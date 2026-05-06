@@ -40,6 +40,14 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
 
+      - name: resolve turbo base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "TURBO_SCM_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+          else
+            echo "TURBO_SCM_BASE=${{ github.event.before }}" >> "$GITHUB_ENV"
+          fi
+
       - name: lint
         run: pnpm turbo run lint --affected
 
