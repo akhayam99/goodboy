@@ -1,3 +1,7 @@
+mod secrets;
+
+pub use secrets::read as read_secret;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -11,6 +15,10 @@ pub fn run() {
       }
       Ok(())
     })
+    .invoke_handler(tauri::generate_handler![
+      secrets::secret_set,
+      secrets::secret_delete,
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
