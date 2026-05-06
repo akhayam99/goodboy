@@ -8,10 +8,27 @@
   --color-muted: oklch(0.96 0.005 270);
   --color-muted-foreground: oklch(0.45 0.01 270);
   --color-border: oklch(0.92 0.005 270);
+  --color-danger: oklch(0.55 0.2 25);
+  --color-danger-foreground: oklch(0.99 0 0);
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 }
 
 html,
 body,
 #root {
   height: 100%;
+  font-size: 13px;
+}
+
+body {
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
 }
