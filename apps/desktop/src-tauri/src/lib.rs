@@ -1,3 +1,4 @@
+mod editor;
 mod secrets;
 
 pub use secrets::read as read_secret;
@@ -18,6 +19,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       secrets::secret_set,
       secrets::secret_delete,
+      editor::open_in_editor,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
