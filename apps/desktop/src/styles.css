@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(0.99 0 0);
+  --color-foreground: oklch(0.18 0.01 270);
+  --color-primary: oklch(0.55 0.18 265);
+  --color-primary-foreground: oklch(0.99 0 0);
+  --color-muted: oklch(0.96 0.005 270);
+  --color-muted-foreground: oklch(0.45 0.01 270);
+  --color-border: oklch(0.92 0.005 270);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
