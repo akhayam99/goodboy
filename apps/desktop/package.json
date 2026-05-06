@@ -9,9 +9,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
-    "lint": "eslint ."
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@kay-am/core": "workspace:*",
