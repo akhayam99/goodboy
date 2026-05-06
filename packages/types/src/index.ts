@@ -9,4 +9,12 @@ export type {
 export type { ContextSlot, Session, SessionState, Workspace } from './workspace';
 export type { Message, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
+export type {
+  DetectResult,
+  ProviderAdapter,
+  ProviderCapabilities,
+  ProviderUsage,
+  TurnEvent,
+  TurnRequest,
+} from './adapter';
 export type { TelemetryRecord } from './telemetry';
