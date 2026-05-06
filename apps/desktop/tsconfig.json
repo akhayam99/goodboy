@@ -6,11 +6,5 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../../packages/types" },
-    { "path": "../../packages/core" },
-    { "path": "../../packages/db" },
-    { "path": "../../packages/ui" }
-  ]
+  "include": ["src"]
 }
