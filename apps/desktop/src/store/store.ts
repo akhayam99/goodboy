@@ -35,6 +35,7 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   TurnEvent,
+  TurnProviderOverride,
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
@@ -121,7 +122,11 @@ export interface AppActions {
   loadTranscript(sessionId: SessionId): Promise<void>;
   appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
   resetTranscript(sessionId: SessionId): void;
-  sendTurn(input: { sessionId: SessionId; content: string }): Promise<void>;
+  sendTurn(input: {
+    sessionId: SessionId;
+    content: string;
+    override?: TurnProviderOverride;
+  }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
   endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
@@ -529,7 +534,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  sendTurn: async ({ sessionId, content }) => {
+  sendTurn: async ({ sessionId, content, override }) => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -541,8 +546,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-    const provider = session.providerPreference.defaultProvider;
-    const model = session.providerPreference.defaultModel ?? getDefaultTurnModel(provider);
+    const resolvedOverride =
+      session.providerPreference.allowTurnOverride && override != null ? override : undefined;
+    const provider = resolvedOverride?.providerId ?? session.providerPreference.defaultProvider;
+    const model =
+      resolvedOverride?.model ??
+      session.providerPreference.defaultModel ??
+      getDefaultTurnModel(provider);
 
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
@@ -562,6 +572,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       role: 'user',
       content,
       createdAt: now(),
+      ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
     await insertMessage(tauriDatabase, userMessage);
 
@@ -584,6 +595,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await updateSessionState(tauriDatabase, sessionId, nextState, now());
     applySessionUpdate(set, sessionId, nextState);
 
+    const providerInfo = get().providers.find((p) => p.id === provider);
+
     let assistantText = '';
     let lastError: unknown = null;
 
@@ -593,6 +606,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         model,
         workingDir,
         prompt: content,
+        binary: providerInfo?.binary,
       })) {
         get().appendTurnEvent(sessionId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;

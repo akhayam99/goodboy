@@ -15,6 +15,23 @@ const formatTokens = (n: number): string =>
 
 type SortKey = 'time' | 'cost';
 
+interface ProviderBreakdown {
+  readonly provider: string;
+  readonly cost: number;
+}
+
+function buildProviderBreakdown(
+  records: ReadonlyArray<TelemetryRecord>,
+): ReadonlyArray<ProviderBreakdown> {
+  const map = new Map<string, number>();
+  for (const r of records) {
+    map.set(r.provider, (map.get(r.provider) ?? 0) + r.estimatedCostUsd);
+  }
+  return Array.from(map.entries())
+    .map(([provider, cost]) => ({ provider, cost }))
+    .sort((a, b) => b.cost - a.cost);
+}
+
 export function TelemetryPill() {
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
@@ -51,6 +68,12 @@ export function TelemetryPill() {
   const summarizerCost = sessionTelemetry
     .filter((r) => r.kind === 'summarizer')
     .reduce((sum, r) => sum + r.estimatedCostUsd, 0);
+
+  const providerBreakdown = useMemo(
+    () => buildProviderBreakdown(sessionTelemetry),
+    [sessionTelemetry],
+  );
+  const hasMultipleProviders = providerBreakdown.length >= 2;
 
   const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
@@ -102,6 +125,18 @@ export function TelemetryPill() {
                 <dd className="text-right font-medium">{formatCost(summarizerCost)}</dd>
               </>
             ) : null}
+            {hasMultipleProviders
+              ? providerBreakdown.map(({ provider, cost }) => (
+                  <>
+                    <dt key={`dt-${provider}`} className="text-muted-foreground">
+                      via {provider === 'anthropic' ? 'claude' : provider}
+                    </dt>
+                    <dd key={`dd-${provider}`} className="text-right font-medium">
+                      {formatCost(cost)}
+                    </dd>
+                  </>
+                ))
+              : null}
           </dl>
 
           <div className="mt-2 max-h-64 overflow-y-auto">
@@ -122,6 +157,11 @@ export function TelemetryPill() {
                       >
                         {record.kind}
                       </span>
+                      {hasMultipleProviders ? (
+                        <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                          {record.provider === 'anthropic' ? 'claude' : record.provider}
+                        </span>
+                      ) : null}
                       <span>
                         {formatTokens(record.inputTokens)}↓ / {formatTokens(record.outputTokens)}↑
                       </span>
