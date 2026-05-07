@@ -3,6 +3,7 @@ import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
 import { SkillsPanel } from './SkillsPanel';
+import { PhasesPanel } from './PhasesPanel';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
@@ -91,6 +92,12 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       {workspace ? (
         <div className="border-t border-border-soft pt-4">
           <SkillsPanel workspaceId={workspace.id} />
+        </div>
+      ) : null}
+
+      {workspace ? (
+        <div className="border-t border-border-soft pt-4">
+          <PhasesPanel workspaceId={workspace.id} />
         </div>
       ) : null}
 

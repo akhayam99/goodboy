@@ -30,6 +30,9 @@ import type {
   IsoDateTime,
   Message,
   MessageId,
+  PhaseRun,
+  PhaseTemplate,
+  PhaseTemplateId,
   ProviderRun,
   ProviderRunId,
   Session,
@@ -85,6 +88,13 @@ import {
   resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../skills';
+import {
+  invokePhaseTemplateList,
+  invokePhaseTemplateUpsert,
+  invokePhaseTemplateDelete,
+  invokePhaseRunList,
+  type PhaseTemplateUpsertArgs,
+} from '../phases';
 
 export type BootPhase =
   | 'pending'
@@ -123,6 +133,8 @@ export interface AppState {
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
+  readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<PhaseTemplate>>>;
+  readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
 }
 
 export interface SummarizerSessionStatus {
@@ -154,6 +166,7 @@ export interface AppActions {
     goal: string;
     branchPrefix?: string;
     providerPreference?: SessionProviderPreference;
+    phaseTemplateId?: PhaseTemplateId;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   loadTranscript(sessionId: SessionId): Promise<void>;
   appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
@@ -183,6 +196,10 @@ export interface AppActions {
   saveSkill(input: SkillUpsertArgs): Promise<void>;
   deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
+  loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
+  savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
+  deletePhaseTemplate(id: PhaseTemplateId, workspaceId: WorkspaceId): Promise<void>;
+  loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -214,6 +231,8 @@ const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
+  phaseTemplates: {},
+  sessionPhaseRuns: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -444,19 +463,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
       workspaceSummary: null,
     });
     if (id) {
-      const [sessions, workspaceSummary, providerSummaries, budgetRules, skills] =
+      const [sessions, workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
         await Promise.all([
           listSessionsForWorkspace(tauriDatabase, id),
           summarizeWorkspaceTelemetry(tauriDatabase, id),
           summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
           invokeBudgetRuleList(),
           invokeSkillList(id),
+          invokePhaseTemplateList(id),
         ]);
       set((state) => ({
         sessions,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
+        phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
       }));
     } else {
       set({ providerSpendBreakdown: [] });
@@ -468,6 +489,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
+      const session = get().sessions.find((s) => s.id === id);
       const [messages, summary, telemetry, slots] = await Promise.all([
         listMessagesForSession(tauriDatabase, id),
         summarizeSessionTelemetry(tauriDatabase, id),
@@ -482,6 +504,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
       }));
+      if (session?.phaseTemplateId) {
+        const phaseRuns = await invokePhaseRunList(id);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: phaseRuns },
+        }));
+      }
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
   },
@@ -553,7 +581,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  createSession: async ({ workspaceId, goal, branchPrefix, providerPreference }) => {
+  createSession: async ({
+    workspaceId,
+    goal,
+    branchPrefix,
+    providerPreference,
+    phaseTemplateId,
+  }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
@@ -574,6 +608,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      ...(phaseTemplateId !== undefined ? { phaseTemplateId } : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -1065,5 +1100,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
   rescanSkills: async (workspaceId) => {
     const skills = await invokeSkillRescan(workspaceId);
     set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
+  },
+
+  loadPhaseTemplates: async (workspaceId) => {
+    const templates = await invokePhaseTemplateList(workspaceId);
+    set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates } }));
+  },
+
+  savePhaseTemplate: async (template) => {
+    await invokePhaseTemplateUpsert(template);
+    const templates = await invokePhaseTemplateList(template.workspaceId);
+    set((state) => ({
+      phaseTemplates: { ...state.phaseTemplates, [template.workspaceId]: templates },
+    }));
+  },
+
+  deletePhaseTemplate: async (id, workspaceId) => {
+    await invokePhaseTemplateDelete(id);
+    const templates = await invokePhaseTemplateList(workspaceId);
+    set((state) => ({
+      phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates },
+    }));
+  },
+
+  loadPhaseRunsForSession: async (sessionId) => {
+    const runs = await invokePhaseRunList(sessionId);
+    set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs } }));
   },
 }));

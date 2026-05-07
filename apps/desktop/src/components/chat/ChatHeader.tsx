@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GitBranch, FolderOpen, Cpu, PanelRightClose, PanelRightOpen, Square } from 'lucide-react';
 import { Button, cn } from '@kay-am/ui';
-import type { ProviderId, Session } from '@kay-am/types';
+import type { PhaseRun, PhaseRunStatus, ProviderId, Session, SessionId } from '@kay-am/types';
 import { getDefaultTurnModel } from '@kay-am/core';
 import { openInEditor } from '../../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../settings';
@@ -104,6 +104,7 @@ export function ChatHeader({
             </span>
           </span>
           {openErr ? <span className="text-danger">{openErr}</span> : null}
+          {session.phaseTemplateId ? <PhaseProgressPill sessionId={session.id} /> : null}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -134,4 +135,45 @@ export function ChatHeader({
 function truncatePath(p: string, max = 48): string {
   if (p.length <= max) return p;
   return `…${p.slice(-(max - 1))}`;
+}
+
+const STATUS_DOT: Record<PhaseRunStatus, string> = {
+  pending: 'bg-muted-foreground/40',
+  running: 'bg-blue-500',
+  completed: 'bg-green-500',
+  failed: 'bg-red-500',
+  skipped: 'bg-muted-foreground/20',
+};
+
+function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
+  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? []);
+
+  if (runs.length === 0) return null;
+
+  const sorted = runs.slice().sort((a, b) => a.ordinal - b.ordinal);
+  const activeIdx = sorted.findIndex((r) => r.status === 'running');
+  const lastCompletedIdx = sorted.reduce(
+    (acc: number, r: PhaseRun, i: number) => (r.status === 'completed' ? i : acc),
+    -1,
+  );
+  const displayIdx = activeIdx >= 0 ? activeIdx : lastCompletedIdx;
+  const current = displayIdx >= 0 ? sorted[displayIdx] : sorted[0];
+
+  if (!current) return null;
+
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground">
+      <span className="font-mono">
+        {displayIdx + 1}/{sorted.length} · {current.name}
+      </span>
+      <span className="flex items-center gap-0.5">
+        {sorted.map((r) => (
+          <span
+            key={r.id}
+            className={cn('inline-block h-1.5 w-1.5 rounded-full', STATUS_DOT[r.status])}
+          />
+        ))}
+      </span>
+    </div>
+  );
 }
