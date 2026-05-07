@@ -1,4 +1,4 @@
-export { useAppStore, type AppActions, type AppState } from './store';
+export { useAppStore, type AppActions, type AppState, type BootPhase } from './store';
 export {
   selectCurrentSession,
   selectCurrentWorkspace,

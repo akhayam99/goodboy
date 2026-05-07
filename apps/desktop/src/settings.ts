@@ -1,6 +1,8 @@
 import type { WorkspaceId } from '@kay-am/types';
 
 export const SETTING_EDITOR_BINARY = 'editor.binary';
+export const SETTING_LAST_WORKSPACE_ID = 'last.workspace_id';
+export const SETTING_LAST_SESSION_ID = 'last.session_id';
 export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BRANCH_PREFIX = 'kay';
 
