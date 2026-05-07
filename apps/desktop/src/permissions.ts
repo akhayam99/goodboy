@@ -224,6 +224,62 @@ export async function invokePermissionAuditClear(scope: PermissionAuditClearScop
 }
 
 // ---------------------------------------------------------------------------
+// Permission audit retry queue (#196)
+// ---------------------------------------------------------------------------
+
+interface RawAuditRetryRow {
+  readonly id: string;
+  readonly payloadJson: string;
+  readonly attempts: number;
+  readonly lastError: string | null;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+export interface AuditRetryEntry {
+  readonly id: string;
+  readonly payloadJson: string;
+  readonly attempts: number;
+  readonly lastError: string | null;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
+  return {
+    id: row.id,
+    payloadJson: row.payloadJson,
+    attempts: row.attempts,
+    lastError: row.lastError,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export async function invokeAuditRetryEnqueue(id: string, payloadJson: string): Promise<void> {
+  return invoke<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } });
+}
+
+export async function invokeAuditRetryDrain(
+  limit: number,
+): Promise<ReadonlyArray<AuditRetryEntry>> {
+  const rows = await invoke<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit });
+  return rows.map(rowToAuditRetryEntry);
+}
+
+export async function invokeAuditRetryUpdate(
+  id: string,
+  attempts: number,
+  lastError: string,
+): Promise<void> {
+  return invoke<void>('permission_audit_retry_update', { id, attempts, lastError });
+}
+
+export async function invokeAuditRetryDelete(id: string): Promise<void> {
+  return invoke<void>('permission_audit_retry_delete', { id });
+}
+
+// ---------------------------------------------------------------------------
 // Effective rules hook — for preflight banner
 // ---------------------------------------------------------------------------
 

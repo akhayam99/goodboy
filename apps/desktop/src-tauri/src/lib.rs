@@ -96,6 +96,10 @@ pub fn run() {
       permissions::permission_audit_insert,
       permissions::permission_audit_list,
       permissions::permission_audit_clear,
+      permissions::permission_audit_retry_enqueue,
+      permissions::permission_audit_retry_drain,
+      permissions::permission_audit_retry_update,
+      permissions::permission_audit_retry_delete,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

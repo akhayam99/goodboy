@@ -562,6 +562,109 @@ pub fn permission_audit_clear(
 }
 
 // ---------------------------------------------------------------------------
+// Commands — permission audit retry queue (#196)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuditRetryRow {
+    pub id: String,
+    #[serde(rename = "payloadJson")]
+    pub payload_json: String,
+    pub attempts: i64,
+    #[serde(rename = "lastError")]
+    pub last_error: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: i64,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AuditRetryEnqueueInput {
+    pub id: String,
+    #[serde(rename = "payloadJson")]
+    pub payload_json: String,
+}
+
+#[tauri::command]
+pub fn permission_audit_retry_enqueue(
+    state: State<'_, Db>,
+    input: AuditRetryEnqueueInput,
+) -> Result<(), PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64;
+
+    conn.execute(
+        "INSERT INTO permission_audit_retry (id, payload_json, attempts, last_error, created_at, updated_at)
+         VALUES (?1, ?2, 0, NULL, ?3, ?4)
+         ON CONFLICT(id) DO NOTHING",
+        rusqlite::params![input.id, input.payload_json, now_ms, now_ms],
+    )?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn permission_audit_retry_drain(
+    state: State<'_, Db>,
+    limit: i64,
+) -> Result<Vec<AuditRetryRow>, PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, payload_json, attempts, last_error, created_at, updated_at
+         FROM permission_audit_retry
+         ORDER BY created_at ASC
+         LIMIT ?1",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![limit], |row| {
+        Ok(AuditRetryRow {
+            id: row.get(0)?,
+            payload_json: row.get(1)?,
+            attempts: row.get(2)?,
+            last_error: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PermissionError::Db)
+}
+
+#[tauri::command]
+pub fn permission_audit_retry_update(
+    state: State<'_, Db>,
+    id: String,
+    attempts: i64,
+    last_error: String,
+) -> Result<(), PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64;
+
+    conn.execute(
+        "UPDATE permission_audit_retry SET attempts = ?1, last_error = ?2, updated_at = ?3 WHERE id = ?4",
+        rusqlite::params![attempts, last_error, now_ms, id],
+    )?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn permission_audit_retry_delete(
+    state: State<'_, Db>,
+    id: String,
+) -> Result<(), PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    conn.execute(
+        "DELETE FROM permission_audit_retry WHERE id = ?1",
+        rusqlite::params![id],
+    )?;
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Utilities (mirrors phases.rs — kept independent per module)
 // ---------------------------------------------------------------------------
 

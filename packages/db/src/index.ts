@@ -65,3 +65,10 @@ export {
   deleteWorktreesForSession,
   type SessionWorktree,
 } from './queries/session-worktrees';
+export {
+  enqueueAuditRetry,
+  drainOldest,
+  updateAuditRetryAttempts,
+  deleteAuditRetry,
+  type AuditRetryRow,
+} from './queries/permission-audit-retry';
