@@ -1,5 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { BudgetAlert, BudgetRule, SessionBudget } from '@kay-am/types';
+import type {
+  BudgetAlert,
+  BudgetCheckResult,
+  BudgetPeriod,
+  BudgetRule,
+  ProviderName,
+  SessionBudget,
+} from '@kay-am/types';
 
 export async function invokeBudgetRuleUpsert(rule: BudgetRule): Promise<void> {
   return invoke<void>('budget_rule_upsert', { rule });
@@ -27,4 +34,15 @@ export async function invokeBudgetAlertsList(): Promise<BudgetAlert[]> {
 
 export async function invokeBudgetAlertDismiss(id: string): Promise<void> {
   return invoke<void>('budget_alert_dismiss', { id });
+}
+
+export async function invokeCheckProviderBudget(
+  provider: ProviderName,
+  period: BudgetPeriod,
+): Promise<BudgetCheckResult> {
+  return invoke<BudgetCheckResult>('check_provider_budget', { provider, period });
+}
+
+export async function invokeCheckSessionBudget(sessionId: string): Promise<BudgetCheckResult> {
+  return invoke<BudgetCheckResult>('check_session_budget', { sessionId });
 }
