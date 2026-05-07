@@ -17,6 +17,7 @@ export type TranscriptItem =
   | { kind: 'usage'; key: string; usage: ProviderUsage }
   | { kind: 'error'; key: string; message: string }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
+  | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | { kind: 'done'; key: string };
 
 export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
@@ -98,6 +99,14 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
         }
         break;
       }
+      case 'skill_invocation':
+        items.push({
+          kind: 'skill_invocation',
+          key: `skill-${i}`,
+          skillName: event.skillName,
+          args: event.args,
+        });
+        break;
       case 'done':
         items.push({ kind: 'done', key: `done-${i}` });
         break;
