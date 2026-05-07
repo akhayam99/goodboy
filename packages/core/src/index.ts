@@ -121,3 +121,10 @@ export {
   type MergeResult,
   type UnsubscribeFn,
 } from './scheduler';
+
+export {
+  createParallelWorktrees,
+  removeParallelWorktrees,
+  type ParallelWorktreeDeps,
+  type ParallelWorktreeResult,
+} from './worktree/parallel';
