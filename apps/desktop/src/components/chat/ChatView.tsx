@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Session } from '@kay-am/types';
+import type { ProviderRunId, Session } from '@kay-am/types';
 import { useAppStore, useTranscript } from '../../store';
-import { ChatHeader } from './ChatHeader';
-import { ChatInput } from './ChatInput';
-import { reduceTranscript } from './transcript-items';
+import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
+import { ChatHeader } from './ChatHeader';
+import { ChatInput } from './ChatInput';
 
 interface ChatViewProps {
   session: Session;
@@ -15,26 +15,17 @@ interface ChatViewProps {
 }
 
 const PIN_TOLERANCE_PX = 32;
+const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
-export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }: ChatViewProps) {
-  const events = useTranscript(session.id);
-  const items = useMemo(() => reduceTranscript(events), [events]);
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const authResults = useAppStore((s) => s.authResults);
-  const refreshProviders = useAppStore((s) => s.refreshProviders);
+function useScrollPin(deps: ReadonlyArray<unknown>) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
-
-  const provider = session.providerPreference.defaultProvider;
-  const providerAuthState = authResults?.[provider]?.state ?? null;
-  const providerIdentity = authResults?.[provider]?.identity ?? null;
-  const isProviderDisconnected = providerAuthState === 'disconnected';
 
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || !pinned) return;
     el.scrollTop = el.scrollHeight;
-  }, [items, pinned]);
+  }, [pinned, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onScroll = () => {
     const el = scrollerRef.current;
@@ -43,7 +34,144 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
     setPinned(distance < PIN_TOLERANCE_PX);
   };
 
+  return { scrollerRef, pinned, setPinned, onScroll };
+}
+
+interface ColumnProps {
+  runId: ProviderRunId;
+  index: number;
+  events: ReturnType<typeof useTranscript>;
+  onRefreshAuth: () => void;
+}
+
+function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
+  const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
+  const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
+  const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
+
+  return (
+    <div className="flex min-w-0 flex-col border-r border-border last:border-r-0">
+      <div className="border-b border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+        p{index + 1}
+      </div>
+      <div
+        ref={scrollerRef}
+        onScroll={onScroll}
+        className="relative flex-1 overflow-y-auto px-3 py-3"
+      >
+        {items.length === 0 ? (
+          <p className="text-xs text-muted-foreground">no events yet for run p{index + 1}.</p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {items.map((item) => (
+              <li key={item.key}>
+                <TranscriptCard item={item} onRefreshAuth={onRefreshAuth} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {!pinned ? (
+          <button
+            type="button"
+            className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-xs shadow-md"
+            onClick={() => {
+              setPinned(true);
+              const el = scrollerRef.current;
+              if (el) el.scrollTop = el.scrollHeight;
+            }}
+          >
+            jump to latest
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }: ChatViewProps) {
+  const events = useTranscript(session.id);
+  const items = useMemo(() => reduceTranscript(events), [events]);
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+  const authResults = useAppStore((s) => s.authResults);
+  const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const settings = useAppStore((s) => s.settings);
+  const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
+
+  const provider = session.providerPreference.defaultProvider;
+  const providerAuthState = authResults?.[provider]?.state ?? null;
+  const providerIdentity = authResults?.[provider]?.identity ?? null;
+  const isProviderDisconnected = providerAuthState === 'disconnected';
+
   const isEnded = session.state.kind === 'ended';
+
+  const flagOn = settings['experimental.enable_parallel_agents'] === 'true';
+
+  const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
+    () => (flagOn ? detectParallelRunIds(events) : []),
+    [events, flagOn],
+  );
+
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? []);
+
+  const allParallelTerminal = useMemo(() => {
+    if (parallelRunIds.length === 0) return false;
+    return parallelRunIds.every((rid) => {
+      const run = phaseRuns.find((r) => r.runId === rid);
+      return run ? TERMINAL_STATUSES.has(run.status) : false;
+    });
+  }, [parallelRunIds, phaseRuns]);
+
+  const isSplitView = flagOn && parallelRunIds.length > 1;
+
+  if (isSplitView) {
+    return (
+      <div className="flex h-full flex-col">
+        <ChatHeader
+          session={session}
+          worktreePath={worktreePath}
+          contextOpen={contextOpen}
+          onToggleContext={onToggleContext}
+          onEndSession={onRequestEnd}
+        />
+        <div
+          className="flex-1 overflow-hidden"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${parallelRunIds.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {parallelRunIds.map((runId, i) => (
+            <ParallelColumn
+              key={runId}
+              runId={runId}
+              index={i}
+              events={events}
+              onRefreshAuth={() => void refreshProviders()}
+            />
+          ))}
+        </div>
+        {allParallelTerminal ? (
+          <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2">
+            <span className="text-xs text-muted-foreground">merge pending — review conflicts</span>
+            <button
+              type="button"
+              className="rounded border border-border bg-background px-3 py-1 text-xs"
+              disabled
+            >
+              merge
+            </button>
+          </div>
+        ) : null}
+        {isEnded ? (
+          <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
+            session ended — no further turns. branch preserved.
+          </div>
+        ) : (
+          <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">

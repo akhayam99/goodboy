@@ -1,4 +1,4 @@
-import type { ProviderId, ProviderUsage, TurnEvent } from '@kay-am/types';
+import type { ProviderId, ProviderRunId, ProviderUsage, TurnEvent } from '@kay-am/types';
 import { decodeAuthRequiredMessage } from '../../turn';
 
 export type TranscriptItem =
@@ -27,6 +27,30 @@ export type TranscriptItem =
       at: string;
     }
   | { kind: 'done'; key: string };
+
+/**
+ * Returns distinct runIds from events, excluding the sentinel 'history' value
+ * used for messages loaded from the DB. Two or more runIds indicates a parallel
+ * phase group is active — the caller decides whether to show split-view.
+ */
+export function detectParallelRunIds(
+  events: ReadonlyArray<TurnEvent>,
+): ReadonlyArray<ProviderRunId> {
+  const seen = new Set<ProviderRunId>();
+  for (const event of events) {
+    if (event.runId !== ('history' as ProviderRunId)) {
+      seen.add(event.runId);
+    }
+  }
+  return seen.size > 1 ? [...seen] : [];
+}
+
+export function filterEventsByRunId(
+  events: ReadonlyArray<TurnEvent>,
+  runId: ProviderRunId,
+): ReadonlyArray<TurnEvent> {
+  return events.filter((e) => e.runId === runId);
+}
 
 export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
   const items: TranscriptItem[] = [];

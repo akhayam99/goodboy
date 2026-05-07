@@ -9,7 +9,13 @@ import { PhasesPanel } from './PhasesPanel';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
+  DEFAULT_ENABLE_PARALLEL_AGENTS,
+  DEFAULT_MAX_PARALLELISM,
+  MAX_PARALLELISM,
+  MIN_PARALLELISM,
   SETTING_EDITOR_BINARY,
+  SETTING_ENABLE_PARALLEL_AGENTS,
+  SETTING_MAX_PARALLELISM,
   SETTING_PROVIDER_PRICING_CONFIG,
   settingBranchPrefix,
 } from '../settings';
@@ -31,6 +37,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [pricingConfig, setPricingConfig] = useState<ProviderPricingConfig>({});
+  const [enableParallelAgents, setEnableParallelAgents] = useState(DEFAULT_ENABLE_PARALLEL_AGENTS);
+  const [maxParallelism, setMaxParallelism] = useState(DEFAULT_MAX_PARALLELISM);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +52,17 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     void loadSetting(SETTING_PROVIDER_PRICING_CONFIG).then((v) =>
       setPricingConfig(parseProviderPricingConfig(v)),
     );
+    void loadSetting(SETTING_ENABLE_PARALLEL_AGENTS).then((v) =>
+      setEnableParallelAgents(v === 'true'),
+    );
+    void loadSetting(SETTING_MAX_PARALLELISM).then((v) => {
+      const parsed = v !== null ? parseInt(v, 10) : NaN;
+      setMaxParallelism(
+        !isNaN(parsed) && parsed >= MIN_PARALLELISM && parsed <= MAX_PARALLELISM
+          ? parsed
+          : DEFAULT_MAX_PARALLELISM,
+      );
+    });
     if (workspace) {
       void loadSetting(settingBranchPrefix(workspace.id)).then((v) =>
         setBranchPrefix(v ?? DEFAULT_BRANCH_PREFIX),
@@ -57,6 +76,12 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     try {
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
       await saveSetting(SETTING_PROVIDER_PRICING_CONFIG, JSON.stringify(pricingConfig));
+      await saveSetting(SETTING_ENABLE_PARALLEL_AGENTS, enableParallelAgents ? 'true' : 'false');
+      const clampedParallelism = Math.max(
+        MIN_PARALLELISM,
+        Math.min(MAX_PARALLELISM, maxParallelism),
+      );
+      await saveSetting(SETTING_MAX_PARALLELISM, String(clampedParallelism));
       if (workspace) {
         await saveSetting(
           settingBranchPrefix(workspace.id),
@@ -116,6 +141,42 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
       <div className="border-t border-border-soft pt-4">
         <ProviderPricingPanel config={pricingConfig} onChange={setPricingConfig} />
+      </div>
+
+      <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          experimental — multi-agent parallel
+        </div>
+        <Section
+          label="enable parallel agents"
+          help="split-view transcript renders N columns when a parallel phase group is active."
+        >
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 cursor-pointer rounded border border-border accent-primary"
+              checked={enableParallelAgents}
+              onChange={(e) => setEnableParallelAgents(e.target.checked)}
+            />
+            <span className="text-sm text-foreground">{enableParallelAgents ? 'on' : 'off'}</span>
+          </label>
+        </Section>
+        <Section
+          label="max parallelism"
+          help={`number of concurrent agent columns (${MIN_PARALLELISM}–${MAX_PARALLELISM}).`}
+        >
+          <Input
+            type="number"
+            value={maxParallelism}
+            min={MIN_PARALLELISM}
+            max={MAX_PARALLELISM}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              if (!isNaN(v)) setMaxParallelism(v);
+            }}
+            disabled={!enableParallelAgents}
+          />
+        </Section>
       </div>
 
       <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
