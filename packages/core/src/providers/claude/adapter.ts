@@ -25,6 +25,7 @@ export interface ClaudeAdapterDeps {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
+  readonly onUnknown?: (type: string, payload: unknown) => void;
 }
 
 export class ClaudeAdapter implements ProviderAdapter {
@@ -34,11 +35,17 @@ export class ClaudeAdapter implements ProviderAdapter {
   private readonly binary: string;
   private readonly now: () => IsoDateTime;
   private readonly spawnFn: typeof spawn;
+  private readonly onUnknown: (type: string, payload: unknown) => void;
 
   constructor(deps: ClaudeAdapterDeps = {}) {
     this.binary = deps.binary ?? 'claude';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
+    this.onUnknown =
+      deps.onUnknown ??
+      ((type) => {
+        console.warn(`[claude-adapter] unknown stream-json payload type: ${type}`);
+      });
   }
 
   async detect(): Promise<DetectResult> {
@@ -80,7 +87,7 @@ export class ClaudeAdapter implements ProviderAdapter {
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    return spawnClaude(this.binary, this.spawnFn, this.now, request);
+    return spawnClaude(this.binary, this.spawnFn, this.now, this.onUnknown, request);
   }
 }
 
@@ -88,6 +95,7 @@ async function* spawnClaude(
   binary: string,
   spawnFn: typeof spawn,
   now: () => IsoDateTime,
+  onUnknown: (type: string, payload: unknown) => void,
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
   const prompt = `${request.systemPrompt}\n\n${request.userMessage}`.trim();
@@ -117,7 +125,7 @@ async function* spawnClaude(
   let ended = false;
   let error: unknown = null;
 
-  const ctx = { runId: request.runId, now };
+  const ctx = { runId: request.runId, now, onUnknown };
 
   const flush = () => {
     if (resolver && queue.length > 0) {
