@@ -29,6 +29,7 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
+  SessionProviderPreference,
   SessionState,
   TelemetryRecord,
   TelemetryRecordId,
@@ -116,6 +117,7 @@ export interface AppActions {
     workspaceId: WorkspaceId;
     goal: string;
     branchPrefix?: string;
+    providerPreference?: SessionProviderPreference;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   loadTranscript(sessionId: SessionId): Promise<void>;
   appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
@@ -469,7 +471,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  createSession: async ({ workspaceId, goal, branchPrefix }) => {
+  createSession: async ({ workspaceId, goal, branchPrefix, providerPreference }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
@@ -489,7 +491,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       goal: goal.trim() || worktree.slug,
       state: initialState,
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: providerPreference ?? DEFAULT_SESSION_PROVIDER_PREFERENCE,
       createdAt: now,
       updatedAt: now,
     };

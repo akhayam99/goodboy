@@ -52,7 +52,7 @@ export function App() {
             </div>
           </div>
         }
-        leftSidebar={<SessionsSidebar />}
+        leftSidebar={<SessionsSidebar onOpenSettings={() => setSettingsOpen(true)} />}
         main={
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>

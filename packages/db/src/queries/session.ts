@@ -1,5 +1,12 @@
-import type { IsoDateTime, Session, SessionId, SessionState, WorkspaceId } from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  ProviderId,
+  Session,
+  SessionId,
+  SessionProviderPreference,
+  SessionState,
+  WorkspaceId,
+} from '@kay-am/types';
 import type { Database } from '../client';
 
 interface SessionRow {
@@ -8,6 +15,8 @@ interface SessionRow {
   goal: string;
   state_kind: SessionState['kind'];
   state_payload: string;
+  provider_default: string;
+  provider_allow_override: number;
   created_at: number;
   updated_at: number;
 }
@@ -17,6 +26,18 @@ function toState(kind: SessionState['kind'], payload: string): SessionState {
   return { kind, ...data } as SessionState;
 }
 
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex']);
+
+function toProviderPreference(row: SessionRow): SessionProviderPreference {
+  const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
+    ? (row.provider_default as ProviderId)
+    : 'anthropic';
+  return {
+    defaultProvider,
+    allowTurnOverride: row.provider_allow_override !== 0,
+  };
+}
+
 function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Session {
   return {
     id: row.id as SessionId,
@@ -24,7 +45,7 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     goal: row.goal,
     state: toState(row.state_kind, row.state_payload),
     contextSlots,
-    providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+    providerPreference: toProviderPreference(row),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -39,14 +60,16 @@ export async function insertSession(db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
       session.goal,
       kind,
       payload,
+      session.providerPreference.defaultProvider,
+      session.providerPreference.allowTurnOverride ? 1 : 0,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],
