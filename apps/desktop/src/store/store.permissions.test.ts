@@ -30,6 +30,10 @@ const permissionAuditInsertSpy = vi.fn();
 vi.mock('../permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
   invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
+  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
+  invokeAuditRetryDrain: vi.fn(async () => []),
+  invokeAuditRetryUpdate: vi.fn(async () => undefined),
+  invokeAuditRetryDelete: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
 }));
 
@@ -51,6 +55,7 @@ vi.mock('@kay-am/db', () => ({
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
   insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   listContextSlotsForSession: vi.fn(async () => []),
@@ -58,6 +63,8 @@ vi.mock('@kay-am/db', () => ({
   listSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
+  listWorktreesForSession: vi.fn(async () => []),
+  deleteWorktreesForSession: vi.fn(),
   setSetting: vi.fn(),
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),

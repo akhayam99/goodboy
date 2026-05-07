@@ -7,6 +7,7 @@ import { m006Skills } from './m006-skills';
 import { m007Phases } from './m007-phases';
 import { m008Permissions } from './m008-permissions';
 import { m009SessionWorktrees } from './m009-session-worktrees';
+import { m010PermissionAuditRetry } from './m010-permission-audit-retry';
 import { m011ParallelPhases } from './m011-parallel-phases';
 
 export interface Migration {
@@ -24,5 +25,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 7, sql: m007Phases },
   { version: 8, sql: m008Permissions },
   { version: 9, sql: m009SessionWorktrees },
+  { version: 10, sql: m010PermissionAuditRetry },
   { version: 11, sql: m011ParallelPhases },
 ];

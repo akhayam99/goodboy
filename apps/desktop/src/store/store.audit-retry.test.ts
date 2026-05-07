@@ -1,0 +1,383 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { IsoDateTime, Session, SessionId, TurnEvent, WorkspaceId } from '@kay-am/types';
+
+// ---------------------------------------------------------------------------
+// Module mocks — hoisted before store import
+// ---------------------------------------------------------------------------
+
+const runTurnSpy = vi.fn();
+const cancelTurnSpy = vi.fn();
+
+vi.mock('../turn', () => ({
+  runTurn: (args: unknown) => runTurnSpy(args),
+  cancelTurn: cancelTurnSpy,
+  encodeAuthRequiredMessage: () => '',
+  isAuthErrorMessage: () => false,
+}));
+
+const permissionRuleListSpy = vi.fn();
+const permissionAuditInsertSpy = vi.fn();
+const auditRetryEnqueueSpy = vi.fn();
+const auditRetryDrainSpy = vi.fn();
+const auditRetryUpdateSpy = vi.fn();
+const auditRetryDeleteSpy = vi.fn();
+
+vi.mock('../permissions', () => ({
+  invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
+  invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
+  invokeAuditRetryEnqueue: (id: string, payload: string) => auditRetryEnqueueSpy(id, payload),
+  invokeAuditRetryDrain: (limit: number) => auditRetryDrainSpy(limit),
+  invokeAuditRetryUpdate: (id: string, attempts: number, err: string) =>
+    auditRetryUpdateSpy(id, attempts, err),
+  invokeAuditRetryDelete: (id: string) => auditRetryDeleteSpy(id),
+  useEffectivePermissionRules: () => [],
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(),
+}));
+
+vi.mock('../db', () => ({
+  runDbMigrations: vi.fn(),
+  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
+}));
+
+vi.mock('@kay-am/db', () => ({
+  getSetting: vi.fn(),
+  insertMessage: vi.fn(),
+  insertProviderRun: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
+  insertTelemetry: vi.fn(),
+  insertWorkspace: vi.fn(),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
+  listWorkspaces: vi.fn(async () => []),
+  listWorktreesForSession: vi.fn(async () => []),
+  deleteWorktreesForSession: vi.fn(),
+  setSetting: vi.fn(),
+  summarizeSessionTelemetry: vi.fn(async () => null),
+  summarizeWorkspaceTelemetry: vi.fn(async () => null),
+  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
+  updateProviderRunStatus: vi.fn(),
+  updateSessionState: vi.fn(),
+  upsertContextSlot: vi.fn(),
+}));
+
+vi.mock('../providers', () => ({
+  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
+  checkProviderAuth: vi.fn(),
+  getCursorStatus: vi.fn(),
+  getCodexStatus: vi.fn(),
+  getProviderStatus: vi.fn(),
+}));
+
+vi.mock('../routing', () => ({
+  resolveProviderForTurn: vi.fn(async () => ({
+    selectedProvider: 'anthropic',
+    selectedModel: 'claude-3-5-sonnet-latest',
+    reason: 'preference',
+  })),
+}));
+
+vi.mock('../budget', () => ({
+  invokeBudgetRuleList: vi.fn(async () => []),
+  invokeBudgetRuleUpsert: vi.fn(),
+  invokeBudgetRuleDelete: vi.fn(),
+  invokeBudgetAlertsList: vi.fn(async () => []),
+  invokeBudgetAlertDismiss: vi.fn(),
+  invokeSessionBudgetGet: vi.fn(),
+  invokeSessionBudgetSet: vi.fn(),
+  invokeCheckProviderBudget: vi.fn(),
+}));
+
+vi.mock('../skills', () => ({
+  invokeSkillList: vi.fn(async () => []),
+  invokeSkillUpsert: vi.fn(),
+  invokeSkillDelete: vi.fn(),
+  invokeSkillRescan: vi.fn(),
+  resolveSkillInvocation: vi.fn(),
+}));
+
+vi.mock('../phases', () => ({
+  invokePhaseTemplateList: vi.fn(async () => []),
+  invokePhaseTemplateUpsert: vi.fn(),
+  invokePhaseTemplateDelete: vi.fn(),
+  invokePhaseRunList: vi.fn(async () => []),
+  invokePhaseRunInsert: vi.fn(),
+  invokePhaseRunUpdateStatus: vi.fn(),
+}));
+
+vi.mock('../worktree', () => ({
+  createWorktree: vi.fn(),
+  removeWorktree: vi.fn(),
+}));
+
+vi.mock('../repo', () => ({
+  validateGitRepo: vi.fn(),
+}));
+
+vi.mock('../providerPricing', () => ({
+  parseProviderPricingConfig: vi.fn(() => null),
+  getCodexPriceOverride: vi.fn(() => null),
+}));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const SESSION_ID = 'session-1' as SessionId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const NOW: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+
+function buildSession(): Session {
+  return {
+    id: SESSION_ID,
+    workspaceId: WORKSPACE_ID,
+    goal: 'test',
+    state: { kind: 'idle', lastActivityAt: NOW },
+    contextSlots: [],
+    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+}
+
+function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts?: number }) {
+  return {
+    id: overrides.id ?? 'retry-1',
+    payloadJson:
+      overrides.payloadJson ??
+      JSON.stringify({
+        id: 'req-1',
+        runId: 'run-1',
+        sessionId: SESSION_ID,
+        toolUseId: 'tu-1',
+        toolName: 'Edit',
+        inputJson: '{}',
+        decision: 'allow',
+        decidedBy: 'engine',
+        requestedAt: NOW,
+        decidedAt: NOW,
+      }),
+    attempts: overrides.attempts ?? 0,
+    lastError: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+async function* emptyStream(): AsyncIterable<TurnEvent> {
+  // intentionally empty
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('audit retry queue — sendTurn enqueue on failure', () => {
+  beforeEach(() => {
+    runTurnSpy.mockReset();
+    cancelTurnSpy.mockReset();
+    permissionRuleListSpy.mockReset();
+    permissionAuditInsertSpy.mockReset();
+    auditRetryEnqueueSpy.mockReset();
+    auditRetryDrainSpy.mockReset();
+    auditRetryUpdateSpy.mockReset();
+    auditRetryDeleteSpy.mockReset();
+
+    permissionRuleListSpy.mockResolvedValue([]);
+    auditRetryEnqueueSpy.mockResolvedValue(undefined);
+    auditRetryDrainSpy.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function importStore() {
+    const mod = await import('./store');
+    return mod.useAppStore;
+  }
+
+  function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: {
+        anthropic: { state: 'connected', identity: 'test' },
+        cursor: { state: 'connected', identity: 'test' },
+        codex: { state: 'connected', identity: 'test' },
+      } as never,
+      workspaces: [
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          rootPath: '/tmp',
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+    });
+  }
+
+  it('enqueues to retry queue when audit insert fails', async () => {
+    permissionAuditInsertSpy.mockRejectedValue(new Error('db locked'));
+
+    async function* toolStream(): AsyncIterable<TurnEvent> {
+      yield {
+        kind: 'tool_call_start',
+        toolUseId: 'tu-1',
+        toolName: 'Edit',
+        input: { path: '/tmp/x' },
+        at: NOW,
+      } as TurnEvent;
+    }
+    runTurnSpy.mockImplementation(() => toolStream());
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
+    expect(auditRetryEnqueueSpy).toHaveBeenCalledTimes(1);
+    const [enqueuedId, enqueuedPayload] = auditRetryEnqueueSpy.mock.calls[0] as [string, string];
+    expect(typeof enqueuedId).toBe('string');
+    const parsed = JSON.parse(enqueuedPayload) as Record<string, unknown>;
+    expect(parsed.toolName).toBe('Edit');
+    // No rules → engine defaults to deny; decision value is whatever the engine decides.
+    expect(typeof parsed.decision).toBe('string');
+  });
+
+  it('does NOT enqueue when audit insert succeeds', async () => {
+    permissionAuditInsertSpy.mockResolvedValue({});
+
+    async function* toolStream(): AsyncIterable<TurnEvent> {
+      yield {
+        kind: 'tool_call_start',
+        toolUseId: 'tu-2',
+        toolName: 'Read',
+        input: {},
+        at: NOW,
+      } as TurnEvent;
+    }
+    runTurnSpy.mockImplementation(() => toolStream());
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(auditRetryEnqueueSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('audit retry queue — drain worker (happy path)', () => {
+  beforeEach(() => {
+    runTurnSpy.mockImplementation(() => emptyStream());
+    permissionRuleListSpy.mockResolvedValue([]);
+    auditRetryEnqueueSpy.mockResolvedValue(undefined);
+    auditRetryUpdateSpy.mockResolvedValue(undefined);
+    auditRetryDeleteSpy.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    auditRetryDrainSpy.mockReset();
+    auditRetryDeleteSpy.mockReset();
+    auditRetryUpdateSpy.mockReset();
+    permissionAuditInsertSpy.mockReset();
+  });
+
+  async function runHydrate() {
+    const { runDbMigrations } = await import('../db');
+    (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const { getSetting } = await import('@kay-am/db');
+    (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const { getProviderStatus, getCursorStatus, getCodexStatus, checkProviderAuth } =
+      await import('../providers');
+    (getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      state: 'connected',
+      identity: 'test',
+    });
+    (getCursorStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      state: 'connected',
+      identity: 'test',
+    });
+    (getCodexStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      state: 'connected',
+      identity: 'test',
+    });
+    (checkProviderAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
+      state: 'connected',
+      identity: 'test',
+    });
+
+    const mod = await import('./store');
+    await mod.useAppStore.getState().hydrate();
+    // Drain is fired with void — yield microtask so it can settle.
+    await Promise.resolve();
+  }
+
+  it('drain happy path: retries insert, deletes on success', async () => {
+    const entry = makeRetryEntry({ id: 'retry-happy', attempts: 2 });
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockResolvedValue({});
+
+    await runHydrate();
+
+    expect(auditRetryDrainSpy).toHaveBeenCalledWith(50);
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-happy');
+    expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
+  });
+
+  it('drain failure path: increments attempts when insert still fails', async () => {
+    const entry = makeRetryEntry({ id: 'retry-fail', attempts: 3 });
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockRejectedValue(new Error('still locked'));
+
+    await runHydrate();
+
+    expect(auditRetryUpdateSpy).toHaveBeenCalledWith('retry-fail', 4, 'still locked');
+    expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
+  });
+
+  it('max-attempts boundary: deletes entry at attempt 10', async () => {
+    const entry = makeRetryEntry({ id: 'retry-max', attempts: 9 });
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
+
+    await runHydrate();
+
+    // At attempts=9, nextAttempts=10 >= MAX(10) → delete, not update
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-max');
+    expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
+  });
+
+  it('drain skips rows with invalid JSON payload (deletes them)', async () => {
+    const entry = makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' });
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+
+    await runHydrate();
+
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json');
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
+  });
+});
