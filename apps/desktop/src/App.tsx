@@ -53,6 +53,12 @@ export function App() {
   }, [hydrate]);
 
   useEffect(() => {
+    const handler = () => setSettingsOpen(true);
+    window.addEventListener('kayam:open-settings', handler);
+    return () => window.removeEventListener('kayam:open-settings', handler);
+  }, []);
+
+  useEffect(() => {
     if (!currentSession) {
       setContextOpen(false);
       setContextHydratedFor(null);

@@ -222,3 +222,50 @@ export async function invokePermissionAuditClear(scope: PermissionAuditClearScop
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Effective rules hook — for preflight banner
+// ---------------------------------------------------------------------------
+
+import { useEffect, useRef, useState } from 'react';
+
+export function useEffectivePermissionRules(args: {
+  sessionId: SessionId | null;
+  workspaceId: WorkspaceId | null;
+  refreshKey?: number;
+}): ReadonlyArray<PermissionRule> {
+  const { sessionId, workspaceId, refreshKey = 0 } = args;
+  const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!sessionId || !workspaceId) {
+      setRules([]);
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [global, workspace, session] = await Promise.all([
+          invokePermissionRuleList({ scope: 'global' }),
+          invokePermissionRuleList({ scope: 'workspace', workspaceId }),
+          invokePermissionRuleList({ scope: 'session', sessionId }),
+        ]);
+        if (!cancelled) setRules([...global, ...workspace, ...session]);
+      } catch {
+        // silent
+      }
+    };
+
+    void load();
+    timerRef.current = setInterval(() => void load(), 30000);
+
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [sessionId, workspaceId, refreshKey]);
+
+  return rules;
+}

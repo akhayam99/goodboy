@@ -82,6 +82,14 @@ function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =>
               {info.version}
             </span>
           ) : null}
+          {info.id !== 'anthropic' ? (
+            <span
+              className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              title="v0.7 will extend the permission proxy to cursor and codex. For now, these providers continue with their previous defaults."
+            >
+              permission proxy: not supported
+            </span>
+          ) : null}
         </div>
         <RowStatus info={info} />
       </div>

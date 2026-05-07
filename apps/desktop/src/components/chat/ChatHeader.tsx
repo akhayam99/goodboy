@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { GitBranch, FolderOpen, Cpu, PanelRightClose, PanelRightOpen, Square } from 'lucide-react';
+import {
+  GitBranch,
+  FolderOpen,
+  Cpu,
+  PanelRightClose,
+  PanelRightOpen,
+  Square,
+  ShieldCheck,
+} from 'lucide-react';
 import { Button, cn } from '@kay-am/ui';
 import type { PhaseRun, PhaseRunStatus, ProviderId, Session, SessionId } from '@kay-am/types';
 import { getDefaultTurnModel } from '@kay-am/core';
 import { openInEditor } from '../../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../settings';
 import { useAppStore } from '../../store';
+import { PermissionAuditPanel } from './PermissionAuditPanel';
 
 interface ChatHeaderProps {
   session: Session;
@@ -39,6 +48,7 @@ export function ChatHeader({
   );
   const [copied, setCopied] = useState(false);
   const [openErr, setOpenErr] = useState<string | null>(null);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const provider = session.providerPreference.defaultProvider;
   const model = session.providerPreference.defaultModel ?? getDefaultTurnModel(provider);
@@ -121,6 +131,15 @@ export function ChatHeader({
         <Button
           variant="ghost"
           size="sm"
+          onClick={() => setAuditOpen((v) => !v)}
+          title="permission audit log"
+          aria-label="permission audit log"
+        >
+          <ShieldCheck size={14} aria-hidden />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onToggleContext}
           title={contextOpen ? 'hide context panel' : 'show context panel'}
           aria-label={contextOpen ? 'hide context panel' : 'show context panel'}
@@ -128,6 +147,11 @@ export function ChatHeader({
           {contextOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
         </Button>
       </div>
+      <PermissionAuditPanel
+        sessionId={session.id}
+        open={auditOpen}
+        onClose={() => setAuditOpen(false)}
+      />
     </div>
   );
 }

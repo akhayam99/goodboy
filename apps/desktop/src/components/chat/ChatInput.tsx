@@ -1,17 +1,22 @@
-import { useState, useRef, useCallback, type KeyboardEvent } from 'react';
+import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
 import { Button, Textarea } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
+  PermissionRule,
   ProviderId,
   Session,
+  SessionId,
   TurnProviderOverride,
+  WorkspaceId,
 } from '@kay-am/types';
+import { buildClaudeFlags } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
+import { useEffectivePermissionRules } from '../../permissions';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -47,6 +52,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
   const workspaceSkills = useAppStore(useShallow((s) => s.skills[session.workspaceId] ?? []));
+
+  const effectiveRules = useEffectivePermissionRules({
+    sessionId: session.id,
+    workspaceId: session.workspaceId,
+  });
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +150,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
+        <PreflightPill
+          provider={effectiveProvider}
+          rules={effectiveRules}
+          sessionId={session.id}
+          workspaceId={session.workspaceId}
+        />
         <div className="relative" ref={wrapperRef}>
           {showPopover && isSlashMode ? (
             <SlashCommandPopover
@@ -199,5 +215,63 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         </div>
       </div>
     </div>
+  );
+}
+
+function PreflightPill({
+  provider,
+  rules,
+  sessionId,
+  workspaceId,
+}: {
+  provider: ProviderId;
+  rules: ReadonlyArray<PermissionRule>;
+  sessionId: SessionId;
+  workspaceId: WorkspaceId;
+}) {
+  const flags = useMemo(
+    () =>
+      provider === 'anthropic'
+        ? buildClaudeFlags({ rules, scope: { sessionId, workspaceId } })
+        : null,
+    [provider, rules, sessionId, workspaceId],
+  );
+
+  const openSettings = () => {
+    window.dispatchEvent(new CustomEvent('kayam:open-settings'));
+  };
+
+  if (provider !== 'anthropic') {
+    return (
+      <button
+        type="button"
+        onClick={openSettings}
+        title="v0.7 will extend permission coverage to this provider."
+        className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+      >
+        permission proxy: claude only
+      </button>
+    );
+  }
+
+  if (!flags) return null;
+
+  const { allowedTools, disallowedTools } = flags;
+  const tooltipLines = [
+    allowedTools.length > 0 ? `--allowedTools "${allowedTools.join(' ')}"` : null,
+    disallowedTools.length > 0 ? `--disallowedTools "${disallowedTools.join(' ')}"` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  return (
+    <button
+      type="button"
+      onClick={openSettings}
+      title={tooltipLines || 'no permission rules configured'}
+      className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+    >
+      permissions: {allowedTools.length} allow / {disallowedTools.length} deny
+    </button>
   );
 }
