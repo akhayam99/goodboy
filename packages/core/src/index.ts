@@ -84,3 +84,13 @@ export {
   type SummarizerResult,
   type SummarizerUsage,
 } from './summarizer';
+
+export {
+  buildPhasePrompt,
+  isPhaseSequenceComplete,
+  nextPhase,
+  PhaseContextPropagator,
+  type PhaseContextPropagatorDeps,
+} from './phases';
+// PhaseRegistry (@kay-am/db → node) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/phases/registry in Node/Tauri command contexts.
