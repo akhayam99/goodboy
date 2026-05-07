@@ -22,14 +22,6 @@ export {
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
-// CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from @kay-am/core/src/providers/codex/adapter when needed in Node context.
-export { CODEX_CHEAP_MODEL } from './providers/codex/constants';
-export {
-  parseJsonLine as parseCodexJsonLine,
-  type ParseContext as CodexParseContext,
-} from './providers/codex/parser';
-
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
 export { CURSOR_CHEAP_MODEL } from './providers/cursor/cost';
