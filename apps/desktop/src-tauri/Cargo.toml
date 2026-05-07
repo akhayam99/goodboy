@@ -25,3 +25,5 @@ keyring = { version = "3", features = ["apple-native", "linux-native", "windows-
 thiserror = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 dirs = "5"
+regex = "1"
+sha2 = "0.10"

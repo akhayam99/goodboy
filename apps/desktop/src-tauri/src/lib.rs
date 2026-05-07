@@ -1,6 +1,7 @@
 mod db;
 mod editor;
 mod secrets;
+mod worktree;
 
 pub use secrets::read as read_secret;
 
@@ -27,6 +28,10 @@ pub fn run() {
       db::db_exec,
       db::db_execute,
       db::db_select,
+      worktree::worktree_create,
+      worktree::worktree_remove,
+      worktree::worktree_list,
+      worktree::worktree_exists,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
