@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
-import type { ProviderId, SessionId, SessionProviderPreference, WorkspaceId } from '@kay-am/types';
+import type {
+  PhaseTemplateId,
+  ProviderId,
+  SessionId,
+  SessionProviderPreference,
+  WorkspaceId,
+} from '@kay-am/types';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { useAppStore } from '../store';
 
@@ -38,9 +44,11 @@ export function NewSessionDialog({
   const providers = useAppStore((s) => s.providers);
   const settingKey = settingBranchPrefix(workspaceId);
   const storedPrefix = useAppStore((s) => s.settings[settingKey]);
+  const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? []);
   const [goal, setGoal] = useState('');
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [softCapRaw, setSoftCapRaw] = useState('');
+  const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<PhaseTemplateId | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -62,6 +70,7 @@ export function NewSessionDialog({
     setGoal('');
     setPrefix(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
     setSoftCapRaw('');
+    setSelectedPhaseTemplateId('');
     setError(null);
   };
 
@@ -78,6 +87,9 @@ export function NewSessionDialog({
         goal,
         branchPrefix: prefix,
         providerPreference,
+        ...(selectedPhaseTemplateId
+          ? { phaseTemplateId: selectedPhaseTemplateId as PhaseTemplateId }
+          : {}),
       });
       const parsedCap = parseFloat(softCapRaw);
       if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
@@ -136,6 +148,29 @@ export function NewSessionDialog({
           min="0"
           step="0.01"
         />
+      </Field>
+
+      <Field
+        label="phase template (optional)"
+        hint={
+          phaseTemplates.length === 0
+            ? 'no phase templates yet — create in Settings → Phases'
+            : 'assign a multi-phase workflow to this session.'
+        }
+      >
+        <select
+          value={selectedPhaseTemplateId}
+          onChange={(e) => setSelectedPhaseTemplateId(e.target.value as PhaseTemplateId | '')}
+          disabled={phaseTemplates.length === 0}
+          className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+        >
+          <option value="">none</option>
+          {phaseTemplates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <Field label="provider">
