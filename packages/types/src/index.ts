@@ -1,6 +1,8 @@
 export type {
   IsoDateTime,
   MessageId,
+  PermissionRequestId,
+  PermissionRuleId,
   PhaseDefinitionId,
   PhaseRunId,
   PhaseTemplateId,
@@ -50,3 +52,14 @@ export type {
   PhaseTemplate,
   PhaseTransition,
 } from './phase';
+export type {
+  PermissionAuditEntry,
+  PermissionDecision,
+  PermissionDecisionKind,
+  PermissionDecisionOutcome,
+  PermissionDecisionSource,
+  PermissionRequest,
+  PermissionRule,
+  PermissionRulePattern,
+  PermissionRuleScope,
+} from './permission';
