@@ -14,7 +14,9 @@ const formatTokens = (n: number): string =>
       ? `${(n / 1_000).toFixed(1)}k`
       : `${n}`;
 
-type SortKey = 'time' | 'cost';
+type SortKey = 'recent' | 'expensive';
+
+const SORT_KEY_STORAGE = 'telemetry-sort-key';
 
 function spendColor(pct: number): string {
   if (pct >= 1) return 'bg-red-500';
@@ -65,7 +67,10 @@ export function TelemetryPill() {
   const providerSpendBreakdown = useAppStore((s) => s.providerSpendBreakdown);
 
   const [open, setOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>('time');
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    const stored = localStorage.getItem(SORT_KEY_STORAGE);
+    return stored === 'expensive' ? 'expensive' : 'recent';
+  });
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,13 +86,18 @@ export function TelemetryPill() {
 
   const sorted = useMemo(() => {
     const copy = [...sessionTelemetry];
-    if (sortKey === 'cost') {
+    if (sortKey === 'expensive') {
       copy.sort((a, b) => b.estimatedCostUsd - a.estimatedCostUsd);
     } else {
       copy.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
     }
     return copy;
   }, [sessionTelemetry, sortKey]);
+
+  const handleSortKey = (key: SortKey) => {
+    setSortKey(key);
+    localStorage.setItem(SORT_KEY_STORAGE, key);
+  };
 
   const summarizerCost = sessionTelemetry
     .filter((r) => r.kind === 'summarizer')
@@ -122,14 +132,14 @@ export function TelemetryPill() {
             </span>
             <div className="flex gap-1">
               <SortChip
-                active={sortKey === 'time'}
-                onClick={() => setSortKey('time')}
-                label="time"
+                active={sortKey === 'recent'}
+                onClick={() => handleSortKey('recent')}
+                label="recent"
               />
               <SortChip
-                active={sortKey === 'cost'}
-                onClick={() => setSortKey('cost')}
-                label="cost"
+                active={sortKey === 'expensive'}
+                onClick={() => handleSortKey('expensive')}
+                label="expensive"
               />
             </div>
           </div>
