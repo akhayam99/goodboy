@@ -116,6 +116,8 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
+  const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
   const allParallelTerminal = useMemo(() => {
     if (parallelRunIds.length === 0) return false;
@@ -135,14 +137,34 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
 
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
 
-  // TODO (@ak): derive real conflicts from sessionPhaseRuns MergeResult once scheduler
-  // emits merge_resolved events — I1 #212 will wire this up. Until then conflicts is
-  // always empty and the dialog acts as a structural placeholder.
-  const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(() => [], []);
+  // Derive MergeConflict[] from store — populated by parallel-turn scheduler
+  // when manual resolution is required. Cast FileConflict to MergeConflict:
+  // both have {file, runIds} — the shapes are structurally identical.
+  const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
+    () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
+    [rawMergeConflicts],
+  );
+
+  // Derive terminal runStatuses for the current session's phaseRuns.
+  const terminalRunStatuses = useMemo(
+    () =>
+      phaseRuns
+        .filter((r) => r.completedAt !== undefined && r.runId !== undefined)
+        .map((r) => ({
+          runId: r.runId as string,
+          completedAt: r.completedAt as string,
+          status: r.status,
+        })),
+    [phaseRuns],
+  );
 
   const onMergeResolve = (picks: Record<string, MergeResolution>) => {
-    // TODO (@ak): forward picks to scheduler merge_resolved command — I1 #212.
-    console.log('[merge] resolved picks:', picks);
+    // Filter out SKIP_SENTINEL picks — those files stay unresolved (winner's version kept).
+    const resolvedPicks: Record<string, string> = {};
+    for (const [file, pick] of Object.entries(picks)) {
+      if (pick !== '__skip__') resolvedPicks[file] = pick;
+    }
+    void resolveMergeConflicts(session.id, resolvedPicks, terminalRunStatuses);
     setMergeDialogOpen(false);
   };
 

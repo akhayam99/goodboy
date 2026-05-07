@@ -336,7 +336,8 @@ describe('audit retry queue — drain worker (happy path)', () => {
   }
 
   it('drain happy path: retries insert, deletes on success', async () => {
-    const entry = makeRetryEntry({ id: 'retry-happy', attempts: 2 });
+    // updatedAt=0 so backoff (4000ms for attempts=2) is satisfied.
+    const entry = { ...makeRetryEntry({ id: 'retry-happy', attempts: 2 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockResolvedValue({});
 
@@ -349,7 +350,8 @@ describe('audit retry queue — drain worker (happy path)', () => {
   });
 
   it('drain failure path: increments attempts when insert still fails', async () => {
-    const entry = makeRetryEntry({ id: 'retry-fail', attempts: 3 });
+    // updatedAt=0 so backoff is satisfied.
+    const entry = { ...makeRetryEntry({ id: 'retry-fail', attempts: 3 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('still locked'));
 
@@ -359,25 +361,89 @@ describe('audit retry queue — drain worker (happy path)', () => {
     expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
   });
 
-  it('max-attempts boundary: deletes entry at attempt 10', async () => {
-    const entry = makeRetryEntry({ id: 'retry-max', attempts: 9 });
+  it('max-attempts boundary: deletes entry at attempt 5', async () => {
+    // updatedAt in the past so backoff is satisfied.
+    const entry = { ...makeRetryEntry({ id: 'retry-max', attempts: 4 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
 
     await runHydrate();
 
-    // At attempts=9, nextAttempts=10 >= MAX(10) → delete, not update
+    // At attempts=4, nextAttempts=5 >= MAX(5) → delete, not update
     expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-max');
     expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
   });
 
+  it('max-attempts exhausted: emits system alert', async () => {
+    const entry = { ...makeRetryEntry({ id: 'retry-exhausted', attempts: 4 }), updatedAt: 0 };
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
+
+    const mod = await import('./store');
+    await runHydrate();
+
+    const { systemAlerts } = mod.useAppStore.getState();
+    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-exhausted');
+    expect(alert).toBeDefined();
+    expect(alert?.kind).toBe('audit-retry-exhausted');
+    expect(alert?.message).toContain('5 attempts');
+  });
+
   it('drain skips rows with invalid JSON payload (deletes them)', async () => {
-    const entry = makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' });
+    const entry = {
+      ...makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' }),
+      updatedAt: 0,
+    };
     auditRetryDrainSpy.mockResolvedValue([entry]);
 
     await runHydrate();
 
     expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json');
     expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
+  });
+
+  it('corrupt payload: emits system alert', async () => {
+    const entry = {
+      ...makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' }),
+      updatedAt: 0,
+    };
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+
+    const mod = await import('./store');
+    await runHydrate();
+
+    const { systemAlerts } = mod.useAppStore.getState();
+    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-corrupt');
+    expect(alert).toBeDefined();
+    expect(alert?.kind).toBe('audit-retry-corrupt');
+    expect(alert?.message).toContain('corrupt payload');
+  });
+
+  it('backoff: skips entry whose updatedAt is too recent for attempt count', async () => {
+    // attempts=0 → backoff=1000ms. updatedAt is NOW (recent) → should skip.
+    const entry = {
+      ...makeRetryEntry({ id: 'retry-backoff', attempts: 0 }),
+      updatedAt: Date.now(),
+    };
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockResolvedValue({});
+
+    await runHydrate();
+
+    // Entry is within backoff window → should NOT have been processed
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
+    expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
+  });
+
+  it('backoff: processes entry whose updatedAt is old enough', async () => {
+    // attempts=0 → backoff=1000ms. updatedAt well in the past → should process.
+    const entry = { ...makeRetryEntry({ id: 'retry-old', attempts: 0 }), updatedAt: 0 };
+    auditRetryDrainSpy.mockResolvedValue([entry]);
+    permissionAuditInsertSpy.mockResolvedValue({});
+
+    await runHydrate();
+
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-old');
   });
 });
