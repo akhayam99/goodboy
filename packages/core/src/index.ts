@@ -1,15 +1,3 @@
-export {
-  createWorktree,
-  listWorktrees,
-  removeWorktree,
-  sanitizeSlug,
-  GitError,
-  WorktreeError,
-  type CreatedWorktree,
-  type CreateWorktreeOptions,
-  type WorktreeInfo,
-} from './worktree';
-
 export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
 
 export {
@@ -30,11 +18,5 @@ export {
   type SlotKey,
 } from './context';
 
-export {
-  ClaudeAdapter,
-  computeCostUsd,
-  parseStreamJsonLine,
-  priceFor,
-  type ClaudeAdapterDeps,
-  type ParseContext,
-} from './providers/claude';
+export { computeCostUsd, priceFor } from './providers/claude/cost';
+export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';

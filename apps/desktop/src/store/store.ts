@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import { sessionReducer } from '@kay-am/core';
 import {
   getSetting,
+  insertMessage,
+  insertProviderRun,
   insertSession,
   insertWorkspace,
   listMessagesForSession,
@@ -8,11 +11,15 @@ import {
   listWorkspaces,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
+  updateProviderRunStatus,
+  updateSessionState,
   type TelemetrySummary,
 } from '@kay-am/db';
 import type {
   IsoDateTime,
   Message,
+  MessageId,
+  ProviderRun,
   ProviderRunId,
   Session,
   SessionId,
@@ -24,6 +31,7 @@ import type {
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
+import { runTurn, cancelTurn } from '../turn';
 import { createWorktree, type CreatedWorktree } from '../worktree';
 
 export interface AppState {
@@ -38,6 +46,7 @@ export interface AppState {
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
+  readonly sessionWorktrees: Readonly<Record<string, string>>;
 }
 
 export interface AppActions {
@@ -58,6 +67,8 @@ export interface AppActions {
   loadTranscript(sessionId: SessionId): Promise<void>;
   appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
   resetTranscript(sessionId: SessionId): void;
+  sendTurn(input: { sessionId: SessionId; content: string }): Promise<void>;
+  cancelCurrentTurn(sessionId: SessionId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -74,6 +85,7 @@ const initialState: AppState = {
   error: null,
   transcripts: {},
   messages: {},
+  sessionWorktrees: {},
 };
 
 function messageToTurnEvent(message: Message): TurnEvent | null {
@@ -86,7 +98,20 @@ function messageToTurnEvent(message: Message): TurnEvent | null {
   };
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+const DEFAULT_MODEL = 'claude-opus-4-7';
+const DEFAULT_PREFIX = 'kay';
+
+type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
+
+function applySessionUpdate(set: SetFn, sessionId: SessionId, state: SessionState): void {
+  set((store) => ({
+    sessions: store.sessions.map((s) =>
+      s.id === sessionId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
+    ),
+  }));
+}
+
+export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
 
   hydrate: async () => {
@@ -186,6 +211,7 @@ export const useAppStore = create<AppStore>((set) => ({
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
+      sessionWorktrees: { ...state.sessionWorktrees, [session.id]: worktree.worktreePath },
     }));
 
     return { session, worktree };
@@ -213,6 +239,116 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       transcripts: { ...state.transcripts, [sessionId]: [] },
     }));
+  },
+
+  sendTurn: async ({ sessionId, content }) => {
+    const before = get();
+    const session = before.sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    const workingDir = before.sessionWorktrees[sessionId];
+    if (!workingDir) {
+      throw new Error(
+        'session worktree not initialized — open a fresh session (worktree paths are not yet persisted across restarts)',
+      );
+    }
+
+    const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+    const userMessage: Message = {
+      id: crypto.randomUUID() as MessageId,
+      sessionId,
+      role: 'user',
+      content,
+      createdAt: now(),
+    };
+    await insertMessage(tauriDatabase, userMessage);
+
+    const runId = crypto.randomUUID() as ProviderRunId;
+    const run: ProviderRun = {
+      id: runId,
+      sessionId,
+      provider: 'anthropic',
+      model: DEFAULT_MODEL,
+      status: { kind: 'streaming', startedAt: now() },
+      createdAt: now(),
+    };
+    await insertProviderRun(tauriDatabase, run);
+
+    let nextState: SessionState = session.state;
+    if (nextState.kind === 'draft') {
+      nextState = sessionReducer(nextState, { kind: 'start', at: now() });
+    }
+    nextState = sessionReducer(nextState, { kind: 'send', runId, at: now() });
+    await updateSessionState(tauriDatabase, sessionId, nextState, now());
+    applySessionUpdate(set, sessionId, nextState);
+
+    let assistantText = '';
+    let lastError: unknown = null;
+
+    try {
+      for await (const event of runTurn({
+        runId,
+        model: DEFAULT_MODEL,
+        workingDir,
+        prompt: content,
+      })) {
+        get().appendTurnEvent(sessionId, event);
+        if (event.kind === 'assistant_text') assistantText += event.delta;
+
+        const current = get().sessions.find((s) => s.id === sessionId);
+        if (current) {
+          const reduced = sessionReducer(current.state, { kind: 'receive_event', event });
+          if (reduced !== current.state) {
+            await updateSessionState(tauriDatabase, sessionId, reduced, now());
+            applySessionUpdate(set, sessionId, reduced);
+          }
+        }
+      }
+      await updateProviderRunStatus(tauriDatabase, runId, {
+        kind: 'succeeded',
+        finishedAt: now(),
+      });
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      const errorState: SessionState = {
+        kind: 'error',
+        message,
+        failedAt: now(),
+      };
+      await updateSessionState(tauriDatabase, sessionId, errorState, now());
+      applySessionUpdate(set, sessionId, errorState);
+      await updateProviderRunStatus(tauriDatabase, runId, {
+        kind: 'failed',
+        finishedAt: now(),
+        error: message,
+      });
+      get().appendTurnEvent(sessionId, {
+        kind: 'error',
+        runId,
+        message,
+        at: now(),
+      });
+    }
+
+    if (assistantText.length > 0) {
+      const assistantMessage: Message = {
+        id: crypto.randomUUID() as MessageId,
+        sessionId,
+        role: 'assistant',
+        content: assistantText,
+        createdAt: now(),
+      };
+      await insertMessage(tauriDatabase, assistantMessage);
+    }
+
+    if (lastError) throw lastError;
+  },
+
+  cancelCurrentTurn: async (sessionId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session || session.state.kind !== 'running') return;
+    await cancelTurn(session.state.runId);
   },
 
   addWorkspace: async ({ rootPath, name }) => {
