@@ -91,6 +91,11 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
   SETTING_PROVIDER_PRICING_CONFIG,
+  SETTING_ENABLE_PARALLEL_AGENTS,
+  SETTING_MAX_PARALLELISM,
+  DEFAULT_MAX_PARALLELISM,
+  MAX_PARALLELISM,
+  MIN_PARALLELISM,
 } from '../settings';
 import { parseProviderPricingConfig, getCodexPriceOverride } from '../providerPricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
@@ -129,6 +134,11 @@ import {
   invokePhaseRunUpdateStatus,
   type PhaseTemplateUpsertArgs,
 } from '../phases';
+import {
+  detectParallelGroup,
+  runParallelBranch,
+  type ParallelBranchEffects,
+} from './parallel-turn';
 
 export type BootPhase =
   | 'pending'
@@ -849,6 +859,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     let phaseDefinition: PhaseDefinition | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'phase_transition' }> | null = null;
+    let parallelDispatch: {
+      template: PhaseTemplate;
+      currentDef: PhaseDefinition;
+      groupDefs: ReadonlyArray<PhaseDefinition>;
+    } | null = null;
+    // Capture user prompt PRE phase build — needed if parallel branch fires, so per-def
+    // prompts can be rebuilt inside runParallelBranch.
+    const userPromptForPhase = resolvedPrompt;
 
     if (session.phaseTemplateId) {
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
@@ -895,11 +913,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
             };
           }
           phaseDefinition = nextDef;
-          resolvedPrompt = buildPhasePrompt({
-            definition: nextDef,
-            carryForwardContext: phasePromptCarryForward,
-            userMessage: resolvedPrompt,
-          });
+
+          // Detect parallel group — only when experimental flag is on AND nextDef
+          // belongs to a group with >= 2 siblings. Defer prompt rebuild for parallel
+          // path: per-def prompts are built inside runParallelBranch using
+          // userPromptForPhase + phasePromptCarryForward.
+          const enableParallelRaw = get().settings[SETTING_ENABLE_PARALLEL_AGENTS];
+          const enableParallel = enableParallelRaw === 'true';
+          if (enableParallel) {
+            const detection = detectParallelGroup(template, nextDef);
+            if (detection !== null) {
+              parallelDispatch = {
+                template,
+                currentDef: detection.currentDef,
+                groupDefs: detection.groupDefs,
+              };
+            }
+          }
+
+          if (parallelDispatch === null) {
+            resolvedPrompt = buildPhasePrompt({
+              definition: nextDef,
+              carryForwardContext: phasePromptCarryForward,
+              userMessage: resolvedPrompt,
+            });
+          }
         }
       }
     }
@@ -958,30 +996,40 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const resolvedOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
-    const userMessage: Message = {
-      id: crypto.randomUUID() as MessageId,
-      sessionId,
-      role: 'user',
-      content: userTurnText,
-      createdAt: now(),
-      ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
-    };
-    await insertMessage(tauriDatabase, userMessage);
 
+    // The single-run setup (user message persist, provider run row, phase run row,
+    // session.state=running) is gated when the parallel branch will fire below —
+    // the parallel branch inserts its own phase_run rows (one per sibling) and
+    // handles user-message + session-state itself. Without this gate we'd duplicate
+    // every row. The runId allocated here is still used as a placeholder for the
+    // gated paths so types stay consistent (it is unused if parallelDispatch fires).
     const runId = crypto.randomUUID() as ProviderRunId;
-    const run: ProviderRun = {
-      id: runId,
-      sessionId,
-      provider,
-      model,
-      status: { kind: 'streaming', startedAt: now() },
-      routingDecision,
-      createdAt: now(),
-    };
-    await insertProviderRun(tauriDatabase, run);
+
+    if (parallelDispatch === null) {
+      const userMessage: Message = {
+        id: crypto.randomUUID() as MessageId,
+        sessionId,
+        role: 'user',
+        content: userTurnText,
+        createdAt: now(),
+        ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
+      };
+      await insertMessage(tauriDatabase, userMessage);
+
+      const run: ProviderRun = {
+        id: runId,
+        sessionId,
+        provider,
+        model,
+        status: { kind: 'streaming', startedAt: now() },
+        routingDecision,
+        createdAt: now(),
+      };
+      await insertProviderRun(tauriDatabase, run);
+    }
 
     let phaseRunId: PhaseRunId | null = null;
-    if (phaseDefinition) {
+    if (phaseDefinition && parallelDispatch === null) {
       const inserted = await invokePhaseRunInsert({
         sessionId,
         phaseDefinitionId: phaseDefinition.id,
@@ -1001,13 +1049,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    let nextState: SessionState = session.state;
-    if (nextState.kind === 'draft') {
-      nextState = sessionReducer(nextState, { kind: 'start', at: now() });
+    if (parallelDispatch === null) {
+      let nextState: SessionState = session.state;
+      if (nextState.kind === 'draft') {
+        nextState = sessionReducer(nextState, { kind: 'start', at: now() });
+      }
+      nextState = sessionReducer(nextState, { kind: 'send', runId, at: now() });
+      await updateSessionState(tauriDatabase, sessionId, nextState, now());
+      applySessionUpdate(set, sessionId, nextState);
     }
-    nextState = sessionReducer(nextState, { kind: 'send', runId, at: now() });
-    await updateSessionState(tauriDatabase, sessionId, nextState, now());
-    applySessionUpdate(set, sessionId, nextState);
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
@@ -1035,6 +1085,164 @@ export const useAppStore = create<AppStore>((set, get) => ({
         claudeFlags = { allowedTools: [], disallowedTools: [], permissionMode: 'default' };
       }
     }
+
+    // ---- Parallel-agents branch -----------------------------------------
+    // Triggered iff: enableParallelAgents on + phaseTemplate active + current
+    // phase has parallelGroup with >= 2 siblings (already resolved above).
+    // Pre-flight: aggregate cost = single-run estimate × N. Existing single-run
+    // pre-flight is the routing decision itself (resolveProviderForTurn already
+    // selected the cheapest viable provider). For N runs we can only enforce a
+    // soft N-multiplier check against budget rules — implemented as a guard
+    // against runaway parallel spend if the user's session budget is set.
+    if (parallelDispatch !== null) {
+      const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+      if (!workspace) {
+        get().appendTurnEvent(sessionId, {
+          kind: 'error',
+          runId: crypto.randomUUID() as ProviderRunId,
+          message: `workspace not found: ${session.workspaceId}`,
+          at: now(),
+        });
+        return;
+      }
+
+      const maxParallelismRaw = get().settings[SETTING_MAX_PARALLELISM];
+      const parsedMax = Number.parseInt(maxParallelismRaw ?? '', 10);
+      const maxParallelism = Number.isFinite(parsedMax)
+        ? Math.min(MAX_PARALLELISM, Math.max(MIN_PARALLELISM, parsedMax))
+        : DEFAULT_MAX_PARALLELISM;
+      const N = Math.min(parallelDispatch.groupDefs.length, maxParallelism);
+
+      // Aggregate budget pre-flight: if a session soft cap exists, ensure that
+      // running N parallel turns would not blow past it on this turn alone. We
+      // approximate per-turn cost from the most recent telemetry row for the
+      // session as a conservative ceiling. If no telemetry exists yet, we skip
+      // the check (no signal to compare against — first turn).
+      const sessBudget = get().sessionBudgets[sessionId];
+      if (sessBudget) {
+        const tele = get().sessionTelemetry[sessionId] ?? [];
+        const lastTurnCost = tele.length > 0 ? (tele[tele.length - 1]?.estimatedCostUsd ?? 0) : 0;
+        const projected = lastTurnCost * N;
+        const sessSpent = (get().sessionSummary?.estimatedCostUsd ?? 0) + projected;
+        if (lastTurnCost > 0 && sessSpent > sessBudget.softCapUsd) {
+          get().appendTurnEvent(sessionId, {
+            kind: 'error',
+            runId: crypto.randomUUID() as ProviderRunId,
+            message: `parallel turn aborted: projected spend (${sessSpent.toFixed(4)} USD) would exceed session soft cap (${sessBudget.softCapUsd.toFixed(4)} USD).`,
+            at: now(),
+          });
+          return;
+        }
+      }
+
+      // Persist user message once (mirrors single-run path).
+      const userMessage: Message = {
+        id: crypto.randomUUID() as MessageId,
+        sessionId,
+        role: 'user',
+        content: userTurnText,
+        createdAt: now(),
+      };
+      await insertMessage(tauriDatabase, userMessage);
+
+      // Mark session running with the FIRST runId (UI uses session.state.runId
+      // for the legacy cancel path; for parallel groups, cancel routes through
+      // cancelGroup via the scheduler handle inside runParallelBranch).
+      const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
+      let nextStateP: SessionState = session.state;
+      if (nextStateP.kind === 'draft') {
+        nextStateP = sessionReducer(nextStateP, { kind: 'start', at: now() });
+      }
+      nextStateP = sessionReducer(nextStateP, {
+        kind: 'send',
+        runId: groupSessionRunId,
+        at: now(),
+      });
+      await updateSessionState(tauriDatabase, sessionId, nextStateP, now());
+      applySessionUpdate(set, sessionId, nextStateP);
+
+      const effects: ParallelBranchEffects = {
+        appendTurnEvent: (sid, ev) => get().appendTurnEvent(sid, ev),
+        refreshPhaseRuns: async (sid) => {
+          const runs = await invokePhaseRunList(sid);
+          set((state) => ({
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sid]: runs },
+          }));
+        },
+      };
+
+      try {
+        const result = await runParallelBranch(
+          {
+            session,
+            workspace,
+            currentDef: parallelDispatch.currentDef,
+            groupDefs: parallelDispatch.groupDefs,
+            workingDir,
+            resolvedPromptBase: userPromptForPhase,
+            carryForwardContext: phasePromptCarryForward,
+            mergeStrategy: 'last_write_wins',
+            maxParallelism,
+          },
+          {
+            now,
+            providerBinary: providerInfo?.binary,
+            model,
+            ...(claudeFlags.permissionMode !== undefined && {
+              permissionMode: claudeFlags.permissionMode,
+            }),
+            ...(claudeFlags.allowedTools !== undefined && {
+              allowedTools: claudeFlags.allowedTools,
+            }),
+            ...(claudeFlags.disallowedTools !== undefined && {
+              disallowedTools: claudeFlags.disallowedTools,
+            }),
+            effects,
+          },
+        );
+
+        if (result.allFailed) {
+          // Don't auto-cleanup worktrees on full failure — user inspects per-run state.
+          // (Currently no per-run worktrees are created in v1; comment kept for the
+          // follow-on that wires createParallelWorktrees end-to-end.)
+          const errorState: SessionState = {
+            kind: 'error',
+            message: 'all parallel runs failed',
+            failedAt: now(),
+          };
+          await updateSessionState(tauriDatabase, sessionId, errorState, now());
+          applySessionUpdate(set, sessionId, errorState);
+        } else {
+          await updateSessionState(
+            tauriDatabase,
+            sessionId,
+            sessionReducer(get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP, {
+              kind: 'receive_event',
+              event: { kind: 'done', runId: result.runIds[0]!, at: now() },
+            }),
+            now(),
+          );
+        }
+      } catch (err) {
+        const rawMessage = err instanceof Error ? err.message : String(err);
+        get().appendTurnEvent(sessionId, {
+          kind: 'error',
+          runId: groupSessionRunId,
+          message: rawMessage,
+          at: now(),
+        });
+        const errorState: SessionState = {
+          kind: 'error',
+          message: rawMessage,
+          failedAt: now(),
+        };
+        await updateSessionState(tauriDatabase, sessionId, errorState, now());
+        applySessionUpdate(set, sessionId, errorState);
+        throw err;
+      }
+      return;
+    }
+    // ---- /Parallel-agents branch ----------------------------------------
 
     const pricingConfigRaw = await getSetting(tauriDatabase, SETTING_PROVIDER_PRICING_CONFIG);
     const pricingConfig = parseProviderPricingConfig(pricingConfigRaw);
