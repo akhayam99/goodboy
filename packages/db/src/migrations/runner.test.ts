@@ -29,6 +29,11 @@ import {
   insertPhaseRun,
   updatePhaseRunStatus,
 } from '../queries/phase-runs';
+import {
+  insertSessionWorktree,
+  listWorktreesForSession,
+  deleteWorktreesForSession,
+} from '../queries/session-worktrees';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -217,5 +222,59 @@ describe('migrate', () => {
     await deletePhaseTemplate(db, template.id);
     const deleted = await getPhaseTemplate(db, template.id);
     expect(deleted).toBeNull();
+  });
+
+  it('round-trips session_worktrees: insert, list, delete', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+
+    const workspace: Workspace = {
+      id: 'ws_wt' as WorkspaceId,
+      name: 'wt-test',
+      rootPath: '/tmp/wt-test',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertWorkspace(db, workspace);
+
+    const session: Session = {
+      id: 'sess_wt' as SessionId,
+      workspaceId: workspace.id,
+      goal: 'worktree test',
+      state: { kind: 'draft' },
+      contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertSession(db, session);
+
+    await insertSessionWorktree(db, {
+      id: 'wt_1',
+      sessionId: session.id,
+      worktreePath: '/tmp/worktrees/wt_1',
+      branch: 'kay/feat-1',
+      parallelIndex: 0,
+      createdAt: Date.now(),
+    });
+    await insertSessionWorktree(db, {
+      id: 'wt_2',
+      sessionId: session.id,
+      worktreePath: '/tmp/worktrees/wt_2',
+      branch: 'kay/feat-2',
+      parallelIndex: 1,
+      createdAt: Date.now(),
+    });
+
+    const rows = await listWorktreesForSession(db, session.id);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.worktreePath).toBe('/tmp/worktrees/wt_1');
+    expect(rows[0]!.parallelIndex).toBe(0);
+    expect(rows[1]!.worktreePath).toBe('/tmp/worktrees/wt_2');
+    expect(rows[1]!.parallelIndex).toBe(1);
+
+    await deleteWorktreesForSession(db, session.id);
+    const afterDelete = await listWorktreesForSession(db, session.id);
+    expect(afterDelete).toHaveLength(0);
   });
 });

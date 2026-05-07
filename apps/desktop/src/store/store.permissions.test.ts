@@ -199,7 +199,7 @@ describe('sendTurn — permission proxy integration', () => {
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     useAppStore.setState({
       sessions: [buildSession()],
-      sessionWorktrees: { [SESSION_ID]: '/tmp/wt' },
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
       providers: [
         {
           id: 'anthropic',

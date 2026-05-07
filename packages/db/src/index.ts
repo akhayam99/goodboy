@@ -59,3 +59,9 @@ export {
   insertPhaseRun,
   updatePhaseRunStatus,
 } from './queries/phase-runs';
+export {
+  insertSessionWorktree,
+  listWorktreesForSession,
+  deleteWorktreesForSession,
+  type SessionWorktree,
+} from './queries/session-worktrees';

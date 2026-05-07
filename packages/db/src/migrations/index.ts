@@ -6,6 +6,7 @@ import { m005BudgetTables } from './m005-budget-tables';
 import { m006Skills } from './m006-skills';
 import { m007Phases } from './m007-phases';
 import { m008Permissions } from './m008-permissions';
+import { m009SessionWorktrees } from './m009-session-worktrees';
 
 export interface Migration {
   readonly version: number;
@@ -21,4 +22,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 6, sql: m006Skills },
   { version: 7, sql: m007Phases },
   { version: 8, sql: m008Permissions },
+  { version: 9, sql: m009SessionWorktrees },
 ];
