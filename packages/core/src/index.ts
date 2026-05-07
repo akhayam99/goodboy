@@ -19,6 +19,8 @@ export {
   type SlotKey,
 } from './context';
 
+export { resolveProvider, type ResolveProviderInput } from './budget/router';
+
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
