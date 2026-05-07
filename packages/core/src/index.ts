@@ -115,11 +115,18 @@ export {
   awaitMerge,
   onProgress,
   cancelGroup,
+  detectConflicts,
+  resolveConflicts,
+  ManualResolutionRequiredError,
   type SchedulerDeps,
   type SchedulerHandle,
   type SchedulerProgress,
   type MergeResult,
   type UnsubscribeFn,
+  type RunFileTouches,
+  type FileConflict,
+  type ResolvedConflict,
+  type ConflictResolutionInput,
 } from './scheduler';
 
 export {

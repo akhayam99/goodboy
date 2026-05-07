@@ -8,6 +8,16 @@ import type {
   TurnEvent,
 } from '@kay-am/types';
 
+export {
+  detectConflicts,
+  resolveConflicts,
+  ManualResolutionRequiredError,
+  type RunFileTouches,
+  type FileConflict,
+  type ResolvedConflict,
+  type ConflictResolutionInput,
+} from './conflict';
+
 export type UnsubscribeFn = () => void;
 
 export interface SchedulerDeps {
