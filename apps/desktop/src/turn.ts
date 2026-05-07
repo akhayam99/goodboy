@@ -1,7 +1,45 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { parseStreamJsonLine } from '@kay-am/core';
-import type { IsoDateTime, ProviderRunId, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@kay-am/types';
+
+export const AUTH_REQUIRED_PREFIX = '__auth_required__:';
+
+export interface AuthRequiredPayload {
+  readonly providerId: ProviderId;
+  readonly identity: string | null;
+}
+
+export function encodeAuthRequiredMessage(payload: AuthRequiredPayload): string {
+  return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`;
+}
+
+export function decodeAuthRequiredMessage(message: string): AuthRequiredPayload | null {
+  if (!message.startsWith(AUTH_REQUIRED_PREFIX)) return null;
+  try {
+    return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
+  } catch {
+    return null;
+  }
+}
+
+const AUTH_ERROR_PATTERNS = [
+  /not authenticated/i,
+  /not logged in/i,
+  /auth required/i,
+  /authentication required/i,
+  /please log in/i,
+  /please sign in/i,
+  /unauthenticated/i,
+  /401/,
+  /unauthorized/i,
+  /login required/i,
+  /not signed in/i,
+];
+
+export function isAuthErrorMessage(text: string): boolean {
+  return AUTH_ERROR_PATTERNS.some((p) => p.test(text));
+}
 
 const EVENT_NAME = 'turn_event';
 

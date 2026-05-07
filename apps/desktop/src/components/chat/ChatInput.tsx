@@ -5,18 +5,23 @@ import { useAppStore } from '../../store';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
-export function ChatInput({ session }: { session: Session }) {
+interface ChatInputProps {
+  readonly session: Session;
+  readonly providerDisconnected?: boolean;
+}
+
+export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const isRunning = RUNNING_KINDS.has(session.state.kind);
-  const canSend = !isRunning && value.trim().length > 0;
+  const canSend = !isRunning && !providerDisconnected && value.trim().length > 0;
 
   const onSend = async () => {
     const content = value.trim();
-    if (!content || isRunning) return;
+    if (!content || isRunning || providerDisconnected) return;
     setError(null);
     setValue('');
     try {
@@ -33,6 +38,8 @@ export function ChatInput({ session }: { session: Session }) {
     }
   };
 
+  const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
+
   return (
     <div className="flex flex-col gap-2 border-t border-border p-3">
       <Textarea
@@ -42,9 +49,11 @@ export function ChatInput({ session }: { session: Session }) {
         placeholder={
           isRunning
             ? 'turn running… cancel to send another'
-            : 'message claude. shift+enter for newline.'
+            : providerDisconnected
+              ? 'sign in to send a message.'
+              : 'message claude. shift+enter for newline.'
         }
-        disabled={isRunning}
+        disabled={isRunning || providerDisconnected}
         rows={3}
       />
       {error ? <p className="text-xs text-danger">{error}</p> : null}
@@ -54,7 +63,7 @@ export function ChatInput({ session }: { session: Session }) {
             cancel
           </Button>
         ) : (
-          <Button onClick={() => void onSend()} disabled={!canSend}>
+          <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
             send
           </Button>
         )}

@@ -1,4 +1,5 @@
-import type { ProviderUsage, TurnEvent } from '@kay-am/types';
+import type { ProviderId, ProviderUsage, TurnEvent } from '@kay-am/types';
+import { decodeAuthRequiredMessage } from '../../turn';
 
 export type TranscriptItem =
   | { kind: 'assistant_text'; key: string; text: string }
@@ -15,6 +16,7 @@ export type TranscriptItem =
   | { kind: 'file_edit'; key: string; path: string; editType: 'create' | 'modify' | 'delete' }
   | { kind: 'usage'; key: string; usage: ProviderUsage }
   | { kind: 'error'; key: string; message: string }
+  | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
   | { kind: 'done'; key: string };
 
 export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
@@ -82,9 +84,20 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
       case 'usage':
         items.push({ kind: 'usage', key: `usage-${i}`, usage: event.usage });
         break;
-      case 'error':
-        items.push({ kind: 'error', key: `error-${i}`, message: event.message });
+      case 'error': {
+        const authPayload = decodeAuthRequiredMessage(event.message);
+        if (authPayload) {
+          items.push({
+            kind: 'auth_required',
+            key: `auth-${i}`,
+            providerId: authPayload.providerId,
+            identity: authPayload.identity,
+          });
+        } else {
+          items.push({ kind: 'error', key: `error-${i}`, message: event.message });
+        }
         break;
+      }
       case 'done':
         items.push({ kind: 'done', key: `done-${i}` });
         break;
