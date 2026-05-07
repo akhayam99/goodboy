@@ -57,7 +57,14 @@ export type TurnEvent =
     }
   | { kind: 'usage'; runId: ProviderRunId; usage: ProviderUsage; at: IsoDateTime }
   | { kind: 'error'; runId: ProviderRunId; message: string; at: IsoDateTime }
-  | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime };
+  | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime }
+  | {
+      kind: 'skill_invocation';
+      runId: ProviderRunId;
+      skillName: string;
+      args: ReadonlyArray<string>;
+      at: IsoDateTime;
+    };
 
 export interface ProviderAdapter {
   readonly id: ProviderName;
