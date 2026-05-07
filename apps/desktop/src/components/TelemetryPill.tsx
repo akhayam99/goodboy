@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@kay-am/ui';
+import type { TelemetryRecord } from '@kay-am/types';
 import { useAppStore } from '../store';
+
+const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
 const formatTokens = (n: number): string =>
@@ -17,7 +20,7 @@ export function TelemetryPill() {
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const sessionTelemetry = useAppStore((s) =>
-    currentSessionId ? (s.sessionTelemetry[currentSessionId] ?? []) : [],
+    currentSessionId ? (s.sessionTelemetry[currentSessionId] ?? EMPTY_TELEMETRY) : EMPTY_TELEMETRY,
   );
 
   const [open, setOpen] = useState(false);
