@@ -3,6 +3,7 @@ import { Collapsible, cn } from '@kay-am/ui';
 import { CopyButton } from './CopyButton';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
+import { SkillInvocationCard } from './SkillInvocationCard';
 
 const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
   create: 'bg-primary/10 text-primary',
@@ -54,6 +55,8 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
           onRefresh={onRefreshAuth ?? (() => undefined)}
         />
       );
+    case 'skill_invocation':
+      return <SkillInvocationCard item={item} />;
     case 'done':
       return <hr className="border-border" />;
   }
