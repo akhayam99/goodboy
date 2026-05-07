@@ -1,6 +1,7 @@
 mod budget;
 mod db;
 mod editor;
+mod permissions;
 mod phases;
 mod providers;
 mod repo;
@@ -88,6 +89,13 @@ pub fn run() {
       phases::phase_run_list_for_session,
       phases::phase_run_insert,
       phases::phase_run_update_status,
+      permissions::permission_rule_list,
+      permissions::permission_rule_get,
+      permissions::permission_rule_upsert,
+      permissions::permission_rule_delete,
+      permissions::permission_audit_insert,
+      permissions::permission_audit_list,
+      permissions::permission_audit_clear,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
