@@ -6,6 +6,7 @@ import { OpenInEditorButton } from '../OpenInEditorButton';
 import { ChatInput } from './ChatInput';
 import { reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
+import { AuthRequiredCallout } from './AuthRequiredCallout';
 
 interface ChatViewProps {
   session: Session;
@@ -17,8 +18,15 @@ export function ChatView({ session }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
+  const authResults = useAppStore((s) => s.authResults);
+  const refreshProviders = useAppStore((s) => s.refreshProviders);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
+
+  const provider = session.providerPreference.defaultProvider;
+  const providerAuthState = authResults?.[provider]?.state ?? null;
+  const providerIdentity = authResults?.[provider]?.identity ?? null;
+  const isProviderDisconnected = providerAuthState === 'disconnected';
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -53,12 +61,20 @@ export function ChatView({ session }: ChatViewProps) {
         className="relative flex-1 overflow-y-auto px-4 py-3"
       >
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
+          isProviderDisconnected ? (
+            <AuthRequiredCallout
+              providerId={provider}
+              identity={providerIdentity}
+              onRefresh={() => void refreshProviders()}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
+          )
         ) : (
           <ul className="flex flex-col gap-3">
             {items.map((item) => (
               <li key={item.key}>
-                <TranscriptCard item={item} />
+                <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
               </li>
             ))}
           </ul>
@@ -82,7 +98,7 @@ export function ChatView({ session }: ChatViewProps) {
           session ended — no further turns. branch preserved.
         </div>
       ) : (
-        <ChatInput session={session} />
+        <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
       )}
     </div>
   );

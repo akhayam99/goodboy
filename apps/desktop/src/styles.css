@@ -10,6 +10,8 @@
   --color-border: oklch(0.92 0.005 270);
   --color-danger: oklch(0.55 0.2 25);
   --color-danger-foreground: oklch(0.99 0 0);
+  --color-warning: oklch(0.60 0.18 70);
+  --color-warning-foreground: oklch(0.99 0 0);
 
   --text-xs: 11px;
   --text-sm: 13px;

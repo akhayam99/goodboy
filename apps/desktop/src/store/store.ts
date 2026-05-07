@@ -57,7 +57,7 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
 } from '../settings';
-import { runTurn, cancelTurn } from '../turn';
+import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 
 export type BootPhase =
@@ -546,6 +546,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const provider = session.providerPreference.defaultProvider;
     const model = session.providerPreference.defaultModel ?? getDefaultTurnModel(provider);
 
+    const authState = get().authResults?.[provider] ?? null;
+    if (authState?.state === 'disconnected') {
+      const runId = crypto.randomUUID() as ProviderRunId;
+      get().appendTurnEvent(sessionId, {
+        kind: 'error',
+        runId,
+        message: encodeAuthRequiredMessage({ providerId: provider, identity: authState.identity }),
+        at: now(),
+      });
+      return;
+    }
+
     const userMessage: Message = {
       id: crypto.randomUUID() as MessageId,
       sessionId,
@@ -633,10 +645,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } catch (err) {
       lastError = err;
-      const message = err instanceof Error ? err.message : String(err);
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      const isAuthErr = isAuthErrorMessage(rawMessage);
+      const message = isAuthErr
+        ? encodeAuthRequiredMessage({
+            providerId: provider,
+            identity: get().authResults?.[provider]?.identity ?? null,
+          })
+        : rawMessage;
       const errorState: SessionState = {
         kind: 'error',
-        message,
+        message: rawMessage,
         failedAt: now(),
       };
       await updateSessionState(tauriDatabase, sessionId, errorState, now());
@@ -644,7 +663,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),
-        error: message,
+        error: rawMessage,
       });
       get().appendTurnEvent(sessionId, {
         kind: 'error',

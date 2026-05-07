@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Collapsible, cn } from '@kay-am/ui';
 import { CopyButton } from './CopyButton';
 import type { TranscriptItem } from './transcript-items';
+import { AuthRequiredCallout } from './AuthRequiredCallout';
 
 const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
   create: 'bg-primary/10 text-primary',
@@ -9,7 +10,12 @@ const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
   delete: 'bg-danger/10 text-danger',
 };
 
-export function TranscriptCard({ item }: { item: TranscriptItem }) {
+interface TranscriptCardProps {
+  readonly item: TranscriptItem;
+  readonly onRefreshAuth?: () => void;
+}
+
+export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
   switch (item.kind) {
     case 'assistant_text':
       return <AssistantText text={item.text} />;
@@ -39,6 +45,14 @@ export function TranscriptCard({ item }: { item: TranscriptItem }) {
         <div className="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
           {item.message}
         </div>
+      );
+    case 'auth_required':
+      return (
+        <AuthRequiredCallout
+          providerId={item.providerId}
+          identity={item.identity}
+          onRefresh={onRefreshAuth ?? (() => undefined)}
+        />
       );
     case 'done':
       return <hr className="border-border" />;
