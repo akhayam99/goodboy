@@ -21,7 +21,10 @@ export {
 } from './queries/provider-run';
 export {
   insertTelemetry,
+  listTelemetryForSession,
   summarizeSessionTelemetry,
-  type SessionTelemetrySummary,
+  summarizeWorkspaceTelemetry,
+  summarizeProviderTelemetry,
+  type TelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';

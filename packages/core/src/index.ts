@@ -11,3 +11,10 @@ export {
 } from './worktree';
 
 export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
+
+export {
+  TelemetryRecorder,
+  type RecordSummarizerInput,
+  type RecordTurnInput,
+  type TelemetryRecorderDeps,
+} from './telemetry';

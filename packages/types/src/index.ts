@@ -17,4 +17,4 @@ export type {
   TurnEvent,
   TurnRequest,
 } from './adapter';
-export type { TelemetryRecord } from './telemetry';
+export type { TelemetryKind, TelemetryRecord } from './telemetry';
