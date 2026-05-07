@@ -49,12 +49,24 @@ kay-am/
 
 ## Development
 
+### Supported providers
+
+kAY.am orchestrates sessions through locally installed CLI tools. All three require an active subscription — kAY.am uses the subscription cap, not API tokens.
+
+| Provider               | CLI install                                      | Required subscription   |
+| ---------------------- | ------------------------------------------------ | ----------------------- |
+| **Anthropic (Claude)** | `npm install -g @anthropic-ai/claude-code`       | Claude Max / Claude Pro |
+| **Cursor**             | [cursor.com](https://www.cursor.com) desktop app | Cursor Pro              |
+| **OpenAI (Codex)**     | `npm install -g @openai/codex`                   | ChatGPT Pro             |
+
+Connect a provider: `<cli> /login` (Claude / Cursor) or `<cli> login` (Codex). See [docs/providers.md](./docs/providers.md) for full install, connect/disconnect, multi-account, and troubleshooting guidance.
+
 ### Prerequisites
 
 - **Node.js** ≥ 20 and **pnpm** ≥ 9
 - **Rust** toolchain (`rustup`) — required by Tauri 2; install from <https://rustup.rs>. After installing, make sure `cargo` is on your shell `PATH` — `rustup` writes the env to `$HOME/.cargo/env`, which most shells don't auto-source. Either add `source "$HOME/.cargo/env"` to your `~/.zshrc` / `~/.bashrc`, or restart your terminal after install. Verify with `cargo --version` (Tauri shells out to `cargo metadata` and will fail with `os error 2` if it's missing).
 - Platform Tauri prereqs — see <https://v2.tauri.app/start/prerequisites/>
-- **Claude CLI** on `PATH` (`claude --version` should print a version) — used as the default provider
+- At least one **provider CLI** on `PATH` — see [Supported providers](#supported-providers) above
 - An **Anthropic API key** if you want to exercise the summarizer (configurable from in-app settings, stored in the OS keychain)
 
 ### Quickstart
