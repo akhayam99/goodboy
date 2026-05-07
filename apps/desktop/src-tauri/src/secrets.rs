@@ -46,3 +46,8 @@ pub fn secret_delete(key: String) -> Result<(), SecretError> {
 pub fn secret_has(key: String) -> Result<bool, SecretError> {
     Ok(read(&key)?.is_some())
 }
+
+#[tauri::command]
+pub fn secret_get(key: String) -> Result<Option<String>, SecretError> {
+    read(&key)
+}

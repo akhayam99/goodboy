@@ -2,22 +2,19 @@ import { useEffect, useState } from 'react';
 import { ScrollArea, Textarea, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
 import type { ContextSlot, Session } from '@kay-am/types';
-import { useAppStore, useSessionSlots } from '../store';
+import { useAppStore, useSessionSlots, useSummarizerStatus } from '../store';
 
 interface ContextPanelProps {
   session: Session;
 }
 
-type SummarizerStatus = 'idle' | 'running' | 'error';
+type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
 export function ContextPanel({ session }: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
+  const summarizer = useSummarizerStatus(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const toggleSessionSlot = useAppStore((s) => s.toggleSessionSlot);
-
-  // summarizer not yet implemented (#8) — placeholder until wired
-  const summarizerStatus: SummarizerStatus = 'idle';
-  const summarizerLastUpdate: string | null = null;
 
   const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
 
@@ -28,7 +25,11 @@ export function ContextPanel({ session }: ContextPanelProps) {
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             context
           </span>
-          <SummarizerBadge status={summarizerStatus} lastUpdate={summarizerLastUpdate} />
+          <SummarizerBadge
+            status={summarizer.status}
+            lastUpdate={summarizer.lastUpdate}
+            error={summarizer.error}
+          />
         </header>
 
         <ul className="flex flex-col gap-3">
@@ -133,23 +134,34 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
 function SummarizerBadge({
   status,
   lastUpdate,
+  error,
 }: {
-  status: SummarizerStatus;
+  status: SummarizerStatusKind;
   lastUpdate: string | null;
+  error: string | null;
 }) {
-  const styles: Record<SummarizerStatus, string> = {
+  const styles: Record<SummarizerStatusKind, string> = {
     idle: 'bg-muted text-muted-foreground',
     running: 'bg-primary/10 text-primary',
     error: 'bg-danger/10 text-danger',
   };
-  const label = status === 'idle' ? 'summarizer idle' : status;
-  const tooltip = lastUpdate ? `last update: ${lastUpdate}` : 'summarizer not yet wired';
+  const labels: Record<SummarizerStatusKind, string> = {
+    idle: 'summarizer idle',
+    running: 'summarizing…',
+    error: 'summarizer error',
+  };
+  const tooltip =
+    status === 'error' && error
+      ? `last error: ${error}`
+      : lastUpdate
+        ? `last update: ${lastUpdate}`
+        : 'no summarizer run yet — runs after each turn when an api key is set';
   return (
     <span
       title={tooltip}
       className={cn('rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide', styles[status])}
     >
-      {label}
+      {labels[status]}
     </span>
   );
 }

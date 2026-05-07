@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sessionReducer, type SlotKey } from '@kay-am/core';
+import { sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -40,7 +40,7 @@ import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
-import { ANTHROPIC_API_KEY_SECRET, hasSecret } from '../secrets';
+import { ANTHROPIC_API_KEY_SECRET, getSecret, hasSecret } from '../secrets';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
@@ -77,6 +77,13 @@ export interface AppState {
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
+  readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
+}
+
+export interface SummarizerSessionStatus {
+  readonly status: 'idle' | 'running' | 'error';
+  readonly lastUpdate: IsoDateTime | null;
+  readonly error: string | null;
 }
 
 export interface AppActions {
@@ -128,6 +135,7 @@ const initialState: AppState = {
   sessionTelemetry: {},
   workspaceSummary: null,
   sessionSlots: {},
+  summarizerStatus: {},
 };
 
 function mergeSlots(
@@ -161,6 +169,99 @@ function applySessionUpdate(set: SetFn, sessionId: SessionId, state: SessionStat
       s.id === sessionId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
     ),
   }));
+}
+
+async function runSummarizer(
+  set: SetFn,
+  get: () => AppStore,
+  sessionId: SessionId,
+  turnInput: string,
+  turnOutput: string,
+  apiKey: string,
+): Promise<void> {
+  const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+  set((state) => ({
+    summarizerStatus: {
+      ...state.summarizerStatus,
+      [sessionId]: { status: 'running', lastUpdate: null, error: null },
+    },
+  }));
+
+  try {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const summarizer = new Summarizer({ apiKey });
+    const prevSlots = get().sessionSlots[sessionId] ?? [];
+    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
+
+    for (const upsert of result.delta.upserts) {
+      const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
+      const next: ContextSlot = {
+        key: upsert.key,
+        value: upsert.value,
+        enabled: existing?.enabled ?? true,
+      };
+      await upsertContextSlot(tauriDatabase, sessionId, next);
+    }
+    const refreshed = await listContextSlotsForSession(tauriDatabase, sessionId);
+    set((state) => ({
+      sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
+    }));
+
+    const summarizerRunId = crypto.randomUUID() as ProviderRunId;
+    const startedAt = now();
+    await insertProviderRun(tauriDatabase, {
+      id: summarizerRunId,
+      sessionId,
+      provider: 'anthropic',
+      model: result.model,
+      status: { kind: 'streaming', startedAt },
+      createdAt: startedAt,
+    });
+    await updateProviderRunStatus(tauriDatabase, summarizerRunId, {
+      kind: 'succeeded',
+      finishedAt: now(),
+    });
+    const record: TelemetryRecord = {
+      id: crypto.randomUUID() as TelemetryRecordId,
+      runId: summarizerRunId,
+      sessionId,
+      kind: 'summarizer',
+      provider: 'anthropic',
+      model: result.model,
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
+      estimatedCostUsd: result.usage.estimatedCostUsd,
+      recordedAt: now(),
+    };
+    await insertTelemetry(tauriDatabase, record);
+
+    const [sessionSummary, workspaceSummary, telemetry] = await Promise.all([
+      summarizeSessionTelemetry(tauriDatabase, sessionId),
+      summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+      listTelemetryForSession(tauriDatabase, sessionId),
+    ]);
+    set((state) => ({
+      sessionSummary,
+      workspaceSummary,
+      sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: telemetry },
+      summarizerStatus: {
+        ...state.summarizerStatus,
+        [sessionId]: { status: 'idle', lastUpdate: now(), error: null },
+      },
+    }));
+  } catch (err) {
+    // never log api key — only the error message
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
+    set((state) => ({
+      summarizerStatus: {
+        ...state.summarizerStatus,
+        [sessionId]: { status: 'error', lastUpdate: now(), error: message },
+      },
+    }));
+  }
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -480,6 +581,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         createdAt: now(),
       };
       await insertMessage(tauriDatabase, assistantMessage);
+    }
+
+    if (!lastError && assistantText.length > 0) {
+      const apiKey = await getSecret(ANTHROPIC_API_KEY_SECRET);
+      if (apiKey) {
+        void runSummarizer(set, get, sessionId, content, assistantText, apiKey);
+      }
     }
 
     if (lastError) throw lastError;

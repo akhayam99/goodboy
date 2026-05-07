@@ -21,3 +21,16 @@ export {
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
+
+export {
+  Summarizer,
+  HAIKU_MODEL,
+  SummarizerHttpError,
+  SummarizerParseError,
+  type ContextSlotDelta,
+  type ContextSlotDeltaUpsert,
+  type SummarizeInput,
+  type SummarizerDeps,
+  type SummarizerResult,
+  type SummarizerUsage,
+} from './summarizer';

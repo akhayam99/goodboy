@@ -1,4 +1,10 @@
-export { useAppStore, type AppActions, type AppState, type BootPhase } from './store';
+export {
+  useAppStore,
+  type AppActions,
+  type AppState,
+  type BootPhase,
+  type SummarizerSessionStatus,
+} from './store';
 export {
   selectCurrentSession,
   selectCurrentWorkspace,
@@ -10,6 +16,7 @@ export {
   useProviderAvailable,
   useSessionSlots,
   useSessions,
+  useSummarizerStatus,
   useWorkspaces,
 } from './selectors';
 export { selectTranscript, useTranscript } from './transcript';
