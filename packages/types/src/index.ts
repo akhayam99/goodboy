@@ -17,10 +17,12 @@ export type { Message, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {
   DetectResult,
+  PermissionMode,
   ProviderAdapter,
   ProviderCapabilities,
   ProviderUsage,
   TurnEvent,
+  TurnPermissionFlags,
   TurnRequest,
 } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
