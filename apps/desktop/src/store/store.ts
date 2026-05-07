@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
+import { sessionReducer, Summarizer, getDefaultTurnModel, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -174,8 +174,6 @@ function messageToTurnEvent(message: Message): TurnEvent | null {
     at: message.createdAt,
   };
 }
-
-const DEFAULT_MODEL = 'claude-opus-4-7';
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
@@ -510,6 +508,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+    const provider = session.providerPreference.defaultProvider;
+    const model = session.providerPreference.defaultModel ?? getDefaultTurnModel(provider);
 
     const userMessage: Message = {
       id: crypto.randomUUID() as MessageId,
@@ -524,8 +524,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const run: ProviderRun = {
       id: runId,
       sessionId,
-      provider: 'anthropic',
-      model: DEFAULT_MODEL,
+      provider,
+      model,
       status: { kind: 'streaming', startedAt: now() },
       createdAt: now(),
     };
@@ -545,7 +545,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       for await (const event of runTurn({
         runId,
-        model: DEFAULT_MODEL,
+        model,
         workingDir,
         prompt: content,
       })) {
@@ -553,14 +553,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (event.kind === 'assistant_text') assistantText += event.delta;
 
         if (event.kind === 'usage') {
-          const cost = computeCostUsd(event.usage, DEFAULT_MODEL);
+          const cost = computeCostUsd(event.usage, model);
           const record: TelemetryRecord = {
             id: crypto.randomUUID() as TelemetryRecordId,
             runId,
             sessionId,
             kind: 'turn',
-            provider: 'anthropic',
-            model: DEFAULT_MODEL,
+            provider,
+            model,
             inputTokens: event.usage.inputTokens,
             outputTokens: event.usage.outputTokens,
             estimatedCostUsd: cost,
