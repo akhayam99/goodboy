@@ -33,3 +33,15 @@ pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), Editor
         Err(source) => Err(EditorError::Spawn { binary, source }),
     }
 }
+
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    let result = Command::new("open").arg(&url).spawn();
+    #[cfg(target_os = "linux")]
+    let result = Command::new("xdg-open").arg(&url).spawn();
+    #[cfg(target_os = "windows")]
+    let result = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
+
+    result.map(|_| ()).map_err(|e| e.to_string())
+}
