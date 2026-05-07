@@ -1,6 +1,15 @@
 export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
 
 export {
+  checkProviderBudget,
+  checkSessionBudget,
+  emitBudgetAlerts,
+  getCurrentPeriodKey,
+  getPeriodWindow,
+  type AlertEmitterDeps,
+} from './budget';
+
+export {
   TelemetryRecorder,
   type RecordSummarizerInput,
   type RecordTurnInput,
