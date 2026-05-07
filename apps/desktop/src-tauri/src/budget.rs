@@ -158,3 +158,169 @@ pub fn budget_alert_dismiss(state: State<'_, Db>, id: String) -> Result<(), DbEr
     )?;
     Ok(())
 }
+
+#[derive(Debug, Serialize)]
+pub struct BudgetCheckResult {
+    #[serde(rename = "remainingUsd")]
+    pub remaining_usd: f64,
+    pub pct: f64,
+    pub exceeded: bool,
+}
+
+fn current_month_window_ms() -> (i64, i64) {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let now_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock before epoch")
+        .as_millis() as i64;
+
+    // Days elapsed in epoch ÷ average — use integer arithmetic to find month boundaries.
+    // Convert ms → seconds for easier calculation.
+    let now_s = now_ms / 1000;
+    // Approximate: find year+month via days since epoch.
+    // Use a simple loop: count years/months from 1970.
+    let (year, month) = epoch_seconds_to_year_month(now_s);
+
+    let start_ms = ymd_to_epoch_ms(year, month, 1);
+    let (ny, nm) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let end_ms = ymd_to_epoch_ms(ny, nm, 1) - 1;
+
+    (start_ms, end_ms)
+}
+
+fn is_leap_year(y: i64) -> bool {
+    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
+}
+
+fn days_in_month(y: i64, m: u32) -> i64 {
+    match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => if is_leap_year(y) { 29 } else { 28 },
+        _ => unreachable!(),
+    }
+}
+
+fn epoch_seconds_to_year_month(mut s: i64) -> (i64, u32) {
+    let mut year: i64 = 1970;
+    loop {
+        let days = if is_leap_year(year) { 366 } else { 365 };
+        let secs = days * 86400;
+        if s < secs {
+            break;
+        }
+        s -= secs;
+        year += 1;
+    }
+    let mut month: u32 = 1;
+    loop {
+        let secs = days_in_month(year, month) * 86400;
+        if s < secs {
+            break;
+        }
+        s -= secs;
+        month += 1;
+    }
+    (year, month)
+}
+
+fn ymd_to_epoch_ms(year: i64, month: u32, day: u32) -> i64 {
+    let mut days: i64 = 0;
+    for y in 1970..year {
+        days += if is_leap_year(y) { 366 } else { 365 };
+    }
+    for m in 1..month {
+        days += days_in_month(year, m);
+    }
+    days += day as i64 - 1;
+    days * 86400 * 1000
+}
+
+#[tauri::command]
+pub fn check_provider_budget(
+    state: State<'_, Db>,
+    provider: String,
+    period: String,
+) -> Result<BudgetCheckResult, DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+
+    let rule: Option<(f64,)> = {
+        let mut stmt = conn.prepare(
+            "SELECT cap_usd FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map(rusqlite::params![provider, period], |row| {
+            Ok((row.get::<_, f64>(0)?,))
+        })?;
+        match rows.next() {
+            Some(r) => Some(r.map_err(DbError::Sqlite)?),
+            None => None,
+        }
+    };
+
+    let Some((cap_usd,)) = rule else {
+        return Ok(BudgetCheckResult {
+            remaining_usd: f64::INFINITY,
+            pct: 0.0,
+            exceeded: false,
+        });
+    };
+
+    let (start_ms, end_ms) = current_month_window_ms();
+
+    let spent: f64 = conn.query_row(
+        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
+          WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
+        rusqlite::params![provider, start_ms, end_ms],
+        |row| row.get(0),
+    )?;
+
+    let remaining = cap_usd - spent;
+    let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+
+    Ok(BudgetCheckResult {
+        remaining_usd: remaining,
+        pct,
+        exceeded: spent > cap_usd,
+    })
+}
+
+#[tauri::command]
+pub fn check_session_budget(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<BudgetCheckResult, DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+
+    let cap: Option<f64> = {
+        let mut stmt = conn
+            .prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
+        match rows.next() {
+            Some(r) => Some(r.map_err(DbError::Sqlite)?),
+            None => None,
+        }
+    };
+
+    let Some(cap_usd) = cap else {
+        return Ok(BudgetCheckResult {
+            remaining_usd: f64::INFINITY,
+            pct: 0.0,
+            exceeded: false,
+        });
+    };
+
+    let spent: f64 = conn.query_row(
+        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE session_id = ?1",
+        rusqlite::params![session_id],
+        |row| row.get(0),
+    )?;
+
+    let remaining = cap_usd - spent;
+    let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+
+    Ok(BudgetCheckResult {
+        remaining_usd: remaining,
+        pct,
+        exceeded: spent > cap_usd,
+    })
+}
