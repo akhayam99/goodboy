@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.4 complete. v0.6 next planned.
+> **Status**: v0.6 complete. v0.7 next planned.
 
 ## Architectural decisions (locked)
 
@@ -342,6 +342,61 @@ Skills: local registry of markdown + scripts, invocable via slash commands, exec
 #126 → #128 → #134 → #137
 #126 → #127 → #131
 #126 → #135 → #137
+```
+
+---
+
+## v0.6 issue index
+
+Permission proxy: tool-call interception via static rules + audit, removing `--dangerously-skip-permissions` for claude.
+
+### Foundation (parallelizable)
+
+- [#170 — feat(types): permission domain types](https://github.com/akhayam99/kay-am/issues/170)
+- [#171 — feat(db): m008 permissions migration](https://github.com/akhayam99/kay-am/issues/171) — depends on #170
+
+### Core layer
+
+- [#172 — feat(core): permission engine](https://github.com/akhayam99/kay-am/issues/172) — depends on #170
+- [#173 — feat(core): tool matcher patterns](https://github.com/akhayam99/kay-am/issues/173) — depends on #170
+- [#174 — feat(core): permission audit recorder](https://github.com/akhayam99/kay-am/issues/174) — depends on #171
+- [#175 — feat(core): permission rules → claude CLI flags](https://github.com/akhayam99/kay-am/issues/175) — depends on #173
+
+### Tauri commands
+
+- [#176 — feat(desktop): permission rule CRUD tauri commands](https://github.com/akhayam99/kay-am/issues/176) — depends on #171
+- [#177 — feat(desktop): permission audit log tauri commands](https://github.com/akhayam99/kay-am/issues/177) — depends on #174
+
+### UI
+
+- [#179 — feat(ui): permissions settings panel](https://github.com/akhayam99/kay-am/issues/179) — depends on #176
+- [#180 — feat(ui): permission audit log viewer](https://github.com/akhayam99/kay-am/issues/180) — depends on #177
+- [#181 — feat(ui): pre-flight permission summary in chat input](https://github.com/akhayam99/kay-am/issues/181) — depends on #175
+- [#182 — feat(ui): provider support indicator (cursor/codex limitation)](https://github.com/akhayam99/kay-am/issues/182) — depends on #176
+
+### Integration
+
+- [#178 — feat(desktop): wire permission flags into turn_spawn (rust)](https://github.com/akhayam99/kay-am/issues/178) — depends on #175
+- [#183 — feat(desktop): wire permission engine into sendTurn](https://github.com/akhayam99/kay-am/issues/183) — depends on #172, #175, #178
+- [#184 — feat(desktop): persist tool-call → audit on stream events](https://github.com/akhayam99/kay-am/issues/184) — depends on #174, #183
+- [#186 — test(core): permission engine + matcher contract tests](https://github.com/akhayam99/kay-am/issues/186) — depends on #172, #173, #175
+- [#187 — test(desktop): permission proxy integration smoke](https://github.com/akhayam99/kay-am/issues/187) — depends on #183
+- [#188 — feat(desktop): roadmap + docs update + integration glue](https://github.com/akhayam99/kay-am/issues/188) — depends on #183, #184, #186, #187
+
+### Stretch (deferred)
+
+- [#185 — feat(types/core): permission_request + permission_decision TurnEvent (MCP path)](https://github.com/akhayam99/kay-am/issues/185) → slipped to v0.7
+
+### Critical path
+
+```
+#170 → #171 → #176 → #179 → #183 → #188
+       #172 → #183
+       #173 → #175 → #178 → #183
+                  ↘ #181
+       #174 → #177 → #180
+                  ↘ #184 → #188
+       #186 + #187 → #188
 ```
 
 ---
