@@ -1,6 +1,7 @@
 mod budget;
 mod db;
 mod editor;
+mod phases;
 mod providers;
 mod repo;
 mod secrets;
@@ -80,6 +81,13 @@ pub fn run() {
       skills::skill_delete,
       skills::skill_rescan,
       skills::skill_run_script,
+      phases::phase_template_list,
+      phases::phase_template_get,
+      phases::phase_template_upsert,
+      phases::phase_template_delete,
+      phases::phase_run_list_for_session,
+      phases::phase_run_insert,
+      phases::phase_run_update_status,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
