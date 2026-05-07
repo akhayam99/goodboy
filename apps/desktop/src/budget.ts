@@ -36,6 +36,13 @@ export async function invokeBudgetAlertDismiss(id: string): Promise<void> {
   return invoke<void>('budget_alert_dismiss', { id });
 }
 
+export async function invokeBudgetEmitAlerts(input: {
+  provider: ProviderName;
+  sessionId: string;
+}): Promise<BudgetAlert[]> {
+  return invoke<BudgetAlert[]>('budget_emit_alerts', { input });
+}
+
 export async function invokeCheckProviderBudget(
   provider: ProviderName,
   period: BudgetPeriod,

@@ -236,6 +236,198 @@ fn ymd_to_epoch_ms(year: i64, month: u32, day: u32) -> i64 {
     days * 86400 * 1000
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EmitAlertsInput {
+    pub provider: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+}
+
+#[tauri::command]
+pub fn budget_emit_alerts(
+    state: State<'_, Db>,
+    input: EmitAlertsInput,
+) -> Result<Vec<BudgetAlert>, DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    let now = iso_now();
+    let period = "monthly";
+    let provider = &input.provider;
+    let session_id = &input.session_id;
+
+    // --- provider budget check ---
+    let provider_rule: Option<(String, f64, f64)> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, cap_usd, alert_threshold_pct FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map(rusqlite::params![provider, period], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?))
+        })?;
+        match rows.next() {
+            Some(r) => Some(r.map_err(DbError::Sqlite)?),
+            None => None,
+        }
+    };
+
+    let (start_ms, end_ms) = current_month_window_ms();
+
+    let mut created: Vec<BudgetAlert> = Vec::new();
+
+    if let Some((_rule_id, cap_usd, threshold_pct)) = provider_rule {
+        let spent: f64 = conn.query_row(
+            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
+              WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
+            rusqlite::params![provider, start_ms, end_ms],
+            |row| row.get(0),
+        )?;
+
+        let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+
+        let alert_kind: Option<&str> = if pct >= 100.0 {
+            Some("provider-exceeded")
+        } else if pct >= threshold_pct {
+            Some("provider-threshold")
+        } else {
+            None
+        };
+
+        if let Some(kind) = alert_kind {
+            let already: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM budget_alerts WHERE kind = ?1 AND provider = ?2 AND dismissed_at IS NULL",
+                rusqlite::params![kind, provider],
+                |row| row.get(0),
+            )?;
+            if already == 0 {
+                let id = uuid_v4();
+                conn.execute(
+                    "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
+                     VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, NULL)",
+                    rusqlite::params![id, kind, provider, spent, cap_usd, now],
+                )?;
+                created.push(BudgetAlert {
+                    id,
+                    kind: kind.to_string(),
+                    provider: Some(provider.clone()),
+                    session_id: None,
+                    current_usd: spent,
+                    cap_usd,
+                    created_at: now.clone(),
+                    dismissed_at: None,
+                });
+            }
+        }
+    }
+
+    // --- session budget check ---
+    let session_cap: Option<f64> = {
+        let mut stmt = conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
+        match rows.next() {
+            Some(r) => Some(r.map_err(DbError::Sqlite)?),
+            None => None,
+        }
+    };
+
+    if let Some(cap_usd) = session_cap {
+        let spent: f64 = conn.query_row(
+            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE session_id = ?1",
+            rusqlite::params![session_id],
+            |row| row.get(0),
+        )?;
+
+        let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+
+        let alert_kind: Option<&str> = if pct >= 100.0 {
+            Some("session-exceeded")
+        } else if pct >= 80.0 {
+            Some("session-threshold")
+        } else {
+            None
+        };
+
+        if let Some(kind) = alert_kind {
+            let already: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM budget_alerts WHERE kind = ?1 AND session_id = ?2 AND dismissed_at IS NULL",
+                rusqlite::params![kind, session_id],
+                |row| row.get(0),
+            )?;
+            if already == 0 {
+                let id = uuid_v4();
+                conn.execute(
+                    "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
+                     VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, NULL)",
+                    rusqlite::params![id, kind, session_id, spent, cap_usd, now],
+                )?;
+                created.push(BudgetAlert {
+                    id,
+                    kind: kind.to_string(),
+                    provider: None,
+                    session_id: Some(session_id.clone()),
+                    current_usd: spent,
+                    cap_usd,
+                    created_at: now.clone(),
+                    dismissed_at: None,
+                });
+            }
+        }
+    }
+
+    Ok(created)
+}
+
+fn uuid_v4() -> String {
+    use sha2::{Digest, Sha256};
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let pid = std::process::id();
+    static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let seq = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let input = format!("{}-{}-{}", t.as_nanos(), pid, seq);
+    let hash = Sha256::digest(input.as_bytes());
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-4{:01x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        hash[0], hash[1], hash[2], hash[3],
+        hash[4], hash[5],
+        hash[6] & 0x0f, hash[7],
+        (hash[8] & 0x3f) | 0x80, hash[9],
+        hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
+    )
+}
+
+fn iso_now() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
+    format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", year, month, day, hour, min, sec)
+}
+
+fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
+    let sec = (s % 60) as u32;
+    s /= 60;
+    let min = (s % 60) as u32;
+    s /= 60;
+    let hour = (s % 24) as u32;
+    s /= 24;
+    let mut year: i64 = 1970;
+    loop {
+        let days = if is_leap_year(year) { 366 } else { 365 };
+        if s < days { break; }
+        s -= days;
+        year += 1;
+    }
+    let mut month: u32 = 1;
+    loop {
+        let d = days_in_month(year, month);
+        if s < d { break; }
+        s -= d;
+        month += 1;
+    }
+    let day = s as u32 + 1;
+    (year, month, day, hour, min, sec)
+}
+
 #[tauri::command]
 pub fn check_provider_budget(
     state: State<'_, Db>,

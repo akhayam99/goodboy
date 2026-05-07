@@ -1,9 +1,16 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Button, Textarea } from '@kay-am/ui';
-import type { ProviderId, Session, TurnProviderOverride } from '@kay-am/types';
+import type {
+  BudgetAlert,
+  BudgetAlertKind,
+  ProviderId,
+  Session,
+  TurnProviderOverride,
+} from '@kay-am/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
+import { useToast, type ToastKind } from '../Toast';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -12,12 +19,31 @@ interface ChatInputProps {
   readonly providerDisconnected?: boolean;
 }
 
+function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
+  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
+}
+
+function toastMessageForAlert(alert: BudgetAlert): string {
+  const pct = alert.capUsd > 0 ? Math.round((alert.currentUsd / alert.capUsd) * 100) : 0;
+  if (alert.kind === 'provider-threshold') {
+    return `provider ${alert.provider ?? '?'} budget at ${pct}%`;
+  }
+  if (alert.kind === 'provider-exceeded') {
+    return `provider ${alert.provider ?? '?'} budget exceeded`;
+  }
+  if (alert.kind === 'session-threshold') {
+    return `session budget at ${pct}%`;
+  }
+  return 'session budget exceeded';
+}
+
 export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
+  const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
@@ -49,7 +75,16 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
     setSelectedProvider(null);
     try {
-      await sendTurn({ sessionId: session.id, content, override });
+      await sendTurn({
+        sessionId: session.id,
+        content,
+        override,
+        onNewAlerts: (alerts) => {
+          for (const alert of alerts) {
+            showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
+          }
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }

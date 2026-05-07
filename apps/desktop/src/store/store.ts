@@ -24,6 +24,7 @@ import {
   type ProviderTelemetrySummary,
 } from '@kay-am/db';
 import type {
+  BudgetAlert,
   BudgetRule,
   ContextSlot,
   IsoDateTime,
@@ -66,7 +67,13 @@ import {
 } from '../settings';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
-import { invokeBudgetRuleList, invokeBudgetRuleUpsert, invokeBudgetRuleDelete } from '../budget';
+import {
+  invokeBudgetRuleList,
+  invokeBudgetRuleUpsert,
+  invokeBudgetRuleDelete,
+  invokeBudgetAlertsList,
+  invokeBudgetAlertDismiss,
+} from '../budget';
 
 export type BootPhase =
   | 'pending'
@@ -103,6 +110,7 @@ export interface AppState {
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
+  readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
 }
 
 export interface SummarizerSessionStatus {
@@ -142,6 +150,7 @@ export interface AppActions {
     sessionId: SessionId;
     content: string;
     override?: TurnProviderOverride;
+    onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
   endSession(sessionId: SessionId): Promise<void>;
@@ -156,6 +165,8 @@ export interface AppActions {
   loadSessionBudget(sessionId: SessionId): Promise<void>;
   setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
+  loadBudgetAlerts(): Promise<void>;
+  dismissBudgetAlert(id: string): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -185,6 +196,7 @@ const initialState: AppState = {
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
+  budgetAlerts: [],
 };
 
 function buildProviderSpendBreakdown(
@@ -583,7 +595,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  sendTurn: async ({ sessionId, content, override }) => {
+  sendTurn: async ({ sessionId, content, override, onNewAlerts }) => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -683,17 +695,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }));
           const session = get().sessions.find((s) => s.id === sessionId);
           if (session) {
-            const [sessSummary, wsSummary, providerSummaries, budgetRules] = await Promise.all([
-              summarizeSessionTelemetry(tauriDatabase, sessionId),
-              summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
-              summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
-              invokeBudgetRuleList(),
-            ]);
+            const [sessSummary, wsSummary, providerSummaries, budgetRules, freshAlerts] =
+              await Promise.all([
+                summarizeSessionTelemetry(tauriDatabase, sessionId),
+                summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+                summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
+                invokeBudgetRuleList(),
+                invokeBudgetAlertsList(),
+              ]);
+            const knownIds = new Set(get().budgetAlerts.map((a) => a.id));
+            const newAlerts = freshAlerts.filter((a) => !knownIds.has(a.id));
             set({
               sessionSummary: sessSummary,
               workspaceSummary: wsSummary,
               providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+              budgetAlerts: freshAlerts,
             });
+            if (newAlerts.length > 0 && onNewAlerts) onNewAlerts(newAlerts);
           }
         }
 
@@ -913,5 +931,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       invokeBudgetRuleList(),
     ]);
     set({ providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules) });
+  },
+
+  loadBudgetAlerts: async () => {
+    const alerts = await invokeBudgetAlertsList();
+    set({ budgetAlerts: alerts });
+  },
+
+  dismissBudgetAlert: async (id) => {
+    await invokeBudgetAlertDismiss(id);
+    set((state) => ({
+      budgetAlerts: state.budgetAlerts.map((a) =>
+        a.id === id ? { ...a, dismissedAt: new Date().toISOString() as IsoDateTime } : a,
+      ),
+    }));
   },
 }));
