@@ -8,6 +8,7 @@ export {
   useCurrentSession,
   useCurrentWorkspace,
   useProviderAvailable,
+  useSessionSlots,
   useSessions,
   useWorkspaces,
 } from './selectors';

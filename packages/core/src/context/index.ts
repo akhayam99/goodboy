@@ -5,5 +5,6 @@ export {
   isSlotKey,
   serializeSlots,
   SLOT_KEYS,
+  SLOT_LABELS,
   type SlotKey,
 } from './slots';

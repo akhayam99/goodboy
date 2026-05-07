@@ -1,4 +1,4 @@
-import type { Session, Workspace } from '@kay-am/types';
+import type { ContextSlot, Session, SessionId, Workspace } from '@kay-am/types';
 import { useAppStore, type AppState } from './store';
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
@@ -15,3 +15,8 @@ export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCur
 export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
 export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
 export const useProviderAvailable = (): boolean => useAppStore(selectProviderAvailable);
+
+const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
+
+export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
+  useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
