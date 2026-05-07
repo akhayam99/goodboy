@@ -1,3 +1,4 @@
+mod db;
 mod editor;
 mod secrets;
 
@@ -5,7 +6,10 @@ pub use secrets::read as read_secret;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  let database = db::open().expect("failed to open kay-am database");
+
   tauri::Builder::default()
+    .manage(database)
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -20,6 +24,9 @@ pub fn run() {
       secrets::secret_set,
       secrets::secret_delete,
       editor::open_in_editor,
+      db::db_exec,
+      db::db_execute,
+      db::db_select,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
