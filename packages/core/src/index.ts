@@ -54,6 +54,13 @@ export {
   parseSkillMarkdown,
   parseSlashCommand,
   serializeSkillMarkdown,
+  SkillRegistry,
+  SkillRegistryError,
+  type SkillFs,
+  type SkillRegistryDeps,
+  SkillExecutor,
+  SkillScriptError,
+  type SkillScriptRunner,
 } from './skills';
 
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
