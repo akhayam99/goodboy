@@ -40,9 +40,12 @@ import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
 import {
   buildProviderList,
+  getCursorStatus,
+  getCodexStatus,
   getProviderStatus,
   type ProviderInfo,
   type ProviderStatus,
+  type ProviderStatuses,
 } from '../providers';
 import { validateGitRepo } from '../repo';
 import { ANTHROPIC_API_KEY_SECRET, getSecret, hasSecret } from '../secrets';
@@ -72,6 +75,8 @@ export interface AppState {
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
+  readonly cursorStatus: ProviderStatus | null;
+  readonly codexStatus: ProviderStatus | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
@@ -132,7 +137,9 @@ const initialState: AppState = {
   settings: {},
   sessionSummary: null,
   providerStatus: null,
-  providers: buildProviderList(null),
+  cursorStatus: null,
+  codexStatus: null,
+  providers: buildProviderList({ anthropic: null, cursor: null, codex: null }),
   hydrated: false,
   bootPhase: 'pending',
   apiKeyPresent: false,
@@ -296,8 +303,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
 
       set({ bootPhase: 'detecting-cli' });
-      const providerStatus = await getProviderStatus();
-      set({ providerStatus, providers: buildProviderList(providerStatus) });
+      const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
+        getProviderStatus(),
+        getCursorStatus(),
+        getCodexStatus(),
+      ]);
+      const statuses: ProviderStatuses = {
+        anthropic: providerStatus,
+        cursor: cursorStatus,
+        codex: codexStatus,
+      };
+      set({ providerStatus, cursorStatus, codexStatus, providers: buildProviderList(statuses) });
 
       set({ bootPhase: 'loading-workspaces' });
       const workspaces = await listWorkspaces(tauriDatabase);
@@ -395,12 +411,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshProviderStatus: (status) => {
-    set({ providerStatus: status, providers: buildProviderList(status) });
+    set((state) => {
+      const statuses: ProviderStatuses = {
+        anthropic: status,
+        cursor: state.cursorStatus,
+        codex: state.codexStatus,
+      };
+      return { providerStatus: status, providers: buildProviderList(statuses) };
+    });
   },
 
   refreshProviders: async () => {
-    const status = await getProviderStatus();
-    set({ providerStatus: status, providers: buildProviderList(status) });
+    const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
+      getProviderStatus(),
+      getCursorStatus(),
+      getCodexStatus(),
+    ]);
+    const statuses: ProviderStatuses = {
+      anthropic: providerStatus,
+      cursor: cursorStatus,
+      codex: codexStatus,
+    };
+    set({ providerStatus, cursorStatus, codexStatus, providers: buildProviderList(statuses) });
   },
 
   createSession: async ({ workspaceId, goal, branchPrefix }) => {
