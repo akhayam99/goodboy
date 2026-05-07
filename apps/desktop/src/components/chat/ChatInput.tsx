@@ -3,6 +3,7 @@ import { Button, Textarea } from '@kay-am/ui';
 import type { ProviderId, Session, TurnProviderOverride } from '@kay-am/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
+import { RoutingIndicator } from './RoutingIndicator';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -27,6 +28,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const defaultProvider = session.providerPreference.defaultProvider;
 
   const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
+
+  const routingOverride: TurnProviderOverride | undefined =
+    allowOverride && selectedProvider !== null && selectedProvider !== defaultProvider
+      ? { providerId: selectedProvider }
+      : undefined;
+
+  const connectedProviderIds = connectedProviders.map((p) => p.id);
 
   const onSend = async () => {
     const content = value.trim();
@@ -62,6 +70,14 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   return (
     <div className="border-t border-border px-4 py-3">
       <div className="mx-auto flex max-w-3xl flex-col gap-2">
+        {!isRunning && !providerDisconnected ? (
+          <RoutingIndicator
+            sessionPreference={session.providerPreference}
+            turnOverride={routingOverride}
+            connectedProviders={connectedProviderIds}
+            onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
+          />
+        ) : null}
         <Textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
