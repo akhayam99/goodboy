@@ -1,4 +1,5 @@
 import type { IsoDateTime, Session, SessionId, SessionState, WorkspaceId } from '@kay-am/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface SessionRow {
@@ -23,6 +24,7 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     goal: row.goal,
     state: toState(row.state_kind, row.state_payload),
     contextSlots,
+    providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
