@@ -50,7 +50,10 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
   return (
-    <div className="flex min-w-0 flex-col border-r border-border last:border-r-0">
+    <div
+      data-run-column={runId}
+      className="flex min-w-0 flex-col border-r border-border last:border-r-0"
+    >
       <div className="border-b border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
         p{index + 1}
       </div>
@@ -123,6 +126,12 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
 
   const isSplitView = flagOn && parallelRunIds.length > 1;
 
+  const onSelectRun = (runId: ProviderRunId) => {
+    document
+      .querySelector(`[data-run-column="${runId}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   if (isSplitView) {
     return (
       <div className="flex h-full flex-col">
@@ -132,6 +141,8 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
           contextOpen={contextOpen}
           onToggleContext={onToggleContext}
           onEndSession={onRequestEnd}
+          parallelRunIds={parallelRunIds}
+          onSelectRun={onSelectRun}
         />
         <div
           className="flex-1 overflow-hidden"
