@@ -1,3 +1,4 @@
+mod budget;
 mod db;
 mod editor;
 mod providers;
@@ -62,6 +63,13 @@ pub fn run() {
       turn::turn_cancel,
       summarize::summarize_session,
       repo::validate_git_repo,
+      budget::budget_rule_upsert,
+      budget::budget_rule_list,
+      budget::budget_rule_delete,
+      budget::session_budget_set,
+      budget::session_budget_get,
+      budget::budget_alerts_list,
+      budget::budget_alert_dismiss,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
