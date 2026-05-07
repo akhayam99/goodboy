@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from './ids';
+import type { IsoDateTime, PhaseTemplateId, ProviderRunId, SessionId, WorkspaceId } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
 
 export type Workspace = Readonly<{
@@ -30,6 +30,8 @@ export type Session = Readonly<{
   state: SessionState;
   contextSlots: ReadonlyArray<ContextSlot>;
   providerPreference: SessionProviderPreference;
+  phaseTemplateId?: PhaseTemplateId;
+  currentPhaseOrdinal?: number;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
