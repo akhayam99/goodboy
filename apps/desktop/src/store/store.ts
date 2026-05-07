@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   getSetting,
+  insertSession,
   insertWorkspace,
   listSessionsForWorkspace,
   listWorkspaces,
@@ -8,10 +9,18 @@ import {
   summarizeSessionTelemetry,
   type TelemetrySummary,
 } from '@kay-am/db';
-import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  Session,
+  SessionId,
+  SessionState,
+  Workspace,
+  WorkspaceId,
+} from '@kay-am/types';
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
+import { createWorktree, type CreatedWorktree } from '../worktree';
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -35,6 +44,11 @@ export interface AppActions {
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  createSession(input: {
+    workspaceId: WorkspaceId;
+    goal: string;
+    branchPrefix?: string;
+  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
 }
 
 type AppStore = AppState & AppActions;
@@ -113,6 +127,41 @@ export const useAppStore = create<AppStore>((set) => ({
 
   refreshProviderStatus: (status) => {
     set({ providerStatus: status });
+  },
+
+  createSession: async ({ workspaceId, goal, branchPrefix }) => {
+    const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
+    if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
+
+    const prefix = branchPrefix?.trim() || 'kay';
+    const slugSeed = goal.trim().length > 0 ? goal : `session-${Date.now()}`;
+    const worktree = await createWorktree({
+      repoPath: workspace.rootPath,
+      branchPrefix: prefix,
+      slug: slugSeed,
+    });
+
+    const now = new Date().toISOString() as IsoDateTime;
+    const initialState: SessionState = { kind: 'draft' };
+    const session: Session = {
+      id: crypto.randomUUID() as SessionId,
+      workspaceId,
+      goal: goal.trim() || worktree.slug,
+      state: initialState,
+      contextSlots: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    await insertSession(tauriDatabase, session);
+
+    set((state) => ({
+      sessions:
+        state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
+      currentSessionId: session.id,
+      sessionSummary: null,
+    }));
+
+    return { session, worktree };
   },
 
   addWorkspace: async ({ rootPath, name }) => {
