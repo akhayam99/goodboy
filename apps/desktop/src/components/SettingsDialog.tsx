@@ -20,6 +20,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const workspace = useCurrentWorkspace();
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
+  const refreshApiKeyPresence = useAppStore((s) => s.refreshApiKeyPresence);
 
   const [apiKeySet, setApiKeySet] = useState<boolean | null>(null);
   const [apiKeyDraft, setApiKeyDraft] = useState('');
@@ -52,6 +53,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         await setSecret(ANTHROPIC_API_KEY_SECRET, apiKeyDraft.trim());
         setApiKeySet(true);
         setApiKeyDraft('');
+        await refreshApiKeyPresence();
       }
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
       if (workspace) {
@@ -72,6 +74,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     try {
       await deleteSecret(ANTHROPIC_API_KEY_SECRET);
       setApiKeySet(false);
+      await refreshApiKeyPresence();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }

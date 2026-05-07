@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppShell, Button, KbdPill } from '@kay-am/ui';
+import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
 import { ContextPanel } from './components/ContextPanel';
 import { SessionsSidebar } from './components/SessionsSidebar';
@@ -11,7 +12,9 @@ import { useAppStore, useCurrentSession, useCurrentWorkspace, useProviderAvailab
 export function App() {
   const hydrate = useAppStore((s) => s.hydrate);
   const hydrated = useAppStore((s) => s.hydrated);
+  const bootPhase = useAppStore((s) => s.bootPhase);
   const error = useAppStore((s) => s.error);
+  const apiKeyPresent = useAppStore((s) => s.apiKeyPresent);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const providerAvailable = useProviderAvailable();
@@ -20,6 +23,10 @@ export function App() {
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  if (!hydrated) {
+    return <BootSplash phase={bootPhase} error={error} />;
+  }
 
   return (
     <>
@@ -33,6 +40,16 @@ export function App() {
                 <span className="rounded-full bg-danger/10 px-2 py-0.5 text-danger">
                   claude cli missing
                 </span>
+              ) : null}
+              {!apiKeyPresent ? (
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className="rounded-full bg-danger/10 px-2 py-0.5 text-danger hover:bg-danger/20"
+                  title="open settings to add your anthropic api key"
+                >
+                  api key missing
+                </button>
               ) : null}
               <TelemetryPill />
               <Button
@@ -52,9 +69,7 @@ export function App() {
         }
         leftSidebar={<SessionsSidebar />}
         main={
-          !hydrated ? (
-            <p className="p-6 text-sm text-muted-foreground">loading…</p>
-          ) : error ? (
+          error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>
           ) : currentSession ? (
             <ChatView session={currentSession} />

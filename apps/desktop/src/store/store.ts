@@ -40,8 +40,24 @@ import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
+import { ANTHROPIC_API_KEY_SECRET, hasSecret } from '../secrets';
+import {
+  SETTING_EDITOR_BINARY,
+  SETTING_LAST_SESSION_ID,
+  SETTING_LAST_WORKSPACE_ID,
+} from '../settings';
 import { runTurn, cancelTurn } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
+
+export type BootPhase =
+  | 'pending'
+  | 'migrating'
+  | 'loading-settings'
+  | 'detecting-cli'
+  | 'loading-workspaces'
+  | 'restoring-session'
+  | 'ready'
+  | 'error';
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -52,6 +68,8 @@ export interface AppState {
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
   readonly hydrated: boolean;
+  readonly bootPhase: BootPhase;
+  readonly apiKeyPresent: boolean;
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
@@ -84,6 +102,7 @@ export interface AppActions {
   endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
+  refreshApiKeyPresence(): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
@@ -100,6 +119,8 @@ const initialState: AppState = {
   sessionSummary: null,
   providerStatus: null,
   hydrated: false,
+  bootPhase: 'pending',
+  apiKeyPresent: false,
   error: null,
   transcripts: {},
   messages: {},
@@ -147,14 +168,57 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   hydrate: async () => {
     try {
+      set({ bootPhase: 'migrating', error: null });
       await runDbMigrations();
-      const [workspaces, providerStatus] = await Promise.all([
-        listWorkspaces(tauriDatabase),
-        getProviderStatus(),
+
+      set({ bootPhase: 'loading-settings' });
+      const [editorBinary, lastWorkspaceRaw, lastSessionRaw, apiKeyPresent] = await Promise.all([
+        getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
+        getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
+        getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
+        hasSecret(ANTHROPIC_API_KEY_SECRET),
       ]);
-      set({ workspaces, providerStatus, hydrated: true, error: null });
+      set((state) => {
+        const next = { ...state.settings };
+        if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
+        if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
+        if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
+        return { settings: next, apiKeyPresent };
+      });
+
+      set({ bootPhase: 'detecting-cli' });
+      const providerStatus = await getProviderStatus();
+      set({ providerStatus });
+
+      set({ bootPhase: 'loading-workspaces' });
+      const workspaces = await listWorkspaces(tauriDatabase);
+      set({ workspaces });
+
+      set({ bootPhase: 'restoring-session' });
+      const lastWorkspaceId =
+        lastWorkspaceRaw && lastWorkspaceRaw.length > 0 ? (lastWorkspaceRaw as WorkspaceId) : null;
+      const targetWorkspace = lastWorkspaceId
+        ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+        : null;
+      if (targetWorkspace) {
+        await get().setCurrentWorkspace(targetWorkspace.id);
+        const lastSessionId =
+          lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
+        if (lastSessionId) {
+          const sessions = get().sessions;
+          if (sessions.some((s) => s.id === lastSessionId)) {
+            await get().setCurrentSession(lastSessionId);
+          }
+        }
+      }
+
+      set({ bootPhase: 'ready', hydrated: true });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err), hydrated: true });
+      set({
+        bootPhase: 'error',
+        error: err instanceof Error ? err.message : String(err),
+        hydrated: true,
+      });
     }
   },
 
@@ -173,6 +237,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ]);
       set({ sessions, workspaceSummary });
     }
+    await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
   },
 
   setCurrentSession: async (id) => {
@@ -193,6 +259,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionSlots: { ...state.sessionSlots, [id]: slots },
       }));
     }
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
   },
 
   refreshSessions: async (workspaceId) => {
@@ -254,6 +321,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionSummary: null,
       sessionWorktrees: { ...state.sessionWorktrees, [session.id]: worktree.worktreePath },
     }));
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
     return { session, worktree };
   },
@@ -433,6 +501,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: records },
     }));
+  },
+
+  refreshApiKeyPresence: async () => {
+    const present = await hasSecret(ANTHROPIC_API_KEY_SECRET);
+    set({ apiKeyPresent: present });
   },
 
   loadSessionSlots: async (sessionId) => {
