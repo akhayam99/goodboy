@@ -3,6 +3,8 @@ export type {
   MessageId,
   PermissionRequestId,
   PermissionRuleId,
+  ParallelPhaseGroupId,
+  ParallelPhaseRunId,
   PhaseDefinitionId,
   PhaseRunId,
   PhaseTemplateId,
@@ -48,6 +50,9 @@ export type {
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
+  ParallelMergeStrategy,
+  ParallelPhaseGroup,
+  ParallelPhaseRun,
   PhaseDefinition,
   PhaseRun,
   PhaseRunStatus,

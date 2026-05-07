@@ -7,6 +7,8 @@ export type SkillId = string & { readonly __brand: 'SkillId' };
 export type PhaseTemplateId = string & { readonly __brand: 'PhaseTemplateId' };
 export type PhaseDefinitionId = string & { readonly __brand: 'PhaseDefinitionId' };
 export type PhaseRunId = string & { readonly __brand: 'PhaseRunId' };
+export type ParallelPhaseGroupId = string & { readonly __brand: 'ParallelPhaseGroupId' };
+export type ParallelPhaseRunId = string & { readonly __brand: 'ParallelPhaseRunId' };
 
 export type IsoDateTime = string & { readonly __brand: 'IsoDateTime' };
 
