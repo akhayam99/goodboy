@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import type { ContextSlot, IsoDateTime, ProviderId } from '@kay-am/types';
+import type { ContextSlot, ProviderId } from '@kay-am/types';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
@@ -32,9 +32,7 @@ export interface SummarizerResult {
 export interface SummarizerDeps {
   readonly providerId: ProviderId;
   readonly binary?: string;
-  readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
-  readonly maxTokens?: number;
 }
 
 export class SummarizerSpawnError extends Error {
