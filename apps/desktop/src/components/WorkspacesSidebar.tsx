@@ -173,7 +173,7 @@ interface SessionRowProps {
 }
 
 function SessionRow({ session, isActive, onClick }: SessionRowProps) {
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const providerId = session.providerPreference.defaultProvider;
   const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);

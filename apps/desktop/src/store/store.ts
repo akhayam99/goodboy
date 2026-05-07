@@ -17,6 +17,7 @@ import {
   insertMessage,
   insertProviderRun,
   insertSession,
+  insertSessionWorktree,
   insertTelemetry,
   insertWorkspace,
   listContextSlotsForSession,
@@ -24,6 +25,8 @@ import {
   listSessionsForWorkspace,
   listTelemetryForSession,
   listWorkspaces,
+  listWorktreesForSession,
+  deleteWorktreesForSession,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
@@ -143,7 +146,7 @@ export interface AppState {
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
-  readonly sessionWorktrees: Readonly<Record<string, string>>;
+  readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
@@ -515,8 +518,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
           invokeSkillList(id),
           invokePhaseTemplateList(id),
         ]);
+      const worktreeRows = await Promise.all(
+        sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id)),
+      );
+      const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
+      for (let i = 0; i < sessions.length; i++) {
+        const s = sessions[i]!;
+        const rows = worktreeRows[i]!;
+        if (rows.length > 0) {
+          sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
+        }
+      }
       set((state) => ({
         sessions,
+        sessionWorktrees,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
@@ -656,13 +671,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
+    await insertSessionWorktree(tauriDatabase, {
+      id: crypto.randomUUID(),
+      sessionId: session.id,
+      worktreePath: worktree.worktreePath,
+      branch: worktree.branchName,
+      parallelIndex: 0,
+      createdAt: Date.now(),
+    });
 
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
-      sessionWorktrees: { ...state.sessionWorktrees, [session.id]: worktree.worktreePath },
+      sessionWorktrees: {
+        ...state.sessionWorktrees,
+        [session.id]: [worktree.worktreePath],
+      },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
@@ -697,10 +723,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
-    const workingDir = before.sessionWorktrees[sessionId];
+    const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
-        'session worktree not initialized — open a fresh session (worktree paths are not yet persisted across restarts)',
+        'session worktree not initialized — restart the app to reload persisted worktree paths',
       );
     }
 
@@ -1195,16 +1221,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await cancelTurn(session.state.runId);
     }
 
-    const worktreePath = get().sessionWorktrees[sessionId];
+    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (worktreePath && workspace) {
-      try {
-        await removeWorktree(workspace.rootPath, worktreePath);
-      } catch (err) {
-        // worktree may already be gone — surface as warning, continue ending
-        console.warn(`worktree_remove failed: ${err instanceof Error ? err.message : String(err)}`);
+    if (workspace) {
+      for (const worktreePath of worktreePaths) {
+        try {
+          await removeWorktree(workspace.rootPath, worktreePath);
+        } catch (err) {
+          // worktree may already be gone — surface as warning, continue ending
+          console.warn(
+            `worktree_remove failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
       }
     }
+    await deleteWorktreesForSession(tauriDatabase, sessionId);
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
     const ended: SessionState = sessionReducer(session.state, { kind: 'end', at: now() });

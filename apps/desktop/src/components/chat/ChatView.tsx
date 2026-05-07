@@ -19,7 +19,7 @@ const PIN_TOLERANCE_PX = 32;
 export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const scrollerRef = useRef<HTMLDivElement>(null);

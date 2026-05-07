@@ -35,7 +35,7 @@ export function StatusBar({ onEndSession, onOpenTelemetry }: StatusBarProps) {
     session ? (s.sessionTelemetry[session.id] ?? null) : null,
   );
   const worktreePath = useAppStore((s) =>
-    session ? (s.sessionWorktrees[session.id] ?? null) : null,
+    session ? ((s.sessionWorktrees[session.id] ?? [])[0] ?? null) : null,
   );
   const editorBinary = useAppStore(
     (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
