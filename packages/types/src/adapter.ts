@@ -64,6 +64,14 @@ export type TurnEvent =
       skillName: string;
       args: ReadonlyArray<string>;
       at: IsoDateTime;
+    }
+  | {
+      kind: 'phase_transition';
+      runId: ProviderRunId;
+      fromPhase: { ordinal: number; name: string };
+      toPhase: { ordinal: number; name: string };
+      carryForwardContext: string;
+      at: IsoDateTime;
     };
 
 export interface ProviderAdapter {

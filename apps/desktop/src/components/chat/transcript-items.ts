@@ -18,6 +18,14 @@ export type TranscriptItem =
   | { kind: 'error'; key: string; message: string }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
+  | {
+      kind: 'phase_transition';
+      key: string;
+      fromPhase: { ordinal: number; name: string };
+      toPhase: { ordinal: number; name: string };
+      carryForwardContext: string;
+      at: string;
+    }
   | { kind: 'done'; key: string };
 
 export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
@@ -105,6 +113,16 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
           key: `skill-${i}`,
           skillName: event.skillName,
           args: event.args,
+        });
+        break;
+      case 'phase_transition':
+        items.push({
+          kind: 'phase_transition',
+          key: `phase-${i}`,
+          fromPhase: event.fromPhase,
+          toPhase: event.toPhase,
+          carryForwardContext: event.carryForwardContext,
+          at: event.at,
         });
         break;
       case 'done':

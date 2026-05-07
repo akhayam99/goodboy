@@ -76,6 +76,7 @@ function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
     case 'file_edit':
     case 'usage':
     case 'skill_invocation':
+    case 'phase_transition':
       return state;
     default: {
       const _exhaustive: never = turn;
