@@ -49,7 +49,12 @@ export {
   type ParseContext as CursorParseContext,
 } from './providers/cursor/parser';
 
-export { parseSlashCommand } from './skills';
+export {
+  SkillParseError,
+  parseSkillMarkdown,
+  parseSlashCommand,
+  serializeSkillMarkdown,
+} from './skills';
 
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/providers/codex/adapter in Node contexts.
