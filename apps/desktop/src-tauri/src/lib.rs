@@ -1,6 +1,7 @@
 mod db;
 mod editor;
 mod providers;
+mod repo;
 mod secrets;
 mod turn;
 mod worktree;
@@ -16,6 +17,7 @@ pub fn run() {
   let turn_registry = turn::TurnRegistry::new();
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_dialog::init())
     .manage(database)
     .manage(provider_state)
     .manage(turn_registry)
@@ -44,6 +46,7 @@ pub fn run() {
       providers::refresh_provider_status,
       turn::turn_spawn,
       turn::turn_cancel,
+      repo::validate_git_repo,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
