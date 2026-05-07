@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import { AppShell, KbdPill, ScrollArea } from '@kay-am/ui';
+import { SessionsSidebar } from './components/SessionsSidebar';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
-import { useAppStore, useCurrentWorkspace, useProviderAvailable } from './store';
+import { useAppStore, useCurrentSession, useCurrentWorkspace, useProviderAvailable } from './store';
 
 export function App() {
   const hydrate = useAppStore((s) => s.hydrate);
   const hydrated = useAppStore((s) => s.hydrated);
   const error = useAppStore((s) => s.error);
-  const current = useCurrentWorkspace();
+  const currentWorkspace = useCurrentWorkspace();
+  const currentSession = useCurrentSession();
   const providerAvailable = useProviderAvailable();
 
   useEffect(() => {
@@ -30,25 +32,24 @@ export function App() {
           </span>
         </div>
       }
-      leftSidebar={
-        <ScrollArea className="h-full p-2">
-          <div className="text-xs uppercase text-muted-foreground">sessions</div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {current ? 'no sessions yet — coming in #20' : 'pick a workspace to begin'}
-          </p>
-        </ScrollArea>
-      }
+      leftSidebar={<SessionsSidebar />}
       main={
         <div className="flex h-full flex-col gap-4 p-6">
           {!hydrated ? (
             <p className="text-sm text-muted-foreground">loading…</p>
           ) : error ? (
             <p className="text-sm text-danger">init error: {error}</p>
-          ) : current ? (
+          ) : currentSession ? (
             <>
-              <h1 className="text-lg font-medium tracking-tight">{current.name}</h1>
-              <p className="text-sm text-muted-foreground">{current.rootPath}</p>
+              <h1 className="text-lg font-medium tracking-tight">{currentSession.goal}</h1>
+              <p className="text-xs text-muted-foreground">
+                state: {currentSession.state.kind} · chat view in #21
+              </p>
             </>
+          ) : currentWorkspace ? (
+            <p className="text-sm text-muted-foreground">
+              create a session from the sidebar to begin.
+            </p>
           ) : (
             <p className="text-sm text-muted-foreground">
               no workspace selected. open the dropdown to add one.
