@@ -11,8 +11,6 @@ export interface AppShellProps {
   className?: string;
 }
 
-const SHELL_MAX_WIDTH = '1920px';
-const SHELL_MAX_HEIGHT = '1200px';
 const LEFT_SIDEBAR_WIDTH = '260px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
 
@@ -48,15 +46,13 @@ export function AppShell({
 }: AppShellProps) {
   const layout = buildLayout({ collapsed: rightSidebarCollapsed, hasFooter: Boolean(footer) });
   const gridStyle: CSSProperties = {
-    maxWidth: SHELL_MAX_WIDTH,
-    maxHeight: SHELL_MAX_HEIGHT,
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
     gridTemplateRows: layout.templateRows,
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-muted/40">
+    <div className="h-screen w-screen bg-muted/40">
       <div
         className={cn(
           'grid h-full w-full overflow-hidden border-border-soft bg-background text-foreground',
