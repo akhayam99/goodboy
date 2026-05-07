@@ -475,12 +475,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setCurrentWorkspace: async (id) => {
+    // Cancel any running turns before clearing state — orphaned Rust child processes
+    // keep emitting turn_events into stale sessionIds if we don't stop them first.
+    const runningSessions = get().sessions.filter((s) => s.state.kind === 'running');
+    await Promise.all(
+      runningSessions.map((s) =>
+        cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(() => {
+          // best-effort: Rust TurnRegistry may have already cleaned up
+        }),
+      ),
+    );
+
+    // Option A: wipe all per-session maps unconditionally. Simpler than filtering by
+    // workspaceId (Option B) and correct because setCurrentSession reloads from DB
+    // on demand — the cache is cheap to rebuild, stale cross-workspace data is not.
     set({
       currentWorkspaceId: id,
       currentSessionId: null,
       sessions: [],
       sessionSummary: null,
       workspaceSummary: null,
+      transcripts: {},
+      messages: {},
+      sessionTelemetry: {},
+      sessionSlots: {},
+      sessionWorktrees: {},
+      sessionPhaseRuns: {},
+      sessionBudgets: {},
+      summarizerStatus: {},
+      budgetAlerts: [],
     });
     if (id) {
       const [sessions, workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
