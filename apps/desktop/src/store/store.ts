@@ -99,7 +99,6 @@ function messageToTurnEvent(message: Message): TurnEvent | null {
 }
 
 const DEFAULT_MODEL = 'claude-opus-4-7';
-const DEFAULT_PREFIX = 'kay';
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
