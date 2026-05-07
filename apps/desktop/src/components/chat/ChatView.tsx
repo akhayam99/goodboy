@@ -6,6 +6,7 @@ import { TranscriptCard } from './TranscriptCards';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
+import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDialog';
 
 interface ChatViewProps {
   session: Session;
@@ -123,6 +124,19 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
 
   const isSplitView = flagOn && parallelRunIds.length > 1;
 
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+
+  // TODO (@ak): derive real conflicts from sessionPhaseRuns MergeResult once scheduler
+  // emits merge_resolved events — I1 #212 will wire this up. Until then conflicts is
+  // always empty and the dialog acts as a structural placeholder.
+  const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(() => [], []);
+
+  const onMergeResolve = (picks: Record<string, MergeResolution>) => {
+    // TODO (@ak): forward picks to scheduler merge_resolved command — I1 #212.
+    console.log('[merge] resolved picks:', picks);
+    setMergeDialogOpen(false);
+  };
+
   if (isSplitView) {
     return (
       <div className="flex h-full flex-col">
@@ -155,13 +169,20 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
             <span className="text-xs text-muted-foreground">merge pending — review conflicts</span>
             <button
               type="button"
-              className="rounded border border-border bg-background px-3 py-1 text-xs"
-              disabled
+              data-testid="merge-dialog-trigger"
+              className="rounded border border-border bg-background px-3 py-1 text-xs transition-colors hover:bg-muted"
+              onClick={() => setMergeDialogOpen(true)}
             >
               merge
             </button>
           </div>
         ) : null}
+        <MergeDialog
+          open={mergeDialogOpen}
+          conflicts={mergeConflicts}
+          onResolve={onMergeResolve}
+          onCancel={() => setMergeDialogOpen(false)}
+        />
         {isEnded ? (
           <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
             session ended — no further turns. branch preserved.
