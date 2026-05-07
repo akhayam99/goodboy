@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppShell, KbdPill, ScrollArea } from '@kay-am/ui';
 import { ChatView } from './components/chat/ChatView';
 import { SessionsSidebar } from './components/SessionsSidebar';
+import { TelemetryPill } from './components/TelemetryPill';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useProviderAvailable } from './store';
 
@@ -23,14 +24,17 @@ export function App() {
         <div className="flex w-full items-center gap-3">
           <span className="font-semibold tracking-tight">kAY.am</span>
           <WorkspaceSelector />
-          <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
             {!providerAvailable ? (
               <span className="rounded-full bg-danger/10 px-2 py-0.5 text-danger">
                 claude cli missing
               </span>
             ) : null}
-            press <KbdPill>⌘K</KbdPill>
-          </span>
+            <TelemetryPill />
+            <span>
+              press <KbdPill>⌘K</KbdPill>
+            </span>
+          </div>
         </div>
       }
       leftSidebar={<SessionsSidebar />}

@@ -5,12 +5,15 @@ import {
   insertMessage,
   insertProviderRun,
   insertSession,
+  insertTelemetry,
   insertWorkspace,
   listMessagesForSession,
   listSessionsForWorkspace,
+  listTelemetryForSession,
   listWorkspaces,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
+  summarizeWorkspaceTelemetry,
   updateProviderRunStatus,
   updateSessionState,
   type TelemetrySummary,
@@ -24,10 +27,13 @@ import type {
   Session,
   SessionId,
   SessionState,
+  TelemetryRecord,
+  TelemetryRecordId,
   TurnEvent,
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
+import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
@@ -47,6 +53,8 @@ export interface AppState {
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
   readonly sessionWorktrees: Readonly<Record<string, string>>;
+  readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
+  readonly workspaceSummary: TelemetrySummary | null;
 }
 
 export interface AppActions {
@@ -70,6 +78,8 @@ export interface AppActions {
   sendTurn(input: { sessionId: SessionId; content: string }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
   endSession(sessionId: SessionId): Promise<void>;
+  refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
+  loadSessionTelemetry(sessionId: SessionId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -87,6 +97,8 @@ const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  sessionTelemetry: {},
+  workspaceSummary: null,
 };
 
 function messageToTurnEvent(message: Message): TurnEvent | null {
@@ -133,23 +145,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
       currentSessionId: null,
       sessions: [],
       sessionSummary: null,
+      workspaceSummary: null,
     });
     if (id) {
-      const sessions = await listSessionsForWorkspace(tauriDatabase, id);
-      set({ sessions });
+      const [sessions, workspaceSummary] = await Promise.all([
+        listSessionsForWorkspace(tauriDatabase, id),
+        summarizeWorkspaceTelemetry(tauriDatabase, id),
+      ]);
+      set({ sessions, workspaceSummary });
     }
   },
 
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
-      const messages = await listMessagesForSession(tauriDatabase, id);
+      const [messages, summary, telemetry] = await Promise.all([
+        listMessagesForSession(tauriDatabase, id),
+        summarizeSessionTelemetry(tauriDatabase, id),
+        listTelemetryForSession(tauriDatabase, id),
+      ]);
       const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
-      const summary = await summarizeSessionTelemetry(tauriDatabase, id);
       set((state) => ({
         sessionSummary: summary,
         messages: { ...state.messages, [id]: messages },
         transcripts: { ...state.transcripts, [id]: events },
+        sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
       }));
     }
   },
@@ -295,6 +315,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
         get().appendTurnEvent(sessionId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
 
+        if (event.kind === 'usage') {
+          const cost = computeCostUsd(event.usage, DEFAULT_MODEL);
+          const record: TelemetryRecord = {
+            id: crypto.randomUUID() as TelemetryRecordId,
+            runId,
+            sessionId,
+            kind: 'turn',
+            provider: 'anthropic',
+            model: DEFAULT_MODEL,
+            inputTokens: event.usage.inputTokens,
+            outputTokens: event.usage.outputTokens,
+            estimatedCostUsd: cost,
+            recordedAt: now(),
+          };
+          await insertTelemetry(tauriDatabase, record);
+          set((state) => ({
+            sessionTelemetry: {
+              ...state.sessionTelemetry,
+              [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
+            },
+          }));
+          const session = get().sessions.find((s) => s.id === sessionId);
+          if (session) {
+            const [sessSummary, wsSummary] = await Promise.all([
+              summarizeSessionTelemetry(tauriDatabase, sessionId),
+              summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+            ]);
+            set({ sessionSummary: sessSummary, workspaceSummary: wsSummary });
+          }
+        }
+
         const current = get().sessions.find((s) => s.id === sessionId);
         if (current) {
           const reduced = sessionReducer(current.state, { kind: 'receive_event', event });
@@ -349,6 +400,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.state.kind !== 'running') return;
     await cancelTurn(session.state.runId);
+  },
+
+  refreshWorkspaceSummary: async (workspaceId) => {
+    const summary = await summarizeWorkspaceTelemetry(tauriDatabase, workspaceId);
+    set({ workspaceSummary: summary });
+  },
+
+  loadSessionTelemetry: async (sessionId) => {
+    const records = await listTelemetryForSession(tauriDatabase, sessionId);
+    set((state) => ({
+      sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: records },
+    }));
   },
 
   endSession: async (sessionId) => {
