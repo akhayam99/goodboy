@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@kay-am/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
@@ -63,6 +64,7 @@ describe('migrate', () => {
       goal: 'refactor auth',
       state: { kind: 'idle', lastActivityAt: now() },
       contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       createdAt: now(),
       updatedAt: now(),
     };

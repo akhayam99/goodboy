@@ -25,3 +25,5 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
+export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
+export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';

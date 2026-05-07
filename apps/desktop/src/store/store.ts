@@ -36,6 +36,7 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
 import {
@@ -423,6 +424,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       goal: goal.trim() || worktree.slug,
       state: initialState,
       contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       createdAt: now,
       updatedAt: now,
     };

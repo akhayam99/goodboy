@@ -1,4 +1,5 @@
 import type { IsoDateTime, MessageId, SessionId } from './ids';
+import type { TurnProviderOverride } from './provider-preference';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
@@ -8,4 +9,5 @@ export type Message = Readonly<{
   role: MessageRole;
   content: string;
   createdAt: IsoDateTime;
+  providerOverride?: TurnProviderOverride;
 }>;
