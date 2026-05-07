@@ -47,6 +47,6 @@ export type PhaseRun = Readonly<{
 export type PhaseTransition = Readonly<{
   fromOrdinal: number;
   toOrdinal: number;
-  carryForwardContext: boolean;
+  carryForwardContext: string;
   at: IsoDateTime;
 }>;
