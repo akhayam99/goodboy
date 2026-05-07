@@ -168,12 +168,19 @@ describe('parseJsonLine', () => {
     expect(events[0]).toMatchObject({ kind: 'error', message: 'rate limit exceeded' });
   });
 
-  it('calls onUnknown for unrecognized types and skips them', () => {
+  it('emits unknown_payload event and calls onUnknown for unrecognized types', () => {
     const onUnknown = vi.fn();
-    const events = parse(JSON.stringify({ type: 'mystery_event', payload: { x: 1 } }), {
-      onUnknown,
+    const raw = { type: 'mystery_event', payload: { x: 1 } };
+    const events = parse(JSON.stringify(raw), { onUnknown });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      kind: 'unknown_payload',
+      runId: ctx.runId,
+      adapter: 'codex',
+      payloadType: 'mystery_event',
+      raw,
+      at,
     });
-    expect(events).toEqual([]);
     expect(onUnknown).toHaveBeenCalledWith(
       'mystery_event',
       expect.objectContaining({ type: 'mystery_event' }),

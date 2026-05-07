@@ -187,7 +187,7 @@ describe('CursorAdapter — malformed JSON', () => {
     expect(events.map((e) => e.kind)).toEqual(['assistant_text', 'usage', 'done']);
   });
 
-  it('invokes onUnknown for unrecognised payload types and skips them', async () => {
+  it('emits unknown_payload event and invokes onUnknown for unrecognised payload types', async () => {
     const onUnknown = vi.fn();
     const lines = [
       FIXTURES.assistantText,
@@ -201,7 +201,17 @@ describe('CursorAdapter — malformed JSON', () => {
       onUnknown,
     });
     const events = await collect(adapter);
-    expect(events.map((e) => e.kind)).toEqual(['assistant_text', 'usage', 'done']);
+    expect(events.map((e) => e.kind)).toEqual([
+      'assistant_text',
+      'unknown_payload',
+      'usage',
+      'done',
+    ]);
+    expect(events[1]).toMatchObject({
+      kind: 'unknown_payload',
+      adapter: 'cursor',
+      payloadType: 'mystery_event',
+    });
     expect(onUnknown).toHaveBeenCalledWith(
       'mystery_event',
       expect.objectContaining({ type: 'mystery_event' }),

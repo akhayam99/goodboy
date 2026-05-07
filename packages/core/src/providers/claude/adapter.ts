@@ -41,11 +41,7 @@ export class ClaudeAdapter implements ProviderAdapter {
     this.binary = deps.binary ?? 'claude';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
-    this.onUnknown =
-      deps.onUnknown ??
-      ((type) => {
-        console.warn(`[claude-adapter] unknown stream-json payload type: ${type}`);
-      });
+    this.onUnknown = deps.onUnknown ?? (() => undefined);
   }
 
   async detect(): Promise<DetectResult> {
