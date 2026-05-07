@@ -2,6 +2,7 @@ mod db;
 mod editor;
 mod providers;
 mod secrets;
+mod turn;
 mod worktree;
 
 pub use secrets::read as read_secret;
@@ -12,10 +13,12 @@ use std::sync::Mutex;
 pub fn run() {
   let database = db::open().expect("failed to open kay-am database");
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
+  let turn_registry = turn::TurnRegistry::new();
 
   tauri::Builder::default()
     .manage(database)
     .manage(provider_state)
+    .manage(turn_registry)
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -39,6 +42,8 @@ pub fn run() {
       worktree::worktree_exists,
       providers::get_provider_status,
       providers::refresh_provider_status,
+      turn::turn_spawn,
+      turn::turn_cancel,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
