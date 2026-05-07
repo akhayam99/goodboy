@@ -110,7 +110,16 @@ import {
   resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../skills';
-import { invokePermissionRuleList, invokePermissionAuditInsert } from '../permissions';
+import {
+  invokePermissionRuleList,
+  invokePermissionAuditInsert,
+  invokeAuditRetryEnqueue,
+  invokeAuditRetryDrain,
+  invokeAuditRetryUpdate,
+  invokeAuditRetryDelete,
+  type AuditRetryEntry,
+  type PermissionAuditInsertPayload,
+} from '../permissions';
 import {
   invokePhaseTemplateList,
   invokePhaseTemplateUpsert,
@@ -400,6 +409,49 @@ async function runSummarizer(
   }
 }
 
+const AUDIT_RETRY_MAX_ATTEMPTS = 10;
+const AUDIT_RETRY_DRAIN_BATCH = 50;
+
+async function drainAuditRetryQueue(): Promise<void> {
+  let entries: ReadonlyArray<AuditRetryEntry>;
+  try {
+    entries = await invokeAuditRetryDrain(AUDIT_RETRY_DRAIN_BATCH);
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    let payload: PermissionAuditInsertPayload;
+    try {
+      payload = JSON.parse(entry.payloadJson) as PermissionAuditInsertPayload;
+    } catch {
+      await invokeAuditRetryDelete(entry.id).catch(() => undefined);
+      continue;
+    }
+
+    try {
+      await invokePermissionAuditInsert(payload);
+      await invokeAuditRetryDelete(entry.id);
+    } catch (err) {
+      const nextAttempts = entry.attempts + 1;
+      const errMsg = err instanceof Error ? err.message : String(err);
+
+      if (nextAttempts >= AUDIT_RETRY_MAX_ATTEMPTS) {
+        // TODO (@ak): emit alert via existing alert mechanism once one is in place (#196 max-attempts).
+        // No app-level non-blocking alert API exists yet; log to console as a
+        // discoverability measure until the alert system is wired.
+        console.error(
+          `permission audit retry exhausted (${AUDIT_RETRY_MAX_ATTEMPTS} attempts) for entry ${entry.id}; dropping`,
+          errMsg,
+        );
+        await invokeAuditRetryDelete(entry.id).catch(() => undefined);
+      } else {
+        await invokeAuditRetryUpdate(entry.id, nextAttempts, errMsg).catch(() => undefined);
+      }
+    }
+  }
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
 
@@ -470,6 +522,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
 
       set({ bootPhase: 'ready', hydrated: true });
+
+      // Drain audit retry queue after boot — non-blocking, best-effort.
+      void drainAuditRetryQueue();
     } catch (err) {
       set({
         bootPhase: 'error',
@@ -1000,34 +1055,44 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (event.kind === 'assistant_text') assistantText += event.delta;
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
+          const engine = new PermissionEngine();
+          const auditRequestId = crypto.randomUUID() as PermissionRequestId;
+          const request: PermissionRequest = {
+            id: auditRequestId,
+            runId,
+            toolUseId: event.toolUseId,
+            toolName: event.toolName,
+            input: event.input,
+            at: event.at,
+          };
+          const decision = engine.decide(request, effectiveRules, {
+            sessionId,
+            workspaceId: session.workspaceId,
+          });
+          const auditPayload: PermissionAuditInsertPayload = {
+            id: auditRequestId,
+            runId,
+            sessionId,
+            toolUseId: event.toolUseId,
+            toolName: event.toolName,
+            inputJson: JSON.stringify(event.input),
+            decision: decision.decision,
+            ...(decision.ruleId != null && { ruleId: decision.ruleId }),
+            decidedBy: decision.decidedBy,
+            requestedAt: event.at,
+            decidedAt: decision.at,
+          };
           try {
-            const engine = new PermissionEngine();
-            const request: PermissionRequest = {
-              id: crypto.randomUUID() as PermissionRequestId,
-              runId,
-              toolUseId: event.toolUseId,
-              toolName: event.toolName,
-              input: event.input,
-              at: event.at,
-            };
-            const decision = engine.decide(request, effectiveRules, {
-              sessionId,
-              workspaceId: session.workspaceId,
-            });
-            await invokePermissionAuditInsert({
-              runId,
-              sessionId,
-              toolUseId: event.toolUseId,
-              toolName: event.toolName,
-              inputJson: JSON.stringify(event.input),
-              decision: decision.decision,
-              ...(decision.ruleId != null && { ruleId: decision.ruleId }),
-              decidedBy: decision.decidedBy,
-              requestedAt: event.at,
-              decidedAt: decision.at,
-            });
-          } catch (err) {
-            console.error('permission audit insert failed', err);
+            await invokePermissionAuditInsert(auditPayload);
+          } catch {
+            // Insert failed — persist to retry queue so the audit trail is
+            // not silently dropped. JS single-threaded event loop makes the
+            // sequential await sufficient as a single-writer guard.
+            try {
+              await invokeAuditRetryEnqueue(auditRequestId, JSON.stringify(auditPayload));
+            } catch (enqueueErr) {
+              console.error('permission audit retry enqueue failed', enqueueErr);
+            }
           }
         }
 
