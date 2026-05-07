@@ -54,6 +54,7 @@ pub fn run() {
       providers::refresh_cursor_status,
       providers::get_codex_status,
       providers::refresh_codex_status,
+      providers::check_provider_auth,
       turn::turn_spawn,
       turn::turn_cancel,
       repo::validate_git_repo,
