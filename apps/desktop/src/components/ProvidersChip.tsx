@@ -7,8 +7,8 @@ interface ProvidersChipProps {
 
 export function ProvidersChip({ onOpenSettings }: ProvidersChipProps) {
   const providers = useAppStore((s) => s.providers);
-  const active = providers.filter((p) => p.state !== 'coming-soon');
-  const connected = active.filter((p) => p.state === 'connected').length;
+  const active = providers.filter((p) => p.connection !== 'coming-soon');
+  const connected = active.filter((p) => p.connection === 'connected').length;
   const total = active.length;
   const allOk = total > 0 && connected === total;
 

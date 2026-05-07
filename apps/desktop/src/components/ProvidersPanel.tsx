@@ -5,6 +5,7 @@ import { useAppStore } from '../store';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
   connected: 'connected',
+  installed_disconnected: 'installed, not logged in',
   missing: 'not installed',
   error: 'error',
   'coming-soon': 'integration in v0.2',
@@ -12,6 +13,7 @@ const STATE_LABEL: Record<ProviderConnectionState, string> = {
 
 const STATE_DOT: Record<ProviderConnectionState, string> = {
   connected: 'bg-primary',
+  installed_disconnected: 'bg-warning',
   missing: 'bg-danger',
   error: 'bg-danger',
   'coming-soon': 'bg-muted-foreground/40',
@@ -59,14 +61,14 @@ export function ProvidersPanel() {
 }
 
 function ProviderRow({ info }: { info: ProviderInfo }) {
-  const placeholder = info.state === 'coming-soon';
+  const placeholder = info.connection === 'coming-soon';
   return (
     <li
       className={cn('flex items-center gap-3 px-3 py-2 text-xs', placeholder ? 'opacity-60' : '')}
     >
       <span
         aria-hidden
-        className={cn('inline-block h-2 w-2 rounded-full', STATE_DOT[info.state])}
+        className={cn('inline-block h-2 w-2 rounded-full', STATE_DOT[info.connection])}
       />
       <div className="flex flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
@@ -77,7 +79,7 @@ function ProviderRow({ info }: { info: ProviderInfo }) {
           ) : null}
         </div>
         <div className="text-[11px] text-muted-foreground">
-          {STATE_LABEL[info.state]}
+          {STATE_LABEL[info.connection]}
           {info.error ? <span className="text-danger"> — {info.error}</span> : null}
         </div>
       </div>
@@ -87,7 +89,7 @@ function ProviderRow({ info }: { info: ProviderInfo }) {
 }
 
 function RowActions({ info }: { info: ProviderInfo }) {
-  if (info.state === 'coming-soon') {
+  if (info.connection === 'coming-soon') {
     return info.trackingIssueUrl ? (
       <a
         href={info.trackingIssueUrl}
@@ -99,7 +101,7 @@ function RowActions({ info }: { info: ProviderInfo }) {
       </a>
     ) : null;
   }
-  if (info.state === 'connected') {
+  if (info.connection === 'connected') {
     return null;
   }
   return (

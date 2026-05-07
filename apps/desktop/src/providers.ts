@@ -1,6 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
+import type {
+  ProviderConnectionState,
+  ProviderInfo as ProviderInfoBase,
+  ProviderId,
+} from '@kay-am/types';
 
-export type ProviderId = 'anthropic' | 'cursor' | 'codex';
+export type { ProviderId, ProviderConnectionState };
 
 export interface ProviderStatus {
   readonly id: string;
@@ -10,14 +15,8 @@ export interface ProviderStatus {
   readonly error: string | null;
 }
 
-export type ProviderConnectionState = 'connected' | 'missing' | 'error' | 'coming-soon';
-
-export interface ProviderInfo {
-  readonly id: ProviderId;
+export interface ProviderInfo extends ProviderInfoBase {
   readonly label: string;
-  readonly binary: string;
-  readonly state: ProviderConnectionState;
-  readonly version: string | null;
   readonly error: string | null;
   readonly docsUrl: string;
   readonly trackingIssueUrl?: string;
@@ -40,6 +39,13 @@ const TRACKING_ISSUES: Partial<Record<ProviderId, string>> = {
   codex: 'https://github.com/akhayam99/kay-am/issues/69',
 };
 
+const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
+  models: [],
+  supportsTools: false,
+  supportsStream: false,
+  supportsCheapModel: false,
+};
+
 export async function getProviderStatus(): Promise<ProviderStatus> {
   return invoke<ProviderStatus>('get_provider_status');
 }
@@ -54,17 +60,19 @@ function claudeInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
     id,
     label: PROVIDER_LABEL[id],
     binary: status?.binary ?? 'claude',
+    capabilities: EMPTY_CAPABILITIES,
+    identity: null,
     docsUrl: PROVIDER_DOCS[id],
   };
   if (!status) {
-    return { ...base, state: 'missing', version: null, error: null };
+    return { ...base, connection: 'missing', version: null, error: null };
   }
   if (status.available) {
-    return { ...base, state: 'connected', version: status.version, error: null };
+    return { ...base, connection: 'connected', version: status.version, error: null };
   }
   return {
     ...base,
-    state: status.error ? 'error' : 'missing',
+    connection: status.error ? 'error' : 'missing',
     version: null,
     error: status.error,
   };
@@ -75,7 +83,9 @@ function placeholder(id: ProviderId, binary: string): ProviderInfo {
     id,
     label: PROVIDER_LABEL[id],
     binary,
-    state: 'coming-soon',
+    capabilities: EMPTY_CAPABILITIES,
+    identity: null,
+    connection: 'coming-soon',
     version: null,
     error: null,
     docsUrl: PROVIDER_DOCS[id],

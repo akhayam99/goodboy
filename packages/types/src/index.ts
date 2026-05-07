@@ -18,3 +18,10 @@ export type {
   TurnRequest,
 } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
+export type {
+  ModelTier,
+  ProviderConnectionState,
+  ProviderInfo,
+  ProviderId,
+  ProviderRegistryCapabilities,
+} from './provider-registry';
