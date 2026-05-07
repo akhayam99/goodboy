@@ -41,3 +41,10 @@ export {
   dismissBudgetAlert,
   type ListBudgetAlertsOptions,
 } from './queries/budget';
+export {
+  listSkillsForWorkspace,
+  getSkillById,
+  upsertSkill,
+  deleteSkill,
+  deleteSkillsForWorkspace,
+} from './queries/skill';
