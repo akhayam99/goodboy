@@ -1,11 +1,42 @@
 import { useState } from 'react';
 import { Button, ScrollArea, cn } from '@kay-am/ui';
+import type { ProviderId } from '@kay-am/types';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessions } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
 import { OpenInEditorButton } from './OpenInEditorButton';
 import { StatusBadge } from './StatusBadge';
 
-export function SessionsSidebar() {
+interface SessionsSidebarProps {
+  onOpenSettings: () => void;
+}
+
+const PROVIDER_CHIP_COLOR: Record<ProviderId, string> = {
+  anthropic: 'bg-orange-100 text-orange-700',
+  cursor: 'bg-blue-100 text-blue-700',
+  codex: 'bg-green-100 text-green-700',
+};
+
+const PROVIDER_SHORT: Record<ProviderId, string> = {
+  anthropic: 'cl',
+  cursor: 'cu',
+  codex: 'cx',
+};
+
+function ProviderChip({ providerId }: { providerId: ProviderId }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium leading-none',
+        PROVIDER_CHIP_COLOR[providerId],
+      )}
+      title={providerId}
+    >
+      {PROVIDER_SHORT[providerId]}
+    </span>
+  );
+}
+
+export function SessionsSidebar({ onOpenSettings }: SessionsSidebarProps) {
   const workspace = useCurrentWorkspace();
   const sessions = useSessions();
   const current = useCurrentSession();
@@ -47,7 +78,10 @@ export function SessionsSidebar() {
                         className="flex w-full items-center justify-between gap-2"
                       >
                         <span className="line-clamp-1 flex-1">{session.goal}</span>
-                        <StatusBadge state={session.state} />
+                        <div className="flex shrink-0 items-center gap-1">
+                          <ProviderChip providerId={session.providerPreference.defaultProvider} />
+                          <StatusBadge state={session.state} />
+                        </div>
                       </button>
                       <div
                         className={cn(
@@ -72,6 +106,7 @@ export function SessionsSidebar() {
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           workspaceId={workspace.id}
+          onOpenSettings={onOpenSettings}
         />
       ) : null}
     </div>

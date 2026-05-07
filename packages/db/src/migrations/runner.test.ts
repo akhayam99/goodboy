@@ -75,4 +75,34 @@ describe('migrate', () => {
     expect(fetched?.goal).toBe('refactor auth');
     expect(fetched?.state.kind).toBe('idle');
   });
+
+  it('round-trips session providerPreference columns', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+
+    const workspace: Workspace = {
+      id: 'ws_3' as WorkspaceId,
+      name: 'prov-test',
+      rootPath: '/tmp/demo3',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertWorkspace(db, workspace);
+
+    const session: Session = {
+      id: 'sess_2' as SessionId,
+      workspaceId: workspace.id,
+      goal: 'test provider pref',
+      state: { kind: 'draft' },
+      contextSlots: [],
+      providerPreference: { defaultProvider: 'cursor', allowTurnOverride: false },
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertSession(db, session);
+    const fetched = await getSessionById(db, session.id);
+
+    expect(fetched?.providerPreference.defaultProvider).toBe('cursor');
+    expect(fetched?.providerPreference.allowTurnOverride).toBe(false);
+  });
 });
