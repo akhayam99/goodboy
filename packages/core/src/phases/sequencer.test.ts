@@ -86,6 +86,24 @@ describe('nextPhase', () => {
     const runs = [makeRun('d1', 'completed', 1)];
     expect(nextPhase(unordered, runs)).toBe(D2);
   });
+
+  it('returns null with empty template (0 definitions)', () => {
+    const empty: PhaseTemplate = { ...TEMPLATE, definitions: [] };
+    expect(nextPhase(empty, [])).toBeNull();
+  });
+
+  it('returns first incomplete phase when running status present', () => {
+    const runs = [makeRun('d1', 'running', 1)];
+    expect(nextPhase(TEMPLATE, runs)).toBe(D1);
+  });
+
+  it('treats unrecognized status as non-terminal (safe default)', () => {
+    // Simulate malformed DB row with unknown status
+    const badRun = {
+      ...makeRun('d1', 'unknown' as PhaseRun['status'], 1),
+    };
+    expect(nextPhase(TEMPLATE, [badRun])).toBe(D1);
+  });
 });
 
 describe('isPhaseSequenceComplete', () => {
@@ -128,6 +146,15 @@ describe('isPhaseSequenceComplete', () => {
   it('true for template with no definitions', () => {
     const empty: PhaseTemplate = { ...TEMPLATE, definitions: [] };
     expect(isPhaseSequenceComplete(empty, [])).toBe(true);
+  });
+
+  it('false when one run has running status', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'running', 2),
+      makeRun('d3', 'pending', 3),
+    ];
+    expect(isPhaseSequenceComplete(TEMPLATE, runs)).toBe(false);
   });
 });
 
