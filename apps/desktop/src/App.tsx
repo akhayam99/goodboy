@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AppShell, KbdPill, ScrollArea } from '@kay-am/ui';
+import { ChatView } from './components/chat/ChatView';
 import { SessionsSidebar } from './components/SessionsSidebar';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useProviderAvailable } from './store';
@@ -34,28 +35,21 @@ export function App() {
       }
       leftSidebar={<SessionsSidebar />}
       main={
-        <div className="flex h-full flex-col gap-4 p-6">
-          {!hydrated ? (
-            <p className="text-sm text-muted-foreground">loading…</p>
-          ) : error ? (
-            <p className="text-sm text-danger">init error: {error}</p>
-          ) : currentSession ? (
-            <>
-              <h1 className="text-lg font-medium tracking-tight">{currentSession.goal}</h1>
-              <p className="text-xs text-muted-foreground">
-                state: {currentSession.state.kind} · chat view in #21
-              </p>
-            </>
-          ) : currentWorkspace ? (
+        !hydrated ? (
+          <p className="p-6 text-sm text-muted-foreground">loading…</p>
+        ) : error ? (
+          <p className="p-6 text-sm text-danger">init error: {error}</p>
+        ) : currentSession ? (
+          <ChatView session={currentSession} />
+        ) : (
+          <div className="flex h-full flex-col p-6">
             <p className="text-sm text-muted-foreground">
-              create a session from the sidebar to begin.
+              {currentWorkspace
+                ? 'create a session from the sidebar to begin.'
+                : 'no workspace selected. open the dropdown to add one.'}
             </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              no workspace selected. open the dropdown to add one.
-            </p>
-          )}
-        </div>
+          </div>
+        )
       }
       rightSidebar={
         <ScrollArea className="h-full p-2">

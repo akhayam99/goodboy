@@ -11,3 +11,4 @@ export {
   useSessions,
   useWorkspaces,
 } from './selectors';
+export { selectTranscript, useTranscript } from './transcript';

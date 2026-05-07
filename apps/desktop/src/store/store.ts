@@ -3,6 +3,7 @@ import {
   getSetting,
   insertSession,
   insertWorkspace,
+  listMessagesForSession,
   listSessionsForWorkspace,
   listWorkspaces,
   setSetting as dbSetSetting,
@@ -11,9 +12,12 @@ import {
 } from '@kay-am/db';
 import type {
   IsoDateTime,
+  Message,
+  ProviderRunId,
   Session,
   SessionId,
   SessionState,
+  TurnEvent,
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
@@ -32,6 +36,8 @@ export interface AppState {
   readonly providerStatus: ProviderStatus | null;
   readonly hydrated: boolean;
   readonly error: string | null;
+  readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
+  readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
 }
 
 export interface AppActions {
@@ -49,6 +55,9 @@ export interface AppActions {
     goal: string;
     branchPrefix?: string;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  loadTranscript(sessionId: SessionId): Promise<void>;
+  appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
+  resetTranscript(sessionId: SessionId): void;
 }
 
 type AppStore = AppState & AppActions;
@@ -63,7 +72,19 @@ const initialState: AppState = {
   providerStatus: null,
   hydrated: false,
   error: null,
+  transcripts: {},
+  messages: {},
 };
+
+function messageToTurnEvent(message: Message): TurnEvent | null {
+  if (message.role !== 'assistant') return null;
+  return {
+    kind: 'assistant_text',
+    runId: 'history' as ProviderRunId,
+    delta: message.content,
+    at: message.createdAt,
+  };
+}
 
 export const useAppStore = create<AppStore>((set) => ({
   ...initialState,
@@ -97,8 +118,14 @@ export const useAppStore = create<AppStore>((set) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
+      const messages = await listMessagesForSession(tauriDatabase, id);
+      const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
       const summary = await summarizeSessionTelemetry(tauriDatabase, id);
-      set({ sessionSummary: summary });
+      set((state) => ({
+        sessionSummary: summary,
+        messages: { ...state.messages, [id]: messages },
+        transcripts: { ...state.transcripts, [id]: events },
+      }));
     }
   },
 
@@ -162,6 +189,30 @@ export const useAppStore = create<AppStore>((set) => ({
     }));
 
     return { session, worktree };
+  },
+
+  loadTranscript: async (sessionId) => {
+    const messages = await listMessagesForSession(tauriDatabase, sessionId);
+    const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
+    set((state) => ({
+      messages: { ...state.messages, [sessionId]: messages },
+      transcripts: { ...state.transcripts, [sessionId]: events },
+    }));
+  },
+
+  appendTurnEvent: (sessionId, event) => {
+    set((state) => {
+      const existing = state.transcripts[sessionId] ?? [];
+      return {
+        transcripts: { ...state.transcripts, [sessionId]: [...existing, event] },
+      };
+    });
+  },
+
+  resetTranscript: (sessionId) => {
+    set((state) => ({
+      transcripts: { ...state.transcripts, [sessionId]: [] },
+    }));
   },
 
   addWorkspace: async ({ rootPath, name }) => {
