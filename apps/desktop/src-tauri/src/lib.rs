@@ -70,6 +70,7 @@ pub fn run() {
       budget::session_budget_get,
       budget::budget_alerts_list,
       budget::budget_alert_dismiss,
+      budget::budget_emit_alerts,
       budget::check_provider_budget,
       budget::check_session_budget,
     ])

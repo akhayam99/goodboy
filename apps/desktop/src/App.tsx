@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppShell, Button, KbdPill } from '@kay-am/ui';
 import { Settings } from 'lucide-react';
 import type { SessionId } from '@kay-am/types';
+import { AlertCenter } from './components/AlertCenter';
 import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
 import { ContextPanel } from './components/ContextPanel';
@@ -10,6 +11,7 @@ import { ProvidersChip } from './components/ProvidersChip';
 import { SettingsDialog } from './components/SettingsDialog';
 import { StatusBar } from './components/StatusBar';
 import { TelemetryPill } from './components/TelemetryPill';
+import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
 
@@ -79,7 +81,7 @@ export function App() {
   const rightSidebarCollapsed = !currentSession || !contextOpen;
 
   return (
-    <>
+    <ToastProvider>
       <AppShell
         header={
           <div className="flex w-full items-center gap-3">
@@ -87,6 +89,7 @@ export function App() {
             <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
               <ProvidersChip onOpenSettings={() => setSettingsOpen(true)} />
               <TelemetryPill />
+              <AlertCenter />
               <Button
                 variant="ghost"
                 size="sm"
@@ -130,7 +133,7 @@ export function App() {
           onClose={() => setEndOpen(false)}
         />
       ) : null}
-    </>
+    </ToastProvider>
   );
 }
 
