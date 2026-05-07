@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@kay-am/ui';
 import type { TelemetryRecord } from '@kay-am/types';
 import { useAppStore } from '../store';
+import type { ProviderSpendEntry } from '../store';
 
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
@@ -15,21 +16,43 @@ const formatTokens = (n: number): string =>
 
 type SortKey = 'time' | 'cost';
 
-interface ProviderBreakdown {
-  readonly provider: string;
-  readonly cost: number;
+function spendColor(pct: number): string {
+  if (pct >= 1) return 'bg-red-500';
+  if (pct >= 0.8) return 'bg-yellow-500';
+  return 'bg-green-500';
 }
 
-function buildProviderBreakdown(
-  records: ReadonlyArray<TelemetryRecord>,
-): ReadonlyArray<ProviderBreakdown> {
-  const map = new Map<string, number>();
-  for (const r of records) {
-    map.set(r.provider, (map.get(r.provider) ?? 0) + r.estimatedCostUsd);
-  }
-  return Array.from(map.entries())
-    .map(([provider, cost]) => ({ provider, cost }))
-    .sort((a, b) => b.cost - a.cost);
+function spendTextColor(pct: number, hasCap: boolean): string {
+  if (!hasCap) return 'text-foreground';
+  if (pct >= 1) return 'text-red-600';
+  if (pct >= 0.8) return 'text-yellow-600';
+  return 'text-green-700';
+}
+
+function ProviderSpendRow({ entry }: { entry: ProviderSpendEntry }) {
+  const label = entry.provider === 'anthropic' ? 'claude' : entry.provider;
+  const hasCap = entry.capUsd !== null;
+  const pctClamped = Math.min(entry.pct, 1);
+
+  return (
+    <li className="flex flex-col gap-0.5 py-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium capitalize">{label}</span>
+        <span className={cn('font-mono text-xs', spendTextColor(entry.pct, hasCap))}>
+          {formatCost(entry.spentUsd)}
+          {hasCap ? ` / ${formatCost(entry.capUsd!)}` : null}
+        </span>
+      </div>
+      {hasCap ? (
+        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn('h-full rounded-full transition-all', spendColor(entry.pct))}
+            style={{ width: `${pctClamped * 100}%` }}
+          />
+        </div>
+      ) : null}
+    </li>
+  );
 }
 
 export function TelemetryPill() {
@@ -39,6 +62,7 @@ export function TelemetryPill() {
   const sessionTelemetry = useAppStore((s) =>
     currentSessionId ? (s.sessionTelemetry[currentSessionId] ?? EMPTY_TELEMETRY) : EMPTY_TELEMETRY,
   );
+  const providerSpendBreakdown = useAppStore((s) => s.providerSpendBreakdown);
 
   const [open, setOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('time');
@@ -69,11 +93,7 @@ export function TelemetryPill() {
     .filter((r) => r.kind === 'summarizer')
     .reduce((sum, r) => sum + r.estimatedCostUsd, 0);
 
-  const providerBreakdown = useMemo(
-    () => buildProviderBreakdown(sessionTelemetry),
-    [sessionTelemetry],
-  );
-  const hasMultipleProviders = providerBreakdown.length >= 2;
+  const hasMultipleProviders = providerSpendBreakdown.length >= 2;
 
   const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
@@ -125,19 +145,20 @@ export function TelemetryPill() {
                 <dd className="text-right font-medium">{formatCost(summarizerCost)}</dd>
               </>
             ) : null}
-            {hasMultipleProviders
-              ? providerBreakdown.map(({ provider, cost }) => (
-                  <>
-                    <dt key={`dt-${provider}`} className="text-muted-foreground">
-                      via {provider === 'anthropic' ? 'claude' : provider}
-                    </dt>
-                    <dd key={`dd-${provider}`} className="text-right font-medium">
-                      {formatCost(cost)}
-                    </dd>
-                  </>
-                ))
-              : null}
           </dl>
+
+          {providerSpendBreakdown.length > 0 ? (
+            <div className="mt-2 border-b border-border pb-2">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                by provider
+              </p>
+              <ul className="flex flex-col divide-y divide-border">
+                {providerSpendBreakdown.map((entry) => (
+                  <ProviderSpendRow key={entry.provider} entry={entry} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="mt-2 max-h-64 overflow-y-auto">
             {sorted.length === 0 ? (
