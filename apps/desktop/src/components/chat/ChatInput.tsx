@@ -12,7 +12,7 @@ import type {
 } from '@kay-am/types';
 import { buildClaudeFlags } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
-import { useAppStore } from '../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
@@ -51,7 +51,9 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
-  const workspaceSkills = useAppStore(useShallow((s) => s.skills[session.workspaceId] ?? []));
+  const workspaceSkills = useAppStore(
+    useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
+  );
 
   const effectiveRules = useEffectivePermissionRules({
     sessionId: session.id,
