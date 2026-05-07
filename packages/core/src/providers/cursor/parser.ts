@@ -121,7 +121,20 @@ export function parseCursorStreamLine(line: string, ctx: ParseContext): Readonly
 
     default:
       if (typeof payload.type === 'string' && !KNOWN_PAYLOAD_TYPES.has(payload.type)) {
+        if (process.env['NODE_ENV'] !== 'production') {
+          console.warn(`[cursor-adapter] unknown stream-json payload type: ${payload.type}`);
+        }
         ctx.onUnknown?.(payload.type, payload);
+        return [
+          {
+            kind: 'unknown_payload',
+            runId: ctx.runId,
+            adapter: 'cursor',
+            payloadType: payload.type,
+            raw: payload,
+            at,
+          },
+        ];
       }
       return [];
   }

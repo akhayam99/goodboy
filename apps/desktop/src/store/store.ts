@@ -179,6 +179,7 @@ export interface AppState {
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<PhaseTemplate>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
+  readonly unknownPayloadCounts: Readonly<Record<string, number>>;
 }
 
 export interface SummarizerSessionStatus {
@@ -277,6 +278,7 @@ const initialState: AppState = {
   skills: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
+  unknownPayloadCounts: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -574,6 +576,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionBudgets: {},
       summarizerStatus: {},
       budgetAlerts: [],
+      unknownPayloadCounts: {},
     });
     if (id) {
       const [sessions, workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
@@ -774,9 +777,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   appendTurnEvent: (sessionId, event) => {
     set((state) => {
       const existing = state.transcripts[sessionId] ?? [];
-      return {
-        transcripts: { ...state.transcripts, [sessionId]: [...existing, event] },
-      };
+      const updatedTranscripts = { ...state.transcripts, [sessionId]: [...existing, event] };
+      if (event.kind === 'unknown_payload') {
+        const key = `${event.adapter}:${event.payloadType}`;
+        return {
+          transcripts: updatedTranscripts,
+          unknownPayloadCounts: {
+            ...state.unknownPayloadCounts,
+            [key]: (state.unknownPayloadCounts[key] ?? 0) + 1,
+          },
+        };
+      }
+      return { transcripts: updatedTranscripts };
     });
   },
 
