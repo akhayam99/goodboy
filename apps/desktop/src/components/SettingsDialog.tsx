@@ -3,14 +3,17 @@ import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
 import { PermissionsPanel } from './PermissionsPanel';
+import { ProviderPricingPanel } from './ProviderPricingPanel';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
+  SETTING_PROVIDER_PRICING_CONFIG,
   settingBranchPrefix,
 } from '../settings';
+import { parseProviderPricingConfig, type ProviderPricingConfig } from '../providerPricing';
 import { useAppStore, useCurrentWorkspace } from '../store';
 
 interface SettingsDialogProps {
@@ -27,6 +30,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
+  const [pricingConfig, setPricingConfig] = useState<ProviderPricingConfig>({});
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +40,9 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setError(null);
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
       setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
+    );
+    void loadSetting(SETTING_PROVIDER_PRICING_CONFIG).then((v) =>
+      setPricingConfig(parseProviderPricingConfig(v)),
     );
     if (workspace) {
       void loadSetting(settingBranchPrefix(workspace.id)).then((v) =>
@@ -49,6 +56,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setError(null);
     try {
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
+      await saveSetting(SETTING_PROVIDER_PRICING_CONFIG, JSON.stringify(pricingConfig));
       if (workspace) {
         await saveSetting(
           settingBranchPrefix(workspace.id),
@@ -104,6 +112,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
       <div className="border-t border-border-soft pt-4">
         <PermissionsPanel />
+      </div>
+
+      <div className="border-t border-border-soft pt-4">
+        <ProviderPricingPanel config={pricingConfig} onChange={setPricingConfig} />
       </div>
 
       <div className="flex flex-col gap-4 border-t border-border-soft pt-4">

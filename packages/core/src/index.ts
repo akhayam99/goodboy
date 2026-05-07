@@ -43,7 +43,7 @@ export {
 
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
-export { CURSOR_CHEAP_MODEL } from './providers/cursor/cost';
+export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
 export {
   parseCursorStreamLine,
   type ParseContext as CursorParseContext,
@@ -66,6 +66,7 @@ export {
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/providers/codex/adapter in Node contexts.
 export { CODEX_CHEAP_MODEL } from './providers/codex/constants';
+export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
 export {
   parseJsonLine as parseCodexJsonLine,
   type ParseContext as CodexParseContext,
