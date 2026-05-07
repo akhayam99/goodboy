@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Button, Textarea } from '@kay-am/ui';
 import type { ProviderId, Session, TurnProviderOverride } from '@kay-am/types';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
@@ -13,8 +14,8 @@ interface ChatInputProps {
 export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
-  const connectedProviders = useAppStore((s) =>
-    s.providers.filter((p) => p.connection === 'connected'),
+  const connectedProviders = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);

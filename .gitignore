@@ -32,6 +32,7 @@ pnpm-debug.log*
 
 # claude code
 .claude/settings.local.json
+.claude/worktrees
 
 # test
 coverage/
