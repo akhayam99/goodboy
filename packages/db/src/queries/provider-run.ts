@@ -4,6 +4,7 @@ import type {
   ProviderRun,
   ProviderRunId,
   ProviderRunStatus,
+  RoutingDecision,
   SessionId,
 } from '@kay-am/types';
 import type { Database } from '../client';
@@ -18,32 +19,49 @@ interface ProviderRunRow {
   created_at: number;
 }
 
-function toStatus(kind: ProviderRunStatus['kind'], payload: string): ProviderRunStatus {
-  const data = JSON.parse(payload) as Record<string, unknown>;
-  return { kind, ...data } as ProviderRunStatus;
+interface ParsedPayload {
+  routingDecision?: RoutingDecision;
+  [key: string]: unknown;
 }
 
-function splitStatus(status: ProviderRunStatus): {
+function toStatus(kind: ProviderRunStatus['kind'], payload: string): ProviderRunStatus {
+  const data = JSON.parse(payload) as Record<string, unknown>;
+  const { routingDecision: _, ...statusData } = data;
+  return { kind, ...statusData } as ProviderRunStatus;
+}
+
+function extractRoutingDecision(payload: string): RoutingDecision | undefined {
+  const data = JSON.parse(payload) as ParsedPayload;
+  return data.routingDecision;
+}
+
+function splitStatus(
+  status: ProviderRunStatus,
+  routingDecision?: RoutingDecision,
+): {
   kind: ProviderRunStatus['kind'];
   payload: string;
 } {
   const { kind, ...rest } = status;
-  return { kind, payload: JSON.stringify(rest) };
+  const merged = routingDecision !== undefined ? { ...rest, routingDecision } : rest;
+  return { kind, payload: JSON.stringify(merged) };
 }
 
 function toDomain(row: ProviderRunRow): ProviderRun {
+  const routingDecision = extractRoutingDecision(row.status_payload);
   return {
     id: row.id as ProviderRunId,
     sessionId: row.session_id as SessionId,
     provider: row.provider,
     model: row.model,
     status: toStatus(row.status_kind, row.status_payload),
+    ...(routingDecision !== undefined ? { routingDecision } : {}),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   };
 }
 
 export async function insertProviderRun(db: Database, run: ProviderRun): Promise<void> {
-  const { kind, payload } = splitStatus(run.status);
+  const { kind, payload } = splitStatus(run.status, run.routingDecision);
   await db.execute(
     `INSERT INTO provider_runs
       (id, session_id, provider, model, status_kind, status_payload, created_at)
@@ -57,7 +75,12 @@ export async function updateProviderRunStatus(
   id: ProviderRunId,
   status: ProviderRunStatus,
 ): Promise<void> {
-  const { kind, payload } = splitStatus(status);
+  const rows = await db.select<Pick<ProviderRunRow, 'status_payload'>>(
+    'SELECT status_payload FROM provider_runs WHERE id = ?',
+    [id],
+  );
+  const existingRouting = rows[0] ? extractRoutingDecision(rows[0].status_payload) : undefined;
+  const { kind, payload } = splitStatus(status, existingRouting);
   await db.execute('UPDATE provider_runs SET status_kind = ?, status_payload = ? WHERE id = ?', [
     kind,
     payload,
