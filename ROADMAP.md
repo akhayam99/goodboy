@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.3 complete. v0.5 in progress.
+> **Status**: v0.4 complete. v0.6 next planned.
 
 ## Architectural decisions (locked)
 
@@ -254,6 +254,50 @@ Budget rules, routing engine, threshold alerts, and integration into the live tu
        ↘ #104 → #106
               ↘ #107
 #102 → #105 → #108 → #111
+```
+
+---
+
+## v0.4 issue index
+
+Multi-agent sequential: declared phases inside a session, each phase spawns its own agent, synthetic context flows between phases.
+
+### Foundation
+
+- [#150 — feat(types): phase domain types](https://github.com/akhayam99/kay-am/issues/150)
+- [#151 — feat(db): m007 phase tables migration](https://github.com/akhayam99/kay-am/issues/151) — depends on #150
+
+### Core layer
+
+- [#152 — feat(core): phase sequencer (nextPhase, buildPhasePrompt, isPhaseSequenceComplete)](https://github.com/akhayam99/kay-am/issues/152) — depends on #150
+- [#153 — feat(core): phase context propagator](https://github.com/akhayam99/kay-am/issues/153) — depends on #150
+- [#154 — feat(core): phase registry (node-only)](https://github.com/akhayam99/kay-am/issues/154) — depends on #151
+
+### Tauri commands
+
+- [#155 — feat(desktop): phase template tauri commands](https://github.com/akhayam99/kay-am/issues/155) — depends on #154
+- [#156 — feat(desktop): phase run tauri commands](https://github.com/akhayam99/kay-am/issues/156) — depends on #151
+
+### UI
+
+- [#157 — feat(desktop): phases panel in settings](https://github.com/akhayam99/kay-am/issues/157) — depends on #155
+- [#158 — feat(desktop): phase template picker in new-session dialog](https://github.com/akhayam99/kay-am/issues/158) — depends on #155
+- [#159 — feat(desktop): phase progress pill in chat header](https://github.com/akhayam99/kay-am/issues/159) — depends on #156
+- [#160 — feat(desktop): phase_transition turn event + transcript card](https://github.com/akhayam99/kay-am/issues/160) — depends on #150
+
+### Integration
+
+- [#161 — feat(desktop): wire phase sequencer into sendTurn](https://github.com/akhayam99/kay-am/issues/161) — depends on #152, #153, #156, #160
+- [#162 — test(core): phase orchestration tests + barrel sanity](https://github.com/akhayam99/kay-am/issues/162) — depends on #152, #153
+
+### Critical path
+
+```
+#150 → #151 → #154 → #155 → #157 → #161
+              ↘ #156 → #159 → #161
+       ↘ #152 → #161
+       ↘ #153 → #161
+       ↘ #160 → #161
 ```
 
 ---

@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { parseSlashCommand, sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
+import {
+  PhaseContextPropagator,
+  buildPhasePrompt,
+  nextPhase,
+  parseSlashCommand,
+  sessionReducer,
+  Summarizer,
+  type SlotKey,
+} from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -30,9 +38,12 @@ import type {
   IsoDateTime,
   Message,
   MessageId,
+  PhaseDefinition,
   PhaseRun,
+  PhaseRunId,
   PhaseTemplate,
   PhaseTemplateId,
+  ProviderId,
   ProviderRun,
   ProviderRunId,
   Session,
@@ -93,6 +104,8 @@ import {
   invokePhaseTemplateUpsert,
   invokePhaseTemplateDelete,
   invokePhaseRunList,
+  invokePhaseRunInsert,
+  invokePhaseRunUpdateStatus,
   type PhaseTemplateUpsertArgs,
 } from '../phases';
 
@@ -720,13 +733,83 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
+    let phaseDefinition: PhaseDefinition | null = null;
+    let phasePromptCarryForward = '';
+    let phaseTransitionEvent: Extract<TurnEvent, { kind: 'phase_transition' }> | null = null;
+
+    if (session.phaseTemplateId) {
+      const templates = get().phaseTemplates[session.workspaceId] ?? [];
+      const template = templates.find((t) => t.id === session.phaseTemplateId) ?? null;
+      if (template) {
+        const freshRuns = await invokePhaseRunList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
+        }));
+        const nextDef = nextPhase(template, freshRuns);
+        if (nextDef) {
+          const sortedDefs = [...template.definitions].sort((a, b) => a.ordinal - b.ordinal);
+          const prevDef =
+            sortedDefs
+              .filter((d) => d.ordinal < nextDef.ordinal)
+              .reverse()
+              .find((d) =>
+                freshRuns.some((r) => r.phaseDefinitionId === d.id && r.status === 'completed'),
+              ) ?? null;
+          const prevRun = prevDef
+            ? (freshRuns.find(
+                (r) => r.phaseDefinitionId === prevDef.id && r.status === 'completed',
+              ) ?? null)
+            : null;
+          if (prevDef && prevRun) {
+            const propagator = new PhaseContextPropagator({
+              summarizer: { summarizePhaseOutput: async (text) => text },
+            });
+            const transition = await propagator.buildTransition({
+              fromOrdinal: prevDef.ordinal,
+              toOrdinal: nextDef.ordinal,
+              completedPhaseOutput: prevRun.outputSummary ?? '',
+              existingSlots: get().sessionSlots[sessionId] ?? [],
+              at: now(),
+            });
+            phasePromptCarryForward = transition.carryForwardContext;
+            phaseTransitionEvent = {
+              kind: 'phase_transition',
+              runId: 'pending' as ProviderRunId,
+              fromPhase: { ordinal: prevDef.ordinal, name: prevDef.name },
+              toPhase: { ordinal: nextDef.ordinal, name: nextDef.name },
+              carryForwardContext: transition.carryForwardContext,
+              at: transition.at,
+            };
+          }
+          phaseDefinition = nextDef;
+          resolvedPrompt = buildPhasePrompt({
+            definition: nextDef,
+            carryForwardContext: phasePromptCarryForward,
+            userMessage: resolvedPrompt,
+          });
+        }
+      }
+    }
+
     const connectedProviders = get()
       .providers.filter((p) => p.connection === 'connected')
       .map((p) => p.id);
 
+    const phaseOverride: TurnProviderOverride | undefined = phaseDefinition?.providerOverride
+      ? {
+          providerId: phaseDefinition.providerOverride,
+          ...(phaseDefinition.modelOverride !== undefined && {
+            model: phaseDefinition.modelOverride,
+          }),
+        }
+      : undefined;
+    const turnOverride =
+      session.providerPreference.allowTurnOverride && override != null ? override : undefined;
+    const effectiveOverride = phaseOverride ?? turnOverride;
+
     const routingDecision = await resolveProviderForTurn(
       session.providerPreference,
-      session.providerPreference.allowTurnOverride && override != null ? override : undefined,
+      effectiveOverride,
       connectedProviders,
     );
 
@@ -742,8 +825,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
-    const provider = routingDecision.selectedProvider;
-    const model = routingDecision.selectedModel;
+    const provider: ProviderId = routingDecision.selectedProvider;
+    const model =
+      phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
+        ? phaseDefinition.modelOverride
+        : routingDecision.selectedModel;
 
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
@@ -780,6 +866,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
       createdAt: now(),
     };
     await insertProviderRun(tauriDatabase, run);
+
+    let phaseRunId: PhaseRunId | null = null;
+    if (phaseDefinition) {
+      const inserted = await invokePhaseRunInsert({
+        sessionId,
+        phaseDefinitionId: phaseDefinition.id,
+        ordinal: phaseDefinition.ordinal,
+        name: phaseDefinition.name,
+        status: 'running',
+        providerRunId: runId,
+        startedAt: now(),
+      });
+      phaseRunId = inserted.id;
+      const refreshedRuns = await invokePhaseRunList(sessionId);
+      set((state) => ({
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+      }));
+      if (phaseTransitionEvent) {
+        get().appendTurnEvent(sessionId, { ...phaseTransitionEvent, runId });
+      }
+    }
 
     let nextState: SessionState = session.state;
     if (nextState.kind === 'draft') {
@@ -861,6 +968,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         kind: 'succeeded',
         finishedAt: now(),
       });
+      if (phaseRunId && phaseDefinition) {
+        const completedOrdinal = phaseDefinition.ordinal;
+        await invokePhaseRunUpdateStatus(phaseRunId, {
+          status: 'completed',
+          outputSummary: assistantText.slice(0, 2000),
+          completedAt: now(),
+        });
+        const refreshedRuns = await invokePhaseRunList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId ? { ...s, currentPhaseOrdinal: completedOrdinal } : s,
+          ),
+        }));
+      }
     } catch (err) {
       lastError = err;
       const rawMessage = err instanceof Error ? err.message : String(err);
@@ -889,6 +1011,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         message,
         at: now(),
       });
+      if (phaseRunId) {
+        await invokePhaseRunUpdateStatus(phaseRunId, {
+          status: 'failed',
+          completedAt: now(),
+        });
+        const refreshedRuns = await invokePhaseRunList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+        }));
+      }
     }
 
     if (assistantText.length > 0) {
