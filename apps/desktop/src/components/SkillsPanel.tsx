@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Textarea } from '@kay-am/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@kay-am/types';
-import { useAppStore } from '../store';
+import { EMPTY_ARRAY, useAppStore } from '../store';
 
 interface SkillsPanelProps {
   readonly workspaceId: WorkspaceId;
@@ -55,7 +55,7 @@ function parseChips(raw: string): ReadonlyArray<string> {
 }
 
 export function SkillsPanel({ workspaceId }: SkillsPanelProps) {
-  const skills = useAppStore((s) => s.skills[workspaceId] ?? []);
+  const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY);
   const loadSkills = useAppStore((s) => s.loadSkills);
   const saveSkill = useAppStore((s) => s.saveSkill);
   const deleteSkill = useAppStore((s) => s.deleteSkill);

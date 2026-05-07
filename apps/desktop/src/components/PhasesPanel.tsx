@@ -8,7 +8,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
-import { useAppStore } from '../store';
+import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../phases';
 
 interface PhasesPanelProps {
@@ -62,7 +62,7 @@ function templateToForm(t: PhaseTemplate): TemplateForm {
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
 export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
-  const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? []);
+  const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deletePhaseTemplate = useAppStore((s) => s.deletePhaseTemplate);
