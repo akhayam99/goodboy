@@ -6,7 +6,7 @@ kAY.am sits between you and your AI agents. It doesn't replace your editor or yo
 
 Manage macro sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. Get real-time visibility on tokens and cost. Automate the repeatable with skills.
 
-> **Status**: Early development. Not yet usable.
+> **Status**: v0.3 complete. Budget & routing active.
 
 ## Why
 
@@ -104,7 +104,6 @@ If the **claude cli missing** banner shows in the header, install the Claude CLI
 
 - Conventional commits (`type(scope): subject`), all-lowercase subjects.
 - Branch protection on `main`. PR-only.
-- All changes in English.
 
 ## License
 

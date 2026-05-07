@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { sessionReducer, Summarizer, getDefaultTurnModel, type SlotKey } from '@kay-am/core';
+import { sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -60,6 +60,7 @@ import {
   type ProviderStatuses,
 } from '../providers';
 import { validateGitRepo } from '../repo';
+import { resolveProviderForTurn } from '../routing';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
@@ -607,13 +608,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-    const resolvedOverride =
-      session.providerPreference.allowTurnOverride && override != null ? override : undefined;
-    const provider = resolvedOverride?.providerId ?? session.providerPreference.defaultProvider;
-    const model =
-      resolvedOverride?.model ??
-      session.providerPreference.defaultModel ??
-      getDefaultTurnModel(provider);
+    const connectedProviders = get()
+      .providers.filter((p) => p.connection === 'connected')
+      .map((p) => p.id);
+
+    const routingDecision = await resolveProviderForTurn(
+      session.providerPreference,
+      session.providerPreference.allowTurnOverride && override != null ? override : undefined,
+      connectedProviders,
+    );
+
+    if (routingDecision.reason === 'all-exceeded') {
+      const runId = crypto.randomUUID() as ProviderRunId;
+      get().appendTurnEvent(sessionId, {
+        kind: 'error',
+        runId,
+        message:
+          'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.',
+        at: now(),
+      });
+      return;
+    }
+
+    const provider = routingDecision.selectedProvider;
+    const model = routingDecision.selectedModel;
 
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
@@ -627,6 +645,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    const resolvedOverride =
+      session.providerPreference.allowTurnOverride && override != null ? override : undefined;
     const userMessage: Message = {
       id: crypto.randomUUID() as MessageId,
       sessionId,
@@ -644,6 +664,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       provider,
       model,
       status: { kind: 'streaming', startedAt: now() },
+      routingDecision,
       createdAt: now(),
     };
     await insertProviderRun(tauriDatabase, run);

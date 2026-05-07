@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.1 in planning. Foundation, scaffold, and conventions in place.
+> **Status**: v0.3 complete. v0.4 in planning.
 
 ## Architectural decisions (locked)
 
@@ -209,6 +209,51 @@ Cursor + Codex adapters, summarizer refactor (drop API-key path → use active-p
 #66 → #67 → #76 → #77  →  per-session + per-turn provider choice
 #72 → #73 → #75
         ↘ #74 ↗
+```
+
+---
+
+## v0.3 issue index
+
+Budget rules, routing engine, threshold alerts, and integration into the live turn flow.
+
+### Foundation
+
+- [#99 — feat(types): budget & routing domain types](https://github.com/akhayam99/kay-am/issues/99)
+- [#100 — feat(db): budget tables migration](https://github.com/akhayam99/kay-am/issues/100) — depends on #99
+
+### Core layer
+
+- [#101 — feat(core): budget checker](https://github.com/akhayam99/kay-am/issues/101) — depends on #100
+- [#102 — feat(core): routing engine](https://github.com/akhayam99/kay-am/issues/102) — depends on #101
+- [#103 — feat(core): threshold alert emitter](https://github.com/akhayam99/kay-am/issues/103) — depends on #100
+
+### Tauri commands
+
+- [#104 — feat(desktop): budget CRUD tauri commands](https://github.com/akhayam99/kay-am/issues/104) — depends on #100
+- [#105 — feat(desktop): routing tauri command](https://github.com/akhayam99/kay-am/issues/105) — depends on #102
+
+### UI
+
+- [#106 — feat(desktop): budget rules panel in settings](https://github.com/akhayam99/kay-am/issues/106) — depends on #104
+- [#107 — feat(desktop): session soft cap in new-session dialog](https://github.com/akhayam99/kay-am/issues/107) — depends on #104
+- [#108 — feat(desktop): routing indicator on chat input](https://github.com/akhayam99/kay-am/issues/108) — depends on #105
+- [#109 — feat(desktop): budget alert toasts](https://github.com/akhayam99/kay-am/issues/109) — depends on #103
+- [#110 — feat(desktop): provider spend breakdown in telemetry pill](https://github.com/akhayam99/kay-am/issues/110)
+
+### Integration
+
+- [#111 — feat(desktop): wire routing engine into sendTurn](https://github.com/akhayam99/kay-am/issues/111) — depends on #102, #105, #108
+- [#112 — test(core): budget & routing tests](https://github.com/akhayam99/kay-am/issues/112)
+
+### Critical path
+
+```
+#99 → #100 → #101 → #102 → #105 → #111  →  routing live
+              ↘ #103 → #109
+       ↘ #104 → #106
+              ↘ #107
+#102 → #105 → #108 → #111
 ```
 
 ---
