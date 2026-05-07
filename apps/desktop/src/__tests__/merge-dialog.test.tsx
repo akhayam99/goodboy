@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import type { ProviderRunId } from '@kay-am/types';
 import { MergeDialog, SKIP_SENTINEL } from '../components/chat/MergeDialog';
+
+afterEach(cleanup);
 
 // ---------------------------------------------------------------------------
 // Helpers
