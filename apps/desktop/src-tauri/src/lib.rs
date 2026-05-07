@@ -3,6 +3,7 @@ mod editor;
 mod providers;
 mod repo;
 mod secrets;
+mod summarize;
 mod turn;
 mod worktree;
 
@@ -58,6 +59,7 @@ pub fn run() {
       providers::provider_action,
       turn::turn_spawn,
       turn::turn_cancel,
+      summarize::summarize_session,
       repo::validate_git_repo,
     ])
     .run(tauri::generate_context!())

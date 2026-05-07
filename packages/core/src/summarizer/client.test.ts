@@ -2,7 +2,7 @@ import { type ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
-import { Summarizer, SummarizerParseError, SummarizerSpawnError } from './client';
+import { Summarizer, SummarizerParseError, SummarizerSpawnError } from './cli';
 
 interface MockChild extends EventEmitter {
   stdout: Readable;

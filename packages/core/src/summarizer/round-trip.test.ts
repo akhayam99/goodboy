@@ -7,7 +7,7 @@ import { migrate, type Database as DbInterface } from '@kay-am/db';
 import type { SessionId, WorkspaceId } from '@kay-am/types';
 import { ContextEngine } from '../context/engine';
 import { SLOT_KEYS } from '../context/slots';
-import { Summarizer } from './client';
+import { Summarizer } from './cli';
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { sessionReducer, Summarizer, getDefaultTurnModel, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
@@ -205,7 +206,7 @@ async function runSummarizer(
     if (!session) return;
 
     const providerId = session.providerPreference.defaultProvider;
-    const summarizer = new Summarizer({ providerId });
+    const summarizer = new Summarizer({ providerId, invokeFn: invoke });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
 

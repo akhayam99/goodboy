@@ -1,29 +1,8 @@
+import { spawn } from 'node:child_process';
 import type { ContextSlot, ProviderId } from '@kay-am/types';
+import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
-import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
-
-export type { SlotKey };
-
-function getCheapModel(providerId: ProviderId): string {
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-}
-
-function getDefaultBinary(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude';
-    case 'cursor':
-      return 'cursor-agent';
-    case 'codex':
-      return 'codex';
-    default: {
-      const _exhaustive: never = providerId;
-      throw new Error(`unknown provider: ${_exhaustive}`);
-    }
-  }
-}
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 
@@ -50,12 +29,10 @@ export interface SummarizerResult {
   readonly model: string;
 }
 
-type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-
 export interface SummarizerDeps {
   readonly providerId: ProviderId;
   readonly binary?: string;
-  readonly invokeFn: InvokeFn;
+  readonly spawnFn?: typeof spawn;
 }
 
 export class SummarizerSpawnError extends Error {
@@ -78,12 +55,6 @@ export class SummarizerParseError extends Error {
   }
 }
 
-interface SummarizeCommandResult {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-}
-
 const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session.
 
 There are exactly five slots, each with a stable key:
@@ -99,39 +70,23 @@ The schema is:
 Only include slots that should change. Omit slots that stay the same. Never invent new keys.
 If nothing should change, return { "upserts": [] }.`;
 
-export class Summarizer {
-  private readonly providerId: ProviderId;
-  private readonly binary: string;
-  private readonly model: string;
-  private readonly invokeFn: InvokeFn;
+function getCheapModel(providerId: ProviderId): string {
+  const caps = PROVIDER_CAPABILITIES[providerId];
+  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
+}
 
-  constructor(deps: SummarizerDeps) {
-    this.providerId = deps.providerId;
-    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = getCheapModel(deps.providerId);
-    this.invokeFn = deps.invokeFn;
-  }
-
-  async summarize(input: SummarizeInput): Promise<SummarizerResult> {
-    const userMessage = buildUserPrompt(input);
-
-    const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
-      args: {
-        providerId: this.providerId,
-        model: this.model,
-        binary: this.binary,
-        userMessage,
-        systemPrompt: SYSTEM_PROMPT,
-      },
-    });
-
-    if ((result.exitCode ?? 0) !== 0) {
-      throw new SummarizerSpawnError(result.exitCode, result.stderr);
+function getDefaultBinary(providerId: ProviderId): string {
+  switch (providerId) {
+    case 'anthropic':
+      return 'claude';
+    case 'cursor':
+      return 'cursor-agent';
+    case 'codex':
+      return 'codex';
+    default: {
+      const _exhaustive: never = providerId;
+      throw new Error(`unknown provider: ${_exhaustive}`);
     }
-
-    const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model);
-    const delta = parseDelta(text);
-    return { delta, usage, model: this.model };
   }
 }
 
@@ -142,19 +97,105 @@ interface ClaudeJsonResult {
     readonly output_tokens?: number;
     readonly cache_read_input_tokens?: number;
   };
+  readonly model?: string;
   readonly subtype?: string;
   readonly is_error?: boolean;
 }
 
-function extractTextAndUsage(
-  providerId: ProviderId,
-  stdout: string,
-  model: string,
-): { text: string; usage: SummarizerUsage } {
-  if (providerId === 'anthropic') {
-    return extractClaudeJsonOutput(stdout, model);
+export class Summarizer {
+  private readonly providerId: ProviderId;
+  private readonly binary: string;
+  private readonly model: string;
+  private readonly spawnFn: typeof spawn;
+
+  constructor(deps: SummarizerDeps) {
+    this.providerId = deps.providerId;
+    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
+    this.model = getCheapModel(deps.providerId);
+    this.spawnFn = deps.spawnFn ?? spawn;
   }
-  return { text: stdout.trim(), usage: zeroUsage() };
+
+  async summarize(input: SummarizeInput): Promise<SummarizerResult> {
+    const userMessage = buildUserPrompt(input);
+    const { stdout, stderr, exitCode } = await this.spawnCli(userMessage);
+
+    if (exitCode !== 0) {
+      throw new SummarizerSpawnError(exitCode, stderr);
+    }
+
+    const { text, usage } = this.extractTextAndUsage(stdout);
+    const delta = parseDelta(text);
+
+    return { delta, usage, model: this.model };
+  }
+
+  private spawnCli(
+    userMessage: string,
+  ): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
+    return new Promise((resolve, reject) => {
+      const args = buildCliArgs(this.providerId, this.model, SYSTEM_PROMPT, userMessage);
+      const child = this.spawnFn(this.binary, args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout?.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString('utf8');
+      });
+      child.stderr?.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf8');
+      });
+      child.on('error', (err) => reject(err));
+      child.on('close', (code) => resolve({ stdout, stderr, exitCode: code }));
+    });
+  }
+
+  private extractTextAndUsage(stdout: string): { text: string; usage: SummarizerUsage } {
+    if (this.providerId === 'anthropic') {
+      return extractClaudeJsonOutput(stdout, this.model);
+    }
+    return { text: stdout.trim(), usage: zeroUsage() };
+  }
+}
+
+function buildCliArgs(
+  providerId: ProviderId,
+  model: string,
+  systemPrompt: string,
+  userMessage: string,
+): string[] {
+  switch (providerId) {
+    case 'anthropic':
+      return [
+        '-p',
+        userMessage,
+        '--model',
+        model,
+        '--system-prompt',
+        systemPrompt,
+        '--output-format',
+        'json',
+        '--no-session-persistence',
+      ];
+    case 'cursor':
+      return [
+        '-p',
+        `${systemPrompt}\n\n${userMessage}`,
+        '--model',
+        model,
+        '--output-format',
+        'stream-json',
+        '--force',
+      ];
+    case 'codex':
+      return ['exec', '--json', '--model', model, '--', `${systemPrompt}\n\n${userMessage}`];
+    default: {
+      const _exhaustive: never = providerId;
+      throw new Error(`unknown provider: ${_exhaustive}`);
+    }
+  }
 }
 
 function extractClaudeJsonOutput(
