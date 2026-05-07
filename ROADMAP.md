@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.3 complete. v0.4 in planning.
+> **Status**: v0.3 complete. v0.5 in progress.
 
 ## Architectural decisions (locked)
 
@@ -254,6 +254,50 @@ Budget rules, routing engine, threshold alerts, and integration into the live tu
        ↘ #104 → #106
               ↘ #107
 #102 → #105 → #108 → #111
+```
+
+---
+
+## v0.5 issue index
+
+Skills: local registry of markdown + scripts, invocable via slash commands, executable across providers.
+
+### Foundation
+
+- [#126 — feat(types): skill domain types](https://github.com/akhayam99/kay-am/issues/126)
+- [#127 — feat(db): m006 skills table migration](https://github.com/akhayam99/kay-am/issues/127) — depends on #126
+
+### Core layer
+
+- [#128 — feat(core): slash-command parser](https://github.com/akhayam99/kay-am/issues/128) — depends on #126
+- [#129 — feat(core): skill markdown parser](https://github.com/akhayam99/kay-am/issues/129) — depends on #126
+- [#130 — feat(core): skill executor](https://github.com/akhayam99/kay-am/issues/130) — depends on #129
+- [#131 — feat(core): skill registry](https://github.com/akhayam99/kay-am/issues/131) — depends on #129, #127
+
+### Tauri commands
+
+- [#132 — feat(desktop): skill CRUD tauri commands](https://github.com/akhayam99/kay-am/issues/132) — depends on #131
+- [#133 — feat(desktop): skill invoke tauri command](https://github.com/akhayam99/kay-am/issues/133) — depends on #130
+
+### UI
+
+- [#134 — feat(desktop): slash command autocomplete in chat input](https://github.com/akhayam99/kay-am/issues/134) — depends on #132, #128
+- [#135 — feat(desktop): skill invocation card in transcript](https://github.com/akhayam99/kay-am/issues/135) — depends on #126
+- [#136 — feat(desktop): skill manager in settings](https://github.com/akhayam99/kay-am/issues/136) — depends on #132
+
+### Integration
+
+- [#137 — feat(desktop): wire skill invoke into sendTurn](https://github.com/akhayam99/kay-am/issues/137) — depends on #133, #135, #128
+- [#138 — test(core): skill parser + executor tests](https://github.com/akhayam99/kay-am/issues/138) — depends on #129, #130, #128
+
+### Critical path
+
+```
+#126 → #129 → #131 → #132 → #136
+              ↘ #130 → #133 → #137
+#126 → #128 → #134 → #137
+#126 → #127 → #131
+#126 → #135 → #137
 ```
 
 ---

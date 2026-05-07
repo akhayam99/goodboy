@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
+import { parseSlashCommand, sessionReducer, Summarizer, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -82,6 +82,7 @@ import {
   invokeSkillUpsert,
   invokeSkillDelete,
   invokeSkillRescan,
+  resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../skills';
 
@@ -626,6 +627,64 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+    const userTurnText = content;
+    let resolvedPrompt = content;
+
+    const slashCmd = parseSlashCommand(content);
+    if (slashCmd !== null) {
+      const workspaceSkills = before.skills[session.workspaceId] ?? [];
+      const skill = workspaceSkills.find((s) => s.name === slashCmd.name);
+      if (!skill) {
+        const errRunId = crypto.randomUUID() as ProviderRunId;
+        get().appendTurnEvent(sessionId, {
+          kind: 'error',
+          runId: errRunId,
+          message: `unknown skill: /${slashCmd.name}`,
+          at: now(),
+        });
+        return;
+      }
+      const workspace = before.workspaces.find((w) => w.id === session.workspaceId);
+      if (!workspace) {
+        const errRunId = crypto.randomUUID() as ProviderRunId;
+        get().appendTurnEvent(sessionId, {
+          kind: 'error',
+          runId: errRunId,
+          message: `workspace not found: ${session.workspaceId}`,
+          at: now(),
+        });
+        return;
+      }
+      try {
+        const result = await resolveSkillInvocation({
+          skill,
+          args: slashCmd.args,
+          workingDir,
+          workspaceRoot: workspace.rootPath,
+        });
+        resolvedPrompt = result.resolvedPrompt;
+        const skillRunId = crypto.randomUUID() as ProviderRunId;
+        get().appendTurnEvent(sessionId, {
+          kind: 'skill_invocation',
+          runId: skillRunId,
+          skillName: result.skillName,
+          args: result.args,
+          at: now(),
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const errRunId = crypto.randomUUID() as ProviderRunId;
+        get().appendTurnEvent(sessionId, {
+          kind: 'error',
+          runId: errRunId,
+          message,
+          at: now(),
+        });
+        return;
+      }
+    }
+
     const connectedProviders = get()
       .providers.filter((p) => p.connection === 'connected')
       .map((p) => p.id);
@@ -669,7 +728,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       id: crypto.randomUUID() as MessageId,
       sessionId,
       role: 'user',
-      content,
+      content: userTurnText,
       createdAt: now(),
       ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
@@ -705,7 +764,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         runId,
         model,
         workingDir,
-        prompt: content,
+        prompt: resolvedPrompt,
         binary: providerInfo?.binary,
       })) {
         get().appendTurnEvent(sessionId, event);
@@ -809,7 +868,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (!lastError && assistantText.length > 0) {
-      void runSummarizer(set, get, sessionId, content, assistantText);
+      void runSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
     }
 
     if (lastError) throw lastError;
