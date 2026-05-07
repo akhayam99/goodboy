@@ -10,7 +10,7 @@ These are the non-negotiable choices that frame all of v0.1 and constrain later 
 
 1. **Provider integration via headless CLI spawn** — `claude -p "<prompt>" --output-format stream-json --working-dir <worktree> --dangerously-skip-permissions`. The user's existing subscription (Claude Max, Cursor Pro, ChatGPT Pro) is consumed via the official provider CLI. Anthropic / OpenAI / Cursor SDKs are explicitly NOT used in v0.1 — they require per-token billing and would defeat the "spend less" mission.
 2. **kAY.am owns the conversation** — history lives in our SQLite, not in `~/.claude/projects/`. Every turn is reconstructed from the synthetic context plus the new user message; we never rely on `--resume`. This is what makes context portable across providers.
-3. **Synthetic context = hybrid structured slots** — fixed slots (`goal`, `files_touched`, `decisions`, `open_questions`, `last_output_summary`), editable by hand at any time, auto-updated post-turn by a cheap summarizer (Claude Haiku via Anthropic API at token cost — pennies per session).
+3. **Synthetic context = hybrid structured slots** — fixed slots (`goal`, `files_touched`, `decisions`, `open_questions`, `last_output_summary`), editable by hand at any time, auto-updated post-turn by a cheap summarizer (active provider's cheap-tier model via CLI — no separate API key required, runs against the user's existing subscription).
 4. **Isolation = git worktree per session** — branch prefix configurable per workspace (default `kay`). Worktree is the sandbox that makes `--dangerously-skip-permissions` acceptable in v0.1.
 5. **Provider scope, phased** — v0.1 ships with Claude only behind a stable adapter interface; v0.2 adds Cursor + Codex together to stress-test the contract on two new adapters at once.
 6. **Permission model v0.1** — `--dangerously-skip-permissions` ON, contained by the worktree sandbox. Permission proxy (intercept tool-calls → UI approve/deny) lands in v0.6 once we know what real usage demands.
@@ -33,7 +33,7 @@ Full design spec: see the conversation that produced this roadmap. Architectural
 - Auto worktree creation on session start, cleanup on end (branch preserved)
 - Provider CLI detection at boot
 - Chat UI with stream-rendered TurnEvents (assistant text, tool-use cards, file edit cards, usage)
-- Synthetic context engine + Haiku summarizer (auto slot update post-turn)
+- Synthetic context engine + cheap-tier summarizer via active provider CLI (auto slot update post-turn)
 - Telemetry: per-turn / per-session / per-workspace token + USD cost
 - Persistence of workspaces, sessions, messages, slots, telemetry, settings
 - Open-in-VS-Code button on session

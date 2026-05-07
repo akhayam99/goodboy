@@ -1,10 +1,13 @@
+import { type ChildProcess } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
 import Database from 'better-sqlite3';
 import { describe, expect, it, vi } from 'vitest';
 import { migrate, type Database as DbInterface } from '@kay-am/db';
 import type { SessionId, WorkspaceId } from '@kay-am/types';
 import { ContextEngine } from '../context/engine';
 import { SLOT_KEYS } from '../context/slots';
-import { HAIKU_MODEL, Summarizer } from './client';
+import { Summarizer } from './client';
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');
@@ -39,15 +42,28 @@ async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void>
   );
 }
 
-function fakeAnthropicReply(upserts: ReadonlyArray<{ key: string; value: string }>) {
-  return new Response(
-    JSON.stringify({
-      content: [{ type: 'text', text: JSON.stringify({ upserts }) }],
-      usage: { input_tokens: 100, output_tokens: 20 },
-      model: HAIKU_MODEL,
-    }),
-    { status: 200, headers: { 'content-type': 'application/json' } },
-  );
+function makeMockSpawnWithOutput(text: string): typeof import('node:child_process').spawn {
+  return vi.fn().mockImplementation(() => {
+    const child = new EventEmitter() as EventEmitter & {
+      stdout: Readable;
+      stderr: Readable;
+      killed: boolean;
+      exitCode: number | null;
+      kill: () => boolean;
+    };
+    child.stdout = new Readable({ read() {} });
+    child.stderr = new Readable({ read() {} });
+    child.killed = false;
+    child.exitCode = null;
+    child.kill = () => true;
+    setImmediate(() => {
+      child.stdout.push(text);
+      child.stdout.push(null);
+      child.stderr.push(null);
+      setImmediate(() => child.emit('close', 0));
+    });
+    return child as unknown as ChildProcess;
+  }) as unknown as typeof import('node:child_process').spawn;
 }
 
 async function applyDelta(
@@ -69,8 +85,8 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     const fakeUpserts = SLOT_KEYS.map((key) => ({ key, value: `seeded ${key}` }));
-    const fetchFn = vi.fn<typeof fetch>(async () => fakeAnthropicReply(fakeUpserts));
-    const summarizer = new Summarizer({ apiKey: 'sk', fetchFn });
+    const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: fakeUpserts }));
+    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
     const before = await engine.load(sessionId);
     expect(before).toHaveLength(0);
@@ -99,13 +115,15 @@ describe('synthetic context engine round-trip', () => {
     await engine.upsert(sessionId, 'goal', 'original goal');
     await engine.upsert(sessionId, 'decisions', 'original decision');
 
-    const fetchFn = vi.fn<typeof fetch>(async () =>
-      fakeAnthropicReply([
-        { key: 'goal', value: 'updated goal' },
-        { key: 'open_questions', value: 'how to test?' },
-      ]),
+    const spawnFn = makeMockSpawnWithOutput(
+      JSON.stringify({
+        upserts: [
+          { key: 'goal', value: 'updated goal' },
+          { key: 'open_questions', value: 'how to test?' },
+        ],
+      }),
     );
-    const summarizer = new Summarizer({ apiKey: 'sk', fetchFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
     const before = await engine.load(sessionId);
     const result = await summarizer.summarize({
@@ -133,8 +151,8 @@ describe('synthetic context engine round-trip', () => {
       await engine.upsert(sessionId, key, `pre-${key}`);
     }
 
-    const fetchFn = vi.fn<typeof fetch>(async () => fakeAnthropicReply([]));
-    const summarizer = new Summarizer({ apiKey: 'sk', fetchFn });
+    const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: [] }));
+    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
     const before = await engine.load(sessionId);
     const result = await summarizer.summarize({
@@ -156,13 +174,11 @@ describe('synthetic context engine round-trip', () => {
     await seedSession(db, sessionId);
     const engine = new ContextEngine({ db });
 
-    const summarizerWith = (upserts: ReadonlyArray<{ key: string; value: string }>) => {
-      const fetchFn = vi.fn<typeof fetch>(async () => fakeAnthropicReply(upserts));
-      return new Summarizer({ apiKey: 'sk', fetchFn });
-    };
-
     for (let i = 0; i < 5; i += 1) {
-      const summarizer = summarizerWith([{ key: 'goal', value: `iteration ${i}` }]);
+      const spawnFn = makeMockSpawnWithOutput(
+        JSON.stringify({ upserts: [{ key: 'goal', value: `iteration ${i}` }] }),
+      );
+      const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
       const slots = await engine.load(sessionId);
       const result = await summarizer.summarize({
         prevSlots: slots,
@@ -186,10 +202,10 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     const huge = 'x'.repeat(50_000);
-    const fetchFn = vi.fn<typeof fetch>(async () =>
-      fakeAnthropicReply([{ key: 'last_output_summary', value: huge }]),
+    const spawnFn = makeMockSpawnWithOutput(
+      JSON.stringify({ upserts: [{ key: 'last_output_summary', value: huge }] }),
     );
-    const summarizer = new Summarizer({ apiKey: 'sk', fetchFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
     const result = await summarizer.summarize({
       prevSlots: [],
@@ -210,13 +226,15 @@ describe('synthetic context engine round-trip', () => {
     await seedSession(db, sessionId);
     const engine = new ContextEngine({ db });
 
-    const fetchFn = vi.fn<typeof fetch>(async () =>
-      fakeAnthropicReply([
-        { key: 'goal', value: 'ok' },
-        { key: 'mystery_slot', value: 'should be dropped' },
-      ]),
+    const spawnFn = makeMockSpawnWithOutput(
+      JSON.stringify({
+        upserts: [
+          { key: 'goal', value: 'ok' },
+          { key: 'mystery_slot', value: 'should be dropped' },
+        ],
+      }),
     );
-    const summarizer = new Summarizer({ apiKey: 'sk', fetchFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
     const result = await summarizer.summarize({
       prevSlots: [],

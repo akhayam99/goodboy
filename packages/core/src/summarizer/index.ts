@@ -1,8 +1,7 @@
 export {
   Summarizer,
-  HAIKU_MODEL,
   SummarizerParseError,
-  SummarizerHttpError,
+  SummarizerSpawnError,
   type ContextSlotDelta,
   type ContextSlotDeltaUpsert,
   type SummarizeInput,

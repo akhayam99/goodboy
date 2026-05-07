@@ -51,7 +51,6 @@ import {
   type ProviderStatuses,
 } from '../providers';
 import { validateGitRepo } from '../repo';
-import { ANTHROPIC_API_KEY_SECRET, getSecret, hasSecret } from '../secrets';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
@@ -84,7 +83,6 @@ export interface AppState {
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
-  readonly apiKeyPresent: boolean;
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
@@ -125,7 +123,6 @@ export interface AppActions {
   endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
-  refreshApiKeyPresence(): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
@@ -147,7 +144,6 @@ const initialState: AppState = {
   providers: buildProviderList({ anthropic: null, cursor: null, codex: null }),
   hydrated: false,
   bootPhase: 'pending',
-  apiKeyPresent: false,
   error: null,
   transcripts: {},
   messages: {},
@@ -195,7 +191,6 @@ async function runSummarizer(
   sessionId: SessionId,
   turnInput: string,
   turnOutput: string,
-  apiKey: string,
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
   set((state) => ({
@@ -209,7 +204,8 @@ async function runSummarizer(
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) return;
 
-    const summarizer = new Summarizer({ apiKey });
+    const providerId = session.providerPreference.defaultProvider;
+    const summarizer = new Summarizer({ providerId });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
 
@@ -232,7 +228,7 @@ async function runSummarizer(
     await insertProviderRun(tauriDatabase, {
       id: summarizerRunId,
       sessionId,
-      provider: 'anthropic',
+      provider: providerId,
       model: result.model,
       status: { kind: 'streaming', startedAt },
       createdAt: startedAt,
@@ -246,7 +242,7 @@ async function runSummarizer(
       runId: summarizerRunId,
       sessionId,
       kind: 'summarizer',
-      provider: 'anthropic',
+      provider: providerId,
       model: result.model,
       inputTokens: result.usage.inputTokens,
       outputTokens: result.usage.outputTokens,
@@ -291,18 +287,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await runDbMigrations();
 
       set({ bootPhase: 'loading-settings' });
-      const [editorBinary, lastWorkspaceRaw, lastSessionRaw, apiKeyPresent] = await Promise.all([
+      const [editorBinary, lastWorkspaceRaw, lastSessionRaw] = await Promise.all([
         getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
         getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
         getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
-        hasSecret(ANTHROPIC_API_KEY_SECRET),
       ]);
       set((state) => {
         const next = { ...state.settings };
         if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
         if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
         if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
-        return { settings: next, apiKeyPresent };
+        return { settings: next };
       });
 
       set({ bootPhase: 'detecting-cli' });
@@ -685,10 +680,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (!lastError && assistantText.length > 0) {
-      const apiKey = await getSecret(ANTHROPIC_API_KEY_SECRET);
-      if (apiKey) {
-        void runSummarizer(set, get, sessionId, content, assistantText, apiKey);
-      }
+      void runSummarizer(set, get, sessionId, content, assistantText);
     }
 
     if (lastError) throw lastError;
@@ -710,11 +702,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: records },
     }));
-  },
-
-  refreshApiKeyPresence: async () => {
-    const present = await hasSecret(ANTHROPIC_API_KEY_SECRET);
-    set({ apiKeyPresent: present });
   },
 
   loadSessionSlots: async (sessionId) => {

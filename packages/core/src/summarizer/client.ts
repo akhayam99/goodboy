@@ -1,11 +1,8 @@
-import type { ContextSlot, IsoDateTime } from '@kay-am/types';
+import { spawn } from 'node:child_process';
+import type { ContextSlot, IsoDateTime, ProviderId } from '@kay-am/types';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
-
-export const HAIKU_MODEL = 'claude-haiku-4-5';
-const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_API_VERSION = '2023-06-01';
-const DEFAULT_MAX_TOKENS = 512;
+import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 
@@ -33,20 +30,20 @@ export interface SummarizerResult {
 }
 
 export interface SummarizerDeps {
-  readonly apiKey: string;
-  readonly model?: string;
-  readonly fetchFn?: typeof fetch;
+  readonly providerId: ProviderId;
+  readonly binary?: string;
   readonly now?: () => IsoDateTime;
+  readonly spawnFn?: typeof spawn;
   readonly maxTokens?: number;
 }
 
-export class SummarizerHttpError extends Error {
+export class SummarizerSpawnError extends Error {
   constructor(
-    public readonly status: number,
-    public readonly body: string,
+    public readonly exitCode: number | null,
+    public readonly stderr: string,
   ) {
-    super(`anthropic api error: ${status}`);
-    this.name = 'SummarizerHttpError';
+    super(`summarizer cli exited with code ${exitCode ?? 'null'}`);
+    this.name = 'SummarizerSpawnError';
   }
 }
 
@@ -58,16 +55,6 @@ export class SummarizerParseError extends Error {
     super(message);
     this.name = 'SummarizerParseError';
   }
-}
-
-interface AnthropicMessageResponse {
-  readonly content?: ReadonlyArray<{ type: string; text?: string }>;
-  readonly usage?: {
-    readonly input_tokens?: number;
-    readonly output_tokens?: number;
-    readonly cache_read_input_tokens?: number;
-  };
-  readonly model?: string;
 }
 
 const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session.
@@ -85,68 +72,160 @@ The schema is:
 Only include slots that should change. Omit slots that stay the same. Never invent new keys.
 If nothing should change, return { "upserts": [] }.`;
 
+function getCheapModel(providerId: ProviderId): string {
+  const caps = PROVIDER_CAPABILITIES[providerId];
+  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
+}
+
+function getDefaultBinary(providerId: ProviderId): string {
+  switch (providerId) {
+    case 'anthropic':
+      return 'claude';
+    case 'cursor':
+      return 'cursor-agent';
+    case 'codex':
+      return 'codex';
+    default: {
+      const _exhaustive: never = providerId;
+      throw new Error(`unknown provider: ${_exhaustive}`);
+    }
+  }
+}
+
+interface ClaudeJsonResult {
+  readonly result?: string;
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+    readonly cache_read_input_tokens?: number;
+  };
+  readonly model?: string;
+  readonly subtype?: string;
+  readonly is_error?: boolean;
+}
+
 export class Summarizer {
-  private readonly apiKey: string;
+  private readonly providerId: ProviderId;
+  private readonly binary: string;
   private readonly model: string;
-  private readonly fetchFn: typeof fetch;
-  private readonly maxTokens: number;
+  private readonly spawnFn: typeof spawn;
 
   constructor(deps: SummarizerDeps) {
-    if (!deps.apiKey || deps.apiKey.trim().length === 0) {
-      throw new Error('summarizer requires an anthropic api key');
-    }
-    this.apiKey = deps.apiKey;
-    this.model = deps.model ?? HAIKU_MODEL;
-    this.fetchFn = deps.fetchFn ?? fetch;
-    this.maxTokens = deps.maxTokens ?? DEFAULT_MAX_TOKENS;
+    this.providerId = deps.providerId;
+    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
+    this.model = getCheapModel(deps.providerId);
+    this.spawnFn = deps.spawnFn ?? spawn;
   }
 
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
     const userMessage = buildUserPrompt(input);
+    const { stdout, stderr, exitCode } = await this.spawnCli(userMessage);
 
-    const response = await this.fetchFn(ANTHROPIC_MESSAGES_URL, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': ANTHROPIC_API_VERSION,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        max_tokens: this.maxTokens,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await safeReadText(response);
-      throw new SummarizerHttpError(response.status, body);
+    if (exitCode !== 0) {
+      throw new SummarizerSpawnError(exitCode, stderr);
     }
 
-    const payload = (await response.json()) as AnthropicMessageResponse;
-    const text = (payload.content ?? [])
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text ?? '')
-      .join('')
-      .trim();
-
+    const { text, usage } = this.extractTextAndUsage(stdout);
     const delta = parseDelta(text);
-    const usage = this.normalizeUsage(payload);
 
-    return { delta, usage, model: payload.model ?? this.model };
+    return { delta, usage, model: this.model };
   }
 
-  private normalizeUsage(payload: AnthropicMessageResponse): SummarizerUsage {
-    const inputTokens = payload.usage?.input_tokens ?? 0;
-    const outputTokens = payload.usage?.output_tokens ?? 0;
-    const cachedInputTokens = payload.usage?.cache_read_input_tokens ?? 0;
-    const estimatedCostUsd = computeCostUsd(
-      { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
-      this.model,
-    );
-    return { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd };
+  private spawnCli(
+    userMessage: string,
+  ): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
+    return new Promise((resolve, reject) => {
+      const args = buildCliArgs(this.providerId, this.model, SYSTEM_PROMPT, userMessage);
+      const child = this.spawnFn(this.binary, args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout?.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString('utf8');
+      });
+      child.stderr?.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf8');
+      });
+      child.on('error', (err) => reject(err));
+      child.on('close', (code) => resolve({ stdout, stderr, exitCode: code }));
+    });
   }
+
+  private extractTextAndUsage(stdout: string): { text: string; usage: SummarizerUsage } {
+    if (this.providerId === 'anthropic') {
+      return extractClaudeJsonOutput(stdout, this.model);
+    }
+    return { text: stdout.trim(), usage: zeroUsage() };
+  }
+}
+
+function buildCliArgs(
+  providerId: ProviderId,
+  model: string,
+  systemPrompt: string,
+  userMessage: string,
+): string[] {
+  switch (providerId) {
+    case 'anthropic':
+      return [
+        '-p',
+        userMessage,
+        '--model',
+        model,
+        '--system-prompt',
+        systemPrompt,
+        '--output-format',
+        'json',
+        '--no-session-persistence',
+      ];
+    case 'cursor':
+      return [
+        '-p',
+        `${systemPrompt}\n\n${userMessage}`,
+        '--model',
+        model,
+        '--output-format',
+        'stream-json',
+        '--force',
+      ];
+    case 'codex':
+      return ['exec', '--json', '--model', model, '--', `${systemPrompt}\n\n${userMessage}`];
+    default: {
+      const _exhaustive: never = providerId;
+      throw new Error(`unknown provider: ${_exhaustive}`);
+    }
+  }
+}
+
+function extractClaudeJsonOutput(
+  stdout: string,
+  model: string,
+): { text: string; usage: SummarizerUsage } {
+  const trimmed = stdout.trim();
+  let parsed: ClaudeJsonResult;
+  try {
+    parsed = JSON.parse(trimmed) as ClaudeJsonResult;
+  } catch {
+    return { text: trimmed, usage: zeroUsage() };
+  }
+
+  const text = parsed.result ?? '';
+  const rawUsage = parsed.usage ?? {};
+  const inputTokens = rawUsage.input_tokens ?? 0;
+  const outputTokens = rawUsage.output_tokens ?? 0;
+  const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0;
+  const estimatedCostUsd = computeCostUsd(
+    { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
+    model,
+  );
+  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } };
+}
+
+function zeroUsage(): SummarizerUsage {
+  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 };
 }
 
 function buildUserPrompt(input: SummarizeInput): string {
@@ -206,12 +285,4 @@ function parseDelta(raw: string): ContextSlotDelta {
 function stripCodeFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();
-}
-
-async function safeReadText(response: Response): Promise<string> {
-  try {
-    return await response.text();
-  } catch {
-    return '';
-  }
 }

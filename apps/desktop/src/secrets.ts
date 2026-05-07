@@ -15,5 +15,3 @@ export async function hasSecret(key: string): Promise<boolean> {
 export async function getSecret(key: string): Promise<string | null> {
   return await invoke<string | null>('secret_get', { key });
 }
-
-export const ANTHROPIC_API_KEY_SECRET = 'anthropic_api_key';

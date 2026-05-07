@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
-import { ANTHROPIC_API_KEY_SECRET, deleteSecret, hasSecret, setSecret } from '../secrets';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
@@ -21,10 +20,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const workspace = useCurrentWorkspace();
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
-  const refreshApiKeyPresence = useAppStore((s) => s.refreshApiKeyPresence);
 
-  const [apiKeySet, setApiKeySet] = useState<boolean | null>(null);
-  const [apiKeyDraft, setApiKeyDraft] = useState('');
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -34,8 +30,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     if (!open) return;
     setSaveState('idle');
     setError(null);
-    setApiKeyDraft('');
-    void hasSecret(ANTHROPIC_API_KEY_SECRET).then(setApiKeySet);
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
       setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
     );
@@ -50,12 +44,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setSaveState('saving');
     setError(null);
     try {
-      if (apiKeyDraft.trim().length > 0) {
-        await setSecret(ANTHROPIC_API_KEY_SECRET, apiKeyDraft.trim());
-        setApiKeySet(true);
-        setApiKeyDraft('');
-        await refreshApiKeyPresence();
-      }
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
       if (workspace) {
         await saveSetting(
@@ -70,51 +58,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     }
   };
 
-  const onClearKey = async () => {
-    setError(null);
-    try {
-      await deleteSecret(ANTHROPIC_API_KEY_SECRET);
-      setApiKeySet(false);
-      await refreshApiKeyPresence();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
   return (
     <Dialog open={open} onClose={onClose} title="settings" className="min-w-96">
       <div className="flex flex-col gap-4">
         <ProvidersPanel />
-
-        <Section
-          label="anthropic api key (summarizer only)"
-          help={
-            apiKeySet === null
-              ? 'checking keychain…'
-              : apiKeySet
-                ? 'key present in keychain (write-only) — used by post-turn summarizer (Haiku). Removed in v0.2 (#71).'
-                : 'optional. enables auto context-slot updates via Haiku (~$0.0015/turn). slots stay editable by hand without it.'
-          }
-        >
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              autoComplete="off"
-              placeholder={apiKeySet ? '•••••••• (replace)' : 'sk-ant-…'}
-              value={apiKeyDraft}
-              onChange={(e) => setApiKeyDraft(e.target.value)}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void onClearKey()}
-              disabled={apiKeySet !== true}
-              title="remove key from keychain"
-            >
-              clear
-            </Button>
-          </div>
-        </Section>
 
         <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
           <Input
