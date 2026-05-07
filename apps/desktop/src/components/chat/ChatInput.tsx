@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useState, useRef, useCallback, type KeyboardEvent } from 'react';
 import { Button, Textarea } from '@kay-am/ui';
 import type {
   BudgetAlert,
@@ -11,8 +11,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
+import { SlashCommandPopover } from './SlashCommandPopover';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
+
+const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 
 interface ChatInputProps {
   readonly session: Session;
@@ -43,10 +46,16 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
+  const workspaceSkills = useAppStore(useShallow((s) => s.skills[session.workspaceId] ?? []));
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
+  const [showPopover, setShowPopover] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
+  const isSlashMode = slashQuery !== null;
 
   const isRunning = RUNNING_KINDS.has(session.state.kind);
   const canSend = !isRunning && !providerDisconnected && value.trim().length > 0;
@@ -61,6 +70,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
+
+  const onValueChange = (next: string) => {
+    setValue(next);
+    setShowPopover(SLASH_MODE_RE.test(next));
+  };
+
+  const onSkillSelect = useCallback((name: string) => {
+    setValue(`/${name} `);
+    setShowPopover(false);
+    wrapperRef.current?.querySelector('textarea')?.focus();
+  }, []);
 
   const onSend = async () => {
     const content = value.trim();
@@ -91,7 +111,14 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (
+      showPopover &&
+      (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Tab')
+    ) {
+      event.preventDefault();
+      return;
+    }
+    if (event.key === 'Enter' && !event.shiftKey && !showPopover) {
       event.preventDefault();
       void onSend();
     }
@@ -113,20 +140,30 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
-        <Textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={
-            isRunning
-              ? 'turn running… cancel to send another'
-              : providerDisconnected
-                ? 'sign in to send a message.'
-                : 'message claude. shift+enter for newline.'
-          }
-          disabled={isRunning || providerDisconnected}
-          rows={3}
-        />
+        <div className="relative" ref={wrapperRef}>
+          {showPopover && isSlashMode ? (
+            <SlashCommandPopover
+              items={workspaceSkills}
+              query={slashQuery}
+              onSelect={onSkillSelect}
+              onDismiss={() => setShowPopover(false)}
+            />
+          ) : null}
+          <Textarea
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={
+              isRunning
+                ? 'turn running… cancel to send another'
+                : providerDisconnected
+                  ? 'sign in to send a message.'
+                  : 'message claude. shift+enter for newline.'
+            }
+            disabled={isRunning || providerDisconnected}
+            rows={3}
+          />
+        </div>
         {error ? <p className="text-xs text-danger">{error}</p> : null}
         <div className="flex items-center justify-end gap-2">
           {isRunning ? (

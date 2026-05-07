@@ -37,6 +37,8 @@ import type {
   SessionId,
   SessionProviderPreference,
   SessionState,
+  Skill,
+  SkillId,
   TelemetryRecord,
   TelemetryRecordId,
   TurnEvent,
@@ -75,6 +77,13 @@ import {
   invokeBudgetAlertsList,
   invokeBudgetAlertDismiss,
 } from '../budget';
+import {
+  invokeSkillList,
+  invokeSkillUpsert,
+  invokeSkillDelete,
+  invokeSkillRescan,
+  type SkillUpsertArgs,
+} from '../skills';
 
 export type BootPhase =
   | 'pending'
@@ -112,6 +121,7 @@ export interface AppState {
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
+  readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
 }
 
 export interface SummarizerSessionStatus {
@@ -168,6 +178,10 @@ export interface AppActions {
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
   loadBudgetAlerts(): Promise<void>;
   dismissBudgetAlert(id: string): Promise<void>;
+  loadSkills(workspaceId: WorkspaceId): Promise<void>;
+  saveSkill(input: SkillUpsertArgs): Promise<void>;
+  deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
+  rescanSkills(workspaceId: WorkspaceId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -198,6 +212,7 @@ const initialState: AppState = {
   sessionBudgets: {},
   providerSpendBreakdown: [],
   budgetAlerts: [],
+  skills: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -428,17 +443,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       workspaceSummary: null,
     });
     if (id) {
-      const [sessions, workspaceSummary, providerSummaries, budgetRules] = await Promise.all([
-        listSessionsForWorkspace(tauriDatabase, id),
-        summarizeWorkspaceTelemetry(tauriDatabase, id),
-        summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
-        invokeBudgetRuleList(),
-      ]);
-      set({
+      const [sessions, workspaceSummary, providerSummaries, budgetRules, skills] =
+        await Promise.all([
+          listSessionsForWorkspace(tauriDatabase, id),
+          summarizeWorkspaceTelemetry(tauriDatabase, id),
+          summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
+          invokeBudgetRuleList(),
+          invokeSkillList(id),
+        ]);
+      set((state) => ({
         sessions,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
-      });
+        skills: { ...state.skills, [id]: skills },
+      }));
     } else {
       set({ providerSpendBreakdown: [] });
     }
@@ -966,5 +984,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
         a.id === id ? { ...a, dismissedAt: new Date().toISOString() as IsoDateTime } : a,
       ),
     }));
+  },
+
+  loadSkills: async (workspaceId) => {
+    const skills = await invokeSkillList(workspaceId);
+    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
+  },
+
+  saveSkill: async (input) => {
+    await invokeSkillUpsert(input);
+    const skills = await invokeSkillList(input.workspaceId);
+    set((state) => ({ skills: { ...state.skills, [input.workspaceId]: skills } }));
+  },
+
+  deleteSkill: async (skillId, workspaceId) => {
+    await invokeSkillDelete(skillId);
+    const skills = await invokeSkillList(workspaceId);
+    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
+  },
+
+  rescanSkills: async (workspaceId) => {
+    const skills = await invokeSkillRescan(workspaceId);
+    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
   },
 }));
