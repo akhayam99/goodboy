@@ -59,49 +59,55 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="settings" className="min-w-[28rem]">
-      <div className="flex flex-col gap-6">
-        <ProvidersPanel />
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="settings"
+      description="providers, editor and per-workspace defaults."
+      size="lg"
+      footer={
+        <>
+          {saveState === 'saved' ? (
+            <span className="mr-auto text-xs text-success">saved.</span>
+          ) : null}
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={onClose}>
+            close
+          </Button>
+          <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
+            {saveState === 'saving' ? 'saving…' : 'save'}
+          </Button>
+        </>
+      }
+    >
+      <ProvidersPanel />
 
-        <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
-          <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
-            <Input
-              value={editorBinary}
-              onChange={(e) => setEditorBinary(e.target.value)}
-              placeholder={DEFAULT_EDITOR_BINARY}
-            />
-          </Section>
+      <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
+        <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
+          <Input
+            value={editorBinary}
+            onChange={(e) => setEditorBinary(e.target.value)}
+            placeholder={DEFAULT_EDITOR_BINARY}
+          />
+        </Section>
 
-          <Section
-            label={
-              workspace ? `branch prefix — ${workspace.name}` : 'branch prefix (workspace scoped)'
-            }
-            help={
-              workspace
-                ? 'used as default in the new-session dialog'
-                : 'select a workspace to edit per-workspace prefix'
-            }
-          >
-            <Input
-              value={branchPrefix}
-              onChange={(e) => setBranchPrefix(e.target.value)}
-              placeholder={DEFAULT_BRANCH_PREFIX}
-              disabled={!workspace}
-            />
-          </Section>
-        </div>
-
-        {error ? <p className="text-xs text-danger">{error}</p> : null}
-        {saveState === 'saved' ? <p className="text-xs text-success">saved.</p> : null}
-      </div>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" onClick={onClose}>
-          close
-        </Button>
-        <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
-          {saveState === 'saving' ? 'saving…' : 'save'}
-        </Button>
+        <Section
+          label={
+            workspace ? `branch prefix — ${workspace.name}` : 'branch prefix (workspace scoped)'
+          }
+          help={
+            workspace
+              ? 'used as default in the new-session dialog'
+              : 'select a workspace to edit per-workspace prefix'
+          }
+        >
+          <Input
+            value={branchPrefix}
+            onChange={(e) => setBranchPrefix(e.target.value)}
+            placeholder={DEFAULT_BRANCH_PREFIX}
+            disabled={!workspace}
+          />
+        </Section>
       </div>
     </Dialog>
   );

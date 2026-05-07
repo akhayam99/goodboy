@@ -6,7 +6,7 @@ export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button
 export { Collapsible } from './components/Collapsible';
 export type { CollapsibleProps } from './components/Collapsible';
 export { Dialog } from './components/Dialog';
-export type { DialogProps } from './components/Dialog';
+export type { DialogProps, DialogSize } from './components/Dialog';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';

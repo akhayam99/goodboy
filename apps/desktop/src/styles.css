@@ -51,3 +51,16 @@ body {
   outline-offset: 1px;
   border-radius: var(--radius-sm);
 }
+
+/*
+ * Tailwind preflight zeros margins on every element; the UA `dialog`
+ * selector relies on `margin: auto` for viewport centering. Restore it.
+ */
+dialog {
+  margin: auto;
+}
+
+dialog::backdrop {
+  background-color: oklch(0.18 0.01 270 / 0.45);
+  backdrop-filter: blur(2px);
+}
