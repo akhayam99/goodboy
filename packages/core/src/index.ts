@@ -94,3 +94,17 @@ export {
 } from './phases';
 // PhaseRegistry (@kay-am/db → node) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/phases/registry in Node/Tauri command contexts.
+
+export {
+  PermissionEngine,
+  type PermissionEngineDeps,
+  parseToolPattern,
+  parseArgsMatcher,
+  formatToolPattern,
+  type ToolMatcher,
+  buildClaudeFlags,
+  type ClaudeFlagSet,
+  PermissionAuditRecorder,
+  type AuditRecorderDeps,
+  type AuditQuery,
+} from './permissions';
