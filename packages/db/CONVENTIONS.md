@@ -20,8 +20,8 @@ SQLite schema, migrations, and queries for kAY.am. Runs locally on the user's ma
 This is **local-only** persistence. No data leaves the user's machine.
 
 - DB file lives at `~/.kay-am/data.db` (or platform-equivalent app data dir).
-- API keys NEVER stored here — use OS keyring via Tauri keyring plugin.
-- No conversation content stored. Sessions store metadata only (titles, status, timestamps, provider used, cost summary).
+- API keys NEVER stored here — use OS keyring via the desktop secret store.
+- Conversation history (messages, slots, runs, telemetry) is stored locally so kAY.am owns the conversation across providers. Nothing transmitted.
 - User can wipe the DB by deleting the file. Reset = clean slate.
 
 ## Schema rules
@@ -36,10 +36,10 @@ This is **local-only** persistence. No data leaves the user's machine.
 
 ## Migrations
 
-- Sequential, numbered: `001_initial.sql`, `002_add_provider_usage.sql`, etc.
+- Sequential, numbered: `m001-initial.ts`, `m002-...ts`, etc. SQL is exported as a template-literal string so the same source ships through `tauri-plugin-sql` at runtime and through `better-sqlite3` in tests.
 - Each migration is idempotent (`CREATE TABLE IF NOT EXISTS`, conditional column adds).
 - Never edit a migration after it has shipped — add a new one.
-- Migration runner verifies version against schema_version table; refuses to start on mismatch.
+- The runner records applied versions in `schema_version` and skips them on re-run.
 
 ## Query patterns
 
@@ -64,17 +64,23 @@ This is **local-only** persistence. No data leaves the user's machine.
 
 ```
 src/
-├── index.ts              # public API
-├── client.ts             # database client wrapper
+├── index.ts              # public API (re-exports)
+├── client.ts             # Database interface
 ├── migrations/
-│   ├── 001_initial.sql
-│   ├── 002_*.sql
-│   └── runner.ts
+│   ├── index.ts          # ordered list
+│   ├── m001-initial.ts   # SQL as exported string
+│   ├── runner.ts         # migrate(db, migrations?) → MigrateResult
+│   └── runner.test.ts
 ├── queries/
 │   ├── workspace.ts
-│   ├── task.ts
-│   ├── provider.ts
-│   └── usage.ts
-└── shared/
-    └── errors.ts
+│   ├── session.ts
+│   ├── message.ts
+│   ├── context-slot.ts
+│   ├── provider-run.ts
+│   ├── telemetry.ts
+│   └── settings.ts
+├── shared/
+│   └── errors.ts
+└── test-helpers/
+    └── test-db.ts        # better-sqlite3 adapter (devDep, tests only)
 ```

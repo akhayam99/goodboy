@@ -1,15 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "types": []
   },
-  "include": ["src"],
-  "references": [{ "path": "../types" }]
+  "include": ["src"]
 }
