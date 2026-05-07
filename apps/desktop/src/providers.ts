@@ -54,6 +54,22 @@ export async function refreshProviderStatus(): Promise<ProviderStatus> {
   return invoke<ProviderStatus>('refresh_provider_status');
 }
 
+export async function getCursorStatus(): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>('get_cursor_status');
+}
+
+export async function refreshCursorStatus(): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>('refresh_cursor_status');
+}
+
+export async function getCodexStatus(): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>('get_codex_status');
+}
+
+export async function refreshCodexStatus(): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>('refresh_codex_status');
+}
+
 function claudeInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
   const id: ProviderId = 'anthropic';
   const base = {
@@ -78,25 +94,62 @@ function claudeInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
   };
 }
 
-function placeholder(id: ProviderId, binary: string): ProviderInfo {
-  return {
+function cursorInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
+  const id: ProviderId = 'cursor';
+  const base = {
     id,
     label: PROVIDER_LABEL[id],
-    binary,
+    binary: status?.binary ?? 'cursor-agent',
     capabilities: EMPTY_CAPABILITIES,
     identity: null,
-    connection: 'coming-soon',
-    version: null,
-    error: null,
     docsUrl: PROVIDER_DOCS[id],
     trackingIssueUrl: TRACKING_ISSUES[id],
   };
+  if (!status || !status.available) {
+    return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
+  }
+  return { ...base, connection: 'installed_disconnected', version: status.version, error: null };
 }
 
-export function buildProviderList(claude: ProviderStatus | null): ReadonlyArray<ProviderInfo> {
+function codexInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
+  const id: ProviderId = 'codex';
+  const base = {
+    id,
+    label: PROVIDER_LABEL[id],
+    binary: status?.binary ?? 'codex',
+    capabilities: EMPTY_CAPABILITIES,
+    identity: null,
+    docsUrl: PROVIDER_DOCS[id],
+    trackingIssueUrl: TRACKING_ISSUES[id],
+  };
+  if (!status || !status.available) {
+    return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
+  }
+  return { ...base, connection: 'installed_disconnected', version: status.version, error: null };
+}
+
+export interface ProviderStatuses {
+  readonly anthropic: ProviderStatus | null;
+  readonly cursor: ProviderStatus | null;
+  readonly codex: ProviderStatus | null;
+}
+
+export function buildProviderList(statuses: ProviderStatuses): ReadonlyArray<ProviderInfo>;
+export function buildProviderList(anthropic: ProviderStatus | null): ReadonlyArray<ProviderInfo>;
+export function buildProviderList(
+  arg: ProviderStatus | null | ProviderStatuses,
+): ReadonlyArray<ProviderInfo> {
+  if (arg === null || (typeof arg === 'object' && 'available' in arg)) {
+    return [
+      claudeInfoFromStatus(arg as ProviderStatus | null),
+      cursorInfoFromStatus(null),
+      codexInfoFromStatus(null),
+    ];
+  }
+  const { anthropic, cursor, codex } = arg as ProviderStatuses;
   return [
-    claudeInfoFromStatus(claude),
-    placeholder('cursor', 'cursor-agent'),
-    placeholder('codex', 'codex'),
+    claudeInfoFromStatus(anthropic),
+    cursorInfoFromStatus(cursor),
+    codexInfoFromStatus(codex),
   ];
 }
