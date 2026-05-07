@@ -32,7 +32,7 @@ import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
 import { validateGitRepo } from '../repo';
 import { runTurn, cancelTurn } from '../turn';
-import { createWorktree, type CreatedWorktree } from '../worktree';
+import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -69,6 +69,7 @@ export interface AppActions {
   resetTranscript(sessionId: SessionId): void;
   sendTurn(input: { sessionId: SessionId; content: string }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
+  endSession(sessionId: SessionId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -348,6 +349,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.state.kind !== 'running') return;
     await cancelTurn(session.state.runId);
+  },
+
+  endSession: async (sessionId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (session.state.kind === 'ended') return;
+    if (session.state.kind === 'running') {
+      await cancelTurn(session.state.runId);
+    }
+
+    const worktreePath = get().sessionWorktrees[sessionId];
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    if (worktreePath && workspace) {
+      try {
+        await removeWorktree(workspace.rootPath, worktreePath);
+      } catch (err) {
+        // worktree may already be gone — surface as warning, continue ending
+        console.warn(`worktree_remove failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+    const ended: SessionState = sessionReducer(session.state, { kind: 'end', at: now() });
+    await updateSessionState(tauriDatabase, sessionId, ended, now());
+    applySessionUpdate(set, sessionId, ended);
+
+    set((state) => {
+      const nextWorktrees = { ...state.sessionWorktrees };
+      delete nextWorktrees[sessionId];
+      return { sessionWorktrees: nextWorktrees };
+    });
   },
 
   addWorkspace: async ({ rootPath, name }) => {

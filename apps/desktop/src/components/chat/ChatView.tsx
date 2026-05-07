@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@kay-am/types';
-import { useTranscript } from '../../store';
+import { useAppStore, useTranscript } from '../../store';
+import { EndSessionButton } from '../EndSessionButton';
+import { OpenInEditorButton } from '../OpenInEditorButton';
 import { ChatInput } from './ChatInput';
 import { reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
@@ -14,6 +16,7 @@ const PIN_TOLERANCE_PX = 32;
 export function ChatView({ session }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
+  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
 
@@ -30,11 +33,19 @@ export function ChatView({ session }: ChatViewProps) {
     setPinned(distance < PIN_TOLERANCE_PX);
   };
 
+  const isEnded = session.state.kind === 'ended';
+
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-3 py-2">
-        <h1 className="text-sm font-semibold tracking-tight">{session.goal}</h1>
-        <p className="text-xs text-muted-foreground">state: {session.state.kind}</p>
+      <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2">
+        <div>
+          <h1 className="text-sm font-semibold tracking-tight">{session.goal}</h1>
+          <p className="text-xs text-muted-foreground">state: {session.state.kind}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <OpenInEditorButton worktreePath={worktreePath} />
+          <EndSessionButton session={session} />
+        </div>
       </div>
       <div
         ref={scrollerRef}
@@ -66,7 +77,13 @@ export function ChatView({ session }: ChatViewProps) {
           </button>
         ) : null}
       </div>
-      <ChatInput session={session} />
+      {isEnded ? (
+        <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          session ended — no further turns. branch preserved.
+        </div>
+      ) : (
+        <ChatInput session={session} />
+      )}
     </div>
   );
 }
