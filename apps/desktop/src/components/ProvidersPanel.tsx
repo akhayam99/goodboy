@@ -4,6 +4,7 @@ import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
 import type { ProviderId } from '../providers';
 import { useAppStore } from '../store';
+import { openUrl } from '../editor';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
   connected: 'connected',
@@ -16,7 +17,7 @@ const STATE_LABEL: Record<ProviderConnectionState, string> = {
 const STATE_DOT: Record<ProviderConnectionState, string> = {
   connected: 'bg-primary',
   installed_disconnected: 'bg-warning',
-  missing: 'bg-danger',
+  missing: 'bg-muted-foreground/40',
   error: 'bg-danger',
   'coming-soon': 'bg-muted-foreground/40',
 };
@@ -46,7 +47,7 @@ export function ProvidersPanel() {
           disabled={refreshing}
           title="re-detect installed CLIs"
         >
-          {refreshing ? 'refreshing…' : 'refresh'}
+          {refreshing ? 'refreshing…' : 'refresh all'}
         </Button>
       </div>
       <ul className="flex flex-col divide-y divide-border rounded border border-border">
@@ -66,28 +67,45 @@ function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =>
   const placeholder = info.connection === 'coming-soon';
   return (
     <li
-      className={cn('flex items-center gap-3 px-3 py-2 text-xs', placeholder ? 'opacity-60' : '')}
+      className={cn('flex items-center gap-3 px-3 py-2.5 text-xs', placeholder ? 'opacity-60' : '')}
     >
       <span
         aria-hidden
-        className={cn('inline-block h-2 w-2 rounded-full', STATE_DOT[info.connection])}
+        className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_DOT[info.connection])}
       />
-      <div className="flex flex-1 flex-col gap-0.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="font-medium">{info.label}</span>
           <code className="text-[10px] text-muted-foreground">{info.binary}</code>
           {info.version ? (
-            <span className="text-[10px] text-muted-foreground">{info.version}</span>
+            <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
+              {info.version}
+            </span>
           ) : null}
         </div>
-        <div className="text-[11px] text-muted-foreground">
-          {STATE_LABEL[info.connection]}
-          {info.error ? <span className="text-danger"> — {info.error}</span> : null}
-        </div>
+        <RowStatus info={info} />
       </div>
       <RowActions info={info} onRefresh={onRefresh} />
     </li>
   );
+}
+
+function RowStatus({ info }: { info: ProviderInfo }) {
+  if (info.connection === 'connected') {
+    return (
+      <div className="text-[11px] text-muted-foreground">
+        {info.identity ?? 'no identity reported'}
+      </div>
+    );
+  }
+  if (info.connection === 'error') {
+    return (
+      <div className="text-[11px]">
+        <span className="text-danger">{info.error ?? 'unknown error'}</span>
+      </div>
+    );
+  }
+  return <div className="text-[11px] text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
 }
 
 function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
@@ -104,33 +122,31 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
 
   if (info.connection === 'coming-soon') {
     return info.trackingIssueUrl ? (
-      <a
-        href={info.trackingIssueUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="text-[11px] text-muted-foreground underline hover:text-foreground"
+      <button
+        type="button"
+        className="shrink-0 text-[11px] text-muted-foreground underline hover:text-foreground"
+        onClick={() => void openUrl(info.trackingIssueUrl!)}
       >
         track ↗
-      </a>
+      </button>
     ) : null;
   }
 
   if (info.connection === 'missing') {
     return (
-      <a
-        href={info.docsUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="text-[11px] text-primary underline hover:opacity-80"
+      <button
+        type="button"
+        className="shrink-0 text-[11px] text-primary underline hover:opacity-80"
+        onClick={() => void openUrl(info.docsUrl)}
       >
         install ↗
-      </a>
+      </button>
     );
   }
 
   if (info.connection === 'error') {
     return (
-      <Button variant="ghost" size="sm" onClick={() => void onRefresh()}>
+      <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void onRefresh()}>
         retry
       </Button>
     );
@@ -138,19 +154,23 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
 
   if (info.connection === 'installed_disconnected') {
     return (
-      <div className="flex flex-col items-end gap-0.5">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <button
+          type="button"
+          className="text-[11px] text-primary underline hover:opacity-80 disabled:opacity-50"
           disabled={pending === 'login'}
           onClick={() => void onAction('login')}
         >
-          connect
-        </Button>
+          connect ↗
+        </button>
         {pending === 'login' ? (
           <span className="text-[10px] text-muted-foreground">
             complete in terminal, then{' '}
-            <button className="underline hover:text-foreground" onClick={() => void onRefresh()}>
+            <button
+              type="button"
+              className="underline hover:text-foreground"
+              onClick={() => void onRefresh()}
+            >
               refresh ↻
             </button>
           </span>
@@ -161,23 +181,37 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
 
   if (info.connection === 'connected') {
     return (
-      <div className="flex flex-col items-end gap-0.5">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
-          disabled={pending === 'logout'}
-          onClick={() => void onAction('logout')}
+          title="re-check identity"
+          onClick={() => void onRefresh()}
         >
-          disconnect
+          ↻
         </Button>
-        {pending === 'logout' ? (
-          <span className="text-[10px] text-muted-foreground">
-            complete in terminal, then{' '}
-            <button className="underline hover:text-foreground" onClick={() => void onRefresh()}>
-              refresh ↻
-            </button>
-          </span>
-        ) : null}
+        <div className="flex flex-col items-end gap-0.5">
+          <button
+            type="button"
+            className="text-[11px] text-muted-foreground underline hover:text-foreground disabled:opacity-50"
+            disabled={pending === 'logout'}
+            onClick={() => void onAction('logout')}
+          >
+            disconnect ↗
+          </button>
+          {pending === 'logout' ? (
+            <span className="text-[10px] text-muted-foreground">
+              complete in terminal, then{' '}
+              <button
+                type="button"
+                className="underline hover:text-foreground"
+                onClick={() => void onRefresh()}
+              >
+                refresh ↻
+              </button>
+            </span>
+          ) : null}
+        </div>
       </div>
     );
   }
