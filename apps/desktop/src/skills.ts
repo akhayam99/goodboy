@@ -3,6 +3,31 @@ import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from 
 import { parseSkillMarkdown, serializeSkillMarkdown, SkillExecutor } from '@kay-am/core';
 import type { SkillScriptRunner } from '@kay-am/core';
 
+export interface ResolveSkillInvocationArgs {
+  readonly skill: Skill;
+  readonly args: ReadonlyArray<string>;
+  readonly workingDir: string;
+  readonly workspaceRoot: string;
+}
+
+export interface ResolveSkillInvocationResult {
+  readonly resolvedPrompt: string;
+  readonly skillName: string;
+  readonly args: ReadonlyArray<string>;
+}
+
+export async function resolveSkillInvocation(
+  input: ResolveSkillInvocationArgs,
+): Promise<ResolveSkillInvocationResult> {
+  const { resolvedPrompt } = await invokeSkillInvoke({
+    skillId: input.skill.id,
+    args: input.args,
+    workingDir: input.workingDir,
+    workspaceRoot: input.workspaceRoot,
+  });
+  return { resolvedPrompt, skillName: input.skill.name, args: input.args };
+}
+
 // ---------------------------------------------------------------------------
 // Internal shape returned by rust commands
 // ---------------------------------------------------------------------------
