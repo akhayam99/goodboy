@@ -160,3 +160,41 @@ export async function* runTurn(
 export async function cancelTurn(runId: ProviderRunId): Promise<void> {
   await invoke('turn_cancel', { runId });
 }
+
+// ---------------------------------------------------------------------------
+// Parallel phase run spawn
+// ---------------------------------------------------------------------------
+
+export interface ParallelRunSpec {
+  readonly runId: ProviderRunId;
+  /** Worktree path from C3 worktree helper. */
+  readonly workingDir: string;
+  readonly parallelIndex: number;
+}
+
+export interface ParallelSpawnArgs {
+  readonly groupId: string;
+  readonly runs: ReadonlyArray<ParallelRunSpec>;
+  readonly binary?: string;
+  readonly model: string;
+  readonly prompt: string;
+  readonly permissionMode?: ClaudePermissionMode;
+  readonly allowedTools?: ReadonlyArray<string>;
+  readonly disallowedTools?: ReadonlyArray<string>;
+}
+
+/**
+ * Spawn N child processes concurrently via a single Tauri invoke.
+ *
+ * Returns the launched `runId`s in the same order as `args.runs`.
+ * Each run emits `turn_event` envelopes tagged with its own `runId` — the
+ * existing `RawTurnEnvelope` listener already filters by `runId`, so no
+ * frontend changes are needed for multiplexing.
+ */
+export async function invokeParallelPhaseRunSpawn(
+  args: ParallelSpawnArgs,
+): Promise<ReadonlyArray<ProviderRunId>> {
+  return invoke<string[]>('parallel_phase_run_spawn', { args }).then(
+    (ids) => ids as ProviderRunId[],
+  );
+}

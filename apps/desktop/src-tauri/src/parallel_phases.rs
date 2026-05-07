@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::{Db, DbError};
+use crate::turn::{spawn_one, SpawnOneArgs, TurnError, TurnRegistry};
 
 // ---------------------------------------------------------------------------
 // Structs
@@ -368,5 +369,125 @@ pub fn parallel_phase_group_update_completed_at(
     match rows.next() {
         Some(r) => Ok(r.map_err(ParallelPhaseError::Db)?),
         None => Err(ParallelPhaseError::GroupNotFound(id)),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Parallel run spawn
+// ---------------------------------------------------------------------------
+
+/// One run within a parallel phase — carries the per-process identity.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelRunSpec {
+    pub run_id: String,
+    /// Worktree path produced by C3 worktree helper.
+    pub working_dir: String,
+    /// Zero-based index among sibling runs in the group.
+    #[allow(dead_code)]
+    pub parallel_index: u32,
+}
+
+/// Arguments for spawning a batch of parallel runs in one invoke.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParallelSpawnArgs {
+    /// Parallel phase group this batch belongs to (for tracing / audit).
+    #[allow(dead_code)]
+    pub group_id: String,
+    pub runs: Vec<ParallelRunSpec>,
+    #[serde(default)]
+    pub binary: Option<String>,
+    pub model: String,
+    pub prompt: String,
+    #[serde(default)]
+    pub permission_mode: Option<String>,
+    #[serde(default)]
+    pub allowed_tools: Vec<String>,
+    #[serde(default)]
+    pub disallowed_tools: Vec<String>,
+}
+
+/// Spawn N child processes concurrently (one per `ParallelRunSpec`).
+///
+/// Each child is registered in `TurnRegistry` with its own `run_id` and emits
+/// `turn_event` envelopes tagged with that `run_id`. Returns all launched
+/// `run_id`s once every child has been spawned (threads run independently).
+/// Cancelling a single `run_id` via `turn_cancel` does not affect siblings.
+#[tauri::command]
+pub fn parallel_phase_run_spawn(
+    app: AppHandle,
+    state: State<'_, TurnRegistry>,
+    args: ParallelSpawnArgs,
+) -> Result<Vec<String>, TurnError> {
+    let binary = args.binary.as_deref().unwrap_or("claude");
+    let permission_mode = args
+        .permission_mode
+        .as_deref()
+        .unwrap_or("default")
+        .to_string();
+
+    let mut run_ids: Vec<String> = Vec::with_capacity(args.runs.len());
+
+    for spec in &args.runs {
+        let run_id = spawn_one(
+            &app,
+            &state.0,
+            SpawnOneArgs {
+                run_id: &spec.run_id,
+                binary,
+                model: &args.model,
+                working_dir: &spec.working_dir,
+                prompt: &args.prompt,
+                permission_mode: &permission_mode,
+                allowed_tools: &args.allowed_tools,
+                disallowed_tools: &args.disallowed_tools,
+            },
+        )?;
+        run_ids.push(run_id);
+    }
+
+    Ok(run_ids)
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parallel_spawn_args_defaults() {
+        let json = r#"{
+            "groupId": "g1",
+            "runs": [
+                {"runId": "r1", "workingDir": "/tmp/wt1", "parallelIndex": 0},
+                {"runId": "r2", "workingDir": "/tmp/wt2", "parallelIndex": 1}
+            ],
+            "model": "claude-3-opus",
+            "prompt": "do the thing"
+        }"#;
+        let parsed: ParallelSpawnArgs = serde_json::from_str(json).unwrap();
+        assert_eq!(parsed.group_id, "g1");
+        assert_eq!(parsed.runs.len(), 2);
+        assert_eq!(parsed.runs[0].run_id, "r1");
+        assert_eq!(parsed.runs[1].parallel_index, 1);
+        assert!(parsed.binary.is_none());
+        assert!(parsed.permission_mode.is_none());
+        assert!(parsed.allowed_tools.is_empty());
+        assert!(parsed.disallowed_tools.is_empty());
+    }
+
+    #[test]
+    fn parallel_run_spec_fields() {
+        let spec = ParallelRunSpec {
+            run_id: "run-42".to_string(),
+            working_dir: "/worktrees/branch-p0".to_string(),
+            parallel_index: 0,
+        };
+        assert_eq!(spec.run_id, "run-42");
+        assert_eq!(spec.parallel_index, 0);
     }
 }

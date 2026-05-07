@@ -95,6 +95,7 @@ pub fn run() {
       parallel_phases::parallel_phase_group_get,
       parallel_phases::parallel_phase_group_delete,
       parallel_phases::parallel_phase_group_update_completed_at,
+      parallel_phases::parallel_phase_run_spawn,
       permissions::permission_rule_list,
       permissions::permission_rule_get,
       permissions::permission_rule_upsert,

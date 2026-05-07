@@ -91,45 +91,57 @@ pub struct TurnEventEnvelope {
     pub event: TurnEventPayload,
 }
 
-const EVENT_NAME: &str = "turn_event";
+pub const EVENT_NAME: &str = "turn_event";
 
-#[tauri::command]
-pub fn turn_spawn(
-    app: AppHandle,
-    state: State<'_, TurnRegistry>,
-    args: SpawnArgs,
+/// Per-run spawn parameters used by both `turn_spawn` and `parallel_phase_run_spawn`.
+pub struct SpawnOneArgs<'a> {
+    pub run_id: &'a str,
+    pub binary: &'a str,
+    pub model: &'a str,
+    pub working_dir: &'a str,
+    pub prompt: &'a str,
+    pub permission_mode: &'a str,
+    pub allowed_tools: &'a [String],
+    pub disallowed_tools: &'a [String],
+}
+
+/// Spawns one child process, registers it in the registry, and starts the
+/// forwarding thread. Returns `run_id` on success.
+///
+/// Extracted so that `turn_spawn` (single run) and `parallel_phase_run_spawn`
+/// (N runs) share the same logic without copy-paste.
+pub(crate) fn spawn_one(
+    app: &AppHandle,
+    registry: &ChildRegistry,
+    args: SpawnOneArgs<'_>,
 ) -> Result<String, TurnError> {
-    let binary = args.binary.unwrap_or_else(|| "claude".to_string());
-    let permission_mode = args
-        .permission_mode
-        .clone()
-        .unwrap_or_else(|| "default".to_string());
-
-    if permission_mode == "bypassPermissions"
+    if args.permission_mode == "bypassPermissions"
         && args.allowed_tools.is_empty()
         && args.disallowed_tools.is_empty()
     {
         eprintln!(
-            "[turn_spawn] permission_mode=bypassPermissions with no rules — \
+            "[spawn_one] permission_mode=bypassPermissions with no rules — \
              relying on claude CLI native bypass; --dangerously-skip-permissions intentionally not set"
         );
     }
 
-    let mut command = Command::new(binary);
+    let mut command = Command::new(args.binary);
     command
         .arg("-p")
-        .arg(&args.prompt)
+        .arg(args.prompt)
         .arg("--output-format")
         .arg("stream-json")
         .arg("--working-dir")
-        .arg(&args.working_dir)
+        .arg(args.working_dir)
         .arg("--model")
-        .arg(&args.model)
+        .arg(args.model)
         .arg("--permission-mode")
-        .arg(&permission_mode);
+        .arg(args.permission_mode);
 
     if !args.allowed_tools.is_empty() {
-        command.arg("--allowedTools").arg(args.allowed_tools.join(","));
+        command
+            .arg("--allowedTools")
+            .arg(args.allowed_tools.join(","));
     }
     if !args.disallowed_tools.is_empty() {
         command
@@ -152,24 +164,23 @@ pub fn turn_spawn(
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
     let slot = Arc::new(Mutex::new(Some(child)));
-    state
-        .0
+    registry
         .lock()
         .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.clone(), Arc::clone(&slot));
+        .insert(args.run_id.to_string(), Arc::clone(&slot));
 
     let app_clone = app.clone();
-    let registry = Arc::clone(&state.0);
-    let run_id = args.run_id.clone();
+    let registry_clone = Arc::clone(registry);
+    let run_id_owned = args.run_id.to_string();
 
     thread::spawn(move || {
-        forward_lines(&app_clone, &run_id, stdout);
+        forward_lines(&app_clone, &run_id_owned, stdout);
         let stderr_buf = capture_stderr(stderr);
-        let exit_code = wait_and_remove(&slot, &registry, &run_id);
+        let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
-                run_id: run_id.clone(),
+                run_id: run_id_owned.clone(),
                 event: TurnEventPayload::End {
                     exit_code,
                     stderr: stderr_buf,
@@ -178,7 +189,36 @@ pub fn turn_spawn(
         );
     });
 
-    Ok(args.run_id)
+    Ok(args.run_id.to_string())
+}
+
+#[tauri::command]
+pub fn turn_spawn(
+    app: AppHandle,
+    state: State<'_, TurnRegistry>,
+    args: SpawnArgs,
+) -> Result<String, TurnError> {
+    let binary = args.binary.as_deref().unwrap_or("claude");
+    let permission_mode = args
+        .permission_mode
+        .as_deref()
+        .unwrap_or("default")
+        .to_string();
+
+    spawn_one(
+        &app,
+        &state.0,
+        SpawnOneArgs {
+            run_id: &args.run_id,
+            binary,
+            model: &args.model,
+            working_dir: &args.working_dir,
+            prompt: &args.prompt,
+            permission_mode: &permission_mode,
+            allowed_tools: &args.allowed_tools,
+            disallowed_tools: &args.disallowed_tools,
+        },
+    )
 }
 
 #[tauri::command]
@@ -247,4 +287,39 @@ fn wait_and_remove(
         map.remove(run_id);
     }
     exit
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn turn_registry_default_is_empty() {
+        let registry = TurnRegistry::new();
+        let map = registry.0.lock().unwrap();
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn spawn_one_args_fields_accessible() {
+        let allowed: Vec<String> = vec!["Bash".to_string()];
+        let disallowed: Vec<String> = vec![];
+        let args = SpawnOneArgs {
+            run_id: "run-1",
+            binary: "echo",
+            model: "claude-3",
+            working_dir: "/tmp",
+            prompt: "hello",
+            permission_mode: "default",
+            allowed_tools: &allowed,
+            disallowed_tools: &disallowed,
+        };
+        assert_eq!(args.run_id, "run-1");
+        assert_eq!(args.binary, "echo");
+        assert_eq!(args.allowed_tools, &["Bash".to_string()]);
+    }
 }
