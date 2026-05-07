@@ -345,6 +345,82 @@ pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
     next
 }
 
+fn provider_login_command(provider_id: &str) -> Option<String> {
+    match provider_id {
+        "anthropic" => Some("claude /login".to_string()),
+        "cursor" => Some("cursor login".to_string()),
+        "codex" => Some("codex login".to_string()),
+        _ => None,
+    }
+}
+
+fn provider_logout_command(provider_id: &str) -> Option<String> {
+    match provider_id {
+        "anthropic" => Some("claude /logout".to_string()),
+        "cursor" => Some("cursor logout".to_string()),
+        "codex" => Some("codex logout".to_string()),
+        _ => None,
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn spawn_in_terminal(command: &str) -> Result<(), String> {
+    // osascript ensures the terminal window opens and the command runs even if Terminal is already open
+    let script = format!(
+        "tell application \"Terminal\" to do script \"{}\"",
+        command.replace('\\', "\\\\").replace('"', "\\\"")
+    );
+    Command::new("osascript")
+        .args(["-e", &script])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn spawn_in_terminal(command: &str) -> Result<(), String> {
+    let terminals: &[(&str, &[&str])] = &[
+        ("gnome-terminal", &["--", "bash", "-c"]),
+        ("konsole", &["-e", "bash", "-c"]),
+        ("xterm", &["-e", "bash", "-c"]),
+    ];
+    for (term, base_args) in terminals {
+        let mut args: Vec<&str> = base_args.to_vec();
+        let cmd_with_pause = format!("{}; read -p 'press enter to close'", command);
+        args.push(&cmd_with_pause);
+        if Command::new(term).args(&args).spawn().is_ok() {
+            return Ok(());
+        }
+    }
+    Err("no supported terminal emulator found (tried gnome-terminal, konsole, xterm)".to_string())
+}
+
+#[cfg(target_os = "windows")]
+fn spawn_in_terminal(command: &str) -> Result<(), String> {
+    Command::new("cmd")
+        .args(["/c", "start", "cmd", "/k", command])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn spawn_in_terminal(_command: &str) -> Result<(), String> {
+    Err("unsupported platform".to_string())
+}
+
+#[tauri::command]
+pub fn provider_action(provider_id: String, action: String) -> Result<(), String> {
+    let command = match action.as_str() {
+        "login" => provider_login_command(&provider_id),
+        "logout" => provider_logout_command(&provider_id),
+        _ => return Err(format!("unknown action: {}", action)),
+    }
+    .ok_or_else(|| format!("unknown provider: {}", provider_id))?;
+
+    spawn_in_terminal(&command)
+}
+
 #[tauri::command]
 pub fn check_provider_auth(provider_id: String) -> AuthState {
     match provider_id.as_str() {

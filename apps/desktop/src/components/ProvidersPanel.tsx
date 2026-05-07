@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button, cn } from '@kay-am/ui';
 import type { ProviderConnectionState, ProviderInfo } from '../providers';
+import { providerAction } from '../providers';
+import type { ProviderId } from '../providers';
 import { useAppStore } from '../store';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
@@ -49,7 +51,7 @@ export function ProvidersPanel() {
       </div>
       <ul className="flex flex-col divide-y divide-border rounded border border-border">
         {providers.map((p) => (
-          <ProviderRow key={p.id} info={p} />
+          <ProviderRow key={p.id} info={p} onRefresh={onRefresh} />
         ))}
       </ul>
       <p className="text-[11px] text-muted-foreground">
@@ -60,7 +62,7 @@ export function ProvidersPanel() {
   );
 }
 
-function ProviderRow({ info }: { info: ProviderInfo }) {
+function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
   const placeholder = info.connection === 'coming-soon';
   return (
     <li
@@ -83,12 +85,23 @@ function ProviderRow({ info }: { info: ProviderInfo }) {
           {info.error ? <span className="text-danger"> — {info.error}</span> : null}
         </div>
       </div>
-      <RowActions info={info} />
+      <RowActions info={info} onRefresh={onRefresh} />
     </li>
   );
 }
 
-function RowActions({ info }: { info: ProviderInfo }) {
+function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
+  const [pending, setPending] = useState<'login' | 'logout' | null>(null);
+
+  const onAction = async (action: 'login' | 'logout') => {
+    setPending(action);
+    try {
+      await providerAction(info.id as ProviderId, action);
+    } catch {
+      // terminal launch failed — fall through to show note anyway
+    }
+  };
+
   if (info.connection === 'coming-soon') {
     return info.trackingIssueUrl ? (
       <a
@@ -101,17 +114,73 @@ function RowActions({ info }: { info: ProviderInfo }) {
       </a>
     ) : null;
   }
-  if (info.connection === 'connected') {
-    return null;
+
+  if (info.connection === 'missing') {
+    return (
+      <a
+        href={info.docsUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="text-[11px] text-primary underline hover:opacity-80"
+      >
+        install ↗
+      </a>
+    );
   }
-  return (
-    <a
-      href={info.docsUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="text-[11px] text-primary underline hover:opacity-80"
-    >
-      install ↗
-    </a>
-  );
+
+  if (info.connection === 'error') {
+    return (
+      <Button variant="ghost" size="sm" onClick={() => void onRefresh()}>
+        retry
+      </Button>
+    );
+  }
+
+  if (info.connection === 'installed_disconnected') {
+    return (
+      <div className="flex flex-col items-end gap-0.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={pending === 'login'}
+          onClick={() => void onAction('login')}
+        >
+          connect
+        </Button>
+        {pending === 'login' ? (
+          <span className="text-[10px] text-muted-foreground">
+            complete in terminal, then{' '}
+            <button className="underline hover:text-foreground" onClick={() => void onRefresh()}>
+              refresh ↻
+            </button>
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (info.connection === 'connected') {
+    return (
+      <div className="flex flex-col items-end gap-0.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={pending === 'logout'}
+          onClick={() => void onAction('logout')}
+        >
+          disconnect
+        </Button>
+        {pending === 'logout' ? (
+          <span className="text-[10px] text-muted-foreground">
+            complete in terminal, then{' '}
+            <button className="underline hover:text-foreground" onClick={() => void onRefresh()}>
+              refresh ↻
+            </button>
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return null;
 }
