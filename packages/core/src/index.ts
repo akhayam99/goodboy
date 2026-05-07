@@ -29,3 +29,12 @@ export {
   type ContextEngineDeps,
   type SlotKey,
 } from './context';
+
+export {
+  ClaudeAdapter,
+  computeCostUsd,
+  parseStreamJsonLine,
+  priceFor,
+  type ClaudeAdapterDeps,
+  type ParseContext,
+} from './providers/claude';
