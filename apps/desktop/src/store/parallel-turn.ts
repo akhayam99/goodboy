@@ -57,6 +57,7 @@ export interface ParallelBranchInputs {
 export interface ParallelBranchEffects {
   appendTurnEvent: (sessionId: SessionId, event: TurnEvent) => void;
   refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
+  setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
 }
 
 export interface ParallelBranchResult {
@@ -398,24 +399,29 @@ export async function runParallelBranch(
     const conflicts: ReadonlyArray<FileConflict> = detectConflicts(touches);
 
     if (conflicts.length > 0) {
-      try {
-        await resolveConflicts({
-          conflicts,
-          runStatuses: merge.runStatuses
-            .filter((rs) => rs.status === 'completed')
-            .map((rs) => ({ runId: rs.runId, completedAt: now(), status: rs.status })),
-          strategy: mergeStrategy,
-        });
-      } catch (err) {
-        if (err instanceof ManualResolutionRequiredError) {
-          effects.appendTurnEvent(session.id, {
-            kind: 'error',
-            runId: runIds[0]!,
-            message: `manual merge resolution required for: ${err.unresolvedFiles.join(', ')}`,
-            at: now(),
+      if (mergeStrategy === 'manual') {
+        // Surface conflicts to UI via store — ChatView will open MergeDialog.
+        effects.setMergeConflicts(session.id, conflicts);
+      } else {
+        try {
+          await resolveConflicts({
+            conflicts,
+            runStatuses: merge.runStatuses
+              .filter((rs) => rs.status === 'completed')
+              .map((rs) => ({ runId: rs.runId, completedAt: now(), status: rs.status })),
+            strategy: mergeStrategy,
           });
-        } else {
-          throw err;
+        } catch (err) {
+          if (err instanceof ManualResolutionRequiredError) {
+            effects.appendTurnEvent(session.id, {
+              kind: 'error',
+              runId: runIds[0]!,
+              message: `manual merge resolution required for: ${err.unresolvedFiles.join(', ')}`,
+              at: now(),
+            });
+          } else {
+            throw err;
+          }
         }
       }
     }

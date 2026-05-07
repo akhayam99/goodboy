@@ -3,6 +3,17 @@ import { Button, Dialog } from '@kay-am/ui';
 import type { Session } from '@kay-am/types';
 import { useAppStore } from '../store';
 
+// Tauri errors serialize as `{kind: string; message: string}` plain objects.
+// `instanceof Error` is false for them, so `String(err)` → "[object Object]".
+function unwrapError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const { message } = err as Record<string, unknown>;
+    if (typeof message === 'string') return message;
+  }
+  return String(err);
+}
+
 interface EndSessionDialogProps {
   session: Session;
   open: boolean;
@@ -23,7 +34,7 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
       await endSession(session.id);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(unwrapError(err));
     } finally {
       setBusy(false);
     }

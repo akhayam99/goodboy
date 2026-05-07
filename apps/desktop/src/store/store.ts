@@ -7,9 +7,11 @@ import {
   buildPhasePrompt,
   nextPhase,
   parseSlashCommand,
+  resolveConflicts,
   sessionReducer,
   Summarizer,
   type ClaudeFlagSet,
+  type FileConflict,
   type SlotKey,
 } from '@kay-am/core';
 import {
@@ -50,6 +52,7 @@ import type {
   PhaseDefinition,
   PhaseRun,
   PhaseRunId,
+  PhaseRunStatus,
   PhaseTemplate,
   PhaseTemplateId,
   ProviderId,
@@ -150,6 +153,15 @@ export type BootPhase =
   | 'ready'
   | 'error';
 
+export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted';
+
+export interface SystemAlert {
+  readonly id: string;
+  readonly kind: SystemAlertKind;
+  readonly message: string;
+  readonly createdAt: string;
+}
+
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly currentWorkspaceId: WorkspaceId | null;
@@ -176,9 +188,11 @@ export interface AppState {
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
+  readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<PhaseTemplate>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
+  readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
 }
 
@@ -245,6 +259,13 @@ export interface AppActions {
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deletePhaseTemplate(id: PhaseTemplateId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
+  dismissSystemAlert(id: string): void;
+  setSessionMergeConflicts(sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>): void;
+  resolveMergeConflicts(
+    sessionId: SessionId,
+    picks: Record<string, string>,
+    runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
+  ): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -278,7 +299,9 @@ const initialState: AppState = {
   skills: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
+  sessionMergeConflicts: {},
   unknownPayloadCounts: {},
+  systemAlerts: [],
 };
 
 function buildProviderSpendBreakdown(
@@ -411,7 +434,9 @@ async function runSummarizer(
   } catch (err) {
     // never log api key — only the error message
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
+    if (import.meta.env.DEV) {
+      console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
+    }
     set((state) => ({
       summarizerStatus: {
         ...state.summarizerStatus,
@@ -421,10 +446,16 @@ async function runSummarizer(
   }
 }
 
-const AUDIT_RETRY_MAX_ATTEMPTS = 10;
+const AUDIT_RETRY_MAX_ATTEMPTS = 5;
 const AUDIT_RETRY_DRAIN_BATCH = 50;
+// Exponential backoff delays (ms): attempt 0→1s, 1→2s, 2→4s, 3→8s, 4→16s.
+const AUDIT_RETRY_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000] as const;
 
-async function drainAuditRetryQueue(): Promise<void> {
+function auditRetryBackoffMs(attempt: number): number {
+  return AUDIT_RETRY_BACKOFF_MS[Math.min(attempt, AUDIT_RETRY_BACKOFF_MS.length - 1)] ?? 16000;
+}
+
+async function drainAuditRetryQueue(set: SetFn): Promise<void> {
   let entries: ReadonlyArray<AuditRetryEntry>;
   try {
     entries = await invokeAuditRetryDrain(AUDIT_RETRY_DRAIN_BATCH);
@@ -432,12 +463,30 @@ async function drainAuditRetryQueue(): Promise<void> {
     return;
   }
 
+  const now = () => new Date().toISOString();
+
   for (const entry of entries) {
+    // Respect backoff: skip entries updated too recently for their attempt count.
+    const backoffMs = auditRetryBackoffMs(entry.attempts);
+    const msSinceUpdate = Date.now() - entry.updatedAt;
+    if (msSinceUpdate < backoffMs) continue;
+
     let payload: PermissionAuditInsertPayload;
     try {
       payload = JSON.parse(entry.payloadJson) as PermissionAuditInsertPayload;
     } catch {
       await invokeAuditRetryDelete(entry.id).catch(() => undefined);
+      set((state) => ({
+        systemAlerts: [
+          ...state.systemAlerts,
+          {
+            id: crypto.randomUUID(),
+            kind: 'audit-retry-corrupt' as const,
+            message: `permission audit retry entry ${entry.id} had corrupt payload and was dropped`,
+            createdAt: now(),
+          },
+        ],
+      }));
       continue;
     }
 
@@ -449,14 +498,18 @@ async function drainAuditRetryQueue(): Promise<void> {
       const errMsg = err instanceof Error ? err.message : String(err);
 
       if (nextAttempts >= AUDIT_RETRY_MAX_ATTEMPTS) {
-        // TODO (@ak): emit alert via existing alert mechanism once one is in place (#196 max-attempts).
-        // No app-level non-blocking alert API exists yet; log to console as a
-        // discoverability measure until the alert system is wired.
-        console.error(
-          `permission audit retry exhausted (${AUDIT_RETRY_MAX_ATTEMPTS} attempts) for entry ${entry.id}; dropping`,
-          errMsg,
-        );
         await invokeAuditRetryDelete(entry.id).catch(() => undefined);
+        set((state) => ({
+          systemAlerts: [
+            ...state.systemAlerts,
+            {
+              id: crypto.randomUUID(),
+              kind: 'audit-retry-exhausted' as const,
+              message: `permission audit retry for entry ${entry.id} exhausted after ${AUDIT_RETRY_MAX_ATTEMPTS} attempts: ${errMsg}`,
+              createdAt: now(),
+            },
+          ],
+        }));
       } else {
         await invokeAuditRetryUpdate(entry.id, nextAttempts, errMsg).catch(() => undefined);
       }
@@ -536,7 +589,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ bootPhase: 'ready', hydrated: true });
 
       // Drain audit retry queue after boot — non-blocking, best-effort.
-      void drainAuditRetryQueue();
+      void drainAuditRetryQueue(set);
     } catch (err) {
       set({
         bootPhase: 'error',
@@ -573,6 +626,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionSlots: {},
       sessionWorktrees: {},
       sessionPhaseRuns: {},
+      sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
       budgetAlerts: [],
@@ -1181,6 +1235,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [sid]: runs },
           }));
         },
+        setMergeConflicts: (sid, conflicts) => get().setSessionMergeConflicts(sid, conflicts),
       };
 
       try {
@@ -1672,5 +1727,36 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadPhaseRunsForSession: async (sessionId) => {
     const runs = await invokePhaseRunList(sessionId);
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs } }));
+  },
+
+  dismissSystemAlert: (id) => {
+    set((state) => ({
+      systemAlerts: state.systemAlerts.filter((a) => a.id !== id),
+    }));
+  },
+
+  setSessionMergeConflicts: (sessionId, conflicts) => {
+    set((state) => ({
+      sessionMergeConflicts: { ...state.sessionMergeConflicts, [sessionId]: conflicts },
+    }));
+  },
+
+  resolveMergeConflicts: async (sessionId, picks, runStatuses) => {
+    const conflicts = get().sessionMergeConflicts[sessionId] ?? [];
+    await resolveConflicts({
+      conflicts,
+      runStatuses: runStatuses.map((rs) => ({
+        runId: rs.runId as ProviderRunId,
+        completedAt: rs.completedAt as IsoDateTime,
+        status: rs.status as PhaseRunStatus,
+      })),
+      strategy: 'manual',
+      manualPicks: picks as Record<string, ProviderRunId>,
+    });
+    set((state) => {
+      const next = { ...state.sessionMergeConflicts };
+      delete next[sessionId];
+      return { sessionMergeConflicts: next };
+    });
   },
 }));
