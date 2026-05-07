@@ -20,7 +20,7 @@ import type {
 import { getDefaultTurnModel } from '@kay-am/core';
 import { openInEditor } from '../../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../settings';
-import { useAppStore } from '../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { PermissionAuditPanel } from './PermissionAuditPanel';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
@@ -87,7 +87,7 @@ export function ChatHeader({
     }
   };
 
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? []);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
   const runStatuses = Object.fromEntries(
     (parallelRunIds ?? []).map((rid) => {
@@ -202,7 +202,7 @@ const STATUS_DOT: Record<PhaseRunStatus, string> = {
 };
 
 function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
-  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? []);
+  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
 
   if (runs.length === 0) return null;
 

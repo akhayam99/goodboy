@@ -8,7 +8,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
-import { useAppStore } from '../store';
+import { EMPTY_ARRAY, useAppStore } from '../store';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -44,7 +44,7 @@ export function NewSessionDialog({
   const providers = useAppStore((s) => s.providers);
   const settingKey = settingBranchPrefix(workspaceId);
   const storedPrefix = useAppStore((s) => s.settings[settingKey]);
-  const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? []);
+  const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const [goal, setGoal] = useState('');
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [softCapRaw, setSoftCapRaw] = useState('');

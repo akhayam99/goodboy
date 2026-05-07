@@ -20,3 +20,5 @@ export {
   useWorkspaces,
 } from './selectors';
 export { selectTranscript, useTranscript } from './transcript';
+
+export const EMPTY_ARRAY: readonly never[] = [];

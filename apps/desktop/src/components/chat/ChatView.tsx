@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProviderRunId, Session } from '@kay-am/types';
-import { useAppStore, useTranscript } from '../../store';
+import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
@@ -115,7 +115,7 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
     [events, flagOn],
   );
 
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? []);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
   const allParallelTerminal = useMemo(() => {
     if (parallelRunIds.length === 0) return false;
