@@ -109,3 +109,15 @@ export {
   type AuditRecorderDeps,
   type AuditQuery,
 } from './permissions';
+
+export {
+  fanOut,
+  awaitMerge,
+  onProgress,
+  cancelGroup,
+  type SchedulerDeps,
+  type SchedulerHandle,
+  type SchedulerProgress,
+  type MergeResult,
+  type UnsubscribeFn,
+} from './scheduler';
