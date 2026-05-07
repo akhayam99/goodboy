@@ -98,6 +98,14 @@ export type TurnEvent =
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
       at: IsoDateTime;
+    }
+  | {
+      kind: 'unknown_payload';
+      runId: ProviderRunId;
+      adapter: string;
+      payloadType: string;
+      raw: unknown;
+      at: IsoDateTime;
     };
 
 export interface ProviderAdapter {

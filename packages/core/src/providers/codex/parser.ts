@@ -167,7 +167,20 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
 
     default:
       if (typeof type === 'string' && !KNOWN_TYPES.has(type)) {
+        if (process.env['NODE_ENV'] !== 'production') {
+          console.warn(`[codex-adapter] unknown json payload type: ${type}`);
+        }
         ctx.onUnknown?.(type, payload);
+        return [
+          {
+            kind: 'unknown_payload',
+            runId: ctx.runId,
+            adapter: 'codex',
+            payloadType: type,
+            raw: payload,
+            at,
+          },
+        ];
       }
       return [];
   }

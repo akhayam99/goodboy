@@ -43,11 +43,7 @@ export class CodexAdapter implements ProviderAdapter {
     this.binary = deps.binary ?? 'codex';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
-    this.onUnknown =
-      deps.onUnknown ??
-      ((type) => {
-        console.warn(`[codex-adapter] unknown json payload type: ${type}`);
-      });
+    this.onUnknown = deps.onUnknown ?? (() => undefined);
   }
 
   async detect(): Promise<DetectResult> {

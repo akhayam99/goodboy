@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@kay-am/types';
 import { parseStreamJsonLine, type ParseContext } from './parser';
 
@@ -151,5 +151,26 @@ describe('parseStreamJsonLine', () => {
     const events = parse(JSON.stringify({ type: 'result', subtype: 'error', error: 'rate limit' }));
     const error = events.find((e) => e.kind === 'error');
     expect(error).toMatchObject({ kind: 'error', message: 'rate limit' });
+  });
+
+  it('emits unknown_payload for unrecognised payload types', () => {
+    const raw = { type: 'ping', extra: 42 };
+    const events = parse(JSON.stringify(raw));
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      kind: 'unknown_payload',
+      runId: ctx.runId,
+      adapter: 'anthropic',
+      payloadType: 'ping',
+      raw,
+      at,
+    });
+  });
+
+  it('calls onUnknown hook for unrecognised payload types', () => {
+    const onUnknown = vi.fn();
+    const raw = { type: 'debug_trace', data: 'x' };
+    parseStreamJsonLine(JSON.stringify(raw), { ...ctx, onUnknown });
+    expect(onUnknown).toHaveBeenCalledWith('debug_trace', raw);
   });
 });

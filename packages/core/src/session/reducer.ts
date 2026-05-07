@@ -79,6 +79,7 @@ function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
     case 'phase_transition':
     case 'permission_request':
     case 'permission_decision':
+    case 'unknown_payload':
       return state;
     default: {
       const _exhaustive: never = turn;
