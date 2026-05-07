@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Textarea } from '@kay-am/ui';
 import type { WorkspaceId } from '@kay-am/types';
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { useAppStore } from '../store';
 
 interface NewSessionDialogProps {
@@ -11,14 +12,24 @@ interface NewSessionDialogProps {
 
 export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialogProps) {
   const createSession = useAppStore((s) => s.createSession);
+  const loadSetting = useAppStore((s) => s.loadSetting);
+  const settingKey = settingBranchPrefix(workspaceId);
+  const storedPrefix = useAppStore((s) => s.settings[settingKey]);
   const [goal, setGoal] = useState('');
-  const [prefix, setPrefix] = useState('kay');
+  const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    void loadSetting(settingKey).then((value) => {
+      setPrefix(value ?? DEFAULT_BRANCH_PREFIX);
+    });
+  }, [open, settingKey, loadSetting]);
+
   const reset = () => {
     setGoal('');
-    setPrefix('kay');
+    setPrefix(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
     setError(null);
   };
 

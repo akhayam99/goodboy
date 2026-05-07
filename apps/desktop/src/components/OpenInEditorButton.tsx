@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button } from '@kay-am/ui';
 import type { ButtonProps } from '@kay-am/ui';
 import { openInEditor } from '../editor';
+import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
+import { useAppStore } from '../store';
 
 interface OpenInEditorButtonProps extends Omit<ButtonProps, 'onClick' | 'children'> {
   worktreePath: string | null;
@@ -10,18 +12,22 @@ interface OpenInEditorButtonProps extends Omit<ButtonProps, 'onClick' | 'childre
 
 export function OpenInEditorButton({
   worktreePath,
-  label = 'open in vscode',
+  label,
   size = 'sm',
   variant = 'ghost',
   ...rest
 }: OpenInEditorButtonProps) {
   const [error, setError] = useState<string | null>(null);
+  const editorBinary = useAppStore(
+    (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
+  );
+  const resolvedLabel = label ?? `open in ${editorBinary}`;
 
   const onClick = async () => {
     if (!worktreePath) return;
     setError(null);
     try {
-      await openInEditor(worktreePath);
+      await openInEditor(worktreePath, editorBinary);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -42,7 +48,7 @@ export function OpenInEditorButton({
       title={tooltip}
       onClick={() => void onClick()}
     >
-      {label}
+      {resolvedLabel}
     </Button>
   );
 }

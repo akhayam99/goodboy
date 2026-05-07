@@ -34,6 +34,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       secrets::secret_set,
       secrets::secret_delete,
+      secrets::secret_has,
       editor::open_in_editor,
       db::db_exec,
       db::db_execute,
