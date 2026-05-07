@@ -30,6 +30,14 @@ export {
   type ParseContext as CursorParseContext,
 } from './providers/cursor/parser';
 
+// CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/providers/codex/adapter in Node contexts.
+export { CODEX_CHEAP_MODEL } from './providers/codex/constants';
+export {
+  parseJsonLine as parseCodexJsonLine,
+  type ParseContext as CodexParseContext,
+} from './providers/codex/parser';
+
 export {
   Summarizer,
   HAIKU_MODEL,
