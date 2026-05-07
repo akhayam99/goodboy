@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
-import type { ProviderId, SessionProviderPreference, WorkspaceId } from '@kay-am/types';
+import type { ProviderId, SessionId, SessionProviderPreference, WorkspaceId } from '@kay-am/types';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { useAppStore } from '../store';
 
@@ -34,11 +34,13 @@ export function NewSessionDialog({
 }: NewSessionDialogProps) {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
+  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const providers = useAppStore((s) => s.providers);
   const settingKey = settingBranchPrefix(workspaceId);
   const storedPrefix = useAppStore((s) => s.settings[settingKey]);
   const [goal, setGoal] = useState('');
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
+  const [softCapRaw, setSoftCapRaw] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -59,6 +61,7 @@ export function NewSessionDialog({
   const reset = () => {
     setGoal('');
     setPrefix(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
+    setSoftCapRaw('');
     setError(null);
   };
 
@@ -70,7 +73,16 @@ export function NewSessionDialog({
         defaultProvider: selectedProvider,
         allowTurnOverride: true,
       };
-      await createSession({ workspaceId, goal, branchPrefix: prefix, providerPreference });
+      const { session } = await createSession({
+        workspaceId,
+        goal,
+        branchPrefix: prefix,
+        providerPreference,
+      });
+      const parsedCap = parseFloat(softCapRaw);
+      if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
+        await setSessionBudget(session.id as SessionId, parsedCap);
+      }
       reset();
       onClose();
     } catch (err) {
@@ -113,6 +125,17 @@ export function NewSessionDialog({
 
       <Field label="branch prefix" hint="branch name will be `<prefix>/<slug>`.">
         <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="kay" />
+      </Field>
+
+      <Field label="soft cap (usd)" hint="optional spend limit. session is flagged when exceeded.">
+        <Input
+          value={softCapRaw}
+          onChange={(e) => setSoftCapRaw(e.target.value)}
+          placeholder="e.g. 5.00"
+          type="number"
+          min="0"
+          step="0.01"
+        />
       </Field>
 
       <Field label="provider">

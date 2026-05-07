@@ -30,6 +30,7 @@ import type {
   ProviderRun,
   ProviderRunId,
   Session,
+  SessionBudget,
   SessionId,
   SessionProviderPreference,
   SessionState,
@@ -42,6 +43,7 @@ import type {
 } from '@kay-am/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { computeCostUsd } from '@kay-am/core';
+import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
 import { runDbMigrations, tauriDatabase } from '../db';
 import {
   buildProviderList,
@@ -97,6 +99,7 @@ export interface AppState {
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
+  readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
 }
 
 export interface SummarizerSessionStatus {
@@ -140,6 +143,8 @@ export interface AppActions {
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
+  loadSessionBudget(sessionId: SessionId): Promise<void>;
+  setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -167,6 +172,7 @@ const initialState: AppState = {
   sessionSlots: {},
   summarizerStatus: {},
   budgetRules: [],
+  sessionBudgets: {},
 };
 
 function mergeSlots(
@@ -812,6 +818,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
   deleteBudgetRule: async (id) => {
     await invokeBudgetRuleDelete(id);
     set((state) => ({ budgetRules: state.budgetRules.filter((r) => r.id !== id) }));
+  },
+
+  loadSessionBudget: async (sessionId) => {
+    const budget = await invokeSessionBudgetGet(sessionId);
+    if (budget !== null) {
+      set((state) => ({
+        sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
+      }));
+    }
+  },
+
+  setSessionBudget: async (sessionId, softCapUsd) => {
+    await invokeSessionBudgetSet(sessionId, softCapUsd);
+    const budget: SessionBudget = { sessionId, softCapUsd };
+    set((state) => ({
+      sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
+    }));
   },
 
   addWorkspace: async ({ rootPath, name }) => {
