@@ -43,12 +43,22 @@ export function isAuthErrorMessage(text: string): boolean {
 
 const EVENT_NAME = 'turn_event';
 
+export type ClaudePermissionMode =
+  | 'default'
+  | 'acceptEdits'
+  | 'bypassPermissions'
+  | 'dontAsk'
+  | 'plan';
+
 interface SpawnArgs {
   readonly runId: ProviderRunId;
   readonly model: string;
   readonly workingDir: string;
   readonly prompt: string;
   readonly binary?: string;
+  readonly allowedTools?: ReadonlyArray<string>;
+  readonly disallowedTools?: ReadonlyArray<string>;
+  readonly permissionMode?: ClaudePermissionMode;
 }
 
 type RawTurnEnvelope =

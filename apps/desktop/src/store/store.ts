@@ -2,11 +2,14 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import {
   PhaseContextPropagator,
+  PermissionEngine,
+  buildClaudeFlags,
   buildPhasePrompt,
   nextPhase,
   parseSlashCommand,
   sessionReducer,
   Summarizer,
+  type ClaudeFlagSet,
   type SlotKey,
 } from '@kay-am/core';
 import {
@@ -38,6 +41,9 @@ import type {
   IsoDateTime,
   Message,
   MessageId,
+  PermissionRequest,
+  PermissionRequestId,
+  PermissionRule,
   PhaseDefinition,
   PhaseRun,
   PhaseRunId,
@@ -99,6 +105,7 @@ import {
   resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../skills';
+import { invokePermissionRuleList, invokePermissionAuditInsert } from '../permissions';
 import {
   invokePhaseTemplateList,
   invokePhaseTemplateUpsert,
@@ -898,6 +905,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
+    let claudeFlags: Partial<ClaudeFlagSet> = {};
+    let effectiveRules: ReadonlyArray<PermissionRule> = [];
+    if (provider === 'anthropic') {
+      try {
+        const [globalRules, workspaceRules, sessionRules] = await Promise.all([
+          invokePermissionRuleList({ scope: 'global' }),
+          invokePermissionRuleList({ scope: 'workspace', workspaceId: session.workspaceId }),
+          invokePermissionRuleList({ scope: 'session', sessionId }),
+        ]);
+        effectiveRules = [...globalRules, ...workspaceRules, ...sessionRules];
+        const flags = buildClaudeFlags({
+          rules: effectiveRules,
+          scope: { workspaceId: session.workspaceId, sessionId },
+        });
+        claudeFlags = {
+          allowedTools: flags.allowedTools,
+          disallowedTools: flags.disallowedTools,
+          permissionMode: flags.permissionMode,
+        };
+      } catch (err) {
+        console.error('permission rule load failed; falling back to empty rule set', err);
+        claudeFlags = { allowedTools: [], disallowedTools: [], permissionMode: 'default' };
+      }
+    }
+
     let assistantText = '';
     let lastError: unknown = null;
 
@@ -908,9 +940,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
         workingDir,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
+        ...claudeFlags,
       })) {
         get().appendTurnEvent(sessionId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
+
+        if (provider === 'anthropic' && event.kind === 'tool_call_start') {
+          try {
+            const engine = new PermissionEngine();
+            const request: PermissionRequest = {
+              id: crypto.randomUUID() as PermissionRequestId,
+              runId,
+              toolUseId: event.toolUseId,
+              toolName: event.toolName,
+              input: event.input,
+              at: event.at,
+            };
+            const decision = engine.decide(request, effectiveRules, {
+              sessionId,
+              workspaceId: session.workspaceId,
+            });
+            await invokePermissionAuditInsert({
+              runId,
+              sessionId,
+              toolUseId: event.toolUseId,
+              toolName: event.toolName,
+              inputJson: JSON.stringify(event.input),
+              decision: decision.decision,
+              ...(decision.ruleId != null && { ruleId: decision.ruleId }),
+              decidedBy: decision.decidedBy,
+              requestedAt: event.at,
+              decidedAt: decision.at,
+            });
+          } catch (err) {
+            console.error('permission audit insert failed', err);
+          }
+        }
 
         if (event.kind === 'usage') {
           const cost = computeCostUsd(event.usage, model);

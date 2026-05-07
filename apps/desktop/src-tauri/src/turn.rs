@@ -43,8 +43,11 @@ impl TurnError {
     }
 }
 
+type ChildSlot = Arc<Mutex<Option<Child>>>;
+type ChildRegistry = Arc<Mutex<HashMap<String, ChildSlot>>>;
+
 #[derive(Default)]
-pub struct TurnRegistry(pub Arc<Mutex<HashMap<String, Arc<Mutex<Option<Child>>>>>>);
+pub struct TurnRegistry(pub ChildRegistry);
 
 impl TurnRegistry {
     pub fn new() -> Self {
@@ -61,6 +64,12 @@ pub struct SpawnArgs {
     pub prompt: String,
     #[serde(default)]
     pub binary: Option<String>,
+    #[serde(default)]
+    pub allowed_tools: Vec<String>,
+    #[serde(default)]
+    pub disallowed_tools: Vec<String>,
+    #[serde(default)]
+    pub permission_mode: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -91,7 +100,23 @@ pub fn turn_spawn(
     args: SpawnArgs,
 ) -> Result<String, TurnError> {
     let binary = args.binary.unwrap_or_else(|| "claude".to_string());
-    let mut child = Command::new(binary)
+    let permission_mode = args
+        .permission_mode
+        .clone()
+        .unwrap_or_else(|| "default".to_string());
+
+    if permission_mode == "bypassPermissions"
+        && args.allowed_tools.is_empty()
+        && args.disallowed_tools.is_empty()
+    {
+        eprintln!(
+            "[turn_spawn] permission_mode=bypassPermissions with no rules — \
+             relying on claude CLI native bypass; --dangerously-skip-permissions intentionally not set"
+        );
+    }
+
+    let mut command = Command::new(binary);
+    command
         .arg("-p")
         .arg(&args.prompt)
         .arg("--output-format")
@@ -100,7 +125,19 @@ pub fn turn_spawn(
         .arg(&args.working_dir)
         .arg("--model")
         .arg(&args.model)
-        .arg("--dangerously-skip-permissions")
+        .arg("--permission-mode")
+        .arg(&permission_mode);
+
+    if !args.allowed_tools.is_empty() {
+        command.arg("--allowedTools").arg(args.allowed_tools.join(","));
+    }
+    if !args.disallowed_tools.is_empty() {
+        command
+            .arg("--disallowedTools")
+            .arg(args.disallowed_tools.join(","));
+    }
+
+    let mut child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
@@ -197,8 +234,8 @@ fn capture_stderr(mut stderr: ChildStderr) -> String {
 }
 
 fn wait_and_remove(
-    slot: &Arc<Mutex<Option<Child>>>,
-    registry: &Arc<Mutex<HashMap<String, Arc<Mutex<Option<Child>>>>>>,
+    slot: &ChildSlot,
+    registry: &ChildRegistry,
     run_id: &str,
 ) -> Option<i32> {
     let exit = {
