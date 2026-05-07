@@ -77,6 +77,8 @@ function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
     case 'usage':
     case 'skill_invocation':
     case 'phase_transition':
+    case 'permission_request':
+    case 'permission_decision':
       return state;
     default: {
       const _exhaustive: never = turn;
