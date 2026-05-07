@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@kay-am/types';
 import { useTranscript } from '../../store';
+import { ChatInput } from './ChatInput';
 import { reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
 
@@ -65,6 +66,7 @@ export function ChatView({ session }: ChatViewProps) {
           </button>
         ) : null}
       </div>
+      <ChatInput session={session} />
     </div>
   );
 }
