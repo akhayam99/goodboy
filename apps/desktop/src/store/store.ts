@@ -777,17 +777,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   appendTurnEvent: (sessionId, event) => {
     set((state) => {
       const existing = state.transcripts[sessionId] ?? [];
-      const next: Partial<AppStore> = {
-        transcripts: { ...state.transcripts, [sessionId]: [...existing, event] },
-      };
+      const updatedTranscripts = { ...state.transcripts, [sessionId]: [...existing, event] };
       if (event.kind === 'unknown_payload') {
         const key = `${event.adapter}:${event.payloadType}`;
-        next.unknownPayloadCounts = {
-          ...state.unknownPayloadCounts,
-          [key]: (state.unknownPayloadCounts[key] ?? 0) + 1,
+        return {
+          transcripts: updatedTranscripts,
+          unknownPayloadCounts: {
+            ...state.unknownPayloadCounts,
+            [key]: (state.unknownPayloadCounts[key] ?? 0) + 1,
+          },
         };
       }
-      return next;
+      return { transcripts: updatedTranscripts };
     });
   },
 
