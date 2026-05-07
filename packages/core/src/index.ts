@@ -18,3 +18,14 @@ export {
   type RecordTurnInput,
   type TelemetryRecorderDeps,
 } from './telemetry';
+
+export {
+  ContextEngine,
+  InvalidSlotKeyError,
+  SLOT_KEYS,
+  assertSlotKey,
+  isSlotKey,
+  serializeSlots,
+  type ContextEngineDeps,
+  type SlotKey,
+} from './context';
