@@ -22,6 +22,7 @@ import {
   type TelemetrySummary,
 } from '@kay-am/db';
 import type {
+  BudgetRule,
   ContextSlot,
   IsoDateTime,
   Message,
@@ -61,6 +62,7 @@ import {
 } from '../settings';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
+import { invokeBudgetRuleList, invokeBudgetRuleUpsert, invokeBudgetRuleDelete } from '../budget';
 
 export type BootPhase =
   | 'pending'
@@ -94,6 +96,7 @@ export interface AppState {
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
+  readonly budgetRules: ReadonlyArray<BudgetRule>;
 }
 
 export interface SummarizerSessionStatus {
@@ -134,6 +137,9 @@ export interface AppActions {
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
+  loadBudgetRules(): Promise<void>;
+  saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
+  deleteBudgetRule(id: string): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -160,6 +166,7 @@ const initialState: AppState = {
   workspaceSummary: null,
   sessionSlots: {},
   summarizerStatus: {},
+  budgetRules: [],
 };
 
 function mergeSlots(
@@ -783,6 +790,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
       delete nextWorktrees[sessionId];
       return { sessionWorktrees: nextWorktrees };
     });
+  },
+
+  loadBudgetRules: async () => {
+    const rules = await invokeBudgetRuleList();
+    set({ budgetRules: rules });
+  },
+
+  saveBudgetRule: async (partial) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    const rule: BudgetRule = {
+      id: crypto.randomUUID(),
+      createdAt: now,
+      ...partial,
+    };
+    await invokeBudgetRuleUpsert(rule);
+    const rules = await invokeBudgetRuleList();
+    set({ budgetRules: rules });
+  },
+
+  deleteBudgetRule: async (id) => {
+    await invokeBudgetRuleDelete(id);
+    set((state) => ({ budgetRules: state.budgetRules.filter((r) => r.id !== id) }));
   },
 
   addWorkspace: async ({ rootPath, name }) => {

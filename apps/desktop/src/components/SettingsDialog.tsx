@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
+import { BudgetRulesPanel } from './BudgetRulesPanel';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
@@ -81,6 +82,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       }
     >
       <ProvidersPanel />
+
+      <div className="border-t border-border-soft pt-4">
+        <BudgetRulesPanel />
+      </div>
 
       <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
         <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
