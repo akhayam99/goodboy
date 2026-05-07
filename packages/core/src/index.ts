@@ -9,3 +9,5 @@ export {
   type CreateWorktreeOptions,
   type WorktreeInfo,
 } from './worktree';
+
+export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
