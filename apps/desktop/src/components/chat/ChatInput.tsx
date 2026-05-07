@@ -59,53 +59,55 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     : undefined;
 
   return (
-    <div className="flex flex-col gap-2 border-t border-border p-3">
-      <Textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder={
-          isRunning
-            ? 'turn running… cancel to send another'
-            : providerDisconnected
-              ? 'sign in to send a message.'
-              : 'message claude. shift+enter for newline.'
-        }
-        disabled={isRunning || providerDisconnected}
-        rows={3}
-      />
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
-      <div className="flex items-center justify-end gap-2">
-        {isRunning ? (
-          <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
-            cancel
-          </Button>
-        ) : (
-          <>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>send via</span>
-              <select
-                disabled={!allowOverride || isRunning}
-                title={overrideDisabledTitle}
-                value={effectiveProvider}
-                onChange={(e) => setSelectedProvider(e.target.value as ProviderId)}
-                className="rounded border border-border bg-background px-1 py-0.5 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {connectedProviders.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.id === 'anthropic' ? 'claude' : p.id}
-                  </option>
-                ))}
-                {connectedProviders.every((p) => p.id !== defaultProvider) ? (
-                  <option value={defaultProvider}>{defaultProvider}</option>
-                ) : null}
-              </select>
-            </div>
-            <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
-              send
+    <div className="border-t border-border px-4 py-3">
+      <div className="mx-auto flex max-w-3xl flex-col gap-2">
+        <Textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={
+            isRunning
+              ? 'turn running… cancel to send another'
+              : providerDisconnected
+                ? 'sign in to send a message.'
+                : 'message claude. shift+enter for newline.'
+          }
+          disabled={isRunning || providerDisconnected}
+          rows={3}
+        />
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
+        <div className="flex items-center justify-end gap-2">
+          {isRunning ? (
+            <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
+              cancel
             </Button>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <span>send via</span>
+                <select
+                  disabled={!allowOverride || isRunning}
+                  title={overrideDisabledTitle}
+                  value={effectiveProvider}
+                  onChange={(e) => setSelectedProvider(e.target.value as ProviderId)}
+                  className="rounded border border-border bg-background px-1 py-0.5 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {connectedProviders.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.id === 'anthropic' ? 'claude' : p.id}
+                    </option>
+                  ))}
+                  {connectedProviders.every((p) => p.id !== defaultProvider) ? (
+                    <option value={defaultProvider}>{defaultProvider}</option>
+                  ) : null}
+                </select>
+              </div>
+              <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
+                send
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

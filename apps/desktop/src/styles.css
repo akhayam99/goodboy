@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-background: oklch(0.99 0 0);
@@ -7,11 +7,17 @@
   --color-primary-foreground: oklch(0.99 0 0);
   --color-muted: oklch(0.96 0.005 270);
   --color-muted-foreground: oklch(0.45 0.01 270);
+  --color-subtle: oklch(0.985 0.003 270);
   --color-border: oklch(0.92 0.005 270);
+  --color-border-soft: oklch(0.95 0.004 270);
   --color-danger: oklch(0.55 0.2 25);
   --color-danger-foreground: oklch(0.99 0 0);
-  --color-warning: oklch(0.60 0.18 70);
+  --color-warning: oklch(0.6 0.18 70);
   --color-warning-foreground: oklch(0.99 0 0);
+  --color-success: oklch(0.62 0.15 150);
+  --color-success-foreground: oklch(0.99 0 0);
+  --color-info: oklch(0.62 0.13 230);
+  --color-info-foreground: oklch(0.99 0 0);
 
   --text-xs: 11px;
   --text-sm: 13px;
@@ -21,6 +27,10 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
+
+  --shadow-sm: 0 1px 2px 0 oklch(0.18 0.01 270 / 0.05);
+  --shadow-md: 0 4px 12px -2px oklch(0.18 0.01 270 / 0.08);
+  --shadow-lg: 0 12px 32px -8px oklch(0.18 0.01 270 / 0.12);
 }
 
 html,
@@ -28,9 +38,16 @@ body,
 #root {
   height: 100%;
   font-size: 13px;
+  line-height: 1.5;
 }
 
 body {
-  font-feature-settings: "cv11", "ss01";
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--color-primary) 30%, transparent);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
 }

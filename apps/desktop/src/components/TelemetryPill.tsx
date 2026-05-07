@@ -95,7 +95,7 @@ export function TelemetryPill() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-7 z-10 w-80 rounded-md border border-border bg-background p-3 text-xs shadow-lg">
+        <div className="absolute right-0 top-7 z-10 w-80 rounded-lg border border-border bg-background p-4 text-xs shadow-lg">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-semibold uppercase tracking-wide text-muted-foreground">
               breakdown
