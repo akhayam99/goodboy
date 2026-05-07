@@ -1,8 +1,9 @@
+// SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/summarizer/cli in Node/test contexts.
 export {
   Summarizer,
-  HAIKU_MODEL,
   SummarizerParseError,
-  SummarizerHttpError,
+  SummarizerSpawnError,
   type ContextSlotDelta,
   type ContextSlotDeltaUpsert,
   type SummarizeInput,
