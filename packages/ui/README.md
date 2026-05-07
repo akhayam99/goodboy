@@ -104,3 +104,52 @@ import { cn } from '@kay-am/ui';
 
 <span className={cn('text-sm', isActive && 'font-medium')} />;
 ```
+
+## Design tokens
+
+All tokens live in `apps/desktop/src/styles.css` under `@theme`. Reference them via Tailwind utilities.
+
+### Font scale
+
+| Token         | Value | Utility     |
+| ------------- | ----- | ----------- |
+| `--text-2xs`  | 10px  | `text-2xs`  |
+| `--text-xs`   | 11px  | `text-xs`   |
+| `--text-sm`   | 13px  | `text-sm`   |
+| `--text-base` | 14px  | `text-base` |
+| `--text-lg`   | 16px  | `text-lg`   |
+
+`text-2xs` and `text-xs` replace ad-hoc `text-[10px]` / `text-[11px]` usage. `text-xs` was already 11px in this project (not Tailwind's default 13px) — no regression.
+
+### Motion durations
+
+| Token             | Value | Use                                             |
+| ----------------- | ----- | ----------------------------------------------- |
+| `--motion-fast`   | 100ms | micro-interactions (icon swap, badge)           |
+| `--motion-normal` | 200ms | standard transitions (hover, open)              |
+| `--motion-slow`   | 350ms | large surface transitions (panel slide, dialog) |
+
+Easings:
+
+| Token               | Value                          |
+| ------------------- | ------------------------------ |
+| `--ease-default`    | `cubic-bezier(0.4, 0, 0.2, 1)` |
+| `--ease-emphasized` | `cubic-bezier(0.2, 0, 0, 1)`   |
+
+### Motion policy
+
+All animation and transition classes **must** be gated with the `motion-safe:` Tailwind prefix. This respects `prefers-reduced-motion: reduce`.
+
+```tsx
+// correct
+<div className="motion-safe:transition-opacity motion-safe:duration-[--motion-normal]" />
+
+// wrong — plays regardless of OS accessibility setting
+<div className="transition-opacity duration-200" />
+```
+
+Rule: no bare `transition-*`, `animate-*`, or `duration-*` class without `motion-safe:` prefix. A lint rule will enforce this post-P2.
+
+### Focus ring
+
+`--color-focus-ring` is `oklch(0.55 0.18 265 / 0.55)` — primary hue at 55% opacity. Sufficient contrast on both white and muted backgrounds. Used automatically by the global `:focus-visible` rule.
