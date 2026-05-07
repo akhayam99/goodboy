@@ -7,3 +7,9 @@ export async function setSecret(key: string, value: string): Promise<void> {
 export async function deleteSecret(key: string): Promise<void> {
   await invoke('secret_delete', { key });
 }
+
+export async function hasSecret(key: string): Promise<boolean> {
+  return await invoke<boolean>('secret_has', { key });
+}
+
+export const ANTHROPIC_API_KEY_SECRET = 'anthropic_api_key';

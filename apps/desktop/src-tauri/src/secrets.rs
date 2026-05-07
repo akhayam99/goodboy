@@ -41,3 +41,8 @@ pub fn secret_delete(key: String) -> Result<(), SecretError> {
         Err(err) => Err(err.into()),
     }
 }
+
+#[tauri::command]
+pub fn secret_has(key: String) -> Result<bool, SecretError> {
+    Ok(read(&key)?.is_some())
+}
