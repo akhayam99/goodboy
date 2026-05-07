@@ -1,0 +1,44 @@
+import type { ProviderId, ProviderRegistryCapabilities } from '@kay-am/types';
+import { CURSOR_CHEAP_MODEL } from './cursor/cost';
+import { CODEX_CHEAP_MODEL } from './codex/constants';
+
+export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
+  anthropic: {
+    models: [
+      { id: 'claude-opus-4-7', tier: 'turn', contextWindow: 1_000_000 },
+      { id: 'claude-sonnet-4-6', tier: 'turn', contextWindow: 200_000 },
+      { id: 'claude-haiku-4-5', tier: 'cheap', contextWindow: 200_000 },
+    ],
+    supportsTools: true,
+    supportsStream: true,
+    supportsCheapModel: true,
+  },
+  cursor: {
+    models: [
+      { id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 },
+      { id: 'gpt-4o', tier: 'turn', contextWindow: 128_000 },
+      { id: CURSOR_CHEAP_MODEL, tier: 'cheap', contextWindow: 32_000 },
+    ],
+    supportsTools: true,
+    supportsStream: true,
+    supportsCheapModel: true,
+  },
+  codex: {
+    models: [
+      { id: 'codex-latest', tier: 'turn', contextWindow: 128_000 },
+      { id: CODEX_CHEAP_MODEL, tier: 'cheap', contextWindow: 128_000 },
+    ],
+    supportsTools: true,
+    supportsStream: true,
+    supportsCheapModel: true,
+  },
+};
+
+export function getCapabilities(id: ProviderId): ProviderRegistryCapabilities {
+  return PROVIDER_CAPABILITIES[id];
+}
+
+export function getDefaultTurnModel(id: ProviderId): string {
+  const caps = PROVIDER_CAPABILITIES[id];
+  return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
+}
