@@ -13,6 +13,7 @@ import { SkillRegistry, SkillRegistryError } from './registry';
 const WORKSPACE_ID = 'ws_test' as WorkspaceId;
 const ROOT = '/fake/root';
 const SKILLS_DIR = `${ROOT}/.kay/skills`;
+const CLAUDE_SKILLS_DIR = `${ROOT}/.claude/skills`;
 
 const FIXED_NOW = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
@@ -55,10 +56,24 @@ async function makeSeededDb(): Promise<DbInterface> {
 function makeFs(files: Record<string, string>): SkillFs {
   return {
     async readDir(path: string): Promise<string[]> {
-      if (path !== SKILLS_DIR) return [];
-      return Object.keys(files)
-        .filter((f) => f.startsWith(`${SKILLS_DIR}/`))
-        .map((f) => f.slice(`${SKILLS_DIR}/`.length));
+      if (path === SKILLS_DIR) {
+        return Object.keys(files)
+          .filter((f) => f.startsWith(`${SKILLS_DIR}/`))
+          .map((f) => f.slice(`${SKILLS_DIR}/`.length));
+      }
+      if (path === CLAUDE_SKILLS_DIR) {
+        // Return the immediate subdirectory names under .claude/skills/
+        const subdirs = new Set<string>();
+        for (const f of Object.keys(files)) {
+          if (f.startsWith(`${CLAUDE_SKILLS_DIR}/`)) {
+            const rel = f.slice(`${CLAUDE_SKILLS_DIR}/`.length);
+            const firstSegment = rel.split('/')[0];
+            if (firstSegment !== undefined) subdirs.add(firstSegment);
+          }
+        }
+        return [...subdirs];
+      }
+      return [];
     },
     async readFile(path: string): Promise<string> {
       const content = files[path];
@@ -66,6 +81,9 @@ function makeFs(files: Record<string, string>): SkillFs {
       return content;
     },
     async stat(path: string): Promise<{ exists: boolean }> {
+      // Exact file match
+      if (files[path] !== undefined) return { exists: true };
+      // Directory / prefix match
       const hasFiles = Object.keys(files).some((f) => f.startsWith(`${path}/`));
       return { exists: hasFiles };
     },
@@ -202,5 +220,67 @@ describe('SkillRegistry.getSkillByName', () => {
 
     const skill = await registry.getSkillByName(WORKSPACE_ID, 'nonexistent', db);
     expect(skill).toBeNull();
+  });
+});
+
+describe('SkillRegistry.scanWorkspace – Claude Code convention (.claude/skills)', () => {
+  const CLAUDE_SKILL_BAR = `---
+name: bar
+description: Claude Code skill bar
+---
+
+Body of bar.
+`;
+
+  it('discovers skill from .claude/skills/<name>/SKILL.md', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({
+      [`${CLAUDE_SKILLS_DIR}/bar/SKILL.md`]: CLAUDE_SKILL_BAR,
+    });
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe('bar');
+    expect(result[0]?.filePath).toBe(`${CLAUDE_SKILLS_DIR}/bar/SKILL.md`);
+  });
+
+  it('discovers skills from BOTH .kay/skills and .claude/skills simultaneously', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({
+      [`${SKILLS_DIR}/skill-a.md`]: SKILL_A,
+      [`${CLAUDE_SKILLS_DIR}/bar/SKILL.md`]: CLAUDE_SKILL_BAR,
+    });
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+
+    expect(result).toHaveLength(2);
+    const names = result.map((s) => s.name).sort();
+    expect(names).toEqual(['bar', 'skill-a']);
+  });
+
+  it('ignores .claude/skills subdirs with no SKILL.md', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({
+      [`${CLAUDE_SKILLS_DIR}/bar/SKILL.md`]: CLAUDE_SKILL_BAR,
+      [`${CLAUDE_SKILLS_DIR}/empty-dir/other.md`]: '# not a skill',
+    });
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe('bar');
+  });
+
+  it('missing .claude/skills dir → returns empty (no throw)', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({});
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+    expect(result).toHaveLength(0);
   });
 });
