@@ -28,3 +28,14 @@ export {
   type TelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';
+export {
+  insertBudgetRule,
+  listBudgetRules,
+  deleteBudgetRule,
+  upsertSessionBudget,
+  getSessionBudget,
+  insertBudgetAlert,
+  listBudgetAlerts,
+  dismissBudgetAlert,
+  type ListBudgetAlertsOptions,
+} from './queries/budget';
