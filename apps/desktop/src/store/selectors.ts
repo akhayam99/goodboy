@@ -1,5 +1,5 @@
 import type { ContextSlot, Session, SessionId, Workspace } from '@kay-am/types';
-import { useAppStore, type AppState } from './store';
+import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
 export const selectCurrentWorkspace = (state: AppState): Workspace | null =>
@@ -20,3 +20,8 @@ const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 
 export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
   useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
+
+const IDLE_STATUS: SummarizerSessionStatus = { status: 'idle', lastUpdate: null, error: null };
+
+export const useSummarizerStatus = (sessionId: SessionId | null): SummarizerSessionStatus =>
+  useAppStore((s) => (sessionId ? (s.summarizerStatus[sessionId] ?? IDLE_STATUS) : IDLE_STATUS));
