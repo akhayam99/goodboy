@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sessionReducer } from '@kay-am/core';
+import { sessionReducer, type SlotKey } from '@kay-am/core';
 import {
   getSetting,
   insertMessage,
@@ -7,6 +7,7 @@ import {
   insertSession,
   insertTelemetry,
   insertWorkspace,
+  listContextSlotsForSession,
   listMessagesForSession,
   listSessionsForWorkspace,
   listTelemetryForSession,
@@ -16,9 +17,11 @@ import {
   summarizeWorkspaceTelemetry,
   updateProviderRunStatus,
   updateSessionState,
+  upsertContextSlot,
   type TelemetrySummary,
 } from '@kay-am/db';
 import type {
+  ContextSlot,
   IsoDateTime,
   Message,
   MessageId,
@@ -55,6 +58,7 @@ export interface AppState {
   readonly sessionWorktrees: Readonly<Record<string, string>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
+  readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
 }
 
 export interface AppActions {
@@ -80,6 +84,9 @@ export interface AppActions {
   endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
+  loadSessionSlots(sessionId: SessionId): Promise<void>;
+  upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
+  toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -99,7 +106,19 @@ const initialState: AppState = {
   sessionWorktrees: {},
   sessionTelemetry: {},
   workspaceSummary: null,
+  sessionSlots: {},
 };
+
+function mergeSlots(
+  existing: ReadonlyArray<ContextSlot>,
+  next: ContextSlot,
+): ReadonlyArray<ContextSlot> {
+  const idx = existing.findIndex((s) => s.key === next.key);
+  if (idx === -1) return [...existing, next];
+  const copy = existing.slice();
+  copy[idx] = next;
+  return copy;
+}
 
 function messageToTurnEvent(message: Message): TurnEvent | null {
   if (message.role !== 'assistant') return null;
@@ -159,10 +178,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
-      const [messages, summary, telemetry] = await Promise.all([
+      const [messages, summary, telemetry, slots] = await Promise.all([
         listMessagesForSession(tauriDatabase, id),
         summarizeSessionTelemetry(tauriDatabase, id),
         listTelemetryForSession(tauriDatabase, id),
+        listContextSlotsForSession(tauriDatabase, id),
       ]);
       const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
       set((state) => ({
@@ -170,6 +190,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         messages: { ...state.messages, [id]: messages },
         transcripts: { ...state.transcripts, [id]: events },
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
+        sessionSlots: { ...state.sessionSlots, [id]: slots },
       }));
     }
   },
@@ -411,6 +432,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const records = await listTelemetryForSession(tauriDatabase, sessionId);
     set((state) => ({
       sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: records },
+    }));
+  },
+
+  loadSessionSlots: async (sessionId) => {
+    const slots = await listContextSlotsForSession(tauriDatabase, sessionId);
+    set((state) => ({
+      sessionSlots: { ...state.sessionSlots, [sessionId]: slots },
+    }));
+  },
+
+  upsertSessionSlot: async (sessionId, key, value) => {
+    const existing = get().sessionSlots[sessionId] ?? [];
+    const prev = existing.find((s) => s.key === key);
+    const next: ContextSlot = { key, value, enabled: prev?.enabled ?? true };
+    await upsertContextSlot(tauriDatabase, sessionId, next);
+    set((state) => ({
+      sessionSlots: {
+        ...state.sessionSlots,
+        [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
+      },
+    }));
+  },
+
+  toggleSessionSlot: async (sessionId, key, enabled) => {
+    const existing = get().sessionSlots[sessionId] ?? [];
+    const prev = existing.find((s) => s.key === key);
+    const next: ContextSlot = { key, value: prev?.value ?? '', enabled };
+    await upsertContextSlot(tauriDatabase, sessionId, next);
+    set((state) => ({
+      sessionSlots: {
+        ...state.sessionSlots,
+        [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
+      },
     }));
   },
 

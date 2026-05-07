@@ -11,6 +11,7 @@ export {
   ContextEngine,
   InvalidSlotKeyError,
   SLOT_KEYS,
+  SLOT_LABELS,
   assertSlotKey,
   isSlotKey,
   serializeSlots,

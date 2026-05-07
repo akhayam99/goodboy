@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { AppShell, KbdPill, ScrollArea } from '@kay-am/ui';
+import { AppShell, KbdPill } from '@kay-am/ui';
 import { ChatView } from './components/chat/ChatView';
+import { ContextPanel } from './components/ContextPanel';
 import { SessionsSidebar } from './components/SessionsSidebar';
 import { TelemetryPill } from './components/TelemetryPill';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
@@ -56,10 +57,18 @@ export function App() {
         )
       }
       rightSidebar={
-        <ScrollArea className="h-full p-2">
-          <div className="text-xs uppercase text-muted-foreground">context</div>
-          <p className="mt-2 text-sm text-muted-foreground">slots will live here.</p>
-        </ScrollArea>
+        currentSession ? (
+          <ContextPanel session={currentSession} />
+        ) : (
+          <div className="p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              context
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              select a session to view its slots.
+            </p>
+          </div>
+        )
       }
     />
   );

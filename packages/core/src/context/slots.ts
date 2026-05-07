@@ -12,7 +12,7 @@ export type SlotKey = (typeof SLOT_KEYS)[number];
 
 const SLOT_KEY_SET = new Set<string>(SLOT_KEYS);
 
-const SLOT_LABELS: Record<SlotKey, string> = {
+export const SLOT_LABELS: Record<SlotKey, string> = {
   goal: 'goal',
   files_touched: 'files touched',
   decisions: 'decisions',
