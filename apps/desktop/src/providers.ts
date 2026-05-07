@@ -5,6 +5,13 @@ import type {
   ProviderId,
 } from '@kay-am/types';
 
+export type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
+
+export interface AuthState {
+  readonly state: AuthStateKind;
+  readonly identity: string | null;
+}
+
 export type { ProviderId, ProviderConnectionState };
 
 export interface ProviderStatus {
@@ -70,62 +77,81 @@ export async function refreshCodexStatus(): Promise<ProviderStatus> {
   return invoke<ProviderStatus>('refresh_codex_status');
 }
 
-function claudeInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
+export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
+  return invoke<AuthState>('check_provider_auth', { providerId });
+}
+
+export type ProviderAuthResults = Readonly<Record<ProviderId, AuthState | null>>;
+
+function connectionFromDetectionAndAuth(
+  available: boolean,
+  detectionError: string | null,
+  auth: AuthState | null,
+): ProviderConnectionState {
+  if (!available) {
+    return detectionError ? 'error' : 'missing';
+  }
+  if (!auth || auth.state === 'unknown') return 'installed_disconnected';
+  if (auth.state === 'disconnected') return 'installed_disconnected';
+  return 'connected';
+}
+
+function claudeInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
   const id: ProviderId = 'anthropic';
   const base = {
     id,
     label: PROVIDER_LABEL[id],
     binary: status?.binary ?? 'claude',
     capabilities: EMPTY_CAPABILITIES,
-    identity: null,
+    identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
   };
   if (!status) {
     return { ...base, connection: 'missing', version: null, error: null };
   }
-  if (status.available) {
-    return { ...base, connection: 'connected', version: status.version, error: null };
-  }
+  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
   return {
     ...base,
-    connection: status.error ? 'error' : 'missing',
-    version: null,
-    error: status.error,
+    connection,
+    version: status.available ? status.version : null,
+    error: status.available ? null : status.error,
   };
 }
 
-function cursorInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
+function cursorInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
   const id: ProviderId = 'cursor';
   const base = {
     id,
     label: PROVIDER_LABEL[id],
     binary: status?.binary ?? 'cursor-agent',
     capabilities: EMPTY_CAPABILITIES,
-    identity: null,
+    identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
     trackingIssueUrl: TRACKING_ISSUES[id],
   };
   if (!status || !status.available) {
     return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
   }
-  return { ...base, connection: 'installed_disconnected', version: status.version, error: null };
+  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
+  return { ...base, connection, version: status.version, error: null };
 }
 
-function codexInfoFromStatus(status: ProviderStatus | null): ProviderInfo {
+function codexInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
   const id: ProviderId = 'codex';
   const base = {
     id,
     label: PROVIDER_LABEL[id],
     binary: status?.binary ?? 'codex',
     capabilities: EMPTY_CAPABILITIES,
-    identity: null,
+    identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
     trackingIssueUrl: TRACKING_ISSUES[id],
   };
   if (!status || !status.available) {
     return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
   }
-  return { ...base, connection: 'installed_disconnected', version: status.version, error: null };
+  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
+  return { ...base, connection, version: status.version, error: null };
 }
 
 export interface ProviderStatuses {
@@ -134,22 +160,14 @@ export interface ProviderStatuses {
   readonly codex: ProviderStatus | null;
 }
 
-export function buildProviderList(statuses: ProviderStatuses): ReadonlyArray<ProviderInfo>;
-export function buildProviderList(anthropic: ProviderStatus | null): ReadonlyArray<ProviderInfo>;
 export function buildProviderList(
-  arg: ProviderStatus | null | ProviderStatuses,
+  statuses: ProviderStatuses,
+  auth?: ProviderAuthResults,
 ): ReadonlyArray<ProviderInfo> {
-  if (arg === null || (typeof arg === 'object' && 'available' in arg)) {
-    return [
-      claudeInfoFromStatus(arg as ProviderStatus | null),
-      cursorInfoFromStatus(null),
-      codexInfoFromStatus(null),
-    ];
-  }
-  const { anthropic, cursor, codex } = arg as ProviderStatuses;
+  const { anthropic, cursor, codex } = statuses;
   return [
-    claudeInfoFromStatus(anthropic),
-    cursorInfoFromStatus(cursor),
-    codexInfoFromStatus(codex),
+    claudeInfoFromStatus(anthropic, auth?.anthropic ?? null),
+    cursorInfoFromStatus(cursor, auth?.cursor ?? null),
+    codexInfoFromStatus(codex, auth?.codex ?? null),
   ];
 }
