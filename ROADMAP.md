@@ -167,6 +167,51 @@ After #1, #2, #3, #5, #6, #11, #12, #13, #17, #18, #20, #21, #22 (≈ 40% of v0.
 
 ---
 
+## v0.2 issue index
+
+Cursor + Codex adapters, summarizer refactor (drop API-key path → use active-provider CLI), provider connection UX.
+
+### Foundation (parallelizable)
+
+- [#66 — feat(types): provider registry + capability matrix types](https://github.com/akhayam99/kay-am/issues/66)
+- [#67 — feat(types): session provider preference types](https://github.com/akhayam99/kay-am/issues/67) — depends on #66
+
+### Core layer
+
+- [#68 — feat(core): cursor adapter (CLI spawn + stream parse)](https://github.com/akhayam99/kay-am/issues/68) — depends on #66
+- [#69 — feat(core): codex adapter (CLI spawn + stream parse)](https://github.com/akhayam99/kay-am/issues/69) — depends on #66
+- [#70 — feat(core): provider registry (unified factory)](https://github.com/akhayam99/kay-am/issues/70) — depends on #66, #68, #69
+- [#71 — refactor(core): summarizer uses active-provider CLI (drop ANTHROPIC_API_KEY)](https://github.com/akhayam99/kay-am/issues/71) — depends on #70
+
+### Tauri commands
+
+- [#72 — feat(desktop): detect cursor + codex binaries (rust)](https://github.com/akhayam99/kay-am/issues/72)
+- [#73 — feat(desktop): provider auth state check (rust)](https://github.com/akhayam99/kay-am/issues/73) — depends on #72
+- [#74 — feat(desktop): provider connect (open external terminal with login command)](https://github.com/akhayam99/kay-am/issues/74) — depends on #72
+
+### UI
+
+- [#75 — feat(desktop): provider panel in Settings (detect/install/connect/logout)](https://github.com/akhayam99/kay-am/issues/75) — depends on #72, #73, #74
+- [#76 — feat(desktop): per-session provider preference picker](https://github.com/akhayam99/kay-am/issues/76) — depends on #67, #70, #75
+- [#77 — feat(desktop): per-turn provider override](https://github.com/akhayam99/kay-am/issues/77) — depends on #76
+- [#79 — feat(desktop): pre-flight auth check + guided error on turn](https://github.com/akhayam99/kay-am/issues/79) — depends on #73, #75
+
+### Docs
+
+- [#78 — docs(repo): provider integration guide](https://github.com/akhayam99/kay-am/issues/78) — depends on #74, #75
+
+### Critical path
+
+```
+#66 → #68 → #70 → #71  →  summarizer migrated, anthropic-key gone
+       ↘ #69 ↗
+#66 → #67 → #76 → #77  →  per-session + per-turn provider choice
+#72 → #73 → #75
+        ↘ #74 ↗
+```
+
+---
+
 ## How to read this roadmap
 
 - One issue ≈ 1–4 hours of focused implementation work.
