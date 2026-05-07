@@ -27,3 +27,14 @@ export type {
 } from './provider-registry';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
+export type {
+  BudgetRule,
+  BudgetPeriod,
+  BudgetCheckResult,
+  SessionBudget,
+  RoutingReason,
+  RoutingDecision,
+  BudgetAlertKind,
+  BudgetAlert,
+} from './budget';
+export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
