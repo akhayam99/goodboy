@@ -65,3 +65,10 @@ export {
   deleteWorktreesForSession,
   type SessionWorktree,
 } from './queries/session-worktrees';
+export {
+  insertGroup,
+  listGroupsForSession,
+  getGroupById,
+  deleteGroup,
+  updateGroupCompletedAt,
+} from './queries/parallel-phases';
