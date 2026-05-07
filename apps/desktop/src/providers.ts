@@ -81,6 +81,15 @@ export async function checkProviderAuth(providerId: ProviderId): Promise<AuthSta
   return invoke<AuthState>('check_provider_auth', { providerId });
 }
 
+export type ProviderAction = 'login' | 'logout';
+
+export async function providerAction(
+  providerId: ProviderId,
+  action: ProviderAction,
+): Promise<void> {
+  return invoke<void>('provider_action', { providerId, action });
+}
+
 export type ProviderAuthResults = Readonly<Record<ProviderId, AuthState | null>>;
 
 function connectionFromDetectionAndAuth(
