@@ -1,0 +1,1 @@
+export { parseSlashCommand } from './slash';
