@@ -3,7 +3,10 @@ import type { IsoDateTime, ProviderRunId, TurnEvent } from '@kay-am/types';
 export interface ParseContext {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
+  readonly onUnknown?: (type: string, payload: unknown) => void;
 }
+
+const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant', 'user', 'result']);
 
 interface AssistantMessage {
   readonly content?: ReadonlyArray<AssistantContentBlock>;
@@ -114,7 +117,12 @@ export function parseStreamJsonLine(line: string, ctx: ParseContext): ReadonlyAr
     }
 
     case 'system':
+      return [];
+
     default:
+      if (typeof payload.type === 'string' && !KNOWN_PAYLOAD_TYPES.has(payload.type)) {
+        ctx.onUnknown?.(payload.type, payload);
+      }
       return [];
   }
 }
