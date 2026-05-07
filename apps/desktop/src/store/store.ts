@@ -70,7 +70,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
-import { computeCostUsd } from '@kay-am/core';
+import { computeCostUsd, computeCodexCostUsd, computeCursorCostUsd } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
 import { runDbMigrations, tauriDatabase } from '../db';
 import {
@@ -90,7 +90,9 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
+  SETTING_PROVIDER_PRICING_CONFIG,
 } from '../settings';
+import { parseProviderPricingConfig, getCodexPriceOverride } from '../providerPricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 import {
@@ -979,6 +981,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
+    const pricingConfigRaw = await getSetting(tauriDatabase, SETTING_PROVIDER_PRICING_CONFIG);
+    const pricingConfig = parseProviderPricingConfig(pricingConfigRaw);
+
     let assistantText = '';
     let lastError: unknown = null;
 
@@ -1027,7 +1032,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
 
         if (event.kind === 'usage') {
-          const cost = computeCostUsd(event.usage, model);
+          const cost =
+            provider === 'codex'
+              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(pricingConfig, model))
+              : provider === 'cursor'
+                ? computeCursorCostUsd(event.usage, model)
+                : computeCostUsd(event.usage, model);
           const record: TelemetryRecord = {
             id: crypto.randomUUID() as TelemetryRecordId,
             runId,
