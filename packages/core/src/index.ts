@@ -1,3 +1,5 @@
+export { SkillParseError, parseSkillMarkdown, serializeSkillMarkdown } from './skills';
+
 export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
 
 export {
