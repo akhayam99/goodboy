@@ -1,6 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   IsoDateTime,
+  ParallelMergeStrategy,
+  ParallelPhaseGroup,
+  ParallelPhaseGroupId,
   PhaseDefinition,
   PhaseDefinitionId,
   PhaseRun,
@@ -214,4 +217,82 @@ export async function invokePhaseRunUpdateStatus(
     },
   });
   return rowToPhaseRun(row);
+}
+
+// ---------------------------------------------------------------------------
+// Parallel phase group commands (#207)
+// ---------------------------------------------------------------------------
+
+interface RawParallelPhaseGroupRow {
+  readonly id: string;
+  readonly sessionId: string;
+  readonly ordinal: number;
+  readonly mergeStrategy: string;
+  readonly createdAt: string;
+  readonly completedAt: string | null;
+}
+
+function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelPhaseGroup {
+  return {
+    id: row.id as ParallelPhaseGroupId,
+    sessionId: row.sessionId as SessionId,
+    ordinal: row.ordinal,
+    mergeStrategy: row.mergeStrategy as ParallelMergeStrategy,
+    createdAt: row.createdAt as IsoDateTime,
+    completedAt: row.completedAt != null ? (row.completedAt as IsoDateTime) : null,
+  };
+}
+
+export interface ParallelPhaseGroupCreateArgs {
+  readonly id?: ParallelPhaseGroupId;
+  readonly sessionId: SessionId;
+  readonly ordinal: number;
+  readonly mergeStrategy: ParallelMergeStrategy;
+  readonly createdAt?: IsoDateTime;
+}
+
+export async function invokeParallelPhaseGroupCreate(
+  args: ParallelPhaseGroupCreateArgs,
+): Promise<ParallelPhaseGroup> {
+  const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_create', {
+    input: {
+      id: args.id ?? null,
+      sessionId: args.sessionId,
+      ordinal: args.ordinal,
+      mergeStrategy: args.mergeStrategy,
+      createdAt: args.createdAt ?? null,
+    },
+  });
+  return rowToParallelPhaseGroup(row);
+}
+
+export async function invokeParallelPhaseGroupList(
+  sessionId: SessionId,
+): Promise<ParallelPhaseGroup[]> {
+  const rows = await invoke<RawParallelPhaseGroupRow[]>('parallel_phase_group_list', {
+    sessionId,
+  });
+  return rows.map(rowToParallelPhaseGroup);
+}
+
+export async function invokeParallelPhaseGroupGet(
+  id: ParallelPhaseGroupId,
+): Promise<ParallelPhaseGroup | null> {
+  const row = await invoke<RawParallelPhaseGroupRow | null>('parallel_phase_group_get', { id });
+  return row != null ? rowToParallelPhaseGroup(row) : null;
+}
+
+export async function invokeParallelPhaseGroupDelete(id: ParallelPhaseGroupId): Promise<void> {
+  return invoke<void>('parallel_phase_group_delete', { id });
+}
+
+export async function invokeParallelPhaseGroupUpdateCompletedAt(
+  id: ParallelPhaseGroupId,
+  completedAt: IsoDateTime,
+): Promise<ParallelPhaseGroup> {
+  const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_update_completed_at', {
+    id,
+    completedAt,
+  });
+  return rowToParallelPhaseGroup(row);
 }

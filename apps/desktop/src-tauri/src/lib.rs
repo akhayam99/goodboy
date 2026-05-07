@@ -1,6 +1,7 @@
 mod budget;
 mod db;
 mod editor;
+mod parallel_phases;
 mod permissions;
 mod phases;
 mod providers;
@@ -89,6 +90,11 @@ pub fn run() {
       phases::phase_run_list_for_session,
       phases::phase_run_insert,
       phases::phase_run_update_status,
+      parallel_phases::parallel_phase_group_create,
+      parallel_phases::parallel_phase_group_list,
+      parallel_phases::parallel_phase_group_get,
+      parallel_phases::parallel_phase_group_delete,
+      parallel_phases::parallel_phase_group_update_completed_at,
       permissions::permission_rule_list,
       permissions::permission_rule_get,
       permissions::permission_rule_upsert,
