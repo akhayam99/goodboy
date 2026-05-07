@@ -8,12 +8,10 @@ export {
 export {
   selectCurrentSession,
   selectCurrentWorkspace,
-  selectProviderAvailable,
   selectSessions,
   selectWorkspaces,
   useCurrentSession,
   useCurrentWorkspace,
-  useProviderAvailable,
   useSessionSlots,
   useSessions,
   useSummarizerStatus,

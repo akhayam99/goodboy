@@ -3,21 +3,20 @@ import { AppShell, Button, KbdPill } from '@kay-am/ui';
 import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
 import { ContextPanel } from './components/ContextPanel';
+import { ProvidersChip } from './components/ProvidersChip';
 import { SessionsSidebar } from './components/SessionsSidebar';
 import { SettingsDialog } from './components/SettingsDialog';
 import { TelemetryPill } from './components/TelemetryPill';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
-import { useAppStore, useCurrentSession, useCurrentWorkspace, useProviderAvailable } from './store';
+import { useAppStore, useCurrentSession, useCurrentWorkspace } from './store';
 
 export function App() {
   const hydrate = useAppStore((s) => s.hydrate);
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
   const error = useAppStore((s) => s.error);
-  const apiKeyPresent = useAppStore((s) => s.apiKeyPresent);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
-  const providerAvailable = useProviderAvailable();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -36,21 +35,7 @@ export function App() {
             <span className="font-semibold tracking-tight">kAY.am</span>
             <WorkspaceSelector />
             <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-              {!providerAvailable ? (
-                <span className="rounded-full bg-danger/10 px-2 py-0.5 text-danger">
-                  claude cli missing
-                </span>
-              ) : null}
-              {!apiKeyPresent ? (
-                <button
-                  type="button"
-                  onClick={() => setSettingsOpen(true)}
-                  className="rounded-full bg-danger/10 px-2 py-0.5 text-danger hover:bg-danger/20"
-                  title="open settings to add your anthropic api key"
-                >
-                  api key missing
-                </button>
-              ) : null}
+              <ProvidersChip onOpenSettings={() => setSettingsOpen(true)} />
               <TelemetryPill />
               <Button
                 variant="ghost"

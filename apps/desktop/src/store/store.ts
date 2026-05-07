@@ -38,7 +38,12 @@ import type {
 } from '@kay-am/types';
 import { computeCostUsd } from '@kay-am/core';
 import { runDbMigrations, tauriDatabase } from '../db';
-import { getProviderStatus, type ProviderStatus } from '../providers';
+import {
+  buildProviderList,
+  getProviderStatus,
+  type ProviderInfo,
+  type ProviderStatus,
+} from '../providers';
 import { validateGitRepo } from '../repo';
 import { ANTHROPIC_API_KEY_SECRET, getSecret, hasSecret } from '../secrets';
 import {
@@ -67,6 +72,7 @@ export interface AppState {
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
+  readonly providers: ReadonlyArray<ProviderInfo>;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
   readonly apiKeyPresent: boolean;
@@ -95,6 +101,7 @@ export interface AppActions {
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
+  refreshProviders(): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   createSession(input: {
     workspaceId: WorkspaceId;
@@ -125,6 +132,7 @@ const initialState: AppState = {
   settings: {},
   sessionSummary: null,
   providerStatus: null,
+  providers: buildProviderList(null),
   hydrated: false,
   bootPhase: 'pending',
   apiKeyPresent: false,
@@ -289,7 +297,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       set({ bootPhase: 'detecting-cli' });
       const providerStatus = await getProviderStatus();
-      set({ providerStatus });
+      set({ providerStatus, providers: buildProviderList(providerStatus) });
 
       set({ bootPhase: 'loading-workspaces' });
       const workspaces = await listWorkspaces(tauriDatabase);
@@ -387,7 +395,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshProviderStatus: (status) => {
-    set({ providerStatus: status });
+    set({ providerStatus: status, providers: buildProviderList(status) });
+  },
+
+  refreshProviders: async () => {
+    const status = await getProviderStatus();
+    set({ providerStatus: status, providers: buildProviderList(status) });
   },
 
   createSession: async ({ workspaceId, goal, branchPrefix }) => {

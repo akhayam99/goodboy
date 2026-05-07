@@ -52,16 +52,16 @@ kay-am/
 ### Prerequisites
 
 - **Node.js** ≥ 20 and **pnpm** ≥ 9
-- **Rust** toolchain (`rustup`) — required by Tauri 2; install from <https://rustup.rs>
+- **Rust** toolchain (`rustup`) — required by Tauri 2; install from <https://rustup.rs>. After installing, make sure `cargo` is on your shell `PATH` — `rustup` writes the env to `$HOME/.cargo/env`, which most shells don't auto-source. Either add `source "$HOME/.cargo/env"` to your `~/.zshrc` / `~/.bashrc`, or restart your terminal after install. Verify with `cargo --version` (Tauri shells out to `cargo metadata` and will fail with `os error 2` if it's missing).
 - Platform Tauri prereqs — see <https://v2.tauri.app/start/prerequisites/>
 - **Claude CLI** on `PATH` (`claude --version` should print a version) — used as the default provider
-- An **Anthropic API key** if you want to exercise the (upcoming) summarizer
+- An **Anthropic API key** if you want to exercise the summarizer (configurable from in-app settings, stored in the OS keychain)
 
 ### Quickstart
 
 ```bash
 pnpm install
-pnpm tauri:dev      # launches the desktop app in dev mode
+pnpm tauri:dev      # launches the desktop app in dev mode (root alias for the desktop workspace)
 ```
 
 Useful commands:
