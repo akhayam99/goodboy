@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import { FolderOpen, FolderPlus, Plus } from 'lucide-react';
-import type { ProviderId, Session, Workspace } from '@kay-am/types';
+import type { ProviderId, Session, SessionId, Workspace } from '@kay-am/types';
 import {
   useAppStore,
   useCurrentSession,
@@ -175,6 +175,47 @@ interface SessionRowProps {
 function SessionRow({ session, isActive, onClick }: SessionRowProps) {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
   const providerId = session.providerPreference.defaultProvider;
+  const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
+  const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
+  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
+  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
+  const budgetLoaded = useRef(false);
+
+  const [editingCap, setEditingCap] = useState(false);
+  const [capDraft, setCapDraft] = useState('');
+
+  useEffect(() => {
+    if (!budgetLoaded.current) {
+      budgetLoaded.current = true;
+      void loadSessionBudget(session.id as SessionId);
+    }
+  }, [session.id, loadSessionBudget]);
+
+  const spent = isActive ? (spentUsd ?? 0) : 0;
+  const cap = budget?.softCapUsd ?? null;
+  const pct = cap !== null && cap > 0 ? spent / cap : null;
+
+  const barColor =
+    pct === null ? '' : pct >= 1 ? 'bg-red-500' : pct >= 0.8 ? 'bg-yellow-400' : 'bg-green-500';
+
+  const onCapClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCapDraft(cap !== null ? String(cap) : '');
+    setEditingCap(true);
+  };
+
+  const onCapSave = async () => {
+    const parsed = parseFloat(capDraft);
+    if (!isNaN(parsed) && parsed > 0) {
+      await setSessionBudget(session.id as SessionId, parsed);
+    }
+    setEditingCap(false);
+  };
+
+  const onCapKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') void onCapSave();
+    if (e.key === 'Escape') setEditingCap(false);
+  };
 
   return (
     <li className="group">
@@ -210,6 +251,47 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
             <StatusBadge state={session.state} />
           </div>
         </button>
+
+        {cap !== null && (
+          <div className="flex flex-col gap-0.5 pl-3.5">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn('h-full rounded-full transition-all', barColor)}
+                style={{ width: `${Math.min((pct ?? 0) * 100, 100)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">
+                ${spent.toFixed(2)} /{' '}
+                {editingCap ? null : (
+                  <button
+                    type="button"
+                    className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                    onClick={onCapClick}
+                    title="click to edit cap"
+                  >
+                    ${cap.toFixed(2)}
+                  </button>
+                )}
+              </span>
+              {editingCap && (
+                <input
+                  autoFocus
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={capDraft}
+                  onChange={(e) => setCapDraft(e.target.value)}
+                  onBlur={() => void onCapSave()}
+                  onKeyDown={onCapKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-[10px] outline-none focus:ring-1 focus:ring-primary"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         <div
           className={cn(
             'flex justify-end opacity-0 transition-opacity',
