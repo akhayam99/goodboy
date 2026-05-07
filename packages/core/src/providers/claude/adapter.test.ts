@@ -1,7 +1,14 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  ProviderRunId,
+  SessionId,
+  TurnEvent,
+  TurnPermissionFlags,
+  TurnRequest,
+} from '@kay-am/types';
 import { ClaudeAdapter } from './adapter';
 
 const fakeNow = (): IsoDateTime => '2026-05-07T00:00:00.000Z' as IsoDateTime;
@@ -57,7 +64,7 @@ function makeOpenChild(lines: ReadonlyArray<string>): OpenChild {
   return new OpenChild(lines);
 }
 
-function makeRequest(): TurnRequest {
+function makeRequest(permissionFlags?: TurnPermissionFlags): TurnRequest {
   return {
     runId: 'run_1' as ProviderRunId,
     sessionId: 'sess_1' as SessionId,
@@ -65,6 +72,7 @@ function makeRequest(): TurnRequest {
     workingDir: '/tmp/demo',
     systemPrompt: 'sys',
     userMessage: 'hi',
+    permissionFlags,
   };
 }
 
@@ -138,5 +146,66 @@ describe('ClaudeAdapter.detect', () => {
     });
     const result = await adapter.detect();
     expect(result.kind).toBe('missing');
+  });
+});
+
+describe('spawnClaude — permission flags', () => {
+  function captureArgs(permissionFlags?: TurnPermissionFlags): string[] {
+    let capturedArgs: string[] = [];
+    const child = new FakeChild([]);
+    const spawnFn = (_binary: string, args: string[]) => {
+      capturedArgs = args;
+      return child;
+    };
+    const adapter = new ClaudeAdapter({
+      now: fakeNow,
+      spawnFn: spawnFn as never,
+    });
+    void (async () => {
+      for await (const _ of adapter.spawn(makeRequest(permissionFlags))) {
+        // drain
+      }
+    })();
+    return capturedArgs;
+  }
+
+  it('uses --permission-mode default and omits legacy bypass flag when no permissionFlags provided', () => {
+    const args = captureArgs();
+    expect(args).toContain('--permission-mode');
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('default');
+    expect(args).not.toContain('--dangerously-skip-permissions');
+    expect(args).not.toContain('--allowedTools');
+    expect(args).not.toContain('--disallowedTools');
+  });
+
+  it('passes bypassPermissions mode without legacy bypass flag', () => {
+    const args = captureArgs({ mode: 'bypassPermissions' });
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('bypassPermissions');
+    expect(args).not.toContain('--dangerously-skip-permissions');
+  });
+
+  it('appends --allowedTools as comma-list when allowedTools non-empty', () => {
+    const args = captureArgs({ mode: 'default', allowedTools: ['Edit', 'Read'] });
+    expect(args).toContain('--allowedTools');
+    expect(args[args.indexOf('--allowedTools') + 1]).toBe('Edit,Read');
+    expect(args).not.toContain('--disallowedTools');
+  });
+
+  it('appends --disallowedTools as comma-list when disallowedTools non-empty', () => {
+    const args = captureArgs({ mode: 'default', disallowedTools: ['Bash(rm:*)'] });
+    expect(args).toContain('--disallowedTools');
+    expect(args[args.indexOf('--disallowedTools') + 1]).toBe('Bash(rm:*)');
+    expect(args).not.toContain('--allowedTools');
+  });
+
+  it('appends both tool lists when both provided', () => {
+    const args = captureArgs({
+      mode: 'plan',
+      allowedTools: ['Read'],
+      disallowedTools: ['Bash'],
+    });
+    expect(args[args.indexOf('--permission-mode') + 1]).toBe('plan');
+    expect(args[args.indexOf('--allowedTools') + 1]).toBe('Read');
+    expect(args[args.indexOf('--disallowedTools') + 1]).toBe('Bash');
   });
 });

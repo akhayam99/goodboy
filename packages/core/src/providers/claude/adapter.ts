@@ -99,6 +99,9 @@ async function* spawnClaude(
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
   const prompt = `${request.systemPrompt}\n\n${request.userMessage}`.trim();
+  const flags = request.permissionFlags;
+  const mode = flags?.mode ?? 'default';
+
   const args = [
     '-p',
     prompt,
@@ -108,8 +111,19 @@ async function* spawnClaude(
     request.workingDir,
     '--model',
     request.model,
-    '--dangerously-skip-permissions',
+    '--permission-mode',
+    mode,
   ];
+
+  const allowedTools = flags?.allowedTools ?? [];
+  const disallowedTools = flags?.disallowedTools ?? [];
+
+  if (allowedTools.length > 0) {
+    args.push('--allowedTools', allowedTools.join(','));
+  }
+  if (disallowedTools.length > 0) {
+    args.push('--disallowedTools', disallowedTools.join(','));
+  }
 
   const child: ChildProcess = spawnFn(binary, args, {
     stdio: ['ignore', 'pipe', 'pipe'],

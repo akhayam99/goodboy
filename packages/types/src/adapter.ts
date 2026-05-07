@@ -21,6 +21,14 @@ export type DetectResult =
   | { kind: 'available'; binary: string; version: string }
   | { kind: 'missing'; binary: string; reason: string };
 
+export type PermissionMode = 'default' | 'bypassPermissions' | 'plan' | 'acceptEdits';
+
+export interface TurnPermissionFlags {
+  readonly mode: PermissionMode;
+  readonly allowedTools?: ReadonlyArray<string>;
+  readonly disallowedTools?: ReadonlyArray<string>;
+}
+
 export interface TurnRequest {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
@@ -28,6 +36,7 @@ export interface TurnRequest {
   readonly workingDir: string;
   readonly systemPrompt: string;
   readonly userMessage: string;
+  readonly permissionFlags?: TurnPermissionFlags;
 }
 
 export type TurnEvent =
