@@ -195,6 +195,7 @@ Cursor + Codex adapters, summarizer refactor (drop API-key path → use active-p
 - [#76 — feat(desktop): per-session provider preference picker](https://github.com/akhayam99/kay-am/issues/76) — depends on #67, #70, #75
 - [#77 — feat(desktop): per-turn provider override](https://github.com/akhayam99/kay-am/issues/77) — depends on #76
 - [#79 — feat(desktop): pre-flight auth check + guided error on turn](https://github.com/akhayam99/kay-am/issues/79) — depends on #73, #75
+- [#80 — feat(desktop): UX/UI restyle (layout reorg + design tokens + polish)](https://github.com/akhayam99/kay-am/issues/80)
 
 ### Docs
 
