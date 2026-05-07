@@ -48,3 +48,14 @@ export {
   deleteSkill,
   deleteSkillsForWorkspace,
 } from './queries/skill';
+export {
+  listPhaseTemplates,
+  getPhaseTemplate,
+  upsertPhaseTemplate,
+  deletePhaseTemplate,
+} from './queries/phase-templates';
+export {
+  listPhaseRunsForSession,
+  insertPhaseRun,
+  updatePhaseRunStatus,
+} from './queries/phase-runs';

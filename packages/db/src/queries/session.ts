@@ -1,5 +1,6 @@
 import type {
   IsoDateTime,
+  PhaseTemplateId,
   ProviderId,
   Session,
   SessionId,
@@ -17,6 +18,8 @@ interface SessionRow {
   state_payload: string;
   provider_default: string;
   provider_allow_override: number;
+  phase_template_id: string | null;
+  current_phase_ordinal: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -46,6 +49,8 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     state: toState(row.state_kind, row.state_payload),
     contextSlots,
     providerPreference: toProviderPreference(row),
+    ...(row.phase_template_id && { phaseTemplateId: row.phase_template_id as PhaseTemplateId }),
+    ...(row.current_phase_ordinal !== null && { currentPhaseOrdinal: row.current_phase_ordinal }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -60,8 +65,8 @@ export async function insertSession(db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, phase_template_id, current_phase_ordinal, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -70,6 +75,8 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       payload,
       session.providerPreference.defaultProvider,
       session.providerPreference.allowTurnOverride ? 1 : 0,
+      session.phaseTemplateId ?? null,
+      session.currentPhaseOrdinal ?? null,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],

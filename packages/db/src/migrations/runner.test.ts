@@ -1,11 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  PhaseDefinition,
+  PhaseDefinitionId,
+  PhaseRun,
+  PhaseRunId,
+  PhaseTemplate,
+  PhaseTemplateId,
+  Session,
+  SessionId,
+  Workspace,
+  WorkspaceId,
+} from '@kay-am/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
+import {
+  listPhaseTemplates,
+  getPhaseTemplate,
+  upsertPhaseTemplate,
+  deletePhaseTemplate,
+} from '../queries/phase-templates';
+import {
+  listPhaseRunsForSession,
+  insertPhaseRun,
+  updatePhaseRunStatus,
+} from '../queries/phase-runs';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -104,5 +127,95 @@ describe('migrate', () => {
 
     expect(fetched?.providerPreference.defaultProvider).toBe('cursor');
     expect(fetched?.providerPreference.allowTurnOverride).toBe(false);
+  });
+
+  it('round-trips phase templates with definitions and phase runs', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+
+    const workspace: Workspace = {
+      id: 'ws_4' as WorkspaceId,
+      name: 'phase-test',
+      rootPath: '/tmp/demo4',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertWorkspace(db, workspace);
+
+    const session: Session = {
+      id: 'sess_3' as SessionId,
+      workspaceId: workspace.id,
+      goal: 'test phases',
+      state: { kind: 'draft' },
+      contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertSession(db, session);
+
+    const def1: PhaseDefinition = {
+      id: 'pdef_1' as PhaseDefinitionId,
+      templateId: 'pt_1' as PhaseTemplateId,
+      ordinal: 0,
+      name: 'Discovery',
+      promptPrefix: 'Analyze the codebase.',
+      providerOverride: 'anthropic',
+    };
+
+    const def2: PhaseDefinition = {
+      id: 'pdef_2' as PhaseDefinitionId,
+      templateId: 'pt_1' as PhaseTemplateId,
+      ordinal: 1,
+      name: 'Implementation',
+      promptPrefix: 'Implement the solution.',
+    };
+
+    const template: PhaseTemplate = {
+      id: 'pt_1' as PhaseTemplateId,
+      workspaceId: workspace.id,
+      name: 'Workflow',
+      description: 'A standard workflow',
+      definitions: [def1, def2],
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    await upsertPhaseTemplate(db, template);
+    const fetched = await getPhaseTemplate(db, template.id);
+
+    expect(fetched).not.toBeNull();
+    if (!fetched) throw new Error('fetched should not be null');
+    expect(fetched.name).toBe('Workflow');
+    expect(fetched.definitions).toHaveLength(2);
+    expect(fetched.definitions[0]!.name).toBe('Discovery');
+    expect(fetched.definitions[1]!.name).toBe('Implementation');
+
+    const run: PhaseRun = {
+      id: 'pr_1' as PhaseRunId,
+      sessionId: session.id,
+      phaseDefinitionId: def1.id,
+      ordinal: 0,
+      name: 'Discovery',
+      status: 'pending',
+    };
+
+    await insertPhaseRun(db, run);
+    const runs = await listPhaseRunsForSession(db, session.id);
+
+    expect(runs).toHaveLength(1);
+    if (!runs[0]) throw new Error('runs[0] should exist');
+    expect(runs[0].status).toBe('pending');
+
+    await updatePhaseRunStatus(db, run.id, { status: 'completed', outputSummary: 'Found issues' });
+    const updated = await listPhaseRunsForSession(db, session.id);
+
+    if (!updated[0]) throw new Error('updated[0] should exist');
+    expect(updated[0].status).toBe('completed');
+    expect(updated[0].outputSummary).toBe('Found issues');
+
+    await deletePhaseTemplate(db, template.id);
+    const deleted = await getPhaseTemplate(db, template.id);
+    expect(deleted).toBeNull();
   });
 });

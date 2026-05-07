@@ -4,6 +4,7 @@ import { m003SessionProvider } from './m003-session-provider';
 import { m004TurnOverrides } from './m004-turn-overrides';
 import { m005BudgetTables } from './m005-budget-tables';
 import { m006Skills } from './m006-skills';
+import { m007Phases } from './m007-phases';
 
 export interface Migration {
   readonly version: number;
@@ -17,4 +18,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 4, sql: m004TurnOverrides },
   { version: 5, sql: m005BudgetTables },
   { version: 6, sql: m006Skills },
+  { version: 7, sql: m007Phases },
 ];
