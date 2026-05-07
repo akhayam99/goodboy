@@ -3,6 +3,7 @@ export type {
   MessageId,
   ProviderRunId,
   SessionId,
+  SkillId,
   TelemetryRecordId,
   WorkspaceId,
 } from './ids';
@@ -27,6 +28,7 @@ export type {
 } from './provider-registry';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
+export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
   BudgetPeriod,
