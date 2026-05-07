@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.6 complete. v0.7 next planned.
+> **Status**: v0.7 complete. v1.0 next.
 
 ## Architectural decisions (locked)
 
@@ -86,7 +86,7 @@ Intercept tool-call requests from the agent, surface them in the kAY.am UI for e
 
 [v0.6 milestone](https://github.com/akhayam99/kay-am/milestone/6)
 
-### v0.7 — Multi-agent parallel (experimental)
+### v0.7 — Multi-agent parallel (experimental) ✓
 
 Multiple agents inside a single session, each on its own worktree, coordinating via shared synthetic context.
 
@@ -397,6 +397,44 @@ Permission proxy: tool-call interception via static rules + audit, removing `--d
        #174 → #177 → #180
                   ↘ #184 → #188
        #186 + #187 → #188
+```
+
+---
+
+## v0.7 issue index
+
+Consolidation (parte A — hardening + carryover from v0.6):
+
+- [#194 — fix(desktop): cleanup session-scoped state on workspace switch](https://github.com/akhayam99/kay-am/issues/194)
+- [#195 — feat(db,core,desktop): persist session worktrees in m009 table](https://github.com/akhayam99/kay-am/issues/195)
+- [#196 — feat(db,core,desktop): permission audit retry queue (m010)](https://github.com/akhayam99/kay-am/issues/196)
+- [#197 — refactor(core): cost truth cursor + codex via stream usage + settings override](https://github.com/akhayam99/kay-am/issues/197)
+- [#198 — refactor(core): parametrize claude TS adapter permission flags](https://github.com/akhayam99/kay-am/issues/198) — closes #185 part 2
+- [#199 — test(core): phase sequencer edge cases](https://github.com/akhayam99/kay-am/issues/199)
+- [#200 — test(core): summarizer client gated integration test](https://github.com/akhayam99/kay-am/issues/200)
+
+Multi-agent parallel (parte B — experimental):
+
+- [#201 — feat(types): parallel phase domain types](https://github.com/akhayam99/kay-am/issues/201)
+- [#202 — feat(db): m011 parallel_phases migration](https://github.com/akhayam99/kay-am/issues/202)
+- [#203 — feat(core): parallel scheduler (fan-out/fan-in)](https://github.com/akhayam99/kay-am/issues/203)
+- [#204 — feat(core): parallel conflict detection + merge strategy](https://github.com/akhayam99/kay-am/issues/204)
+- [#205 — feat(core): throwaway worktree helper for parallel runs](https://github.com/akhayam99/kay-am/issues/205)
+- [#206 — test(core): parallel scheduler + conflict integration tests](https://github.com/akhayam99/kay-am/issues/206)
+- [#207 — feat(desktop): parallel phase group CRUD tauri commands](https://github.com/akhayam99/kay-am/issues/207)
+- [#208 — feat(desktop): parallel phase run spawn batch tauri command](https://github.com/akhayam99/kay-am/issues/208)
+- [#209 — feat(desktop,ui): split-view transcript + experimental flag toggle](https://github.com/akhayam99/kay-am/issues/209)
+- [#210 — feat(desktop): multi-progress indicator for parallel runs](https://github.com/akhayam99/kay-am/issues/210)
+- [#211 — feat(desktop,ui): merge dialog conflict resolution UI](https://github.com/akhayam99/kay-am/issues/211)
+- [#212 — feat(desktop): wire parallel scheduler into sendTurn](https://github.com/akhayam99/kay-am/issues/212)
+- [#213 — feat(types,core): permission_request + permission_decision TurnEvent](https://github.com/akhayam99/kay-am/issues/213) — closes #185 part 1
+- [#214 — test(desktop,repo): e2e parallel fan-out/fan-in + ROADMAP/README v0.7](https://github.com/akhayam99/kay-am/issues/214)
+
+### Critical path
+
+```
+H1.0 → H1.1 → F1+F2 → C1+C2+C3 → C4 → T1+T2 → U1+U2+U3 → I1 → I3
+H2.* parallelizable with H1+F (independent file scope).
 ```
 
 ---
