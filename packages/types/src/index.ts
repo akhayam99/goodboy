@@ -1,6 +1,9 @@
 export type {
   IsoDateTime,
   MessageId,
+  PhaseDefinitionId,
+  PhaseRunId,
+  PhaseTemplateId,
   ProviderRunId,
   SessionId,
   SkillId,
@@ -40,3 +43,10 @@ export type {
   BudgetAlert,
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
+export type {
+  PhaseDefinition,
+  PhaseRun,
+  PhaseRunStatus,
+  PhaseTemplate,
+  PhaseTransition,
+} from './phase';
