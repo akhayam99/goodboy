@@ -9,12 +9,20 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Button, cn } from '@kay-am/ui';
-import type { PhaseRun, PhaseRunStatus, ProviderId, Session, SessionId } from '@kay-am/types';
+import type {
+  PhaseRun,
+  PhaseRunStatus,
+  ProviderId,
+  ProviderRunId,
+  Session,
+  SessionId,
+} from '@kay-am/types';
 import { getDefaultTurnModel } from '@kay-am/core';
 import { openInEditor } from '../../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../settings';
 import { useAppStore } from '../../store';
 import { PermissionAuditPanel } from './PermissionAuditPanel';
+import { ParallelProgressPill } from './ParallelProgressPill';
 
 interface ChatHeaderProps {
   session: Session;
@@ -22,6 +30,8 @@ interface ChatHeaderProps {
   contextOpen: boolean;
   onToggleContext: () => void;
   onEndSession: () => void;
+  parallelRunIds?: ReadonlyArray<ProviderRunId>;
+  onSelectRun?: (runId: ProviderRunId) => void;
 }
 
 const PROVIDER_LABEL: Record<ProviderId, string> = {
@@ -42,6 +52,8 @@ export function ChatHeader({
   contextOpen,
   onToggleContext,
   onEndSession,
+  parallelRunIds,
+  onSelectRun,
 }: ChatHeaderProps) {
   const editorBinary = useAppStore(
     (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
@@ -75,10 +87,30 @@ export function ChatHeader({
     }
   };
 
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? []);
+
+  const runStatuses = Object.fromEntries(
+    (parallelRunIds ?? []).map((rid) => {
+      const run = phaseRuns.find((r) => r.runId === rid);
+      return [rid, run?.status ?? ('pending' as PhaseRunStatus)];
+    }),
+  ) as Readonly<Record<ProviderRunId, PhaseRunStatus>>;
+
+  const isParallel = (parallelRunIds?.length ?? 0) > 1;
+
   return (
     <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
+          {isParallel && onSelectRun ? (
+            <ParallelProgressPill
+              parallelRunIds={parallelRunIds!}
+              runStatuses={runStatuses}
+              onSelectRun={onSelectRun}
+            />
+          ) : null}
+        </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <button
             type="button"
