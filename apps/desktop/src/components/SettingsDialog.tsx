@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input } from '@kay-am/ui';
+import { ProvidersPanel } from './ProvidersPanel';
 import { ANTHROPIC_API_KEY_SECRET, deleteSecret, hasSecret, setSecret } from '../secrets';
 import {
   DEFAULT_BRANCH_PREFIX,
@@ -80,19 +81,19 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     }
   };
 
-  const summarizerHint = 'needs summarizer client (#8) — wired once available';
-
   return (
     <Dialog open={open} onClose={onClose} title="settings" className="min-w-96">
       <div className="flex flex-col gap-4">
+        <ProvidersPanel />
+
         <Section
-          label="anthropic api key"
+          label="anthropic api key (summarizer only)"
           help={
             apiKeySet === null
               ? 'checking keychain…'
               : apiKeySet
-                ? 'key present in keychain (write-only)'
-                : 'no key stored yet'
+                ? 'key present in keychain (write-only) — used by post-turn summarizer (Haiku). Removed in v0.2 (#71).'
+                : 'optional. enables auto context-slot updates via Haiku (~$0.0015/turn). slots stay editable by hand without it.'
           }
         >
           <div className="flex gap-2">
@@ -139,12 +140,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             placeholder={DEFAULT_BRANCH_PREFIX}
             disabled={!workspace}
           />
-        </Section>
-
-        <Section label="test summarizer" help={summarizerHint}>
-          <Button variant="ghost" size="sm" disabled title={summarizerHint}>
-            run test
-          </Button>
         </Section>
 
         {error ? <p className="text-xs text-danger">{error}</p> : null}
