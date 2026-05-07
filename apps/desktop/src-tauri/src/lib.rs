@@ -4,6 +4,7 @@ mod editor;
 mod providers;
 mod repo;
 mod secrets;
+mod skills;
 mod summarize;
 mod turn;
 mod worktree;
@@ -73,6 +74,12 @@ pub fn run() {
       budget::budget_emit_alerts,
       budget::check_provider_budget,
       budget::check_session_budget,
+      skills::skill_list,
+      skills::skill_get,
+      skills::skill_upsert,
+      skills::skill_delete,
+      skills::skill_rescan,
+      skills::skill_run_script,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
