@@ -1,77 +1,64 @@
-import { useState } from 'react';
-import {
-  AppShell,
-  Button,
-  Collapsible,
-  Dialog,
-  Input,
-  KbdPill,
-  ScrollArea,
-  Textarea,
-} from '@kay-am/ui';
+import { useEffect } from 'react';
+import { AppShell, KbdPill, ScrollArea } from '@kay-am/ui';
+import { WorkspaceSelector } from './components/WorkspaceSelector';
+import { useAppStore, useCurrentWorkspace, useProviderAvailable } from './store';
 
 export function App() {
-  const [collapsed, setCollapsed] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const hydrate = useAppStore((s) => s.hydrate);
+  const hydrated = useAppStore((s) => s.hydrated);
+  const error = useAppStore((s) => s.error);
+  const current = useCurrentWorkspace();
+  const providerAvailable = useProviderAvailable();
+
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
 
   return (
     <AppShell
       header={
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center gap-3">
           <span className="font-semibold tracking-tight">kAY.am</span>
-          <span className="text-xs text-muted-foreground">
-            press <KbdPill>⌘K</KbdPill> to focus
+          <WorkspaceSelector />
+          <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            {!providerAvailable ? (
+              <span className="rounded-full bg-danger/10 px-2 py-0.5 text-danger">
+                claude cli missing
+              </span>
+            ) : null}
+            press <KbdPill>⌘K</KbdPill>
           </span>
         </div>
       }
       leftSidebar={
         <ScrollArea className="h-full p-2">
-          <div className="text-xs uppercase text-muted-foreground">Workspaces</div>
-          <ul className="mt-2 space-y-1">
-            <li className="rounded-md px-2 py-1 text-sm hover:bg-muted">demo</li>
-            <li className="rounded-md px-2 py-1 text-sm hover:bg-muted">api-gateway</li>
-            <li className="rounded-md px-2 py-1 text-sm hover:bg-muted">design-system</li>
-          </ul>
+          <div className="text-xs uppercase text-muted-foreground">sessions</div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {current ? 'no sessions yet — coming in #20' : 'pick a workspace to begin'}
+          </p>
         </ScrollArea>
       }
       main={
         <div className="flex h-full flex-col gap-4 p-6">
-          <h1 className="text-lg font-medium tracking-tight">design system smoke test</h1>
-          <div className="flex flex-wrap gap-2">
-            <Button>primary</Button>
-            <Button variant="secondary">secondary</Button>
-            <Button variant="ghost">ghost</Button>
-            <Button variant="danger">danger</Button>
-            <Button size="sm">small</Button>
-          </div>
-          <Input placeholder="type something" />
-          <Textarea placeholder="multiline input" />
-          <Collapsible
-            open={collapsed}
-            onOpenChange={setCollapsed}
-            trigger={<span>collapsible section</span>}
-          >
-            <p className="text-sm text-muted-foreground">hidden content revealed when expanded.</p>
-          </Collapsible>
-          <div>
-            <Button onClick={() => setDialogOpen(true)}>open dialog</Button>
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="hello">
-              <p className="text-sm text-muted-foreground">
-                native html dialog with backdrop and esc-to-close.
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setDialogOpen(false)}>
-                  cancel
-                </Button>
-                <Button onClick={() => setDialogOpen(false)}>ok</Button>
-              </div>
-            </Dialog>
-          </div>
+          {!hydrated ? (
+            <p className="text-sm text-muted-foreground">loading…</p>
+          ) : error ? (
+            <p className="text-sm text-danger">init error: {error}</p>
+          ) : current ? (
+            <>
+              <h1 className="text-lg font-medium tracking-tight">{current.name}</h1>
+              <p className="text-sm text-muted-foreground">{current.rootPath}</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              no workspace selected. open the dropdown to add one.
+            </p>
+          )}
         </div>
       }
       rightSidebar={
         <ScrollArea className="h-full p-2">
-          <div className="text-xs uppercase text-muted-foreground">Context</div>
+          <div className="text-xs uppercase text-muted-foreground">context</div>
           <p className="mt-2 text-sm text-muted-foreground">slots will live here.</p>
         </ScrollArea>
       }

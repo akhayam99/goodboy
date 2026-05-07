@@ -1,15 +1,17 @@
 import { create } from 'zustand';
 import {
   getSetting,
+  insertWorkspace,
   listSessionsForWorkspace,
   listWorkspaces,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
   type TelemetrySummary,
 } from '@kay-am/db';
-import type { Session, SessionId, Workspace, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@kay-am/types';
 import { runDbMigrations, tauriDatabase } from '../db';
 import { getProviderStatus, type ProviderStatus } from '../providers';
+import { validateGitRepo } from '../repo';
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -32,6 +34,7 @@ export interface AppActions {
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
+  addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
 }
 
 type AppStore = AppState & AppActions;
@@ -110,5 +113,26 @@ export const useAppStore = create<AppStore>((set) => ({
 
   refreshProviderStatus: (status) => {
     set({ providerStatus: status });
+  },
+
+  addWorkspace: async ({ rootPath, name }) => {
+    const check = await validateGitRepo(rootPath);
+    if (!check.isRepo || !check.rootPath) {
+      throw new Error(check.error ?? 'not a git repository');
+    }
+    const resolvedRoot = check.rootPath;
+    const inferredName =
+      name?.trim() || resolvedRoot.split('/').filter(Boolean).at(-1) || 'workspace';
+    const now = new Date().toISOString() as IsoDateTime;
+    const workspace: Workspace = {
+      id: crypto.randomUUID() as WorkspaceId,
+      name: inferredName,
+      rootPath: resolvedRoot,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await insertWorkspace(tauriDatabase, workspace);
+    set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
+    return workspace;
   },
 }));
