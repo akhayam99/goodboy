@@ -22,6 +22,14 @@ export {
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
+// CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
+export { CURSOR_CHEAP_MODEL } from './providers/cursor/cost';
+export {
+  parseCursorStreamLine,
+  type ParseContext as CursorParseContext,
+} from './providers/cursor/parser';
+
 export {
   Summarizer,
   HAIKU_MODEL,
