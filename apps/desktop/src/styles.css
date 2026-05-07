@@ -19,6 +19,7 @@
   --color-info: oklch(0.62 0.13 230);
   --color-info-foreground: oklch(0.99 0 0);
 
+  --text-2xs: 10px;
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -31,6 +32,15 @@
   --shadow-sm: 0 1px 2px 0 oklch(0.18 0.01 270 / 0.05);
   --shadow-md: 0 4px 12px -2px oklch(0.18 0.01 270 / 0.08);
   --shadow-lg: 0 12px 32px -8px oklch(0.18 0.01 270 / 0.12);
+
+  --motion-fast: 100ms;
+  --motion-normal: 200ms;
+  --motion-slow: 350ms;
+
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  --color-focus-ring: oklch(0.55 0.18 265 / 0.55);
 }
 
 html,
@@ -47,7 +57,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--color-primary) 30%, transparent);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 1px;
   border-radius: var(--radius-sm);
 }
