@@ -1,6 +1,6 @@
 import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
 
-export type ProviderName = 'anthropic' | 'openai' | 'cursor';
+export type ProviderName = 'anthropic' | 'openai' | 'cursor' | 'codex';
 
 export type ProviderRunStatus =
   | { kind: 'pending' }
