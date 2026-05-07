@@ -3,6 +3,7 @@ export {
   type AppActions,
   type AppState,
   type BootPhase,
+  type ProviderSpendEntry,
   type SummarizerSessionStatus,
 } from './store';
 export {

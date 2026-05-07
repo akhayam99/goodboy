@@ -16,10 +16,12 @@ import {
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
+  summarizeWorkspaceProviderTelemetry,
   updateProviderRunStatus,
   updateSessionState,
   upsertContextSlot,
   type TelemetrySummary,
+  type ProviderTelemetrySummary,
 } from '@kay-am/db';
 import type {
   BudgetRule,
@@ -100,12 +102,20 @@ export interface AppState {
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
+  readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
 }
 
 export interface SummarizerSessionStatus {
   readonly status: 'idle' | 'running' | 'error';
   readonly lastUpdate: IsoDateTime | null;
   readonly error: string | null;
+}
+
+export interface ProviderSpendEntry {
+  readonly provider: ProviderTelemetrySummary['provider'];
+  readonly spentUsd: number;
+  readonly capUsd: number | null;
+  readonly pct: number;
 }
 
 export interface AppActions {
@@ -145,6 +155,7 @@ export interface AppActions {
   deleteBudgetRule(id: string): Promise<void>;
   loadSessionBudget(sessionId: SessionId): Promise<void>;
   setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
+  refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -173,7 +184,20 @@ const initialState: AppState = {
   summarizerStatus: {},
   budgetRules: [],
   sessionBudgets: {},
+  providerSpendBreakdown: [],
 };
+
+function buildProviderSpendBreakdown(
+  providerSummaries: ReadonlyArray<ProviderTelemetrySummary>,
+  budgetRules: ReadonlyArray<BudgetRule>,
+): ReadonlyArray<ProviderSpendEntry> {
+  return providerSummaries.map((s) => {
+    const rule = budgetRules.find((r) => r.provider === s.provider) ?? null;
+    const capUsd = rule?.capUsd ?? null;
+    const pct = capUsd !== null && capUsd > 0 ? s.estimatedCostUsd / capUsd : 0;
+    return { provider: s.provider, spentUsd: s.estimatedCostUsd, capUsd, pct };
+  });
+}
 
 function mergeSlots(
   existing: ReadonlyArray<ContextSlot>,
@@ -272,11 +296,14 @@ async function runSummarizer(
     };
     await insertTelemetry(tauriDatabase, record);
 
-    const [sessionSummary, workspaceSummary, telemetry] = await Promise.all([
-      summarizeSessionTelemetry(tauriDatabase, sessionId),
-      summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
-      listTelemetryForSession(tauriDatabase, sessionId),
-    ]);
+    const [sessionSummary, workspaceSummary, telemetry, providerSummaries, budgetRules] =
+      await Promise.all([
+        summarizeSessionTelemetry(tauriDatabase, sessionId),
+        summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+        listTelemetryForSession(tauriDatabase, sessionId),
+        summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
+        invokeBudgetRuleList(),
+      ]);
     set((state) => ({
       sessionSummary,
       workspaceSummary,
@@ -285,6 +312,7 @@ async function runSummarizer(
         ...state.summarizerStatus,
         [sessionId]: { status: 'idle', lastUpdate: now(), error: null },
       },
+      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
   } catch (err) {
     // never log api key — only the error message
@@ -387,11 +415,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       workspaceSummary: null,
     });
     if (id) {
-      const [sessions, workspaceSummary] = await Promise.all([
+      const [sessions, workspaceSummary, providerSummaries, budgetRules] = await Promise.all([
         listSessionsForWorkspace(tauriDatabase, id),
         summarizeWorkspaceTelemetry(tauriDatabase, id),
+        summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
+        invokeBudgetRuleList(),
       ]);
-      set({ sessions, workspaceSummary });
+      set({
+        sessions,
+        workspaceSummary,
+        providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+      });
+    } else {
+      set({ providerSpendBreakdown: [] });
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
@@ -647,11 +683,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }));
           const session = get().sessions.find((s) => s.id === sessionId);
           if (session) {
-            const [sessSummary, wsSummary] = await Promise.all([
+            const [sessSummary, wsSummary, providerSummaries, budgetRules] = await Promise.all([
               summarizeSessionTelemetry(tauriDatabase, sessionId),
               summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+              summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
+              invokeBudgetRuleList(),
             ]);
-            set({ sessionSummary: sessSummary, workspaceSummary: wsSummary });
+            set({
+              sessionSummary: sessSummary,
+              workspaceSummary: wsSummary,
+              providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+            });
           }
         }
 
@@ -723,8 +765,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
-    const summary = await summarizeWorkspaceTelemetry(tauriDatabase, workspaceId);
-    set({ workspaceSummary: summary });
+    const [summary, providerSummaries, budgetRules] = await Promise.all([
+      summarizeWorkspaceTelemetry(tauriDatabase, workspaceId),
+      summarizeWorkspaceProviderTelemetry(tauriDatabase, workspaceId),
+      invokeBudgetRuleList(),
+    ]);
+    set({
+      workspaceSummary: summary,
+      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+    });
   },
 
   loadSessionTelemetry: async (sessionId) => {
@@ -856,5 +905,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await insertWorkspace(tauriDatabase, workspace);
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
     return workspace;
+  },
+
+  refreshProviderSpendBreakdown: async (workspaceId) => {
+    const [providerSummaries, budgetRules] = await Promise.all([
+      summarizeWorkspaceProviderTelemetry(tauriDatabase, workspaceId),
+      invokeBudgetRuleList(),
+    ]);
+    set({ providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules) });
   },
 }));

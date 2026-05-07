@@ -25,7 +25,9 @@ export {
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeProviderTelemetry,
+  summarizeWorkspaceProviderTelemetry,
   type TelemetrySummary,
+  type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';
 export {

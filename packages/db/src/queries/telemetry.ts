@@ -134,3 +134,29 @@ export async function summarizeProviderTelemetry(
   );
   return toSummary(rows[0]);
 }
+
+export interface ProviderTelemetrySummary {
+  readonly provider: ProviderName;
+  readonly estimatedCostUsd: number;
+}
+
+interface ProviderSummaryRow {
+  provider: ProviderName;
+  cost: number | null;
+}
+
+export async function summarizeWorkspaceProviderTelemetry(
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<ProviderTelemetrySummary>> {
+  const rows = await db.select<ProviderSummaryRow>(
+    `SELECT t.provider, COALESCE(SUM(t.estimated_cost_usd), 0) AS cost
+       FROM telemetry_records t
+       INNER JOIN sessions s ON s.id = t.session_id
+      WHERE s.workspace_id = ?
+      GROUP BY t.provider
+      ORDER BY cost DESC`,
+    [workspaceId],
+  );
+  return rows.map((r) => ({ provider: r.provider, estimatedCostUsd: r.cost ?? 0 }));
+}
