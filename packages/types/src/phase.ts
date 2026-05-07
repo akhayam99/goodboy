@@ -1,5 +1,7 @@
 import type {
   IsoDateTime,
+  ParallelPhaseGroupId,
+  ParallelPhaseRunId,
   PhaseDefinitionId,
   PhaseRunId,
   PhaseTemplateId,
@@ -11,6 +13,8 @@ import type { ProviderId } from './provider-registry';
 
 export type PhaseRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
+export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
+
 export type PhaseDefinition = Readonly<{
   id: PhaseDefinitionId;
   templateId: PhaseTemplateId;
@@ -19,6 +23,7 @@ export type PhaseDefinition = Readonly<{
   promptPrefix: string;
   providerOverride?: ProviderId;
   modelOverride?: string;
+  parallelGroup?: number;
 }>;
 
 export type PhaseTemplate = Readonly<{
@@ -50,3 +55,25 @@ export type PhaseTransition = Readonly<{
   carryForwardContext: string;
   at: IsoDateTime;
 }>;
+
+export interface ParallelPhaseGroup {
+  readonly id: ParallelPhaseGroupId;
+  readonly sessionId: SessionId;
+  readonly ordinal: number;
+  readonly mergeStrategy: ParallelMergeStrategy;
+  readonly createdAt: IsoDateTime;
+  readonly completedAt: IsoDateTime | null;
+}
+
+export interface ParallelPhaseRun {
+  readonly id: ParallelPhaseRunId;
+  readonly groupId: ParallelPhaseGroupId;
+  readonly phaseDefinitionId: PhaseDefinitionId;
+  readonly parallelIndex: number;
+  readonly runId: ProviderRunId;
+  readonly status: PhaseRunStatus;
+  readonly worktreePath: string;
+  readonly outputSummary: string | null;
+  readonly startedAt: IsoDateTime;
+  readonly completedAt: IsoDateTime | null;
+}
