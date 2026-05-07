@@ -30,19 +30,26 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="end session?">
-      <p className="text-sm text-muted-foreground">
-        this removes the worktree directory at the session path. the branch is preserved for manual
-        merge.
-      </p>
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose} disabled={busy}>
-          cancel
-        </Button>
-        <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-          {busy ? 'ending…' : 'end'}
-        </Button>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="end session?"
+      description="the worktree directory will be removed. the branch is preserved for manual merge."
+      size="sm"
+      footer={
+        <>
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
+            cancel
+          </Button>
+          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
+            {busy ? 'ending…' : 'end session'}
+          </Button>
+        </>
+      }
+    >
+      <div className="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
+        <span className="font-mono text-foreground">{session.goal}</span>
       </div>
     </Dialog>
   );

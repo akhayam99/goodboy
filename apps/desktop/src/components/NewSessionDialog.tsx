@@ -85,77 +85,105 @@ export function NewSessionDialog({
   );
 
   return (
-    <Dialog open={open} onClose={onClose} title="new session">
-      <div className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          goal
-          <Textarea
-            value={goal}
-            placeholder="refactor auth domain"
-            onChange={(e) => setGoal(e.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          branch prefix
-          <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="kay" />
-        </label>
-        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-          provider
-          <ul className="flex flex-col divide-y divide-border rounded border border-border">
-            {PROVIDER_ORDER.map((id) => {
-              const connected = connectedProviderIds.has(id);
-              const disabled = !connected;
-              return (
-                <li
-                  key={id}
-                  className={cn('flex items-center gap-2 px-3 py-2', disabled ? 'opacity-50' : '')}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="new session"
+      description="creates a worktree on a fresh branch from the workspace root."
+      size="md"
+      footer={
+        <>
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={onClose}>
+            cancel
+          </Button>
+          <Button onClick={onCreate} disabled={goal.trim().length === 0 || busy}>
+            {busy ? 'creating…' : 'create session'}
+          </Button>
+        </>
+      }
+    >
+      <Field label="goal" hint="what the session should accomplish.">
+        <Textarea
+          value={goal}
+          placeholder="refactor auth domain"
+          onChange={(e) => setGoal(e.target.value)}
+        />
+      </Field>
+
+      <Field label="branch prefix" hint="branch name will be `<prefix>/<slug>`.">
+        <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="kay" />
+      </Field>
+
+      <Field label="provider">
+        <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border">
+          {PROVIDER_ORDER.map((id) => {
+            const connected = connectedProviderIds.has(id);
+            const disabled = !connected;
+            const selected = selectedProvider === id;
+            return (
+              <li
+                key={id}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                  disabled ? 'opacity-50' : 'hover:bg-muted/40',
+                  selected && !disabled ? 'bg-muted/60' : '',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="provider"
+                  id={`provider-${id}`}
+                  value={id}
+                  checked={selected}
+                  disabled={disabled}
+                  onChange={() => setSelectedProvider(id)}
+                  className="accent-primary"
+                />
+                <label
+                  htmlFor={`provider-${id}`}
+                  className={cn(
+                    'flex flex-1 items-center justify-between',
+                    disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                  )}
                 >
-                  <input
-                    type="radio"
-                    name="provider"
-                    id={`provider-${id}`}
-                    value={id}
-                    checked={selectedProvider === id}
-                    disabled={disabled}
-                    onChange={() => setSelectedProvider(id)}
-                    className="accent-primary"
-                  />
-                  <label
-                    htmlFor={`provider-${id}`}
-                    className={cn(
-                      'flex flex-1 items-center justify-between',
-                      disabled ? 'cursor-not-allowed' : 'cursor-pointer',
-                    )}
-                  >
-                    <span className="font-medium">{PROVIDER_LABEL[id]}</span>
-                    {!connected && (
-                      <button
-                        type="button"
-                        className="text-[11px] text-primary underline hover:opacity-80"
-                        onClick={() => {
-                          onClose();
-                          onOpenSettings();
-                        }}
-                      >
-                        connect in settings
-                      </button>
-                    )}
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        {error ? <p className="text-xs text-danger">{error}</p> : null}
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
-          cancel
-        </Button>
-        <Button onClick={onCreate} disabled={goal.trim().length === 0 || busy}>
-          {busy ? 'creating…' : 'create'}
-        </Button>
-      </div>
+                  <span className="font-medium">{PROVIDER_LABEL[id]}</span>
+                  {!connected && (
+                    <button
+                      type="button"
+                      className="text-[11px] text-primary underline hover:opacity-80"
+                      onClick={() => {
+                        onClose();
+                        onOpenSettings();
+                      }}
+                    >
+                      connect in settings
+                    </button>
+                  )}
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      </Field>
     </Dialog>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold text-foreground">{label}</span>
+      {children}
+      {hint ? <p className="text-[11px] leading-relaxed text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }
