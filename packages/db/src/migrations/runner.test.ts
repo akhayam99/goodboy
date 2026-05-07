@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
+  ParallelPhaseGroup,
+  ParallelPhaseGroupId,
   PhaseDefinition,
   PhaseDefinitionId,
   PhaseRun,
@@ -34,6 +36,13 @@ import {
   listWorktreesForSession,
   deleteWorktreesForSession,
 } from '../queries/session-worktrees';
+import {
+  insertGroup,
+  listGroupsForSession,
+  getGroupById,
+  deleteGroup,
+  updateGroupCompletedAt,
+} from '../queries/parallel-phases';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -276,5 +285,158 @@ describe('migrate', () => {
     await deleteWorktreesForSession(db, session.id);
     const afterDelete = await listWorktreesForSession(db, session.id);
     expect(afterDelete).toHaveLength(0);
+  });
+
+  it('round-trips parallel_phase_groups: insert, list, get, update, delete', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+
+    const workspace: Workspace = {
+      id: 'ws_ppg' as WorkspaceId,
+      name: 'ppg-test',
+      rootPath: '/tmp/ppg-test',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertWorkspace(db, workspace);
+
+    const session: Session = {
+      id: 'sess_ppg' as SessionId,
+      workspaceId: workspace.id,
+      goal: 'parallel phase group test',
+      state: { kind: 'draft' },
+      contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertSession(db, session);
+
+    const group1: ParallelPhaseGroup = {
+      id: 'ppg_1' as ParallelPhaseGroupId,
+      sessionId: session.id,
+      ordinal: 0,
+      mergeStrategy: 'last_write_wins',
+      createdAt: now(),
+      completedAt: null,
+    };
+
+    const group2: ParallelPhaseGroup = {
+      id: 'ppg_2' as ParallelPhaseGroupId,
+      sessionId: session.id,
+      ordinal: 1,
+      mergeStrategy: 'manual',
+      createdAt: now(),
+      completedAt: null,
+    };
+
+    await insertGroup(db, group1);
+    await insertGroup(db, group2);
+
+    const groups = await listGroupsForSession(db, session.id);
+    expect(groups).toHaveLength(2);
+    expect(groups[0]!.ordinal).toBe(0);
+    expect(groups[0]!.mergeStrategy).toBe('last_write_wins');
+    expect(groups[1]!.ordinal).toBe(1);
+    expect(groups[1]!.mergeStrategy).toBe('manual');
+
+    const fetched = await getGroupById(db, group1.id);
+    expect(fetched).not.toBeNull();
+    if (!fetched) throw new Error('fetched should not be null');
+    expect(fetched.id).toBe(group1.id);
+    expect(fetched.mergeStrategy).toBe('last_write_wins');
+    expect(fetched.completedAt).toBeNull();
+
+    const completedAt = now();
+    await updateGroupCompletedAt(db, group1.id, completedAt);
+    const updated = await getGroupById(db, group1.id);
+    expect(updated).not.toBeNull();
+    if (!updated) throw new Error('updated should not be null');
+    expect(updated.completedAt).toBe(completedAt);
+
+    await deleteGroup(db, group1.id);
+    const afterDelete = await listGroupsForSession(db, session.id);
+    expect(afterDelete).toHaveLength(1);
+    expect(afterDelete[0]!.id).toBe(group2.id);
+  });
+
+  it('backward-compat: sequential phases without group_id still work', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+
+    const workspace: Workspace = {
+      id: 'ws_seq' as WorkspaceId,
+      name: 'seq-test',
+      rootPath: '/tmp/seq-test',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertWorkspace(db, workspace);
+
+    const session: Session = {
+      id: 'sess_seq' as SessionId,
+      workspaceId: workspace.id,
+      goal: 'sequential phases test',
+      state: { kind: 'draft' },
+      contextSlots: [],
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    await insertSession(db, session);
+
+    const def1: PhaseDefinition = {
+      id: 'pdef_seq_1' as PhaseDefinitionId,
+      templateId: 'pt_seq' as PhaseTemplateId,
+      ordinal: 0,
+      name: 'Phase 1',
+      promptPrefix: 'First phase',
+    };
+
+    const def2: PhaseDefinition = {
+      id: 'pdef_seq_2' as PhaseDefinitionId,
+      templateId: 'pt_seq' as PhaseTemplateId,
+      ordinal: 1,
+      name: 'Phase 2',
+      promptPrefix: 'Second phase',
+    };
+
+    const template: PhaseTemplate = {
+      id: 'pt_seq' as PhaseTemplateId,
+      workspaceId: workspace.id,
+      name: 'Sequential Workflow',
+      description: 'Sequential phases without groups',
+      definitions: [def1, def2],
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    await upsertPhaseTemplate(db, template);
+
+    const run1: PhaseRun = {
+      id: 'pr_seq_1' as PhaseRunId,
+      sessionId: session.id,
+      phaseDefinitionId: def1.id,
+      ordinal: 0,
+      name: 'Phase 1',
+      status: 'completed',
+    };
+
+    const run2: PhaseRun = {
+      id: 'pr_seq_2' as PhaseRunId,
+      sessionId: session.id,
+      phaseDefinitionId: def2.id,
+      ordinal: 1,
+      name: 'Phase 2',
+      status: 'completed',
+    };
+
+    await insertPhaseRun(db, run1);
+    await insertPhaseRun(db, run2);
+
+    const runs = await listPhaseRunsForSession(db, session.id);
+    expect(runs).toHaveLength(2);
+    expect(runs[0]!.ordinal).toBe(0);
+    expect(runs[1]!.ordinal).toBe(1);
   });
 });

@@ -72,3 +72,10 @@ export {
   deleteAuditRetry,
   type AuditRetryRow,
 } from './queries/permission-audit-retry';
+export {
+  insertGroup,
+  listGroupsForSession,
+  getGroupById,
+  deleteGroup,
+  updateGroupCompletedAt,
+} from './queries/parallel-phases';
