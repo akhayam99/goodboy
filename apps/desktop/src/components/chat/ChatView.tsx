@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@kay-am/types';
 import { useAppStore, useTranscript } from '../../store';
-import { EndSessionButton } from '../EndSessionButton';
-import { OpenInEditorButton } from '../OpenInEditorButton';
+import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
 import { reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
@@ -10,11 +9,14 @@ import { AuthRequiredCallout } from './AuthRequiredCallout';
 
 interface ChatViewProps {
   session: Session;
+  contextOpen: boolean;
+  onToggleContext: () => void;
+  onRequestEnd: () => void;
 }
 
 const PIN_TOLERANCE_PX = 32;
 
-export function ChatView({ session }: ChatViewProps) {
+export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id] ?? null);
@@ -45,20 +47,17 @@ export function ChatView({ session }: ChatViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2">
-        <div>
-          <h1 className="text-sm font-semibold tracking-tight">{session.goal}</h1>
-          <p className="text-xs text-muted-foreground">state: {session.state.kind}</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <OpenInEditorButton worktreePath={worktreePath} />
-          <EndSessionButton session={session} />
-        </div>
-      </div>
+      <ChatHeader
+        session={session}
+        worktreePath={worktreePath}
+        contextOpen={contextOpen}
+        onToggleContext={onToggleContext}
+        onEndSession={onRequestEnd}
+      />
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        className="relative flex-1 overflow-y-auto px-4 py-3"
+        className="relative flex-1 overflow-y-auto px-6 py-4"
       >
         {items.length === 0 ? (
           isProviderDisconnected ? (
@@ -71,7 +70,7 @@ export function ChatView({ session }: ChatViewProps) {
             <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
           )
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="mx-auto flex max-w-3xl flex-col gap-6">
             {items.map((item) => (
               <li key={item.key}>
                 <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
@@ -82,7 +81,7 @@ export function ChatView({ session }: ChatViewProps) {
         {!pinned ? (
           <button
             type="button"
-            className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-xs shadow"
+            className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-xs shadow-md"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
@@ -94,7 +93,7 @@ export function ChatView({ session }: ChatViewProps) {
         ) : null}
       </div>
       {isEnded ? (
-        <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
           session ended — no further turns. branch preserved.
         </div>
       ) : (

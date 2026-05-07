@@ -59,41 +59,43 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="settings" className="min-w-96">
-      <div className="flex flex-col gap-4">
+    <Dialog open={open} onClose={onClose} title="settings" className="min-w-[28rem]">
+      <div className="flex flex-col gap-6">
         <ProvidersPanel />
 
-        <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
-          <Input
-            value={editorBinary}
-            onChange={(e) => setEditorBinary(e.target.value)}
-            placeholder={DEFAULT_EDITOR_BINARY}
-          />
-        </Section>
+        <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
+          <Section label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
+            <Input
+              value={editorBinary}
+              onChange={(e) => setEditorBinary(e.target.value)}
+              placeholder={DEFAULT_EDITOR_BINARY}
+            />
+          </Section>
 
-        <Section
-          label={
-            workspace ? `branch prefix — ${workspace.name}` : 'branch prefix (workspace scoped)'
-          }
-          help={
-            workspace
-              ? 'used as default in the new-session dialog'
-              : 'select a workspace to edit per-workspace prefix'
-          }
-        >
-          <Input
-            value={branchPrefix}
-            onChange={(e) => setBranchPrefix(e.target.value)}
-            placeholder={DEFAULT_BRANCH_PREFIX}
-            disabled={!workspace}
-          />
-        </Section>
+          <Section
+            label={
+              workspace ? `branch prefix — ${workspace.name}` : 'branch prefix (workspace scoped)'
+            }
+            help={
+              workspace
+                ? 'used as default in the new-session dialog'
+                : 'select a workspace to edit per-workspace prefix'
+            }
+          >
+            <Input
+              value={branchPrefix}
+              onChange={(e) => setBranchPrefix(e.target.value)}
+              placeholder={DEFAULT_BRANCH_PREFIX}
+              disabled={!workspace}
+            />
+          </Section>
+        </div>
 
         {error ? <p className="text-xs text-danger">{error}</p> : null}
-        {saveState === 'saved' ? <p className="text-xs text-primary">saved.</p> : null}
+        {saveState === 'saved' ? <p className="text-xs text-success">saved.</p> : null}
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="ghost" onClick={onClose}>
           close
         </Button>
@@ -115,10 +117,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+    <div className="flex flex-col gap-1.5">
+      <div className="text-xs font-semibold text-foreground">{label}</div>
       {children}
-      {help ? <p className="text-[11px] text-muted-foreground">{help}</p> : null}
+      {help ? <p className="text-[11px] leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
   );
 }

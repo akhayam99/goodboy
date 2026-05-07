@@ -37,9 +37,9 @@ export function ProvidersPanel() {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium text-muted-foreground">providers</div>
+        <div className="text-xs font-semibold text-foreground">providers</div>
         <Button
           variant="ghost"
           size="sm"
@@ -50,7 +50,7 @@ export function ProvidersPanel() {
           {refreshing ? 'refreshing…' : 'refresh all'}
         </Button>
       </div>
-      <ul className="flex flex-col divide-y divide-border rounded border border-border">
+      <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
         {providers.map((p) => (
           <ProviderRow key={p.id} info={p} onRefresh={onRefresh} />
         ))}

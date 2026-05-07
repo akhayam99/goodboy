@@ -31,12 +31,12 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
     <dialog
       ref={ref}
       className={cn(
-        'rounded-lg border border-border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/30',
+        'rounded-lg border border-border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/40',
         className,
       )}
     >
-      <div className="flex min-w-72 flex-col gap-3 p-4">
-        {title ? <h2 className="text-sm font-semibold">{title}</h2> : null}
+      <div className="flex min-w-72 flex-col gap-4 p-5">
+        {title ? <h2 className="text-sm font-semibold tracking-tight">{title}</h2> : null}
         {children}
       </div>
     </dialog>

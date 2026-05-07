@@ -20,9 +20,9 @@ export function ContextPanel({ session }: ContextPanelProps) {
 
   return (
     <ScrollArea className="h-full">
-      <div className="flex flex-col gap-3 p-3">
+      <div className="flex flex-col gap-4 p-4">
         <header className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             context
           </span>
           <SummarizerBadge
@@ -32,7 +32,7 @@ export function ContextPanel({ session }: ContextPanelProps) {
           />
         </header>
 
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-4">
           {SLOT_KEYS.map((key) => {
             const slot = slotsByKey.get(key);
             return (
@@ -74,9 +74,11 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
   };
 
   return (
-    <li className="flex flex-col gap-1">
+    <li className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-medium text-muted-foreground">{SLOT_LABELS[slotKey]}</label>
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {SLOT_LABELS[slotKey]}
+        </label>
         <button
           type="button"
           onClick={() => onToggle(!enabled)}
@@ -116,7 +118,7 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
           type="button"
           onClick={() => setEditing(true)}
           className={cn(
-            'whitespace-pre-wrap rounded-md border border-transparent px-2 py-1.5 text-left text-xs hover:border-border hover:bg-muted/40',
+            'whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40',
             !enabled && 'opacity-60',
           )}
         >
@@ -142,13 +144,13 @@ function SummarizerBadge({
 }) {
   const styles: Record<SummarizerStatusKind, string> = {
     idle: 'bg-muted text-muted-foreground',
-    running: 'bg-primary/10 text-primary',
+    running: 'bg-info/10 text-info',
     error: 'bg-danger/10 text-danger',
   };
   const labels: Record<SummarizerStatusKind, string> = {
-    idle: 'summarizer idle',
+    idle: 'idle',
     running: 'summarizing…',
-    error: 'summarizer error',
+    error: 'error',
   };
   const tooltip =
     status === 'error' && error
