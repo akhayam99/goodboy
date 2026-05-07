@@ -5,6 +5,8 @@ import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
 import { PhaseTransitionCard } from './PhaseTransitionCard';
+import { PermissionRequestCard } from './PermissionRequestCard';
+import { PermissionDecisionCard } from './PermissionDecisionCard';
 
 const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
   create: 'bg-primary/10 text-primary',
@@ -62,6 +64,10 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
       return <PhaseTransitionCard item={item} />;
     case 'done':
       return <hr className="border-border" />;
+    case 'permission_request':
+      return <PermissionRequestCard item={item} />;
+    case 'permission_decision':
+      return <PermissionDecisionCard item={item} />;
   }
 }
 

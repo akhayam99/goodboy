@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { ProviderName } from './provider';
 
 export interface ProviderCapabilities {
@@ -80,6 +80,23 @@ export type TurnEvent =
       fromPhase: { ordinal: number; name: string };
       toPhase: { ordinal: number; name: string };
       carryForwardContext: string;
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'permission_request';
+      runId: ProviderRunId;
+      toolUseId: string;
+      toolName: string;
+      input: unknown;
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'permission_decision';
+      runId: ProviderRunId;
+      toolUseId: string;
+      decision: 'allow' | 'deny';
+      ruleId: PermissionRuleId | null;
+      decidedBy: 'engine' | 'user' | 'default';
       at: IsoDateTime;
     };
 

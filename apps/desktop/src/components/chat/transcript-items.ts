@@ -1,4 +1,11 @@
-import type { ProviderId, ProviderRunId, ProviderUsage, TurnEvent } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  PermissionRuleId,
+  ProviderId,
+  ProviderRunId,
+  ProviderUsage,
+  TurnEvent,
+} from '@kay-am/types';
 import { decodeAuthRequiredMessage } from '../../turn';
 
 export type TranscriptItem =
@@ -26,7 +33,24 @@ export type TranscriptItem =
       carryForwardContext: string;
       at: string;
     }
-  | { kind: 'done'; key: string };
+  | { kind: 'done'; key: string }
+  | {
+      kind: 'permission_request';
+      key: string;
+      toolUseId: string;
+      toolName: string;
+      input: unknown;
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'permission_decision';
+      key: string;
+      toolUseId: string;
+      decision: 'allow' | 'deny';
+      ruleId: PermissionRuleId | null;
+      decidedBy: 'engine' | 'user' | 'default';
+      at: IsoDateTime;
+    };
 
 /**
  * Returns distinct runIds from events, excluding the sentinel 'history' value
@@ -151,6 +175,27 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
         break;
       case 'done':
         items.push({ kind: 'done', key: `done-${i}` });
+        break;
+      case 'permission_request':
+        items.push({
+          kind: 'permission_request',
+          key: `perm-req-${event.toolUseId}-${i}`,
+          toolUseId: event.toolUseId,
+          toolName: event.toolName,
+          input: event.input,
+          at: event.at,
+        });
+        break;
+      case 'permission_decision':
+        items.push({
+          kind: 'permission_decision',
+          key: `perm-dec-${event.toolUseId}-${i}`,
+          toolUseId: event.toolUseId,
+          decision: event.decision,
+          ruleId: event.ruleId,
+          decidedBy: event.decidedBy,
+          at: event.at,
+        });
         break;
     }
   }
