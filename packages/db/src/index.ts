@@ -16,6 +16,8 @@ export {
   updateSessionState,
   getSessionById,
   listSessionsForWorkspace,
+  renameSession,
+  deleteSession,
 } from './queries/session';
 export { insertMessage, listMessagesForSession } from './queries/message';
 export { upsertContextSlot, listContextSlotsForSession } from './queries/context-slot';

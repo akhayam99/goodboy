@@ -1,7 +1,7 @@
 import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
 
-export type DialogSize = 'sm' | 'md' | 'lg';
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface DialogProps {
   open: boolean;
@@ -22,6 +22,7 @@ const SIZE: Record<DialogSize, string> = {
   sm: 'w-[24rem]',
   md: 'w-[32rem]',
   lg: 'w-[44rem]',
+  xl: 'w-[56rem]',
 };
 
 export function Dialog({
