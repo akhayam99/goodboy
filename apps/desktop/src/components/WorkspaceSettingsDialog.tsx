@@ -1,9 +1,10 @@
+import type { WorkspaceId } from '@kay-am/types';
 import { Button, Dialog } from '@kay-am/ui';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
 
 interface WorkspaceSettingsDialogProps {
-  workspaceId: string;
+  workspaceId: WorkspaceId;
   workspaceName: string;
   open: boolean;
   onClose: () => void;

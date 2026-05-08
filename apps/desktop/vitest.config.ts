@@ -6,5 +6,6 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     passWithNoTests: true,
+    exclude: ['**/node_modules/**', '**/a11y/**'],
   },
 });

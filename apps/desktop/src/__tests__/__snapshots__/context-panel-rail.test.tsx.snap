@@ -49,7 +49,7 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       class="flex items-center justify-between"
     >
       <span
-        class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+        class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
       >
         context
       </span>
@@ -57,7 +57,7 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
         class="flex items-center gap-1"
       >
         <span
-          class="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide bg-muted text-muted-foreground"
+          class="rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide bg-muted text-muted-foreground"
           title="no summarizer run yet — runs after each turn when an api key is set"
         >
           idle
@@ -108,13 +108,13 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
           class="flex items-center justify-between gap-2"
         >
           <label
-            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             goal
           </label>
           <button
             aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
             type="button"
           >
             on
@@ -138,13 +138,13 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
           class="flex items-center justify-between gap-2"
         >
           <label
-            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             files touched
           </label>
           <button
             aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
             type="button"
           >
             on
@@ -168,13 +168,13 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
           class="flex items-center justify-between gap-2"
         >
           <label
-            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             decisions
           </label>
           <button
             aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
             type="button"
           >
             on
@@ -198,13 +198,13 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
           class="flex items-center justify-between gap-2"
         >
           <label
-            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             open questions
           </label>
           <button
             aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
             type="button"
           >
             on
@@ -228,13 +228,13 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
           class="flex items-center justify-between gap-2"
         >
           <label
-            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             last output summary
           </label>
           <button
             aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
             type="button"
           >
             on
