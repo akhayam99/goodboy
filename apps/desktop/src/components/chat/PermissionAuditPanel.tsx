@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Button } from '@kay-am/ui';
+import { Button, Tooltip } from '@kay-am/ui';
 import type { PermissionAuditEntry, ProviderRunId, SessionId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 import { invokePermissionAuditList, invokePermissionAuditClear } from '../../permissions';
@@ -144,14 +144,16 @@ export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
       <div className="fixed right-0 top-0 z-50 flex h-full w-[480px] max-w-full flex-col border-l border-border bg-background shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="text-sm font-semibold">permission audit log</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="close audit panel"
-          >
-            ✕
-          </button>
+          <Tooltip content="close" side="left">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="close audit panel"
+            >
+              ✕
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
