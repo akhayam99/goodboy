@@ -20,6 +20,7 @@ import {
   insertSessionWorktree,
   insertTelemetry,
   insertWorkspace,
+  deleteWorkspace,
   listContextSlotsForSession,
   listMessagesForSession,
   listSessionsForWorkspace,
@@ -206,6 +207,7 @@ export interface AppActions {
   refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  deleteWorkspace(id: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -1602,6 +1604,71 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await insertWorkspace(tauriDatabase, workspace);
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
     return workspace;
+  },
+
+  deleteWorkspace: async (id) => {
+    const state = get();
+    const workspace = state.workspaces.find((w) => w.id === id);
+    if (!workspace) throw new Error(`workspace not found: ${id}`);
+
+    const sessions = await listSessionsForWorkspace(tauriDatabase, id);
+    const aliveSessions = sessions.filter(
+      (s) => s.state.kind === 'running' || s.state.kind === 'idle',
+    );
+    if (aliveSessions.length > 0) {
+      throw new Error(
+        `${aliveSessions.length} session${aliveSessions.length > 1 ? 's are' : ' is'} still running or idle. end them before deleting this workspace.`,
+      );
+    }
+
+    // Remove all worktrees from disk for sessions that have ended
+    for (const session of sessions) {
+      const worktreePaths = state.sessionWorktrees[session.id] ?? [];
+      for (const worktreePath of worktreePaths) {
+        try {
+          await removeWorktree(workspace.rootPath, worktreePath);
+        } catch {
+          // worktree may already be gone — best-effort cleanup
+        }
+      }
+    }
+
+    // Optimistic UI update
+    const prevWorkspaces = state.workspaces;
+    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+    set((s) => ({
+      workspaces: s.workspaces.filter((w) => w.id !== id),
+      ...(wasCurrentWorkspace
+        ? {
+            currentWorkspaceId: null,
+            currentSessionId: null,
+            sessions: [],
+            sessionSummary: null,
+            workspaceSummary: null,
+            transcripts: {},
+            messages: {},
+            sessionTelemetry: {},
+            sessionSlots: {},
+            sessionWorktrees: {},
+            sessionPhaseRuns: {},
+            sessionBudgets: {},
+            summarizerStatus: {},
+            budgetAlerts: [],
+            unknownPayloadCounts: {},
+          }
+        : {}),
+    }));
+
+    try {
+      await deleteWorkspace(tauriDatabase, id);
+    } catch (err) {
+      // Rollback optimistic update
+      set((s) => ({
+        workspaces: prevWorkspaces,
+        ...(wasCurrentWorkspace ? { currentWorkspaceId: id } : {}),
+      }));
+      throw err;
+    }
   },
 
   refreshProviderSpendBreakdown: async (workspaceId) => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
-import { FolderOpen, FolderPlus, Plus } from 'lucide-react';
+import { FolderOpen, FolderPlus, Plus, Trash2 } from 'lucide-react';
 import type { ProviderId, Session, SessionId, Workspace } from '@kay-am/types';
 import {
   useAppStore,
@@ -10,6 +10,7 @@ import {
   useSessions,
   useWorkspaces,
 } from '../store';
+import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 import { NewSessionDialog } from './NewSessionDialog';
 import { OpenInEditorButton } from './OpenInEditorButton';
 import { StatusBadge } from './StatusBadge';
@@ -40,6 +41,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -52,6 +54,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 workspace={ws}
                 isActive={ws.id === currentWorkspace?.id}
                 onClick={() => void setCurrentWorkspace(ws.id)}
+                onDelete={() => setWorkspaceToDelete(ws)}
               />
             ))}
             <li>
@@ -105,6 +108,13 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onOpenSettings={onOpenSettings}
         />
       ) : null}
+      {workspaceToDelete ? (
+        <DeleteWorkspaceDialog
+          workspace={workspaceToDelete}
+          open={workspaceToDelete !== null}
+          onClose={() => setWorkspaceToDelete(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -135,33 +145,50 @@ interface WorkspaceRowProps {
   workspace: Workspace;
   isActive: boolean;
   onClick: () => void;
+  onDelete: () => void;
 }
 
-function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
+function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowProps) {
   return (
-    <li>
-      <button
-        type="button"
-        onClick={onClick}
+    <li className="group">
+      <div
         className={cn(
-          'group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+          'flex items-center gap-1 rounded-md transition-colors',
           isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/60',
         )}
       >
-        <span
-          className={cn(
-            'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-            isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-          )}
-          aria-hidden
-        />
-        <FolderOpen
-          size={13}
-          aria-hidden
-          className={cn('shrink-0', isActive ? 'text-foreground' : 'text-muted-foreground')}
-        />
-        <span className="line-clamp-1 flex-1 font-medium">{workspace.name}</span>
-      </button>
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
+        >
+          <span
+            className={cn(
+              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+              isActive ? 'bg-primary' : 'bg-muted-foreground/30',
+            )}
+            aria-hidden
+          />
+          <FolderOpen
+            size={13}
+            aria-hidden
+            className={cn('shrink-0', isActive ? 'text-foreground' : 'text-muted-foreground')}
+          />
+          <span className="line-clamp-1 flex-1 font-medium">{workspace.name}</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/50 hover:!text-danger"
+          title="delete workspace"
+          aria-label={`delete workspace ${workspace.name}`}
+        >
+          <Trash2 size={12} aria-hidden />
+        </button>
+      </div>
     </li>
   );
 }
