@@ -27,6 +27,8 @@ vi.mock('../../store', () => ({
       sessionWorktrees: {},
       sessionTelemetry: {},
       sessionSummary: null,
+      workspaceSummary: null,
+      providerSpendBreakdown: [],
       loadBudgetAlerts: vi.fn(),
       dismissBudgetAlert: vi.fn(),
       refreshProviders: vi.fn(),
@@ -137,7 +139,11 @@ describe('a11y smoke — WorkspacesSidebar', () => {
 
 describe('a11y smoke — StatusBar', () => {
   it('no violations (idle, no session)', async () => {
-    const { container } = render(<StatusBar />);
+    const { container } = render(
+      <ToastProvider>
+        <StatusBar />
+      </ToastProvider>,
+    );
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });

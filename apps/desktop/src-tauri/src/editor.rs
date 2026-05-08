@@ -1,7 +1,50 @@
 use std::process::Command;
+use std::sync::OnceLock;
 use thiserror::Error;
 
 const DEFAULT_EDITOR: &str = "code";
+
+/// Explicit allowlist of known editors. No auto-discovery of unknown binaries.
+const KNOWN_EDITORS: &[(&str, &str)] = &[
+    ("code", "VS Code"),
+    ("cursor", "Cursor"),
+    ("webstorm", "WebStorm"),
+    ("idea", "IntelliJ IDEA"),
+    ("zed", "Zed"),
+    ("subl", "Sublime Text"),
+    ("vim", "Vim"),
+    ("nvim", "Neovim"),
+];
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DetectedEditor {
+    pub binary: String,
+    pub label: String,
+}
+
+static DETECTED_EDITORS: OnceLock<Vec<DetectedEditor>> = OnceLock::new();
+
+fn detect_editors_inner() -> Vec<DetectedEditor> {
+    KNOWN_EDITORS
+        .iter()
+        .filter_map(|(binary, label)| {
+            which_binary(binary).map(|_| DetectedEditor {
+                binary: binary.to_string(),
+                label: label.to_string(),
+            })
+        })
+        .collect()
+}
+
+fn which_binary(binary: &str) -> Option<()> {
+    let status = Command::new("which").arg(binary).output().ok()?;
+    if status.status.success() { Some(()) } else { None }
+}
+
+#[tauri::command]
+pub fn detect_editors() -> Vec<DetectedEditor> {
+    DETECTED_EDITORS.get_or_init(detect_editors_inner).clone()
+}
 
 #[derive(Debug, Error)]
 pub enum EditorError {

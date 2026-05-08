@@ -1,44 +1,19 @@
 import { useState } from 'react';
-import {
-  GitBranch,
-  FolderOpen,
-  Cpu,
-  PanelRightClose,
-  PanelRightOpen,
-  Square,
-  ShieldCheck,
-} from 'lucide-react';
+import { GitBranch, Square, ShieldCheck } from 'lucide-react';
 import { Button, cn } from '@kay-am/ui';
-import type {
-  PhaseRun,
-  PhaseRunStatus,
-  ProviderId,
-  ProviderRunId,
-  Session,
-  SessionId,
-} from '@kay-am/types';
-import { getDefaultTurnModel } from '@kay-am/core';
-import { openInEditor } from '../../editor';
-import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../settings';
+import type { PhaseRun, PhaseRunStatus, ProviderRunId, Session, SessionId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
+import { OpenInEditorButton } from '../OpenInEditorButton';
 import { PermissionAuditPanel } from './PermissionAuditPanel';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
 interface ChatHeaderProps {
   session: Session;
   worktreePath: string | null;
-  contextOpen: boolean;
-  onToggleContext: () => void;
   onEndSession: () => void;
   parallelRunIds?: ReadonlyArray<ProviderRunId>;
   onSelectRun?: (runId: ProviderRunId) => void;
 }
-
-const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
-};
 
 function inferBranch(worktreePath: string | null, sessionId: string): string {
   if (!worktreePath) return sessionId.slice(0, 8);
@@ -49,43 +24,15 @@ function inferBranch(worktreePath: string | null, sessionId: string): string {
 export function ChatHeader({
   session,
   worktreePath,
-  contextOpen,
-  onToggleContext,
   onEndSession,
   parallelRunIds,
   onSelectRun,
 }: ChatHeaderProps) {
-  const editorBinary = useAppStore(
-    (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
-  );
   const [copied, setCopied] = useState(false);
-  const [openErr, setOpenErr] = useState<string | null>(null);
   const [auditOpen, setAuditOpen] = useState(false);
 
-  const provider = session.providerPreference.defaultProvider;
-  const model = session.providerPreference.defaultModel ?? getDefaultTurnModel(provider);
   const branch = inferBranch(worktreePath, session.id);
   const isEnded = session.state.kind === 'ended';
-
-  const onCopyBranch = async () => {
-    try {
-      await navigator.clipboard.writeText(branch);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // clipboard denied — silent
-    }
-  };
-
-  const onOpenWorktree = async () => {
-    if (!worktreePath) return;
-    setOpenErr(null);
-    try {
-      await openInEditor(worktreePath, editorBinary);
-    } catch (err) {
-      setOpenErr(err instanceof Error ? err.message : String(err));
-    }
-  };
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
@@ -98,8 +45,18 @@ export function ChatHeader({
 
   const isParallel = (parallelRunIds?.length ?? 0) > 1;
 
+  const onCopyBranch = async () => {
+    try {
+      await navigator.clipboard.writeText(branch);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // clipboard denied — silent
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
+    <div className="flex w-full items-center gap-3 border-b border-border px-4 py-2.5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
@@ -122,34 +79,12 @@ export function ChatHeader({
             <span className="font-mono">{branch}</span>
             {copied ? <span className="text-success">copied</span> : null}
           </button>
-          <button
-            type="button"
-            onClick={() => void onOpenWorktree()}
-            disabled={!worktreePath}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted hover:text-foreground',
-              !worktreePath && 'opacity-50 hover:bg-transparent hover:text-muted-foreground',
-            )}
-            title={
-              worktreePath ? `open ${worktreePath} in ${editorBinary}` : 'no worktree available'
-            }
-          >
-            <FolderOpen size={12} aria-hidden />
-            <span className="font-mono">
-              {worktreePath ? truncatePath(worktreePath) : 'no worktree'}
-            </span>
-          </button>
-          <span className="inline-flex items-center gap-1">
-            <Cpu size={12} aria-hidden />
-            <span className="font-mono">
-              {PROVIDER_LABEL[provider]} · {model}
-            </span>
-          </span>
-          {openErr ? <span className="text-danger">{openErr}</span> : null}
           {session.phaseTemplateId ? <PhaseProgressPill sessionId={session.id} /> : null}
         </div>
       </div>
+
       <div className="flex shrink-0 items-center gap-1">
+        <OpenInEditorButton worktreePath={worktreePath} />
         {!isEnded ? (
           <Button
             variant="ghost"
@@ -169,16 +104,8 @@ export function ChatHeader({
         >
           <ShieldCheck size={14} aria-hidden />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleContext}
-          title={contextOpen ? 'hide context panel' : 'show context panel'}
-          aria-label={contextOpen ? 'hide context panel' : 'show context panel'}
-        >
-          {contextOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
-        </Button>
       </div>
+
       <PermissionAuditPanel
         sessionId={session.id}
         open={auditOpen}
@@ -186,11 +113,6 @@ export function ChatHeader({
       />
     </div>
   );
-}
-
-function truncatePath(p: string, max = 48): string {
-  if (p.length <= max) return p;
-  return `…${p.slice(-(max - 1))}`;
 }
 
 const STATUS_DOT: Record<PhaseRunStatus, string> = {

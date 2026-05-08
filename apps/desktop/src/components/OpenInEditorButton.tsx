@@ -1,54 +1,125 @@
-import { useState } from 'react';
-import { Button } from '@kay-am/ui';
-import type { ButtonProps } from '@kay-am/ui';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, FolderOpen } from 'lucide-react';
+import { Button, cn, type ButtonSize, type ButtonVariant } from '@kay-am/ui';
 import { openInEditor } from '../editor';
-import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
+import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore } from '../store';
 
-interface OpenInEditorButtonProps extends Omit<ButtonProps, 'onClick' | 'children'> {
+interface OpenInEditorButtonProps {
   worktreePath: string | null;
-  label?: string;
+  size?: ButtonSize;
+  variant?: ButtonVariant;
 }
 
 export function OpenInEditorButton({
   worktreePath,
-  label,
   size = 'sm',
   variant = 'ghost',
-  ...rest
 }: OpenInEditorButtonProps) {
-  const [error, setError] = useState<string | null>(null);
-  const editorBinary = useAppStore(
+  const detectedEditors = useAppStore((s) => s.detectedEditors);
+  const globalEditorBinary = useAppStore(
     (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
   );
-  const resolvedLabel = label ?? `open in ${editorBinary}`;
+  const savedDefault = useAppStore((s) => s.settings[SETTING_DEFAULT_EDITOR] ?? null);
+  const saveSetting = useAppStore((s) => s.saveSetting);
 
-  const onClick = async () => {
+  const resolvedDefault = savedDefault ?? globalEditorBinary;
+
+  const [error, setError] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
+  }, [dropdownOpen]);
+
+  const open = async (binary: string) => {
     if (!worktreePath) return;
     setError(null);
     try {
-      await openInEditor(worktreePath, editorBinary);
+      await openInEditor(worktreePath, binary);
+      if (binary !== resolvedDefault) {
+        await saveSetting(SETTING_DEFAULT_EDITOR, binary);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+    setDropdownOpen(false);
   };
 
-  const disabled = rest.disabled || worktreePath === null;
-  const tooltip =
-    worktreePath === null
-      ? 'session has no worktree (worktree paths are not yet persisted across restarts)'
-      : (error ?? undefined);
+  const disabled = worktreePath === null;
+  const title = disabled ? 'no worktree available' : (error ?? undefined);
+
+  const hasMultiple = detectedEditors.length > 1;
+
+  if (!hasMultiple) {
+    return (
+      <Button
+        size={size}
+        variant={variant}
+        disabled={disabled}
+        title={title}
+        onClick={() => void open(resolvedDefault)}
+      >
+        <FolderOpen size={12} aria-hidden />
+        open in {resolvedDefault}
+      </Button>
+    );
+  }
 
   return (
-    <Button
-      {...rest}
-      size={size}
-      variant={variant}
-      disabled={disabled}
-      title={tooltip}
-      onClick={() => void onClick()}
-    >
-      {resolvedLabel}
-    </Button>
+    <div className="relative" ref={containerRef}>
+      <div className="flex">
+        <Button
+          size={size}
+          variant={variant}
+          disabled={disabled}
+          title={title}
+          className="rounded-r-none"
+          onClick={() => void open(resolvedDefault)}
+        >
+          <FolderOpen size={12} aria-hidden />
+          open in {resolvedDefault}
+        </Button>
+        <Button
+          size={size}
+          variant={variant}
+          disabled={disabled}
+          aria-label="choose editor"
+          className="rounded-l-none border-l border-border px-1"
+          onClick={() => setDropdownOpen((v) => !v)}
+        >
+          <ChevronDown size={10} aria-hidden />
+        </Button>
+      </div>
+
+      {dropdownOpen ? (
+        <div className="absolute right-0 top-full z-20 mt-0.5 min-w-[160px] rounded-md border border-border bg-background py-1 shadow-md text-xs">
+          {detectedEditors.map((ed) => (
+            <button
+              key={ed.binary}
+              type="button"
+              onClick={() => void open(ed.binary)}
+              className={cn(
+                'flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-muted',
+                ed.binary === resolvedDefault && 'font-medium text-foreground',
+              )}
+            >
+              {ed.label}
+              {ed.binary === resolvedDefault ? (
+                <span className="ml-auto text-[10px] text-muted-foreground">default</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

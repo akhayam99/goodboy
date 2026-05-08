@@ -26,7 +26,7 @@ function buildLayout(opts: { collapsed: boolean; hasFooter: boolean }): {
   if (hasFooter) {
     const templateAreas = collapsed
       ? `"header header" "left main" "footer footer"`
-      : `"header header header" "left main right" "footer footer right"`;
+      : `"header header header" "left main right" "footer footer footer"`;
     return { templateAreas, templateColumns, templateRows: 'auto minmax(0,1fr) auto' };
   }
   const templateAreas = collapsed

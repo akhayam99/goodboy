@@ -8,6 +8,7 @@ export {
   type SystemAlert,
   type SystemAlertKind,
 } from './store';
+export type { DetectedEditor } from '../editor';
 
 export {
   selectCurrentSession,

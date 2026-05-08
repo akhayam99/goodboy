@@ -10,7 +10,6 @@ import { EndSessionDialog } from './components/EndSessionDialog';
 import { ProvidersChip } from './components/ProvidersChip';
 import { SettingsDialog } from './components/SettingsDialog';
 import { StatusBar } from './components/StatusBar';
-import { TelemetryPill } from './components/TelemetryPill';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
@@ -94,7 +93,6 @@ export function App() {
             <span className="font-semibold tracking-tight">kAY.am</span>
             <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
               <ProvidersChip onOpenSettings={() => setSettingsOpen(true)} />
-              <TelemetryPill />
               <AlertCenter />
               <Button
                 variant="ghost"
@@ -106,6 +104,7 @@ export function App() {
                 <Settings size={14} aria-hidden />
                 settings
               </Button>
+              {/* TODO (@ak): cmd+K palette not shipped yet */}
               <span className="hidden sm:inline">
                 press <KbdPill>⌘K</KbdPill>
               </span>
@@ -117,19 +116,18 @@ export function App() {
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>
           ) : currentSession ? (
-            <ChatView
-              session={currentSession}
-              contextOpen={contextOpen}
-              onToggleContext={onToggleContext}
-              onRequestEnd={() => setEndOpen(true)}
-            />
+            <ChatView session={currentSession} onRequestEnd={() => setEndOpen(true)} />
           ) : (
             <EmptyState hasWorkspace={Boolean(currentWorkspace)} />
           )
         }
-        rightSidebar={currentSession ? <ContextPanel session={currentSession} /> : null}
+        rightSidebar={
+          currentSession ? (
+            <ContextPanel session={currentSession} onCollapse={onToggleContext} />
+          ) : null
+        }
         rightSidebarCollapsed={rightSidebarCollapsed}
-        footer={<StatusBar onEndSession={() => setEndOpen(true)} />}
+        footer={<StatusBar />}
       />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {currentSession ? (

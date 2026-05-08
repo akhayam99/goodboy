@@ -92,6 +92,7 @@ import {
   type ProviderStatus,
   type ProviderStatuses,
 } from '../providers';
+import { detectEditors, type DetectedEditor } from '../editor';
 import { validateGitRepo } from '../repo';
 import { resolveProviderForTurn } from '../routing';
 import {
@@ -201,6 +202,7 @@ export interface AppState {
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
   readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
+  readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
   readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
 }
@@ -315,6 +317,7 @@ const initialState: AppState = {
   sessionPhaseRuns: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
+  detectedEditors: [],
   systemAlerts: [],
   workspaceOverrides: {},
   sessionOverrides: {},
@@ -556,11 +559,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
 
       set({ bootPhase: 'detecting-cli' });
-      const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
+      const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
         getProviderStatus(),
         getCursorStatus(),
         getCodexStatus(),
+        detectEditors(),
       ]);
+      set({ detectedEditors });
       const statuses: ProviderStatuses = {
         anthropic: providerStatus,
         cursor: cursorStatus,

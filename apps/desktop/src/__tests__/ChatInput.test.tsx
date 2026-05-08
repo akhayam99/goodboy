@@ -32,6 +32,7 @@ vi.mock('../components/Toast', () => ({
 
 vi.mock('@kay-am/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
+  getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
   resolveProvider: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',

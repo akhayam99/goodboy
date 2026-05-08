@@ -47,6 +47,7 @@ pub fn run() {
       secrets::secret_delete,
       secrets::secret_has,
       secrets::secret_get,
+      editor::detect_editors,
       editor::open_in_editor,
       editor::open_url,
       db::db_exec,
