@@ -90,6 +90,23 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
   );
 }
 
+function ThinkingIndicator() {
+  return (
+    <div
+      role="status"
+      aria-label="claude is thinking"
+      className="flex w-fit items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground"
+    >
+      <span className="flex gap-1">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:0ms]" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:150ms]" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:300ms]" />
+      </span>
+      thinking…
+    </div>
+  );
+}
+
 export function ChatView({ session, onRequestEnd }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
@@ -105,6 +122,9 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
   const isProviderDisconnected = providerAuthState === 'disconnected';
 
   const isEnded = session.state.kind === 'ended';
+  const lastItem = items[items.length - 1];
+  const isThinking =
+    session.state.kind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
 
   const flagOn = settings['experimental.enable_parallel_agents'] === 'true';
 
@@ -252,6 +272,11 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
                 <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
               </li>
             ))}
+            {isThinking ? (
+              <li>
+                <ThinkingIndicator />
+              </li>
+            ) : null}
           </ul>
         )}
         {!pinned ? (

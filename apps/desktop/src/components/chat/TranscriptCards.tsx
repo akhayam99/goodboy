@@ -20,6 +20,8 @@ interface TranscriptCardProps {
 
 export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
   switch (item.kind) {
+    case 'user_text':
+      return <UserText text={item.text} />;
     case 'assistant_text':
       return <AssistantText text={item.text} />;
     case 'tool_call':
@@ -73,6 +75,17 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
 function AssistantText({ text }: { text: string }) {
   return (
     <div className="group relative rounded-lg border border-border bg-background px-3 py-2">
+      <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
+        <CopyButton value={text} label="message" />
+      </div>
+      <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+    </div>
+  );
+}
+
+function UserText({ text }: { text: string }) {
+  return (
+    <div className="group relative ml-auto w-fit max-w-full rounded-lg bg-muted px-3 py-2">
       <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>

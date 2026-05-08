@@ -40,7 +40,7 @@ export function assertSlotKey(key: string): asserts key is SlotKey {
 export function serializeSlots(slots: ReadonlyArray<ContextSlot>): string {
   const byKey = new Map<SlotKey, ContextSlot>();
   for (const slot of slots) {
-    if (isSlotKey(slot.key) && slot.enabled) {
+    if (isSlotKey(slot.key)) {
       byKey.set(slot.key, slot);
     }
   }

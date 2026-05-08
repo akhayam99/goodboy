@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Input } from '@kay-am/ui';
+import { Button, Input, Select } from '@kay-am/ui';
 import type { PermissionDecisionKind, PermissionRule, PermissionRuleScope } from '@kay-am/types';
 import { formatToolPattern } from '@kay-am/core';
 import type { PermissionRuleId } from '@kay-am/types';
@@ -411,8 +411,9 @@ function RuleEditor({
         <div className="flex gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">decision</label>
-            <select
-              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            <Select
+              size="sm"
+              block
               value={form.decision}
               onChange={(e) =>
                 onChange({ ...form, decision: e.target.value as PermissionDecisionKind })
@@ -423,7 +424,7 @@ function RuleEditor({
                   {d}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">priority</label>

@@ -17,6 +17,8 @@ export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
+export { Select } from './components/Select';
+export type { SelectProps, SelectSize } from './components/Select';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
 export { Skeleton } from './components/Skeleton';

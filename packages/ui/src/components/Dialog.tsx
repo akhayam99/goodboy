@@ -16,6 +16,18 @@ export interface DialogProps {
   closeOnBackdrop?: boolean;
   /** Override which element receives focus when the dialog opens. */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  /**
+   * When true, the dialog collapses to fill the entire viewport on small
+   * screens (≤ 768px in either dimension), removing rounded corners and
+   * shadow so it reads as a full page rather than a floating modal.
+   */
+  fullScreenOnSmall?: boolean;
+  /**
+   * Lock the dialog body to a fixed height (e.g. `h-[640px]`). Without this,
+   * the dialog grows and shrinks with its content up to `max-h-[85vh]`.
+   * The fixed height yields when the viewport is too small to hold it.
+   */
+  fixedHeightClass?: string;
 }
 
 const SIZE: Record<DialogSize, string> = {
@@ -24,6 +36,8 @@ const SIZE: Record<DialogSize, string> = {
   lg: 'w-[44rem]',
   xl: 'w-[56rem]',
 };
+
+const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
 
 export function Dialog({
   open,
@@ -37,6 +51,8 @@ export function Dialog({
   showClose = true,
   closeOnBackdrop = true,
   initialFocusRef,
+  fullScreenOnSmall = false,
+  fixedHeightClass,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
@@ -86,9 +102,21 @@ export function Dialog({
       onClick={onBackdropClick}
       aria-labelledby={titleId}
       aria-describedby={descId}
-      className="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+      className={cn(
+        'overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl',
+        fullScreenOnSmall &&
+          'max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none',
+      )}
     >
-      <div className={cn('flex max-h-[85vh] min-h-0 flex-col', SIZE[size], className)}>
+      <div
+        className={cn(
+          'flex min-h-0 flex-col',
+          fixedHeightClass ?? 'max-h-[85vh]',
+          SIZE[size],
+          fullScreenOnSmall && SMALL_VIEWPORT,
+          className,
+        )}
+      >
         {title || description || showClose ? (
           <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4">
             <div className="flex min-w-0 flex-col gap-1">

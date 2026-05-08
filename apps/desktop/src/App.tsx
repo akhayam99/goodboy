@@ -47,6 +47,9 @@ export function App() {
   const currentSession = useCurrentSession();
   const slots = useSessionSlots(currentSession?.id ?? null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialSection, setSettingsInitialSection] = useState<string | undefined>(
+    undefined,
+  );
   const [endOpen, setEndOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -59,7 +62,11 @@ export function App() {
   }, [hydrate]);
 
   useEffect(() => {
-    const handler = () => setSettingsOpen(true);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ section?: string }>).detail;
+      setSettingsInitialSection(detail?.section);
+      setSettingsOpen(true);
+    };
     window.addEventListener('kayam:open-settings', handler);
     return () => window.removeEventListener('kayam:open-settings', handler);
   }, []);
@@ -152,14 +159,27 @@ export function App() {
         rightSidebarCollapsed={rightSidebarCollapsed}
         footer={<StatusBar />}
       />
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
+          setSettingsInitialSection(undefined);
+        }}
+        initialSection={settingsInitialSection}
+      />
       <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       {paletteOpen ? (
         <CommandPalette
           onClose={() => setPaletteOpen(false)}
-          onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); }}
+          onOpenSettings={() => {
+            setSettingsOpen(true);
+            setPaletteOpen(false);
+          }}
           onNewSession={() => setPaletteOpen(false)}
-          onOpenShortcutHelp={() => { setShortcutHelpOpen(true); setPaletteOpen(false); }}
+          onOpenShortcutHelp={() => {
+            setShortcutHelpOpen(true);
+            setPaletteOpen(false);
+          }}
         />
       ) : null}
       {currentSession ? (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Input } from '@kay-am/ui';
+import { Button, Input, Select } from '@kay-am/ui';
 import type { BudgetRule, ProviderName } from '@kay-am/types';
 import { useAppStore } from '../store';
 
@@ -163,8 +163,9 @@ function AddRuleForm({
     <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-foreground">provider</label>
-        <select
-          className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        <Select
+          size="sm"
+          block
           value={form.provider}
           onChange={(e) => onChange({ ...form, provider: e.target.value as ProviderName })}
         >
@@ -173,7 +174,7 @@ function AddRuleForm({
               {p}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="flex gap-2">

@@ -33,6 +33,13 @@ vi.mock('../components/Toast', () => ({
 vi.mock('@kay-am/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
   getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
+  PROVIDER_CAPABILITIES: {
+    anthropic: {
+      models: [{ id: 'claude-3-5-sonnet-latest', tier: 'turn', contextWindow: 200_000 }],
+    },
+    cursor: { models: [{ id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 }] },
+    codex: { models: [{ id: 'codex-latest', tier: 'turn', contextWindow: 128_000 }] },
+  },
   resolveProvider: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',

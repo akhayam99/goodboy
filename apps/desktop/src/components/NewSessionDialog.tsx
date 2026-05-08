@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
+import { Button, Dialog, Input, Select, Textarea, cn } from '@kay-am/ui';
 import type {
   PhaseTemplateId,
   ProviderId,
@@ -160,11 +160,11 @@ export function NewSessionDialog({
             : 'assign a multi-phase workflow to this session.'
         }
       >
-        <select
+        <Select
+          size="sm"
           value={selectedPhaseTemplateId}
           onChange={(e) => setSelectedPhaseTemplateId(e.target.value as PhaseTemplateId | '')}
           disabled={phaseTemplates.length === 0}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
         >
           <option value="">none</option>
           {phaseTemplates.map((t) => (
@@ -172,7 +172,7 @@ export function NewSessionDialog({
               {t.name}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="provider">

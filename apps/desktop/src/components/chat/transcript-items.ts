@@ -9,6 +9,7 @@ import type {
 import { decodeAuthRequiredMessage } from '../../turn';
 
 export type TranscriptItem =
+  | { kind: 'user_text'; key: string; text: string }
   | { kind: 'assistant_text'; key: string; text: string }
   | {
       kind: 'tool_call';
@@ -100,6 +101,9 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
     flushText();
 
     switch (event.kind) {
+      case 'user_text':
+        items.push({ kind: 'user_text', key: `user-${i}`, text: event.text });
+        break;
       case 'tool_call_start': {
         const key = `tool-${event.toolUseId}`;
         callIndex.set(event.toolUseId, items.length);
