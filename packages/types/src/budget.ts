@@ -10,6 +10,7 @@ export type BudgetRule = Readonly<{
   period: BudgetPeriod;
   capUsd: number;
   alertThresholdPct: number;
+  extraTokensBudget: number | null;
   createdAt: IsoDateTime;
 }>;
 

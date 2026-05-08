@@ -99,7 +99,6 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
-  SETTING_PROVIDER_PRICING_CONFIG,
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
   DEFAULT_BRANCH_PREFIX,
@@ -108,7 +107,7 @@ import {
   MAX_PARALLELISM,
   MIN_PARALLELISM,
 } from '../settings';
-import { parseProviderPricingConfig, getCodexPriceOverride } from '../providerPricing';
+import { getCodexPriceOverride, refreshPricingTable } from '../providerPricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 import {
@@ -1332,8 +1331,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     // ---- /Parallel-agents branch ----------------------------------------
 
-    const pricingConfigRaw = await getSetting(tauriDatabase, SETTING_PROVIDER_PRICING_CONFIG);
-    const pricingConfig = parseProviderPricingConfig(pricingConfigRaw);
+    void refreshPricingTable();
 
     let assistantText = '';
     let lastError: unknown = null;
@@ -1395,7 +1393,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (event.kind === 'usage') {
           const cost =
             provider === 'codex'
-              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(pricingConfig, model))
+              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model))
               : provider === 'cursor'
                 ? computeCursorCostUsd(event.usage, model)
                 : computeCostUsd(event.usage, model);

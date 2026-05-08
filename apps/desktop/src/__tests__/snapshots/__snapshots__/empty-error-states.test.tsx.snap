@@ -84,8 +84,9 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           goal
         </span>
         <textarea
-          class="min-h-16 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
           placeholder="refactor auth domain"
+          style="height: 0px; overflow-y: hidden;"
         />
         <p
           class="text-[11px] leading-relaxed text-muted-foreground"
@@ -757,8 +758,9 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           goal
         </span>
         <textarea
-          class="min-h-16 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
           placeholder="refactor auth domain"
+          style="height: 0px; overflow-y: hidden;"
         />
         <p
           class="text-[11px] leading-relaxed text-muted-foreground"

@@ -13,6 +13,7 @@ import { StatusBar } from './components/StatusBar';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
+import { refreshPricingTable } from './providerPricing';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `kayam:context-panel-open:${id}`;
 
@@ -49,6 +50,7 @@ export function App() {
 
   useEffect(() => {
     void hydrate();
+    void refreshPricingTable();
   }, [hydrate]);
 
   useEffect(() => {

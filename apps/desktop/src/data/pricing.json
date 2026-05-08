@@ -1,0 +1,13 @@
+{
+  "version": "2026-05-08",
+  "anthropic": {
+    "claude-opus-4-7": { "inputPerMtok": 15, "outputPerMtok": 75, "cachedInputPerMtok": 1.5 },
+    "claude-sonnet-4-6": { "inputPerMtok": 3, "outputPerMtok": 15, "cachedInputPerMtok": 0.3 },
+    "claude-haiku-4-5": { "inputPerMtok": 1, "outputPerMtok": 5, "cachedInputPerMtok": 0.1 }
+  },
+  "cursor": {},
+  "codex": {
+    "codex-latest": { "inputPerMtok": 2.5, "outputPerMtok": 10, "cachedInputPerMtok": 1.25 },
+    "codex-mini-latest": { "inputPerMtok": 1.5, "outputPerMtok": 6, "cachedInputPerMtok": 0.75 }
+  }
+}

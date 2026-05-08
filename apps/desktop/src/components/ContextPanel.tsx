@@ -126,7 +126,9 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
               commit();
             }
           }}
-          className="min-h-12 text-xs"
+          className="text-xs"
+          autoGrow
+          maxRows={12}
         />
       ) : (
         <button

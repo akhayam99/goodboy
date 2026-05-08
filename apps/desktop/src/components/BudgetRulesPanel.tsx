@@ -11,12 +11,14 @@ interface FormState {
   provider: ProviderName;
   capUsd: string;
   alertThresholdPct: string;
+  extraTokensBudget: string;
 }
 
 const emptyForm = (): FormState => ({
   provider: 'anthropic',
   capUsd: '',
   alertThresholdPct: String(DEFAULT_THRESHOLD),
+  extraTokensBudget: '',
 });
 
 export function BudgetRulesPanel() {
@@ -37,6 +39,8 @@ export function BudgetRulesPanel() {
   const onAdd = async () => {
     const cap = parseFloat(form.capUsd);
     const threshold = parseFloat(form.alertThresholdPct);
+    const extraRaw = form.extraTokensBudget.trim();
+    const extraTokens = extraRaw === '' ? null : parseFloat(extraRaw);
 
     if (!isFinite(cap) || cap <= 0) {
       setFormError('cap must be a positive number');
@@ -44,6 +48,10 @@ export function BudgetRulesPanel() {
     }
     if (!isFinite(threshold) || threshold < 1 || threshold > 100) {
       setFormError('threshold must be between 1 and 100');
+      return;
+    }
+    if (extraTokens !== null && (!isFinite(extraTokens) || extraTokens < 0)) {
+      setFormError('extra-token budget must be empty or a non-negative integer');
       return;
     }
 
@@ -55,6 +63,7 @@ export function BudgetRulesPanel() {
         period: 'monthly',
         capUsd: cap,
         alertThresholdPct: threshold,
+        extraTokensBudget: extraTokens !== null ? Math.floor(extraTokens) : null,
       });
       setForm(emptyForm());
       setShowForm(false);
@@ -119,6 +128,9 @@ function BudgetRuleRow({ rule, onDelete }: { rule: BudgetRule; onDelete: () => v
         <span className="font-medium">{rule.provider}</span>
         <span className="text-[11px] text-muted-foreground">
           ${rule.capUsd.toFixed(2)} / month · alert at {rule.alertThresholdPct}%
+          {rule.extraTokensBudget != null
+            ? ` · ${rule.extraTokensBudget.toLocaleString()} extra tokens`
+            : ''}
         </span>
       </div>
       <button
@@ -188,6 +200,23 @@ function AddRuleForm({
             onChange={(e) => onChange({ ...form, alertThresholdPct: e.target.value })}
           />
         </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1.5">
+        <label className="text-[11px] font-semibold text-foreground">
+          extra-token budget <span className="font-normal text-muted-foreground">(optional)</span>
+        </label>
+        <Input
+          type="number"
+          min="0"
+          step="1000"
+          placeholder="leave empty for no token cap"
+          value={form.extraTokensBudget}
+          onChange={(e) => onChange({ ...form, extraTokensBudget: e.target.value })}
+        />
+        <p className="text-[10px] text-muted-foreground">
+          additional token allowance per period. empty = no extra-token budget.
+        </p>
       </div>
 
       {error && <p className="text-[11px] text-danger">{error}</p>}

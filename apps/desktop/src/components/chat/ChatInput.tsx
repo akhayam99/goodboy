@@ -186,7 +186,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                   : 'message claude. shift+enter for newline.'
             }
             disabled={isRunning || providerDisconnected}
-            rows={3}
+            autoGrow
+            maxRows={12}
           />
         </div>
         {error ? <p className="text-xs text-danger">{error}</p> : null}
