@@ -171,7 +171,11 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     const next = [...providerOrder];
     const swapIndex = index + direction;
     if (swapIndex < 0 || swapIndex >= next.length) return;
-    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+    const a = next[index];
+    const b = next[swapIndex];
+    if (a === undefined || b === undefined) return;
+    next[index] = b;
+    next[swapIndex] = a;
     setProviderOrder(next);
     // TODO (@ak): persist provider order via store action
   };
@@ -417,8 +421,6 @@ function Field({
 
 function EmptyWorkspace({ section }: { section: string }) {
   return (
-    <p className="text-sm text-muted-foreground">
-      select a workspace to manage its {section}.
-    </p>
+    <p className="text-sm text-muted-foreground">select a workspace to manage its {section}.</p>
   );
 }
