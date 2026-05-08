@@ -96,7 +96,8 @@ export function App() {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
   }
 
-  const rightSidebarCollapsed = !currentSession || !contextOpen;
+  const contextCollapsed = !contextOpen;
+  const rightSidebarCollapsed = !currentSession || contextCollapsed;
 
   return (
     <ToastProvider>
@@ -136,7 +137,12 @@ export function App() {
         }
         rightSidebar={
           currentSession ? (
-            <ContextPanel session={currentSession} onCollapse={onToggleContext} />
+            <ContextPanel
+              session={currentSession}
+              collapsed={contextCollapsed}
+              onCollapse={onToggleContext}
+              onExpand={onToggleContext}
+            />
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}

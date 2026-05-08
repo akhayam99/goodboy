@@ -1,0 +1,140 @@
+// @vitest-environment happy-dom
+// Tests for ContextPanel rail variant (collapsed state) — #318.
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
+vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
+vi.mock('@tauri-apps/plugin-sql', () => ({
+  default: { load: vi.fn().mockResolvedValue({}) },
+}));
+
+vi.mock('../store', () => ({
+  useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
+    const state = {
+      upsertSessionSlot: vi.fn(),
+      toggleSessionSlot: vi.fn(),
+      summarizerStatus: {},
+    };
+    return selector(state);
+  }),
+  useSessionSlots: vi.fn().mockReturnValue([]),
+  useSummarizerStatus: vi.fn().mockReturnValue({ status: 'idle', lastUpdate: null, error: null }),
+}));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
+import { ContextPanel } from '../components/ContextPanel';
+
+afterEach(cleanup);
+
+const WS_ID = 'ws-test' as WorkspaceId;
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: 'sess-1' as SessionId,
+    workspaceId: WS_ID,
+    goal: 'test goal',
+    branchPrefix: 'test',
+    createdAt: '2026-01-01T00:00:00.000Z' as never,
+    state: { kind: 'idle' },
+    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+    ...overrides,
+  } as Session;
+}
+
+// ---------------------------------------------------------------------------
+// Snapshot — rail (collapsed) vs expanded
+// ---------------------------------------------------------------------------
+
+describe('snapshot — ContextPanel variants', () => {
+  it('collapsed: renders rail button, not slot content', () => {
+    const { container } = render(
+      <ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('expanded: renders slot content, not rail button', () => {
+    const { container } = render(
+      <ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rail semantics
+// ---------------------------------------------------------------------------
+
+describe('ContextPanel rail — a11y attributes', () => {
+  it('has role=button', () => {
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /expand context panel/i })).toBeDefined();
+  });
+
+  it('has aria-label="expand context panel"', () => {
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    expect(rail.getAttribute('aria-label')).toBe('expand context panel');
+  });
+
+  it('is focusable (tabIndex=0)', () => {
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    expect(rail.getAttribute('tabindex')).toBe('0');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Keyboard interaction
+// ---------------------------------------------------------------------------
+
+describe('ContextPanel rail — keyboard', () => {
+  it('Enter key calls onExpand', async () => {
+    const onExpand = vi.fn();
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={onExpand} />);
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    rail.focus();
+    fireEvent.keyDown(rail, { key: 'Enter' });
+    expect(onExpand).toHaveBeenCalledOnce();
+  });
+
+  it('Space key calls onExpand', async () => {
+    const onExpand = vi.fn();
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={onExpand} />);
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    rail.focus();
+    fireEvent.keyDown(rail, { key: ' ' });
+    expect(onExpand).toHaveBeenCalledOnce();
+  });
+
+  it('click calls onExpand', async () => {
+    const user = userEvent.setup();
+    const onExpand = vi.fn();
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={onExpand} />);
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    await user.click(rail);
+    expect(onExpand).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Persistence — collapsed state survives toggle cycle
+// ---------------------------------------------------------------------------
+
+describe('ContextPanel — persistence contract', () => {
+  it('collapsed=false renders context label (not rail)', () => {
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /expand context panel/i })).toBeNull();
+  });
+
+  it('collapsed=true does not render context header label', () => {
+    render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
+    // The "context" label in the header is only shown in expanded view
+    const labels = screen.queryAllByText(/^context$/i);
+    expect(labels).toHaveLength(0);
+  });
+});

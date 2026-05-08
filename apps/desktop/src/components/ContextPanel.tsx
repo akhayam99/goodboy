@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PanelRightClose } from 'lucide-react';
+import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { ScrollArea, Textarea, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
 import type { ContextSlot, Session } from '@kay-am/types';
@@ -7,18 +7,51 @@ import { useAppStore, useSessionSlots, useSummarizerStatus } from '../store';
 
 interface ContextPanelProps {
   session: Session;
+  collapsed?: boolean;
   onCollapse?: () => void;
+  onExpand?: () => void;
 }
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
-export function ContextPanel({ session, onCollapse }: ContextPanelProps) {
+export function ContextPanel({
+  session,
+  collapsed = false,
+  onCollapse,
+  onExpand,
+}: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const toggleSessionSlot = useAppStore((s) => s.toggleSessionSlot);
 
   const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
+
+  if (collapsed) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="expand context panel"
+        onClick={onExpand}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onExpand?.();
+          }
+        }}
+        className={cn(
+          'flex h-full w-full cursor-pointer flex-col items-center justify-start pt-2',
+          'border-l border-border bg-background',
+          'hover:bg-muted/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        )}
+        title="expand context panel"
+      >
+        <PanelRightOpen size={13} className="text-muted-foreground" aria-hidden />
+      </div>
+    );
+  }
 
   return (
     <ScrollArea className="h-full">
