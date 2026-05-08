@@ -59,6 +59,7 @@ export type {
   PhaseTemplate,
   PhaseTransition,
 } from './phase';
+export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
 export type {
   PermissionAuditEntry,
   PermissionDecision,

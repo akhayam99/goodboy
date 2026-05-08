@@ -7,6 +7,7 @@ mod phases;
 mod providers;
 mod repo;
 mod secrets;
+mod settings_overrides;
 mod skills;
 mod summarize;
 mod turn;
@@ -107,6 +108,10 @@ pub fn run() {
       permissions::permission_audit_retry_drain,
       permissions::permission_audit_retry_update,
       permissions::permission_audit_retry_delete,
+      settings_overrides::get_workspace_overrides,
+      settings_overrides::set_workspace_overrides,
+      settings_overrides::get_session_overrides,
+      settings_overrides::set_session_overrides,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
