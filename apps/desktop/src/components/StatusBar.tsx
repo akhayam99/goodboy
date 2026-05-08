@@ -10,12 +10,6 @@ interface StatusBarProps {
   onOpenTelemetry?: () => void;
 }
 
-function inferBranch(worktreePath: string | null, sessionId: string | null): string | null {
-  if (!worktreePath) return sessionId ? sessionId.slice(0, 8) : null;
-  const tail = worktreePath.split('/').filter(Boolean).at(-1);
-  return tail ?? null;
-}
-
 function shortenHome(path: string): string {
   const home = '/Users/';
   const idx = path.indexOf(home);
@@ -37,12 +31,11 @@ export function StatusBar({ onEndSession, onOpenTelemetry }: StatusBarProps) {
   const worktreePath = useAppStore((s) =>
     session ? ((s.sessionWorktrees[session.id] ?? [])[0] ?? null) : null,
   );
+  const branch = useAppStore((s) => (session ? (s.sessionBranches[session.id] ?? null) : null));
   const editorBinary = useAppStore(
     (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
   );
   const [copied, setCopied] = useState<string | null>(null);
-
-  const branch = session ? inferBranch(worktreePath, session.id) : null;
   const lastTurn = sessionTelemetry?.[sessionTelemetry.length - 1] ?? null;
   const sessionStateLabel = session?.state.kind ?? 'idle';
 
