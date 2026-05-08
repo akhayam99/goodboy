@@ -150,6 +150,7 @@ import {
   runParallelBranch,
   type ParallelBranchEffects,
 } from './parallel-turn';
+import { exportConfigToFile, importConfigFromFile } from '../config-export';
 
 export type BootPhase =
   | 'pending'
@@ -282,6 +283,8 @@ export interface AppActions {
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
   setSessionOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
+  exportConfig(): Promise<string | null>;
+  importConfig(): Promise<import('@kay-am/types').ConfigBundleImportResult | null>;
 }
 
 type AppStore = AppState & AppActions;
@@ -1878,6 +1881,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
     }));
+  },
+
+  exportConfig: async () => {
+    return exportConfigToFile();
+  },
+
+  importConfig: async () => {
+    return importConfigFromFile();
   },
 }));
 

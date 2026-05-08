@@ -1,4 +1,5 @@
 mod budget;
+mod config_export;
 mod db;
 mod editor;
 mod parallel_phases;
@@ -113,6 +114,10 @@ pub fn run() {
       settings_overrides::set_workspace_overrides,
       settings_overrides::get_session_overrides,
       settings_overrides::set_session_overrides,
+      config_export::export_config,
+      config_export::import_config,
+      config_export::export_config_to_file,
+      config_export::import_config_from_file,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
