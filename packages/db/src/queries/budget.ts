@@ -9,6 +9,7 @@ interface BudgetRuleRow {
   period: string;
   cap_usd: number;
   alert_threshold_pct: number;
+  extra_tokens_budget: number | null;
   created_at: string;
 }
 
@@ -19,6 +20,7 @@ function toBudgetRule(row: BudgetRuleRow): BudgetRule {
     period: row.period as 'monthly',
     capUsd: row.cap_usd,
     alertThresholdPct: row.alert_threshold_pct,
+    extraTokensBudget: row.extra_tokens_budget ?? null,
     createdAt: row.created_at as IsoDateTime,
   };
 }
@@ -26,9 +28,17 @@ function toBudgetRule(row: BudgetRuleRow): BudgetRule {
 export async function insertBudgetRule(db: Database, rule: BudgetRule): Promise<void> {
   await db.execute(
     `INSERT INTO budget_rules
-      (id, provider, period, cap_usd, alert_threshold_pct, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [rule.id, rule.provider, rule.period, rule.capUsd, rule.alertThresholdPct, rule.createdAt],
+      (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      rule.id,
+      rule.provider,
+      rule.period,
+      rule.capUsd,
+      rule.alertThresholdPct,
+      rule.extraTokensBudget ?? null,
+      rule.createdAt,
+    ],
   );
 }
 

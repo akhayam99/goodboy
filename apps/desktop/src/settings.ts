@@ -4,7 +4,6 @@ export const SETTING_EDITOR_BINARY = 'editor.binary';
 export const SETTING_DEFAULT_EDITOR = 'editor.default';
 export const SETTING_LAST_WORKSPACE_ID = 'last.workspace_id';
 export const SETTING_LAST_SESSION_ID = 'last.session_id';
-export const SETTING_PROVIDER_PRICING_CONFIG = 'provider.pricing_config';
 export const SETTING_ENABLE_PARALLEL_AGENTS = 'experimental.enable_parallel_agents';
 export const SETTING_MAX_PARALLELISM = 'experimental.max_parallelism';
 export const DEFAULT_EDITOR_BINARY = 'code';

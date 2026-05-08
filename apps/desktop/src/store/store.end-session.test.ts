@@ -121,6 +121,7 @@ vi.mock('../repo', () => ({
 vi.mock('../providerPricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
+  refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
 // ---------------------------------------------------------------------------

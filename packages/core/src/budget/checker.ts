@@ -15,6 +15,7 @@ interface BudgetRuleRow {
   period: BudgetPeriod;
   cap_usd: number;
   alert_threshold_pct: number;
+  extra_tokens_budget: number | null;
   created_at: string;
 }
 
@@ -44,7 +45,7 @@ export async function checkProviderBudget(
   period: BudgetPeriod,
 ): Promise<BudgetCheckResult> {
   const ruleRows = await db.select<BudgetRuleRow>(
-    `SELECT id, provider, period, cap_usd, alert_threshold_pct, created_at
+    `SELECT id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at
        FROM budget_rules
       WHERE provider = ? AND period = ?
       LIMIT 1`,
@@ -60,6 +61,7 @@ export async function checkProviderBudget(
     period: row.period,
     capUsd: row.cap_usd,
     alertThresholdPct: row.alert_threshold_pct,
+    extraTokensBudget: row.extra_tokens_budget ?? null,
     createdAt: row.created_at as IsoDateTime,
   };
 

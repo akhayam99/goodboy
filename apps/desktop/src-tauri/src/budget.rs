@@ -12,6 +12,8 @@ pub struct BudgetRule {
     pub cap_usd: f64,
     #[serde(rename = "alertThresholdPct")]
     pub alert_threshold_pct: f64,
+    #[serde(rename = "extraTokensBudget")]
+    pub extra_tokens_budget: Option<i64>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
 }
@@ -45,19 +47,21 @@ pub struct BudgetAlert {
 pub fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
-        "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT(id) DO UPDATE SET
            provider = excluded.provider,
            period = excluded.period,
            cap_usd = excluded.cap_usd,
-           alert_threshold_pct = excluded.alert_threshold_pct",
+           alert_threshold_pct = excluded.alert_threshold_pct,
+           extra_tokens_budget = excluded.extra_tokens_budget",
         rusqlite::params![
             rule.id,
             rule.provider,
             rule.period,
             rule.cap_usd,
             rule.alert_threshold_pct,
+            rule.extra_tokens_budget,
             rule.created_at,
         ],
     )?;
@@ -68,7 +72,7 @@ pub fn budget_rule_upsert(state: State<'_, Db>, rule: BudgetRule) -> Result<(), 
 pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, provider, period, cap_usd, alert_threshold_pct, created_at FROM budget_rules",
+        "SELECT id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at FROM budget_rules",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(BudgetRule {
@@ -77,7 +81,8 @@ pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError
             period: row.get(2)?,
             cap_usd: row.get(3)?,
             alert_threshold_pct: row.get(4)?,
-            created_at: row.get(5)?,
+            extra_tokens_budget: row.get(5)?,
+            created_at: row.get(6)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(DbError::Sqlite)
