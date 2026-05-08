@@ -3,9 +3,10 @@ import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
 import { PermissionsPanel } from './PermissionsPanel';
-import { ProviderPricingPanel } from './ProviderPricingPanel';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
+import { ImportConfigDialog } from './ImportConfigDialog';
+import type { ConfigBundleImportResult } from '@kay-am/types';
 import {
   DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
@@ -16,10 +17,8 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
-  SETTING_PROVIDER_PRICING_CONFIG,
   settingBranchPrefix,
 } from '../settings';
-import { parseProviderPricingConfig, type ProviderPricingConfig } from '../providerPricing';
 import { useAppStore, useCurrentWorkspace } from '../store';
 
 interface SettingsDialogProps {
@@ -33,14 +32,19 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const workspace = useCurrentWorkspace();
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
+  const exportConfig = useAppStore((s) => s.exportConfig);
+  const importConfig = useAppStore((s) => s.importConfig);
 
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [pricingConfig, setPricingConfig] = useState<ProviderPricingConfig>({});
   const [enableParallelAgents, setEnableParallelAgents] = useState(DEFAULT_ENABLE_PARALLEL_AGENTS);
   const [maxParallelism, setMaxParallelism] = useState(DEFAULT_MAX_PARALLELISM);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [exportState, setExportState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importResult, setImportResult] = useState<ConfigBundleImportResult | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -48,9 +52,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setError(null);
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
       setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
-    );
-    void loadSetting(SETTING_PROVIDER_PRICING_CONFIG).then((v) =>
-      setPricingConfig(parseProviderPricingConfig(v)),
     );
     void loadSetting(SETTING_ENABLE_PARALLEL_AGENTS).then((v) =>
       setEnableParallelAgents(v === 'true'),
@@ -70,12 +71,36 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     }
   }, [open, workspace, loadSetting]);
 
+  const onExport = async () => {
+    setExportState('busy');
+    try {
+      const path = await exportConfig();
+      setExportState(path ? 'done' : 'idle');
+    } catch (err) {
+      setExportState('error');
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const onImport = async () => {
+    setImportResult(null);
+    setImportError(null);
+    try {
+      const result = await importConfig();
+      if (!result) return;
+      setImportResult(result);
+      setImportDialogOpen(true);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : String(err));
+      setImportDialogOpen(true);
+    }
+  };
+
   const onSave = async () => {
     setSaveState('saving');
     setError(null);
     try {
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
-      await saveSetting(SETTING_PROVIDER_PRICING_CONFIG, JSON.stringify(pricingConfig));
       await saveSetting(SETTING_ENABLE_PARALLEL_AGENTS, enableParallelAgents ? 'true' : 'false');
       const clampedParallelism = Math.max(
         MIN_PARALLELISM,
@@ -137,10 +162,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
       <div className="border-t border-border-soft pt-4">
         <PermissionsPanel />
-      </div>
-
-      <div className="border-t border-border-soft pt-4">
-        <ProviderPricingPanel config={pricingConfig} onChange={setPricingConfig} />
       </div>
 
       <div className="flex flex-col gap-4 border-t border-border-soft pt-4">
@@ -206,6 +227,40 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           />
         </Section>
       </div>
+
+      <div className="flex flex-col gap-3 border-t border-border-soft pt-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          advanced — config backup
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void onExport()}
+            disabled={exportState === 'busy'}
+          >
+            {exportState === 'busy'
+              ? 'exporting…'
+              : exportState === 'done'
+                ? 'exported ✓'
+                : 'export config'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => void onImport()}>
+            import config
+          </Button>
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          export saves workspaces, skills, phase templates, permission rules, budget rules, and
+          settings to a json file. api keys are never included.
+        </p>
+      </div>
+
+      <ImportConfigDialog
+        open={importDialogOpen}
+        result={importResult}
+        error={importError}
+        onClose={() => setImportDialogOpen(false)}
+      />
     </Dialog>
   );
 }

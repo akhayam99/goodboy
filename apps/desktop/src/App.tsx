@@ -15,6 +15,7 @@ import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
+import { refreshPricingTable } from './providerPricing';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `kayam:context-panel-open:${id}`;
 
@@ -52,6 +53,7 @@ export function App() {
 
   useEffect(() => {
     void hydrate();
+    void refreshPricingTable();
   }, [hydrate]);
 
   useEffect(() => {
@@ -96,7 +98,8 @@ export function App() {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
   }
 
-  const rightSidebarCollapsed = !currentSession || !contextOpen;
+  const contextCollapsed = !contextOpen;
+  const rightSidebarCollapsed = !currentSession || contextCollapsed;
 
   return (
     <ToastProvider>
@@ -136,7 +139,12 @@ export function App() {
         }
         rightSidebar={
           currentSession ? (
-            <ContextPanel session={currentSession} onCollapse={onToggleContext} />
+            <ContextPanel
+              session={currentSession}
+              collapsed={contextCollapsed}
+              onCollapse={onToggleContext}
+              onExpand={onToggleContext}
+            />
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}

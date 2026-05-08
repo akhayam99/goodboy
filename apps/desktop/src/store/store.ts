@@ -101,7 +101,6 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
-  SETTING_PROVIDER_PRICING_CONFIG,
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
   DEFAULT_BRANCH_PREFIX,
@@ -110,7 +109,7 @@ import {
   MAX_PARALLELISM,
   MIN_PARALLELISM,
 } from '../settings';
-import { parseProviderPricingConfig, getCodexPriceOverride } from '../providerPricing';
+import { getCodexPriceOverride, refreshPricingTable } from '../providerPricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 import {
@@ -152,6 +151,7 @@ import {
   runParallelBranch,
   type ParallelBranchEffects,
 } from './parallel-turn';
+import { exportConfigToFile, importConfigFromFile } from '../config-export';
 
 export type BootPhase =
   | 'pending'
@@ -295,6 +295,8 @@ export interface AppActions {
   setSidebarSessionSearch(query: string): void;
   setSidebarStateFilter(states: ReadonlyArray<SessionState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
+  exportConfig(): Promise<string | null>;
+  importConfig(): Promise<import('@kay-am/types').ConfigBundleImportResult | null>;
 }
 
 type AppStore = AppState & AppActions;
@@ -1362,8 +1364,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     // ---- /Parallel-agents branch ----------------------------------------
 
-    const pricingConfigRaw = await getSetting(tauriDatabase, SETTING_PROVIDER_PRICING_CONFIG);
-    const pricingConfig = parseProviderPricingConfig(pricingConfigRaw);
+    void refreshPricingTable();
 
     let assistantText = '';
     let lastError: unknown = null;
@@ -1425,7 +1426,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (event.kind === 'usage') {
           const cost =
             provider === 'codex'
-              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(pricingConfig, model))
+              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model))
               : provider === 'cursor'
                 ? computeCursorCostUsd(event.usage, model)
                 : computeCostUsd(event.usage, model);
@@ -1970,6 +1971,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setSidebarSessionSearch: (query) => set({ sidebarSessionSearch: query }),
   setSidebarStateFilter: (states) => set({ sidebarStateFilter: states }),
   setSidebarProviderFilter: (providers) => set({ sidebarProviderFilter: providers }),
+
+  exportConfig: async () => {
+    return exportConfigToFile();
+  },
+
+  importConfig: async () => {
+    return importConfigFromFile();
+  },
 }));
 
 export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {

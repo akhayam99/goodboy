@@ -132,6 +132,8 @@ export function NewSessionDialog({
           value={goal}
           placeholder="refactor auth domain"
           onChange={(e) => setGoal(e.target.value)}
+          autoGrow
+          maxRows={12}
         />
       </Field>
 

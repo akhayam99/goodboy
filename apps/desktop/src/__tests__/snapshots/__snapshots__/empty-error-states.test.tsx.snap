@@ -7,33 +7,36 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
   class="relative"
   role="region"
 >
-  <button
-    aria-label="alert center"
-    class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors text-muted-foreground hover:bg-muted/60"
-    title="alert center"
-    type="button"
+  <span
+    class="relative inline-flex"
   >
-    <svg
-      aria-hidden="true"
-      class="lucide lucide-bell"
-      fill="none"
-      height="13"
-      stroke="currentColor"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      viewBox="0 0 24 24"
-      width="13"
-      xmlns="http://www.w3.org/2000/svg"
+    <button
+      aria-label="alert center"
+      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors text-muted-foreground hover:bg-muted/60"
+      type="button"
     >
-      <path
-        d="M10.268 21a2 2 0 0 0 3.464 0"
-      />
-      <path
-        d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-      />
-    </svg>
-  </button>
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-bell"
+        fill="none"
+        height="13"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="13"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10.268 21a2 2 0 0 0 3.464 0"
+        />
+        <path
+          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+        />
+      </svg>
+    </button>
+  </span>
 </div>
 `;
 
@@ -91,8 +94,9 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           goal
         </span>
         <textarea
-          class="min-h-16 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
           placeholder="refactor auth domain"
+          style="height: 0px; overflow-y: hidden;"
         />
         <p
           class="text-[11px] leading-relaxed text-muted-foreground"
@@ -838,8 +842,9 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           goal
         </span>
         <textarea
-          class="min-h-16 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
           placeholder="refactor auth domain"
+          style="height: 0px; overflow-y: hidden;"
         />
         <p
           class="text-[11px] leading-relaxed text-muted-foreground"

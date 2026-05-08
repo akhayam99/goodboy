@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Collapsible, cn } from '@kay-am/ui';
-import { CopyButton } from './CopyButton';
+import { Collapsible, CopyButton, cn } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
@@ -75,7 +74,7 @@ function AssistantText({ text }: { text: string }) {
   return (
     <div className="group relative rounded-lg border border-border bg-background px-3 py-2">
       <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <CopyButton text={text} />
+        <CopyButton value={text} label="message" />
       </div>
       <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
     </div>

@@ -24,6 +24,7 @@ const RULE: BudgetRule = {
   period: 'monthly',
   capUsd: 100,
   alertThresholdPct: 80,
+  extraTokensBudget: null,
   createdAt: NOW,
 };
 

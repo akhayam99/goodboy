@@ -61,6 +61,19 @@ export type {
 } from './phase';
 export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
 export type {
+  ConfigBundle,
+  ConfigBundleBudgetRule,
+  ConfigBundleImportResult,
+  ConfigBundlePermissionRule,
+  ConfigBundlePhaseDefinition,
+  ConfigBundlePhaseTemplate,
+  ConfigBundleSettings,
+  ConfigBundleSkill,
+  ConfigBundleValidationError,
+  ConfigBundleWorkspace,
+} from './config-bundle';
+export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
+export type {
   PermissionAuditEntry,
   PermissionDecision,
   PermissionDecisionKind,
