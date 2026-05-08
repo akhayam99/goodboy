@@ -38,3 +38,7 @@ export async function listWorkspaces(db: Database): Promise<ReadonlyArray<Worksp
   const rows = await db.select<WorkspaceRow>('SELECT * FROM workspaces ORDER BY created_at DESC');
   return rows.map(toDomain);
 }
+
+export async function deleteWorkspace(db: Database, id: WorkspaceId): Promise<void> {
+  await db.execute('DELETE FROM workspaces WHERE id = ?', [id]);
+}
