@@ -7,12 +7,6 @@ interface StatusBarProps {
   onFocusWorkspaces?: () => void;
 }
 
-function inferBranch(worktreePath: string | null, sessionId: string | null): string | null {
-  if (!worktreePath) return sessionId ? sessionId.slice(0, 8) : null;
-  const tail = worktreePath.split('/').filter(Boolean).at(-1);
-  return tail ?? null;
-}
-
 function shortenHome(path: string): string {
   const home = '/Users/';
   const idx = path.indexOf(home);
@@ -29,9 +23,8 @@ export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
   const worktreePath = useAppStore((s) =>
     session ? ((s.sessionWorktrees[session.id] ?? [])[0] ?? null) : null,
   );
+  const branch = useAppStore((s) => (session ? (s.sessionBranches[session.id] ?? null) : null));
   const { showToast } = useToast();
-
-  const branch = session ? inferBranch(worktreePath, session.id) : null;
   const sessionStateLabel = session?.state.kind ?? 'idle';
 
   const onCopy = async (text: string, label: string) => {

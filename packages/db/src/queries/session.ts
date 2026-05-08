@@ -113,3 +113,20 @@ export async function listSessionsForWorkspace(
   );
   return rows.map((row) => toDomain(row, []));
 }
+
+export async function renameSession(
+  db: Database,
+  id: SessionId,
+  goal: string,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute('UPDATE sessions SET goal = ?, updated_at = ? WHERE id = ?', [
+    goal,
+    Date.parse(updatedAt),
+    id,
+  ]);
+}
+
+export async function deleteSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
+}
