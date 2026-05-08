@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, SessionId, TelemetryRecordId } from './ids';
+import type { IsoDateTime, ProviderRunId, TaskId, TelemetryRecordId } from './ids';
 import type { ProviderName } from './provider';
 
 export type TelemetryKind = 'turn' | 'summarizer';
@@ -6,7 +6,7 @@ export type TelemetryKind = 'turn' | 'summarizer';
 export type TelemetryRecord = Readonly<{
   id: TelemetryRecordId;
   runId: ProviderRunId;
-  sessionId: SessionId;
+  taskId: TaskId;
   kind: TelemetryKind;
   provider: ProviderName;
   model: string;

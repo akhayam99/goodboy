@@ -1,23 +1,23 @@
 import type {
   IsoDateTime,
-  ParallelPhaseGroupId,
-  ParallelPhaseRunId,
-  PhaseDefinitionId,
-  PhaseRunId,
-  PhaseTemplateId,
+  ParallelGroupId,
+  ParallelSessionId,
   ProviderRunId,
   SessionId,
+  StepId,
+  TaskId,
+  WorkflowId,
   WorkspaceId,
 } from './ids';
 import type { ProviderId } from './provider-registry';
 
-export type PhaseRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type SessionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
 
-export type PhaseDefinition = Readonly<{
-  id: PhaseDefinitionId;
-  templateId: PhaseTemplateId;
+export type Step = Readonly<{
+  id: StepId;
+  workflowId: WorkflowId;
   ordinal: number;
   name: string;
   promptPrefix: string;
@@ -26,52 +26,52 @@ export type PhaseDefinition = Readonly<{
   parallelGroup?: number;
 }>;
 
-export type PhaseTemplate = Readonly<{
-  id: PhaseTemplateId;
+export type Workflow = Readonly<{
+  id: WorkflowId;
   workspaceId: WorkspaceId;
   name: string;
   description: string;
-  definitions: ReadonlyArray<PhaseDefinition>;
+  steps: ReadonlyArray<Step>;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
 
-export type PhaseRun = Readonly<{
-  id: PhaseRunId;
-  sessionId: SessionId;
-  phaseDefinitionId: PhaseDefinitionId;
+export type Session = Readonly<{
+  id: SessionId;
+  taskId: TaskId;
+  stepId: StepId;
   ordinal: number;
   name: string;
-  status: PhaseRunStatus;
+  status: SessionStatus;
   runId?: ProviderRunId;
   outputSummary?: string;
   startedAt?: IsoDateTime;
   completedAt?: IsoDateTime;
 }>;
 
-export type PhaseTransition = Readonly<{
+export type StepTransition = Readonly<{
   fromOrdinal: number;
   toOrdinal: number;
   carryForwardContext: string;
   at: IsoDateTime;
 }>;
 
-export interface ParallelPhaseGroup {
-  readonly id: ParallelPhaseGroupId;
-  readonly sessionId: SessionId;
+export interface ParallelGroup {
+  readonly id: ParallelGroupId;
+  readonly taskId: TaskId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt: IsoDateTime;
   readonly completedAt: IsoDateTime | null;
 }
 
-export interface ParallelPhaseRun {
-  readonly id: ParallelPhaseRunId;
-  readonly groupId: ParallelPhaseGroupId;
-  readonly phaseDefinitionId: PhaseDefinitionId;
+export interface ParallelSession {
+  readonly id: ParallelSessionId;
+  readonly groupId: ParallelGroupId;
+  readonly stepId: StepId;
   readonly parallelIndex: number;
   readonly runId: ProviderRunId;
-  readonly status: PhaseRunStatus;
+  readonly status: SessionStatus;
   readonly worktreePath: string;
   readonly outputSummary: string | null;
   readonly startedAt: IsoDateTime;

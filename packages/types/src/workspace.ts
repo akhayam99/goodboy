@@ -1,5 +1,5 @@
-import type { IsoDateTime, PhaseTemplateId, ProviderRunId, SessionId, WorkspaceId } from './ids';
-import type { SessionProviderPreference } from './provider-preference';
+import type { IsoDateTime, ProviderRunId, TaskId, WorkflowId, WorkspaceId } from './ids';
+import type { TaskProviderPreference } from './provider-preference';
 
 export type Workspace = Readonly<{
   id: WorkspaceId;
@@ -15,7 +15,7 @@ export type ContextSlot = Readonly<{
   enabled: boolean;
 }>;
 
-export type SessionState =
+export type TurnState =
   | { kind: 'draft' }
   | { kind: 'starting'; startedAt: IsoDateTime }
   | { kind: 'idle'; lastActivityAt: IsoDateTime }
@@ -23,15 +23,15 @@ export type SessionState =
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 
-export type Session = Readonly<{
-  id: SessionId;
+export type Task = Readonly<{
+  id: TaskId;
   workspaceId: WorkspaceId;
   goal: string;
-  state: SessionState;
+  state: TurnState;
   contextSlots: ReadonlyArray<ContextSlot>;
-  providerPreference: SessionProviderPreference;
-  phaseTemplateId?: PhaseTemplateId;
-  currentPhaseOrdinal?: number;
+  providerPreference: TaskProviderPreference;
+  workflowId?: WorkflowId;
+  currentStepOrdinal?: number;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

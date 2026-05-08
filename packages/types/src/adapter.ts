@@ -1,4 +1,4 @@
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, TaskId } from './ids';
 import type { ProviderName } from './provider';
 
 export interface ProviderCapabilities {
@@ -31,7 +31,7 @@ export interface TurnPermissionFlags {
 
 export interface TurnRequest {
   readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
+  readonly taskId: TaskId;
   readonly model: string;
   readonly workingDir: string;
   readonly systemPrompt: string;
@@ -76,10 +76,10 @@ export type TurnEvent =
       at: IsoDateTime;
     }
   | {
-      kind: 'phase_transition';
+      kind: 'step_transition';
       runId: ProviderRunId;
-      fromPhase: { ordinal: number; name: string };
-      toPhase: { ordinal: number; name: string };
+      fromStep: { ordinal: number; name: string };
+      toStep: { ordinal: number; name: string };
       carryForwardContext: string;
       at: IsoDateTime;
     }

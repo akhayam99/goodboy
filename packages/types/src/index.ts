@@ -3,18 +3,18 @@ export type {
   MessageId,
   PermissionRequestId,
   PermissionRuleId,
-  ParallelPhaseGroupId,
-  ParallelPhaseRunId,
-  PhaseDefinitionId,
-  PhaseRunId,
-  PhaseTemplateId,
+  ParallelGroupId,
+  ParallelSessionId,
   ProviderRunId,
   SessionId,
   SkillId,
+  StepId,
+  TaskId,
   TelemetryRecordId,
+  WorkflowId,
   WorkspaceId,
 } from './ids';
-export type { ContextSlot, Session, SessionState, Workspace } from './workspace';
+export type { ContextSlot, Task, TurnState, Workspace } from './workspace';
 export type { Message, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {
@@ -35,14 +35,14 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
-export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
-export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
+export type { TaskProviderPreference, TurnProviderOverride } from './provider-preference';
+export { DEFAULT_TASK_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
   BudgetPeriod,
   BudgetCheckResult,
-  SessionBudget,
+  TaskBudget,
   RoutingReason,
   RoutingDecision,
   BudgetAlertKind,
@@ -51,25 +51,25 @@ export type {
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
   ParallelMergeStrategy,
-  ParallelPhaseGroup,
-  ParallelPhaseRun,
-  PhaseDefinition,
-  PhaseRun,
-  PhaseRunStatus,
-  PhaseTemplate,
-  PhaseTransition,
-} from './phase';
+  ParallelGroup,
+  ParallelSession,
+  Session,
+  SessionStatus,
+  Step,
+  StepTransition,
+  Workflow,
+} from './workflow';
 export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
 export type {
   ConfigBundle,
   ConfigBundleBudgetRule,
   ConfigBundleImportResult,
   ConfigBundlePermissionRule,
-  ConfigBundlePhaseDefinition,
-  ConfigBundlePhaseTemplate,
   ConfigBundleSettings,
   ConfigBundleSkill,
+  ConfigBundleStep,
   ConfigBundleValidationError,
+  ConfigBundleWorkflow,
   ConfigBundleWorkspace,
 } from './config-bundle';
 export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
