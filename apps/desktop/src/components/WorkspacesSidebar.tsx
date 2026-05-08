@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
-import { FolderOpen, FolderPlus, Plus, Trash2 } from 'lucide-react';
+import { FolderOpen, FolderPlus, Plus, Settings2, Trash2 } from 'lucide-react';
+import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import type { ProviderId, Session, SessionId, Workspace } from '@kay-am/types';
 import {
   useAppStore,
@@ -148,6 +149,8 @@ interface WorkspaceRowProps {
 }
 
 function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowProps) {
+  const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
+
   return (
     <li className="group">
       <div
@@ -179,15 +182,33 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
           type="button"
           onClick={(e) => {
             e.stopPropagation();
+            setWsSettingsOpen(true);
+          }}
+          className="invisible mr-0.5 shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors group-hover:visible hover:!text-foreground"
+          title="workspace settings"
+          aria-label={`settings for workspace ${workspace.name}`}
+        >
+          <Settings2 size={12} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
             onDelete();
           }}
-          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/50 hover:!text-danger"
+          className="invisible mr-1 shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors group-hover:visible hover:!text-danger"
           title="delete workspace"
           aria-label={`delete workspace ${workspace.name}`}
         >
           <Trash2 size={12} aria-hidden />
         </button>
       </div>
+      <WorkspaceSettingsDialog
+        workspaceId={workspace.id}
+        workspaceName={workspace.name}
+        open={wsSettingsOpen}
+        onClose={() => setWsSettingsOpen(false)}
+      />
     </li>
   );
 }
