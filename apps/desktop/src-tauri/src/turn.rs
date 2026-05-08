@@ -127,12 +127,21 @@ pub(crate) fn spawn_one(
 
     let mut command = Command::new(args.binary);
     command
+        .current_dir(args.working_dir)
+        // Strip env vars that signal "running inside another Claude Code /
+        // Agent SDK session". When kay-am is launched from such a context the
+        // vars propagate to children; the claude CLI then either refuses with
+        // a nested-session error or falls through to broken auth (401). We
+        // want every spawn to behave as a fresh shell invocation that hits
+        // claude's own ~/.claude credentials.
+        .env_remove("CLAUDECODE")
+        .env_remove("CLAUDE_CODE_ENTRYPOINT")
+        .env_remove("CLAUDE_AGENT_SDK_VERSION")
         .arg("-p")
         .arg(args.prompt)
         .arg("--output-format")
         .arg("stream-json")
-        .arg("--working-dir")
-        .arg(args.working_dir)
+        .arg("--verbose")
         .arg("--model")
         .arg(args.model)
         .arg("--permission-mode")

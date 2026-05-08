@@ -1,17 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
-import {
-  ChevronDown,
-  ChevronRight,
-  FolderOpen,
-  FolderPlus,
-  Plus,
-  Search,
-  Settings2,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { FolderOpen, FolderPlus, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import type { ProviderId, Session, SessionId, SessionState, Workspace } from '@kay-am/types';
 import {
@@ -30,9 +20,9 @@ interface WorkspacesSidebarProps {
 }
 
 const PROVIDER_CHIP_COLOR: Record<ProviderId, string> = {
-  anthropic: 'bg-orange-100 text-orange-700',
-  cursor: 'bg-blue-100 text-blue-700',
-  codex: 'bg-green-100 text-green-700',
+  anthropic: 'bg-muted text-foreground',
+  cursor: 'bg-muted text-foreground',
+  codex: 'bg-muted text-foreground',
 };
 
 const PROVIDER_SHORT: Record<ProviderId, string> = {
@@ -47,6 +37,8 @@ const STATE_FILTER_OPTIONS: ReadonlyArray<SessionState['kind']> = [
   'ended',
   'error',
 ];
+
+const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
 export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const workspaces = useWorkspaces();
@@ -68,13 +60,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<ReadonlySet<string>>(new Set());
-
-  useEffect(() => {
-    if (currentWorkspace) {
-      setExpandedWorkspaces((prev) => new Set([...prev, currentWorkspace.id]));
-    }
-  }, [currentWorkspace]);
 
   const filteredWorkspaces = workspaces.filter((ws) =>
     ws.name.toLowerCase().includes(sidebarWorkspaceSearch.toLowerCase()),
@@ -89,20 +74,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
     return matchesSearch && matchesState && matchesProvider;
   });
-
-  const toggleWorkspaceExpanded = (wsId: string) => {
-    setExpandedWorkspaces((prev) => {
-      const next = new Set(prev);
-      if (next.has(wsId)) {
-        next.delete(wsId);
-      } else {
-        next.add(wsId);
-      }
-      return next;
-    });
-  };
-
-  const providerFilterOptions: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
   const toggleStateFilter = (kind: SessionState['kind']) => {
     const next = sidebarStateFilter.includes(kind)
@@ -120,62 +91,28 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-col gap-1 px-2 pt-2">
-        <SearchInput
-          value={sidebarWorkspaceSearch}
-          onChange={setSidebarWorkspaceSearch}
-          placeholder="search workspaces…"
-        />
-      </div>
-
-      <ScrollArea className="flex-1">
-        <section className="flex flex-col px-2 pt-2">
+      <ScrollArea className="max-h-[40%] shrink-0">
+        <section className="flex flex-col px-2 pb-4 pt-3">
           <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               workspaces
             </span>
           </header>
-          <ul className="flex flex-col gap-0.5">
-            {filteredWorkspaces.map((ws) => {
-              const isActive = ws.id === currentWorkspace?.id;
-              const isExpanded = expandedWorkspaces.has(ws.id);
-              const wsSessions = filteredSessions.filter((s) => s.workspaceId === ws.id);
-
-              return (
-                <WorkspaceRow
-                  key={ws.id}
-                  workspace={ws}
-                  isActive={isActive}
-                  isExpanded={isExpanded}
-                  onToggleExpand={() => toggleWorkspaceExpanded(ws.id)}
-                  onClick={() => void setCurrentWorkspace(ws.id)}
-                  onDelete={() => setWorkspaceToDelete(ws)}
-                  sessionList={
-                    isExpanded ? (
-                      <SessionList
-                        sessions={wsSessions}
-                        currentSessionId={currentSession?.id ?? null}
-                        workspaceId={ws.id}
-                        sidebarSessionSearch={
-                          ws.id === currentWorkspace?.id ? sidebarSessionSearch : ''
-                        }
-                        onSessionSearch={
-                          ws.id === currentWorkspace?.id ? setSidebarSessionSearch : () => undefined
-                        }
-                        stateFilter={sidebarStateFilter}
-                        providerFilter={sidebarProviderFilter}
-                        stateFilterOptions={STATE_FILTER_OPTIONS}
-                        providerFilterOptions={providerFilterOptions}
-                        onToggleState={toggleStateFilter}
-                        onToggleProvider={toggleProviderFilter}
-                        onSelectSession={(id) => void setCurrentSession(id)}
-                        onNewSession={() => setNewSessionOpen(true)}
-                      />
-                    ) : null
-                  }
-                />
-              );
-            })}
+          <SearchInput
+            value={sidebarWorkspaceSearch}
+            onChange={setSidebarWorkspaceSearch}
+            placeholder="search workspaces…"
+          />
+          <ul className="mt-1 flex flex-col gap-0.5">
+            {filteredWorkspaces.map((ws) => (
+              <WorkspaceRow
+                key={ws.id}
+                workspace={ws}
+                isActive={ws.id === currentWorkspace?.id}
+                onClick={() => void setCurrentWorkspace(ws.id)}
+                onDelete={() => setWorkspaceToDelete(ws)}
+              />
+            ))}
             <li>
               <AddRow
                 label="add workspace"
@@ -184,6 +121,43 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
               />
             </li>
           </ul>
+        </section>
+      </ScrollArea>
+
+      <div className="my-1 border-t border-border" aria-hidden />
+
+      <ScrollArea className="flex-1">
+        <section className="flex flex-col px-2 pt-4">
+          <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              sessions
+            </span>
+            {currentWorkspace ? (
+              <span className="truncate text-2xs text-muted-foreground/70">
+                {currentWorkspace.name}
+              </span>
+            ) : null}
+          </header>
+          {currentWorkspace ? (
+            <SessionList
+              sessions={filteredSessions}
+              currentSessionId={currentSession?.id ?? null}
+              sessionSearch={sidebarSessionSearch}
+              onSessionSearch={setSidebarSessionSearch}
+              stateFilter={sidebarStateFilter}
+              providerFilter={sidebarProviderFilter}
+              stateFilterOptions={STATE_FILTER_OPTIONS}
+              providerFilterOptions={PROVIDER_FILTER_OPTIONS}
+              onToggleState={toggleStateFilter}
+              onToggleProvider={toggleProviderFilter}
+              onSelectSession={(id) => void setCurrentSession(id)}
+              onNewSession={() => setNewSessionOpen(true)}
+            />
+          ) : (
+            <p className="px-1 py-2 text-xs text-muted-foreground/70">
+              select a workspace to see its sessions.
+            </p>
+          )}
         </section>
       </ScrollArea>
 
@@ -245,22 +219,11 @@ function SearchInput({ value, onChange, placeholder }: SearchInputProps) {
 interface WorkspaceRowProps {
   workspace: Workspace;
   isActive: boolean;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   onClick: () => void;
   onDelete: () => void;
-  sessionList: React.ReactNode;
 }
 
-function WorkspaceRow({
-  workspace,
-  isActive,
-  isExpanded,
-  onToggleExpand,
-  onClick,
-  onDelete,
-  sessionList,
-}: WorkspaceRowProps) {
+function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowProps) {
   const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
 
   return (
@@ -273,10 +236,7 @@ function WorkspaceRow({
       >
         <button
           type="button"
-          onClick={() => {
-            onClick();
-            onToggleExpand();
-          }}
+          onClick={onClick}
           className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
         >
           <span
@@ -292,11 +252,6 @@ function WorkspaceRow({
             className={cn('shrink-0', isActive ? 'text-foreground' : 'text-muted-foreground')}
           />
           <span className="line-clamp-1 flex-1 font-medium">{workspace.name}</span>
-          {isExpanded ? (
-            <ChevronDown size={11} className="shrink-0 text-muted-foreground" aria-hidden />
-          ) : (
-            <ChevronRight size={11} className="shrink-0 text-muted-foreground" aria-hidden />
-          )}
         </button>
         <button
           type="button"
@@ -323,7 +278,6 @@ function WorkspaceRow({
           <Trash2 size={12} aria-hidden />
         </button>
       </div>
-      {sessionList}
       <WorkspaceSettingsDialog
         workspaceId={workspace.id}
         workspaceName={workspace.name}
@@ -337,8 +291,7 @@ function WorkspaceRow({
 interface SessionListProps {
   sessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
-  workspaceId: string;
-  sidebarSessionSearch: string;
+  sessionSearch: string;
   onSessionSearch: (v: string) => void;
   stateFilter: ReadonlyArray<SessionState['kind']>;
   providerFilter: ReadonlyArray<ProviderId>;
@@ -353,7 +306,7 @@ interface SessionListProps {
 function SessionList({
   sessions,
   currentSessionId,
-  sidebarSessionSearch,
+  sessionSearch,
   onSessionSearch,
   stateFilter,
   providerFilter,
@@ -365,9 +318,9 @@ function SessionList({
   onNewSession,
 }: SessionListProps) {
   return (
-    <div className="ml-3 mt-0.5 flex flex-col gap-1 border-l border-border-soft pl-2">
+    <div className="flex flex-col gap-1">
       <SearchInput
-        value={sidebarSessionSearch}
+        value={sessionSearch}
         onChange={onSessionSearch}
         placeholder="search sessions…"
       />
@@ -396,7 +349,7 @@ function SessionList({
             className={cn(
               'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
               stateFilter.includes(kind)
-                ? 'bg-primary/15 text-primary'
+                ? 'bg-foreground/15 text-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
           >
@@ -411,7 +364,7 @@ function SessionList({
             className={cn(
               'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
               providerFilter.includes(p)
-                ? cn(PROVIDER_CHIP_COLOR[p])
+                ? 'bg-foreground/15 text-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
           >
@@ -448,7 +401,7 @@ interface FilterChipProps {
 
 function FilterChip({ label, onRemove }: FilterChipProps) {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-2xs text-primary">
+    <span className="inline-flex items-center gap-0.5 rounded bg-foreground/10 px-1 py-0.5 text-2xs text-foreground">
       {label}
       <button
         type="button"
@@ -469,7 +422,6 @@ interface SessionRowProps {
 }
 
 function SessionRow({ session, isActive, onClick }: SessionRowProps) {
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const providerId = session.providerPreference.defaultProvider;
   const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
@@ -498,7 +450,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
   const pct = cap !== null && cap > 0 ? spent / cap : null;
 
   const barColor =
-    pct === null ? '' : pct >= 1 ? 'bg-red-500' : pct >= 0.8 ? 'bg-yellow-400' : 'bg-green-500';
+    pct === null ? '' : pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : 'bg-muted-foreground';
 
   const onCapClick = (e: React.MouseEvent) => {
     e.stopPropagation();

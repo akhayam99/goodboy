@@ -367,13 +367,23 @@ function mergeSlots(
 }
 
 function messageToTurnEvent(message: Message): TurnEvent | null {
-  if (message.role !== 'assistant') return null;
-  return {
-    kind: 'assistant_text',
-    runId: 'history' as ProviderRunId,
-    delta: message.content,
-    at: message.createdAt,
-  };
+  if (message.role === 'user') {
+    return {
+      kind: 'user_text',
+      runId: 'history' as ProviderRunId,
+      text: message.content,
+      at: message.createdAt,
+    };
+  }
+  if (message.role === 'assistant') {
+    return {
+      kind: 'assistant_text',
+      runId: 'history' as ProviderRunId,
+      delta: message.content,
+      at: message.createdAt,
+    };
+  }
+  return null;
 }
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
@@ -678,15 +688,36 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sidebarProviderFilter: [],
     });
     if (id) {
-      const [sessions, workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
-        await Promise.all([
-          listSessionsForWorkspace(tauriDatabase, id),
-          summarizeWorkspaceTelemetry(tauriDatabase, id),
-          summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
-          invokeBudgetRuleList(),
-          invokeSkillList(id),
-          invokePhaseTemplateList(id),
-        ]);
+      const [
+        loadedSessions,
+        workspaceSummary,
+        providerSummaries,
+        budgetRules,
+        skills,
+        phaseTemplates,
+      ] = await Promise.all([
+        listSessionsForWorkspace(tauriDatabase, id),
+        summarizeWorkspaceTelemetry(tauriDatabase, id),
+        summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
+        invokeBudgetRuleList(),
+        invokeSkillList(id),
+        invokePhaseTemplateList(id),
+      ]);
+      // Boot-recovery: a session row in 'running' state is necessarily orphaned
+      // here — the Rust TurnRegistry is reset on every app start, so there is
+      // no live process to reattach to. Normalize to 'idle' so the UI re-enables
+      // the input. Persist the correction back to the DB.
+      const recoveryNow = new Date().toISOString() as IsoDateTime;
+      const sessions = await Promise.all(
+        loadedSessions.map(async (s) => {
+          if (s.state.kind !== 'running') return s;
+          const idleState: SessionState = { kind: 'idle', lastActivityAt: recoveryNow };
+          await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
+            () => undefined,
+          );
+          return { ...s, state: idleState, updatedAt: recoveryNow };
+        }),
+      );
       const worktreeRows = await Promise.all(
         sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id)),
       );
@@ -853,6 +884,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       createdAt: Date.now(),
     });
 
+    // Seed the goal context slot so the session prompt carries the user's
+    // stated goal from turn 1. Otherwise the goal lives only on the session
+    // row and never reaches the model unless the user retypes it in the
+    // context panel.
+    const goalText = session.goal.trim();
+    if (goalText.length > 0) {
+      await upsertContextSlot(tauriDatabase, session.id, {
+        key: 'goal',
+        value: goalText,
+        enabled: true,
+      });
+    }
+
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
@@ -865,6 +909,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionBranches: {
         ...state.sessionBranches,
         [session.id]: worktree.branchName,
+      },
+      sessionSlots: {
+        ...state.sessionSlots,
+        [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
@@ -1134,6 +1182,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
       };
       await insertMessage(tauriDatabase, userMessage);
+      get().appendTurnEvent(sessionId, {
+        kind: 'user_text',
+        runId,
+        text: userTurnText,
+        at: userMessage.createdAt,
+      });
 
       const run: ProviderRun = {
         id: runId,
@@ -1268,6 +1322,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // for the legacy cancel path; for parallel groups, cancel routes through
       // cancelGroup via the scheduler handle inside runParallelBranch).
       const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
+      get().appendTurnEvent(sessionId, {
+        kind: 'user_text',
+        runId: groupSessionRunId,
+        text: userTurnText,
+        at: userMessage.createdAt,
+      });
       let nextStateP: SessionState = session.state;
       if (nextStateP.kind === 'draft') {
         nextStateP = sessionReducer(nextStateP, { kind: 'start', at: now() });
@@ -1480,6 +1540,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
         }
       }
+      // Stream ended without a 'done'/'error' event — provider CLI exited
+      // cleanly but didn't emit a `result` line, so the reducer never left
+      // 'running'. Force-idle so input re-enables.
+      const afterStream = get().sessions.find((s) => s.id === sessionId);
+      if (afterStream?.state.kind === 'running') {
+        const idleState: SessionState = { kind: 'idle', lastActivityAt: now() };
+        await updateSessionState(tauriDatabase, sessionId, idleState, now());
+        applySessionUpdate(set, sessionId, idleState);
+        if (assistantText.length === 0) {
+          get().appendTurnEvent(sessionId, {
+            kind: 'error',
+            runId,
+            message:
+              'provider exited without a response. check that the CLI is configured correctly.',
+            at: now(),
+          });
+        }
+      }
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'succeeded',
         finishedAt: now(),
@@ -1560,7 +1638,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   cancelCurrentTurn: async (sessionId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.state.kind !== 'running') return;
-    await cancelTurn(session.state.runId);
+    // Best-effort: if the registry already evicted the run we still want to
+    // normalize session state locally so the UI re-enables the input.
+    await cancelTurn(session.state.runId).catch(() => undefined);
+    const now = new Date().toISOString() as IsoDateTime;
+    const idleState: SessionState = { kind: 'idle', lastActivityAt: now };
+    await updateSessionState(tauriDatabase, sessionId, idleState, now).catch(() => undefined);
+    applySessionUpdate(set, sessionId, idleState);
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
@@ -1620,7 +1704,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!session) throw new Error(`session not found: ${sessionId}`);
     if (session.state.kind === 'ended') return;
     if (session.state.kind === 'running') {
-      await cancelTurn(session.state.runId);
+      // Best-effort cancel — Rust TurnRegistry may have already removed the
+      // run (process exited, app restarted, etc). A "turn not found" error
+      // here must not block end-session: the session row is the source of
+      // truth, not the in-memory registry.
+      await cancelTurn(session.state.runId).catch(() => undefined);
     }
 
     const worktreePaths = get().sessionWorktrees[sessionId] ?? [];

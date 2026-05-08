@@ -19,16 +19,16 @@ type SortKey = 'recent' | 'expensive';
 const SORT_KEY_STORAGE = 'telemetry-sort-key';
 
 function spendColor(pct: number): string {
-  if (pct >= 1) return 'bg-red-500';
-  if (pct >= 0.8) return 'bg-yellow-500';
-  return 'bg-green-500';
+  if (pct >= 1) return 'bg-danger';
+  if (pct >= 0.8) return 'bg-warning';
+  return 'bg-muted-foreground';
 }
 
 function spendTextColor(pct: number, hasCap: boolean): string {
   if (!hasCap) return 'text-foreground';
-  if (pct >= 1) return 'text-red-600';
-  if (pct >= 0.8) return 'text-yellow-600';
-  return 'text-green-700';
+  if (pct >= 1) return 'text-danger';
+  if (pct >= 0.8) return 'text-warning';
+  return 'text-foreground';
 }
 
 function ProviderSpendRow({ entry }: { entry: ProviderSpendEntry }) {
@@ -105,6 +105,28 @@ export function TelemetryPill() {
 
   const hasMultipleProviders = providerSpendBreakdown.length >= 2;
 
+  const modelBreakdown = useMemo(() => {
+    const map = new Map<
+      string,
+      { provider: string; model: string; tokensIn: number; tokensOut: number; spentUsd: number }
+    >();
+    for (const r of sessionTelemetry) {
+      const key = `${r.provider}//${r.model}`;
+      const prev = map.get(key) ?? {
+        provider: r.provider,
+        model: r.model,
+        tokensIn: 0,
+        tokensOut: 0,
+        spentUsd: 0,
+      };
+      prev.tokensIn += r.inputTokens;
+      prev.tokensOut += r.outputTokens;
+      prev.spentUsd += r.estimatedCostUsd;
+      map.set(key, prev);
+    }
+    return [...map.values()].sort((a, b) => b.spentUsd - a.spentUsd);
+  }, [sessionTelemetry]);
+
   const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
 
@@ -165,6 +187,35 @@ export function TelemetryPill() {
               <ul className="flex flex-col divide-y divide-border">
                 {providerSpendBreakdown.map((entry) => (
                   <ProviderSpendRow key={entry.provider} entry={entry} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {modelBreakdown.length > 0 ? (
+            <div className="mt-2 border-b border-border pb-2">
+              <p className="mb-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                by model
+              </p>
+              <ul className="flex flex-col divide-y divide-border">
+                {modelBreakdown.map((entry) => (
+                  <li
+                    key={`${entry.provider}//${entry.model}`}
+                    className="flex flex-col gap-0.5 py-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-1">
+                        <span className="rounded bg-muted px-1 text-2xs uppercase text-muted-foreground">
+                          {entry.provider === 'anthropic' ? 'cl' : entry.provider.slice(0, 2)}
+                        </span>
+                        <span className="truncate font-mono text-2xs">{entry.model}</span>
+                      </span>
+                      <span className="font-mono text-xs">{formatCost(entry.spentUsd)}</span>
+                    </div>
+                    <div className="text-2xs text-muted-foreground">
+                      {formatTokens(entry.tokensIn)}↓ / {formatTokens(entry.tokensOut)}↑
+                    </div>
+                  </li>
                 ))}
               </ul>
             </div>

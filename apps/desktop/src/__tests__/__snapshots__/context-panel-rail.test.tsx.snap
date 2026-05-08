@@ -104,22 +104,11 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <div
-          class="flex items-center justify-between gap-2"
+        <label
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <label
-            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            goal
-          </label>
-          <button
-            aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
-            type="button"
-          >
-            on
-          </button>
-        </div>
+          goal
+        </label>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -134,22 +123,11 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <div
-          class="flex items-center justify-between gap-2"
+        <label
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <label
-            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            files touched
-          </label>
-          <button
-            aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
-            type="button"
-          >
-            on
-          </button>
-        </div>
+          files touched
+        </label>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -164,22 +142,11 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <div
-          class="flex items-center justify-between gap-2"
+        <label
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <label
-            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            decisions
-          </label>
-          <button
-            aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
-            type="button"
-          >
-            on
-          </button>
-        </div>
+          decisions
+        </label>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -194,22 +161,11 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <div
-          class="flex items-center justify-between gap-2"
+        <label
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <label
-            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            open questions
-          </label>
-          <button
-            aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
-            type="button"
-          >
-            on
-          </button>
-        </div>
+          open questions
+        </label>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -224,22 +180,11 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <div
-          class="flex items-center justify-between gap-2"
+        <label
+          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <label
-            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            last output summary
-          </label>
-          <button
-            aria-pressed="true"
-            class="rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
-            type="button"
-          >
-            on
-          </button>
-        </div>
+          last output summary
+        </label>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"

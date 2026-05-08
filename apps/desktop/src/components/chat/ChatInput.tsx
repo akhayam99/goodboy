@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
 import { Cpu } from 'lucide-react';
-import { Button, Textarea } from '@kay-am/ui';
+import { Button, Select, Textarea } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -11,7 +11,7 @@ import type {
   TurnProviderOverride,
   WorkspaceId,
 } from '@kay-am/types';
-import { buildClaudeFlags, getDefaultTurnModel } from '@kay-am/core';
+import { PROVIDER_CAPABILITIES, buildClaudeFlags, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
@@ -70,6 +70,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [showPopover, setShowPopover] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -82,10 +83,20 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const defaultProvider = session.providerPreference.defaultProvider;
 
   const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
+  const defaultModel =
+    session.providerPreference.defaultModel ?? getDefaultTurnModel(defaultProvider);
+  const effectiveModel = selectedModel ?? defaultModel;
 
+  const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
+
+  const providerChanged = selectedProvider !== null && selectedProvider !== defaultProvider;
+  const modelChanged = selectedModel !== null && selectedModel !== defaultModel;
   const routingOverride: TurnProviderOverride | undefined =
-    allowOverride && selectedProvider !== null && selectedProvider !== defaultProvider
-      ? { providerId: selectedProvider }
+    allowOverride && (providerChanged || modelChanged)
+      ? {
+          providerId: effectiveProvider,
+          ...(modelChanged ? { model: effectiveModel } : {}),
+        }
       : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
@@ -108,11 +119,15 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setValue('');
 
     const override: TurnProviderOverride | undefined =
-      allowOverride && selectedProvider !== null && selectedProvider !== defaultProvider
-        ? { providerId: selectedProvider }
+      allowOverride && (providerChanged || modelChanged)
+        ? {
+            providerId: effectiveProvider,
+            ...(modelChanged ? { model: effectiveModel } : {}),
+          }
         : undefined;
 
     setSelectedProvider(null);
+    setSelectedModel(null);
     try {
       await sendTurn({
         sessionId: session.id,
@@ -209,14 +224,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             </Button>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span>via</span>
-                <select
+                <Select
+                  size="sm"
                   disabled={!allowOverride || isRunning}
                   title={overrideDisabledTitle}
                   value={effectiveProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value as ProviderId)}
-                  className="rounded border border-border bg-background px-1 py-0.5 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  onChange={(e) => {
+                    setSelectedProvider(e.target.value as ProviderId);
+                    setSelectedModel(null);
+                  }}
                 >
                   {connectedProviders.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -226,7 +244,23 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                   {connectedProviders.every((p) => p.id !== defaultProvider) ? (
                     <option value={defaultProvider}>{defaultProvider}</option>
                   ) : null}
-                </select>
+                </Select>
+                <Select
+                  size="sm"
+                  disabled={!allowOverride || isRunning}
+                  title={overrideDisabledTitle ?? 'model for this turn'}
+                  value={effectiveModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                >
+                  {providerModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.id}
+                    </option>
+                  ))}
+                  {providerModels.every((m) => m.id !== effectiveModel) ? (
+                    <option value={effectiveModel}>{effectiveModel}</option>
+                  ) : null}
+                </Select>
               </div>
               <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
                 send
@@ -259,7 +293,9 @@ function PreflightPill({
   );
 
   const openSettings = () => {
-    window.dispatchEvent(new CustomEvent('kayam:open-settings'));
+    window.dispatchEvent(
+      new CustomEvent('kayam:open-settings', { detail: { section: 'permissions' } }),
+    );
   };
 
   if (provider !== 'anthropic') {

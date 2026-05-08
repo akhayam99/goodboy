@@ -104,20 +104,35 @@ export async function* runTurn(
     }
   };
 
+  let receivedAnyLine = false;
+
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
     if (event.payload.runId !== args.runId) return;
 
     switch (event.payload.type) {
       case 'line':
+        receivedAnyLine = true;
         for (const ev of parseStreamJsonLine(event.payload.line, ctx)) {
           queue.push(ev);
         }
         flush();
         break;
-      case 'end':
+      case 'end': {
+        const exitCode = event.payload.exit_code;
+        const stderr = event.payload.stderr;
+        // Only surface exit-code as error when the stream emitted nothing —
+        // if any line came through, the parsed events (result/is_error,
+        // assistant_text) already convey the outcome and a duplicate
+        // "provider exited with code N" card would be noise.
+        if (!receivedAnyLine && exitCode !== null && exitCode !== 0) {
+          const tail = stderr.trim().split('\n').slice(-5).join('\n');
+          const detail = tail.length > 0 ? `: ${tail}` : '';
+          error = new Error(`provider exited with code ${exitCode}${detail}`);
+        }
         ended = true;
         flush();
         break;
+      }
       case 'error':
         error = new Error(event.payload.message);
         ended = true;

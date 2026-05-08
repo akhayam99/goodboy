@@ -36,6 +36,7 @@ import { useAppStore, useCurrentWorkspace } from '../store';
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
+  initialSection?: string;
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -67,7 +68,20 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'advanced', label: 'advanced', icon: <FileDown size={14} aria-hidden /> },
 ];
 
-export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
+function isNavSection(value: string | undefined): value is NavSection {
+  return (
+    value === 'app' ||
+    value === 'providers' ||
+    value === 'budget' ||
+    value === 'agent' ||
+    value === 'skills' ||
+    value === 'phases' ||
+    value === 'permissions' ||
+    value === 'advanced'
+  );
+}
+
+export function SettingsDialog({ open, onClose, initialSection }: SettingsDialogProps) {
   const workspace = useCurrentWorkspace();
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -95,6 +109,9 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
   useEffect(() => {
     if (!open) return;
+    if (isNavSection(initialSection)) {
+      setActiveSection(initialSection);
+    }
     setSaveState('idle');
     setError(null);
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
@@ -116,7 +133,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         setBranchPrefix(v ?? DEFAULT_BRANCH_PREFIX),
       );
     }
-  }, [open, workspace, loadSetting]);
+  }, [open, workspace, loadSetting, initialSection]);
 
   const onExport = async () => {
     setExportState('busy');
@@ -345,6 +362,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       title="settings"
       description="configure providers, editor, and workspace defaults."
       size="xl"
+      fixedHeightClass="h-[640px]"
+      fullScreenOnSmall
       footer={
         <>
           {saveState === 'saved' ? (
@@ -362,8 +381,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         </>
       }
     >
-      <div className="flex min-h-[480px] gap-0">
-        <nav className="flex w-40 shrink-0 flex-col gap-0.5 border-r border-border-soft pr-2">
+      <div className="flex h-full min-h-0 gap-0">
+        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -380,7 +399,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             </button>
           ))}
         </nav>
-        <div className="min-w-0 flex-1 pl-4">{renderContent()}</div>
+        <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
       </div>
 
       <ImportConfigDialog

@@ -70,6 +70,7 @@ function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
       return { kind: 'idle', lastActivityAt: turn.at };
     case 'error':
       return { kind: 'error', message: turn.message, failedAt: turn.at };
+    case 'user_text':
     case 'assistant_text':
     case 'tool_call_start':
     case 'tool_call_end':

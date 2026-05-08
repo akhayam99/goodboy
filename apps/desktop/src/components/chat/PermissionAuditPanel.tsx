@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Button, Tooltip } from '@kay-am/ui';
+import { Button, Select, Tooltip } from '@kay-am/ui';
 import type { PermissionAuditEntry, ProviderRunId, SessionId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 import { invokePermissionAuditList, invokePermissionAuditClear } from '../../permissions';
@@ -164,15 +164,15 @@ export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
             onChange={(e) => setFilterTool(e.target.value)}
             className="h-7 w-36 rounded border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground"
           />
-          <select
+          <Select
+            size="sm"
             value={filterDecision}
             onChange={(e) => setFilterDecision(e.target.value as 'all' | 'allow' | 'deny')}
-            className="h-7 rounded border border-border bg-background px-1 text-xs text-foreground"
           >
             <option value="all">all decisions</option>
             <option value="allow">allow only</option>
             <option value="deny">deny only</option>
-          </select>
+          </Select>
           <input
             type="date"
             value={filterFrom}

@@ -23,7 +23,6 @@ export function ContextPanel({
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const toggleSessionSlot = useAppStore((s) => s.toggleSessionSlot);
 
   const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
 
@@ -89,7 +88,6 @@ export function ContextPanel({
                 slotKey={key}
                 slot={slot}
                 onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                onToggle={(enabled) => void toggleSessionSlot(session.id, key, enabled)}
               />
             );
           })}
@@ -103,11 +101,9 @@ interface SlotRowProps {
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   onCommit: (value: string) => void;
-  onToggle: (enabled: boolean) => void;
 }
 
-function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
-  const enabled = slot?.enabled ?? true;
+function SlotRow({ slotKey, slot, onCommit }: SlotRowProps) {
   const value = slot?.value ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -123,24 +119,9 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
 
   return (
     <li className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {SLOT_LABELS[slotKey]}
-        </label>
-        <button
-          type="button"
-          onClick={() => onToggle(!enabled)}
-          className={cn(
-            'rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide',
-            enabled
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-border bg-muted text-muted-foreground',
-          )}
-          aria-pressed={enabled}
-        >
-          {enabled ? 'on' : 'off'}
-        </button>
-      </div>
+      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {SLOT_LABELS[slotKey]}
+      </label>
 
       {editing ? (
         <Textarea
@@ -167,10 +148,7 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className={cn(
-            'whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40',
-            !enabled && 'opacity-60',
-          )}
+          className="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
         >
           {value.length > 0 ? (
             value

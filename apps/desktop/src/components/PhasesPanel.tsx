@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Input, Textarea } from '@kay-am/ui';
+import { Button, Input, Select, Textarea } from '@kay-am/ui';
 import type {
   PhaseDefinition,
   PhaseDefinitionId,
@@ -407,10 +407,11 @@ function DefinitionEditor({
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1">
           <label className="text-2xs font-semibold text-foreground">provider override</label>
-          <select
+          <Select
+            size="sm"
+            block
             value={def.providerOverride}
             onChange={(e) => onUpdate({ providerOverride: e.target.value })}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="">default</option>
             {PROVIDER_IDS.map((id) => (
@@ -418,7 +419,7 @@ function DefinitionEditor({
                 {id}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="flex flex-1 flex-col gap-1">
           <label className="text-2xs font-semibold text-foreground">model override</label>

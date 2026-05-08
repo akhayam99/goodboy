@@ -64,10 +64,12 @@ describe('serializeSlots', () => {
     expect(a).toBe(b);
   });
 
-  it('skips disabled slots', () => {
-    const out = serializeSlots([{ key: 'goal', value: 'hidden', enabled: false }]);
-    expect(out).not.toContain('hidden');
-    expect(out).toMatch(/## goal\n—/);
+  it('serializes slots regardless of the legacy enabled flag', () => {
+    // The enabled flag is no longer respected at serialization time — slots
+    // with content always reach the model. The flag is kept on the type for
+    // schema compat but has no effect on output.
+    const out = serializeSlots([{ key: 'goal', value: 'visible-anyway', enabled: false }]);
+    expect(out).toContain('visible-anyway');
   });
 });
 
@@ -104,7 +106,7 @@ describe('ContextEngine', () => {
     expect(serialized).toContain('use claude only');
   });
 
-  it('toggles enabled', async () => {
+  it('keeps slot content visible even when enabled is toggled off (legacy flag is a no-op)', async () => {
     const db = makeDb();
     await migrate(db);
     await seedSession(db, 'sess_3' as SessionId);
@@ -114,6 +116,6 @@ describe('ContextEngine', () => {
     await engine.setEnabled('sess_3' as SessionId, 'goal', false);
 
     const out = await engine.serialize('sess_3' as SessionId);
-    expect(out).not.toContain('visible');
+    expect(out).toContain('visible');
   });
 });
