@@ -5,6 +5,8 @@ export {
   type BootPhase,
   type ProviderSpendEntry,
   type SummarizerSessionStatus,
+  type SystemAlert,
+  type SystemAlertKind,
 } from './store';
 export type { DetectedEditor } from '../editor';
 

@@ -171,6 +171,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
     effects: {
       appendTurnEvent: (_sid: SessionId, e: TurnEvent) => events.push(e),
       refreshPhaseRuns: vi.fn(async () => undefined),
+      setMergeConflicts: vi.fn(),
     },
     events,
   };

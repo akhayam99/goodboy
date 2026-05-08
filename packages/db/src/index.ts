@@ -5,7 +5,12 @@ export { migrations, type Migration } from './migrations';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
 
-export { insertWorkspace, getWorkspaceById, listWorkspaces } from './queries/workspace';
+export {
+  insertWorkspace,
+  getWorkspaceById,
+  listWorkspaces,
+  deleteWorkspace,
+} from './queries/workspace';
 export {
   insertSession,
   updateSessionState,
@@ -79,3 +84,9 @@ export {
   deleteGroup,
   updateGroupCompletedAt,
 } from './queries/parallel-phases';
+export {
+  getWorkspaceOverrides,
+  setWorkspaceOverrides,
+  getSessionOverrides,
+  setSessionOverrides,
+} from './queries/settings-overrides';

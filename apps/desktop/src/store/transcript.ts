@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { SessionId, TurnEvent } from '@kay-am/types';
 import { useAppStore, type AppState } from './store';
 
@@ -9,5 +10,13 @@ export const selectTranscript =
     sessionId ? (state.transcripts[sessionId] ?? EMPTY) : EMPTY;
 
 export function useTranscript(sessionId: SessionId | null): ReadonlyArray<TurnEvent> {
-  return useAppStore(selectTranscript(sessionId));
+  const idRef = useRef<SessionId | null>(sessionId);
+  const selectorRef = useRef<(state: AppState) => ReadonlyArray<TurnEvent>>(
+    selectTranscript(sessionId),
+  );
+  if (idRef.current !== sessionId) {
+    idRef.current = sessionId;
+    selectorRef.current = selectTranscript(sessionId);
+  }
+  return useAppStore(selectorRef.current);
 }

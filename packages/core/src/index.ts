@@ -135,3 +135,5 @@ export {
   type ParallelWorktreeDeps,
   type ParallelWorktreeResult,
 } from './worktree/parallel';
+
+export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
