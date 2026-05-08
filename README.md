@@ -96,6 +96,44 @@ pnpm lint           # placeholder; lint runs in CI
 
 If the **claude cli missing** banner shows in the header, install the Claude CLI and reopen the app. If **api key missing** shows, click it to jump back into settings.
 
+## Getting started
+
+New to kAY.am? Follow these steps to spin up your first session.
+
+### 1. Boot splash → ready
+
+Launch `pnpm tauri:dev`. Wait for the splash screen to reach _ready_. See [docs/glossary.md](./docs/glossary.md#booting) for phase breakdown.
+
+### 2. Add your first workspace
+
+Top-right: **workspace dropdown** → **add workspace…** → pick a local git repo (existing or new, sandbox repos are fine). kAY.am runs all sessions inside isolated worktrees next to the repo.
+
+### 3. Connect a provider
+
+Top-right: **settings** → paste your **Anthropic API key**, set your **default editor** (e.g. `code`). See [Supported providers](#supported-providers) for install + login commands. kAY.am routes turns through your chosen provider's subscription cap — no separate API tokens needed.
+
+### 4. Create your first session
+
+Left sidebar: **+ new session** → give it a goal (e.g. "add dark mode toggle") → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
+
+### 5. First turn
+
+Type a message in the chat input → enter. You'll see:
+
+- streamed assistant text (real-time as tokens arrive)
+- cost meter ticking (provider + token cost)
+- worktree-{slug} directory created next to your repo root
+
+### 6. Monitor progress
+
+**Telemetry pill** (top-left): session elapsed time, token count, cost breakdown. **Status bar** (bottom): active worktree, branch info, provider. **Alerts**: watch for banners (missing API key, CLI not found, etc.).
+
+### 7. End session
+
+**End session** button → preserves the branch (no force-push, safe to merge manually later) → cleans up the worktree. Your code changes stay in git.
+
+**Optional: phase templates.** Structure multi-step goals with templates. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply. Experimental parallel agents also available — enable in **settings → Experimental** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
+
 ## Roadmap & contributing
 
 - [ROADMAP.md](./ROADMAP.md) — milestones and the active issue list
