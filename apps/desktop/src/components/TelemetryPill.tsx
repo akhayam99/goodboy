@@ -48,7 +48,7 @@ function ProviderSpendRow({ entry }: { entry: ProviderSpendEntry }) {
       {hasCap ? (
         <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={cn('h-full rounded-full transition-all', spendColor(entry.pct))}
+            className={cn('h-full rounded-full motion-safe:transition-all', spendColor(entry.pct))}
             style={{ width: `${pctClamped * 100}%` }}
           />
         </div>
@@ -159,7 +159,7 @@ export function TelemetryPill() {
 
           {providerSpendBreakdown.length > 0 ? (
             <div className="mt-2 border-b border-border pb-2">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="mb-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 by provider
               </p>
               <ul className="flex flex-col divide-y divide-border">
@@ -180,7 +180,7 @@ export function TelemetryPill() {
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <span
                         className={cn(
-                          'rounded px-1 text-[10px] uppercase',
+                          'rounded px-1 text-2xs uppercase',
                           record.kind === 'summarizer'
                             ? 'bg-muted text-muted-foreground'
                             : 'bg-primary/10 text-primary',
@@ -189,7 +189,7 @@ export function TelemetryPill() {
                         {record.kind}
                       </span>
                       {hasMultipleProviders ? (
-                        <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                        <span className="rounded bg-muted px-1 text-2xs text-muted-foreground">
                           {record.provider === 'anthropic' ? 'claude' : record.provider}
                         </span>
                       ) : null}
@@ -223,7 +223,7 @@ function SortChip({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+        'rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide',
         active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground',
       )}
     >

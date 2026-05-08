@@ -268,7 +268,7 @@ function PreflightPill({
         type="button"
         onClick={openSettings}
         title="v0.7 will extend permission coverage to this provider."
-        className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+        className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
       >
         permission proxy: claude only
       </button>
@@ -290,7 +290,7 @@ function PreflightPill({
       type="button"
       onClick={openSettings}
       title={tooltipLines || 'no permission rules configured'}
-      className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+      className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
     >
       permissions: {allowedTools.length} allow / {disallowedTools.length} deny
     </button>
@@ -299,7 +299,7 @@ function PreflightPill({
 
 function ModelChip({ provider, model }: { provider: ProviderId; model: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
       <Cpu size={11} aria-hidden />
       <span className="font-mono">
         {PROVIDER_LABEL[provider]} · {model}

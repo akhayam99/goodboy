@@ -90,7 +90,7 @@ export function BudgetRulesPanel() {
       </div>
 
       {budgetRules.length === 0 && !showForm && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           no rules defined. add one to cap monthly spend per provider.
         </p>
       )}
@@ -126,7 +126,7 @@ function BudgetRuleRow({ rule, onDelete }: { rule: BudgetRule; onDelete: () => v
     <li className="flex items-center gap-3 px-3 py-2.5 text-xs">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-medium">{rule.provider}</span>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           ${rule.capUsd.toFixed(2)} / month · alert at {rule.alertThresholdPct}%
           {rule.extraTokensBudget != null
             ? ` · ${rule.extraTokensBudget.toLocaleString()} extra tokens`
@@ -135,7 +135,7 @@ function BudgetRuleRow({ rule, onDelete }: { rule: BudgetRule; onDelete: () => v
       </div>
       <button
         type="button"
-        className="shrink-0 text-[11px] text-muted-foreground underline hover:text-danger"
+        className="shrink-0 text-xs text-muted-foreground underline hover:text-danger"
         onClick={onDelete}
       >
         delete
@@ -162,7 +162,7 @@ function AddRuleForm({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex flex-col gap-1.5">
-        <label className="text-[11px] font-semibold text-foreground">provider</label>
+        <label className="text-xs font-semibold text-foreground">provider</label>
         <select
           className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           value={form.provider}
@@ -178,7 +178,7 @@ function AddRuleForm({
 
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">monthly cap (USD)</label>
+          <label className="text-xs font-semibold text-foreground">monthly cap (USD)</label>
           <Input
             type="number"
             min="0.01"
@@ -189,7 +189,7 @@ function AddRuleForm({
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">alert threshold (%)</label>
+          <label className="text-xs font-semibold text-foreground">alert threshold (%)</label>
           <Input
             type="number"
             min="1"
@@ -203,7 +203,7 @@ function AddRuleForm({
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5">
-        <label className="text-[11px] font-semibold text-foreground">
+        <label className="text-xs font-semibold text-foreground">
           extra-token budget <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <Input
@@ -214,12 +214,12 @@ function AddRuleForm({
           value={form.extraTokensBudget}
           onChange={(e) => onChange({ ...form, extraTokensBudget: e.target.value })}
         />
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           additional token allowance per period. empty = no extra-token budget.
         </p>
       </div>
 
-      {error && <p className="text-[11px] text-danger">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>

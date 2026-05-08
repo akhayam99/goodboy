@@ -97,7 +97,7 @@ export function AppShell({
         ) : null}
         {footer ? (
           <footer
-            className="flex h-6 min-w-0 items-center border-t border-border bg-subtle px-3 font-mono text-[11px] text-muted-foreground"
+            className="flex h-6 min-w-0 items-center border-t border-border bg-subtle px-3 font-mono text-xs text-muted-foreground"
             style={{ gridArea: 'footer' }}
           >
             {footer}

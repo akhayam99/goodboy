@@ -8,7 +8,7 @@ interface ParallelProgressPillProps {
 }
 
 const BADGE_CLASSES: Record<PhaseRunStatus, string> = {
-  running: 'bg-blue-500 animate-pulse',
+  running: 'bg-blue-500 motion-safe:animate-pulse',
   completed: 'bg-green-500',
   failed: 'bg-red-500',
   skipped: 'bg-muted-foreground/40',
@@ -34,7 +34,7 @@ export function ParallelProgressPill({
             title={`run p${i + 1} — ${status}`}
             onClick={() => onSelectRun(runId)}
             className={cn(
-              'inline-block h-2 w-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'inline-block h-2 w-2 rounded-full motion-safe:transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               BADGE_CLASSES[status],
             )}
           />

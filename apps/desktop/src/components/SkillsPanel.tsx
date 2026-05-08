@@ -167,7 +167,7 @@ export function SkillsPanel({ workspaceId }: SkillsPanelProps) {
       </div>
 
       {skills.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           no skills for this workspace. create one or rescan the workspace directory.
         </p>
       ) : (
@@ -200,21 +200,21 @@ function SkillRow({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-medium">/{skill.name}</span>
         {skill.description ? (
-          <span className="text-[11px] text-muted-foreground">{skill.description}</span>
+          <span className="text-xs text-muted-foreground">{skill.description}</span>
         ) : null}
-        <span className="truncate text-[10px] text-muted-foreground/60">{skill.filePath}</span>
+        <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
-          className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          className="text-xs text-muted-foreground underline hover:text-foreground"
           onClick={onEdit}
         >
           edit
         </button>
         <button
           type="button"
-          className="text-[11px] text-muted-foreground underline hover:text-danger"
+          className="text-xs text-muted-foreground underline hover:text-danger"
           onClick={onDelete}
         >
           delete
@@ -249,7 +249,7 @@ function SkillEditor({
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">name</label>
+          <label className="text-xs font-semibold text-foreground">name</label>
           <Input
             value={form.name}
             onChange={(e) => onChange({ ...form, name: e.target.value })}
@@ -258,7 +258,7 @@ function SkillEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">description</label>
+          <label className="text-xs font-semibold text-foreground">description</label>
           <Input
             value={form.description}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
@@ -268,9 +268,7 @@ function SkillEditor({
 
         <div className="flex gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-foreground">
-              args (comma-separated)
-            </label>
+            <label className="text-xs font-semibold text-foreground">args (comma-separated)</label>
             <Input
               value={form.args}
               onChange={(e) => onChange({ ...form, args: e.target.value })}
@@ -278,7 +276,7 @@ function SkillEditor({
             />
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-foreground">
+            <label className="text-xs font-semibold text-foreground">
               scripts (comma-separated)
             </label>
             <Input
@@ -290,7 +288,7 @@ function SkillEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">body</label>
+          <label className="text-xs font-semibold text-foreground">body</label>
           <Textarea
             value={form.body}
             onChange={(e) => onChange({ ...form, body: e.target.value })}
@@ -300,7 +298,7 @@ function SkillEditor({
           />
         </div>
 
-        {error ? <p className="text-[11px] text-danger">{error}</p> : null}
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>

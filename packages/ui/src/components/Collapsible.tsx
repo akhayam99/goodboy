@@ -27,7 +27,10 @@ export function Collapsible({
         <span className="flex-1 text-left">{trigger}</span>
         <span
           aria-hidden
-          className={cn('text-muted-foreground transition-transform', open && 'rotate-90')}
+          className={cn(
+            'text-muted-foreground motion-safe:transition-transform',
+            open && 'rotate-90',
+          )}
         >
           ›
         </span>

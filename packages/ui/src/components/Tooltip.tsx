@@ -62,7 +62,7 @@ export function Tooltip({ content, side = 'top', children }: TooltipProps) {
         <span
           role="tooltip"
           className={cn(
-            'pointer-events-none absolute z-50 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-[11px] font-medium text-background shadow-sm',
+            'pointer-events-none absolute z-50 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
             SIDE_CLASSES[side],
           )}
         >

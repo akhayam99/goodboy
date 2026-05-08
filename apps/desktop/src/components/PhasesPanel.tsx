@@ -160,7 +160,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       </div>
 
       {templates.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           no phase templates for this workspace. create one to run multi-phase sessions.
         </p>
       ) : (
@@ -193,23 +193,23 @@ function TemplateRow({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-medium">{template.name}</span>
         {template.description ? (
-          <span className="text-[11px] text-muted-foreground">{template.description}</span>
+          <span className="text-xs text-muted-foreground">{template.description}</span>
         ) : null}
-        <span className="text-[10px] text-muted-foreground/60">
+        <span className="text-2xs text-muted-foreground/60">
           {template.definitions.length} phase{template.definitions.length !== 1 ? 's' : ''}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
-          className="text-[11px] text-muted-foreground underline hover:text-foreground"
+          className="text-xs text-muted-foreground underline hover:text-foreground"
           onClick={onEdit}
         >
           edit
         </button>
         <button
           type="button"
-          className="text-[11px] text-muted-foreground underline hover:text-danger"
+          className="text-xs text-muted-foreground underline hover:text-danger"
           onClick={onDelete}
         >
           delete
@@ -273,7 +273,7 @@ function PhaseEditor({
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">name</label>
+          <label className="text-xs font-semibold text-foreground">name</label>
           <Input
             value={form.name}
             onChange={(e) => onChange({ ...form, name: e.target.value })}
@@ -282,7 +282,7 @@ function PhaseEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">description</label>
+          <label className="text-xs font-semibold text-foreground">description</label>
           <Input
             value={form.description}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
@@ -292,10 +292,10 @@ function PhaseEditor({
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-foreground">phases</span>
+            <span className="text-xs font-semibold text-foreground">phases</span>
             <button
               type="button"
-              className="text-[11px] text-primary underline hover:opacity-80"
+              className="text-xs text-primary underline hover:opacity-80"
               onClick={addDefinition}
             >
               add phase
@@ -316,7 +316,7 @@ function PhaseEditor({
           ))}
         </div>
 
-        {error ? <p className="text-[11px] text-danger">{error}</p> : null}
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
@@ -351,11 +351,11 @@ function DefinitionEditor({
   return (
     <div className="flex flex-col gap-2 rounded border border-border-soft bg-background p-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-muted-foreground">phase {ordinal + 1}</span>
+        <span className="text-2xs font-semibold text-muted-foreground">phase {ordinal + 1}</span>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
             onClick={onMoveUp}
             disabled={ordinal === 0}
             title="move up"
@@ -364,7 +364,7 @@ function DefinitionEditor({
           </button>
           <button
             type="button"
-            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
             onClick={onMoveDown}
             disabled={ordinal === total - 1}
             title="move down"
@@ -373,7 +373,7 @@ function DefinitionEditor({
           </button>
           <button
             type="button"
-            className="text-[11px] text-muted-foreground hover:text-danger"
+            className="text-xs text-muted-foreground hover:text-danger"
             onClick={onRemove}
             title="remove phase"
           >
@@ -384,7 +384,7 @@ function DefinitionEditor({
 
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1">
-          <label className="text-[10px] font-semibold text-foreground">name</label>
+          <label className="text-2xs font-semibold text-foreground">name</label>
           <Input
             value={def.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
@@ -394,7 +394,7 @@ function DefinitionEditor({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-semibold text-foreground">prompt prefix</label>
+        <label className="text-2xs font-semibold text-foreground">prompt prefix</label>
         <Textarea
           value={def.promptPrefix}
           onChange={(e) => onUpdate({ promptPrefix: e.target.value })}
@@ -406,7 +406,7 @@ function DefinitionEditor({
 
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1">
-          <label className="text-[10px] font-semibold text-foreground">provider override</label>
+          <label className="text-2xs font-semibold text-foreground">provider override</label>
           <select
             value={def.providerOverride}
             onChange={(e) => onUpdate({ providerOverride: e.target.value })}
@@ -421,7 +421,7 @@ function DefinitionEditor({
           </select>
         </div>
         <div className="flex flex-1 flex-col gap-1">
-          <label className="text-[10px] font-semibold text-foreground">model override</label>
+          <label className="text-2xs font-semibold text-foreground">model override</label>
           <Input
             value={def.modelOverride}
             onChange={(e) => onUpdate({ modelOverride: e.target.value })}

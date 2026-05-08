@@ -53,7 +53,7 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
       data-run-column={runId}
       className="flex min-w-0 flex-col border-r border-border last:border-r-0"
     >
-      <div className="border-b border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+      <div className="border-b border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
         p{index + 1}
       </div>
       <div
@@ -199,7 +199,7 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
             <button
               type="button"
               data-testid="merge-dialog-trigger"
-              className="rounded border border-border bg-background px-3 py-1 text-xs transition-colors hover:bg-muted"
+              className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
               onClick={() => setMergeDialogOpen(true)}
             >
               merge

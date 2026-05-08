@@ -19,3 +19,4 @@ export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
+export { Skeleton } from './components/Skeleton';

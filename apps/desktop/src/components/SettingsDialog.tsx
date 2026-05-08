@@ -249,7 +249,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             import config
           </Button>
         </div>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           export saves workspaces, skills, phase templates, permission rules, budget rules, and
           settings to a json file. api keys are never included.
         </p>
@@ -278,7 +278,7 @@ function Section({
     <div className="flex flex-col gap-1.5">
       <div className="text-xs font-semibold text-foreground">{label}</div>
       {children}
-      {help ? <p className="text-[11px] leading-relaxed text-muted-foreground">{help}</p> : null}
+      {help ? <p className="text-xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
   );
 }

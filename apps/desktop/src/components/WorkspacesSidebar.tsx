@@ -46,24 +46,38 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="flex-1">
         <Section title="workspaces">
-          <ul className="flex flex-col gap-0.5">
-            {workspaces.map((ws) => (
-              <WorkspaceRow
-                key={ws.id}
-                workspace={ws}
-                isActive={ws.id === currentWorkspace?.id}
-                onClick={() => void setCurrentWorkspace(ws.id)}
-                onDelete={() => setWorkspaceToDelete(ws)}
-              />
-            ))}
-            <li>
-              <AddRow
-                label="add workspace"
-                icon={<FolderPlus size={13} aria-hidden />}
+          {workspaces.length === 0 ? (
+            <div className="px-3 py-6 text-center text-2xs text-muted-foreground">
+              no workspaces yet
+              <br />
+              <button
+                type="button"
+                className="mt-2 text-xs text-primary underline-offset-2 hover:underline"
                 onClick={() => setAddWorkspaceOpen(true)}
-              />
-            </li>
-          </ul>
+              >
+                create one
+              </button>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {workspaces.map((ws) => (
+                <WorkspaceRow
+                  key={ws.id}
+                  workspace={ws}
+                  isActive={ws.id === currentWorkspace?.id}
+                  onClick={() => void setCurrentWorkspace(ws.id)}
+                  onDelete={() => setWorkspaceToDelete(ws)}
+                />
+              ))}
+              <li>
+                <AddRow
+                  label="add workspace"
+                  icon={<FolderPlus size={13} aria-hidden />}
+                  onClick={() => setAddWorkspaceOpen(true)}
+                />
+              </li>
+            </ul>
+          )}
         </Section>
 
         <div className="my-2 border-t border-border-soft" />
@@ -73,7 +87,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           subtitle={currentWorkspace ? currentWorkspace.name : 'select a workspace'}
         >
           {!currentWorkspace ? (
-            <p className="px-2 py-1 text-[11px] text-muted-foreground">
+            <p className="px-2 py-1 text-xs text-muted-foreground">
               pick a workspace to see its sessions.
             </p>
           ) : (
@@ -128,11 +142,11 @@ function Section({ title, subtitle, children }: SectionProps) {
   return (
     <section className="flex flex-col px-2 pt-3">
       <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           {title}
         </span>
         {subtitle ? (
-          <span className="line-clamp-1 text-[10px] text-muted-foreground/80">{subtitle}</span>
+          <span className="line-clamp-1 text-2xs text-muted-foreground/80">{subtitle}</span>
         ) : null}
       </header>
       {children}
@@ -152,7 +166,7 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
     <li className="group">
       <div
         className={cn(
-          'flex items-center gap-1 rounded-md transition-colors',
+          'flex items-center gap-1 rounded-md motion-safe:transition-colors',
           isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/60',
         )}
       >
@@ -181,7 +195,7 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
             e.stopPropagation();
             onDelete();
           }}
-          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/50 hover:!text-danger"
+          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/0 motion-safe:transition-colors group-hover:text-muted-foreground/50 hover:!text-danger"
           title="delete workspace"
           aria-label={`delete workspace ${workspace.name}`}
         >
@@ -247,7 +261,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
     <li className="group">
       <div
         className={cn(
-          'flex flex-col gap-1 rounded-md px-2 py-1.5 transition-colors',
+          'flex flex-col gap-1 rounded-md px-2 py-1.5 motion-safe:transition-colors',
           isActive ? 'bg-muted' : 'hover:bg-muted/60',
         )}
       >
@@ -267,7 +281,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
           <div className="flex shrink-0 items-center gap-1">
             <span
               className={cn(
-                'inline-flex items-center rounded-sm px-1 py-0.5 text-[10px] font-medium leading-none',
+                'inline-flex items-center rounded-sm px-1 py-0.5 text-2xs font-medium leading-none',
                 PROVIDER_CHIP_COLOR[providerId],
               )}
               title={providerId}
@@ -282,17 +296,17 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
           <div className="flex flex-col gap-0.5 pl-3.5">
             <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={cn('h-full rounded-full transition-all', barColor)}
+                className={cn('h-full rounded-full motion-safe:transition-all', barColor)}
                 style={{ width: `${Math.min((pct ?? 0) * 100, 100)}%` }}
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-2xs text-muted-foreground">
                 ${spent.toFixed(2)} /{' '}
                 {editingCap ? null : (
                   <button
                     type="button"
-                    className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                    className="text-2xs text-muted-foreground underline-offset-2 hover:underline"
                     onClick={onCapClick}
                     title="click to edit cap"
                   >
@@ -311,7 +325,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
                   onBlur={() => void onCapSave()}
                   onKeyDown={onCapKeyDown}
                   onClick={(e) => e.stopPropagation()}
-                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-[10px] outline-none focus:ring-1 focus:ring-primary"
+                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-2xs outline-none focus:ring-1 focus:ring-primary"
                 />
               )}
             </div>
@@ -333,7 +347,7 @@ function AddRow({ label, icon, onClick }: AddRowProps) {
     <button
       type="button"
       onClick={onClick}
-      className="mt-0.5 flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+      className="mt-0.5 flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
     >
       <span className="text-muted-foreground" aria-hidden>
         {icon}
@@ -417,7 +431,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
             browse
           </Button>
         </div>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           the directory must contain a `.git` folder.
         </p>
       </div>

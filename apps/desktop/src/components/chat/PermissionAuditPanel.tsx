@@ -204,14 +204,14 @@ export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
                 return (
                   <div key={runId} className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                         run
                       </span>
-                      <span className="font-mono text-[10px] text-muted-foreground">
+                      <span className="font-mono text-2xs text-muted-foreground">
                         {String(runId).slice(0, 12)}…
                       </span>
                       {firstAt ? (
-                        <span className="text-[10px] text-muted-foreground/60">
+                        <span className="text-2xs text-muted-foreground/60">
                           {formatTime(firstAt)}
                         </span>
                       ) : null}
@@ -249,10 +249,10 @@ function AuditRow({ entry }: { entry: PermissionAuditEntry }) {
 
   return (
     <li className="flex items-start gap-3 px-3 py-2 text-xs">
-      <span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">
+      <span className="shrink-0 font-mono text-2xs text-muted-foreground/70">
         {formatTime(entry.request.at)}
       </span>
-      <span className="min-w-0 flex-1 font-mono text-[11px]">
+      <span className="min-w-0 flex-1 font-mono text-xs">
         <span className="font-semibold">{entry.request.toolName}</span>
         <span className="ml-1 text-muted-foreground">{inputPreview(entry.request.input)}</span>
       </span>
@@ -260,13 +260,13 @@ function AuditRow({ entry }: { entry: PermissionAuditEntry }) {
         <span
           className={
             isAllow
-              ? 'rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700'
-              : 'rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700'
+              ? 'rounded-full bg-green-100 px-1.5 py-0.5 text-2xs font-medium text-green-700'
+              : 'rounded-full bg-red-100 px-1.5 py-0.5 text-2xs font-medium text-red-700'
           }
         >
           {isAllow ? 'allow' : 'deny'}
         </span>
-        <span className="text-[9px] text-muted-foreground/60">{ruleLabel}</span>
+        <span className="text-2xs text-muted-foreground/60">{ruleLabel}</span>
       </div>
     </li>
   );

@@ -185,7 +185,7 @@ export function NewSessionDialog({
               <li
                 key={id}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors',
                   disabled ? 'opacity-50' : 'hover:bg-muted/40',
                   selected && !disabled ? 'bg-muted/60' : '',
                 )}
@@ -211,7 +211,7 @@ export function NewSessionDialog({
                   {!connected && (
                     <button
                       type="button"
-                      className="text-[11px] text-primary underline hover:opacity-80"
+                      className="text-xs text-primary underline hover:opacity-80"
                       onClick={() => {
                         onClose();
                         onOpenSettings();
@@ -243,7 +243,7 @@ function Field({
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-semibold text-foreground">{label}</span>
       {children}
-      {hint ? <p className="text-[11px] leading-relaxed text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
