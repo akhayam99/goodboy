@@ -10,7 +10,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:a11y": "vitest run --passWithNoTests src/__tests__/a11y"
   },
   "dependencies": {
     "@kay-am/core": "workspace:*",
