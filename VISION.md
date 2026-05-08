@@ -14,11 +14,11 @@ kAY.am is a local-first AI workspace orchestrator that sits between you and your
 
 ## Core concepts
 
-### Macro sessions
+### Sessions
 
-A macro session is a container for a goal. Not a chat. Not a thread. A goal.
+A session is a container for a goal. Not a chat. Not a thread. A goal.
 
-"Refactor authentication domain" is a macro session. Inside it, you declare phases — setup, planning, implementation, review — and each phase spawns its own agent with only the context it needs. The macro session holds the big picture. The agents do the work.
+"Refactor authentication domain" is a session. Inside it, you declare phases — setup, planning, implementation, review — and each phase spawns its own agent with only the context it needs. The session holds the big picture. The agents do the work.
 
 ### Synthetic context
 
@@ -37,10 +37,10 @@ Register your AI providers (Anthropic, OpenAI, Cursor, etc.). Set priorities. Se
 Every interaction is metered. kAY.am gives you total visibility on what you're spending and where, in real time.
 
 - **Token usage**: input/output tokens per request, per session, per provider, per model.
-- **Estimated cost**: live cost estimate based on provider pricing, with running totals per session and per macro session.
+- **Estimated cost**: live cost estimate based on provider pricing, with running totals per session.
 - **Session lifecycle metrics**: when a session starts, when it resets, when it hits a threshold, when it switches provider, when it ends.
 - **Budgets**: per-provider monthly cap, per-session soft cap. Visual alerts before you hit limits.
-- **Historical view**: spend over time, broken down by provider, model, task type, macro session.
+- **Historical view**: spend over time, broken down by provider, model, task type, session.
 - **Provider efficiency**: compare cost-per-task across providers to inform routing rules.
 
 All metrics are computed and stored locally. Nothing transmitted.

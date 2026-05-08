@@ -58,9 +58,9 @@ export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
         </button>
         {branch ? (
           <CopyItem
-            label={`branch:${branch}`}
+            label={`worktree:${branch}`}
             copyValue={branch}
-            copyLabel="branch"
+            copyLabel="worktree"
             onCopy={onCopy}
           />
         ) : null}
