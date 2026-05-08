@@ -45,7 +45,7 @@ export function ChatHeader({
 
   const isParallel = (parallelRunIds?.length ?? 0) > 1;
 
-  const onCopyBranch = async () => {
+  const onCopyWorktree = async () => {
     try {
       await navigator.clipboard.writeText(branch);
       setCopied(true);
@@ -71,9 +71,10 @@ export function ChatHeader({
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <button
             type="button"
-            onClick={() => void onCopyBranch()}
+            onClick={() => void onCopyWorktree()}
             className="inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted hover:text-foreground"
-            title="copy branch name"
+            aria-label={`worktree — branch: ${branch}`}
+            title={`worktree — branch: ${branch}`}
           >
             <GitBranch size={12} aria-hidden />
             <span className="font-mono">{branch}</span>

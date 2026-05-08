@@ -2,7 +2,10 @@
 
 exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 <div
+  aria-label="alerts"
+  aria-live="polite"
   class="relative"
+  role="region"
 >
   <span
     class="relative inline-flex"
@@ -39,6 +42,8 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 
 exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = `
 <dialog
+  aria-describedby="_r_1_-desc"
+  aria-labelledby="_r_1_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -53,11 +58,13 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
+          id="_r_1_-title"
         >
           new session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
+          id="_r_1_-desc"
         >
           creates a worktree on a fresh branch from the workspace root.
         </p>
@@ -453,6 +460,8 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     </section>
   </div>
   <dialog
+    aria-describedby="_r_0_-desc"
+    aria-labelledby="_r_0_-title"
     class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   >
     <div
@@ -466,11 +475,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         >
           <h2
             class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_0_-title"
           >
             add workspace
           </h2>
           <p
             class="text-xs leading-relaxed text-muted-foreground"
+            id="_r_0_-desc"
           >
             point at a git repository on disk. each session creates its own worktree.
           </p>
@@ -569,11 +580,42 @@ exports[`snapshot — error states > App init error — BootSplash with error me
         style="width: 0%;"
       />
     </div>
-    <p
-      class="text-xs text-danger"
+  </div>
+  <div
+    class="flex w-72 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4"
+    role="alert"
+  >
+    <div
+      class="flex flex-col gap-1"
     >
-      database migration failed
-    </p>
+      <span
+        class="text-xs font-semibold uppercase tracking-wide text-danger"
+      >
+        initialization
+         failed
+      </span>
+      <p
+        class="text-xs text-danger/80"
+      >
+        database migration failed
+      </p>
+    </div>
+    <div
+      class="flex flex-col gap-2"
+    >
+      <button
+        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+        type="button"
+      >
+        open logs
+      </button>
+      <button
+        class="text-left text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        type="button"
+      >
+        report on github ↗
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -603,11 +645,42 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
         style="width: 0%;"
       />
     </div>
-    <p
-      class="text-xs text-danger"
+  </div>
+  <div
+    class="flex w-72 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4"
+    role="alert"
+  >
+    <div
+      class="flex flex-col gap-1"
     >
-      detecting-cli failed
-    </p>
+      <span
+        class="text-xs font-semibold uppercase tracking-wide text-danger"
+      >
+        initialization
+         failed
+      </span>
+      <p
+        class="text-xs text-danger/80"
+      >
+        detecting-cli failed
+      </p>
+    </div>
+    <div
+      class="flex flex-col gap-2"
+    >
+      <button
+        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+        type="button"
+      >
+        open logs
+      </button>
+      <button
+        class="text-left text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        type="button"
+      >
+        report on github ↗
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -641,6 +714,8 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
 
 exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 <dialog
+  aria-describedby="_r_3_-desc"
+  aria-labelledby="_r_3_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -655,11 +730,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
+          id="_r_3_-title"
         >
           end session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
+          id="_r_3_-desc"
         >
           the worktree directory will be removed. the branch is preserved for manual merge.
         </p>
@@ -712,6 +789,8 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 
 exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
 <dialog
+  aria-describedby="_r_2_-desc"
+  aria-labelledby="_r_2_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -726,11 +805,13 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
+          id="_r_2_-title"
         >
           new session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
+          id="_r_2_-desc"
         >
           creates a worktree on a fresh branch from the workspace root.
         </p>

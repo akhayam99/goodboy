@@ -51,7 +51,7 @@ export function AlertCenter() {
   const count = undismissed.length;
 
   return (
-    <div className="relative">
+    <div className="relative" role="region" aria-label="alerts" aria-live="polite">
       <Tooltip content="alert center" side="bottom">
         <button
           type="button"
