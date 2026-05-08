@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
 
 export type DialogSize = 'sm' | 'md' | 'lg';
@@ -14,6 +14,8 @@ export interface DialogProps {
   className?: string;
   showClose?: boolean;
   closeOnBackdrop?: boolean;
+  /** Override which element receives focus when the dialog opens. */
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
 const SIZE: Record<DialogSize, string> = {
@@ -33,21 +35,36 @@ export function Dialog({
   className,
   showClose = true,
   closeOnBackdrop = true,
+  initialFocusRef,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const uid = useId();
+  const titleId = title ? `${uid}-title` : undefined;
+  const descId = description ? `${uid}-desc` : undefined;
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
     if (open) {
-      if (!dialog.open) dialog.showModal();
+      if (!dialog.open) {
+        dialog.showModal();
+        const target = initialFocusRef?.current;
+        if (target) {
+          target.focus();
+        } else {
+          const first = dialog.querySelector<HTMLElement>(
+            'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          );
+          first?.focus();
+        }
+      }
     } else if (dialog.open) {
       dialog.close();
     }
     return () => {
       if (dialog.open) dialog.close();
     };
-  }, [open]);
+  }, [open, initialFocusRef]);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -66,6 +83,8 @@ export function Dialog({
     <dialog
       ref={ref}
       onClick={onBackdropClick}
+      aria-labelledby={titleId}
+      aria-describedby={descId}
       className="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
     >
       <div className={cn('flex max-h-[85vh] min-h-0 flex-col', SIZE[size], className)}>
@@ -73,10 +92,14 @@ export function Dialog({
           <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4">
             <div className="flex min-w-0 flex-col gap-1">
               {title ? (
-                <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
+                <h2 id={titleId} className="text-sm font-semibold tracking-tight text-foreground">
+                  {title}
+                </h2>
               ) : null}
               {description ? (
-                <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+                <p id={descId} className="text-xs leading-relaxed text-muted-foreground">
+                  {description}
+                </p>
               ) : null}
             </div>
             {showClose ? (

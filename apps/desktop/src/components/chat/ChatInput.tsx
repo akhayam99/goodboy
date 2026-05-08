@@ -189,7 +189,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             rows={3}
           />
         </div>
-        {error ? <p className="text-xs text-danger">{error}</p> : null}
+        {error ? (
+          <p role="alert" className="text-xs text-danger">
+            {error}
+          </p>
+        ) : null}
         <div className="flex items-center justify-between gap-2">
           <ModelChip
             provider={session.providerPreference.defaultProvider}

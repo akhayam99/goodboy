@@ -242,7 +242,11 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
             <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
           )
         ) : (
-          <ul className="mx-auto flex max-w-3xl flex-col gap-6">
+          <ul
+            className="mx-auto flex max-w-3xl flex-col gap-6"
+            aria-live="polite"
+            aria-relevant="additions"
+          >
             {items.map((item) => (
               <li key={item.key}>
                 <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
