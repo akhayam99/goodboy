@@ -31,6 +31,8 @@ import {
   listWorkspaces,
   listWorktreesForSession,
   deleteWorktreesForSession,
+  renameSession as renameSessionInDb,
+  deleteSession as deleteSessionFromDb,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
@@ -188,6 +190,7 @@ export interface AppState {
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
+  readonly sessionBranches: Readonly<Record<string, string>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
@@ -205,6 +208,10 @@ export interface AppState {
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
   readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
+  readonly sidebarWorkspaceSearch: string;
+  readonly sidebarSessionSearch: string;
+  readonly sidebarStateFilter: ReadonlyArray<SessionState['kind']>;
+  readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
 }
 
 export interface SummarizerSessionStatus {
@@ -282,6 +289,12 @@ export interface AppActions {
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
   setSessionOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
+  renameSession(sessionId: SessionId, goal: string): Promise<void>;
+  deleteSession(sessionId: SessionId): Promise<void>;
+  setSidebarWorkspaceSearch(query: string): void;
+  setSidebarSessionSearch(query: string): void;
+  setSidebarStateFilter(states: ReadonlyArray<SessionState['kind']>): void;
+  setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
 }
 
 type AppStore = AppState & AppActions;
@@ -304,6 +317,7 @@ const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  sessionBranches: {},
   sessionTelemetry: {},
   workspaceSummary: null,
   sessionSlots: {},
@@ -321,6 +335,10 @@ const initialState: AppState = {
   systemAlerts: [],
   workspaceOverrides: {},
   sessionOverrides: {},
+  sidebarWorkspaceSearch: '',
+  sidebarSessionSearch: '',
+  sidebarStateFilter: [],
+  sidebarProviderFilter: [],
 };
 
 function buildProviderSpendBreakdown(
@@ -646,12 +664,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionTelemetry: {},
       sessionSlots: {},
       sessionWorktrees: {},
+      sessionBranches: {},
       sessionPhaseRuns: {},
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
       budgetAlerts: [],
       unknownPayloadCounts: {},
+      sidebarSessionSearch: '',
+      sidebarStateFilter: [],
+      sidebarProviderFilter: [],
     });
     if (id) {
       const [sessions, workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
@@ -667,16 +689,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id)),
       );
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
+      const sessionBranches: Record<string, string> = {};
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
+          const primaryRow = rows[0];
+          if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
       }
       set((state) => ({
         sessions,
         sessionWorktrees,
+        sessionBranches,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
@@ -833,6 +859,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionWorktrees: {
         ...state.sessionWorktrees,
         [session.id]: [worktree.worktreePath],
+      },
+      sessionBranches: {
+        ...state.sessionBranches,
+        [session.id]: worktree.branchName,
       },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
@@ -1616,7 +1646,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => {
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
-      return { sessionWorktrees: nextWorktrees };
+      const nextBranches = { ...state.sessionBranches };
+      delete nextBranches[sessionId];
+      return { sessionWorktrees: nextWorktrees, sessionBranches: nextBranches };
     });
   },
 
@@ -1879,6 +1911,65 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
     }));
   },
+
+  renameSession: async (sessionId, goal) => {
+    if (!goal.trim()) throw new Error('session name cannot be empty');
+    const now = new Date().toISOString() as IsoDateTime;
+    const prev = get().sessions.find((s) => s.id === sessionId);
+    if (!prev) throw new Error(`session not found: ${sessionId}`);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, goal: goal.trim(), updatedAt: now } : s,
+      ),
+    }));
+    try {
+      await renameSessionInDb(tauriDatabase, sessionId, goal.trim(), now);
+    } catch (err) {
+      set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
+      }));
+      throw err;
+    }
+  },
+
+  deleteSession: async (sessionId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (session.state.kind === 'running') {
+      await cancelTurn((session.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
+        () => undefined,
+      );
+    }
+    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    if (workspace) {
+      for (const worktreePath of worktreePaths) {
+        try {
+          await removeWorktree(workspace.rootPath, worktreePath);
+        } catch {
+          // worktree may already be gone
+        }
+      }
+    }
+    await deleteSessionFromDb(tauriDatabase, sessionId);
+    set((state) => {
+      const nextWorktrees = { ...state.sessionWorktrees };
+      delete nextWorktrees[sessionId];
+      const nextBranches = { ...state.sessionBranches };
+      delete nextBranches[sessionId];
+      return {
+        sessions: state.sessions.filter((s) => s.id !== sessionId),
+        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        sessionWorktrees: nextWorktrees,
+        sessionBranches: nextBranches,
+      };
+    });
+  },
+
+  setSidebarWorkspaceSearch: (query) => set({ sidebarWorkspaceSearch: query }),
+  setSidebarSessionSearch: (query) => set({ sidebarSessionSearch: query }),
+  setSidebarStateFilter: (states) => set({ sidebarStateFilter: states }),
+  setSidebarProviderFilter: (providers) => set({ sidebarProviderFilter: providers }),
 }));
 
 export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {
