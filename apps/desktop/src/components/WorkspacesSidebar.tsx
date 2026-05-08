@@ -11,7 +11,6 @@ import {
   useWorkspaces,
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
-import { OpenInEditorButton } from './OpenInEditorButton';
 import { StatusBadge } from './StatusBadge';
 
 interface WorkspacesSidebarProps {
@@ -291,16 +290,6 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
             </div>
           </div>
         )}
-
-        <div
-          className={cn(
-            'flex justify-end opacity-0 transition-opacity',
-            (isActive || worktreePath !== null) && 'group-hover:opacity-100',
-            isActive && 'opacity-100',
-          )}
-        >
-          <OpenInEditorButton worktreePath={worktreePath} label="vscode" />
-        </div>
       </div>
     </li>
   );

@@ -84,6 +84,7 @@ import {
   type ProviderStatus,
   type ProviderStatuses,
 } from '../providers';
+import { detectEditors, type DetectedEditor } from '../editor';
 import { validateGitRepo } from '../repo';
 import { resolveProviderForTurn } from '../routing';
 import {
@@ -180,6 +181,7 @@ export interface AppState {
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<PhaseTemplate>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
+  readonly detectedEditors: ReadonlyArray<DetectedEditor>;
 }
 
 export interface SummarizerSessionStatus {
@@ -279,6 +281,7 @@ const initialState: AppState = {
   phaseTemplates: {},
   sessionPhaseRuns: {},
   unknownPayloadCounts: {},
+  detectedEditors: [],
 };
 
 function buildProviderSpendBreakdown(
@@ -487,11 +490,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
 
       set({ bootPhase: 'detecting-cli' });
-      const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
+      const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
         getProviderStatus(),
         getCursorStatus(),
         getCodexStatus(),
+        detectEditors(),
       ]);
+      set({ detectedEditors });
       const statuses: ProviderStatuses = {
         anthropic: providerStatus,
         cursor: cursorStatus,

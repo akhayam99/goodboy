@@ -1,5 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 
+export interface DetectedEditor {
+  readonly binary: string;
+  readonly label: string;
+}
+
+export async function detectEditors(): Promise<ReadonlyArray<DetectedEditor>> {
+  return invoke<DetectedEditor[]>('detect_editors');
+}
+
 export async function openInEditor(path: string, editor?: string): Promise<void> {
   await invoke('open_in_editor', { path, editor: editor ?? null });
 }

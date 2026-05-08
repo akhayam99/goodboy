@@ -10,8 +10,6 @@ import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDi
 
 interface ChatViewProps {
   session: Session;
-  contextOpen: boolean;
-  onToggleContext: () => void;
   onRequestEnd: () => void;
 }
 
@@ -92,7 +90,7 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
   );
 }
 
-export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }: ChatViewProps) {
+export function ChatView({ session, onRequestEnd }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
@@ -152,8 +150,6 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
         <ChatHeader
           session={session}
           worktreePath={worktreePath}
-          contextOpen={contextOpen}
-          onToggleContext={onToggleContext}
           onEndSession={onRequestEnd}
           parallelRunIds={parallelRunIds}
           onSelectRun={onSelectRun}
@@ -207,13 +203,7 @@ export function ChatView({ session, contextOpen, onToggleContext, onRequestEnd }
 
   return (
     <div className="flex h-full flex-col">
-      <ChatHeader
-        session={session}
-        worktreePath={worktreePath}
-        contextOpen={contextOpen}
-        onToggleContext={onToggleContext}
-        onEndSession={onRequestEnd}
-      />
+      <ChatHeader session={session} worktreePath={worktreePath} onEndSession={onRequestEnd} />
       <div
         ref={scrollerRef}
         onScroll={onScroll}

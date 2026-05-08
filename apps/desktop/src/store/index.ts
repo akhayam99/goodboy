@@ -6,6 +6,7 @@ export {
   type ProviderSpendEntry,
   type SummarizerSessionStatus,
 } from './store';
+export type { DetectedEditor } from '../editor';
 
 export {
   selectCurrentSession,

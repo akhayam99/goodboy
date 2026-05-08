@@ -1,13 +1,10 @@
-import { useState } from 'react';
 import { CircleHelp } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import { openInEditor } from '../editor';
-import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../store';
+import { useToast } from './Toast';
+import { TelemetryPill } from './TelemetryPill';
 
 interface StatusBarProps {
-  onEndSession?: () => void;
-  onOpenTelemetry?: () => void;
+  onFocusWorkspaces?: () => void;
 }
 
 function inferBranch(worktreePath: string | null, sessionId: string | null): string | null {
@@ -26,114 +23,86 @@ function shortenHome(path: string): string {
   return `~${rest.slice(slash)}`;
 }
 
-const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
-
-export function StatusBar({ onEndSession, onOpenTelemetry }: StatusBarProps) {
+export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
   const workspace = useCurrentWorkspace();
   const session = useCurrentSession();
-  const sessionTelemetry = useAppStore((s) =>
-    session ? (s.sessionTelemetry[session.id] ?? null) : null,
-  );
   const worktreePath = useAppStore((s) =>
     session ? ((s.sessionWorktrees[session.id] ?? [])[0] ?? null) : null,
   );
-  const editorBinary = useAppStore(
-    (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
-  );
-  const [copied, setCopied] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const branch = session ? inferBranch(worktreePath, session.id) : null;
-  const lastTurn = sessionTelemetry?.[sessionTelemetry.length - 1] ?? null;
   const sessionStateLabel = session?.state.kind ?? 'idle';
 
   const onCopy = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(label);
-      setTimeout(() => setCopied(null), 1200);
+      showToast('success', `copied ${label}`);
     } catch {
-      // silent
+      // clipboard denied — silent
     }
-  };
-
-  const onOpenWorktree = () => {
-    if (!worktreePath) return;
-    void openInEditor(worktreePath, editorBinary).catch(() => undefined);
   };
 
   return (
     <div className="flex w-full items-center gap-3">
       <div className="flex flex-1 items-center gap-3 truncate">
         <span aria-hidden>▸</span>
-        <span className="text-foreground/80">{workspace?.name ?? 'no workspace'}</span>
+        <button
+          type="button"
+          onClick={onFocusWorkspaces}
+          title="focus workspaces  ⌘1"
+          className="text-foreground/80 hover:text-foreground hover:underline disabled:cursor-default disabled:no-underline"
+          disabled={!onFocusWorkspaces}
+        >
+          {workspace?.name ?? 'no workspace'}
+        </button>
         {branch ? (
-          <Item
+          <CopyItem
             label={`branch:${branch}`}
-            title="copy branch"
-            onClick={() => void onCopy(branch, 'branch')}
-            highlight={copied === 'branch'}
+            copyValue={branch}
+            copyLabel="branch"
+            onCopy={onCopy}
           />
         ) : null}
         {worktreePath ? (
-          <Item
+          <CopyItem
             label={`worktree:${shortenHome(worktreePath)}`}
-            title={`open in ${editorBinary}`}
-            onClick={onOpenWorktree}
-            onAuxClick={() => void onCopy(worktreePath, 'worktree')}
-            highlight={copied === 'worktree'}
-          />
-        ) : null}
-        {lastTurn ? (
-          <Item
-            label={`last:${formatCost(lastTurn.estimatedCostUsd)}`}
-            title="open telemetry breakdown"
-            onClick={onOpenTelemetry}
+            copyValue={worktreePath}
+            copyLabel="worktree path"
+            onCopy={onCopy}
           />
         ) : null}
         <span className="text-muted-foreground">{sessionStateLabel}</span>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        {session && session.state.kind !== 'ended' && onEndSession ? (
-          <button
-            type="button"
-            onClick={onEndSession}
-            className="rounded-sm px-1 hover:bg-muted hover:text-foreground"
-            title="end session"
-          >
-            [end session]
-          </button>
-        ) : null}
-        <span className="inline-flex items-center gap-1" title="press ⌘? for help">
+        <TelemetryPill />
+        <span className="inline-flex items-center gap-1" title="open settings">
           <CircleHelp size={11} aria-hidden />
-          help ⌘?
+          <kbd className="font-mono">⌘,</kbd>
+          {/* TODO (@ak): cmd+K palette not shipped yet */}
         </span>
       </div>
     </div>
   );
 }
 
-interface ItemProps {
+function CopyItem({
+  label,
+  copyValue,
+  copyLabel,
+  onCopy,
+}: {
   label: string;
-  title?: string;
-  onClick?: () => void;
-  onAuxClick?: () => void;
-  highlight?: boolean;
-}
-
-function Item({ label, title, onClick, onAuxClick, highlight }: ItemProps) {
-  if (!onClick) {
-    return <span className={cn('px-1', highlight && 'text-success')}>{label}</span>;
-  }
+  copyValue: string;
+  copyLabel: string;
+  onCopy: (text: string, label: string) => Promise<void>;
+}) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      onAuxClick={onAuxClick}
-      title={title}
-      className={cn(
-        'truncate rounded-sm px-1 hover:bg-muted hover:text-foreground',
-        highlight && 'text-success',
-      )}
+      onClick={() => void onCopy(copyValue, copyLabel)}
+      title={`copy ${copyLabel}`}
+      className="truncate rounded-sm px-1 hover:bg-muted hover:text-foreground"
     >
       {label}
     </button>

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
+import { Cpu } from 'lucide-react';
 import { Button, Textarea } from '@kay-am/ui';
 import type {
   BudgetAlert,
@@ -10,13 +11,19 @@ import type {
   TurnProviderOverride,
   WorkspaceId,
 } from '@kay-am/types';
-import { buildClaudeFlags } from '@kay-am/core';
+import { buildClaudeFlags, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
 import { useEffectivePermissionRules } from '../../permissions';
+
+const PROVIDER_LABEL: Record<ProviderId, string> = {
+  anthropic: 'claude',
+  cursor: 'cursor',
+  codex: 'codex',
+};
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -181,15 +188,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           />
         </div>
         {error ? <p className="text-xs text-danger">{error}</p> : null}
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <ModelChip
+            provider={session.providerPreference.defaultProvider}
+            model={
+              session.providerPreference.defaultModel ??
+              getDefaultTurnModel(session.providerPreference.defaultProvider)
+            }
+          />
           {isRunning ? (
             <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
               cancel
             </Button>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>send via</span>
+                <span>via</span>
                 <select
                   disabled={!allowOverride || isRunning}
                   title={overrideDisabledTitle}
@@ -210,7 +224,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
                 send
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -273,5 +287,16 @@ function PreflightPill({
     >
       permissions: {allowedTools.length} allow / {disallowedTools.length} deny
     </button>
+  );
+}
+
+function ModelChip({ provider, model }: { provider: ProviderId; model: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+      <Cpu size={11} aria-hidden />
+      <span className="font-mono">
+        {PROVIDER_LABEL[provider]} · {model}
+      </span>
+    </span>
   );
 }

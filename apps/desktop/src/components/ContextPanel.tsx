@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PanelRightClose } from 'lucide-react';
 import { ScrollArea, Textarea, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
 import type { ContextSlot, Session } from '@kay-am/types';
@@ -6,11 +7,12 @@ import { useAppStore, useSessionSlots, useSummarizerStatus } from '../store';
 
 interface ContextPanelProps {
   session: Session;
+  onCollapse?: () => void;
 }
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
-export function ContextPanel({ session }: ContextPanelProps) {
+export function ContextPanel({ session, onCollapse }: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
@@ -25,11 +27,24 @@ export function ContextPanel({ session }: ContextPanelProps) {
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             context
           </span>
-          <SummarizerBadge
-            status={summarizer.status}
-            lastUpdate={summarizer.lastUpdate}
-            error={summarizer.error}
-          />
+          <div className="flex items-center gap-1">
+            <SummarizerBadge
+              status={summarizer.status}
+              lastUpdate={summarizer.lastUpdate}
+              error={summarizer.error}
+            />
+            {onCollapse ? (
+              <button
+                type="button"
+                onClick={onCollapse}
+                title="hide context panel"
+                aria-label="hide context panel"
+                className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+              >
+                <PanelRightClose size={13} aria-hidden />
+              </button>
+            ) : null}
+          </div>
         </header>
 
         <ul className="flex flex-col gap-4">
