@@ -8,6 +8,7 @@ import {
   nextPhase,
   parseSlashCommand,
   resolveConflicts,
+  resolveSettings,
   sessionReducer,
   Summarizer,
   type ClaudeFlagSet,
@@ -44,9 +45,11 @@ import type {
   BudgetAlert,
   BudgetRule,
   ContextSlot,
+  GlobalSettings,
   IsoDateTime,
   Message,
   MessageId,
+  OverrideSettings,
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
@@ -59,6 +62,7 @@ import type {
   ProviderId,
   ProviderRun,
   ProviderRunId,
+  ResolvedSettings,
   Session,
   SessionBudget,
   SessionId,
@@ -97,6 +101,8 @@ import {
   SETTING_PROVIDER_PRICING_CONFIG,
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
+  DEFAULT_BRANCH_PREFIX,
+  DEFAULT_ENABLE_PARALLEL_AGENTS,
   DEFAULT_MAX_PARALLELISM,
   MAX_PARALLELISM,
   MIN_PARALLELISM,
@@ -195,6 +201,8 @@ export interface AppState {
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
   readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
+  readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
+  readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
 }
 
 export interface SummarizerSessionStatus {
@@ -268,6 +276,10 @@ export interface AppActions {
     picks: Record<string, string>,
     runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
   ): Promise<void>;
+  loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
+  setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
+  loadSessionOverrides(sessionId: SessionId): Promise<void>;
+  setSessionOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -304,6 +316,8 @@ const initialState: AppState = {
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   systemAlerts: [],
+  workspaceOverrides: {},
+  sessionOverrides: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -1826,4 +1840,58 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return { sessionMergeConflicts: next };
     });
   },
+
+  loadWorkspaceOverrides: async (workspaceId) => {
+    const overrides = await invoke<OverrideSettings | null>('get_workspace_overrides', {
+      workspaceId,
+    });
+    if (overrides) {
+      set((state) => ({
+        workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
+      }));
+    }
+  },
+
+  setWorkspaceOverrides: async (workspaceId, overrides) => {
+    await invoke('set_workspace_overrides', { workspaceId, overrides });
+    set((state) => ({
+      workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
+    }));
+  },
+
+  loadSessionOverrides: async (sessionId) => {
+    const overrides = await invoke<OverrideSettings | null>('get_session_overrides', { sessionId });
+    if (overrides) {
+      set((state) => ({
+        sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
+      }));
+    }
+  },
+
+  setSessionOverrides: async (sessionId, overrides) => {
+    await invoke('set_session_overrides', { sessionId, overrides });
+    set((state) => ({
+      sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
+    }));
+  },
 }));
+
+export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {
+  return useAppStore((state) => {
+    const session = sessionId ? (state.sessions.find((s) => s.id === sessionId) ?? null) : null;
+    const workspaceId = session?.workspaceId ?? null;
+
+    const globalSettings: GlobalSettings = {
+      defaultProviderId: DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
+      defaultPhaseTemplateId: null,
+      defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
+      parallelEnabled:
+        state.settings[SETTING_ENABLE_PARALLEL_AGENTS] === 'true' || DEFAULT_ENABLE_PARALLEL_AGENTS,
+    };
+
+    const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;
+    const sessionOverride = sessionId ? (state.sessionOverrides[sessionId] ?? null) : null;
+
+    return resolveSettings({ global: globalSettings, workspaceOverride, sessionOverride });
+  });
+}

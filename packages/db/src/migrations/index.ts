@@ -9,6 +9,7 @@ import { m008Permissions } from './m008-permissions';
 import { m009SessionWorktrees } from './m009-session-worktrees';
 import { m010PermissionAuditRetry } from './m010-permission-audit-retry';
 import { m011ParallelPhases } from './m011-parallel-phases';
+import { m012SettingsOverrides } from './m012-settings-overrides';
 
 export interface Migration {
   readonly version: number;
@@ -27,4 +28,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 9, sql: m009SessionWorktrees },
   { version: 10, sql: m010PermissionAuditRetry },
   { version: 11, sql: m011ParallelPhases },
+  { version: 12, sql: m012SettingsOverrides },
 ];

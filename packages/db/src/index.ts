@@ -84,3 +84,9 @@ export {
   deleteGroup,
   updateGroupCompletedAt,
 } from './queries/parallel-phases';
+export {
+  getWorkspaceOverrides,
+  setWorkspaceOverrides,
+  getSessionOverrides,
+  setSessionOverrides,
+} from './queries/settings-overrides';
