@@ -62,7 +62,7 @@ export function RoutingIndicator({
             {label} / {decision.selectedModel}
           </span>
           {decision.reason === 'override' ? (
-            <span className="rounded bg-accent px-1 py-0.5 text-[10px] font-medium text-accent-foreground">
+            <span className="rounded bg-accent px-1 py-0.5 text-2xs font-medium text-accent-foreground">
               override
             </span>
           ) : null}

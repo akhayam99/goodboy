@@ -22,17 +22,17 @@ export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
         onOpenChange={setOpen}
         trigger={
           <span className="flex items-center gap-2 text-xs font-medium">
-            <span className="rounded bg-background px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="rounded bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
               phase
             </span>
             {header}
           </span>
         }
       >
-        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-background p-2 text-[11px] text-muted-foreground">
+        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-background p-2 text-xs text-muted-foreground">
           {item.carryForwardContext}
         </pre>
-        <p className="mt-1 text-right text-[10px] text-muted-foreground">{timestamp}</p>
+        <p className="mt-1 text-right text-2xs text-muted-foreground">{timestamp}</p>
       </Collapsible>
     </div>
   );

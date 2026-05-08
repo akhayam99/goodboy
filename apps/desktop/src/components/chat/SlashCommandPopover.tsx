@@ -59,7 +59,7 @@ export function SlashCommandPopover({
   return (
     <div className="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-background shadow-md">
       {filtered.length === 0 ? (
-        <p className="px-3 py-2 text-[11px] text-muted-foreground">
+        <p className="px-3 py-2 text-xs text-muted-foreground">
           no skills — create one in settings
         </p>
       ) : (
@@ -78,7 +78,7 @@ export function SlashCommandPopover({
             >
               <span className="text-xs font-medium text-foreground">/{item.name}</span>
               {item.description ? (
-                <span className="text-[11px] text-muted-foreground">{item.description}</span>
+                <span className="text-xs text-muted-foreground">{item.description}</span>
               ) : null}
             </li>
           ))}

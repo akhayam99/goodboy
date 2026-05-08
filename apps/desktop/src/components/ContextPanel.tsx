@@ -57,7 +57,7 @@ export function ContextPanel({
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-4 p-4">
         <header className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             context
           </span>
           <div className="flex items-center gap-1">
@@ -124,14 +124,14 @@ function SlotRow({ slotKey, slot, onCommit, onToggle }: SlotRowProps) {
   return (
     <li className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {SLOT_LABELS[slotKey]}
         </label>
         <button
           type="button"
           onClick={() => onToggle(!enabled)}
           className={cn(
-            'rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+            'rounded-full border px-1.5 py-0.5 text-2xs uppercase tracking-wide',
             enabled
               ? 'border-primary/30 bg-primary/10 text-primary'
               : 'border-border bg-muted text-muted-foreground',
@@ -211,7 +211,7 @@ function SummarizerBadge({
   return (
     <span
       title={tooltip}
-      className={cn('rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide', styles[status])}
+      className={cn('rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide', styles[status])}
     >
       {labels[status]}
     </span>

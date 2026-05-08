@@ -116,7 +116,7 @@ export function OpenInEditorButton({
             >
               {ed.label}
               {ed.binary === resolvedDefault ? (
-                <span className="ml-auto text-[10px] text-muted-foreground">default</span>
+                <span className="ml-auto text-2xs text-muted-foreground">default</span>
               ) : null}
             </button>
           ))}

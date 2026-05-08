@@ -205,7 +205,7 @@ export function PermissionsPanel() {
       />
 
       {showNonClaudeBanner && (
-        <div className="flex items-start justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-[11px] text-warning">
+        <div className="flex items-start justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
           <span>
             permission proxy is currently claude-only. rules saved here will not affect cursor/codex
             turns until v0.7.
@@ -221,18 +221,16 @@ export function PermissionsPanel() {
       )}
 
       {scope === 'workspace' && !workspace && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           select a workspace to manage workspace rules.
         </p>
       )}
       {scope === 'session' && !session && (
-        <p className="text-[11px] text-muted-foreground">
-          select a session to manage session rules.
-        </p>
+        <p className="text-xs text-muted-foreground">select a session to manage session rules.</p>
       )}
 
       {canLoadScope && !loading && rules.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           no rules for this scope. add one to control which tools claude can use.
         </p>
       )}
@@ -268,7 +266,7 @@ function ScopeTabs({ current, onChange }: { current: ScopeTab; onChange: (s: Sco
         <button
           key={tab}
           type="button"
-          className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+          className={`rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
             current === tab
               ? 'bg-foreground text-background'
               : 'text-muted-foreground hover:text-foreground'
@@ -296,23 +294,23 @@ function RuleRow({
     <li className="flex items-center gap-3 px-3 py-2.5 text-xs">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-mono font-medium">{rendered}</span>
-        <span className="text-[10px] text-muted-foreground">priority {rule.priority}</span>
+        <span className="text-2xs text-muted-foreground">priority {rule.priority}</span>
       </div>
       <span
-        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${DECISION_BADGE[rule.decision]}`}
+        className={`shrink-0 rounded px-1.5 py-0.5 text-2xs font-semibold ${DECISION_BADGE[rule.decision]}`}
       >
         {rule.decision}
       </span>
       <button
         type="button"
-        className="shrink-0 text-[11px] text-muted-foreground underline hover:text-foreground"
+        className="shrink-0 text-xs text-muted-foreground underline hover:text-foreground"
         onClick={onEdit}
       >
         edit
       </button>
       <button
         type="button"
-        className="shrink-0 text-[11px] text-muted-foreground underline hover:text-danger"
+        className="shrink-0 text-xs text-muted-foreground underline hover:text-danger"
         onClick={onDelete}
       >
         delete
@@ -323,7 +321,7 @@ function RuleRow({
 
 function DeleteConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2.5 text-[11px]">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2.5 text-xs">
       <span className="text-foreground">delete this rule?</span>
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -368,7 +366,7 @@ function RuleEditor({
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
         <div className="relative flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">tool pattern</label>
+          <label className="text-xs font-semibold text-foreground">tool pattern</label>
           <Input
             value={form.tool}
             onChange={(e) => {
@@ -400,7 +398,7 @@ function RuleEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-foreground">
+          <label className="text-xs font-semibold text-foreground">
             args matcher <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <Input
@@ -412,7 +410,7 @@ function RuleEditor({
 
         <div className="flex gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-foreground">decision</label>
+            <label className="text-xs font-semibold text-foreground">decision</label>
             <select
               className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               value={form.decision}
@@ -428,7 +426,7 @@ function RuleEditor({
             </select>
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-foreground">priority</label>
+            <label className="text-xs font-semibold text-foreground">priority</label>
             <Input
               type="number"
               step="1"
@@ -440,12 +438,12 @@ function RuleEditor({
         </div>
 
         {preview && (
-          <div className="rounded bg-muted px-2.5 py-2 font-mono text-[10px] text-muted-foreground">
+          <div className="rounded bg-muted px-2.5 py-2 font-mono text-2xs text-muted-foreground">
             renders as: <span className="text-foreground">{preview}</span>
           </div>
         )}
 
-        {error && <p className="text-[11px] text-danger">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>

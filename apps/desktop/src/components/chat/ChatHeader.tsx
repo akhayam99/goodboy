@@ -68,7 +68,7 @@ export function ChatHeader({
             />
           ) : null}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <button
             type="button"
             onClick={() => void onCopyWorktree()}
@@ -142,7 +142,7 @@ function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
   if (!current) return null;
 
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-[10px] text-muted-foreground">
+    <div className="inline-flex items-center gap-1.5 rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground">
       <span className="font-mono">
         {displayIdx + 1}/{sorted.length} · {current.name}
       </span>

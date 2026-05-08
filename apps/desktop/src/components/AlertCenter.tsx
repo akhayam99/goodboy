@@ -57,14 +57,14 @@ export function AlertCenter() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
+            'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
             open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60',
           )}
           aria-label={`alert center${count > 0 ? `, ${count} undismissed` : ''}`}
         >
           <Bell size={13} aria-hidden />
           {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[9px] font-bold leading-none text-warning-foreground">
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-2xs font-bold leading-none text-warning-foreground">
               {count > 9 ? '9+' : count}
             </span>
           )}
@@ -90,7 +90,7 @@ export function AlertCenter() {
             </div>
 
             {undismissed.length === 0 ? (
-              <p className="px-3 py-4 text-center text-[11px] text-muted-foreground">
+              <p className="px-3 py-4 text-center text-xs text-muted-foreground">
                 no active alerts
               </p>
             ) : (
@@ -103,7 +103,7 @@ export function AlertCenter() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span
                             className={cn(
-                              'rounded px-1 py-0.5 text-[10px] font-medium leading-none',
+                              'rounded px-1 py-0.5 text-2xs font-medium leading-none',
                               badge.className,
                             )}
                           >
@@ -113,7 +113,7 @@ export function AlertCenter() {
                             {alertLabel(alert)}
                           </span>
                         </div>
-                        <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           <span>
                             ${alert.currentUsd.toFixed(2)} / ${alert.capUsd.toFixed(2)}
                           </span>
@@ -123,7 +123,7 @@ export function AlertCenter() {
                       </div>
                       <button
                         type="button"
-                        className="mt-0.5 shrink-0 text-[10px] text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
+                        className="mt-0.5 shrink-0 text-2xs text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
                         onClick={() => void dismissBudgetAlert(alert.id)}
                       >
                         dismiss

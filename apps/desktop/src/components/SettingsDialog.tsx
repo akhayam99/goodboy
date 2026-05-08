@@ -253,7 +253,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             </Field>
             <div className="flex flex-col gap-2">
               <div className="text-xs font-semibold text-foreground">provider priority order</div>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 providers are tried top-to-bottom when routing a turn.
               </p>
               <ul className="flex flex-col gap-1">
@@ -262,7 +262,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     key={p.id}
                     className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/40 px-3 py-2"
                   >
-                    <span className="w-4 text-[11px] text-muted-foreground">{i + 1}</span>
+                    <span className="w-4 text-xs text-muted-foreground">{i + 1}</span>
                     <span className="flex-1 text-sm font-medium">{p.label}</span>
                     <div className="flex flex-col">
                       <button
@@ -325,7 +325,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                 import config
               </Button>
             </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               export saves workspaces, skills, phase templates, permission rules, budget rules, and
               settings to a json file. api keys are never included.
             </p>
@@ -410,7 +410,7 @@ function Field({
     <div className="flex flex-col gap-1.5">
       <div className="text-xs font-semibold text-foreground">{label}</div>
       {children}
-      {help ? <p className="text-[11px] leading-relaxed text-muted-foreground">{help}</p> : null}
+      {help ? <p className="text-xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
   );
 }

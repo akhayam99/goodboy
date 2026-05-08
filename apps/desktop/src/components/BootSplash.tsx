@@ -85,7 +85,7 @@ function BootErrorRecovery({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-md border border-danger/30 bg-background px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10"
+            className="rounded-md border border-danger/30 bg-background px-3 py-1.5 text-xs font-medium text-danger motion-safe:transition-colors hover:bg-danger/10"
           >
             retry
           </button>
@@ -95,7 +95,7 @@ function BootErrorRecovery({
           <button
             type="button"
             onClick={onSkipProviderDetection}
-            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted"
           >
             skip provider detection
           </button>
@@ -104,7 +104,7 @@ function BootErrorRecovery({
         <button
           type="button"
           onClick={openLogs}
-          className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+          className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted"
         >
           open logs
         </button>
@@ -112,7 +112,7 @@ function BootErrorRecovery({
         <button
           type="button"
           onClick={openIssue}
-          className="text-left text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          className="text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
         >
           report on github ↗
         </button>
@@ -132,7 +132,7 @@ export function BootSplash({ phase, error, onRetry, onSkipProviderDetection }: B
         <p className="text-xs text-muted-foreground">{PHASE_LABEL[phase]}</p>
         <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full bg-primary transition-all"
+            className="h-full bg-primary motion-safe:transition-all"
             style={{
               width: phase === 'ready' ? '100%' : `${Math.max(0, (idx / total) * 100)}%`,
             }}

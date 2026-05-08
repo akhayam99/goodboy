@@ -87,7 +87,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
           that wire-up lands in I1 #212. When available, replace this placeholder
           with a per-conflict <DiffPreview> component rendered below the radio list. */}
       {conflicts.length > 0 ? (
-        <p className="text-[11px] text-muted-foreground/60 italic">
+        <p className="text-xs text-muted-foreground/60 italic">
           diff preview: [follow-on issue, not blocking merge]
         </p>
       ) : null}

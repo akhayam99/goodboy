@@ -73,7 +73,7 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
 function AssistantText({ text }: { text: string }) {
   return (
     <div className="group relative rounded-lg border border-border bg-background px-3 py-2">
-      <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
       <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
@@ -91,7 +91,7 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
         onOpenChange={setOpen}
         trigger={
           <span className="flex items-center gap-2 text-xs font-medium">
-            <span className="rounded bg-background px-1.5 py-0.5 font-mono text-[10px] uppercase">
+            <span className="rounded bg-background px-1.5 py-0.5 font-mono text-2xs uppercase">
               tool
             </span>
             {item.toolName}
@@ -103,11 +103,11 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
           </span>
         }
       >
-        <pre className="overflow-x-auto rounded bg-background p-2 text-[11px] text-muted-foreground">
+        <pre className="overflow-x-auto rounded bg-background p-2 text-xs text-muted-foreground">
           input: {JSON.stringify(item.input, null, 2)}
         </pre>
         {item.ended ? (
-          <pre className="mt-1 overflow-x-auto rounded bg-background p-2 text-[11px] text-muted-foreground">
+          <pre className="mt-1 overflow-x-auto rounded bg-background p-2 text-xs text-muted-foreground">
             output: {JSON.stringify(item.output, null, 2)}
           </pre>
         ) : null}

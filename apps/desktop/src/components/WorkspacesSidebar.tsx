@@ -131,7 +131,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <ScrollArea className="flex-1">
         <section className="flex flex-col px-2 pt-2">
           <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               workspaces
             </span>
           </header>
@@ -226,7 +226,7 @@ function SearchInput({ value, onChange, placeholder }: SearchInputProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-md border border-border-soft bg-muted/40 py-1 pl-6 pr-2 text-[11px] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-full rounded-md border border-border-soft bg-muted/40 py-1 pl-6 pr-2 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
       />
       {value ? (
         <button
@@ -394,7 +394,7 @@ function SessionList({
             type="button"
             onClick={() => onToggleState(kind)}
             className={cn(
-              'rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide transition-colors',
+              'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
               stateFilter.includes(kind)
                 ? 'bg-primary/15 text-primary'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
@@ -409,7 +409,7 @@ function SessionList({
             type="button"
             onClick={() => onToggleProvider(p)}
             className={cn(
-              'rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide transition-colors',
+              'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
               providerFilter.includes(p)
                 ? cn(PROVIDER_CHIP_COLOR[p])
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
@@ -448,7 +448,7 @@ interface FilterChipProps {
 
 function FilterChip({ label, onRemove }: FilterChipProps) {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[9px] text-primary">
+    <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-2xs text-primary">
       {label}
       <button
         type="button"
@@ -587,7 +587,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
                 onKeyDown={onRenameKeyDown}
                 className="flex-1 rounded border border-border bg-background px-1 py-0 text-xs outline-none focus:ring-1 focus:ring-primary"
               />
-              {renameError ? <span className="text-[10px] text-danger">{renameError}</span> : null}
+              {renameError ? <span className="text-2xs text-danger">{renameError}</span> : null}
             </div>
           ) : (
             <span className="line-clamp-1 flex-1">{session.goal}</span>
@@ -595,7 +595,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <span
               className={cn(
-                'inline-flex items-center rounded-sm px-1 py-0.5 text-[10px] font-medium leading-none',
+                'inline-flex items-center rounded-sm px-1 py-0.5 text-2xs font-medium leading-none',
                 PROVIDER_CHIP_COLOR[providerId],
               )}
               title={providerId}
@@ -627,12 +627,12 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-2xs text-muted-foreground">
                 ${spent.toFixed(2)} /{' '}
                 {editingCap ? null : (
                   <button
                     type="button"
-                    className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                    className="text-2xs text-muted-foreground underline-offset-2 hover:underline"
                     onClick={onCapClick}
                     title="click to edit cap"
                   >
@@ -651,7 +651,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
                   onBlur={() => void onCapSave()}
                   onKeyDown={onCapKeyDown}
                   onClick={(e) => e.stopPropagation()}
-                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-[10px] outline-none focus:ring-1 focus:ring-primary"
+                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-2xs outline-none focus:ring-1 focus:ring-primary"
                 />
               )}
             </div>
@@ -795,7 +795,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
             browse
           </Button>
         </div>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           the directory must contain a `.git` folder.
         </p>
       </div>

@@ -50,12 +50,16 @@ export function ProvidersPanel() {
           {refreshing ? 'refreshing…' : 'refresh all'}
         </Button>
       </div>
-      <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
-        {providers.map((p) => (
-          <ProviderRow key={p.id} info={p} onRefresh={onRefresh} />
-        ))}
-      </ul>
-      <p className="text-[11px] text-muted-foreground">
+      {providers.length === 0 ? (
+        <p className="text-2xs text-muted-foreground">no providers configured</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
+          {providers.map((p) => (
+            <ProviderRow key={p.id} info={p} onRefresh={onRefresh} />
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted-foreground">
         kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run{' '}
         <code className="rounded bg-muted px-1">claude</code> in a terminal once).
       </p>
@@ -76,15 +80,15 @@ function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="font-medium">{info.label}</span>
-          <code className="text-[10px] text-muted-foreground">{info.binary}</code>
+          <code className="text-2xs text-muted-foreground">{info.binary}</code>
           {info.version ? (
-            <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
+            <span className="rounded bg-muted px-1 text-2xs text-muted-foreground">
               {info.version}
             </span>
           ) : null}
           {info.id !== 'anthropic' ? (
             <span
-              className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground"
               title="v0.7 will extend the permission proxy to cursor and codex. For now, these providers continue with their previous defaults."
             >
               permission proxy: not supported
@@ -101,19 +105,17 @@ function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =>
 function RowStatus({ info }: { info: ProviderInfo }) {
   if (info.connection === 'connected') {
     return (
-      <div className="text-[11px] text-muted-foreground">
-        {info.identity ?? 'no identity reported'}
-      </div>
+      <div className="text-xs text-muted-foreground">{info.identity ?? 'no identity reported'}</div>
     );
   }
   if (info.connection === 'error') {
     return (
-      <div className="text-[11px]">
+      <div className="text-xs">
         <span className="text-danger">{info.error ?? 'unknown error'}</span>
       </div>
     );
   }
-  return <div className="text-[11px] text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
+  return <div className="text-xs text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
 }
 
 function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
@@ -132,7 +134,7 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     return info.trackingIssueUrl ? (
       <button
         type="button"
-        className="shrink-0 text-[11px] text-muted-foreground underline hover:text-foreground"
+        className="shrink-0 text-xs text-muted-foreground underline hover:text-foreground"
         onClick={() => void openUrl(info.trackingIssueUrl!)}
       >
         track ↗
@@ -144,7 +146,7 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     return (
       <button
         type="button"
-        className="shrink-0 text-[11px] text-primary underline hover:opacity-80"
+        className="shrink-0 text-xs text-primary underline hover:opacity-80"
         onClick={() => void openUrl(info.docsUrl)}
       >
         install ↗
@@ -165,14 +167,14 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <button
           type="button"
-          className="text-[11px] text-primary underline hover:opacity-80 disabled:opacity-50"
+          className="text-xs text-primary underline hover:opacity-80 disabled:opacity-50"
           disabled={pending === 'login'}
           onClick={() => void onAction('login')}
         >
           connect ↗
         </button>
         {pending === 'login' ? (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-2xs text-muted-foreground">
             complete in terminal, then{' '}
             <button
               type="button"
@@ -203,14 +205,14 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
         <div className="flex flex-col items-end gap-0.5">
           <button
             type="button"
-            className="text-[11px] text-muted-foreground underline hover:text-foreground disabled:opacity-50"
+            className="text-xs text-muted-foreground underline hover:text-foreground disabled:opacity-50"
             disabled={pending === 'logout'}
             onClick={() => void onAction('logout')}
           >
             disconnect ↗
           </button>
           {pending === 'logout' ? (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-2xs text-muted-foreground">
               complete in terminal, then{' '}
               <button
                 type="button"
