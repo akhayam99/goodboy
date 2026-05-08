@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GitBranch, Square, ShieldCheck } from 'lucide-react';
-import { Button, cn } from '@kay-am/ui';
+import { Button, Tooltip, cn } from '@kay-am/ui';
 import type { PhaseRun, PhaseRunStatus, ProviderRunId, Session, SessionId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
@@ -96,15 +96,16 @@ export function ChatHeader({
             <Square size={12} aria-hidden /> end session
           </Button>
         ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setAuditOpen((v) => !v)}
-          title="permission audit log"
-          aria-label="permission audit log"
-        >
-          <ShieldCheck size={14} aria-hidden />
-        </Button>
+        <Tooltip content="permission audit log" side="bottom">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAuditOpen((v) => !v)}
+            aria-label="permission audit log"
+          >
+            <ShieldCheck size={14} aria-hidden />
+          </Button>
+        </Tooltip>
       </div>
 
       <PermissionAuditPanel

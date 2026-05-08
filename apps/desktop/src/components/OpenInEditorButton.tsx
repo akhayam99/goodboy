@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderOpen } from 'lucide-react';
-import { Button, cn, type ButtonSize, type ButtonVariant } from '@kay-am/ui';
+import { Button, Tooltip, cn, type ButtonSize, type ButtonVariant } from '@kay-am/ui';
 import { openInEditor } from '../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore } from '../store';
@@ -88,16 +88,18 @@ export function OpenInEditorButton({
           <FolderOpen size={12} aria-hidden />
           open in {resolvedDefault}
         </Button>
-        <Button
-          size={size}
-          variant={variant}
-          disabled={disabled}
-          aria-label="choose editor"
-          className="rounded-l-none border-l border-border px-1"
-          onClick={() => setDropdownOpen((v) => !v)}
-        >
-          <ChevronDown size={10} aria-hidden />
-        </Button>
+        <Tooltip content="choose editor" side="bottom">
+          <Button
+            size={size}
+            variant={variant}
+            disabled={disabled}
+            aria-label="choose editor"
+            className="rounded-l-none border-l border-border px-1"
+            onClick={() => setDropdownOpen((v) => !v)}
+          >
+            <ChevronDown size={10} aria-hidden />
+          </Button>
+        </Tooltip>
       </div>
 
       {dropdownOpen ? (

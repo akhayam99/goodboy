@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, cn } from '@kay-am/ui';
+import { Button, Tooltip, cn } from '@kay-am/ui';
 import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
 import type { ProviderId } from '../providers';
@@ -190,14 +190,16 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
   if (info.connection === 'connected') {
     return (
       <div className="flex shrink-0 items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          title="re-check identity"
-          onClick={() => void onRefresh()}
-        >
-          ↻
-        </Button>
+        <Tooltip content="re-check identity" side="top">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="re-check identity"
+            onClick={() => void onRefresh()}
+          >
+            ↻
+          </Button>
+        </Tooltip>
         <div className="flex flex-col items-end gap-0.5">
           <button
             type="button"

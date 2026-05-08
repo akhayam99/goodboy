@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
-import { cn } from '@kay-am/ui';
+import { Tooltip, cn } from '@kay-am/ui';
 import type { BudgetAlert, BudgetAlertKind } from '@kay-am/types';
 import { useAppStore } from '../store';
 
@@ -52,23 +52,24 @@ export function AlertCenter() {
 
   return (
     <div className="relative" role="region" aria-label="alerts" aria-live="polite">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
-          open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60',
-        )}
-        aria-label={`alert center${count > 0 ? `, ${count} undismissed` : ''}`}
-        title="alert center"
-      >
-        <Bell size={13} aria-hidden />
-        {count > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[9px] font-bold leading-none text-warning-foreground">
-            {count > 9 ? '9+' : count}
-          </span>
-        )}
-      </button>
+      <Tooltip content="alert center" side="bottom">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
+            open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60',
+          )}
+          aria-label={`alert center${count > 0 ? `, ${count} undismissed` : ''}`}
+        >
+          <Bell size={13} aria-hidden />
+          {count > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[9px] font-bold leading-none text-warning-foreground">
+              {count > 9 ? '9+' : count}
+            </span>
+          )}
+        </button>
+      </Tooltip>
 
       {open && (
         <>
@@ -76,14 +77,16 @@ export function AlertCenter() {
           <div className="absolute right-0 top-full z-40 mt-1.5 w-80 overflow-hidden rounded-lg border border-border bg-background shadow-lg">
             <div className="flex items-center justify-between border-b border-border-soft px-3 py-2">
               <span className="text-xs font-semibold text-foreground">alerts</span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
-                aria-label="close alert center"
-              >
-                <X size={13} aria-hidden />
-              </button>
+              <Tooltip content="close" side="left">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="close alert center"
+                >
+                  <X size={13} aria-hidden />
+                </button>
+              </Tooltip>
             </div>
 
             {undismissed.length === 0 ? (
