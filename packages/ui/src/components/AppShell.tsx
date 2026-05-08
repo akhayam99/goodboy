@@ -13,25 +13,28 @@ export interface AppShellProps {
 
 const LEFT_SIDEBAR_WIDTH = '260px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
+const RIGHT_RAIL_WIDTH = '36px';
 
-function buildLayout(opts: { collapsed: boolean; hasFooter: boolean }): {
+function buildLayout(opts: { collapsed: boolean; hasRightSidebar: boolean; hasFooter: boolean }): {
   templateAreas: string;
   templateColumns: string;
   templateRows: string;
 } {
-  const { collapsed, hasFooter } = opts;
-  const templateColumns = collapsed
-    ? `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr)`
-    : `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr) ${RIGHT_SIDEBAR_WIDTH}`;
+  const { collapsed, hasRightSidebar, hasFooter } = opts;
+  const hasRight = hasRightSidebar;
+  const rightColWidth = collapsed ? RIGHT_RAIL_WIDTH : RIGHT_SIDEBAR_WIDTH;
+  const templateColumns = hasRight
+    ? `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr) ${rightColWidth}`
+    : `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr)`;
   if (hasFooter) {
-    const templateAreas = collapsed
-      ? `"header header" "left main" "footer footer"`
-      : `"header header header" "left main right" "footer footer footer"`;
+    const templateAreas = hasRight
+      ? `"header header header" "left main right" "footer footer footer"`
+      : `"header header" "left main" "footer footer"`;
     return { templateAreas, templateColumns, templateRows: 'auto minmax(0,1fr) auto' };
   }
-  const templateAreas = collapsed
-    ? `"header header" "left main"`
-    : `"header header header" "left main right"`;
+  const templateAreas = hasRight
+    ? `"header header header" "left main right"`
+    : `"header header" "left main"`;
   return { templateAreas, templateColumns, templateRows: 'auto minmax(0,1fr)' };
 }
 
@@ -44,7 +47,12 @@ export function AppShell({
   rightSidebarCollapsed = false,
   className,
 }: AppShellProps) {
-  const layout = buildLayout({ collapsed: rightSidebarCollapsed, hasFooter: Boolean(footer) });
+  const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
+  const layout = buildLayout({
+    collapsed: rightSidebarCollapsed,
+    hasRightSidebar,
+    hasFooter: Boolean(footer),
+  });
   const gridStyle: CSSProperties = {
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
@@ -56,6 +64,7 @@ export function AppShell({
       <div
         className={cn(
           'grid h-full w-full overflow-hidden border-border-soft bg-background text-foreground',
+          'motion-safe:[transition:grid-template-columns_var(--motion-normal,200ms)_var(--ease-emphasized,cubic-bezier(0.2,0,0,1))]',
           className,
         )}
         style={gridStyle}
@@ -78,14 +87,14 @@ export function AppShell({
         >
           {main}
         </main>
-        {rightSidebarCollapsed ? null : (
+        {hasRightSidebar ? (
           <aside
             className="flex min-h-0 min-w-0 flex-col overflow-hidden border-l border-border bg-background"
             style={{ gridArea: 'right' }}
           >
             {rightSidebar}
           </aside>
-        )}
+        ) : null}
         {footer ? (
           <footer
             className="flex h-6 min-w-0 items-center border-t border-border bg-subtle px-3 font-mono text-[11px] text-muted-foreground"

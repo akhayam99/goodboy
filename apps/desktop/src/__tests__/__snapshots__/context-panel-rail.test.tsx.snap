@@ -1,0 +1,257 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`snapshot — ContextPanel variants > collapsed: renders rail button, not slot content 1`] = `
+<div
+  aria-label="expand context panel"
+  class="flex h-full w-full cursor-pointer flex-col items-center justify-start pt-2 border-l border-border bg-background hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+  role="button"
+  tabindex="0"
+  title="expand context panel"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-panel-right-open text-muted-foreground"
+    fill="none"
+    height="13"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="13"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      height="18"
+      rx="2"
+      width="18"
+      x="3"
+      y="3"
+    />
+    <path
+      d="M15 3v18"
+    />
+    <path
+      d="m10 15-3-3 3-3"
+    />
+  </svg>
+</div>
+`;
+
+exports[`snapshot — ContextPanel variants > expanded: renders slot content, not rail button 1`] = `
+<div
+  class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] h-full"
+>
+  <div
+    class="flex flex-col gap-4 p-4"
+  >
+    <header
+      class="flex items-center justify-between"
+    >
+      <span
+        class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+      >
+        context
+      </span>
+      <div
+        class="flex items-center gap-1"
+      >
+        <span
+          class="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide bg-muted text-muted-foreground"
+          title="no summarizer run yet — runs after each turn when an api key is set"
+        >
+          idle
+        </span>
+        <button
+          aria-label="hide context panel"
+          class="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+          title="hide context panel"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-panel-right-close"
+            fill="none"
+            height="13"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="13"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="18"
+              rx="2"
+              width="18"
+              x="3"
+              y="3"
+            />
+            <path
+              d="M15 3v18"
+            />
+            <path
+              d="m8 9 3 3-3 3"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <ul
+      class="flex flex-col gap-4"
+    >
+      <li
+        class="flex flex-col gap-1.5"
+      >
+        <div
+          class="flex items-center justify-between gap-2"
+        >
+          <label
+            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            goal
+          </label>
+          <button
+            aria-pressed="true"
+            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            type="button"
+          >
+            on
+          </button>
+        </div>
+        <button
+          class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
+          type="button"
+        >
+          <span
+            class="italic text-muted-foreground"
+          >
+            empty — click to edit
+          </span>
+        </button>
+      </li>
+      <li
+        class="flex flex-col gap-1.5"
+      >
+        <div
+          class="flex items-center justify-between gap-2"
+        >
+          <label
+            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            files touched
+          </label>
+          <button
+            aria-pressed="true"
+            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            type="button"
+          >
+            on
+          </button>
+        </div>
+        <button
+          class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
+          type="button"
+        >
+          <span
+            class="italic text-muted-foreground"
+          >
+            empty — click to edit
+          </span>
+        </button>
+      </li>
+      <li
+        class="flex flex-col gap-1.5"
+      >
+        <div
+          class="flex items-center justify-between gap-2"
+        >
+          <label
+            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            decisions
+          </label>
+          <button
+            aria-pressed="true"
+            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            type="button"
+          >
+            on
+          </button>
+        </div>
+        <button
+          class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
+          type="button"
+        >
+          <span
+            class="italic text-muted-foreground"
+          >
+            empty — click to edit
+          </span>
+        </button>
+      </li>
+      <li
+        class="flex flex-col gap-1.5"
+      >
+        <div
+          class="flex items-center justify-between gap-2"
+        >
+          <label
+            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            open questions
+          </label>
+          <button
+            aria-pressed="true"
+            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            type="button"
+          >
+            on
+          </button>
+        </div>
+        <button
+          class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
+          type="button"
+        >
+          <span
+            class="italic text-muted-foreground"
+          >
+            empty — click to edit
+          </span>
+        </button>
+      </li>
+      <li
+        class="flex flex-col gap-1.5"
+      >
+        <div
+          class="flex items-center justify-between gap-2"
+        >
+          <label
+            class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            last output summary
+          </label>
+          <button
+            aria-pressed="true"
+            class="rounded-full border px-1.5 py-0.5 text-[10px] uppercase tracking-wide border-primary/30 bg-primary/10 text-primary"
+            type="button"
+          >
+            on
+          </button>
+        </div>
+        <button
+          class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
+          type="button"
+        >
+          <span
+            class="italic text-muted-foreground"
+          >
+            empty — click to edit
+          </span>
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
+`;
