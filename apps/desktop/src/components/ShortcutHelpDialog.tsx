@@ -10,7 +10,7 @@ const SHORTCUTS: ReadonlyArray<ShortcutEntry> = [
   { combo: ['⌘', '/'], label: 'keyboard shortcut help' },
   { combo: ['⌘', '.'], label: 'end current session' },
   { combo: ['Esc'], label: 'close dialog / cancel' },
-  { combo: ['⌘', 'K'], label: 'command palette (coming soon)' },
+  { combo: ['⌘', 'K'], label: 'command palette' },
 ];
 
 interface ShortcutHelpDialogProps {
