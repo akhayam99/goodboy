@@ -165,7 +165,7 @@ export function CommandPalette({
               return [
                 <li
                   key={`group:${group}`}
-                  className="px-4 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                  className="px-4 py-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   {groupLabels[group]}
                 </li>,
