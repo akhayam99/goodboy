@@ -6,7 +6,7 @@ kAY.am sits between you and your AI agents. It doesn't replace your editor or yo
 
 Manage sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. Get real-time visibility on tokens and cost. Automate the repeatable with skills.
 
-> **Status**: v0.7 complete. Experimental parallel multi-agent mode available (enable via `experimental.enable_parallel_agents` in settings). v1.0 next.
+> **Status**: v0.7 + pre-1.0 UX polish complete. Parallel multi-agent mode available (settings → agent). Command palette via cmd+K. v1.0 next — see [ROADMAP.md](./ROADMAP.md).
 
 ## Why
 
@@ -132,7 +132,7 @@ Type a message in the chat input → enter. You'll see:
 
 **End session** button → preserves the branch (no force-push, safe to merge manually later) → cleans up the worktree. Your code changes stay in git.
 
-**Optional: phase templates.** Structure multi-step goals with templates. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply. Experimental parallel agents also available — enable in **settings → Experimental** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
+**Optional: phase templates.** Structure multi-step goals with templates. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
 
 ## Roadmap & contributing
 

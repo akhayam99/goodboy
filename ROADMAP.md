@@ -2,7 +2,7 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.7 complete. v1.0 next.
+> **Status**: v0.7 complete. pre-1.0 UX polish complete. v1.0 next.
 
 ## Architectural decisions (locked)
 
@@ -435,6 +435,74 @@ Multi-agent parallel (parte B — experimental):
 ```
 H1.0 → H1.1 → F1+F2 → C1+C2+C3 → C4 → T1+T2 → U1+U2+U3 → I1 → I3
 H2.* parallelizable with H1+F (independent file scope).
+```
+
+---
+
+## pre-1.0 issue index
+
+UX polish & IA rework milestone. Bridges v0.7 → v1.0.
+
+Design tokens & motion (T):
+
+- [#241 — feat(ui): design tokens — oklch palette + text scale + motion vars](https://github.com/akhayam99/kay-am/issues/241)
+- [#292 — feat(ui): typography scale propagation (replace text-[10/11px])](https://github.com/akhayam99/kay-am/issues/292)
+- [#288 — feat(ui): motion language + reduced-motion gate](https://github.com/akhayam99/kay-am/issues/288)
+
+Bugs & stability (B):
+
+- [#242 — fix(desktop,ui): appshell max-width/height caps for ultrawide displays](https://github.com/akhayam99/kay-am/issues/242)
+- [#243 — fix(desktop,ui): stabilize zustand selectors](https://github.com/akhayam99/kay-am/issues/243)
+- [#318 — fix(desktop,ui): context panel rail + reopen on collapse](https://github.com/akhayam99/kay-am/issues/318)
+
+Polish & primitives (P):
+
+- [#244 — refactor(ui,core): pre-1.0 polish bundle (tooltip, copybutton, pricing, a11y)](https://github.com/akhayam99/kay-am/issues/244)
+- [#293 — feat(desktop,ui): empty/loading/error states pass with CTAs + Skeleton](https://github.com/akhayam99/kay-am/issues/293)
+
+Information architecture (I):
+
+- [#245 — refactor(repo,desktop,ui): terminology audit + glossary](https://github.com/akhayam99/kay-am/issues/245)
+- [#246 — feat(desktop,ui): session header + ide dropdown + worktree rename](https://github.com/akhayam99/kay-am/issues/246)
+- [#247 — refactor(ui): split settings — global vs per-workspace gear](https://github.com/akhayam99/kay-am/issues/247)
+- [#249 — refactor(ui): settings dialog sidebar+content layout](https://github.com/akhayam99/kay-am/issues/249)
+
+Accessibility (A):
+
+- [#248 — feat(desktop,ui): a11y bundle — shortcut layer + aria + boot recovery](https://github.com/akhayam99/kay-am/issues/248)
+
+Features (F):
+
+- [#250 — feat(desktop,ui): context panel collapse toggle + rail variant](https://github.com/akhayam99/kay-am/issues/250)
+- [#251 — feat(desktop,ui): sidebar mega — nested sessions + search/filter + rename/delete](https://github.com/akhayam99/kay-am/issues/251)
+- [#267 — feat(ui): one-click parallel opt-in + provider order](https://github.com/akhayam99/kay-am/issues/267)
+- [#297 — feat(desktop): command palette (cmd+K)](https://github.com/akhayam99/kay-am/issues/297)
+
+Data & config (D):
+
+- [#252 — feat(desktop,db): config export/import JSON roundtrip](https://github.com/akhayam99/kay-am/issues/252)
+- [#253 — feat(core): settings inheritance resolver (global → workspace → session)](https://github.com/akhayam99/kay-am/issues/253)
+
+Docs & integration (IN):
+
+- [#254 — docs(repo): walkthroughs + parallel agents + phase templates](https://github.com/akhayam99/kay-am/issues/254)
+- [#305 — feat(desktop,repo): pre-1.0 ROADMAP + README integration glue](https://github.com/akhayam99/kay-am/issues/305)
+
+Deferred to v1.0:
+
+- [#270 — feat(desktop,core): GitHub account integration — branch/PR state sync](https://github.com/akhayam99/kay-am/issues/270)
+- [#271 — feat(ui): session context panel surfaces branch, PR, linked issue](https://github.com/akhayam99/kay-am/issues/271)
+- [#272 — refactor(core): audit MCP usage and prefer CLI/scripts where token-cheaper](https://github.com/akhayam99/kay-am/issues/272)
+
+### Critical path
+
+```
+T1(design tokens) → P1(polish bundle) → A1(a11y) → B2(sidebar mega) → F3(settings IA)
+                                       → I1(terminology) → I3(sidebar mega)
+                  → B1(ultrawide fix)  → B3(rail fix) → F2(context panel rail)
+D1(config export) → D2(settings resolver) → F4(parallel opt-in)
+F5(command palette) ← A1(shortcut layer)
+IN2(finale) depends on all above.
 ```
 
 ---
