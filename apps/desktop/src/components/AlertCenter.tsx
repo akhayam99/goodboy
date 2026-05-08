@@ -51,7 +51,7 @@ export function AlertCenter() {
   const count = undismissed.length;
 
   return (
-    <div className="relative">
+    <div className="relative" role="region" aria-label="alerts" aria-live="polite">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

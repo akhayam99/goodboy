@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AppShell, Button, KbdPill } from '@kay-am/ui';
 import { Settings } from 'lucide-react';
 import type { SessionId } from '@kay-am/types';
@@ -9,9 +9,11 @@ import { ContextPanel } from './components/ContextPanel';
 import { EndSessionDialog } from './components/EndSessionDialog';
 import { ProvidersChip } from './components/ProvidersChip';
 import { SettingsDialog } from './components/SettingsDialog';
+import { ShortcutHelpDialog } from './components/ShortcutHelpDialog';
 import { StatusBar } from './components/StatusBar';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
+import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `kayam:context-panel-open:${id}`;
@@ -44,6 +46,7 @@ export function App() {
   const slots = useSessionSlots(currentSession?.id ?? null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
 
@@ -79,8 +82,18 @@ export function App() {
     });
   };
 
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const openEndSession = useCallback(() => {
+    if (currentSession) setEndOpen(true);
+  }, [currentSession]);
+  const openShortcutHelp = useCallback(() => setShortcutHelpOpen(true), []);
+
+  useKeyboardShortcut('cmd+,', openSettings);
+  useKeyboardShortcut('cmd+/', openShortcutHelp);
+  useKeyboardShortcut('cmd+.', openEndSession);
+
   if (!hydrated) {
-    return <BootSplash phase={bootPhase} error={error} />;
+    return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
   }
 
   const rightSidebarCollapsed = !currentSession || !contextOpen;
@@ -98,13 +111,13 @@ export function App() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSettingsOpen(true)}
-                title="settings"
+                title="settings (⌘,)"
                 aria-label="open settings"
               >
                 <Settings size={14} aria-hidden />
                 settings
               </Button>
-              {/* TODO (@ak): cmd+K palette not shipped yet */}
+              {/* TODO (@ak): cmd+K palette not shipped yet (#297) */}
               <span className="hidden sm:inline">
                 press <KbdPill>⌘K</KbdPill>
               </span>
@@ -130,6 +143,7 @@ export function App() {
         footer={<StatusBar />}
       />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       {currentSession ? (
         <EndSessionDialog
           session={currentSession}
