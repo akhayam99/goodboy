@@ -3,6 +3,7 @@ import { AppShell, Button, KbdPill } from '@kay-am/ui';
 import { Settings } from 'lucide-react';
 import type { SessionId } from '@kay-am/types';
 import { AlertCenter } from './components/AlertCenter';
+import { CommandPalette } from './components/CommandPalette';
 import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
 import { ContextPanel } from './components/ContextPanel';
@@ -48,6 +49,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
 
@@ -93,6 +95,7 @@ export function App() {
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
+  useKeyboardShortcut('cmd+k', () => setPaletteOpen(true));
 
   if (!hydrated) {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
@@ -120,7 +123,6 @@ export function App() {
                 <Settings size={14} aria-hidden />
                 settings
               </Button>
-              {/* TODO (@ak): cmd+K palette not shipped yet (#297) */}
               <span className="hidden sm:inline">
                 press <KbdPill>⌘K</KbdPill>
               </span>
@@ -152,6 +154,14 @@ export function App() {
       />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
+      {paletteOpen ? (
+        <CommandPalette
+          onClose={() => setPaletteOpen(false)}
+          onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); }}
+          onNewSession={() => setPaletteOpen(false)}
+          onOpenShortcutHelp={() => { setShortcutHelpOpen(true); setPaletteOpen(false); }}
+        />
+      ) : null}
       {currentSession ? (
         <EndSessionDialog
           session={currentSession}
