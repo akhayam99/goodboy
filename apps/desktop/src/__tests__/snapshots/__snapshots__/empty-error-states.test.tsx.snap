@@ -12,7 +12,7 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
   >
     <button
       aria-label="alert center"
-      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors text-muted-foreground hover:bg-muted/60"
+      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
       type="button"
     >
       <svg
@@ -71,7 +71,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
       </div>
       <button
         aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
         type="button"
       >
         <span
@@ -99,7 +99,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           style="height: 0px; overflow-y: hidden;"
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           what the session should accomplish.
         </p>
@@ -119,7 +119,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           value="kay"
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           branch name will be \`&lt;prefix&gt;/&lt;slug&gt;\`.
         </p>
@@ -141,7 +141,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           value=""
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           optional spend limit. session is flagged when exceeded.
         </p>
@@ -162,7 +162,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           </option>,
         }
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           no phase templates yet — create in Settings → Phases
         </p>
@@ -179,7 +179,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
           class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border"
         >
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -199,7 +199,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
                 claude
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -207,7 +207,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             </label>
           </li>
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -227,7 +227,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
                 cursor
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -235,7 +235,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             </label>
           </li>
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -255,7 +255,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
                 codex
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -269,13 +269,13 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
       class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
       >
         cancel
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
         disabled=""
         type="button"
       >
@@ -299,18 +299,20 @@ exports[`snapshot — empty states > ProvidersPanel: no providers (store returns
       providers
     </div>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
       title="re-detect installed CLIs"
       type="button"
     >
       refresh all
     </button>
   </div>
-  <ul
-    class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm"
-  />
   <p
-    class="text-[11px] text-muted-foreground"
+    class="text-2xs text-muted-foreground"
+  >
+    no providers configured
+  </p>
+  <p
+    class="text-xs text-muted-foreground"
   >
     kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run
      
@@ -340,13 +342,13 @@ exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
       class="flex items-center gap-2"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
         type="button"
       >
         rescan
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
         type="button"
       >
         new skill
@@ -354,7 +356,7 @@ exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
     </div>
   </div>
   <p
-    class="text-[11px] text-muted-foreground"
+    class="text-2xs text-muted-foreground"
   >
     no skills for this workspace. create one or rescan the workspace directory.
   </p>
@@ -366,7 +368,7 @@ exports[`snapshot — empty states > SlashCommandPopover: no skills / empty item
   class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-background shadow-md"
 >
   <p
-    class="px-3 py-2 text-[11px] text-muted-foreground"
+    class="px-3 py-2 text-xs text-muted-foreground"
   >
     no skills — create one in settings
   </p>
@@ -378,16 +380,51 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
   class="flex h-full min-h-0 flex-col"
 >
   <div
+    class="flex flex-col gap-1 px-2 pt-2"
+  >
+    <div
+      class="relative flex items-center"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-search pointer-events-none absolute left-2 text-muted-foreground"
+        fill="none"
+        height="11"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="11"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="m21 21-4.34-4.34"
+        />
+        <circle
+          cx="11"
+          cy="11"
+          r="8"
+        />
+      </svg>
+      <input
+        class="w-full rounded-md border border-border-soft bg-muted/40 py-1 pl-6 pr-2 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+        placeholder="search workspaces…"
+        type="text"
+      />
+    </div>
+  </div>
+  <div
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] flex-1"
   >
     <section
-      class="flex flex-col px-2 pt-3"
+      class="flex flex-col px-2 pt-2"
     >
       <header
         class="flex items-baseline justify-between gap-2 px-1 pb-1.5"
       >
         <span
-          class="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+          class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
         >
           workspaces
         </span>
@@ -433,32 +470,6 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         </li>
       </ul>
     </section>
-    <div
-      class="my-2 border-t border-border-soft"
-    />
-    <section
-      class="flex flex-col px-2 pt-3"
-    >
-      <header
-        class="flex items-baseline justify-between gap-2 px-1 pb-1.5"
-      >
-        <span
-          class="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-        >
-          sessions
-        </span>
-        <span
-          class="line-clamp-1 text-[10px] text-muted-foreground/80"
-        >
-          select a workspace
-        </span>
-      </header>
-      <p
-        class="px-2 py-1 text-[11px] text-muted-foreground"
-      >
-        pick a workspace to see its sessions.
-      </p>
-    </section>
   </div>
   <dialog
     aria-describedby="_r_0_-desc"
@@ -489,7 +500,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         </div>
         <button
           aria-label="close"
-          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
           type="button"
         >
           <span
@@ -521,14 +532,14 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
               value=""
             />
             <button
-              class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
               type="button"
             >
               browse
             </button>
           </div>
           <p
-            class="text-[11px] leading-relaxed text-muted-foreground"
+            class="text-xs leading-relaxed text-muted-foreground"
           >
             the directory must contain a \`.git\` folder.
           </p>
@@ -538,13 +549,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
       >
         <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
           type="button"
         >
           cancel
         </button>
         <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
           disabled=""
           type="button"
         >
@@ -577,7 +588,7 @@ exports[`snapshot — error states > App init error — BootSplash with error me
       class="h-1 w-full overflow-hidden rounded-full bg-muted"
     >
       <div
-        class="h-full bg-primary transition-all"
+        class="h-full bg-primary motion-safe:transition-all"
         style="width: 0%;"
       />
     </div>
@@ -605,13 +616,13 @@ exports[`snapshot — error states > App init error — BootSplash with error me
       class="flex flex-col gap-2"
     >
       <button
-        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted"
         type="button"
       >
         open logs
       </button>
       <button
-        class="text-left text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        class="text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
         type="button"
       >
         report on github ↗
@@ -642,7 +653,7 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
       class="h-1 w-full overflow-hidden rounded-full bg-muted"
     >
       <div
-        class="h-full bg-primary transition-all"
+        class="h-full bg-primary motion-safe:transition-all"
         style="width: 0%;"
       />
     </div>
@@ -670,13 +681,13 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
       class="flex flex-col gap-2"
     >
       <button
-        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+        class="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted"
         type="button"
       >
         open logs
       </button>
       <button
-        class="text-left text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        class="text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
         type="button"
       >
         report on github ↗
@@ -699,14 +710,14 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
       budget rules
     </div>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
       type="button"
     >
       add rule
     </button>
   </div>
   <p
-    class="text-[11px] text-muted-foreground"
+    class="text-xs text-muted-foreground"
   >
     no rules defined. add one to cap monthly spend per provider.
   </p>
@@ -744,7 +755,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       </div>
       <button
         aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
         type="button"
       >
         <span
@@ -772,13 +783,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
       >
         cancel
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
         type="button"
       >
         end session
@@ -819,7 +830,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       </div>
       <button
         aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
         type="button"
       >
         <span
@@ -847,7 +858,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           style="height: 0px; overflow-y: hidden;"
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           what the session should accomplish.
         </p>
@@ -867,7 +878,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           value="kay"
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           branch name will be \`&lt;prefix&gt;/&lt;slug&gt;\`.
         </p>
@@ -889,7 +900,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           value=""
         />
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           optional spend limit. session is flagged when exceeded.
         </p>
@@ -910,7 +921,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           </option>,
         }
         <p
-          class="text-[11px] leading-relaxed text-muted-foreground"
+          class="text-xs leading-relaxed text-muted-foreground"
         >
           no phase templates yet — create in Settings → Phases
         </p>
@@ -927,7 +938,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border"
         >
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -947,7 +958,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
                 claude
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -955,7 +966,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             </label>
           </li>
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -975,7 +986,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
                 cursor
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -983,7 +994,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             </label>
           </li>
           <li
-            class="flex items-center gap-2 px-3 py-2 text-sm transition-colors opacity-50"
+            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
           >
             <input
               class="accent-primary"
@@ -1003,7 +1014,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
                 codex
               </span>
               <button
-                class="text-[11px] text-primary underline hover:opacity-80"
+                class="text-xs text-primary underline hover:opacity-80"
                 type="button"
               >
                 connect in settings
@@ -1017,13 +1028,13 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
       >
         cancel
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
         disabled=""
         type="button"
       >
@@ -1047,7 +1058,7 @@ exports[`snapshot — error states > PermissionsPanel: form error (workspace sco
       permission rules
     </div>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
       type="button"
     >
       add rule
@@ -1057,19 +1068,19 @@ exports[`snapshot — error states > PermissionsPanel: form error (workspace sco
     class="flex gap-1"
   >
     <button
-      class="rounded px-2.5 py-1 text-[11px] font-medium transition-colors bg-foreground text-background"
+      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors bg-foreground text-background"
       type="button"
     >
       global
     </button>
     <button
-      class="rounded px-2.5 py-1 text-[11px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
       type="button"
     >
       workspace
     </button>
     <button
-      class="rounded px-2.5 py-1 text-[11px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
       type="button"
     >
       session
@@ -1091,7 +1102,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
       providers
     </div>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
       title="re-detect installed CLIs"
       type="button"
     >
@@ -1120,18 +1131,18 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
             claude
           </span>
           <code
-            class="text-[10px] text-muted-foreground"
+            class="text-2xs text-muted-foreground"
           >
             claude
           </code>
           <span
-            class="rounded bg-muted px-1 text-[10px] text-muted-foreground"
+            class="rounded bg-muted px-1 text-2xs text-muted-foreground"
           >
             1.0.0
           </span>
         </div>
         <div
-          class="text-[11px]"
+          class="text-xs"
         >
           <span
             class="text-danger"
@@ -1141,7 +1152,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
         </div>
       </div>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs shrink-0"
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs shrink-0"
         type="button"
       >
         retry
@@ -1149,7 +1160,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
     </li>
   </ul>
   <p
-    class="text-[11px] text-muted-foreground"
+    class="text-xs text-muted-foreground"
   >
     kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run
      
