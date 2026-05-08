@@ -4,7 +4,7 @@
 
 kAY.am sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them.
 
-Manage macro sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. Get real-time visibility on tokens and cost. Automate the repeatable with skills.
+Manage sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. Get real-time visibility on tokens and cost. Automate the repeatable with skills.
 
 > **Status**: v0.7 complete. Experimental parallel multi-agent mode available (enable via `experimental.enable_parallel_agents` in settings). v1.0 next.
 
