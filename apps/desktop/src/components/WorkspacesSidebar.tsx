@@ -1,7 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
-import { FolderOpen, FolderPlus, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronRight,
+  FolderOpen,
+  FolderPlus,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Settings2,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import type { ProviderId, Task, TaskId, TurnState, Workspace } from '@kay-am/types';
 import {
@@ -61,8 +74,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
 
-  const filteredWorkspaces = workspaces.filter((ws) =>
-    ws.name.toLowerCase().includes(sidebarWorkspaceSearch.toLowerCase()),
+  const filteredWorkspaces = useMemo(
+    () =>
+      [...workspaces]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter((ws) => ws.name.toLowerCase().includes(sidebarWorkspaceSearch.toLowerCase())),
+    [workspaces, sidebarWorkspaceSearch],
   );
 
   const filteredSessions = sessions.filter((s) => {
@@ -74,6 +91,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
     return matchesSearch && matchesState && matchesProvider;
   });
+
+  const [archivedMap, archive, unarchive] = useArchivedTasks();
+  const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
+  const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
 
   const toggleStateFilter = (kind: TurnState['kind']) => {
     const next = sidebarStateFilter.includes(kind)
@@ -140,7 +161,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           </header>
           {currentWorkspace ? (
             <SessionList
-              sessions={filteredSessions}
+              activeSessions={activeSessions}
+              archivedSessions={archivedSessions}
               currentSessionId={currentSession?.id ?? null}
               sessionSearch={sidebarSessionSearch}
               onSessionSearch={setSidebarSessionSearch}
@@ -152,6 +174,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
               onToggleProvider={toggleProviderFilter}
               onSelectSession={(id) => void setCurrentSession(id)}
               onNewSession={() => setNewSessionOpen(true)}
+              onArchive={archive}
+              onUnarchive={unarchive}
             />
           ) : (
             <p className="px-1 py-2 text-xs text-muted-foreground/70">
@@ -289,7 +313,8 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
 }
 
 interface SessionListProps {
-  sessions: ReadonlyArray<Task>;
+  activeSessions: ReadonlyArray<Task>;
+  archivedSessions: ReadonlyArray<Task>;
   currentSessionId: TaskId | null;
   sessionSearch: string;
   onSessionSearch: (v: string) => void;
@@ -301,10 +326,15 @@ interface SessionListProps {
   onToggleProvider: (provider: ProviderId) => void;
   onSelectSession: (id: TaskId) => void;
   onNewSession: () => void;
+  onArchive: (id: TaskId) => void;
+  onUnarchive: (id: TaskId) => void;
 }
 
+type SessionSort = 'updated' | 'alpha';
+
 function SessionList({
-  sessions,
+  activeSessions,
+  archivedSessions,
   currentSessionId,
   sessionSearch,
   onSessionSearch,
@@ -316,7 +346,17 @@ function SessionList({
   onToggleProvider,
   onSelectSession,
   onNewSession,
+  onArchive,
+  onUnarchive,
 }: SessionListProps) {
+  const [sort, setSort] = useState<SessionSort>('updated');
+  const [archivedOpen, setArchivedOpen] = useState(false);
+
+  const sortedActive = useMemo(() => sortSessions(activeSessions, sort), [activeSessions, sort]);
+  const sortedArchived = useMemo(
+    () => sortSessions(archivedSessions, sort),
+    [archivedSessions, sort],
+  );
   return (
     <div className="flex flex-col gap-1">
       <SearchInput
@@ -325,61 +365,74 @@ function SessionList({
         placeholder="search sessions…"
       />
 
-      {(stateFilter.length > 0 || providerFilter.length > 0) && (
-        <div className="flex flex-wrap gap-0.5">
-          {stateFilter.map((k) => (
-            <FilterChip key={k} label={k} onRemove={() => onToggleState(k)} />
-          ))}
-          {providerFilter.map((p) => (
-            <FilterChip
-              key={p}
-              label={PROVIDER_SHORT[p] ?? p}
-              onRemove={() => onToggleProvider(p)}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-0.5">
-        {stateFilterOptions.map((kind) => (
-          <button
-            key={kind}
-            type="button"
-            onClick={() => onToggleState(kind)}
-            className={cn(
-              'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
-              stateFilter.includes(kind)
-                ? 'bg-foreground/15 text-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80',
-            )}
-          >
-            {kind}
-          </button>
-        ))}
-        {providerFilterOptions.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onToggleProvider(p)}
-            className={cn(
-              'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
-              providerFilter.includes(p)
-                ? 'bg-foreground/15 text-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80',
-            )}
-          >
-            {PROVIDER_SHORT[p]}
-          </button>
-        ))}
+      <div className="flex items-center justify-between">
+        <SortToggle sort={sort} onChange={setSort} />
+        {(stateFilter.length > 0 || providerFilter.length > 0) && (
+          <div className="flex flex-wrap gap-0.5">
+            {stateFilter.map((k) => (
+              <FilterChip key={k} label={k} onRemove={() => onToggleState(k)} />
+            ))}
+            {providerFilter.map((p) => (
+              <FilterChip
+                key={p}
+                label={PROVIDER_SHORT[p] ?? p}
+                onRemove={() => onToggleProvider(p)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
+      {(stateFilter.length > 0 || providerFilter.length > 0) && (
+        <details>
+          <summary className="cursor-pointer text-2xs uppercase tracking-wide text-muted-foreground hover:text-foreground">
+            edit filters
+          </summary>
+          <div className="mt-1 flex flex-wrap gap-0.5">
+            {stateFilterOptions.map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => onToggleState(kind)}
+                className={cn(
+                  'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
+                  stateFilter.includes(kind)
+                    ? 'bg-foreground/15 text-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                )}
+              >
+                {kind}
+              </button>
+            ))}
+            {providerFilterOptions.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onToggleProvider(p)}
+                className={cn(
+                  'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
+                  providerFilter.includes(p)
+                    ? 'bg-foreground/15 text-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                )}
+              >
+                {PROVIDER_SHORT[p]}
+              </button>
+            ))}
+          </div>
+        </details>
+      )}
+
       <ul className="flex flex-col gap-0.5">
-        {sessions.map((session) => (
+        {sortedActive.map((session) => (
           <SessionRow
             key={session.id}
             session={session}
             isActive={session.id === currentSessionId}
             onClick={() => onSelectSession(session.id)}
+            archived={false}
+            onArchive={() => onArchive(session.id)}
+            onUnarchive={() => onUnarchive(session.id)}
           />
         ))}
         <li>
@@ -390,8 +443,122 @@ function SessionList({
           />
         </li>
       </ul>
+
+      {sortedArchived.length > 0 && (
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setArchivedOpen((v) => !v)}
+            className="flex w-full items-center gap-1 px-1 py-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+            aria-expanded={archivedOpen}
+          >
+            {archivedOpen ? (
+              <ChevronDown size={11} aria-hidden />
+            ) : (
+              <ChevronRight size={11} aria-hidden />
+            )}
+            archived ({sortedArchived.length})
+          </button>
+          {archivedOpen && (
+            <ul className="flex flex-col gap-0.5 opacity-70">
+              {sortedArchived.map((session) => (
+                <SessionRow
+                  key={session.id}
+                  session={session}
+                  isActive={session.id === currentSessionId}
+                  onClick={() => onSelectSession(session.id)}
+                  archived
+                  onArchive={() => onArchive(session.id)}
+                  onUnarchive={() => onUnarchive(session.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function SortToggle({ sort, onChange }: { sort: SessionSort; onChange: (s: SessionSort) => void }) {
+  return (
+    <div className="flex items-center gap-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
+      <span>sort</span>
+      <button
+        type="button"
+        onClick={() => onChange('updated')}
+        className={cn(
+          'rounded px-1.5 py-0.5 transition-colors',
+          sort === 'updated' ? 'bg-foreground text-background' : 'hover:text-foreground',
+        )}
+      >
+        recent
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('alpha')}
+        className={cn(
+          'rounded px-1.5 py-0.5 transition-colors',
+          sort === 'alpha' ? 'bg-foreground text-background' : 'hover:text-foreground',
+        )}
+      >
+        a-z
+      </button>
+    </div>
+  );
+}
+
+function sortSessions(list: ReadonlyArray<Task>, sort: SessionSort): ReadonlyArray<Task> {
+  const copy = [...list];
+  if (sort === 'alpha') copy.sort((a, b) => a.goal.localeCompare(b.goal));
+  else copy.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  return copy;
+}
+
+const ARCHIVED_KEY = 'kayam:archived-tasks';
+
+function readArchivedSet(): Record<string, true> {
+  try {
+    const raw = localStorage.getItem(ARCHIVED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === 'object') {
+      const out: Record<string, true> = {};
+      for (const k of Object.keys(parsed as Record<string, unknown>)) out[k] = true;
+      return out;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+function writeArchivedSet(map: Record<string, true>): void {
+  try {
+    localStorage.setItem(ARCHIVED_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
+
+function useArchivedTasks(): [Record<string, true>, (id: TaskId) => void, (id: TaskId) => void] {
+  const [map, setMap] = useState<Record<string, true>>(() => readArchivedSet());
+  const archive = (id: TaskId) => {
+    setMap((prev) => {
+      const next = { ...prev, [id]: true as const };
+      writeArchivedSet(next);
+      return next;
+    });
+  };
+  const unarchive = (id: TaskId) => {
+    setMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      writeArchivedSet(next);
+      return next;
+    });
+  };
+  return [map, archive, unarchive];
 }
 
 interface FilterChipProps {
@@ -419,9 +586,19 @@ interface SessionRowProps {
   session: Task;
   isActive: boolean;
   onClick: () => void;
+  archived: boolean;
+  onArchive: () => void;
+  onUnarchive: () => void;
 }
 
-function SessionRow({ session, isActive, onClick }: SessionRowProps) {
+function SessionRow({
+  session,
+  isActive,
+  onClick,
+  archived,
+  onArchive,
+  onUnarchive,
+}: SessionRowProps) {
   const providerId = session.providerPreference.defaultProvider;
   const budget = useAppStore((s) => s.sessionBudgets[session.id as TaskId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
@@ -555,18 +732,17 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
               {PROVIDER_SHORT[providerId]}
             </span>
             <StatusBadge state={session.state} />
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmDelete(true);
+            <SessionRowMenu
+              archived={archived}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              onDelete={() => setConfirmDelete(true)}
+              onRename={() => {
+                setRenameDraft(session.goal);
+                setRenameError(null);
+                setRenaming(true);
               }}
-              className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-              title="delete session"
-              aria-label="delete session"
-            >
-              <Trash2 size={11} />
-            </button>
+            />
           </div>
         </div>
 
@@ -626,6 +802,110 @@ interface DeleteConfirmDialogProps {
   sessionGoal: string;
   onConfirm: (e: React.MouseEvent) => void;
   onCancel: () => void;
+}
+
+interface SessionRowMenuProps {
+  archived: boolean;
+  onArchive: () => void;
+  onUnarchive: () => void;
+  onDelete: () => void;
+  onRename: () => void;
+}
+
+function SessionRowMenu({
+  archived,
+  onArchive,
+  onUnarchive,
+  onDelete,
+  onRename,
+}: SessionRowMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    window.addEventListener('mousedown', onClick);
+    return () => window.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  const choose = (fn: () => void) => () => {
+    setOpen(false);
+    fn();
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+        title="session menu"
+        aria-label="session menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <MoreHorizontal size={12} aria-hidden />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-5 z-20 min-w-[8.5rem] overflow-hidden rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          <MenuItem onClick={choose(onRename)}>
+            <span className="flex items-center gap-2">rename</span>
+          </MenuItem>
+          {archived ? (
+            <MenuItem onClick={choose(onUnarchive)}>
+              <span className="flex items-center gap-2">
+                <ArchiveRestore size={11} aria-hidden /> unarchive
+              </span>
+            </MenuItem>
+          ) : (
+            <MenuItem onClick={choose(onArchive)}>
+              <span className="flex items-center gap-2">
+                <Archive size={11} aria-hidden /> archive
+              </span>
+            </MenuItem>
+          )}
+          <MenuItem onClick={choose(onDelete)} danger>
+            <span className="flex items-center gap-2">
+              <Trash2 size={11} aria-hidden /> delete
+            </span>
+          </MenuItem>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
+        danger ? 'text-danger' : 'text-foreground',
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 function DeleteConfirmDialog({ sessionGoal, onConfirm, onCancel }: DeleteConfirmDialogProps) {
