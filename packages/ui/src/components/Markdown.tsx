@@ -19,12 +19,21 @@ interface MarkdownProps {
   readonly className?: string;
 }
 
+type CellAlign = 'left' | 'center' | 'right';
+
 type Block =
   | { kind: 'code'; lang: string | null; content: string }
   | { kind: 'heading'; level: 1 | 2 | 3 | 4 | 5 | 6; content: string }
   | { kind: 'hr' }
   | { kind: 'list'; ordered: boolean; items: ReadonlyArray<ListItem> }
   | { kind: 'quote'; lines: ReadonlyArray<string> }
+  | {
+      kind: 'table';
+      headers: ReadonlyArray<string>;
+      align: ReadonlyArray<CellAlign>;
+      rows: ReadonlyArray<ReadonlyArray<string>>;
+    }
+  | { kind: 'callout'; tag: string; content: string }
   | { kind: 'paragraph'; content: string };
 
 interface ListItem {
@@ -38,6 +47,24 @@ const HR_RE = /^[-*_]{3,}\s*$/;
 const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/;
 const OLIST_RE = /^(\s*)\d+\.\s+(.*)$/;
 const QUOTE_RE = /^>\s?(.*)$/;
+const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
+const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
+const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
+
+function splitTableCells(line: string): ReadonlyArray<string> {
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return trimmed.split('|').map((c) => c.trim());
+}
+
+function parseAlign(divider: string): ReadonlyArray<CellAlign> {
+  return splitTableCells(divider).map((c) => {
+    const left = c.startsWith(':');
+    const right = c.endsWith(':');
+    if (left && right) return 'center';
+    if (right) return 'right';
+    return 'left';
+  });
+}
 
 function parseBlocks(input: string): ReadonlyArray<Block> {
   const lines = input.replace(/\r\n/g, '\n').split('\n');
@@ -83,6 +110,62 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
+    // GFM-style table: header row + divider row + body rows. We require the
+    // divider line so a stray pipe inside prose doesn't trigger table mode.
+    if (
+      TABLE_ROW_RE.test(line) &&
+      i + 1 < lines.length &&
+      TABLE_DIVIDER_RE.test(lines[i + 1] ?? '')
+    ) {
+      const headers = splitTableCells(line);
+      const align = parseAlign(lines[i + 1] ?? '');
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && TABLE_ROW_RE.test(lines[i] ?? '')) {
+        rows.push([...splitTableCells(lines[i] ?? '')]);
+        i++;
+      }
+      blocks.push({ kind: 'table', headers, align, rows });
+      continue;
+    }
+
+    // Custom <<tag>>...</tag>> callouts (e.g. <<ctx-decision>>...</ctx-decision>>)
+    // — agent emits these as inline structure markers. Render as a labelled
+    // block instead of leaking the raw tag delimiters into the prose.
+    const calloutOpen = line.match(CALLOUT_OPEN_RE);
+    if (calloutOpen) {
+      const tag = calloutOpen[1]!;
+      const closeRe = new RegExp(`</${tag}>>?`);
+      const buf: string[] = [];
+      const firstLineRest = calloutOpen[2] ?? '';
+      const firstClose = firstLineRest.match(closeRe);
+      if (firstClose && firstClose.index !== undefined) {
+        buf.push(firstLineRest.slice(0, firstClose.index));
+        i++;
+        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
+        continue;
+      }
+      if (firstLineRest.length > 0) buf.push(firstLineRest);
+      i++;
+      let closed = false;
+      while (i < lines.length) {
+        const cur = lines[i] ?? '';
+        const m = cur.match(closeRe);
+        if (m && m.index !== undefined) {
+          buf.push(cur.slice(0, m.index));
+          i++;
+          closed = true;
+          break;
+        }
+        buf.push(cur);
+        i++;
+      }
+      if (closed || buf.length > 0) {
+        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
+        continue;
+      }
+    }
+
     // Blockquote: consume contiguous `>` lines.
     if (QUOTE_RE.test(line)) {
       const buf: string[] = [];
@@ -115,11 +198,14 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // Paragraph: consume until blank line / fence / heading / hr / list / quote.
+    // Paragraph: consume until blank line / fence / heading / hr / list /
+    // quote / table / callout.
     const paraBuf: string[] = [line];
     i++;
     while (i < lines.length) {
       const next = lines[i] ?? '';
+      const nextNext = lines[i + 1] ?? '';
+      const tableStart = TABLE_ROW_RE.test(next) && TABLE_DIVIDER_RE.test(nextNext);
       if (
         next.trim().length === 0 ||
         FENCE_RE.test(next) ||
@@ -127,7 +213,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         HR_RE.test(next) ||
         ULIST_RE.test(next) ||
         OLIST_RE.test(next) ||
-        QUOTE_RE.test(next)
+        QUOTE_RE.test(next) ||
+        CALLOUT_OPEN_RE.test(next) ||
+        tableStart
       ) {
         break;
       }
@@ -313,6 +401,62 @@ function renderBlock(block: Block, idx: number): ReactNode {
           ))}
         </blockquote>
       );
+    case 'table': {
+      const alignClass = (a: CellAlign | undefined): string =>
+        a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left';
+      return (
+        <div key={key} className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border-soft">
+                {block.headers.map((h, j) => (
+                  <th
+                    key={`${key}-h-${j}`}
+                    className={cn(
+                      'px-3 py-1.5 font-semibold text-foreground',
+                      alignClass(block.align[j]),
+                    )}
+                  >
+                    {renderInline(h, `${key}-h-${j}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, ri) => (
+                <tr
+                  key={`${key}-r-${ri}`}
+                  className="border-b border-border-soft/50 last:border-b-0"
+                >
+                  {row.map((cell, ci) => (
+                    <td
+                      key={`${key}-r-${ri}-c-${ci}`}
+                      className={cn('px-3 py-1.5 align-top', alignClass(block.align[ci]))}
+                    >
+                      {renderInline(cell, `${key}-r-${ri}-c-${ci}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'callout': {
+      // Strip the `ctx-` prefix for the chip label so "ctx-decision" → "decision".
+      const label = block.tag.replace(/^ctx-?/i, '') || block.tag;
+      return (
+        <div key={key} className="rounded-md border border-border-soft bg-muted/40 p-3 text-sm">
+          <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          <div className="whitespace-pre-wrap leading-relaxed">
+            {renderInline(block.content, key)}
+          </div>
+        </div>
+      );
+    }
     case 'paragraph':
       return (
         <p key={key} className="whitespace-pre-wrap leading-relaxed">
