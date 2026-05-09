@@ -370,24 +370,41 @@ pub fn skill_rescan(
 ) -> Result<Vec<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     let root = workspace_root(&conn, &workspace_id)?;
-    let skills_dir = PathBuf::from(&root).join(".kay").join("skills");
+    let root_path = PathBuf::from(&root);
+    let kay_dir = root_path.join(".kay").join("skills");
+    let claude_dir = root_path.join(".claude").join("skills");
 
-    // Read .md files from disk.
-    let md_files: Vec<PathBuf> = if skills_dir.exists() {
-        let entries =
-            std::fs::read_dir(&skills_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-        let mut files = Vec::new();
+    // Discover skill files from both layouts:
+    //   - <root>/.kay/skills/*.md            (kay-am native)
+    //   - <root>/.claude/skills/<name>/SKILL.md  (claude-code convention)
+    let mut md_files: Vec<PathBuf> = Vec::new();
+
+    if kay_dir.exists() {
+        let entries = std::fs::read_dir(&kay_dir).map_err(|e| SkillError::Io(e.to_string()))?;
         for entry in entries {
             let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
             let p = entry.path();
             if p.extension().and_then(|s| s.to_str()) == Some("md") {
-                files.push(p);
+                md_files.push(p);
             }
         }
-        files
-    } else {
-        Vec::new()
-    };
+    }
+
+    if claude_dir.exists() {
+        let entries =
+            std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
+        for entry in entries {
+            let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
+            let dir = entry.path();
+            if !dir.is_dir() {
+                continue;
+            }
+            let candidate = dir.join("SKILL.md");
+            if candidate.exists() {
+                md_files.push(candidate);
+            }
+        }
+    }
 
     let now = iso_now();
 
