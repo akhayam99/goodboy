@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
-  ParallelPhaseGroupId,
-  PhaseDefinitionId,
-  PhaseRunId,
-  PhaseRunStatus,
-  PhaseTemplateId,
+  ParallelGroupId,
+  StepId,
+  SessionId,
+  SessionStatus,
+  WorkflowId,
   ProviderId,
   ProviderRunId,
-  SessionId,
+  TaskId,
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
@@ -88,15 +88,15 @@ import type { ParallelBranchInputs, ParallelBranchEffects } from '../store/paral
 // ---------------------------------------------------------------------------
 
 const NOW = '2026-05-07T00:00:00.000Z' as IsoDateTime;
-const SESSION_ID = 'ses-1' as SessionId;
+const SESSION_ID = 'ses-1' as TaskId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
-const TEMPLATE_ID = 'tpl-1' as PhaseTemplateId;
-const GROUP_ID = 'grp-1' as ParallelPhaseGroupId;
+const TEMPLATE_ID = 'tpl-1' as WorkflowId;
+const GROUP_ID = 'grp-1' as ParallelGroupId;
 
 function makeDef(id: string, ordinal: number, pg = 42) {
   return {
-    id: id as PhaseDefinitionId,
-    templateId: TEMPLATE_ID,
+    id: id as StepId,
+    workflowId: TEMPLATE_ID,
     ordinal,
     name: id,
     promptPrefix: `[${id}]`,
@@ -112,7 +112,7 @@ function makeSession() {
     state: { kind: 'idle' as const, lastActivityAt: NOW },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic' as ProviderId, allowTurnOverride: false },
-    phaseTemplateId: TEMPLATE_ID,
+    workflowId: TEMPLATE_ID,
     createdAt: NOW,
     updatedAt: NOW,
   };
@@ -169,7 +169,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
   const events: TurnEvent[] = [];
   return {
     effects: {
-      appendTurnEvent: (_sid: SessionId, e: TurnEvent) => events.push(e),
+      appendTurnEvent: (_sid: TaskId, e: TurnEvent) => events.push(e),
       refreshPhaseRuns: vi.fn(async () => undefined),
       setMergeConflicts: vi.fn(),
     },
@@ -190,29 +190,24 @@ function makeDeps(effects: ParallelBranchEffects) {
 // Stable insertedPhaseRuns list shared between phaseRunInsert + phaseRunList spies.
 function wirePhaseRunSpies(
   insertedPhaseRuns: Array<{
-    id: PhaseRunId;
-    sessionId: SessionId;
-    phaseDefinitionId: PhaseDefinitionId;
+    id: SessionId;
+    taskId: TaskId;
+    stepId: StepId;
     ordinal: number;
     name: string;
-    status: PhaseRunStatus;
+    status: SessionStatus;
     runId: ProviderRunId;
   }>,
 ): void {
   phaseRunInsertSpy.mockImplementation(
-    async (args: {
-      phaseDefinitionId: string;
-      ordinal: number;
-      name: string;
-      providerRunId: string;
-    }) => {
+    async (args: { stepId: string; ordinal: number; name: string; providerRunId: string }) => {
       const row = {
-        id: `pr-${args.phaseDefinitionId}` as PhaseRunId,
-        sessionId: SESSION_ID,
-        phaseDefinitionId: args.phaseDefinitionId as PhaseDefinitionId,
+        id: `pr-${args.stepId}` as SessionId,
+        taskId: SESSION_ID,
+        stepId: args.stepId as StepId,
         ordinal: args.ordinal,
         name: args.name,
-        status: 'running' as PhaseRunStatus,
+        status: 'running' as SessionStatus,
         runId: args.providerRunId as ProviderRunId,
       };
       insertedPhaseRuns.push(row);
@@ -239,7 +234,7 @@ describe('parallel e2e — fan-out/fan-in', () => {
 
     parallelPhaseGroupCreateSpy.mockResolvedValue({
       id: GROUP_ID,
-      sessionId: SESSION_ID,
+      taskId: SESSION_ID,
       ordinal: 1,
       mergeStrategy: 'last_write_wins',
       createdAt: NOW,
@@ -330,7 +325,7 @@ describe('parallel e2e — fan-out/fan-in', () => {
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(3);
 
     // Synthetic phase_transition event emitted (fan-in sync-point).
-    const phaseTransitions = events.filter((e) => e.kind === 'phase_transition');
+    const phaseTransitions = events.filter((e) => e.kind === 'step_transition');
     expect(phaseTransitions).toHaveLength(1);
   });
 

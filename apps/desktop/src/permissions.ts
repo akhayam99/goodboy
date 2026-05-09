@@ -10,7 +10,7 @@ import type {
   PermissionRuleScope,
   PermissionRequestId,
   ProviderRunId,
-  SessionId,
+  TaskId,
   WorkspaceId,
 } from '@kay-am/types';
 
@@ -22,7 +22,7 @@ interface RawPermissionRuleRow {
   readonly id: string;
   readonly scope: string;
   readonly workspaceId: string | null;
-  readonly sessionId: string | null;
+  readonly taskId: string | null;
   readonly patternTool: string;
   readonly patternArgsMatcher: string | null;
   readonly decision: string;
@@ -34,7 +34,7 @@ interface RawPermissionRuleRow {
 interface RawPermissionAuditRow {
   readonly id: string;
   readonly runId: string;
-  readonly sessionId: string;
+  readonly taskId: string;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly inputJson: string;
@@ -54,7 +54,7 @@ function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
     id: row.id as PermissionRuleId,
     scope: row.scope as PermissionRuleScope,
     ...(row.workspaceId != null && { workspaceId: row.workspaceId as WorkspaceId }),
-    ...(row.sessionId != null && { sessionId: row.sessionId as SessionId }),
+    ...(row.taskId != null && { taskId: row.taskId as TaskId }),
     pattern: {
       tool: row.patternTool,
       ...(row.patternArgsMatcher != null && { argsMatcher: row.patternArgsMatcher }),
@@ -94,7 +94,7 @@ export interface PermissionRuleUpsertPayload {
   readonly id?: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
-  readonly sessionId?: SessionId;
+  readonly taskId?: TaskId;
   readonly patternTool: string;
   readonly patternArgsMatcher?: string;
   readonly decision: PermissionDecisionKind;
@@ -104,7 +104,7 @@ export interface PermissionRuleUpsertPayload {
 export interface PermissionAuditInsertPayload {
   readonly id?: string;
   readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
+  readonly taskId: TaskId;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly inputJson: string;
@@ -116,7 +116,7 @@ export interface PermissionAuditInsertPayload {
 }
 
 export interface PermissionAuditQueryPayload {
-  readonly sessionId?: SessionId;
+  readonly taskId?: TaskId;
   readonly workspaceId?: WorkspaceId;
   readonly fromAt?: IsoDateTime;
   readonly toAt?: IsoDateTime;
@@ -124,7 +124,7 @@ export interface PermissionAuditQueryPayload {
 }
 
 export interface PermissionAuditClearScope {
-  readonly sessionId?: SessionId;
+  readonly taskId?: TaskId;
   readonly workspaceId?: WorkspaceId;
 }
 
@@ -135,12 +135,12 @@ export interface PermissionAuditClearScope {
 export async function invokePermissionRuleList(args: {
   scope: PermissionRuleScope;
   workspaceId?: WorkspaceId;
-  sessionId?: SessionId;
+  taskId?: TaskId;
 }): Promise<ReadonlyArray<PermissionRule>> {
   const rows = await invoke<RawPermissionRuleRow[]>('permission_rule_list', {
     scope: args.scope,
     workspaceId: args.workspaceId ?? null,
-    sessionId: args.sessionId ?? null,
+    taskId: args.taskId ?? null,
   });
   return rows.map(rowToPermissionRule);
 }
@@ -160,7 +160,7 @@ export async function invokePermissionRuleUpsert(
       id: input.id ?? null,
       scope: input.scope,
       workspaceId: input.workspaceId ?? null,
-      sessionId: input.sessionId ?? null,
+      taskId: input.taskId ?? null,
       patternTool: input.patternTool,
       patternArgsMatcher: input.patternArgsMatcher ?? null,
       decision: input.decision,
@@ -185,7 +185,7 @@ export async function invokePermissionAuditInsert(
     input: {
       id: input.id ?? null,
       runId: input.runId,
-      sessionId: input.sessionId,
+      taskId: input.taskId,
       toolUseId: input.toolUseId,
       toolName: input.toolName,
       inputJson: input.inputJson,
@@ -204,7 +204,7 @@ export async function invokePermissionAuditList(
 ): Promise<ReadonlyArray<PermissionAuditEntry>> {
   const rows = await invoke<RawPermissionAuditRow[]>('permission_audit_list', {
     input: {
-      sessionId: query.sessionId ?? null,
+      taskId: query.taskId ?? null,
       workspaceId: query.workspaceId ?? null,
       fromAt: query.fromAt ?? null,
       toAt: query.toAt ?? null,
@@ -217,7 +217,7 @@ export async function invokePermissionAuditList(
 export async function invokePermissionAuditClear(scope: PermissionAuditClearScope): Promise<void> {
   return invoke<void>('permission_audit_clear', {
     input: {
-      sessionId: scope.sessionId ?? null,
+      taskId: scope.taskId ?? null,
       workspaceId: scope.workspaceId ?? null,
     },
   });
@@ -286,16 +286,16 @@ export async function invokeAuditRetryDelete(id: string): Promise<void> {
 import { useEffect, useRef, useState } from 'react';
 
 export function useEffectivePermissionRules(args: {
-  sessionId: SessionId | null;
+  taskId: TaskId | null;
   workspaceId: WorkspaceId | null;
   refreshKey?: number;
 }): ReadonlyArray<PermissionRule> {
-  const { sessionId, workspaceId, refreshKey = 0 } = args;
+  const { taskId, workspaceId, refreshKey = 0 } = args;
   const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!sessionId || !workspaceId) {
+    if (!taskId || !workspaceId) {
       setRules([]);
       return;
     }
@@ -306,7 +306,7 @@ export function useEffectivePermissionRules(args: {
         const [global, workspace, session] = await Promise.all([
           invokePermissionRuleList({ scope: 'global' }),
           invokePermissionRuleList({ scope: 'workspace', workspaceId }),
-          invokePermissionRuleList({ scope: 'session', sessionId }),
+          invokePermissionRuleList({ scope: 'task', taskId }),
         ]);
         if (!cancelled) setRules([...global, ...workspace, ...session]);
       } catch {
@@ -321,7 +321,7 @@ export function useEffectivePermissionRules(args: {
       cancelled = true;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [sessionId, workspaceId, refreshKey]);
+  }, [taskId, workspaceId, refreshKey]);
 
   return rules;
 }

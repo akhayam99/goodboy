@@ -1,21 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  IsoDateTime,
-  ProviderId,
-  Session,
-  SessionId,
-  SessionState,
-  WorkspaceId,
-} from '@kay-am/types';
+import type { IsoDateTime, ProviderId, Task, TaskId, TurnState, WorkspaceId } from '@kay-am/types';
 
 const DT = '2024-01-01T00:00:00Z' as IsoDateTime;
 
-function makeSession(overrides: Partial<Session> = {}): Session {
+function makeSession(overrides: Partial<Task> = {}): Task {
   return {
-    id: 'sess-1' as SessionId,
+    id: 'sess-1' as TaskId,
     workspaceId: 'ws-1' as WorkspaceId,
     goal: 'test session',
-    state: { kind: 'idle', lastActivityAt: DT } as SessionState,
+    state: { kind: 'idle', lastActivityAt: DT } as TurnState,
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic' as ProviderId, allowTurnOverride: true },
     createdAt: DT,
@@ -25,11 +18,11 @@ function makeSession(overrides: Partial<Session> = {}): Session {
 }
 
 function filterSessions(
-  sessions: ReadonlyArray<Session>,
+  sessions: ReadonlyArray<Task>,
   search: string,
-  stateFilter: ReadonlyArray<SessionState['kind']>,
+  stateFilter: ReadonlyArray<TurnState['kind']>,
   providerFilter: ReadonlyArray<ProviderId>,
-): ReadonlyArray<Session> {
+): ReadonlyArray<Task> {
   return sessions.filter((s) => {
     const matchesSearch = s.goal.toLowerCase().includes(search.toLowerCase());
     const matchesState = stateFilter.length === 0 || stateFilter.includes(s.state.kind);
@@ -40,21 +33,21 @@ function filterSessions(
 }
 
 describe('sidebar session filtering', () => {
-  const sessions: ReadonlyArray<Session> = [
-    makeSession({ id: 's1' as SessionId, goal: 'refactor auth module' }),
+  const sessions: ReadonlyArray<Task> = [
+    makeSession({ id: 's1' as TaskId, goal: 'refactor auth module' }),
     makeSession({
-      id: 's2' as SessionId,
+      id: 's2' as TaskId,
       goal: 'add new feature',
       state: { kind: 'running', runId: 'r1' as never, startedAt: DT },
     }),
     makeSession({
-      id: 's3' as SessionId,
+      id: 's3' as TaskId,
       goal: 'fix bug in payment',
       state: { kind: 'ended', endedAt: DT },
       providerPreference: { defaultProvider: 'cursor' as ProviderId, allowTurnOverride: false },
     }),
     makeSession({
-      id: 's4' as SessionId,
+      id: 's4' as TaskId,
       goal: 'deploy to prod',
       state: { kind: 'error', message: 'oops', failedAt: DT },
     }),
@@ -106,7 +99,7 @@ describe('rename validation', () => {
 });
 
 describe('status icon mapping', () => {
-  const EXPECTED_KINDS: ReadonlyArray<SessionState['kind']> = [
+  const EXPECTED_KINDS: ReadonlyArray<TurnState['kind']> = [
     'draft',
     'starting',
     'idle',
@@ -115,8 +108,8 @@ describe('status icon mapping', () => {
     'error',
   ];
 
-  it('all SessionState kinds have a defined icon mapping', () => {
-    const ICON_MAP: Readonly<Record<SessionState['kind'], string>> = {
+  it('all TurnState kinds have a defined icon mapping', () => {
+    const ICON_MAP: Readonly<Record<TurnState['kind'], string>> = {
       draft: 'pencil',
       starting: 'loader',
       idle: 'circle',
@@ -131,26 +124,26 @@ describe('status icon mapping', () => {
 });
 
 describe('delete session logic', () => {
-  it('deleteSession removes session from list', () => {
-    const sessions: ReadonlyArray<Session> = [
-      makeSession({ id: 's1' as SessionId }),
-      makeSession({ id: 's2' as SessionId }),
+  it('deleteTask removes session from list', () => {
+    const sessions: ReadonlyArray<Task> = [
+      makeSession({ id: 's1' as TaskId }),
+      makeSession({ id: 's2' as TaskId }),
     ];
-    const afterDelete = sessions.filter((s) => s.id !== ('s1' as SessionId));
+    const afterDelete = sessions.filter((s) => s.id !== ('s1' as TaskId));
     expect(afterDelete).toHaveLength(1);
     expect(afterDelete[0]?.id).toBe('s2');
   });
 
   it('currentSessionId cleared when deleting active session', () => {
-    const currentSessionId = 's1' as SessionId;
-    const deletedId = 's1' as SessionId;
+    const currentSessionId = 's1' as TaskId;
+    const deletedId = 's1' as TaskId;
     const nextId = currentSessionId === deletedId ? null : currentSessionId;
     expect(nextId).toBeNull();
   });
 
   it('currentSessionId preserved when deleting non-active session', () => {
-    const currentSessionId = 's2' as SessionId;
-    const deletedId = 's1' as SessionId;
+    const currentSessionId = 's2' as TaskId;
+    const deletedId = 's1' as TaskId;
     const nextId = currentSessionId === deletedId ? null : currentSessionId;
     expect(nextId).toBe('s2');
   });

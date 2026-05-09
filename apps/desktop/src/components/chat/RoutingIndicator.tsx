@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import type {
   ProviderId,
   RoutingDecision,
-  SessionProviderPreference,
+  TaskProviderPreference,
   TurnProviderOverride,
 } from '@kay-am/types';
 import { resolveProviderForTurn } from '../../routing';
 
 interface RoutingIndicatorProps {
-  readonly sessionPreference: SessionProviderPreference;
+  readonly sessionPreference: TaskProviderPreference;
   readonly turnOverride: TurnProviderOverride | undefined;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onSendAnyway?: () => void;

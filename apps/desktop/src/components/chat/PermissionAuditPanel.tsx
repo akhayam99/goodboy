@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button, Select, Tooltip } from '@kay-am/ui';
-import type { PermissionAuditEntry, ProviderRunId, SessionId } from '@kay-am/types';
+import type { PermissionAuditEntry, ProviderRunId, TaskId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 import { invokePermissionAuditList, invokePermissionAuditClear } from '../../permissions';
 import { useToast } from '../Toast';
 
 interface Props {
-  sessionId: SessionId;
+  taskId: TaskId;
   open: boolean;
   onClose: () => void;
 }
@@ -36,8 +36,8 @@ function groupByRunId(
   return map as Map<ProviderRunId, ReadonlyArray<PermissionAuditEntry>>;
 }
 
-export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId));
+export function PermissionAuditPanel({ taskId, open, onClose }: Props) {
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === taskId));
   const isStreaming = RUNNING_KINDS.has(session?.state.kind ?? 'idle');
   const { showToast } = useToast();
 
@@ -56,12 +56,12 @@ export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
   const fetch = useCallback(async () => {
     if (!open) return;
     try {
-      const result = await invokePermissionAuditList({ sessionId, limit: 500 });
+      const result = await invokePermissionAuditList({ taskId, limit: 500 });
       setEntries(result);
     } catch {
       // silent — panel will show stale data
     }
-  }, [open, sessionId]);
+  }, [open, taskId]);
 
   useEffect(() => {
     if (!open) {
@@ -103,7 +103,7 @@ export function PermissionAuditPanel({ sessionId, open, onClose }: Props) {
     }
     setClearing(true);
     try {
-      await invokePermissionAuditClear({ sessionId });
+      await invokePermissionAuditClear({ taskId });
       setEntries([]);
       showToast('warning', 'audit log cleared for this session');
     } catch (err) {

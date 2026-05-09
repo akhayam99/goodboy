@@ -1,24 +1,24 @@
 import { useState } from 'react';
 import { GitBranch, Square, ShieldCheck } from 'lucide-react';
 import { Button, Tooltip, cn } from '@kay-am/ui';
-import type { PhaseRun, PhaseRunStatus, ProviderRunId, Session, SessionId } from '@kay-am/types';
+import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
 import { PermissionAuditPanel } from './PermissionAuditPanel';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
 interface ChatHeaderProps {
-  session: Session;
+  session: Task;
   worktreePath: string | null;
   onEndSession: () => void;
   parallelRunIds?: ReadonlyArray<ProviderRunId>;
   onSelectRun?: (runId: ProviderRunId) => void;
 }
 
-function inferBranch(worktreePath: string | null, sessionId: string): string {
-  if (!worktreePath) return sessionId.slice(0, 8);
+function inferBranch(worktreePath: string | null, taskId: string): string {
+  if (!worktreePath) return taskId.slice(0, 8);
   const tail = worktreePath.split('/').filter(Boolean).at(-1);
-  return tail ?? sessionId.slice(0, 8);
+  return tail ?? taskId.slice(0, 8);
 }
 
 export function ChatHeader({
@@ -39,9 +39,9 @@ export function ChatHeader({
   const runStatuses = Object.fromEntries(
     (parallelRunIds ?? []).map((rid) => {
       const run = phaseRuns.find((r) => r.runId === rid);
-      return [rid, run?.status ?? ('pending' as PhaseRunStatus)];
+      return [rid, run?.status ?? ('pending' as SessionStatus)];
     }),
-  ) as Readonly<Record<ProviderRunId, PhaseRunStatus>>;
+  ) as Readonly<Record<ProviderRunId, SessionStatus>>;
 
   const isParallel = (parallelRunIds?.length ?? 0) > 1;
 
@@ -80,7 +80,7 @@ export function ChatHeader({
             <span className="font-mono">{branch}</span>
             {copied ? <span className="text-success">copied</span> : null}
           </button>
-          {session.phaseTemplateId ? <PhaseProgressPill sessionId={session.id} /> : null}
+          {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function ChatHeader({
       </div>
 
       <PermissionAuditPanel
-        sessionId={session.id}
+        taskId={session.id}
         open={auditOpen}
         onClose={() => setAuditOpen(false)}
       />
@@ -117,7 +117,7 @@ export function ChatHeader({
   );
 }
 
-const STATUS_DOT: Record<PhaseRunStatus, string> = {
+const STATUS_DOT: Record<SessionStatus, string> = {
   pending: 'bg-muted-foreground/40',
   running: 'bg-blue-500',
   completed: 'bg-green-500',
@@ -125,15 +125,15 @@ const STATUS_DOT: Record<PhaseRunStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
-  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+function PhaseProgressPill({ taskId }: { taskId: TaskId }) {
+  const runs = useAppStore((s) => s.sessionPhaseRuns[taskId] ?? EMPTY_ARRAY);
 
   if (runs.length === 0) return null;
 
   const sorted = runs.slice().sort((a, b) => a.ordinal - b.ordinal);
   const activeIdx = sorted.findIndex((r) => r.status === 'running');
   const lastCompletedIdx = sorted.reduce(
-    (acc: number, r: PhaseRun, i: number) => (r.status === 'completed' ? i : acc),
+    (acc: number, r: Session, i: number) => (r.status === 'completed' ? i : acc),
     -1,
   );
   const displayIdx = activeIdx >= 0 ? activeIdx : lastCompletedIdx;

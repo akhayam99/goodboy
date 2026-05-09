@@ -2,17 +2,17 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   IsoDateTime,
   ParallelMergeStrategy,
-  ParallelPhaseGroup,
-  ParallelPhaseGroupId,
-  PhaseDefinition,
-  PhaseDefinitionId,
-  PhaseRun,
-  PhaseRunId,
-  PhaseRunStatus,
-  PhaseTemplate,
-  PhaseTemplateId,
-  ProviderRunId,
+  ParallelGroup,
+  ParallelGroupId,
+  Step,
+  StepId,
+  Session,
   SessionId,
+  SessionStatus,
+  Workflow,
+  WorkflowId,
+  ProviderRunId,
+  TaskId,
   WorkspaceId,
 } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
@@ -23,7 +23,7 @@ import type { ProviderId } from '@kay-am/types';
 
 interface RawPhaseDefinitionRow {
   readonly id: string;
-  readonly templateId: string;
+  readonly workflowId: string;
   readonly ordinal: number;
   readonly name: string;
   readonly promptPrefix: string;
@@ -36,15 +36,15 @@ interface RawPhaseTemplateRow {
   readonly workspaceId: string;
   readonly name: string;
   readonly description: string;
-  readonly definitions: ReadonlyArray<RawPhaseDefinitionRow>;
+  readonly steps: ReadonlyArray<RawPhaseDefinitionRow>;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
 interface RawPhaseRunRow {
   readonly id: string;
-  readonly sessionId: string;
-  readonly phaseDefinitionId: string;
+  readonly taskId: string;
+  readonly stepId: string;
   readonly ordinal: number;
   readonly name: string;
   readonly status: string;
@@ -58,10 +58,10 @@ interface RawPhaseRunRow {
 // Row → domain converters
 // ---------------------------------------------------------------------------
 
-function rowToDefinition(row: RawPhaseDefinitionRow): PhaseDefinition {
+function rowToDefinition(row: RawPhaseDefinitionRow): Step {
   return {
-    id: row.id as PhaseDefinitionId,
-    templateId: row.templateId as PhaseTemplateId,
+    id: row.id as StepId,
+    workflowId: row.workflowId as WorkflowId,
     ordinal: row.ordinal,
     name: row.name,
     promptPrefix: row.promptPrefix,
@@ -70,26 +70,26 @@ function rowToDefinition(row: RawPhaseDefinitionRow): PhaseDefinition {
   };
 }
 
-function rowToTemplate(row: RawPhaseTemplateRow): PhaseTemplate {
+function rowToTemplate(row: RawPhaseTemplateRow): Workflow {
   return {
-    id: row.id as PhaseTemplateId,
+    id: row.id as WorkflowId,
     workspaceId: row.workspaceId as WorkspaceId,
     name: row.name,
     description: row.description,
-    definitions: row.definitions.map(rowToDefinition),
+    steps: row.steps.map(rowToDefinition),
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
   };
 }
 
-function rowToPhaseRun(row: RawPhaseRunRow): PhaseRun {
+function rowToPhaseRun(row: RawPhaseRunRow): Session {
   return {
-    id: row.id as PhaseRunId,
-    sessionId: row.sessionId as SessionId,
-    phaseDefinitionId: row.phaseDefinitionId as PhaseDefinitionId,
+    id: row.id as SessionId,
+    taskId: row.taskId as TaskId,
+    stepId: row.stepId as StepId,
     ordinal: row.ordinal,
     name: row.name,
-    status: row.status as PhaseRunStatus,
+    status: row.status as SessionStatus,
     ...(row.providerRunId != null && { runId: row.providerRunId as ProviderRunId }),
     ...(row.outputSummary != null && { outputSummary: row.outputSummary }),
     ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
@@ -101,18 +101,18 @@ function rowToPhaseRun(row: RawPhaseRunRow): PhaseRun {
 // Phase template commands (#155)
 // ---------------------------------------------------------------------------
 
-export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise<PhaseTemplate[]> {
+export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise<Workflow[]> {
   const rows = await invoke<RawPhaseTemplateRow[]>('phase_template_list', { workspaceId });
   return rows.map(rowToTemplate);
 }
 
-export async function invokePhaseTemplateGet(id: PhaseTemplateId): Promise<PhaseTemplate | null> {
+export async function invokePhaseTemplateGet(id: WorkflowId): Promise<Workflow | null> {
   const row = await invoke<RawPhaseTemplateRow | null>('phase_template_get', { id });
   return row ? rowToTemplate(row) : null;
 }
 
 export interface PhaseDefinitionUpsertArgs {
-  readonly id?: PhaseDefinitionId;
+  readonly id?: StepId;
   readonly ordinal: number;
   readonly name: string;
   readonly promptPrefix: string;
@@ -121,23 +121,21 @@ export interface PhaseDefinitionUpsertArgs {
 }
 
 export interface PhaseTemplateUpsertArgs {
-  readonly id?: PhaseTemplateId;
+  readonly id?: WorkflowId;
   readonly workspaceId: WorkspaceId;
   readonly name: string;
   readonly description: string;
-  readonly definitions: ReadonlyArray<PhaseDefinitionUpsertArgs>;
+  readonly steps: ReadonlyArray<PhaseDefinitionUpsertArgs>;
 }
 
-export async function invokePhaseTemplateUpsert(
-  args: PhaseTemplateUpsertArgs,
-): Promise<PhaseTemplate> {
+export async function invokePhaseTemplateUpsert(args: PhaseTemplateUpsertArgs): Promise<Workflow> {
   const row = await invoke<RawPhaseTemplateRow>('phase_template_upsert', {
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
       name: args.name,
       description: args.description,
-      definitions: args.definitions.map((d) => ({
+      steps: args.steps.map((d) => ({
         id: d.id ?? null,
         ordinal: d.ordinal,
         name: d.name,
@@ -150,7 +148,7 @@ export async function invokePhaseTemplateUpsert(
   return rowToTemplate(row);
 }
 
-export async function invokePhaseTemplateDelete(id: PhaseTemplateId): Promise<void> {
+export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
   return invoke<void>('phase_template_delete', { id });
 }
 
@@ -158,30 +156,30 @@ export async function invokePhaseTemplateDelete(id: PhaseTemplateId): Promise<vo
 // Phase run commands (#156)
 // ---------------------------------------------------------------------------
 
-export async function invokePhaseRunList(sessionId: SessionId): Promise<PhaseRun[]> {
-  const rows = await invoke<RawPhaseRunRow[]>('phase_run_list_for_session', { sessionId });
+export async function invokePhaseRunList(taskId: TaskId): Promise<Session[]> {
+  const rows = await invoke<RawPhaseRunRow[]>('phase_run_list_for_session', { taskId });
   return rows.map(rowToPhaseRun);
 }
 
 export interface PhaseRunInsertArgs {
-  readonly id?: PhaseRunId;
-  readonly sessionId: SessionId;
-  readonly phaseDefinitionId: PhaseDefinitionId;
+  readonly id?: SessionId;
+  readonly taskId: TaskId;
+  readonly stepId: StepId;
   readonly ordinal: number;
   readonly name: string;
-  readonly status: PhaseRunStatus;
+  readonly status: SessionStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
 }
 
-export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<PhaseRun> {
+export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Session> {
   const row = await invoke<RawPhaseRunRow>('phase_run_insert', {
     input: {
       id: run.id ?? null,
-      sessionId: run.sessionId,
-      phaseDefinitionId: run.phaseDefinitionId,
+      taskId: run.taskId,
+      stepId: run.stepId,
       ordinal: run.ordinal,
       name: run.name,
       status: run.status,
@@ -195,7 +193,7 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Pha
 }
 
 export interface PhaseRunUpdateFields {
-  readonly status: PhaseRunStatus;
+  readonly status: SessionStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
@@ -203,9 +201,9 @@ export interface PhaseRunUpdateFields {
 }
 
 export async function invokePhaseRunUpdateStatus(
-  id: PhaseRunId,
+  id: SessionId,
   fields: PhaseRunUpdateFields,
-): Promise<PhaseRun> {
+): Promise<Session> {
   const row = await invoke<RawPhaseRunRow>('phase_run_update_status', {
     input: {
       id,
@@ -225,17 +223,17 @@ export async function invokePhaseRunUpdateStatus(
 
 interface RawParallelPhaseGroupRow {
   readonly id: string;
-  readonly sessionId: string;
+  readonly taskId: string;
   readonly ordinal: number;
   readonly mergeStrategy: string;
   readonly createdAt: string;
   readonly completedAt: string | null;
 }
 
-function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelPhaseGroup {
+function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelGroup {
   return {
-    id: row.id as ParallelPhaseGroupId,
-    sessionId: row.sessionId as SessionId,
+    id: row.id as ParallelGroupId,
+    taskId: row.taskId as TaskId,
     ordinal: row.ordinal,
     mergeStrategy: row.mergeStrategy as ParallelMergeStrategy,
     createdAt: row.createdAt as IsoDateTime,
@@ -244,8 +242,8 @@ function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelPhaseGr
 }
 
 export interface ParallelPhaseGroupCreateArgs {
-  readonly id?: ParallelPhaseGroupId;
-  readonly sessionId: SessionId;
+  readonly id?: ParallelGroupId;
+  readonly taskId: TaskId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt?: IsoDateTime;
@@ -253,11 +251,11 @@ export interface ParallelPhaseGroupCreateArgs {
 
 export async function invokeParallelPhaseGroupCreate(
   args: ParallelPhaseGroupCreateArgs,
-): Promise<ParallelPhaseGroup> {
+): Promise<ParallelGroup> {
   const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_create', {
     input: {
       id: args.id ?? null,
-      sessionId: args.sessionId,
+      taskId: args.taskId,
       ordinal: args.ordinal,
       mergeStrategy: args.mergeStrategy,
       createdAt: args.createdAt ?? null,
@@ -266,30 +264,28 @@ export async function invokeParallelPhaseGroupCreate(
   return rowToParallelPhaseGroup(row);
 }
 
-export async function invokeParallelPhaseGroupList(
-  sessionId: SessionId,
-): Promise<ParallelPhaseGroup[]> {
+export async function invokeParallelPhaseGroupList(taskId: TaskId): Promise<ParallelGroup[]> {
   const rows = await invoke<RawParallelPhaseGroupRow[]>('parallel_phase_group_list', {
-    sessionId,
+    taskId,
   });
   return rows.map(rowToParallelPhaseGroup);
 }
 
 export async function invokeParallelPhaseGroupGet(
-  id: ParallelPhaseGroupId,
-): Promise<ParallelPhaseGroup | null> {
+  id: ParallelGroupId,
+): Promise<ParallelGroup | null> {
   const row = await invoke<RawParallelPhaseGroupRow | null>('parallel_phase_group_get', { id });
   return row != null ? rowToParallelPhaseGroup(row) : null;
 }
 
-export async function invokeParallelPhaseGroupDelete(id: ParallelPhaseGroupId): Promise<void> {
+export async function invokeParallelPhaseGroupDelete(id: ParallelGroupId): Promise<void> {
   return invoke<void>('parallel_phase_group_delete', { id });
 }
 
 export async function invokeParallelPhaseGroupUpdateCompletedAt(
-  id: ParallelPhaseGroupId,
+  id: ParallelGroupId,
   completedAt: IsoDateTime,
-): Promise<ParallelPhaseGroup> {
+): Promise<ParallelGroup> {
   const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_update_completed_at', {
     id,
     completedAt,

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, TaskId } from '@kay-am/types';
 
 // ---------------------------------------------------------------------------
 // Module mocks — hoisted before store import
@@ -34,23 +34,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
+  insertTask: vi.fn(),
+  insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
+  listContextSlotsForTask: vi.fn(async () => []),
+  listMessagesForTask: vi.fn(async () => []),
+  listTasksForWorkspace: vi.fn(async () => []),
+  listTelemetryForTask: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
-  listWorktreesForSession: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
+  listWorktreesForTask: vi.fn(async () => []),
+  deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
+  summarizeTaskTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
+  updateTaskState: vi.fn(),
   upsertContextSlot: vi.fn(),
 }));
 
@@ -115,7 +115,7 @@ vi.mock('../../providerPricing', () => ({
 // Tests
 // ---------------------------------------------------------------------------
 
-const SESSION_ID = 'sess-1' as SessionId;
+const SESSION_ID = 'sess-1' as TaskId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 

@@ -3,12 +3,12 @@ import { Collapsible } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
 
 interface PhaseTransitionCardProps {
-  readonly item: Extract<TranscriptItem, { kind: 'phase_transition' }>;
+  readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
 }
 
 export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
   const [open, setOpen] = useState(false);
-  const header = `Phase ${item.fromPhase.ordinal + 1} ${item.fromPhase.name} → Phase ${item.toPhase.ordinal + 1} ${item.toPhase.name}`;
+  const header = `Phase ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Phase ${item.toStep.ordinal + 1} ${item.toStep.name}`;
   const timestamp = new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',

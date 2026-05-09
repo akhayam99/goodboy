@@ -34,7 +34,7 @@ export function ImportConfigDialog({ open, result, error, onClose }: ImportConfi
             <ul className="space-y-1 text-xs text-muted-foreground">
               <li>workspaces: {result.stats.workspaces}</li>
               <li>skills: {result.stats.skills}</li>
-              <li>phase templates: {result.stats.phaseTemplates}</li>
+              <li>phase templates: {result.stats.workflows}</li>
               <li>permission rules: {result.stats.permissionRules}</li>
               <li>budget rules: {result.stats.budgetRules}</li>
             </ul>

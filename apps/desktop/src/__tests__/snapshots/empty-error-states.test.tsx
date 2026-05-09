@@ -80,7 +80,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { ProviderInfo } from '../../providers';
 import type { AppState, AppActions } from '../../store/store';
-import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
+import type { Task, TaskId, WorkspaceId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 
 type AppStore = AppState & AppActions;
@@ -107,9 +107,9 @@ afterEach(cleanup);
 
 const WS_ID = 'ws-test' as WorkspaceId;
 
-function makeSession(overrides: Partial<Session> = {}): Session {
+function makeSession(overrides: Partial<Task> = {}): Task {
   return {
-    id: 'sess-1' as SessionId,
+    id: 'sess-1' as TaskId,
     workspaceId: WS_ID,
     goal: 'test goal',
     branchPrefix: 'test',
@@ -117,7 +117,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     state: { kind: 'idle' },
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
     ...overrides,
-  } as Session;
+  } as Task;
 }
 
 function makeProviderInfo(overrides: Partial<ProviderInfo> = {}): ProviderInfo {

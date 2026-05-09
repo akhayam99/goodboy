@@ -27,10 +27,10 @@ export type TranscriptItem =
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | {
-      kind: 'phase_transition';
+      kind: 'step_transition';
       key: string;
-      fromPhase: { ordinal: number; name: string };
-      toPhase: { ordinal: number; name: string };
+      fromStep: { ordinal: number; name: string };
+      toStep: { ordinal: number; name: string };
       carryForwardContext: string;
       at: string;
     }
@@ -167,12 +167,12 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
           args: event.args,
         });
         break;
-      case 'phase_transition':
+      case 'step_transition':
         items.push({
-          kind: 'phase_transition',
+          kind: 'step_transition',
           key: `phase-${i}`,
-          fromPhase: event.fromPhase,
-          toPhase: event.toPhase,
+          fromStep: event.fromStep,
+          toStep: event.toStep,
           carryForwardContext: event.carryForwardContext,
           at: event.at,
         });

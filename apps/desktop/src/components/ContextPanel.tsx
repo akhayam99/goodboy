@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { ScrollArea, Textarea, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
-import type { ContextSlot, Session } from '@kay-am/types';
+import type { ContextSlot, Task } from '@kay-am/types';
 import { useAppStore, useSessionSlots, useSummarizerStatus } from '../store';
 
 interface ContextPanelProps {
-  session: Session;
+  session: Task;
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;

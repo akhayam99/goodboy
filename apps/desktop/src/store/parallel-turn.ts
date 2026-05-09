@@ -1,6 +1,6 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
-  buildPhasePrompt,
+  buildStepPrompt,
   detectConflicts,
   fanOut,
   awaitMerge,
@@ -17,15 +17,15 @@ import { parseStreamJsonLine } from '@kay-am/core';
 import type {
   IsoDateTime,
   ParallelMergeStrategy,
-  ParallelPhaseGroupId,
-  ParallelPhaseRun,
-  ParallelPhaseRunId,
-  PhaseDefinition,
-  PhaseRunStatus,
-  PhaseTemplate,
+  ParallelGroupId,
+  ParallelSession,
+  ParallelSessionId,
+  Step,
+  SessionStatus,
+  Workflow,
   ProviderRunId,
-  Session,
-  SessionId,
+  Task,
+  TaskId,
   TurnEvent,
   Workspace,
 } from '@kay-am/types';
@@ -43,10 +43,10 @@ import { invokeParallelPhaseRunSpawn, cancelTurn } from '../turn';
 // ---------------------------------------------------------------------------
 
 export interface ParallelBranchInputs {
-  readonly session: Session;
+  readonly session: Task;
   readonly workspace: Workspace;
-  readonly currentDef: PhaseDefinition;
-  readonly groupDefs: ReadonlyArray<PhaseDefinition>;
+  readonly currentDef: Step;
+  readonly groupDefs: ReadonlyArray<Step>;
   readonly workingDir: string;
   readonly resolvedPromptBase: string;
   readonly carryForwardContext: string;
@@ -55,13 +55,13 @@ export interface ParallelBranchInputs {
 }
 
 export interface ParallelBranchEffects {
-  appendTurnEvent: (sessionId: SessionId, event: TurnEvent) => void;
-  refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
-  setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
+  appendTurnEvent: (taskId: TaskId, event: TurnEvent) => void;
+  refreshPhaseRuns: (taskId: TaskId) => Promise<void>;
+  setMergeConflicts: (taskId: TaskId, conflicts: ReadonlyArray<FileConflict>) => void;
 }
 
 export interface ParallelBranchResult {
-  readonly groupId: ParallelPhaseGroupId;
+  readonly groupId: ParallelGroupId;
   readonly merge: MergeResult;
   readonly runIds: ReadonlyArray<ProviderRunId>;
   readonly anyFailed: boolean;
@@ -73,22 +73,22 @@ export interface ParallelBranchResult {
 // ---------------------------------------------------------------------------
 
 export interface ParallelDetection {
-  readonly currentDef: PhaseDefinition;
-  readonly groupDefs: ReadonlyArray<PhaseDefinition>;
+  readonly currentDef: Step;
+  readonly groupDefs: ReadonlyArray<Step>;
 }
 
 /**
  * Returns the sibling group iff:
  *  - currentDef has parallelGroup set
- *  - >= 2 sibling definitions share the same parallelGroup
- *  - definitions are sorted by ordinal (deterministic spawn order)
+ *  - >= 2 sibling steps share the same parallelGroup
+ *  - steps are sorted by ordinal (deterministic spawn order)
  */
 export function detectParallelGroup(
-  template: PhaseTemplate,
-  currentDef: PhaseDefinition,
+  template: Workflow,
+  currentDef: Step,
 ): ParallelDetection | null {
   if (currentDef.parallelGroup === undefined) return null;
-  const siblings = template.definitions
+  const siblings = template.steps
     .filter((d) => d.parallelGroup === currentDef.parallelGroup)
     .slice()
     .sort((a, b) => a.ordinal - b.ordinal);
@@ -113,7 +113,7 @@ interface RawTurnEnvelope {
 
 interface RunListenerState {
   readonly onEvent: (e: TurnEvent) => void;
-  readonly onSettle: (status: PhaseRunStatus, error?: string) => void;
+  readonly onSettle: (status: SessionStatus, error?: string) => void;
   collectedFiles: Set<string>;
 }
 
@@ -167,7 +167,7 @@ export interface BuildSchedulerDepsArgs {
   readonly settleHandlers: Map<
     ProviderRunId,
     {
-      promise: Promise<{ status: PhaseRunStatus; error?: string }>;
+      promise: Promise<{ status: SessionStatus; error?: string }>;
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >;
@@ -223,7 +223,7 @@ export async function runParallelBranch(
 
   // Persist parallel group up front so the audit trail captures it even if spawn fails.
   const groupRow = await invokeParallelPhaseGroupCreate({
-    sessionId: session.id,
+    taskId: session.id,
     ordinal: currentDef.ordinal,
     mergeStrategy,
     createdAt: now(),
@@ -233,7 +233,7 @@ export async function runParallelBranch(
   // Generate runIds + per-def prompts up front. Same ID flows through every layer.
   const runIds: ProviderRunId[] = cappedDefs.map(() => crypto.randomUUID() as ProviderRunId);
   const promptsByIndex: string[] = cappedDefs.map((def) =>
-    buildPhasePrompt({
+    buildStepPrompt({
       definition: def,
       carryForwardContext: inputs.carryForwardContext,
       userMessage: inputs.resolvedPromptBase,
@@ -245,7 +245,7 @@ export async function runParallelBranch(
 
   const settleResolvers = new Map<
     ProviderRunId,
-    (v: { status: PhaseRunStatus; error?: string }) => void
+    (v: { status: SessionStatus; error?: string }) => void
   >();
 
   // Per-run scheduler progress callbacks — set by scheduler.spawnRun, invoked by
@@ -262,14 +262,14 @@ export async function runParallelBranch(
   const settleHandlers = new Map<
     ProviderRunId,
     {
-      promise: Promise<{ status: PhaseRunStatus; error?: string }>;
+      promise: Promise<{ status: SessionStatus; error?: string }>;
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >();
 
   for (const runId of runIds) {
     progressCallbacks.set(runId, null);
-    const promise = new Promise<{ status: PhaseRunStatus; error?: string }>((resolve) => {
+    const promise = new Promise<{ status: SessionStatus; error?: string }>((resolve) => {
       settleResolvers.set(runId, resolve);
     });
     settleHandlers.set(runId, {
@@ -294,13 +294,13 @@ export async function runParallelBranch(
 
   // Persist N phase_runs rows (status=running). Using the existing single-run
   // invoker — group_id remains NULL for now (Rust insert doesn't accept it yet),
-  // but session_id+ordinal+phaseDefinitionId still uniquely identifies each run.
+  // but session_id+ordinal+stepId still uniquely identifies each run.
   for (let i = 0; i < cappedDefs.length; i++) {
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
     await invokePhaseRunInsert({
-      sessionId: session.id,
-      phaseDefinitionId: def.id,
+      taskId: session.id,
+      stepId: def.id,
       ordinal: def.ordinal,
       name: def.name,
       status: 'running',
@@ -310,17 +310,17 @@ export async function runParallelBranch(
   }
   await effects.refreshPhaseRuns(session.id);
 
-  // Build ParallelPhaseRun records the scheduler operates on. parallelIndex
+  // Build ParallelSession records the scheduler operates on. parallelIndex
   // matches the spec's order. We DO NOT wire createParallelWorktrees here — the
   // issue scope keeps worktree-per-run out of v1: every run executes in the
   // session's primary worktree (existing single-run invariant). Workdir
   // collisions are still surfaced by detectConflicts via emitted file_edit events.
   // TODO (@ak, #212-followup): wire createParallelWorktrees + per-run workingDir
   // once Rust phase_run_insert accepts (group_id, parallel_index).
-  const parallelRuns: ParallelPhaseRun[] = cappedDefs.map((def, i) => ({
-    id: crypto.randomUUID() as ParallelPhaseRunId,
+  const parallelRuns: ParallelSession[] = cappedDefs.map((def, i) => ({
+    id: crypto.randomUUID() as ParallelSessionId,
     groupId,
-    phaseDefinitionId: def.id,
+    stepId: def.id,
     parallelIndex: i,
     runId: runIds[i]!,
     status: 'running',
@@ -357,7 +357,7 @@ export async function runParallelBranch(
       schedDeps,
       {
         id: groupId,
-        sessionId: session.id,
+        taskId: session.id,
         ordinal: currentDef.ordinal,
         mergeStrategy,
         createdAt: groupRow.createdAt,
@@ -374,10 +374,10 @@ export async function runParallelBranch(
       const runId = runIds[i]!;
       const status = merge.runStatuses.find((rs) => rs.runId === runId);
       const phaseRunsAfter = await invokePhaseRunList(session.id);
-      const row = phaseRunsAfter.find((r) => r.runId === runId && r.phaseDefinitionId === def.id);
+      const row = phaseRunsAfter.find((r) => r.runId === runId && r.stepId === def.id);
       if (row) {
         await invokePhaseRunUpdateStatus(row.id, {
-          status: (status?.status ?? 'failed') as PhaseRunStatus,
+          status: (status?.status ?? 'failed') as SessionStatus,
           completedAt: now(),
         });
       }
@@ -434,10 +434,10 @@ export async function runParallelBranch(
     // We use the first runId for routing; UI treats parallel groups as one phase boundary.
     if (!allFailed) {
       effects.appendTurnEvent(session.id, {
-        kind: 'phase_transition',
+        kind: 'step_transition',
         runId: runIds[0]!,
-        fromPhase: { ordinal: currentDef.ordinal, name: currentDef.name },
-        toPhase: { ordinal: currentDef.ordinal + 1, name: 'next' },
+        fromStep: { ordinal: currentDef.ordinal, name: currentDef.name },
+        toStep: { ordinal: currentDef.ordinal + 1, name: 'next' },
         carryForwardContext: '',
         at: now(),
       });

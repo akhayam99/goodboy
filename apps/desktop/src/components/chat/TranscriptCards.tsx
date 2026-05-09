@@ -61,7 +61,7 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
       );
     case 'skill_invocation':
       return <SkillInvocationCard item={item} />;
-    case 'phase_transition':
+    case 'step_transition':
       return <PhaseTransitionCard item={item} />;
     case 'done':
       return <hr className="border-border" />;
