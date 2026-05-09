@@ -56,12 +56,6 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <div
         class="flex items-center gap-1"
       >
-        <span
-          class="rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide bg-muted text-muted-foreground"
-          title="no summarizer run yet — runs after each turn when an api key is set"
-        >
-          idle
-        </span>
         <button
           aria-label="hide context panel"
           class="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"

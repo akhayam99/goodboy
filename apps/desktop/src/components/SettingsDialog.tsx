@@ -346,7 +346,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     >
       <div className="flex h-full min-h-0 gap-0">
         <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter((item) => item.id !== 'initialization').map((item) => (
             <button
               key={item.id}
               type="button"
@@ -362,6 +362,23 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               {item.beta ? <BetaChip /> : null}
             </button>
           ))}
+          <div className="mt-auto pt-3">
+            {NAV_ITEMS.filter((item) => item.id === 'initialization').map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveSection(item.id)}
+                className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                  activeSection === item.id
+                    ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
+                    : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
         </nav>
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
       </div>

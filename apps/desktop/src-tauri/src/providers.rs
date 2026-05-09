@@ -261,27 +261,65 @@ fn check_cursor_auth() -> AuthState {
 }
 
 fn check_codex_auth() -> AuthState {
-    match run_auth_command(&["codex", "auth", "status"]) {
-        Ok(output) => {
-            let lower = output.to_lowercase();
-            if lower.contains("not logged") || lower.contains("unauthenticated") {
-                return AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                };
+    // codex CLI subcommand layout has shifted across versions; try the variants
+    // we've seen in the wild before giving up. order matters: most recent first.
+    let candidates: &[&[&str]] = &[
+        // codex CLI ≥ 0.13 (current). subcommand: `codex login status` →
+        // stdout "Logged in using ChatGPT" or "Not logged in".
+        &["codex", "login", "status"],
+        // legacy / fallback shapes from older versions, kept in case the user
+        // still has an older binary on PATH.
+        &["codex", "auth", "status"],
+        &["codex", "auth", "whoami"],
+        &["codex", "whoami"],
+        &["codex", "status"],
+    ];
+    let mut last_output: Option<String> = None;
+    for cmd in candidates {
+        match run_auth_command(cmd) {
+            Ok(output) => {
+                last_output = Some(output);
+                break;
             }
-            let identity = extract_email(&output)
-                .or_else(|| extract_json_string(&output, "email"))
-                .or_else(|| extract_json_string(&output, "username"));
-            AuthState {
-                state: AuthStateKind::Connected,
-                identity,
+            Err(err) => {
+                last_output = Some(err);
+                continue;
             }
         }
-        Err(_) => AuthState {
+    }
+    let Some(output) = last_output else {
+        return AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
-        },
+        };
+    };
+    let lower = output.to_lowercase();
+    if lower.contains("not logged")
+        || lower.contains("unauthenticated")
+        || lower.contains("not signed in")
+        || lower.contains("no credentials")
+    {
+        return AuthState {
+            state: AuthStateKind::Disconnected,
+            identity: None,
+        };
+    }
+    if lower.contains("logged in")
+        || lower.contains("signed in")
+        || lower.contains("authenticated")
+        || extract_email(&output).is_some()
+    {
+        let identity = extract_email(&output)
+            .or_else(|| extract_json_string(&output, "email"))
+            .or_else(|| extract_json_string(&output, "username"));
+        return AuthState {
+            state: AuthStateKind::Connected,
+            identity,
+        };
+    }
+    AuthState {
+        state: AuthStateKind::Unknown,
+        identity: None,
     }
 }
 

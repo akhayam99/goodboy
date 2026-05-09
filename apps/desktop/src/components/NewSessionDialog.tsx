@@ -1,6 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
-import { Check, DollarSign, GitBranch, Layers, Sparkles, Target, Zap } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  DollarSign,
+  GitBranch,
+  Layers,
+  Sparkles,
+  Target,
+  Zap,
+} from 'lucide-react';
 import type {
   Workflow,
   WorkflowId,
@@ -19,6 +28,21 @@ interface NewSessionDialogProps {
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
+}
+
+function formatError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const maybe = err as { message?: unknown };
+    if (typeof maybe.message === 'string') return maybe.message;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return 'unknown error';
+    }
+  }
+  return String(err);
 }
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
@@ -110,7 +134,7 @@ export function NewSessionDialog({
       reset();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
@@ -133,33 +157,50 @@ export function NewSessionDialog({
     label: string;
     icon: ReactNode;
     ready: boolean;
+    required: boolean;
   }> = [
-    { id: 'goal', label: 'Goal', icon: <Target size={13} aria-hidden />, ready: goalReady },
+    {
+      id: 'goal',
+      label: 'Goal',
+      icon: <Target size={13} aria-hidden />,
+      ready: goalReady,
+      required: true,
+    },
     {
       id: 'branch',
       label: 'Branch',
       icon: <GitBranch size={13} aria-hidden />,
       ready: prefix.trim().length > 0,
+      required: false,
     },
     {
       id: 'budget',
       label: 'Budget',
       icon: <DollarSign size={13} aria-hidden />,
       ready: budgetReady,
+      required: false,
     },
     {
       id: 'workflow',
       label: 'Workflow',
       icon: <Layers size={13} aria-hidden />,
       ready: workflowReady,
+      required: false,
     },
     {
       id: 'provider',
       label: 'Provider',
       icon: <Zap size={13} aria-hidden />,
       ready: providerReady,
+      required: true,
     },
   ];
+
+  const missingRequired = sections.filter((s) => s.required && !s.ready);
+  const disabledReason =
+    missingRequired.length > 0
+      ? `complete: ${missingRequired.map((s) => s.label.toLowerCase()).join(', ')}`
+      : undefined;
 
   return (
     <Dialog
@@ -170,11 +211,22 @@ export function NewSessionDialog({
       size="lg"
       footer={
         <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          {error ? (
+            <span className="mr-auto text-xs text-danger">{error}</span>
+          ) : disabledReason ? (
+            <span className="mr-auto inline-flex items-center gap-1 text-xs text-warning">
+              <AlertTriangle size={12} aria-hidden />
+              {disabledReason}
+            </span>
+          ) : null}
           <Button variant="ghost" onClick={onClose}>
             cancel
           </Button>
-          <Button onClick={onCreate} disabled={!goalReady || busy}>
+          <Button
+            onClick={onCreate}
+            disabled={!goalReady || !providerReady || busy}
+            title={disabledReason}
+          >
             {busy ? 'creating…' : 'create session'}
           </Button>
         </>
@@ -187,6 +239,7 @@ export function NewSessionDialog({
               key={s.id}
               type="button"
               onClick={() => setActiveSection(s.id)}
+              title={s.required && !s.ready ? `${s.label.toLowerCase()} is required` : undefined}
               className={cn(
                 'relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
                 activeSection === s.id
@@ -195,8 +248,23 @@ export function NewSessionDialog({
               )}
             >
               {s.icon}
-              <span className="flex-1">{s.label}</span>
-              {s.ready ? <Check size={11} className="text-success" aria-label="filled" /> : null}
+              <span className="flex-1">
+                {s.label}
+                {s.required ? (
+                  <span aria-hidden className="ml-0.5 text-warning">
+                    *
+                  </span>
+                ) : null}
+              </span>
+              {s.ready ? (
+                <Check size={11} className="text-success" aria-label="filled" />
+              ) : s.required ? (
+                <AlertTriangle
+                  size={11}
+                  className="text-warning"
+                  aria-label={`${s.label.toLowerCase()} required`}
+                />
+              ) : null}
             </button>
           ))}
         </nav>
@@ -209,7 +277,9 @@ export function NewSessionDialog({
                 placeholder="refactor auth domain"
                 onChange={(e) => setGoal(e.target.value)}
                 autoGrow
+                minRows={4}
                 maxRows={16}
+                autoFocus
               />
             </Field>
           ) : null}
@@ -333,7 +403,11 @@ export function NewSessionDialog({
                             className="text-xs text-primary underline hover:opacity-80"
                             onClick={() => {
                               onClose();
-                              onOpenSettings();
+                              window.dispatchEvent(
+                                new CustomEvent('kayam:open-settings', {
+                                  detail: { section: 'providers' },
+                                }),
+                              );
                             }}
                           >
                             connect in settings

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@kay-am/types';
-import { Button, Dialog, Input } from '@kay-am/ui';
-import { FolderCode, GitBranch, Zap } from 'lucide-react';
+import { Button, Dialog, Input, cn } from '@kay-am/ui';
+import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
@@ -14,7 +14,7 @@ interface WorkspaceSettingsDialogProps {
   onClose: () => void;
 }
 
-type Section = 'general' | 'skills' | 'phases';
+type Section = 'general' | 'skills' | 'phases' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -28,6 +28,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'skills', label: 'Skills', icon: <Zap size={14} aria-hidden /> },
   { id: 'phases', label: 'Workflows', icon: <GitBranch size={14} aria-hidden />, beta: true },
 ];
+
+const DANGER_NAV: NavItem = {
+  id: 'danger',
+  label: 'Disconnect',
+  icon: <Unplug size={14} aria-hidden />,
+};
 
 function BetaChip() {
   return (
@@ -46,10 +52,32 @@ export function WorkspaceSettingsDialog({
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
 
+  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
+
   const [active, setActive] = useState<Section>('general');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setConfirmDisconnect(false);
+    setDisconnecting(false);
+  }, [open]);
+
+  const onDisconnect = async () => {
+    setDisconnecting(true);
+    setError(null);
+    try {
+      await deleteWorkspace(workspaceId);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setDisconnecting(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -102,6 +130,65 @@ export function WorkspaceSettingsDialog({
         return <SkillsPanel workspaceId={workspaceId} />;
       case 'phases':
         return <PhasesPanel workspaceId={workspaceId} />;
+      case 'danger':
+        return (
+          <div className="flex flex-col gap-5">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-danger">
+                danger zone
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                irreversible workspace actions.
+              </p>
+            </div>
+
+            <div
+              className={cn(
+                'flex flex-col gap-3 rounded-md border p-3 transition-colors',
+                confirmDisconnect ? 'border-danger/40 bg-danger/5' : 'border-border-soft',
+              )}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-foreground">disconnect workspace</div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                    removes kAY.am state (sessions, transcripts, worktrees, audit). the repository
+                    on disk is left untouched — you can re-add it later.
+                  </p>
+                </div>
+                {!confirmDisconnect ? (
+                  <Button
+                    variant="danger"
+                    onClick={() => setConfirmDisconnect(true)}
+                    disabled={disconnecting}
+                  >
+                    <Unplug size={13} aria-hidden className="mr-1.5" />
+                    disconnect
+                  </Button>
+                ) : null}
+              </div>
+
+              {confirmDisconnect ? (
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setConfirmDisconnect(false)}
+                    disabled={disconnecting}
+                  >
+                    cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => void onDisconnect()}
+                    disabled={disconnecting}
+                  >
+                    {disconnecting ? 'disconnecting…' : 'confirm disconnect'}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        );
     }
   };
 
@@ -109,7 +196,7 @@ export function WorkspaceSettingsDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title={`${workspaceName} — settings`}
+      title={workspaceName}
       description="Per-workspace defaults, skills, and workflow templates."
       size="xl"
       fixedHeightClass="h-[640px]"
@@ -149,6 +236,20 @@ export function WorkspaceSettingsDialog({
               {item.beta ? <BetaChip /> : null}
             </button>
           ))}
+          <div className="mt-auto pt-3">
+            <button
+              type="button"
+              onClick={() => setActive('danger')}
+              className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                active === 'danger'
+                  ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
+                  : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
+              }`}
+            >
+              {DANGER_NAV.icon}
+              <span>{DANGER_NAV.label}</span>
+            </button>
+          </div>
         </nav>
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
       </div>

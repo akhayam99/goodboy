@@ -1,5 +1,12 @@
-import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
-import { Send, Square } from 'lucide-react';
+import {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
+import { Send, Square, X } from 'lucide-react';
 import { Textarea, cn } from '@kay-am/ui';
 import type {
   BudgetAlert,
@@ -122,7 +129,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const isSlashMode = slashQuery !== null;
 
   const isRunning = RUNNING_KINDS.has(session.state.kind);
-  const canSend = !isRunning && !providerDisconnected && value.trim().length > 0;
+  const wasRunning = useRef(isRunning);
+  interface QueuedTurn {
+    readonly content: string;
+    readonly override: TurnProviderOverride | undefined;
+  }
+  const [queued, setQueued] = useState<QueuedTurn | null>(null);
+  const canSend = !providerDisconnected && value.trim().length > 0;
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
 
@@ -162,6 +175,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   };
 
   const onSelectProvider = (id: ProviderId) => {
+    if (!connectedProviderIds.includes(id)) {
+      window.dispatchEvent(
+        new CustomEvent('kayam:open-settings', { detail: { section: 'providers' } }),
+      );
+      return;
+    }
     if (!allowOverride || isRunning) return;
     setSelectedProvider(id);
     setSelectedModel(null);
@@ -172,9 +191,29 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setSelectedModel(id);
   };
 
+  const dispatchTurn = useCallback(
+    async (content: string, override: TurnProviderOverride | undefined) => {
+      try {
+        await sendTurn({
+          taskId: session.id,
+          content,
+          override,
+          onNewAlerts: (alerts) => {
+            for (const alert of alerts) {
+              showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
+            }
+          },
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [sendTurn, session.id, showToast],
+  );
+
   const onSend = async () => {
     const content = value.trim();
-    if (!content || isRunning || providerDisconnected) return;
+    if (!content || providerDisconnected) return;
     setError(null);
     setValue('');
 
@@ -188,23 +227,26 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
     setSelectedProvider(null);
     setSelectedModel(null);
-    try {
-      await sendTurn({
-        taskId: session.id,
-        content,
-        override,
-        onNewAlerts: (alerts) => {
-          for (const alert of alerts) {
-            showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
-          }
-        },
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+
+    if (isRunning) {
+      setQueued({ content, override });
+      return;
     }
+
+    await dispatchTurn(content, override);
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  useEffect(() => {
+    const wasRun = wasRunning.current;
+    wasRunning.current = isRunning;
+    if (wasRun && !isRunning && queued) {
+      const { content, override } = queued;
+      setQueued(null);
+      void dispatchTurn(content, override);
+    }
+  }, [isRunning, queued, dispatchTurn]);
+
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
       showPopover &&
       (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Tab')
@@ -223,11 +265,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     ? 'override disabled in session settings'
     : undefined;
 
-  const providerCandidates = useMemo<ReadonlyArray<ProviderId>>(() => {
-    const ids = new Set<ProviderId>(connectedProviderIds);
-    ids.add(defaultProvider);
-    return Array.from(ids);
-  }, [connectedProviderIds, defaultProvider]);
+  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
@@ -236,8 +274,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   }, [providerModels, effectiveModel]);
 
   return (
-    <div className="px-4 py-3">
-      <div className="mx-auto flex max-w-3xl flex-col gap-2">
+    <div className="px-8 py-3">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2">
         {!isRunning && !providerDisconnected ? (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
@@ -246,6 +284,46 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <PreflightPill
+              provider={effectiveProvider}
+              rules={effectiveRules}
+              taskId={session.id}
+              workspaceId={session.workspaceId}
+            />
+            {queued ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
+                queued
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQueued(null);
+                    setValue(queued.content);
+                  }}
+                  title="cancel queued message (returns to input)"
+                  aria-label="cancel queued message"
+                  className="rounded-full p-0.5 hover:bg-primary/20"
+                >
+                  <X size={10} aria-hidden />
+                </button>
+              </span>
+            ) : null}
+          </div>
+          <ModelPicker
+            providers={providerCandidates}
+            models={modelCandidates}
+            provider={effectiveProvider}
+            model={effectiveModel}
+            effort={effort}
+            connectedProviders={connectedProviderIds}
+            disabled={!allowOverride || isRunning}
+            disabledTitle={overrideDisabledTitle}
+            onSelectProvider={onSelectProvider}
+            onSelectModel={onSelectModel}
+            onSelectEffort={setEffort}
+          />
+        </div>
         <div className="relative" ref={wrapperRef}>
           {showPopover && isSlashMode ? (
             <SlashCommandPopover
@@ -260,37 +338,39 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onChange={(e) => onValueChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={
-              isRunning
-                ? 'Turn running… cancel to send another'
-                : providerDisconnected
-                  ? 'Sign in to send a message.'
+              providerDisconnected
+                ? 'Sign in to send a message.'
+                : isRunning
+                  ? queued
+                    ? 'Message queued — type to replace.'
+                    : 'Turn running — type to queue next message.'
                   : 'Message Claude. Shift+enter for newline.'
             }
-            disabled={isRunning || providerDisconnected}
+            disabled={providerDisconnected}
             autoGrow
             maxRows={12}
             className="min-h-20 pr-12"
           />
-          {isRunning ? (
+          {isRunning && value.trim().length === 0 ? (
             <button
               type="button"
               onClick={() => void cancelCurrentTurn(session.id)}
               title="Cancel turn"
               aria-label="Cancel turn"
-              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-danger text-danger-foreground transition-opacity hover:opacity-90"
+              className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/10"
             >
-              <Square size={13} aria-hidden fill="currentColor" />
+              <Square size={16} aria-hidden fill="currentColor" />
             </button>
           ) : (
             <button
               type="button"
               onClick={() => void onSend()}
               disabled={!canSend}
-              title={sendDisabledTitle ?? 'Send (enter)'}
-              aria-label="Send message"
-              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+              title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
+              aria-label={isRunning ? 'Queue message' : 'Send message'}
+              className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:hover:bg-transparent"
             >
-              <Send size={13} aria-hidden className="-translate-x-px" />
+              <Send size={16} aria-hidden className="-translate-x-px" />
             </button>
           )}
         </div>
@@ -299,102 +379,268 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             {error}
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
-            {providerCandidates.map((id) => (
-              <Chip
-                key={id}
-                label={PROVIDER_LABEL[id]}
-                active={effectiveProvider === id}
-                onClick={() => onSelectProvider(id)}
-                disabled={!allowOverride || isRunning}
-              />
-            ))}
-          </ChipRow>
-          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
-            {modelCandidates.map((id) => (
-              <Chip
-                key={id}
-                label={modelLabel(id)}
-                active={effectiveModel === id}
-                onClick={() => onSelectModel(id)}
-                disabled={!allowOverride || isRunning}
-              />
-            ))}
-          </ChipRow>
-          {effectiveProvider === 'anthropic' ? (
-            <ChipRow>
-              {EFFORT_LEVELS.map((level) => (
-                <Chip
-                  key={level}
-                  label={EFFORT_LABEL[level]}
-                  active={effort === level}
-                  onClick={() => setEffort(level)}
-                />
-              ))}
-            </ChipRow>
-          ) : null}
-          <div className="ml-auto">
-            <PreflightPill
-              provider={effectiveProvider}
-              rules={effectiveRules}
-              taskId={session.id}
-              workspaceId={session.workspaceId}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-function ChipRow({
+const EFFORT_DOT: Record<EffortLevel, string> = {
+  low: 'bg-success',
+  medium: 'bg-info',
+  high: 'bg-warning',
+  'extra-high': 'bg-danger/80',
+  max: 'bg-danger',
+};
+
+const EFFORT_TEXT: Record<EffortLevel, string> = {
+  low: 'text-success',
+  medium: 'text-info',
+  high: 'text-warning',
+  'extra-high': 'text-danger/85',
+  max: 'text-danger',
+};
+
+type CostTier = 'cheap' | 'mid' | 'expensive';
+
+// Indicative cost weight per model (relative output-token price).
+// Sort ascending → cheapest first; tier drives chip color in the picker.
+const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
+  'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
+  'cursor-small': { weight: 4, tier: 'cheap' },
+  'claude-sonnet-4-5': { weight: 15, tier: 'mid' },
+  'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
+  'gpt-4o': { weight: 15, tier: 'mid' },
+  'claude-opus-4-7': { weight: 75, tier: 'expensive' },
+};
+
+function modelTier(model: string): CostTier {
+  const known = MODEL_COST[model];
+  if (known) return known.tier;
+  if (/haiku|small|mini|flash|nano/i.test(model)) return 'cheap';
+  if (/opus|max/i.test(model)) return 'expensive';
+  return 'mid';
+}
+
+function modelWeight(model: string): number {
+  return MODEL_COST[model]?.weight ?? 10;
+}
+
+const TIER_TEXT: Record<CostTier, string> = {
+  cheap: 'text-success',
+  mid: 'text-warning',
+  expensive: 'text-danger',
+};
+
+const TIER_DOT: Record<CostTier, string> = {
+  cheap: 'bg-success',
+  mid: 'bg-warning',
+  expensive: 'bg-danger',
+};
+
+const PROVIDER_TEXT: Record<ProviderId, string> = {
+  anthropic: 'text-[var(--color-provider-anthropic)]',
+  cursor: 'text-[var(--color-provider-cursor)]',
+  codex: 'text-[var(--color-provider-codex)]',
+};
+
+interface ModelPickerProps {
+  providers: ReadonlyArray<ProviderId>;
+  models: ReadonlyArray<string>;
+  provider: ProviderId;
+  model: string;
+  effort: EffortLevel;
+  connectedProviders: ReadonlyArray<ProviderId>;
+  disabled: boolean;
+  disabledTitle?: string;
+  onSelectProvider: (id: ProviderId) => void;
+  onSelectModel: (id: string) => void;
+  onSelectEffort: (level: EffortLevel) => void;
+}
+
+function ModelPicker({
+  providers,
+  models,
+  provider,
+  model,
+  effort,
+  connectedProviders,
   disabled,
   disabledTitle,
-  children,
-}: {
-  disabled?: boolean;
-  disabledTitle?: string;
-  children: React.ReactNode;
-}) {
+  onSelectProvider,
+  onSelectModel,
+  onSelectEffort,
+}: ModelPickerProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('mousedown', onClick);
+    window.addEventListener('keydown', onEsc);
+    return () => {
+      window.removeEventListener('mousedown', onClick);
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [open]);
+
+  const showEffort = provider === 'anthropic';
+  const tier = modelTier(model);
+  const sortedModels = useMemo(
+    () => [...models].sort((a, b) => modelWeight(a) - modelWeight(b)),
+    [models],
+  );
+
   return (
-    <div
-      className={cn('flex flex-wrap items-center gap-1', disabled && 'opacity-60')}
-      title={disabled ? disabledTitle : undefined}
-    >
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen((v) => !v)}
+        disabled={disabled}
+        title={disabled ? disabledTitle : 'choose provider · model · effort'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-0.5 text-xs transition-colors hover:bg-muted',
+          disabled && 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <span className={cn('font-medium', PROVIDER_TEXT[provider])}>
+          {PROVIDER_LABEL[provider]}
+        </span>
+        <span aria-hidden className="text-muted-foreground/70">
+          ·
+        </span>
+        <span className={cn('font-medium', TIER_TEXT[tier])}>{modelLabel(model)}</span>
+        {showEffort ? (
+          <>
+            <span aria-hidden className="text-muted-foreground/70">
+              ·
+            </span>
+            <span className={EFFORT_TEXT[effort]}>{EFFORT_LABEL[effort].toLowerCase()}</span>
+          </>
+        ) : null}
+      </button>
+      {open ? (
+        <div
+          role="dialog"
+          aria-label="model & effort"
+          className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-background py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          <PickerSection label="provider">
+            {providers.map((id) => {
+              const isConnected = connectedProviders.includes(id);
+              return (
+                <PickerRow
+                  key={id}
+                  label={PROVIDER_LABEL[id]}
+                  active={provider === id}
+                  onClick={() => onSelectProvider(id)}
+                  labelClassName={isConnected ? PROVIDER_TEXT[id] : 'text-muted-foreground/60'}
+                  trailing={
+                    !isConnected ? (
+                      <span className="text-2xs text-warning">connect ↗</span>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
+          </PickerSection>
+          <PickerDivider />
+          <PickerSection label="model · cheapest first">
+            {sortedModels.map((id) => {
+              const t = modelTier(id);
+              return (
+                <PickerRow
+                  key={id}
+                  label={modelLabel(id)}
+                  active={model === id}
+                  onClick={() => onSelectModel(id)}
+                  leadingDot={TIER_DOT[t]}
+                  labelClassName={TIER_TEXT[t]}
+                />
+              );
+            })}
+          </PickerSection>
+          {showEffort ? (
+            <>
+              <PickerDivider />
+              <PickerSection label="effort">
+                {EFFORT_LEVELS.map((level) => (
+                  <PickerRow
+                    key={level}
+                    label={EFFORT_LABEL[level]}
+                    leadingDot={EFFORT_DOT[level]}
+                    active={effort === level}
+                    onClick={() => onSelectEffort(level)}
+                    labelClassName={EFFORT_TEXT[level]}
+                  />
+                ))}
+              </PickerSection>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PickerSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col">
+      <div className="px-2.5 pb-0.5 pt-1 text-2xs uppercase tracking-wide text-muted-foreground/70">
+        {label}
+      </div>
       {children}
     </div>
   );
 }
 
-function Chip({
+function PickerDivider() {
+  return <div className="my-1 h-px bg-border-soft" aria-hidden />;
+}
+
+function PickerRow({
   label,
   active,
   onClick,
-  disabled,
-  mono,
+  leadingDot,
+  labelClassName,
+  trailing,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
-  disabled?: boolean;
-  mono?: boolean;
+  leadingDot?: string;
+  labelClassName?: string;
+  trailing?: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
       className={cn(
-        'rounded-full px-2.5 py-0.5 text-xs normal-case motion-safe:transition-colors',
-        mono && 'font-mono',
-        active
-          ? 'bg-primary text-primary-foreground'
-          : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
-        disabled && 'cursor-not-allowed opacity-60',
+        'flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
+        active ? '' : 'opacity-80',
       )}
     >
-      {label}
+      {leadingDot ? (
+        <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', leadingDot)} />
+      ) : null}
+      <span className={cn('flex-1 truncate', labelClassName ?? 'text-muted-foreground')}>
+        {label}
+      </span>
+      {trailing}
+      {active ? (
+        <span aria-hidden className="text-2xs text-primary">
+          ✓
+        </span>
+      ) : null}
     </button>
   );
 }

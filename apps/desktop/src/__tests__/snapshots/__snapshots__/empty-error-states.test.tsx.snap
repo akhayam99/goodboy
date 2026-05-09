@@ -41,8 +41,8 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 
 exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
-  aria-describedby="_r_2_-desc"
-  aria-labelledby="_r_2_-title"
+  aria-describedby="_r_3_-desc"
+  aria-labelledby="_r_3_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -57,13 +57,13 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_2_-title"
+          id="_r_3_-title"
         >
           New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_2_-desc"
+          id="_r_3_-desc"
         >
           Creates a worktree on a fresh branch from the workspace root.
         </p>
@@ -92,6 +92,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
         >
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
+            title="goal is required"
             type="button"
           >
             <svg
@@ -127,7 +128,36 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               class="flex-1"
             >
               Goal
+              <span
+                aria-hidden="true"
+                class="ml-0.5 text-warning"
+              >
+                *
+              </span>
             </span>
+            <svg
+              aria-label="goal required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
           </button>
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -251,6 +281,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
           </button>
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            title="provider is required"
             type="button"
           >
             <svg
@@ -274,7 +305,36 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               class="flex-1"
             >
               Provider
+              <span
+                aria-hidden="true"
+                class="ml-0.5 text-warning"
+              >
+                *
+              </span>
             </span>
+            <svg
+              aria-label="provider required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
           </button>
         </nav>
         <div
@@ -289,9 +349,9 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               goal
             </span>
             <textarea
-              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
+              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
               placeholder="refactor auth domain"
-              style="height: 0px; overflow-y: hidden;"
+              style="height: 96px; overflow-y: hidden;"
             />
             <p
               class="text-xs leading-relaxed text-muted-foreground"
@@ -305,6 +365,34 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
     <footer
       class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
     >
+      <span
+        class="mr-auto inline-flex items-center gap-1 text-xs text-warning"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-triangle-alert"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="12"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+          />
+          <path
+            d="M12 9v4"
+          />
+          <path
+            d="M12 17h.01"
+          />
+        </svg>
+        complete: goal, provider
+      </span>
       <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
@@ -314,6 +402,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
       <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
         disabled=""
+        title="complete: goal, provider"
         type="button"
       >
         create session
@@ -464,6 +553,38 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         </span>
       </div>
       <button
+        aria-label="open getting started guide"
+        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        title="getting started — guide"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-question-mark"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="13"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <path
+            d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+          />
+          <path
+            d="M12 17h.01"
+          />
+        </svg>
+      </button>
+      <button
         aria-label="open settings"
         class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         title="settings (⌘,)"
@@ -498,10 +619,10 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] max-h-[40%] shrink-0"
   >
     <section
-      class="flex flex-col px-2 pb-2 pt-1"
+      class="flex flex-col px-2"
     >
       <header
-        class="flex items-baseline justify-between gap-2 px-2 pb-1.5"
+        class="flex items-baseline justify-between gap-2 pb-1.5"
       >
         <span
           class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
@@ -552,17 +673,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     </section>
   </div>
   <div
-    aria-hidden="true"
-    class="mx-3 my-5 h-px bg-border-soft"
-  />
-  <div
-    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] flex-1"
+    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] mt-8 flex-1"
   >
     <section
-      class="flex flex-col px-2 pt-2"
+      class="flex flex-col px-2"
     >
       <header
-        class="flex items-center justify-between gap-2 px-2 pb-1.5"
+        class="flex items-center justify-between gap-2 pb-1.5"
       >
         <span
           class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
@@ -641,14 +758,15 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     </button>
     <button
       aria-label="open pricing breakdown"
-      class="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
-      title="open pricing breakdown"
+      class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
+      title="session: $0
+workspace: $0"
       type="button"
     >
       <span
         class="font-medium"
       >
-        $0.0000
+        $0
       </span>
       <span
         class="text-muted-foreground"
@@ -664,12 +782,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       <span
         class="font-medium"
       >
-        $0.0000
-      </span>
-      <span
-        class="text-muted-foreground"
-      >
-        total
+        $0
       </span>
     </button>
     <dialog
@@ -919,34 +1032,517 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       </footer>
     </div>
   </dialog>
+  <dialog
+    aria-describedby="_r_2_-desc"
+    aria-labelledby="_r_2_-title"
+    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none"
+  >
+    <div
+      class="flex min-h-0 flex-col h-[640px] w-[56rem] max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none"
+    >
+      <header
+        class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1"
+        >
+          <h2
+            class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_2_-title"
+          >
+            Getting started
+          </h2>
+          <p
+            class="text-xs leading-relaxed text-muted-foreground"
+            id="_r_2_-desc"
+          >
+            how kAY.am, sessions, agents, and CLI providers fit together.
+          </p>
+        </div>
+        <button
+          aria-label="close"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="text-base leading-none"
+          >
+            ×
+          </span>
+        </button>
+      </header>
+      <div
+        class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+      >
+        <div
+          class="flex h-full min-h-0 gap-0"
+        >
+          <nav
+            class="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
+          >
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-book-open"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 7v14"
+                />
+                <path
+                  d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+                />
+              </svg>
+              <span>
+                Overview
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-git-branch"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 6a9 9 0 0 0-9 9V3"
+                />
+                <circle
+                  cx="18"
+                  cy="6"
+                  r="3"
+                />
+                <circle
+                  cx="6"
+                  cy="18"
+                  r="3"
+                />
+              </svg>
+              <span>
+                Sessions
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-messages-square"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                />
+                <path
+                  d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
+                />
+              </svg>
+              <span>
+                Turns
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-wrench"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+                />
+              </svg>
+              <span>
+                Tools
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-coins"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.744 17.736a6 6 0 1 1-7.48-7.48"
+                />
+                <path
+                  d="M15 6h1v4"
+                />
+                <path
+                  d="m6.134 14.768.866-.5 2 3.464"
+                />
+                <circle
+                  cx="16"
+                  cy="8"
+                  r="6"
+                />
+              </svg>
+              <span>
+                Tokens & cost
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-bot"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 8V4H8"
+                />
+                <rect
+                  height="12"
+                  rx="2"
+                  width="16"
+                  x="4"
+                  y="8"
+                />
+                <path
+                  d="M2 14h2"
+                />
+                <path
+                  d="M20 14h2"
+                />
+                <path
+                  d="M15 13v2"
+                />
+                <path
+                  d="M9 13v2"
+                />
+              </svg>
+              <span>
+                Agents
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-lightbulb"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+                />
+                <path
+                  d="M9 18h6"
+                />
+                <path
+                  d="M10 22h4"
+                />
+              </svg>
+              <span>
+                Tips
+              </span>
+            </button>
+          </nav>
+          <div
+            class="min-w-0 flex-1 overflow-y-auto pl-4 pr-1"
+          >
+            <article
+              class="flex flex-col gap-3 pb-6 text-sm leading-relaxed"
+            >
+              <h2
+                class="text-base font-semibold tracking-tight text-foreground"
+              >
+                What is kAY.am?
+              </h2>
+              <p
+                class="text-muted-foreground"
+              >
+                kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.
+              </p>
+              <p
+                class="text-sm leading-relaxed text-muted-foreground"
+              >
+                kAY.am does 
+                <strong
+                  class="font-semibold text-foreground"
+                >
+                  not
+                </strong>
+                 talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. That means: your usage, login, and quotas live in the CLI itself; kAY.am just adds the workspace layer on top.
+              </p>
+              <h3
+                class="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground/85"
+              >
+                Mental model
+              </h3>
+              <ul
+                class="flex flex-col gap-1.5"
+              >
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Workspace
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a git repo on disk. you can connect many.
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Session
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a chat with one goal, on its own git worktree + branch. like a feature branch with built-in chat.
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Agent
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    one provider/CLI invocation inside a session. a session may have several agents (e.g. one for planning, one for coding).
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Turn
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a single user → assistant exchange inside an agent. tools called inside count as the same turn.
+                  </span>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      >
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+          type="button"
+        >
+          close
+        </button>
+      </footer>
+    </div>
+  </dialog>
 </div>
 `;
 
 exports[`snapshot — error states > App init error — BootSplash with error message 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
+  class="relative flex h-screen flex-col items-center justify-center gap-6 overflow-hidden bg-background text-foreground"
 >
   <div
-    class="text-sm font-semibold tracking-tight"
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+  />
+  <div
+    class="flex flex-col items-center gap-3"
   >
-    kAY.am
+    <div
+      aria-hidden="true"
+      class="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-subtle ring-1 ring-border-soft"
+    >
+      <span
+        class="absolute inset-0 rounded-2xl motion-safe:animate-ping"
+      />
+      <span
+        class="relative font-semibold tracking-tight text-foreground"
+      >
+        k
+      </span>
+    </div>
+    <div
+      class="text-base font-semibold tracking-tight"
+    >
+      kAY.am
+    </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-2"
+    class="flex w-80 flex-col gap-2"
   >
-    <p
-      class="text-xs text-muted-foreground"
-    >
-      boot error
-    </p>
     <div
-      class="h-1 w-full overflow-hidden rounded-full bg-muted"
+      class="flex items-center justify-between text-2xs uppercase tracking-[0.08em] text-muted-foreground"
+    >
+      <span>
+        boot error
+      </span>
+      <span
+        class="font-mono text-muted-foreground/70"
+      >
+        0
+        %
+      </span>
+    </div>
+    <div
+      class="h-0.5 w-full overflow-hidden rounded-full bg-muted/60"
     >
       <div
-        class="h-full bg-primary motion-safe:transition-all"
+        class="h-full rounded-full bg-primary motion-safe:transition-all motion-safe:duration-500"
         style="width: 0%;"
       />
     </div>
+    <ul
+      class="mt-2 flex flex-col gap-0.5"
+    >
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          running database migrations…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          loading settings…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          detecting claude cli…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          loading workspaces…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          restoring last session…
+        </span>
+      </li>
+    </ul>
   </div>
   <div
     class="flex w-72 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4"
@@ -989,29 +1585,127 @@ exports[`snapshot — error states > App init error — BootSplash with error me
 
 exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
+  class="relative flex h-screen flex-col items-center justify-center gap-6 overflow-hidden bg-background text-foreground"
 >
   <div
-    class="text-sm font-semibold tracking-tight"
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+  />
+  <div
+    class="flex flex-col items-center gap-3"
   >
-    kAY.am
+    <div
+      aria-hidden="true"
+      class="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-subtle ring-1 ring-border-soft"
+    >
+      <span
+        class="absolute inset-0 rounded-2xl motion-safe:animate-ping"
+      />
+      <span
+        class="relative font-semibold tracking-tight text-foreground"
+      >
+        k
+      </span>
+    </div>
+    <div
+      class="text-base font-semibold tracking-tight"
+    >
+      kAY.am
+    </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-2"
+    class="flex w-80 flex-col gap-2"
   >
-    <p
-      class="text-xs text-muted-foreground"
-    >
-      boot error
-    </p>
     <div
-      class="h-1 w-full overflow-hidden rounded-full bg-muted"
+      class="flex items-center justify-between text-2xs uppercase tracking-[0.08em] text-muted-foreground"
+    >
+      <span>
+        boot error
+      </span>
+      <span
+        class="font-mono text-muted-foreground/70"
+      >
+        0
+        %
+      </span>
+    </div>
+    <div
+      class="h-0.5 w-full overflow-hidden rounded-full bg-muted/60"
     >
       <div
-        class="h-full bg-primary motion-safe:transition-all"
+        class="h-full rounded-full bg-primary motion-safe:transition-all motion-safe:duration-500"
         style="width: 0%;"
       />
     </div>
+    <ul
+      class="mt-2 flex flex-col gap-0.5"
+    >
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          running database migrations…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          loading settings…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          detecting claude cli…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          loading workspaces…
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-2 text-2xs text-muted-foreground/40"
+      >
+        <span
+          aria-hidden="true"
+          class="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+        />
+        <span
+          class="truncate"
+        >
+          restoring last session…
+        </span>
+      </li>
+    </ul>
   </div>
   <div
     class="flex w-72 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4"
@@ -1081,8 +1775,8 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
 
 exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 <dialog
-  aria-describedby="_r_4_-desc"
-  aria-labelledby="_r_4_-title"
+  aria-describedby="_r_5_-desc"
+  aria-labelledby="_r_5_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -1097,13 +1791,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_4_-title"
+          id="_r_5_-title"
         >
           End session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_4_-desc"
+          id="_r_5_-desc"
         >
           The worktree directory will be removed. The branch is preserved for manual merge.
         </p>
@@ -1156,8 +1850,8 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 
 exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
 <dialog
-  aria-describedby="_r_3_-desc"
-  aria-labelledby="_r_3_-title"
+  aria-describedby="_r_4_-desc"
+  aria-labelledby="_r_4_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -1172,13 +1866,13 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_3_-title"
+          id="_r_4_-title"
         >
           New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_3_-desc"
+          id="_r_4_-desc"
         >
           Creates a worktree on a fresh branch from the workspace root.
         </p>
@@ -1207,6 +1901,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         >
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
+            title="goal is required"
             type="button"
           >
             <svg
@@ -1242,7 +1937,36 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               class="flex-1"
             >
               Goal
+              <span
+                aria-hidden="true"
+                class="ml-0.5 text-warning"
+              >
+                *
+              </span>
             </span>
+            <svg
+              aria-label="goal required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
           </button>
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -1366,6 +2090,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           </button>
           <button
             class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            title="provider is required"
             type="button"
           >
             <svg
@@ -1389,7 +2114,36 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               class="flex-1"
             >
               Provider
+              <span
+                aria-hidden="true"
+                class="ml-0.5 text-warning"
+              >
+                *
+              </span>
             </span>
+            <svg
+              aria-label="provider required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
           </button>
         </nav>
         <div
@@ -1404,9 +2158,9 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               goal
             </span>
             <textarea
-              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
+              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
               placeholder="refactor auth domain"
-              style="height: 0px; overflow-y: hidden;"
+              style="height: 96px; overflow-y: hidden;"
             />
             <p
               class="text-xs leading-relaxed text-muted-foreground"
@@ -1420,6 +2174,34 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
     <footer
       class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
     >
+      <span
+        class="mr-auto inline-flex items-center gap-1 text-xs text-warning"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-triangle-alert"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="12"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+          />
+          <path
+            d="M12 9v4"
+          />
+          <path
+            d="M12 17h.01"
+          />
+        </svg>
+        complete: goal, provider
+      </span>
       <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
@@ -1429,6 +2211,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
         disabled=""
+        title="complete: goal, provider"
         type="button"
       >
         create session

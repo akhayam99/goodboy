@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { BootPhase } from '../store';
 import { openUrl } from '../editor';
+import { cn as uiCn } from '@kay-am/ui';
 
 const PHASE_LABEL: Record<BootPhase, string> = {
   pending: 'starting…',
@@ -124,21 +125,78 @@ function BootErrorRecovery({
 export function BootSplash({ phase, error, onRetry, onSkipProviderDetection }: BootSplashProps) {
   const idx = PHASE_ORDER.indexOf(phase);
   const total = PHASE_ORDER.length;
+  const progressPct = phase === 'ready' ? 100 : Math.max(0, (idx / total) * 100);
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-foreground">
-      <div className="text-sm font-semibold tracking-tight">kAY.am</div>
-      <div className="flex w-72 flex-col gap-2">
-        <p className="text-xs text-muted-foreground">{PHASE_LABEL[phase]}</p>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+    <div className="relative flex h-screen flex-col items-center justify-center gap-6 overflow-hidden bg-background text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 35%, oklch(from var(--color-primary) l c h / 0.10) 0%, transparent 55%)',
+        }}
+      />
+
+      <div className="flex flex-col items-center gap-3">
+        <div
+          aria-hidden
+          className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-subtle ring-1 ring-border-soft"
+        >
+          <span
+            className="absolute inset-0 rounded-2xl motion-safe:animate-ping"
+            style={{ background: 'oklch(from var(--color-primary) l c h / 0.15)' }}
+          />
+          <span className="relative font-semibold tracking-tight text-foreground">k</span>
+        </div>
+        <div className="text-base font-semibold tracking-tight">kAY.am</div>
+      </div>
+
+      <div className="flex w-80 flex-col gap-2">
+        <div className="flex items-center justify-between text-2xs uppercase tracking-[0.08em] text-muted-foreground">
+          <span>{PHASE_LABEL[phase]}</span>
+          <span className="font-mono text-muted-foreground/70">{Math.round(progressPct)}%</span>
+        </div>
+        <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted/60">
           <div
-            className="h-full bg-primary motion-safe:transition-all"
-            style={{
-              width: phase === 'ready' ? '100%' : `${Math.max(0, (idx / total) * 100)}%`,
-            }}
+            className="h-full rounded-full bg-primary motion-safe:transition-all motion-safe:duration-500"
+            style={{ width: `${progressPct}%` }}
           />
         </div>
+        <ul className="mt-2 flex flex-col gap-0.5">
+          {PHASE_ORDER.map((p, i) => {
+            const done = i < idx || phase === 'ready';
+            const active = i === idx && phase !== 'ready';
+            return (
+              <li
+                key={p}
+                className={uiCn(
+                  'flex items-center gap-2 text-2xs',
+                  done
+                    ? 'text-success/80'
+                    : active
+                      ? 'text-foreground'
+                      : 'text-muted-foreground/40',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={uiCn(
+                    'inline-block h-1.5 w-1.5 rounded-full',
+                    done
+                      ? 'bg-success'
+                      : active
+                        ? 'bg-primary motion-safe:animate-pulse'
+                        : 'bg-muted-foreground/30',
+                  )}
+                />
+                <span className="truncate">{PHASE_LABEL[p]}</span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
+
       {error ? (
         <BootErrorRecovery
           error={error}

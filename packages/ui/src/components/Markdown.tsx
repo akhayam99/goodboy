@@ -252,14 +252,53 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
   while (i < input.length) {
     const ch = input[i];
 
-    // Inline code: `...`
+    // Inline ctx marker: <<tag>> (standalone, no body — full callouts handled at block level).
+    if (ch === '<' && input[i + 1] === '<') {
+      const close = input.indexOf('>>', i + 2);
+      if (close > i) {
+        const inner = input.slice(i + 2, close);
+        if (/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(inner)) {
+          flush();
+          const label = inner.replace(/^ctx-?/i, '') || inner;
+          out.push(
+            <span
+              key={nextKey()}
+              className="mx-0.5 inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide text-primary"
+            >
+              {label}
+            </span>,
+          );
+          i = close + 2;
+          continue;
+        }
+      }
+    }
+
+    // Inline code: `...` (skip if it just wraps a <<tag>> marker — render as chip instead).
     if (ch === '`') {
       const end = input.indexOf('`', i + 1);
       if (end > i) {
+        const inner = input.slice(i + 1, end);
+        const ctxMatch = inner.match(/^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/);
+        if (ctxMatch) {
+          flush();
+          const tag = ctxMatch[1]!;
+          const label = tag.replace(/^ctx-?/i, '') || tag;
+          out.push(
+            <span
+              key={nextKey()}
+              className="mx-0.5 inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide text-primary"
+            >
+              {label}
+            </span>,
+          );
+          i = end + 1;
+          continue;
+        }
         flush();
         out.push(
           <code key={nextKey()} className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em]">
-            {input.slice(i + 1, end)}
+            {inner}
           </code>,
         );
         i = end + 1;

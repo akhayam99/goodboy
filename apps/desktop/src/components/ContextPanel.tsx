@@ -170,13 +170,13 @@ function SummarizerBadge({
   lastUpdate: string | null;
   error: string | null;
 }) {
-  const styles: Record<SummarizerStatusKind, string> = {
-    idle: 'bg-muted text-muted-foreground',
+  // hide when idle — no useful info, just visual noise.
+  if (status === 'idle') return null;
+  const styles: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
     running: 'bg-info/10 text-info',
     error: 'bg-danger/10 text-danger',
   };
-  const labels: Record<SummarizerStatusKind, string> = {
-    idle: 'idle',
+  const labels: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
     running: 'summarizing…',
     error: 'error',
   };
@@ -185,7 +185,7 @@ function SummarizerBadge({
       ? `last error: ${error}`
       : lastUpdate
         ? `last update: ${lastUpdate}`
-        : 'no summarizer run yet — runs after each turn when an api key is set';
+        : 'summarizer running';
   return (
     <span
       title={tooltip}

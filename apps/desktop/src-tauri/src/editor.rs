@@ -68,7 +68,32 @@ impl serde::Serialize for EditorError {
 pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
 
-    match Command::new(&binary).arg(&path).spawn() {
+    // On macOS, cursor's CLI shim opens paths inside the current window which can
+    // resolve to a single file rather than the workspace folder. Use `open -a Cursor`
+    // when targeting a directory so the folder loads as a workspace.
+    #[cfg(target_os = "macos")]
+    {
+        if binary == "cursor" && std::path::Path::new(&path).is_dir() {
+            return match Command::new("open")
+                .args(["-a", "Cursor", "-n", &path])
+                .spawn()
+            {
+                Ok(_) => Ok(()),
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                    Err(EditorError::NotFound(binary))
+                }
+                Err(source) => Err(EditorError::Spawn { binary, source }),
+            };
+        }
+    }
+
+    let mut cmd = Command::new(&binary);
+    if binary == "cursor" || binary == "code" {
+        cmd.arg("--new-window");
+    }
+    cmd.arg(&path);
+
+    match cmd.spawn() {
         Ok(_) => Ok(()),
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
             Err(EditorError::NotFound(binary))

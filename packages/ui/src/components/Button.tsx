@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
 export type ButtonSize = 'sm' | 'md';
 
 export interface ButtonProps extends Omit<ComponentProps<'button'>, 'type'> {
@@ -15,6 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'bg-muted text-foreground hover:bg-muted/70 border-border',
   ghost: 'text-foreground hover:bg-muted',
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90',
+  warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
