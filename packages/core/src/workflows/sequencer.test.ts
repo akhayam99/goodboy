@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Step, Session, Workflow } from '@kay-am/types';
-import { buildStepPrompt, isWorkflowComplete, nextStep } from './sequencer';
+import {
+  buildStepPrompt,
+  currentStep,
+  findReusableSession,
+  isWorkflowComplete,
+  nextStep,
+} from './sequencer';
 
 const D1: Step = {
   id: 'd1' as Step['id'],
@@ -36,14 +42,20 @@ const TEMPLATE: Workflow = {
   updatedAt: '2024-01-01T00:00:00.000Z' as Workflow['updatedAt'],
 };
 
-function makeRun(defId: string, status: Session['status'], ordinal: number): Session {
+function makeRun(
+  defId: string,
+  status: Session['status'],
+  ordinal: number,
+  startedAt?: string,
+): Session {
   return {
-    id: `run-${defId}` as Session['id'],
+    id: `run-${defId}-${startedAt ?? '0'}` as Session['id'],
     taskId: 's1' as Session['taskId'],
     stepId: defId as Session['stepId'],
     ordinal,
     name: `run for ${defId}`,
     status,
+    ...(startedAt && { startedAt: startedAt as Session['startedAt'] }),
   };
 }
 
@@ -155,6 +167,67 @@ describe('isWorkflowComplete', () => {
       makeRun('d3', 'pending', 3),
     ];
     expect(isWorkflowComplete(TEMPLATE, runs)).toBe(false);
+  });
+});
+
+describe('currentStep', () => {
+  it('returns first step on cold start (no runs)', () => {
+    expect(currentStep(TEMPLATE, [])).toBe(D1);
+  });
+
+  it('returns the step with a running run', () => {
+    const runs = [makeRun('d2', 'running', 2, '2026-01-02T00:00:00Z')];
+    expect(currentStep(TEMPLATE, runs)).toBe(D2);
+  });
+
+  it('stays on a completed step until user spawns a new agent', () => {
+    // The auto-advance behavior of nextStep would have skipped to D2 here.
+    // currentStep keeps the user on the most recent run regardless of status.
+    const runs = [makeRun('d1', 'completed', 1, '2026-01-01T00:00:00Z')];
+    expect(currentStep(TEMPLATE, runs)).toBe(D1);
+  });
+
+  it('prefers a non-terminal run over a more recent completed one', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1, '2026-01-03T00:00:00Z'),
+      makeRun('d2', 'failed', 2, '2026-01-02T00:00:00Z'),
+    ];
+    expect(currentStep(TEMPLATE, runs)).toBe(D2);
+  });
+
+  it('picks the most recent run by startedAt when several are non-terminal', () => {
+    const runs = [
+      makeRun('d1', 'running', 1, '2026-01-01T00:00:00Z'),
+      makeRun('d2', 'running', 2, '2026-01-02T00:00:00Z'),
+    ];
+    expect(currentStep(TEMPLATE, runs)).toBe(D2);
+  });
+
+  it('falls back to first step when template empty', () => {
+    expect(currentStep({ ...TEMPLATE, steps: [] }, [])).toBeNull();
+  });
+});
+
+describe('findReusableSession', () => {
+  it('returns null when no run exists for the step', () => {
+    expect(findReusableSession([], 'd1' as Step['id'])).toBeNull();
+  });
+
+  it('returns the only matching run', () => {
+    const run = makeRun('d1', 'idle' as Session['status'], 1, '2026-01-01T00:00:00Z');
+    expect(findReusableSession([run], 'd1' as Step['id'])).toBe(run);
+  });
+
+  it('returns the most recently started run for the step', () => {
+    const older = makeRun('d1', 'completed', 1, '2026-01-01T00:00:00Z');
+    const newer = makeRun('d1', 'running', 1, '2026-01-02T00:00:00Z');
+    expect(findReusableSession([older, newer], 'd1' as Step['id'])).toBe(newer);
+  });
+
+  it('ignores runs for other steps', () => {
+    const a = makeRun('d1', 'completed', 1, '2026-01-02T00:00:00Z');
+    const b = makeRun('d2', 'running', 2, '2026-01-01T00:00:00Z');
+    expect(findReusableSession([a, b], 'd2' as Step['id'])).toBe(b);
   });
 });
 
