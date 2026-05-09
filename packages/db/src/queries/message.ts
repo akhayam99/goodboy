@@ -3,14 +3,14 @@ import type {
   Message,
   MessageId,
   MessageRole,
-  SessionId,
+  TaskId,
   TurnProviderOverride,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface MessageRow {
   id: string;
-  session_id: string;
+  task_id: string;
   role: MessageRole;
   content: string;
   created_at: number;
@@ -29,7 +29,7 @@ function toDomain(row: MessageRow): Message {
 
   return {
     id: row.id as MessageId,
-    sessionId: row.session_id as SessionId,
+    taskId: row.task_id as TaskId,
     role: row.role,
     content: row.content,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -40,11 +40,11 @@ function toDomain(row: MessageRow): Message {
 export async function insertMessage(db: Database, message: Message): Promise<void> {
   await db.execute(
     `INSERT INTO messages
-      (id, session_id, role, content, created_at, provider_override_id, provider_override_model)
+      (id, task_id, role, content, created_at, provider_override_id, provider_override_model)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       message.id,
-      message.sessionId,
+      message.taskId,
       message.role,
       message.content,
       Date.parse(message.createdAt),
@@ -54,13 +54,13 @@ export async function insertMessage(db: Database, message: Message): Promise<voi
   );
 }
 
-export async function listMessagesForSession(
+export async function listMessagesForTask(
   db: Database,
-  sessionId: SessionId,
+  taskId: TaskId,
 ): Promise<ReadonlyArray<Message>> {
   const rows = await db.select<MessageRow>(
-    'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
-    [sessionId],
+    'SELECT * FROM messages WHERE task_id = ? ORDER BY created_at ASC',
+    [taskId],
   );
   return rows.map(toDomain);
 }

@@ -12,15 +12,15 @@ export {
   deleteWorkspace,
 } from './queries/workspace';
 export {
-  insertSession,
-  updateSessionState,
-  getSessionById,
-  listSessionsForWorkspace,
-  renameSession,
-  deleteSession,
-} from './queries/session';
-export { insertMessage, listMessagesForSession } from './queries/message';
-export { upsertContextSlot, listContextSlotsForSession } from './queries/context-slot';
+  insertTask,
+  updateTaskState,
+  getTaskById,
+  listTasksForWorkspace,
+  renameTask,
+  deleteTask,
+} from './queries/task';
+export { insertMessage, listMessagesForTask } from './queries/message';
+export { upsertContextSlot, listContextSlotsForTask } from './queries/context-slot';
 export {
   insertProviderRun,
   updateProviderRunStatus,
@@ -28,8 +28,8 @@ export {
 } from './queries/provider-run';
 export {
   insertTelemetry,
-  listTelemetryForSession,
-  summarizeSessionTelemetry,
+  listTelemetryForTask,
+  summarizeTaskTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeProviderTelemetry,
   summarizeWorkspaceProviderTelemetry,
@@ -41,8 +41,8 @@ export {
   insertBudgetRule,
   listBudgetRules,
   deleteBudgetRule,
-  upsertSessionBudget,
-  getSessionBudget,
+  upsertTaskBudget,
+  getTaskBudget,
   insertBudgetAlert,
   listBudgetAlerts,
   dismissBudgetAlert,
@@ -55,23 +55,14 @@ export {
   deleteSkill,
   deleteSkillsForWorkspace,
 } from './queries/skill';
+export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
+export { listSessionsForTask, insertSession, updateSessionStatus } from './queries/session';
 export {
-  listPhaseTemplates,
-  getPhaseTemplate,
-  upsertPhaseTemplate,
-  deletePhaseTemplate,
-} from './queries/phase-templates';
-export {
-  listPhaseRunsForSession,
-  insertPhaseRun,
-  updatePhaseRunStatus,
-} from './queries/phase-runs';
-export {
-  insertSessionWorktree,
-  listWorktreesForSession,
-  deleteWorktreesForSession,
-  type SessionWorktree,
-} from './queries/session-worktrees';
+  insertTaskWorktree,
+  listWorktreesForTask,
+  deleteWorktreesForTask,
+  type TaskWorktree,
+} from './queries/task-worktree';
 export {
   enqueueAuditRetry,
   drainOldest,
@@ -81,14 +72,14 @@ export {
 } from './queries/permission-audit-retry';
 export {
   insertGroup,
-  listGroupsForSession,
+  listGroupsForTask,
   getGroupById,
   deleteGroup,
   updateGroupCompletedAt,
-} from './queries/parallel-phases';
+} from './queries/parallel-group';
 export {
   getWorkspaceOverrides,
   setWorkspaceOverrides,
-  getSessionOverrides,
-  setSessionOverrides,
+  getTaskOverrides,
+  setTaskOverrides,
 } from './queries/settings-overrides';
