@@ -11,9 +11,9 @@ export interface AppShellProps {
   className?: string;
 }
 
-const LEFT_SIDEBAR_WIDTH = '260px';
-const RIGHT_SIDEBAR_WIDTH = '320px';
-const RIGHT_RAIL_WIDTH = '36px';
+const LEFT_SIDEBAR_WIDTH = '280px';
+const RIGHT_SIDEBAR_WIDTH = '340px';
+const RIGHT_RAIL_WIDTH = '40px';
 
 function buildLayout(opts: { collapsed: boolean; hasRightSidebar: boolean; hasFooter: boolean }): {
   templateAreas: string;
@@ -70,13 +70,13 @@ export function AppShell({
         style={gridStyle}
       >
         <header
-          className="flex h-9 min-w-0 items-center border-b border-border bg-background px-3 text-sm"
+          className="flex h-11 min-w-0 items-center border-b border-border-soft bg-background px-4 text-sm"
           style={{ gridArea: 'header' }}
         >
           {header}
         </header>
         <aside
-          className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-border bg-subtle"
+          className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-subtle"
           style={{ gridArea: 'left' }}
         >
           {leftSidebar}
@@ -89,7 +89,7 @@ export function AppShell({
         </main>
         {hasRightSidebar ? (
           <aside
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden border-l border-border bg-background"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
             style={{ gridArea: 'right' }}
           >
             {rightSidebar}
@@ -97,7 +97,7 @@ export function AppShell({
         ) : null}
         {footer ? (
           <footer
-            className="flex h-6 min-w-0 items-center border-t border-border bg-subtle px-3 font-mono text-xs text-muted-foreground"
+            className="flex h-7 min-w-0 items-center border-t border-border-soft bg-subtle px-4 font-mono text-xs text-muted-foreground"
             style={{ gridArea: 'footer' }}
           >
             {footer}
