@@ -1,0 +1,122 @@
+import Database from 'better-sqlite3';
+import { describe, expect, it } from 'vitest';
+import { migrate, type Database as DbInterface } from '@kay-am/db';
+import type { TaskId, WorkspaceId } from '@kay-am/types';
+import { autoPopulateContext } from './auto-populate';
+import { ContextEngine } from './engine';
+
+function makeDb(): DbInterface {
+  const db = new Database(':memory:');
+  db.pragma('foreign_keys = ON');
+  return {
+    async exec(sql) {
+      db.exec(sql);
+    },
+    async execute(sql, params = []) {
+      const stmt = db.prepare(sql);
+      const result = stmt.run(...(params as ReadonlyArray<never>));
+      return { rowsAffected: result.changes };
+    },
+    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
+      const stmt = db.prepare(sql);
+      return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
+    },
+  };
+}
+
+async function seedTask(db: DbInterface, taskId: TaskId): Promise<void> {
+  const workspaceId = 'ws_ap' as WorkspaceId;
+  await db.execute(
+    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    [workspaceId, 'demo', '/tmp/demo', 0, 0],
+  );
+  await db.execute(
+    `INSERT INTO tasks
+       (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [taskId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
+  );
+}
+
+describe('autoPopulateContext', () => {
+  it('persists files_touched + decisions + open_questions in one pass', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const taskId = 'task_ap_1' as TaskId;
+    await seedTask(db, taskId);
+
+    const result = await autoPopulateContext({
+      db,
+      taskId,
+      filesEdited: ['src/auth.ts', 'src/db.ts'],
+      assistantText: `
+        scoped out the auth domain.
+        <<ctx-decision>>switching to OAuth2 PKCE<</ctx-decision>>
+        <<ctx-question>>do we still support legacy session cookies?<</ctx-question>>
+      `,
+    });
+
+    expect(result.updatedSlots).toEqual(['files_touched', 'decisions', 'open_questions']);
+
+    const engine = new ContextEngine({ db });
+    const slots = await engine.load(taskId);
+    expect(slots.find((s) => s.key === 'files_touched')?.value).toBe('src/auth.ts\nsrc/db.ts');
+    expect(slots.find((s) => s.key === 'decisions')?.value).toBe('switching to OAuth2 PKCE');
+    expect(slots.find((s) => s.key === 'open_questions')?.value).toBe(
+      'do we still support legacy session cookies?',
+    );
+  });
+
+  it('merges into existing slots without duplicating', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const taskId = 'task_ap_2' as TaskId;
+    await seedTask(db, taskId);
+    const engine = new ContextEngine({ db });
+    await engine.upsert(taskId, 'files_touched', 'src/auth.ts');
+
+    await autoPopulateContext({
+      db,
+      taskId,
+      filesEdited: ['src/auth.ts', 'src/oauth.ts'],
+      assistantText: '',
+    });
+
+    const slots = await engine.load(taskId);
+    expect(slots.find((s) => s.key === 'files_touched')?.value).toBe('src/auth.ts\nsrc/oauth.ts');
+  });
+
+  it('reports empty updatedSlots when nothing changes', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const taskId = 'task_ap_3' as TaskId;
+    await seedTask(db, taskId);
+
+    const result = await autoPopulateContext({
+      db,
+      taskId,
+      filesEdited: [],
+      assistantText: 'just plain prose, no markers',
+    });
+
+    expect(result.updatedSlots).toEqual([]);
+  });
+
+  it('skips slots whose additions are all duplicates', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const taskId = 'task_ap_4' as TaskId;
+    await seedTask(db, taskId);
+    const engine = new ContextEngine({ db });
+    await engine.upsert(taskId, 'decisions', 'use sqlite');
+
+    const result = await autoPopulateContext({
+      db,
+      taskId,
+      filesEdited: [],
+      assistantText: '<<ctx-decision>>use sqlite<</ctx-decision>>',
+    });
+
+    expect(result.updatedSlots).toEqual([]);
+  });
+});

@@ -8,3 +8,9 @@ export {
   SLOT_LABELS,
   type SlotKey,
 } from './slots';
+export { extractFilesTouched, extractMarkers, mergeIntoSlot } from './extractors';
+export {
+  autoPopulateContext,
+  type AutoPopulateInput,
+  type AutoPopulateResult,
+} from './auto-populate';
