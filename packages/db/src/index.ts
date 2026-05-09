@@ -25,7 +25,12 @@ export {
   listTurnEventsForAgent,
   listTurnEventsForTask,
 } from './queries/turn-event';
-export { upsertContextSlot, listContextSlotsForTask } from './queries/context-slot';
+export {
+  upsertContextSlot,
+  listContextSlotsForTask,
+  insertContextSlotHistory,
+  listContextSlotHistory,
+} from './queries/context-slot';
 export {
   insertProviderRun,
   updateProviderRunStatus,

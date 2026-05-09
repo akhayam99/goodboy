@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { PanelRightClose, PanelRightOpen } from 'lucide-react';
-import { ScrollArea, Textarea, cn } from '@kay-am/ui';
+import { useEffect, useState, useCallback } from 'react';
+import { PanelRightClose, PanelRightOpen, History, RotateCcw } from 'lucide-react';
+import { ScrollArea, Textarea, Dialog, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
-import type { ContextSlot, Task } from '@kay-am/types';
-import { useAppStore, useSessionSlots, useSummarizerStatus } from '../store';
+import type { ContextSlot, ContextSlotHistoryEntry, Task, TaskId } from '@kay-am/types';
+import { useAppStore, useSessionSlots, useSlotHistory, useSummarizerStatus } from '../store';
 
 interface ContextPanelProps {
   session: Task;
@@ -85,6 +85,7 @@ export function ContextPanel({
             return (
               <SlotRow
                 key={key}
+                taskId={session.id}
                 slotKey={key}
                 slot={slot}
                 onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
@@ -98,15 +99,20 @@ export function ContextPanel({
 }
 
 interface SlotRowProps {
+  taskId: TaskId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   onCommit: (value: string) => void;
 }
 
-function SlotRow({ slotKey, slot, onCommit }: SlotRowProps) {
+function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
   const value = slot?.value ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
+  const history = useSlotHistory(taskId, slotKey);
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -117,11 +123,35 @@ function SlotRow({ slotKey, slot, onCommit }: SlotRowProps) {
     if (draft !== value) onCommit(draft);
   };
 
+  const openHistory = useCallback(() => {
+    void loadSlotHistory(taskId, slotKey);
+    setHistoryOpen(true);
+  }, [loadSlotHistory, taskId, slotKey]);
+
+  const restore = useCallback(
+    (entry: ContextSlotHistoryEntry) => {
+      onCommit(entry.value);
+      setHistoryOpen(false);
+    },
+    [onCommit],
+  );
+
   return (
     <li className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {SLOT_LABELS[slotKey]}
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {SLOT_LABELS[slotKey]}
+        </label>
+        <button
+          type="button"
+          onClick={openHistory}
+          title="view history"
+          aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
+          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <History size={11} aria-hidden />
+        </button>
+      </div>
 
       {editing ? (
         <Textarea
@@ -157,8 +187,80 @@ function SlotRow({ slotKey, slot, onCommit }: SlotRowProps) {
           )}
         </button>
       )}
+
+      <SlotHistoryDialog
+        label={SLOT_LABELS[slotKey]}
+        open={historyOpen}
+        entries={history}
+        onRestore={restore}
+        onClose={() => setHistoryOpen(false)}
+      />
     </li>
   );
+}
+
+interface SlotHistoryDialogProps {
+  label: string;
+  open: boolean;
+  entries: ReadonlyArray<ContextSlotHistoryEntry>;
+  onRestore: (entry: ContextSlotHistoryEntry) => void;
+  onClose: () => void;
+}
+
+function SlotHistoryDialog({ label, open, entries, onRestore, onClose }: SlotHistoryDialogProps) {
+  return (
+    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="sm">
+      {entries.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">no history yet</p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-2.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide',
+                    entry.author === 'user' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
+                  )}
+                >
+                  {entry.author === 'user' ? 'you' : 'ai'}
+                </span>
+                <span className="text-2xs text-muted-foreground">
+                  {formatRelative(entry.createdAt)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRestore(entry)}
+                  title="restore this version"
+                  aria-label="restore"
+                  className="ml-auto flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <RotateCcw size={10} aria-hidden />
+                  restore
+                </button>
+              </div>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground line-clamp-4">
+                {entry.value}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Dialog>
+  );
+}
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function SummarizerBadge({
@@ -170,7 +272,6 @@ function SummarizerBadge({
   lastUpdate: string | null;
   error: string | null;
 }) {
-  // hide when idle — no useful info, just visual noise.
   if (status === 'idle') return null;
   const styles: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
     running: 'bg-info/10 text-info',
