@@ -88,6 +88,8 @@ export {
 
 export {
   buildStepPrompt,
+  currentStep,
+  findReusableSession,
   isWorkflowComplete,
   nextStep,
   WorkflowPropagator,

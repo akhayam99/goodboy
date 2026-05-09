@@ -5,7 +5,8 @@ import {
   PermissionEngine,
   buildClaudeFlags,
   buildStepPrompt,
-  nextStep,
+  currentStep,
+  findReusableSession,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
@@ -1036,7 +1037,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: freshRuns },
         }));
-        const nextDef = nextStep(template, freshRuns);
+        // Resolve the step the next turn should land on. Auto-advance is gone:
+        // currentStep keeps the agent on its current role until the user
+        // explicitly spawns a new agent (future PR). Multiple turns now stack
+        // on the same Session row instead of inserting a fresh row per message.
+        const nextDef = currentStep(template, freshRuns);
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
@@ -1048,7 +1053,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const prevRun = prevDef
             ? (freshRuns.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
             : null;
-          if (prevDef && prevRun) {
+          // Carry-forward + transition event only fire on the *first* turn of a
+          // step. Subsequent iterations on the same step skip both, so the
+          // prompt isn't bloated by duplicating the previous step's summary on
+          // every message and the transcript doesn't show a phantom step
+          // transition mid-conversation.
+          const isFirstTurnOfStep = !freshRuns.some((r) => r.stepId === nextDef.id);
+          if (prevDef && prevRun && isFirstTurnOfStep) {
             const propagator = new WorkflowPropagator({
               summarizer: { summarizePhaseOutput: async (text) => text },
             });
@@ -1193,16 +1204,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     let sessionId: SessionId | null = null;
     if (phaseDefinition && parallelDispatch === null) {
-      const inserted = await invokePhaseRunInsert({
-        taskId,
-        stepId: phaseDefinition.id,
-        ordinal: phaseDefinition.ordinal,
-        name: phaseDefinition.name,
-        status: 'running',
-        providerRunId: runId,
-        startedAt: now(),
-      });
-      sessionId = inserted.id;
+      // Reuse the existing Session row for this step if one already exists.
+      // Agent-multi-turn: every turn flips the same row to running and points
+      // it at the new providerRunId, instead of inserting a fresh row per
+      // user message. New rows only appear when the user spawns a new agent.
+      const runsForTask = get().sessionPhaseRuns[taskId] ?? [];
+      const reusable = findReusableSession(runsForTask, phaseDefinition.id);
+      let resolved: Session;
+      if (reusable) {
+        resolved = await invokePhaseRunUpdateStatus(reusable.id, {
+          status: 'running',
+          providerRunId: runId,
+          startedAt: now(),
+        });
+      } else {
+        resolved = await invokePhaseRunInsert({
+          taskId,
+          stepId: phaseDefinition.id,
+          ordinal: phaseDefinition.ordinal,
+          name: phaseDefinition.name,
+          status: 'running',
+          providerRunId: runId,
+          startedAt: now(),
+        });
+      }
+      sessionId = resolved.id;
       const refreshedRuns = await invokePhaseRunList(taskId);
       set((state) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
