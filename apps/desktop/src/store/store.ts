@@ -1776,6 +1776,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       throw new Error(check.error ?? 'not a git repository');
     }
     const resolvedRoot = check.rootPath;
+
+    // Surface a friendly error if the repo is already registered, instead of leaking
+    // SQLite's UNIQUE constraint violation as `[object Object]` to the dialog.
+    const existing = get().workspaces.find((w) => w.rootPath === resolvedRoot);
+    if (existing) {
+      throw new Error(`workspace already exists: ${existing.name}`);
+    }
+
     const inferredName =
       name?.trim() || resolvedRoot.split('/').filter(Boolean).at(-1) || 'workspace';
     const now = new Date().toISOString() as IsoDateTime;
@@ -1786,7 +1794,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
       createdAt: now,
       updatedAt: now,
     };
-    await insertWorkspace(tauriDatabase, workspace);
+    try {
+      await insertWorkspace(tauriDatabase, workspace);
+    } catch (err) {
+      // Tauri serializes Rust errors as `{kind, message}`. Without normalization the dialog
+      // surfaces "[object Object]" because plain objects stringify to that.
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : String(err);
+      if (msg.toLowerCase().includes('unique')) {
+        throw new Error(`workspace already exists at ${resolvedRoot}`);
+      }
+      throw new Error(`failed to register workspace: ${msg}`);
+    }
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
 
     // Seed default workflow library so the new-task wizard always has presets.

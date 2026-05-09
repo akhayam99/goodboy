@@ -11,7 +11,7 @@ use crate::db::{Db, DbError};
 pub struct StepRow {
     pub id: String,
     #[serde(rename = "workflowId")]
-    pub template_id: String,
+    pub workflow_id: String,
     pub ordinal: i64,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -29,7 +29,7 @@ pub struct WorkflowRow {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    pub definitions: Vec<StepRow>,
+    pub steps: Vec<StepRow>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -56,7 +56,7 @@ pub struct PhaseTemplateUpsertInput {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    pub definitions: Vec<StepInput>,
+    pub steps: Vec<StepInput>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -169,20 +169,20 @@ impl From<DbError> for PhaseError {
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn load_definitions(
+fn load_steps(
     conn: &rusqlite::Connection,
-    template_id: &str,
+    workflow_id: &str,
 ) -> Result<Vec<StepRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, template_id, ordinal, name, prompt_prefix, provider_override, model_override
+        "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override
          FROM steps
-         WHERE template_id = ?1
+         WHERE workflow_id = ?1
          ORDER BY ordinal ASC",
     )?;
-    let rows = stmt.query_map(rusqlite::params![template_id], |row| {
+    let rows = stmt.query_map(rusqlite::params![workflow_id], |row| {
         Ok(StepRow {
             id: row.get(0)?,
-            template_id: row.get(1)?,
+            workflow_id: row.get(1)?,
             ordinal: row.get(2)?,
             name: row.get(3)?,
             prompt_prefix: row.get(4)?,
@@ -202,13 +202,13 @@ fn row_to_template(
     created_at: String,
     updated_at: String,
 ) -> Result<WorkflowRow, rusqlite::Error> {
-    let definitions = load_definitions(conn, &id)?;
+    let steps = load_steps(conn, &id)?;
     Ok(WorkflowRow {
         id,
         workspace_id,
         name,
         description,
-        definitions,
+        steps,
         created_at,
         updated_at,
     })
@@ -341,18 +341,18 @@ pub fn workflow_upsert(
         ],
     )?;
 
-    // Replace definitions atomically.
+    // Replace steps atomically.
     conn.execute(
-        "DELETE FROM steps WHERE template_id = ?1",
+        "DELETE FROM steps WHERE workflow_id = ?1",
         rusqlite::params![id],
     )?;
 
-    let mut definitions = Vec::with_capacity(input.definitions.len());
-    for def in &input.definitions {
+    let mut steps = Vec::with_capacity(input.steps.len());
+    for def in &input.steps {
         let def_id = def.id.clone().unwrap_or_else(uuid_v4);
         conn.execute(
             "INSERT INTO steps
-               (id, template_id, ordinal, name, prompt_prefix, provider_override, model_override)
+               (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             rusqlite::params![
                 def_id,
@@ -364,9 +364,9 @@ pub fn workflow_upsert(
                 def.model_override,
             ],
         )?;
-        definitions.push(StepRow {
+        steps.push(StepRow {
             id: def_id,
-            template_id: id.clone(),
+            workflow_id: id.clone(),
             ordinal: def.ordinal,
             name: def.name.clone(),
             prompt_prefix: def.prompt_prefix.clone(),
@@ -380,7 +380,7 @@ pub fn workflow_upsert(
         workspace_id: input.workspace_id,
         name: input.name,
         description: input.description,
-        definitions,
+        steps,
         created_at,
         updated_at: now,
     })
@@ -404,7 +404,7 @@ pub fn workflow_delete(
         return Err(PhaseError::TemplateNotFound(id));
     }
 
-    // Cascade delete handled by FK ON DELETE CASCADE on phase_definitions.
+    // Cascade delete handled by FK ON DELETE CASCADE on steps.
     conn.execute(
         "DELETE FROM workflows WHERE id = ?1",
         rusqlite::params![id],
