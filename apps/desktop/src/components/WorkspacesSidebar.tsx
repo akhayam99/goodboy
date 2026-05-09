@@ -16,8 +16,17 @@ import {
   X,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
-import type { ProviderId, Task, TaskId, TurnState, Workspace } from '@kay-am/types';
+import type {
+  ProviderId,
+  Session,
+  SessionStatus,
+  Task,
+  TaskId,
+  TurnState,
+  Workspace,
+} from '@kay-am/types';
 import {
+  EMPTY_ARRAY,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
@@ -183,6 +192,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             </p>
           )}
         </section>
+
+        {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
@@ -1032,5 +1043,68 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
         </p>
       </div>
     </Dialog>
+  );
+}
+
+interface AgentsSectionProps {
+  task: Task;
+}
+
+function AgentsSection({ task }: AgentsSectionProps) {
+  const phaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
+  );
+
+  const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
+
+  return (
+    <section className="flex flex-col px-2 pb-3 pt-4">
+      <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          agents
+        </span>
+        <span className="truncate text-2xs text-muted-foreground/70">
+          {sorted.length === 0 ? 'none yet' : `${sorted.length} for this task`}
+        </span>
+      </header>
+      {sorted.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground/70">
+          no agents yet — start a workflow to spawn the first one.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-0.5">
+          {sorted.map((run) => (
+            <AgentRow key={run.id} run={run} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
+  pending: 'bg-muted-foreground/40',
+  running: 'bg-blue-500',
+  completed: 'bg-green-500',
+  failed: 'bg-red-500',
+  skipped: 'bg-muted-foreground/20',
+};
+
+function AgentRow({ run }: { run: Session }) {
+  return (
+    <li
+      className="group flex items-center gap-2 rounded-md px-2 py-1 text-xs"
+      title={`step #${run.ordinal + 1} · ${run.status}`}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+          AGENT_STATUS_TONE[run.status],
+        )}
+      />
+      <span className="line-clamp-1 flex-1 text-foreground">{run.name}</span>
+      <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
+    </li>
   );
 }
