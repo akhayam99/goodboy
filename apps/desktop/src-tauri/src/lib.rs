@@ -55,6 +55,7 @@ pub fn run() {
       db::db_exec,
       db::db_execute,
       db::db_select,
+      db::db_wipe,
       worktree::worktree_create,
       worktree::worktree_remove,
       worktree::worktree_list,

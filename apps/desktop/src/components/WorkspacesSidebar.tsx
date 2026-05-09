@@ -160,7 +160,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         </section>
       </ScrollArea>
 
-      <div className="my-1 border-t border-border" aria-hidden />
+      <div className="h-2" aria-hidden />
 
       <ScrollArea className="flex-1">
         <section className="flex flex-col px-2 pt-4">
@@ -497,30 +497,62 @@ function SessionList({
   );
 }
 
+const SORT_OPTIONS: ReadonlyArray<{ value: SessionSort; label: string }> = [
+  { value: 'updated', label: 'recent' },
+  { value: 'alpha', label: 'a → z' },
+];
+
 function SortToggle({ sort, onChange }: { sort: SessionSort; onChange: (s: SessionSort) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = SORT_OPTIONS.find((o) => o.value === sort) ?? SORT_OPTIONS[0]!;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
   return (
-    <div className="flex items-center gap-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
-      <span>sort</span>
+    <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => onChange('updated')}
-        className={cn(
-          'rounded px-1.5 py-0.5 transition-colors',
-          sort === 'updated' ? 'bg-foreground text-background' : 'hover:text-foreground',
-        )}
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
-        recent
+        <span>sort: {current.label}</span>
+        <ChevronDown size={11} aria-hidden />
       </button>
-      <button
-        type="button"
-        onClick={() => onChange('alpha')}
-        className={cn(
-          'rounded px-1.5 py-0.5 transition-colors',
-          sort === 'alpha' ? 'bg-foreground text-background' : 'hover:text-foreground',
-        )}
-      >
-        a-z
-      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-20 mt-1 min-w-[120px] rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
+                opt.value === sort ? 'text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <span>{opt.label}</span>
+              {opt.value === sort ? <span className="text-2xs">✓</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

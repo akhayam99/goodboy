@@ -507,7 +507,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
   </div>
   <div
     aria-hidden="true"
-    class="my-1 border-t border-border"
+    class="h-2"
   />
   <div
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] flex-1"

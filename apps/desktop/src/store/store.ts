@@ -88,7 +88,7 @@ import type {
 import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { computeCostUsd, computeCodexCostUsd, computeCursorCostUsd } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
-import { runDbMigrations, tauriDatabase } from '../db';
+import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -305,6 +305,7 @@ export interface AppActions {
   loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
   selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
+  wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
   setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
   resolveMergeConflicts(
@@ -2178,6 +2179,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
       messages: { ...s.messages, [taskId]: [] },
     }));
     return inserted.id;
+  },
+
+  wipeLocalDatabase: async () => {
+    await wipeDb();
+    set({
+      ...initialState,
+      hydrated: get().hydrated,
+      bootPhase: get().bootPhase,
+      providers: get().providers,
+      providerStatus: get().providerStatus,
+      cursorStatus: get().cursorStatus,
+      codexStatus: get().codexStatus,
+      authResults: get().authResults,
+      detectedEditors: get().detectedEditors,
+    });
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
   },
 
   dismissSystemAlert: (id) => {

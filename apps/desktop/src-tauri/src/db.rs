@@ -115,6 +115,28 @@ pub fn db_execute(
 }
 
 #[tauri::command]
+pub fn db_wipe(state: State<'_, Db>) -> Result<(), DbError> {
+    // Drop every user table + schema_version so the next runDbMigrations call
+    // replays the chain from m001. Done in-place via SQL so the TS side
+    // doesn't need to know the file path or close the connection.
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    let table_names: Vec<String> = {
+        let mut stmt = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    for name in &table_names {
+        // Identifiers can't be parameterised; names come from sqlite_master and
+        // are always valid SQL identifiers, so direct interpolation is safe.
+        conn.execute_batch(&format!("DROP TABLE IF EXISTS \"{}\";", name))?;
+    }
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn db_select(
     state: State<'_, Db>,
     sql: String,

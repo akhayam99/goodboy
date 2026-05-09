@@ -63,14 +63,14 @@ export function AppShell({
     <div className="h-screen w-screen bg-muted/40">
       <div
         className={cn(
-          'grid h-full w-full overflow-hidden border-border-soft bg-background text-foreground',
+          'grid h-full w-full overflow-hidden bg-background text-foreground',
           'motion-safe:[transition:grid-template-columns_var(--motion-normal,200ms)_var(--ease-emphasized,cubic-bezier(0.2,0,0,1))]',
           className,
         )}
         style={gridStyle}
       >
         <header
-          className="flex h-11 min-w-0 items-center border-b border-border-soft bg-background px-4 text-sm"
+          className="flex h-11 min-w-0 items-center bg-subtle px-4 text-sm"
           style={{ gridArea: 'header' }}
         >
           {header}
@@ -97,7 +97,7 @@ export function AppShell({
         ) : null}
         {footer ? (
           <footer
-            className="flex h-7 min-w-0 items-center border-t border-border-soft bg-subtle px-4 font-mono text-xs text-muted-foreground"
+            className="flex h-7 min-w-0 items-center bg-subtle px-4 font-mono text-xs text-muted-foreground"
             style={{ gridArea: 'footer' }}
           >
             {footer}

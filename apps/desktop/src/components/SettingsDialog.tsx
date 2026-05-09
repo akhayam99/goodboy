@@ -1,26 +1,12 @@
 import { useEffect, useState } from 'react';
-import {
-  Bot,
-  ChevronDown,
-  ChevronUp,
-  Cpu,
-  DollarSign,
-  FileDown,
-  FolderCode,
-  GitBranch,
-  Lock,
-  Zap,
-} from 'lucide-react';
+import { Bot, Cpu, DollarSign, FileDown, FolderCode, Lock, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
 import { PermissionsPanel } from './PermissionsPanel';
-import { SkillsPanel } from './SkillsPanel';
-import { PhasesPanel } from './PhasesPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import {
-  DEFAULT_BRANCH_PREFIX,
   DEFAULT_EDITOR_BINARY,
   DEFAULT_ENABLE_PARALLEL_AGENTS,
   DEFAULT_MAX_PARALLELISM,
@@ -29,9 +15,8 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
-  settingBranchPrefix,
 } from '../settings';
-import { useAppStore, useCurrentWorkspace } from '../store';
+import { useAppStore } from '../store';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -46,25 +31,26 @@ type NavSection =
   | 'providers'
   | 'budget'
   | 'agent'
-  | 'skills'
-  | 'phases'
   | 'permissions'
+  | 'initialization'
   | 'advanced';
 
 interface NavItem {
   id: NavSection;
   label: string;
   icon: React.ReactNode;
+  beta?: boolean;
 }
 
+// global settings only — per-workspace skills + phase templates live in
+// WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'app', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'providers', label: 'providers', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'budget', icon: <DollarSign size={14} aria-hidden /> },
-  { id: 'agent', label: 'agent', icon: <Bot size={14} aria-hidden /> },
-  { id: 'skills', label: 'skills', icon: <Zap size={14} aria-hidden /> },
-  { id: 'phases', label: 'phases', icon: <GitBranch size={14} aria-hidden /> },
-  { id: 'permissions', label: 'permissions', icon: <Lock size={14} aria-hidden /> },
+  { id: 'budget', label: 'budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
+  { id: 'agent', label: 'agent', icon: <Bot size={14} aria-hidden />, beta: true },
+  { id: 'permissions', label: 'permissions', icon: <Lock size={14} aria-hidden />, beta: true },
+  { id: 'initialization', label: 'initialization', icon: <Trash2 size={14} aria-hidden /> },
   { id: 'advanced', label: 'advanced', icon: <FileDown size={14} aria-hidden /> },
 ];
 
@@ -74,24 +60,29 @@ function isNavSection(value: string | undefined): value is NavSection {
     value === 'providers' ||
     value === 'budget' ||
     value === 'agent' ||
-    value === 'skills' ||
-    value === 'phases' ||
     value === 'permissions' ||
+    value === 'initialization' ||
     value === 'advanced'
   );
 }
 
+function BetaChip() {
+  return (
+    <span className="ml-auto rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-600">
+      beta
+    </span>
+  );
+}
+
 export function SettingsDialog({ open, onClose, initialSection }: SettingsDialogProps) {
-  const workspace = useCurrentWorkspace();
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
   const importConfig = useAppStore((s) => s.importConfig);
-  const providers = useAppStore((s) => s.providers);
+  const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
 
   const [activeSection, setActiveSection] = useState<NavSection>('providers');
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [enableParallelAgents, setEnableParallelAgents] = useState(DEFAULT_ENABLE_PARALLEL_AGENTS);
   const [maxParallelism, setMaxParallelism] = useState(DEFAULT_MAX_PARALLELISM);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -100,12 +91,10 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importResult, setImportResult] = useState<ConfigBundleImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-
-  const [providerOrder, setProviderOrder] = useState(() => [...providers]);
-
-  useEffect(() => {
-    setProviderOrder([...providers]);
-  }, [providers]);
+  const [wipeState, setWipeState] = useState<'idle' | 'confirm' | 'wiping' | 'done' | 'error'>(
+    'idle',
+  );
+  const [wipeError, setWipeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -128,12 +117,9 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           : DEFAULT_MAX_PARALLELISM,
       );
     });
-    if (workspace) {
-      void loadSetting(settingBranchPrefix(workspace.id)).then((v) =>
-        setBranchPrefix(v ?? DEFAULT_BRANCH_PREFIX),
-      );
-    }
-  }, [open, workspace, loadSetting, initialSection]);
+    setWipeState('idle');
+    setWipeError(null);
+  }, [open, loadSetting, initialSection]);
 
   const onExport = async () => {
     setExportState('busy');
@@ -171,12 +157,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
         Math.min(MAX_PARALLELISM, maxParallelism),
       );
       await saveSetting(SETTING_MAX_PARALLELISM, String(clampedParallelism));
-      if (workspace) {
-        await saveSetting(
-          settingBranchPrefix(workspace.id),
-          branchPrefix.trim() || DEFAULT_BRANCH_PREFIX,
-        );
-      }
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
@@ -184,21 +164,19 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     }
   };
 
-  const moveProvider = (index: number, direction: -1 | 1) => {
-    const next = [...providerOrder];
-    const swapIndex = index + direction;
-    if (swapIndex < 0 || swapIndex >= next.length) return;
-    const a = next[index];
-    const b = next[swapIndex];
-    if (a === undefined || b === undefined) return;
-    next[index] = b;
-    next[swapIndex] = a;
-    setProviderOrder(next);
-    // TODO (@ak): persist provider order via store action
+  const onWipe = async () => {
+    setWipeState('wiping');
+    setWipeError(null);
+    try {
+      await wipeLocalDatabase();
+      setWipeState('done');
+    } catch (err) {
+      setWipeState('error');
+      setWipeError(err instanceof Error ? err.message : String(err));
+    }
   };
 
-  const needsSave =
-    activeSection === 'app' || activeSection === 'agent' || activeSection === 'advanced';
+  const needsSave = activeSection === 'app' || activeSection === 'agent';
 
   const renderContent = () => {
     switch (activeSection) {
@@ -213,23 +191,10 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                 placeholder={DEFAULT_EDITOR_BINARY}
               />
             </Field>
-            <Field
-              label={
-                workspace ? `branch prefix — ${workspace.name}` : 'branch prefix (workspace scoped)'
-              }
-              help={
-                workspace
-                  ? 'used as default in the new-session dialog'
-                  : 'select a workspace to edit per-workspace prefix'
-              }
-            >
-              <Input
-                value={branchPrefix}
-                onChange={(e) => setBranchPrefix(e.target.value)}
-                placeholder={DEFAULT_BRANCH_PREFIX}
-                disabled={!workspace}
-              />
-            </Field>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
+              next to each workspace row.
+            </p>
           </div>
         );
       case 'providers':
@@ -272,59 +237,57 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                 disabled={!enableParallelAgents}
               />
             </Field>
-            <div className="flex flex-col gap-2">
-              <div className="text-xs font-semibold text-foreground">provider priority order</div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                providers are tried top-to-bottom when routing a turn.
-              </p>
-              <ul className="flex flex-col gap-1">
-                {providerOrder.map((p, i) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/40 px-3 py-2"
-                  >
-                    <span className="w-4 text-xs text-muted-foreground">{i + 1}</span>
-                    <span className="flex-1 text-sm font-medium">{p.label}</span>
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => moveProvider(i, -1)}
-                        disabled={i === 0}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
-                        aria-label={`move ${p.label} up`}
-                      >
-                        <ChevronUp size={13} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveProvider(i, 1)}
-                        disabled={i === providerOrder.length - 1}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
-                        aria-label={`move ${p.label} down`}
-                      >
-                        <ChevronDown size={13} aria-hidden />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
-        );
-      case 'skills':
-        return workspace ? (
-          <SkillsPanel workspaceId={workspace.id} />
-        ) : (
-          <EmptyWorkspace section="skills" />
-        );
-      case 'phases':
-        return workspace ? (
-          <PhasesPanel workspaceId={workspace.id} />
-        ) : (
-          <EmptyWorkspace section="phases" />
         );
       case 'permissions':
         return <PermissionsPanel />;
+      case 'initialization':
+        return (
+          <div className="flex flex-col gap-4">
+            <SectionHeading>initialization</SectionHeading>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              wipe the local sqlite database — drops every workspace, session, agent, message,
+              transcript, telemetry record, budget rule, permission rule, and skill registration.
+              api keys in the os keychain are NOT touched. fresh schema is recreated on next boot.
+            </p>
+            {wipeError ? (
+              <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+                {wipeError}
+              </p>
+            ) : null}
+            {wipeState === 'done' ? (
+              <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
+                database wiped. restart the app (or just reopen settings) to start fresh.
+              </p>
+            ) : null}
+            {wipeState === 'confirm' ? (
+              <div className="flex flex-col gap-2 rounded-md border border-danger/40 bg-danger/5 p-3">
+                <p className="text-sm font-semibold text-danger">
+                  this is irreversible. confirm wipe?
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setWipeState('idle')}>
+                    cancel
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => void onWipe()}>
+                    wipe database
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setWipeState('confirm')}
+                  disabled={wipeState === 'wiping'}
+                >
+                  {wipeState === 'wiping' ? 'wiping…' : 'wipe local database'}
+                </Button>
+              </div>
+            )}
+          </div>
+        );
       case 'advanced':
         return (
           <div className="flex flex-col gap-4">
@@ -382,7 +345,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       }
     >
       <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2">
+        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -395,7 +358,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               }`}
             >
               {item.icon}
-              {item.label}
+              <span>{item.label}</span>
+              {item.beta ? <BetaChip /> : null}
             </button>
           ))}
         </nav>
@@ -435,11 +399,5 @@ function Field({
       {children}
       {help ? <p className="text-xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
-  );
-}
-
-function EmptyWorkspace({ section }: { section: string }) {
-  return (
-    <p className="text-sm text-muted-foreground">select a workspace to manage its {section}.</p>
   );
 }
