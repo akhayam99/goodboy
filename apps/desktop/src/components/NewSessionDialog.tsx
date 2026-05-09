@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
 import { Sparkles } from 'lucide-react';
 import type {
+  Workflow,
   WorkflowId,
   ProviderId,
   TaskId,
   TaskProviderPreference,
   WorkspaceId,
 } from '@kay-am/types';
+import { shortModel } from '../agentRowFormat';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
@@ -199,6 +201,11 @@ export function NewSessionDialog({
             <Sparkles size={11} aria-hidden /> design custom
           </button>
         </div>
+        {selectedPhaseTemplateId !== '' ? (
+          <WorkflowPreview
+            template={phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null}
+          />
+        ) : null}
         {plannerOpen ? (
           <PlannerWidget
             workspaceId={workspaceId}
@@ -281,6 +288,53 @@ function Field({
       <span className="text-xs font-semibold text-foreground">{label}</span>
       {children}
       {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function WorkflowPreview({ template }: { template: Workflow | null }) {
+  if (!template) return null;
+  if (template.steps.length === 0) {
+    return (
+      <p className="mt-2 rounded-md bg-subtle px-3 py-2 text-xs text-muted-foreground">
+        this workflow has no steps yet — add some via the planner above.
+      </p>
+    );
+  }
+  const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  return (
+    <div className="mt-2 flex flex-col gap-1.5 rounded-md bg-subtle p-3">
+      <div className="flex items-baseline justify-between">
+        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+          will spawn {template.steps.length} agent
+          {template.steps.length === 1 ? '' : 's'}
+        </span>
+        {template.description ? (
+          <span className="truncate text-2xs text-muted-foreground/70">{template.description}</span>
+        ) : null}
+      </div>
+      <ol className="flex flex-col gap-1">
+        {sortedSteps.map((step, i) => {
+          const model = step.modelOverride ? shortModel(step.modelOverride) : null;
+          return (
+            <li
+              key={step.id}
+              className="flex items-center gap-2 rounded-md bg-background px-2 py-1 text-xs"
+            >
+              <span className="font-mono text-2xs text-muted-foreground">{i + 1}.</span>
+              <span className="flex-1 truncate font-medium text-foreground">{step.name}</span>
+              {model ? (
+                <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
+                  {model}
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+      <p className="text-2xs text-muted-foreground/70">
+        each agent runs in its own chat thread. you decide which one gets the next turn.
+      </p>
     </div>
   );
 }
