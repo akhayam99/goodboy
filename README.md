@@ -90,7 +90,7 @@ pnpm lint           # placeholder; lint runs in CI
 1. Run `pnpm tauri:dev` and wait for the boot splash to reach _ready_.
 2. Open **settings** (top-right) → paste your **Anthropic API key**, set the **default editor binary** (e.g. `code`), save.
 3. From the workspace dropdown choose **add workspace…** and pick a local git repository (an existing one is fine — sessions run inside isolated git worktrees).
-4. From the left sidebar, click **+ new session**, give it a goal, accept the branch prefix.
+4. From the left sidebar, click **+ new task**, give it a goal, accept the branch prefix.
 5. Type a message in the chat input → enter. You should see streamed assistant text, the cost meter ticking, and the `worktree-{slug}` directory created next to the repo.
 6. Use **end session** to close the worktree (the branch is preserved for manual merge).
 
@@ -112,9 +112,9 @@ Top-right: **workspace dropdown** → **add workspace…** → pick a local git 
 
 Top-right: **settings** → paste your **Anthropic API key**, set your **default editor** (e.g. `code`). See [Supported providers](#supported-providers) for install + login commands. kAY.am routes turns through your chosen provider's subscription cap — no separate API tokens needed.
 
-### 4. Create your first session
+### 4. Create your first task
 
-Left sidebar: **+ new session** → give it a goal (e.g. "add dark mode toggle") → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
+Left sidebar: **+ new task** → give it a goal (e.g. "add dark mode toggle") → optionally pick a workflow chip → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
 
 ### 5. First turn
 
@@ -128,11 +128,11 @@ Type a message in the chat input → enter. You'll see:
 
 **Telemetry pill** (top-left): session elapsed time, token count, cost breakdown. **Status bar** (bottom): active worktree, branch info, provider. **Alerts**: watch for banners (missing API key, CLI not found, etc.).
 
-### 7. End session
+### 7. Archive or end the task
 
-**End session** button → preserves the branch (no force-push, safe to merge manually later) → cleans up the worktree. Your code changes stay in git.
+Sidebar kebab menu → **archive** moves a task out of the active list (still inspectable under "archived") or **delete** removes it entirely (worktree, transcripts, audit log). Use **⌘.** to end the active session and clean up the worktree while preserving the branch.
 
-**Optional: phase templates.** Structure multi-step goals with templates. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
+**Optional: workflows.** Structure multi-step goals with workflows. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply, or use the built-in planner ("design custom" chip in the new-task dialog) to generate one from a free-text theme. The default library (refactor / bug-fix / feature / exploration) is auto-seeded on workspace add. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
 
 ## Roadmap & contributing
 
