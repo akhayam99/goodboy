@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ProviderRunId, Session } from '@kay-am/types';
+import type { ProviderRunId, Task } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
@@ -9,7 +9,7 @@ import { ChatInput } from './ChatInput';
 import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDialog';
 
 interface ChatViewProps {
-  session: Session;
+  session: Task;
   onRequestEnd: () => void;
 }
 

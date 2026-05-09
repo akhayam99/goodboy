@@ -3,11 +3,11 @@ import type {
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
-  SessionId,
+  TaskId,
   WorkspaceId,
 } from './ids';
 
-export type PermissionRuleScope = 'workspace' | 'session' | 'global';
+export type PermissionRuleScope = 'workspace' | 'task' | 'global';
 
 export type PermissionDecisionKind = 'allow' | 'deny' | 'ask';
 
@@ -20,7 +20,7 @@ export interface PermissionRule {
   readonly id: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
-  readonly sessionId?: SessionId;
+  readonly taskId?: TaskId;
   readonly pattern: PermissionRulePattern;
   readonly decision: PermissionDecisionKind;
   readonly priority: number;

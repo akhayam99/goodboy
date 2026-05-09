@@ -1145,7 +1145,7 @@ exports[`snapshot — error states > PermissionsPanel: form error (workspace sco
       class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
       type="button"
     >
-      session
+      task
     </button>
   </div>
 </div>

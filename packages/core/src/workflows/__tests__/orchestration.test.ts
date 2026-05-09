@@ -1,47 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PhaseDefinition, PhaseRun, PhaseTemplate } from '@kay-am/types';
-import { nextPhase, isPhaseSequenceComplete } from '../sequencer';
-import { PhaseContextPropagator } from '../propagator';
+import type { IsoDateTime, Step, Session, Workflow } from '@kay-am/types';
+import { nextStep, isWorkflowComplete } from '../sequencer';
+import { WorkflowPropagator } from '../propagator';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
-const PLANNER: PhaseDefinition = {
-  id: 'p-planner' as PhaseDefinition['id'],
-  templateId: 'tpl-1' as PhaseDefinition['templateId'],
+const PLANNER: Step = {
+  id: 'p-planner' as Step['id'],
+  workflowId: 'tpl-1' as Step['workflowId'],
   ordinal: 1,
   name: 'planner',
   promptPrefix: 'plan the work',
 };
-const CODER: PhaseDefinition = {
-  id: 'p-coder' as PhaseDefinition['id'],
-  templateId: 'tpl-1' as PhaseDefinition['templateId'],
+const CODER: Step = {
+  id: 'p-coder' as Step['id'],
+  workflowId: 'tpl-1' as Step['workflowId'],
   ordinal: 2,
   name: 'coder',
   promptPrefix: 'implement plan',
 };
-const REVIEWER: PhaseDefinition = {
-  id: 'p-reviewer' as PhaseDefinition['id'],
-  templateId: 'tpl-1' as PhaseDefinition['templateId'],
+const REVIEWER: Step = {
+  id: 'p-reviewer' as Step['id'],
+  workflowId: 'tpl-1' as Step['workflowId'],
   ordinal: 3,
   name: 'reviewer',
   promptPrefix: 'review code',
 };
 
-const TEMPLATE: PhaseTemplate = {
-  id: 'tpl-1' as PhaseTemplate['id'],
-  workspaceId: 'w1' as PhaseTemplate['workspaceId'],
+const TEMPLATE: Workflow = {
+  id: 'tpl-1' as Workflow['id'],
+  workspaceId: 'w1' as Workflow['workspaceId'],
   name: 'planner→coder→reviewer',
   description: 'three-phase pipeline',
-  definitions: [PLANNER, CODER, REVIEWER],
+  steps: [PLANNER, CODER, REVIEWER],
   createdAt: AT,
   updatedAt: AT,
 };
 
-function completedRun(def: PhaseDefinition, summary: string): PhaseRun {
+function completedRun(def: Step, summary: string): Session {
   return {
-    id: `run-${def.id}` as PhaseRun['id'],
-    sessionId: 's1' as PhaseRun['sessionId'],
-    phaseDefinitionId: def.id,
+    id: `run-${def.id}` as Session['id'],
+    taskId: 's1' as Session['taskId'],
+    stepId: def.id,
     ordinal: def.ordinal,
     name: def.name,
     status: 'completed',
@@ -56,16 +56,16 @@ describe('phase orchestration end-to-end', () => {
         return `summary(${text})`;
       },
     };
-    const propagator = new PhaseContextPropagator({ summarizer });
+    const propagator = new WorkflowPropagator({ summarizer });
 
-    const runs: PhaseRun[] = [];
+    const runs: Session[] = [];
 
-    const first = nextPhase(TEMPLATE, runs);
+    const first = nextStep(TEMPLATE, runs);
     expect(first).toBe(PLANNER);
     expect(first?.ordinal).toBe(1);
     runs.push(completedRun(PLANNER, 'plan output v1'));
 
-    const second = nextPhase(TEMPLATE, runs);
+    const second = nextStep(TEMPLATE, runs);
     expect(second).toBe(CODER);
     expect(second?.ordinal).toBe(2);
 
@@ -82,7 +82,7 @@ describe('phase orchestration end-to-end', () => {
 
     runs.push(completedRun(CODER, 'code diff v1'));
 
-    const third = nextPhase(TEMPLATE, runs);
+    const third = nextStep(TEMPLATE, runs);
     expect(third).toBe(REVIEWER);
     expect(third?.ordinal).toBe(3);
 
@@ -97,7 +97,7 @@ describe('phase orchestration end-to-end', () => {
 
     runs.push(completedRun(REVIEWER, 'review notes'));
 
-    expect(nextPhase(TEMPLATE, runs)).toBeNull();
-    expect(isPhaseSequenceComplete(TEMPLATE, runs)).toBe(true);
+    expect(nextStep(TEMPLATE, runs)).toBeNull();
+    expect(isWorkflowComplete(TEMPLATE, runs)).toBe(true);
   });
 });

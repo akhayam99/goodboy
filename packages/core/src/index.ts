@@ -1,8 +1,8 @@
-export { IllegalSessionTransitionError, sessionReducer, type SessionEvent } from './session';
+export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
   checkProviderBudget,
-  checkSessionBudget,
+  checkTaskBudget,
   emitBudgetAlerts,
   getCurrentPeriodKey,
   getPeriodWindow,
@@ -87,14 +87,14 @@ export {
 } from './summarizer';
 
 export {
-  buildPhasePrompt,
-  isPhaseSequenceComplete,
-  nextPhase,
-  PhaseContextPropagator,
-  type PhaseContextPropagatorDeps,
-} from './phases';
-// PhaseRegistry (@kay-am/db → node) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/phases/registry in Node/Tauri command contexts.
+  buildStepPrompt,
+  isWorkflowComplete,
+  nextStep,
+  WorkflowPropagator,
+  type WorkflowPropagatorDeps,
+} from './workflows';
+// WorkflowRegistry (@kay-am/db → node) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/workflows/registry in Node/Tauri command contexts.
 
 export {
   PermissionEngine,

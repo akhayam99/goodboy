@@ -1,19 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { resolveSettings } from '../resolver';
 import type { GlobalSettings, OverrideSettings } from '@kay-am/types';
-import type { PhaseTemplateId } from '@kay-am/types';
+import type { WorkflowId } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
 
 const GLOBAL: GlobalSettings = {
   defaultProviderId: 'anthropic' as ProviderId,
-  defaultPhaseTemplateId: null,
+  defaultWorkflowId: null,
   defaultBranchPrefix: 'kay',
   parallelEnabled: false,
 };
 
 const NULL_OVERRIDE: OverrideSettings = {
   defaultProviderId: null,
-  defaultPhaseTemplateId: null,
+  defaultWorkflowId: null,
   defaultBranchPrefix: null,
   parallelEnabled: null,
 };
@@ -24,19 +24,19 @@ describe('resolveSettings', () => {
     expect(result.defaultProviderId).toBe('anthropic');
     expect(result.defaultBranchPrefix).toBe('kay');
     expect(result.parallelEnabled).toBe(false);
-    expect(result.defaultPhaseTemplateId).toBeNull();
+    expect(result.defaultWorkflowId).toBeNull();
   });
 
   it('null/value/null → workspace wins', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultPhaseTemplateId: 'tpl-1' as PhaseTemplateId,
+      defaultWorkflowId: 'tpl-1' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
-    expect(result.defaultPhaseTemplateId).toBe('tpl-1');
+    expect(result.defaultWorkflowId).toBe('tpl-1');
     expect(result.defaultBranchPrefix).toBe('ws-prefix');
     expect(result.parallelEnabled).toBe(true);
   });
@@ -44,13 +44,13 @@ describe('resolveSettings', () => {
   it('null/null/value → session wins', () => {
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
-      defaultPhaseTemplateId: 'tpl-2' as PhaseTemplateId,
+      defaultWorkflowId: 'tpl-2' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
-    expect(result.defaultPhaseTemplateId).toBe('tpl-2');
+    expect(result.defaultWorkflowId).toBe('tpl-2');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
     expect(result.parallelEnabled).toBe(true);
   });
@@ -58,13 +58,13 @@ describe('resolveSettings', () => {
   it('null/value/value → session wins over workspace', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultPhaseTemplateId: 'tpl-ws' as PhaseTemplateId,
+      defaultWorkflowId: 'tpl-ws' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: false,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
-      defaultPhaseTemplateId: 'tpl-sess' as PhaseTemplateId,
+      defaultWorkflowId: 'tpl-sess' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
     };
@@ -74,7 +74,7 @@ describe('resolveSettings', () => {
       sessionOverride: sessOverride,
     });
     expect(result.defaultProviderId).toBe('codex');
-    expect(result.defaultPhaseTemplateId).toBe('tpl-sess');
+    expect(result.defaultWorkflowId).toBe('tpl-sess');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
     expect(result.parallelEnabled).toBe(true);
   });
@@ -82,13 +82,13 @@ describe('resolveSettings', () => {
   it('null/value/null-fields → session null fields fall back to workspace', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultPhaseTemplateId: null,
+      defaultWorkflowId: null,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
-      defaultPhaseTemplateId: null,
+      defaultWorkflowId: null,
       defaultBranchPrefix: null,
       parallelEnabled: null,
     };
@@ -123,12 +123,12 @@ describe('resolveSettings', () => {
     expect(result.defaultBranchPrefix).toBe('kay');
   });
 
-  it('global with non-null phaseTemplateId is inherited when overrides are null', () => {
+  it('global with non-null workflowId is inherited when overrides are null', () => {
     const globalWithTemplate: GlobalSettings = {
       ...GLOBAL,
-      defaultPhaseTemplateId: 'global-tpl' as PhaseTemplateId,
+      defaultWorkflowId: 'global-tpl' as WorkflowId,
     };
     const result = resolveSettings({ global: globalWithTemplate });
-    expect(result.defaultPhaseTemplateId).toBe('global-tpl');
+    expect(result.defaultWorkflowId).toBe('global-tpl');
   });
 });

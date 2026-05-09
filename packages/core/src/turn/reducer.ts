@@ -1,6 +1,6 @@
-import type { IsoDateTime, ProviderRunId, SessionState, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, TurnState, TurnEvent } from '@kay-am/types';
 
-export type SessionEvent =
+export type TurnLifecycleEvent =
   | { kind: 'start'; at: IsoDateTime }
   | { kind: 'send'; runId: ProviderRunId; at: IsoDateTime }
   | { kind: 'receive_event'; event: TurnEvent }
@@ -8,52 +8,52 @@ export type SessionEvent =
   | { kind: 'error'; message: string; at: IsoDateTime }
   | { kind: 'retry'; at: IsoDateTime };
 
-export class IllegalSessionTransitionError extends Error {
+export class IllegalTurnTransitionError extends Error {
   constructor(
-    public readonly state: SessionState,
-    public readonly event: SessionEvent,
+    public readonly state: TurnState,
+    public readonly event: TurnLifecycleEvent,
   ) {
     super(`illegal transition: cannot apply ${event.kind} in state ${state.kind}`);
-    this.name = 'IllegalSessionTransitionError';
+    this.name = 'IllegalTurnTransitionError';
   }
 }
 
-export function sessionReducer(state: SessionState, event: SessionEvent): SessionState {
+export function turnReducer(state: TurnState, event: TurnLifecycleEvent): TurnState {
   switch (event.kind) {
     case 'start':
       if (state.kind !== 'draft') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'starting', startedAt: event.at };
 
     case 'send':
       if (state.kind !== 'starting' && state.kind !== 'idle') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'running', runId: event.runId, startedAt: event.at };
 
     case 'receive_event': {
       if (state.kind !== 'running') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return applyTurnEvent(state, event.event);
     }
 
     case 'end':
       if (state.kind === 'ended') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'ended', endedAt: event.at };
 
     case 'error':
       if (state.kind === 'ended') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'error', message: event.message, failedAt: event.at };
 
     case 'retry':
       if (state.kind !== 'error') {
-        throw new IllegalSessionTransitionError(state, event);
+        throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'idle', lastActivityAt: event.at };
 
@@ -64,7 +64,7 @@ export function sessionReducer(state: SessionState, event: SessionEvent): Sessio
   }
 }
 
-function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
+function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
   switch (turn.kind) {
     case 'done':
       return { kind: 'idle', lastActivityAt: turn.at };
@@ -77,7 +77,7 @@ function applyTurnEvent(state: SessionState, turn: TurnEvent): SessionState {
     case 'file_edit':
     case 'usage':
     case 'skill_invocation':
-    case 'phase_transition':
+    case 'step_transition':
     case 'permission_request':
     case 'permission_decision':
     case 'unknown_payload':

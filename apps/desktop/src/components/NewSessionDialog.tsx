@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Select, Textarea, cn } from '@kay-am/ui';
 import type {
-  PhaseTemplateId,
+  WorkflowId,
   ProviderId,
-  SessionId,
-  SessionProviderPreference,
+  TaskId,
+  TaskProviderPreference,
   WorkspaceId,
 } from '@kay-am/types';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
@@ -48,7 +48,7 @@ export function NewSessionDialog({
   const [goal, setGoal] = useState('');
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [softCapRaw, setSoftCapRaw] = useState('');
-  const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<PhaseTemplateId | ''>('');
+  const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -78,7 +78,7 @@ export function NewSessionDialog({
     setError(null);
     setBusy(true);
     try {
-      const providerPreference: SessionProviderPreference = {
+      const providerPreference: TaskProviderPreference = {
         defaultProvider: selectedProvider,
         allowTurnOverride: true,
       };
@@ -87,13 +87,11 @@ export function NewSessionDialog({
         goal,
         branchPrefix: prefix,
         providerPreference,
-        ...(selectedPhaseTemplateId
-          ? { phaseTemplateId: selectedPhaseTemplateId as PhaseTemplateId }
-          : {}),
+        ...(selectedPhaseTemplateId ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
       });
       const parsedCap = parseFloat(softCapRaw);
       if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
-        await setSessionBudget(session.id as SessionId, parsedCap);
+        await setSessionBudget(session.id as TaskId, parsedCap);
       }
       reset();
       onClose();
@@ -163,7 +161,7 @@ export function NewSessionDialog({
         <Select
           size="sm"
           value={selectedPhaseTemplateId}
-          onChange={(e) => setSelectedPhaseTemplateId(e.target.value as PhaseTemplateId | '')}
+          onChange={(e) => setSelectedPhaseTemplateId(e.target.value as WorkflowId | '')}
           disabled={phaseTemplates.length === 0}
         >
           <option value="">none</option>

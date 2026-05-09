@@ -1,4 +1,4 @@
-import type { SessionId } from '@kay-am/types';
+import type { TaskId } from '@kay-am/types';
 
 export interface ParallelWorktreeDeps {
   invokeWorktreeCreate: (args: {
@@ -8,16 +8,16 @@ export interface ParallelWorktreeDeps {
     parentDir?: string;
   }) => Promise<{ worktreePath: string; branch: string }>;
   invokeWorktreeRemove: (args: { repoPath: string; worktreePath: string }) => Promise<void>;
-  insertSessionWorktree: (args: {
-    sessionId: SessionId;
+  insertTaskWorktree: (args: {
+    taskId: TaskId;
     worktreePath: string;
     branch: string;
     parallelIndex: number;
   }) => Promise<void>;
-  listWorktreesForSession: (
-    sessionId: SessionId,
+  listWorktreesForTask: (
+    taskId: TaskId,
   ) => Promise<ReadonlyArray<{ worktreePath: string; branch: string; parallelIndex: number }>>;
-  deleteWorktreesForSession: (sessionId: SessionId) => Promise<void>;
+  deleteWorktreesForTask: (taskId: TaskId) => Promise<void>;
 }
 
 export interface ParallelWorktreeResult {
@@ -45,7 +45,7 @@ function splitParentBranch(parentBranch: string): { prefix: string; base: string
 export async function createParallelWorktrees(
   deps: ParallelWorktreeDeps,
   args: {
-    sessionId: SessionId;
+    taskId: TaskId;
     repoPath: string;
     parentBranch: string;
     n: number;
@@ -91,8 +91,8 @@ export async function createParallelWorktrees(
 
   await Promise.all(
     created.map((c) =>
-      deps.insertSessionWorktree({
-        sessionId: args.sessionId,
+      deps.insertTaskWorktree({
+        taskId: args.taskId,
         worktreePath: c.worktreePath,
         branch: c.branch,
         parallelIndex: c.index,
@@ -122,9 +122,9 @@ async function rollback(
 
 export async function removeParallelWorktrees(
   deps: ParallelWorktreeDeps,
-  args: { repoPath: string; sessionId: SessionId },
+  args: { repoPath: string; taskId: TaskId },
 ): Promise<void> {
-  const rows = await deps.listWorktreesForSession(args.sessionId);
+  const rows = await deps.listWorktreesForTask(args.taskId);
 
   const results = await Promise.allSettled(
     rows.map((row) =>
@@ -138,5 +138,5 @@ export async function removeParallelWorktrees(
     }
   }
 
-  await deps.deleteWorktreesForSession(args.sessionId);
+  await deps.deleteWorktreesForTask(args.taskId);
 }

@@ -1,6 +1,6 @@
 import type { ProviderId } from './provider-registry';
 
-export interface SessionProviderPreference {
+export interface TaskProviderPreference {
   readonly defaultProvider: ProviderId;
   readonly defaultModel?: string;
   readonly allowTurnOverride: boolean;
@@ -11,7 +11,7 @@ export interface TurnProviderOverride {
   readonly model?: string;
 }
 
-export const DEFAULT_SESSION_PROVIDER_PREFERENCE: SessionProviderPreference = {
+export const DEFAULT_TASK_PROVIDER_PREFERENCE: TaskProviderPreference = {
   defaultProvider: 'anthropic',
   allowTurnOverride: true,
 };

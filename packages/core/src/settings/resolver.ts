@@ -16,12 +16,12 @@ export function resolveSettings(input: ResolveSettingsInput): ResolvedSettings {
   return {
     defaultProviderId: sess?.defaultProviderId ?? ws?.defaultProviderId ?? g.defaultProviderId,
 
-    defaultPhaseTemplateId:
-      sess?.defaultPhaseTemplateId !== undefined
-        ? sess.defaultPhaseTemplateId
-        : ws?.defaultPhaseTemplateId !== undefined
-          ? ws.defaultPhaseTemplateId
-          : g.defaultPhaseTemplateId,
+    defaultWorkflowId:
+      sess?.defaultWorkflowId !== undefined
+        ? sess.defaultWorkflowId
+        : ws?.defaultWorkflowId !== undefined
+          ? ws.defaultWorkflowId
+          : g.defaultWorkflowId,
 
     defaultBranchPrefix:
       sess?.defaultBranchPrefix ?? ws?.defaultBranchPrefix ?? g.defaultBranchPrefix,

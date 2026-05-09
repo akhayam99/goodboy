@@ -1,23 +1,23 @@
-import type { ContextSlot, Session, SessionId, Workspace } from '@kay-am/types';
+import type { ContextSlot, Task, TaskId, Workspace } from '@kay-am/types';
 import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
 export const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
-export const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
-export const selectCurrentSession = (state: AppState): Session | null =>
+export const selectSessions = (state: AppState): ReadonlyArray<Task> => state.sessions;
+export const selectCurrentSession = (state: AppState): Task | null =>
   state.sessions.find((s) => s.id === state.currentSessionId) ?? null;
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
 export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
-export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
-export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
+export const useSessions = (): ReadonlyArray<Task> => useAppStore(selectSessions);
+export const useCurrentSession = (): Task | null => useAppStore(selectCurrentSession);
 
 const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 
-export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
-  useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
+export const useSessionSlots = (taskId: TaskId | null): ReadonlyArray<ContextSlot> =>
+  useAppStore((s) => (taskId ? (s.sessionSlots[taskId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
 
 const IDLE_STATUS: SummarizerSessionStatus = { status: 'idle', lastUpdate: null, error: null };
 
-export const useSummarizerStatus = (sessionId: SessionId | null): SummarizerSessionStatus =>
-  useAppStore((s) => (sessionId ? (s.summarizerStatus[sessionId] ?? IDLE_STATUS) : IDLE_STATUS));
+export const useSummarizerStatus = (taskId: TaskId | null): SummarizerSessionStatus =>
+  useAppStore((s) => (taskId ? (s.summarizerStatus[taskId] ?? IDLE_STATUS) : IDLE_STATUS));

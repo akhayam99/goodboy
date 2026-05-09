@@ -13,13 +13,13 @@ interface PaletteItem {
   id: string;
   label: string;
   sublabel?: string;
-  group: 'workspace' | 'session' | 'action';
+  group: 'workspace' | 'task' | 'action';
   onSelect: () => void;
 }
 
 export interface CommandPaletteProps {
   onClose: () => void;
-  onNavigateToSession?: (sessionId: string, workspaceId: string) => void;
+  onNavigateToSession?: (taskId: string, workspaceId: string) => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;
@@ -55,7 +55,7 @@ export function CommandPalette({
         id: `session:${s.id}`,
         label: s.goal,
         sublabel: ws?.name,
-        group: 'session' as const,
+        group: 'task' as const,
         onSelect: () => {
           if (onNavigateToSession) {
             onNavigateToSession(s.id, s.workspaceId);
@@ -131,10 +131,10 @@ export function CommandPalette({
     }
   };
 
-  const groups: Array<PaletteItem['group']> = ['workspace', 'session', 'action'];
+  const groups: Array<PaletteItem['group']> = ['workspace', 'task', 'action'];
   const groupLabels: Record<PaletteItem['group'], string> = {
     workspace: 'workspaces',
-    session: 'sessions',
+    task: 'tasks',
     action: 'actions',
   };
 

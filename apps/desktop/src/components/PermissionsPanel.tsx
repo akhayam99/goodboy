@@ -76,7 +76,7 @@ export function PermissionsPanel() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const showNonClaudeBanner =
-    scope === 'session' &&
+    scope === 'task' &&
     session !== null &&
     session.providerPreference.defaultProvider !== 'anthropic' &&
     !bannerDismissed;
@@ -84,7 +84,7 @@ export function PermissionsPanel() {
   const canLoadScope =
     scope === 'global' ||
     (scope === 'workspace' && workspace !== null) ||
-    (scope === 'session' && session !== null);
+    (scope === 'task' && session !== null);
 
   const loadRules = async () => {
     if (!canLoadScope) {
@@ -96,7 +96,7 @@ export function PermissionsPanel() {
       const list = await invokePermissionRuleList({
         scope,
         ...(scope === 'workspace' && workspace ? { workspaceId: workspace.id } : {}),
-        ...(scope === 'session' && session ? { sessionId: session.id } : {}),
+        ...(scope === 'task' && session ? { taskId: session.id } : {}),
       });
       setRules(list);
     } finally {
@@ -150,7 +150,7 @@ export function PermissionsPanel() {
         ...(existingId ? { id: existingId } : {}),
         scope,
         ...(scope === 'workspace' && workspace ? { workspaceId: workspace.id } : {}),
-        ...(scope === 'session' && session ? { sessionId: session.id } : {}),
+        ...(scope === 'task' && session ? { taskId: session.id } : {}),
         patternTool: tool,
         ...(form.argsMatcher.trim() ? { patternArgsMatcher: form.argsMatcher.trim() } : {}),
         decision: form.decision,
@@ -225,7 +225,7 @@ export function PermissionsPanel() {
           select a workspace to manage workspace rules.
         </p>
       )}
-      {scope === 'session' && !session && (
+      {scope === 'task' && !session && (
         <p className="text-xs text-muted-foreground">select a session to manage session rules.</p>
       )}
 
@@ -259,7 +259,7 @@ export function PermissionsPanel() {
 }
 
 function ScopeTabs({ current, onChange }: { current: ScopeTab; onChange: (s: ScopeTab) => void }) {
-  const tabs: ScopeTab[] = ['global', 'workspace', 'session'];
+  const tabs: ScopeTab[] = ['global', 'workspace', 'task'];
   return (
     <div className="flex gap-1">
       {tabs.map((tab) => (

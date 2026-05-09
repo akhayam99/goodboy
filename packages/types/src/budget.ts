@@ -1,4 +1,4 @@
-import type { IsoDateTime, SessionId } from './ids';
+import type { IsoDateTime, TaskId } from './ids';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
 
@@ -14,8 +14,8 @@ export type BudgetRule = Readonly<{
   createdAt: IsoDateTime;
 }>;
 
-export type SessionBudget = Readonly<{
-  sessionId: SessionId;
+export type TaskBudget = Readonly<{
+  taskId: TaskId;
   softCapUsd: number;
 }>;
 
@@ -38,14 +38,14 @@ export type RoutingDecision = Readonly<{
 export type BudgetAlertKind =
   | 'provider-threshold'
   | 'provider-exceeded'
-  | 'session-threshold'
-  | 'session-exceeded';
+  | 'task-threshold'
+  | 'task-exceeded';
 
 export type BudgetAlert = Readonly<{
   id: string;
   kind: BudgetAlertKind;
   provider?: ProviderName;
-  sessionId?: SessionId;
+  taskId?: TaskId;
   currentUsd: number;
   capUsd: number;
   createdAt: IsoDateTime;

@@ -1,15 +1,15 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import {
-  PhaseContextPropagator,
+  WorkflowPropagator,
   PermissionEngine,
   buildClaudeFlags,
-  buildPhasePrompt,
-  nextPhase,
+  buildStepPrompt,
+  nextStep,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
-  sessionReducer,
+  turnReducer,
   Summarizer,
   type ClaudeFlagSet,
   type FileConflict,
@@ -19,26 +19,26 @@ import {
   getSetting,
   insertMessage,
   insertProviderRun,
-  insertSession,
-  insertSessionWorktree,
+  insertTask,
+  insertTaskWorktree,
   insertTelemetry,
   insertWorkspace,
   deleteWorkspace,
-  listContextSlotsForSession,
-  listMessagesForSession,
-  listSessionsForWorkspace,
-  listTelemetryForSession,
+  listContextSlotsForTask,
+  listMessagesForTask,
+  listTasksForWorkspace,
+  listTelemetryForTask,
   listWorkspaces,
-  listWorktreesForSession,
-  deleteWorktreesForSession,
-  renameSession as renameSessionInDb,
-  deleteSession as deleteSessionFromDb,
+  listWorktreesForTask,
+  deleteWorktreesForTask,
+  renameTask as renameSessionInDb,
+  deleteTask as deleteSessionFromDb,
   setSetting as dbSetSetting,
-  summarizeSessionTelemetry,
+  summarizeTaskTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeWorkspaceProviderTelemetry,
   updateProviderRunStatus,
-  updateSessionState,
+  updateTaskState,
   upsertContextSlot,
   type TelemetrySummary,
   type ProviderTelemetrySummary,
@@ -55,21 +55,21 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
-  PhaseDefinition,
-  PhaseRun,
-  PhaseRunId,
-  PhaseRunStatus,
-  PhaseTemplate,
-  PhaseTemplateId,
+  Step,
+  Session,
+  SessionId,
+  SessionStatus,
+  Workflow,
+  WorkflowId,
   ProviderId,
   ProviderRun,
   ProviderRunId,
   ResolvedSettings,
-  Session,
-  SessionBudget,
-  SessionId,
-  SessionProviderPreference,
-  SessionState,
+  Task,
+  TaskBudget,
+  TaskId,
+  TaskProviderPreference,
+  TurnState,
   Skill,
   SkillId,
   TelemetryRecord,
@@ -79,7 +79,7 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
+import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { computeCostUsd, computeCodexCostUsd, computeCursorCostUsd } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
 import { runDbMigrations, tauriDatabase } from '../db';
@@ -175,8 +175,8 @@ export interface SystemAlert {
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly currentWorkspaceId: WorkspaceId | null;
-  readonly sessions: ReadonlyArray<Session>;
-  readonly currentSessionId: SessionId | null;
+  readonly sessions: ReadonlyArray<Task>;
+  readonly currentSessionId: TaskId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
@@ -196,21 +196,21 @@ export interface AppState {
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
-  readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
+  readonly sessionBudgets: Readonly<Record<TaskId, TaskBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
-  readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<PhaseTemplate>>>;
-  readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<PhaseRun>>>;
-  readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
+  readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
+  readonly sessionPhaseRuns: Readonly<Record<TaskId, ReadonlyArray<Session>>>;
+  readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
-  readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
+  readonly sessionOverrides: Readonly<Record<TaskId, OverrideSettings>>;
   readonly sidebarWorkspaceSearch: string;
   readonly sidebarSessionSearch: string;
-  readonly sidebarStateFilter: ReadonlyArray<SessionState['kind']>;
+  readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
 }
 
@@ -230,9 +230,9 @@ export interface ProviderSpendEntry {
 export interface AppActions {
   hydrate(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  setCurrentSession(id: SessionId | null): Promise<void>;
+  setCurrentSession(id: TaskId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
-  refreshSessionSummary(sessionId: SessionId): Promise<void>;
+  refreshSessionSummary(taskId: TaskId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
@@ -243,30 +243,30 @@ export interface AppActions {
     workspaceId: WorkspaceId;
     goal: string;
     branchPrefix?: string;
-    providerPreference?: SessionProviderPreference;
-    phaseTemplateId?: PhaseTemplateId;
-  }): Promise<{ session: Session; worktree: CreatedWorktree }>;
-  loadTranscript(sessionId: SessionId): Promise<void>;
-  appendTurnEvent(sessionId: SessionId, event: TurnEvent): void;
-  resetTranscript(sessionId: SessionId): void;
+    providerPreference?: TaskProviderPreference;
+    workflowId?: WorkflowId;
+  }): Promise<{ session: Task; worktree: CreatedWorktree }>;
+  loadTranscript(taskId: TaskId): Promise<void>;
+  appendTurnEvent(taskId: TaskId, event: TurnEvent): void;
+  resetTranscript(taskId: TaskId): void;
   sendTurn(input: {
-    sessionId: SessionId;
+    taskId: TaskId;
     content: string;
     override?: TurnProviderOverride;
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
-  cancelCurrentTurn(sessionId: SessionId): Promise<void>;
-  endSession(sessionId: SessionId): Promise<void>;
+  cancelCurrentTurn(taskId: TaskId): Promise<void>;
+  endSession(taskId: TaskId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
-  loadSessionTelemetry(sessionId: SessionId): Promise<void>;
-  loadSessionSlots(sessionId: SessionId): Promise<void>;
-  upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
-  toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
+  loadSessionTelemetry(taskId: TaskId): Promise<void>;
+  loadSessionSlots(taskId: TaskId): Promise<void>;
+  upsertSessionSlot(taskId: TaskId, key: SlotKey, value: string): Promise<void>;
+  toggleSessionSlot(taskId: TaskId, key: SlotKey, enabled: boolean): Promise<void>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
-  loadSessionBudget(sessionId: SessionId): Promise<void>;
-  setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
+  loadSessionBudget(taskId: TaskId): Promise<void>;
+  setSessionBudget(taskId: TaskId, softCapUsd: number): Promise<void>;
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
   loadBudgetAlerts(): Promise<void>;
   dismissBudgetAlert(id: string): Promise<void>;
@@ -276,24 +276,24 @@ export interface AppActions {
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
-  deletePhaseTemplate(id: PhaseTemplateId, workspaceId: WorkspaceId): Promise<void>;
-  loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
+  deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
+  loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
   dismissSystemAlert(id: string): void;
-  setSessionMergeConflicts(sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>): void;
+  setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
   resolveMergeConflicts(
-    sessionId: SessionId,
+    taskId: TaskId,
     picks: Record<string, string>,
     runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
   ): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
-  loadSessionOverrides(sessionId: SessionId): Promise<void>;
-  setSessionOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
-  renameSession(sessionId: SessionId, goal: string): Promise<void>;
-  deleteSession(sessionId: SessionId): Promise<void>;
+  loadSessionOverrides(taskId: TaskId): Promise<void>;
+  setTaskOverrides(taskId: TaskId, overrides: OverrideSettings): Promise<void>;
+  renameTask(taskId: TaskId, goal: string): Promise<void>;
+  deleteTask(taskId: TaskId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
-  setSidebarStateFilter(states: ReadonlyArray<SessionState['kind']>): void;
+  setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@kay-am/types').ConfigBundleImportResult | null>;
@@ -388,10 +388,10 @@ function messageToTurnEvent(message: Message): TurnEvent | null {
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
-function applySessionUpdate(set: SetFn, sessionId: SessionId, state: SessionState): void {
+function applySessionUpdate(set: SetFn, taskId: TaskId, state: TurnState): void {
   set((store) => ({
     sessions: store.sessions.map((s) =>
-      s.id === sessionId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
+      s.id === taskId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
     ),
   }));
 }
@@ -399,7 +399,7 @@ function applySessionUpdate(set: SetFn, sessionId: SessionId, state: SessionStat
 async function runSummarizer(
   set: SetFn,
   get: () => AppStore,
-  sessionId: SessionId,
+  taskId: TaskId,
   turnInput: string,
   turnOutput: string,
 ): Promise<void> {
@@ -407,38 +407,38 @@ async function runSummarizer(
   set((state) => ({
     summarizerStatus: {
       ...state.summarizerStatus,
-      [sessionId]: { status: 'running', lastUpdate: null, error: null },
+      [taskId]: { status: 'running', lastUpdate: null, error: null },
     },
   }));
 
   try {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === taskId);
     if (!session) return;
 
     const providerId = session.providerPreference.defaultProvider;
     const summarizer = new Summarizer({ providerId, invokeFn: invoke });
-    const prevSlots = get().sessionSlots[sessionId] ?? [];
+    const prevSlots = get().sessionSlots[taskId] ?? [];
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
 
     for (const upsert of result.delta.upserts) {
-      const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
+      const existing = (get().sessionSlots[taskId] ?? []).find((s) => s.key === upsert.key);
       const next: ContextSlot = {
         key: upsert.key,
         value: upsert.value,
         enabled: existing?.enabled ?? true,
       };
-      await upsertContextSlot(tauriDatabase, sessionId, next);
+      await upsertContextSlot(tauriDatabase, taskId, next);
     }
-    const refreshed = await listContextSlotsForSession(tauriDatabase, sessionId);
+    const refreshed = await listContextSlotsForTask(tauriDatabase, taskId);
     set((state) => ({
-      sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
+      sessionSlots: { ...state.sessionSlots, [taskId]: refreshed },
     }));
 
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
     await insertProviderRun(tauriDatabase, {
       id: summarizerRunId,
-      sessionId,
+      taskId,
       provider: providerId,
       model: result.model,
       status: { kind: 'streaming', startedAt },
@@ -451,7 +451,7 @@ async function runSummarizer(
     const record: TelemetryRecord = {
       id: crypto.randomUUID() as TelemetryRecordId,
       runId: summarizerRunId,
-      sessionId,
+      taskId,
       kind: 'summarizer',
       provider: providerId,
       model: result.model,
@@ -464,19 +464,19 @@ async function runSummarizer(
 
     const [sessionSummary, workspaceSummary, telemetry, providerSummaries, budgetRules] =
       await Promise.all([
-        summarizeSessionTelemetry(tauriDatabase, sessionId),
+        summarizeTaskTelemetry(tauriDatabase, taskId),
         summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
-        listTelemetryForSession(tauriDatabase, sessionId),
+        listTelemetryForTask(tauriDatabase, taskId),
         summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
         invokeBudgetRuleList(),
       ]);
     set((state) => ({
       sessionSummary,
       workspaceSummary,
-      sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: telemetry },
+      sessionTelemetry: { ...state.sessionTelemetry, [taskId]: telemetry },
       summarizerStatus: {
         ...state.summarizerStatus,
-        [sessionId]: { status: 'idle', lastUpdate: now(), error: null },
+        [taskId]: { status: 'idle', lastUpdate: now(), error: null },
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
@@ -484,12 +484,12 @@ async function runSummarizer(
     // never log api key — only the error message
     const message = err instanceof Error ? err.message : String(err);
     if (import.meta.env.DEV) {
-      console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
+      console.warn(`[summarizer] failed for session ${taskId}: ${message}`);
     }
     set((state) => ({
       summarizerStatus: {
         ...state.summarizerStatus,
-        [sessionId]: { status: 'error', lastUpdate: now(), error: message },
+        [taskId]: { status: 'error', lastUpdate: now(), error: message },
       },
     }));
   }
@@ -628,7 +628,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (targetWorkspace) {
         await get().setCurrentWorkspace(targetWorkspace.id);
         const lastSessionId =
-          lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
+          lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as TaskId) : null;
         if (lastSessionId) {
           const sessions = get().sessions;
           if (sessions.some((s) => s.id === lastSessionId)) {
@@ -696,7 +696,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         skills,
         phaseTemplates,
       ] = await Promise.all([
-        listSessionsForWorkspace(tauriDatabase, id),
+        listTasksForWorkspace(tauriDatabase, id),
         summarizeWorkspaceTelemetry(tauriDatabase, id),
         summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
         invokeBudgetRuleList(),
@@ -711,15 +711,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessions = await Promise.all(
         loadedSessions.map(async (s) => {
           if (s.state.kind !== 'running') return s;
-          const idleState: SessionState = { kind: 'idle', lastActivityAt: recoveryNow };
-          await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
-            () => undefined,
-          );
+          const idleState: TurnState = { kind: 'idle', lastActivityAt: recoveryNow };
+          await updateTaskState(tauriDatabase, s.id, idleState, recoveryNow).catch(() => undefined);
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
       const worktreeRows = await Promise.all(
-        sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id)),
+        sessions.map((s) => listWorktreesForTask(tauriDatabase, s.id)),
       );
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
@@ -753,10 +751,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (id) {
       const session = get().sessions.find((s) => s.id === id);
       const [messages, summary, telemetry, slots] = await Promise.all([
-        listMessagesForSession(tauriDatabase, id),
-        summarizeSessionTelemetry(tauriDatabase, id),
-        listTelemetryForSession(tauriDatabase, id),
-        listContextSlotsForSession(tauriDatabase, id),
+        listMessagesForTask(tauriDatabase, id),
+        summarizeTaskTelemetry(tauriDatabase, id),
+        listTelemetryForTask(tauriDatabase, id),
+        listContextSlotsForTask(tauriDatabase, id),
       ]);
       const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
       set((state) => ({
@@ -766,7 +764,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
       }));
-      if (session?.phaseTemplateId) {
+      if (session?.workflowId) {
         const phaseRuns = await invokePhaseRunList(id);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: phaseRuns },
@@ -777,12 +775,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshSessions: async (workspaceId) => {
-    const sessions = await listSessionsForWorkspace(tauriDatabase, workspaceId);
+    const sessions = await listTasksForWorkspace(tauriDatabase, workspaceId);
     set({ sessions });
   },
 
-  refreshSessionSummary: async (sessionId) => {
-    const summary = await summarizeSessionTelemetry(tauriDatabase, sessionId);
+  refreshSessionSummary: async (taskId) => {
+    const summary = await summarizeTaskTelemetry(tauriDatabase, taskId);
     set({ sessionSummary: summary });
   },
 
@@ -843,13 +841,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  createSession: async ({
-    workspaceId,
-    goal,
-    branchPrefix,
-    providerPreference,
-    phaseTemplateId,
-  }) => {
+  createSession: async ({ workspaceId, goal, branchPrefix, providerPreference, workflowId }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
@@ -862,22 +854,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
 
     const now = new Date().toISOString() as IsoDateTime;
-    const initialState: SessionState = { kind: 'draft' };
-    const session: Session = {
-      id: crypto.randomUUID() as SessionId,
+    const initialState: TurnState = { kind: 'draft' };
+    const session: Task = {
+      id: crypto.randomUUID() as TaskId,
       workspaceId,
       goal: goal.trim() || worktree.slug,
       state: initialState,
       contextSlots: [],
-      providerPreference: providerPreference ?? DEFAULT_SESSION_PROVIDER_PREFERENCE,
-      ...(phaseTemplateId !== undefined ? { phaseTemplateId } : {}),
+      providerPreference: providerPreference ?? DEFAULT_TASK_PROVIDER_PREFERENCE,
+      ...(workflowId !== undefined ? { workflowId } : {}),
       createdAt: now,
       updatedAt: now,
     };
-    await insertSession(tauriDatabase, session);
-    await insertSessionWorktree(tauriDatabase, {
+    await insertTask(tauriDatabase, session);
+    await insertTaskWorktree(tauriDatabase, {
       id: crypto.randomUUID(),
-      sessionId: session.id,
+      taskId: session.id,
       worktreePath: worktree.worktreePath,
       branch: worktree.branchName,
       parallelIndex: 0,
@@ -920,19 +912,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     return { session, worktree };
   },
 
-  loadTranscript: async (sessionId) => {
-    const messages = await listMessagesForSession(tauriDatabase, sessionId);
+  loadTranscript: async (taskId) => {
+    const messages = await listMessagesForTask(tauriDatabase, taskId);
     const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
     set((state) => ({
-      messages: { ...state.messages, [sessionId]: messages },
-      transcripts: { ...state.transcripts, [sessionId]: events },
+      messages: { ...state.messages, [taskId]: messages },
+      transcripts: { ...state.transcripts, [taskId]: events },
     }));
   },
 
-  appendTurnEvent: (sessionId, event) => {
+  appendTurnEvent: (taskId, event) => {
     set((state) => {
-      const existing = state.transcripts[sessionId] ?? [];
-      const updatedTranscripts = { ...state.transcripts, [sessionId]: [...existing, event] };
+      const existing = state.transcripts[taskId] ?? [];
+      const updatedTranscripts = { ...state.transcripts, [taskId]: [...existing, event] };
       if (event.kind === 'unknown_payload') {
         const key = `${event.adapter}:${event.payloadType}`;
         return {
@@ -947,17 +939,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  resetTranscript: (sessionId) => {
+  resetTranscript: (taskId) => {
     set((state) => ({
-      transcripts: { ...state.transcripts, [sessionId]: [] },
+      transcripts: { ...state.transcripts, [taskId]: [] },
     }));
   },
 
-  sendTurn: async ({ sessionId, content, override, onNewAlerts }) => {
+  sendTurn: async ({ taskId, content, override, onNewAlerts }) => {
     const before = get();
-    const session = before.sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
-    const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    const session = before.sessions.find((s) => s.id === taskId);
+    if (!session) throw new Error(`session not found: ${taskId}`);
+    const workingDir = (before.sessionWorktrees[taskId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
         'session worktree not initialized — restart the app to reload persisted worktree paths',
@@ -975,7 +967,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const skill = workspaceSkills.find((s) => s.name === slashCmd.name);
       if (!skill) {
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'error',
           runId: errRunId,
           message: `unknown skill: /${slashCmd.name}`,
@@ -986,7 +978,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const workspace = before.workspaces.find((w) => w.id === session.workspaceId);
       if (!workspace) {
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'error',
           runId: errRunId,
           message: `workspace not found: ${session.workspaceId}`,
@@ -1003,7 +995,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
         resolvedPrompt = result.resolvedPrompt;
         const skillRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'skill_invocation',
           runId: skillRunId,
           skillName: result.skillName,
@@ -1013,7 +1005,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'error',
           runId: errRunId,
           message,
@@ -1023,58 +1015,55 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    let phaseDefinition: PhaseDefinition | null = null;
+    let phaseDefinition: Step | null = null;
     let phasePromptCarryForward = '';
-    let phaseTransitionEvent: Extract<TurnEvent, { kind: 'phase_transition' }> | null = null;
+    let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
     let parallelDispatch: {
-      template: PhaseTemplate;
-      currentDef: PhaseDefinition;
-      groupDefs: ReadonlyArray<PhaseDefinition>;
+      template: Workflow;
+      currentDef: Step;
+      groupDefs: ReadonlyArray<Step>;
     } | null = null;
     // Capture user prompt PRE phase build — needed if parallel branch fires, so per-def
     // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
-    if (session.phaseTemplateId) {
+    if (session.workflowId) {
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
-      const template = templates.find((t) => t.id === session.phaseTemplateId) ?? null;
+      const template = templates.find((t) => t.id === session.workflowId) ?? null;
       if (template) {
-        const freshRuns = await invokePhaseRunList(sessionId);
+        const freshRuns = await invokePhaseRunList(taskId);
         set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: freshRuns },
         }));
-        const nextDef = nextPhase(template, freshRuns);
+        const nextDef = nextStep(template, freshRuns);
         if (nextDef) {
-          const sortedDefs = [...template.definitions].sort((a, b) => a.ordinal - b.ordinal);
+          const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
             sortedDefs
               .filter((d) => d.ordinal < nextDef.ordinal)
               .reverse()
-              .find((d) =>
-                freshRuns.some((r) => r.phaseDefinitionId === d.id && r.status === 'completed'),
-              ) ?? null;
+              .find((d) => freshRuns.some((r) => r.stepId === d.id && r.status === 'completed')) ??
+            null;
           const prevRun = prevDef
-            ? (freshRuns.find(
-                (r) => r.phaseDefinitionId === prevDef.id && r.status === 'completed',
-              ) ?? null)
+            ? (freshRuns.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
             : null;
           if (prevDef && prevRun) {
-            const propagator = new PhaseContextPropagator({
+            const propagator = new WorkflowPropagator({
               summarizer: { summarizePhaseOutput: async (text) => text },
             });
             const transition = await propagator.buildTransition({
               fromOrdinal: prevDef.ordinal,
               toOrdinal: nextDef.ordinal,
               completedPhaseOutput: prevRun.outputSummary ?? '',
-              existingSlots: get().sessionSlots[sessionId] ?? [],
+              existingSlots: get().sessionSlots[taskId] ?? [],
               at: now(),
             });
             phasePromptCarryForward = transition.carryForwardContext;
             phaseTransitionEvent = {
-              kind: 'phase_transition',
+              kind: 'step_transition',
               runId: 'pending' as ProviderRunId,
-              fromPhase: { ordinal: prevDef.ordinal, name: prevDef.name },
-              toPhase: { ordinal: nextDef.ordinal, name: nextDef.name },
+              fromStep: { ordinal: prevDef.ordinal, name: prevDef.name },
+              toStep: { ordinal: nextDef.ordinal, name: nextDef.name },
               carryForwardContext: transition.carryForwardContext,
               at: transition.at,
             };
@@ -1099,7 +1088,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
 
           if (parallelDispatch === null) {
-            resolvedPrompt = buildPhasePrompt({
+            resolvedPrompt = buildStepPrompt({
               definition: nextDef,
               carryForwardContext: phasePromptCarryForward,
               userMessage: resolvedPrompt,
@@ -1133,7 +1122,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (routingDecision.reason === 'all-exceeded') {
       const runId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(sessionId, {
+      get().appendTurnEvent(taskId, {
         kind: 'error',
         runId,
         message:
@@ -1152,7 +1141,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
       const runId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(sessionId, {
+      get().appendTurnEvent(taskId, {
         kind: 'error',
         runId,
         message: encodeAuthRequiredMessage({ providerId: provider, identity: authState.identity }),
@@ -1175,14 +1164,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (parallelDispatch === null) {
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
-        sessionId,
+        taskId,
         role: 'user',
         content: userTurnText,
         createdAt: now(),
         ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
       };
       await insertMessage(tauriDatabase, userMessage);
-      get().appendTurnEvent(sessionId, {
+      get().appendTurnEvent(taskId, {
         kind: 'user_text',
         runId,
         text: userTurnText,
@@ -1191,7 +1180,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       const run: ProviderRun = {
         id: runId,
-        sessionId,
+        taskId,
         provider,
         model,
         status: { kind: 'streaming', startedAt: now() },
@@ -1201,35 +1190,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await insertProviderRun(tauriDatabase, run);
     }
 
-    let phaseRunId: PhaseRunId | null = null;
+    let sessionId: SessionId | null = null;
     if (phaseDefinition && parallelDispatch === null) {
       const inserted = await invokePhaseRunInsert({
-        sessionId,
-        phaseDefinitionId: phaseDefinition.id,
+        taskId,
+        stepId: phaseDefinition.id,
         ordinal: phaseDefinition.ordinal,
         name: phaseDefinition.name,
         status: 'running',
         providerRunId: runId,
         startedAt: now(),
       });
-      phaseRunId = inserted.id;
-      const refreshedRuns = await invokePhaseRunList(sessionId);
+      sessionId = inserted.id;
+      const refreshedRuns = await invokePhaseRunList(taskId);
       set((state) => ({
-        sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
       }));
       if (phaseTransitionEvent) {
-        get().appendTurnEvent(sessionId, { ...phaseTransitionEvent, runId });
+        get().appendTurnEvent(taskId, { ...phaseTransitionEvent, runId });
       }
     }
 
     if (parallelDispatch === null) {
-      let nextState: SessionState = session.state;
+      let nextState: TurnState = session.state;
       if (nextState.kind === 'draft') {
-        nextState = sessionReducer(nextState, { kind: 'start', at: now() });
+        nextState = turnReducer(nextState, { kind: 'start', at: now() });
       }
-      nextState = sessionReducer(nextState, { kind: 'send', runId, at: now() });
-      await updateSessionState(tauriDatabase, sessionId, nextState, now());
-      applySessionUpdate(set, sessionId, nextState);
+      nextState = turnReducer(nextState, { kind: 'send', runId, at: now() });
+      await updateTaskState(tauriDatabase, taskId, nextState, now());
+      applySessionUpdate(set, taskId, nextState);
     }
 
     const providerInfo = get().providers.find((p) => p.id === provider);
@@ -1241,12 +1230,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const [globalRules, workspaceRules, sessionRules] = await Promise.all([
           invokePermissionRuleList({ scope: 'global' }),
           invokePermissionRuleList({ scope: 'workspace', workspaceId: session.workspaceId }),
-          invokePermissionRuleList({ scope: 'session', sessionId }),
+          invokePermissionRuleList({ scope: 'task', taskId }),
         ]);
         effectiveRules = [...globalRules, ...workspaceRules, ...sessionRules];
         const flags = buildClaudeFlags({
           rules: effectiveRules,
-          scope: { workspaceId: session.workspaceId, sessionId },
+          scope: { workspaceId: session.workspaceId, taskId },
         });
         claudeFlags = {
           allowedTools: flags.allowedTools,
@@ -1270,7 +1259,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (parallelDispatch !== null) {
       const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
       if (!workspace) {
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'error',
           runId: crypto.randomUUID() as ProviderRunId,
           message: `workspace not found: ${session.workspaceId}`,
@@ -1291,14 +1280,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // approximate per-turn cost from the most recent telemetry row for the
       // session as a conservative ceiling. If no telemetry exists yet, we skip
       // the check (no signal to compare against — first turn).
-      const sessBudget = get().sessionBudgets[sessionId];
+      const sessBudget = get().sessionBudgets[taskId];
       if (sessBudget) {
-        const tele = get().sessionTelemetry[sessionId] ?? [];
+        const tele = get().sessionTelemetry[taskId] ?? [];
         const lastTurnCost = tele.length > 0 ? (tele[tele.length - 1]?.estimatedCostUsd ?? 0) : 0;
         const projected = lastTurnCost * N;
         const sessSpent = (get().sessionSummary?.estimatedCostUsd ?? 0) + projected;
         if (lastTurnCost > 0 && sessSpent > sessBudget.softCapUsd) {
-          get().appendTurnEvent(sessionId, {
+          get().appendTurnEvent(taskId, {
             kind: 'error',
             runId: crypto.randomUUID() as ProviderRunId,
             message: `parallel turn aborted: projected spend (${sessSpent.toFixed(4)} USD) would exceed session soft cap (${sessBudget.softCapUsd.toFixed(4)} USD).`,
@@ -1311,7 +1300,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Persist user message once (mirrors single-run path).
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
-        sessionId,
+        taskId,
         role: 'user',
         content: userTurnText,
         createdAt: now(),
@@ -1322,23 +1311,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // for the legacy cancel path; for parallel groups, cancel routes through
       // cancelGroup via the scheduler handle inside runParallelBranch).
       const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(sessionId, {
+      get().appendTurnEvent(taskId, {
         kind: 'user_text',
         runId: groupSessionRunId,
         text: userTurnText,
         at: userMessage.createdAt,
       });
-      let nextStateP: SessionState = session.state;
+      let nextStateP: TurnState = session.state;
       if (nextStateP.kind === 'draft') {
-        nextStateP = sessionReducer(nextStateP, { kind: 'start', at: now() });
+        nextStateP = turnReducer(nextStateP, { kind: 'start', at: now() });
       }
-      nextStateP = sessionReducer(nextStateP, {
+      nextStateP = turnReducer(nextStateP, {
         kind: 'send',
         runId: groupSessionRunId,
         at: now(),
       });
-      await updateSessionState(tauriDatabase, sessionId, nextStateP, now());
-      applySessionUpdate(set, sessionId, nextStateP);
+      await updateTaskState(tauriDatabase, taskId, nextStateP, now());
+      applySessionUpdate(set, taskId, nextStateP);
 
       const effects: ParallelBranchEffects = {
         appendTurnEvent: (sid, ev) => get().appendTurnEvent(sid, ev),
@@ -1385,18 +1374,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
           // Don't auto-cleanup worktrees on full failure — user inspects per-run state.
           // (Currently no per-run worktrees are created in v1; comment kept for the
           // follow-on that wires createParallelWorktrees end-to-end.)
-          const errorState: SessionState = {
+          const errorState: TurnState = {
             kind: 'error',
             message: 'all parallel runs failed',
             failedAt: now(),
           };
-          await updateSessionState(tauriDatabase, sessionId, errorState, now());
-          applySessionUpdate(set, sessionId, errorState);
+          await updateTaskState(tauriDatabase, taskId, errorState, now());
+          applySessionUpdate(set, taskId, errorState);
         } else {
-          await updateSessionState(
+          await updateTaskState(
             tauriDatabase,
-            sessionId,
-            sessionReducer(get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP, {
+            taskId,
+            turnReducer(get().sessions.find((s) => s.id === taskId)?.state ?? nextStateP, {
               kind: 'receive_event',
               event: { kind: 'done', runId: result.runIds[0]!, at: now() },
             }),
@@ -1405,19 +1394,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       } catch (err) {
         const rawMessage = err instanceof Error ? err.message : String(err);
-        get().appendTurnEvent(sessionId, {
+        get().appendTurnEvent(taskId, {
           kind: 'error',
           runId: groupSessionRunId,
           message: rawMessage,
           at: now(),
         });
-        const errorState: SessionState = {
+        const errorState: TurnState = {
           kind: 'error',
           message: rawMessage,
           failedAt: now(),
         };
-        await updateSessionState(tauriDatabase, sessionId, errorState, now());
-        applySessionUpdate(set, sessionId, errorState);
+        await updateTaskState(tauriDatabase, taskId, errorState, now());
+        applySessionUpdate(set, taskId, errorState);
         throw err;
       }
       return;
@@ -1438,7 +1427,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         binary: providerInfo?.binary,
         ...claudeFlags,
       })) {
-        get().appendTurnEvent(sessionId, event);
+        get().appendTurnEvent(taskId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
@@ -1453,13 +1442,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
             at: event.at,
           };
           const decision = engine.decide(request, effectiveRules, {
-            sessionId,
+            taskId,
             workspaceId: session.workspaceId,
           });
           const auditPayload: PermissionAuditInsertPayload = {
             id: auditRequestId,
             runId,
-            sessionId,
+            taskId,
             toolUseId: event.toolUseId,
             toolName: event.toolName,
             inputJson: JSON.stringify(event.input),
@@ -1493,7 +1482,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const record: TelemetryRecord = {
             id: crypto.randomUUID() as TelemetryRecordId,
             runId,
-            sessionId,
+            taskId,
             kind: 'turn',
             provider,
             model,
@@ -1506,14 +1495,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
           set((state) => ({
             sessionTelemetry: {
               ...state.sessionTelemetry,
-              [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
+              [taskId]: [...(state.sessionTelemetry[taskId] ?? []), record],
             },
           }));
-          const session = get().sessions.find((s) => s.id === sessionId);
+          const session = get().sessions.find((s) => s.id === taskId);
           if (session) {
             const [sessSummary, wsSummary, providerSummaries, budgetRules, freshAlerts] =
               await Promise.all([
-                summarizeSessionTelemetry(tauriDatabase, sessionId),
+                summarizeTaskTelemetry(tauriDatabase, taskId),
                 summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
                 summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
                 invokeBudgetRuleList(),
@@ -1531,25 +1520,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
         }
 
-        const current = get().sessions.find((s) => s.id === sessionId);
+        const current = get().sessions.find((s) => s.id === taskId);
         if (current) {
-          const reduced = sessionReducer(current.state, { kind: 'receive_event', event });
+          const reduced = turnReducer(current.state, { kind: 'receive_event', event });
           if (reduced !== current.state) {
-            await updateSessionState(tauriDatabase, sessionId, reduced, now());
-            applySessionUpdate(set, sessionId, reduced);
+            await updateTaskState(tauriDatabase, taskId, reduced, now());
+            applySessionUpdate(set, taskId, reduced);
           }
         }
       }
       // Stream ended without a 'done'/'error' event — provider CLI exited
       // cleanly but didn't emit a `result` line, so the reducer never left
       // 'running'. Force-idle so input re-enables.
-      const afterStream = get().sessions.find((s) => s.id === sessionId);
+      const afterStream = get().sessions.find((s) => s.id === taskId);
       if (afterStream?.state.kind === 'running') {
-        const idleState: SessionState = { kind: 'idle', lastActivityAt: now() };
-        await updateSessionState(tauriDatabase, sessionId, idleState, now());
-        applySessionUpdate(set, sessionId, idleState);
+        const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
+        await updateTaskState(tauriDatabase, taskId, idleState, now());
+        applySessionUpdate(set, taskId, idleState);
         if (assistantText.length === 0) {
-          get().appendTurnEvent(sessionId, {
+          get().appendTurnEvent(taskId, {
             kind: 'error',
             runId,
             message:
@@ -1562,18 +1551,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
         kind: 'succeeded',
         finishedAt: now(),
       });
-      if (phaseRunId && phaseDefinition) {
+      if (sessionId && phaseDefinition) {
         const completedOrdinal = phaseDefinition.ordinal;
-        await invokePhaseRunUpdateStatus(phaseRunId, {
+        await invokePhaseRunUpdateStatus(sessionId, {
           status: 'completed',
           outputSummary: assistantText.slice(0, 2000),
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokePhaseRunList(taskId);
         set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
           sessions: state.sessions.map((s) =>
-            s.id === sessionId ? { ...s, currentPhaseOrdinal: completedOrdinal } : s,
+            s.id === taskId ? { ...s, currentStepOrdinal: completedOrdinal } : s,
           ),
         }));
       }
@@ -1587,32 +1576,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
             identity: get().authResults?.[provider]?.identity ?? null,
           })
         : rawMessage;
-      const errorState: SessionState = {
+      const errorState: TurnState = {
         kind: 'error',
         message: rawMessage,
         failedAt: now(),
       };
-      await updateSessionState(tauriDatabase, sessionId, errorState, now());
-      applySessionUpdate(set, sessionId, errorState);
+      await updateTaskState(tauriDatabase, taskId, errorState, now());
+      applySessionUpdate(set, taskId, errorState);
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),
         error: rawMessage,
       });
-      get().appendTurnEvent(sessionId, {
+      get().appendTurnEvent(taskId, {
         kind: 'error',
         runId,
         message,
         at: now(),
       });
-      if (phaseRunId) {
-        await invokePhaseRunUpdateStatus(phaseRunId, {
+      if (sessionId) {
+        await invokePhaseRunUpdateStatus(sessionId, {
           status: 'failed',
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokePhaseRunList(taskId);
         set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
         }));
       }
     }
@@ -1620,7 +1609,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (assistantText.length > 0) {
       const assistantMessage: Message = {
         id: crypto.randomUUID() as MessageId,
-        sessionId,
+        taskId,
         role: 'assistant',
         content: assistantText,
         createdAt: now(),
@@ -1629,22 +1618,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (!lastError && assistantText.length > 0) {
-      void runSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
+      void runSummarizer(set, get, taskId, resolvedPrompt, assistantText);
     }
 
     if (lastError) throw lastError;
   },
 
-  cancelCurrentTurn: async (sessionId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+  cancelCurrentTurn: async (taskId) => {
+    const session = get().sessions.find((s) => s.id === taskId);
     if (!session || session.state.kind !== 'running') return;
     // Best-effort: if the registry already evicted the run we still want to
     // normalize session state locally so the UI re-enables the input.
     await cancelTurn(session.state.runId).catch(() => undefined);
     const now = new Date().toISOString() as IsoDateTime;
-    const idleState: SessionState = { kind: 'idle', lastActivityAt: now };
-    await updateSessionState(tauriDatabase, sessionId, idleState, now).catch(() => undefined);
-    applySessionUpdate(set, sessionId, idleState);
+    const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
+    await updateTaskState(tauriDatabase, taskId, idleState, now).catch(() => undefined);
+    applySessionUpdate(set, taskId, idleState);
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
@@ -1659,49 +1648,49 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  loadSessionTelemetry: async (sessionId) => {
-    const records = await listTelemetryForSession(tauriDatabase, sessionId);
+  loadSessionTelemetry: async (taskId) => {
+    const records = await listTelemetryForTask(tauriDatabase, taskId);
     set((state) => ({
-      sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: records },
+      sessionTelemetry: { ...state.sessionTelemetry, [taskId]: records },
     }));
   },
 
-  loadSessionSlots: async (sessionId) => {
-    const slots = await listContextSlotsForSession(tauriDatabase, sessionId);
+  loadSessionSlots: async (taskId) => {
+    const slots = await listContextSlotsForTask(tauriDatabase, taskId);
     set((state) => ({
-      sessionSlots: { ...state.sessionSlots, [sessionId]: slots },
+      sessionSlots: { ...state.sessionSlots, [taskId]: slots },
     }));
   },
 
-  upsertSessionSlot: async (sessionId, key, value) => {
-    const existing = get().sessionSlots[sessionId] ?? [];
+  upsertSessionSlot: async (taskId, key, value) => {
+    const existing = get().sessionSlots[taskId] ?? [];
     const prev = existing.find((s) => s.key === key);
     const next: ContextSlot = { key, value, enabled: prev?.enabled ?? true };
-    await upsertContextSlot(tauriDatabase, sessionId, next);
+    await upsertContextSlot(tauriDatabase, taskId, next);
     set((state) => ({
       sessionSlots: {
         ...state.sessionSlots,
-        [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
+        [taskId]: mergeSlots(state.sessionSlots[taskId] ?? [], next),
       },
     }));
   },
 
-  toggleSessionSlot: async (sessionId, key, enabled) => {
-    const existing = get().sessionSlots[sessionId] ?? [];
+  toggleSessionSlot: async (taskId, key, enabled) => {
+    const existing = get().sessionSlots[taskId] ?? [];
     const prev = existing.find((s) => s.key === key);
     const next: ContextSlot = { key, value: prev?.value ?? '', enabled };
-    await upsertContextSlot(tauriDatabase, sessionId, next);
+    await upsertContextSlot(tauriDatabase, taskId, next);
     set((state) => ({
       sessionSlots: {
         ...state.sessionSlots,
-        [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
+        [taskId]: mergeSlots(state.sessionSlots[taskId] ?? [], next),
       },
     }));
   },
 
-  endSession: async (sessionId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+  endSession: async (taskId) => {
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session) throw new Error(`session not found: ${taskId}`);
     if (session.state.kind === 'ended') return;
     if (session.state.kind === 'running') {
       // Best-effort cancel — Rust TurnRegistry may have already removed the
@@ -1711,7 +1700,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await cancelTurn(session.state.runId).catch(() => undefined);
     }
 
-    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
+    const worktreePaths = get().sessionWorktrees[taskId] ?? [];
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     if (workspace) {
       for (const worktreePath of worktreePaths) {
@@ -1725,18 +1714,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
     }
-    await deleteWorktreesForSession(tauriDatabase, sessionId);
+    await deleteWorktreesForTask(tauriDatabase, taskId);
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-    const ended: SessionState = sessionReducer(session.state, { kind: 'end', at: now() });
-    await updateSessionState(tauriDatabase, sessionId, ended, now());
-    applySessionUpdate(set, sessionId, ended);
+    const ended: TurnState = turnReducer(session.state, { kind: 'end', at: now() });
+    await updateTaskState(tauriDatabase, taskId, ended, now());
+    applySessionUpdate(set, taskId, ended);
 
     set((state) => {
       const nextWorktrees = { ...state.sessionWorktrees };
-      delete nextWorktrees[sessionId];
+      delete nextWorktrees[taskId];
       const nextBranches = { ...state.sessionBranches };
-      delete nextBranches[sessionId];
+      delete nextBranches[taskId];
       return { sessionWorktrees: nextWorktrees, sessionBranches: nextBranches };
     });
   },
@@ -1763,20 +1752,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({ budgetRules: state.budgetRules.filter((r) => r.id !== id) }));
   },
 
-  loadSessionBudget: async (sessionId) => {
-    const budget = await invokeSessionBudgetGet(sessionId);
+  loadSessionBudget: async (taskId) => {
+    const budget = await invokeSessionBudgetGet(taskId);
     if (budget !== null) {
       set((state) => ({
-        sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
+        sessionBudgets: { ...state.sessionBudgets, [taskId]: budget },
       }));
     }
   },
 
-  setSessionBudget: async (sessionId, softCapUsd) => {
-    await invokeSessionBudgetSet(sessionId, softCapUsd);
-    const budget: SessionBudget = { sessionId, softCapUsd };
+  setSessionBudget: async (taskId, softCapUsd) => {
+    await invokeSessionBudgetSet(taskId, softCapUsd);
+    const budget: TaskBudget = { taskId, softCapUsd };
     set((state) => ({
-      sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
+      sessionBudgets: { ...state.sessionBudgets, [taskId]: budget },
     }));
   },
 
@@ -1806,7 +1795,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const workspace = state.workspaces.find((w) => w.id === id);
     if (!workspace) throw new Error(`workspace not found: ${id}`);
 
-    const sessions = await listSessionsForWorkspace(tauriDatabase, id);
+    const sessions = await listTasksForWorkspace(tauriDatabase, id);
     const aliveSessions = sessions.filter(
       (s) => s.state.kind === 'running' || s.state.kind === 'idle',
     );
@@ -1923,7 +1912,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  deletePhaseTemplate: async (id, workspaceId) => {
+  deleteWorkflow: async (id, workspaceId) => {
     await invokePhaseTemplateDelete(id);
     const templates = await invokePhaseTemplateList(workspaceId);
     set((state) => ({
@@ -1931,9 +1920,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  loadPhaseRunsForSession: async (sessionId) => {
-    const runs = await invokePhaseRunList(sessionId);
-    set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs } }));
+  loadPhaseRunsForSession: async (taskId) => {
+    const runs = await invokePhaseRunList(taskId);
+    set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: runs } }));
   },
 
   dismissSystemAlert: (id) => {
@@ -1942,27 +1931,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  setSessionMergeConflicts: (sessionId, conflicts) => {
+  setSessionMergeConflicts: (taskId, conflicts) => {
     set((state) => ({
-      sessionMergeConflicts: { ...state.sessionMergeConflicts, [sessionId]: conflicts },
+      sessionMergeConflicts: { ...state.sessionMergeConflicts, [taskId]: conflicts },
     }));
   },
 
-  resolveMergeConflicts: async (sessionId, picks, runStatuses) => {
-    const conflicts = get().sessionMergeConflicts[sessionId] ?? [];
+  resolveMergeConflicts: async (taskId, picks, runStatuses) => {
+    const conflicts = get().sessionMergeConflicts[taskId] ?? [];
     await resolveConflicts({
       conflicts,
       runStatuses: runStatuses.map((rs) => ({
         runId: rs.runId as ProviderRunId,
         completedAt: rs.completedAt as IsoDateTime,
-        status: rs.status as PhaseRunStatus,
+        status: rs.status as SessionStatus,
       })),
       strategy: 'manual',
       manualPicks: picks as Record<string, ProviderRunId>,
     });
     set((state) => {
       const next = { ...state.sessionMergeConflicts };
-      delete next[sessionId];
+      delete next[taskId];
       return { sessionMergeConflicts: next };
     });
   },
@@ -1985,51 +1974,51 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  loadSessionOverrides: async (sessionId) => {
-    const overrides = await invoke<OverrideSettings | null>('get_session_overrides', { sessionId });
+  loadSessionOverrides: async (taskId) => {
+    const overrides = await invoke<OverrideSettings | null>('get_session_overrides', { taskId });
     if (overrides) {
       set((state) => ({
-        sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
+        sessionOverrides: { ...state.sessionOverrides, [taskId]: overrides },
       }));
     }
   },
 
-  setSessionOverrides: async (sessionId, overrides) => {
-    await invoke('set_session_overrides', { sessionId, overrides });
+  setTaskOverrides: async (taskId, overrides) => {
+    await invoke('set_session_overrides', { taskId, overrides });
     set((state) => ({
-      sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
+      sessionOverrides: { ...state.sessionOverrides, [taskId]: overrides },
     }));
   },
 
-  renameSession: async (sessionId, goal) => {
+  renameTask: async (taskId, goal) => {
     if (!goal.trim()) throw new Error('session name cannot be empty');
     const now = new Date().toISOString() as IsoDateTime;
-    const prev = get().sessions.find((s) => s.id === sessionId);
-    if (!prev) throw new Error(`session not found: ${sessionId}`);
+    const prev = get().sessions.find((s) => s.id === taskId);
+    if (!prev) throw new Error(`session not found: ${taskId}`);
     set((state) => ({
       sessions: state.sessions.map((s) =>
-        s.id === sessionId ? { ...s, goal: goal.trim(), updatedAt: now } : s,
+        s.id === taskId ? { ...s, goal: goal.trim(), updatedAt: now } : s,
       ),
     }));
     try {
-      await renameSessionInDb(tauriDatabase, sessionId, goal.trim(), now);
+      await renameSessionInDb(tauriDatabase, taskId, goal.trim(), now);
     } catch (err) {
       set((state) => ({
-        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
+        sessions: state.sessions.map((s) => (s.id === taskId ? prev : s)),
       }));
       throw err;
     }
   },
 
-  deleteSession: async (sessionId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+  deleteTask: async (taskId) => {
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session) throw new Error(`session not found: ${taskId}`);
     if (session.state.kind === 'running') {
       await cancelTurn((session.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
         () => undefined,
       );
     }
-    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
+    const worktreePaths = get().sessionWorktrees[taskId] ?? [];
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     if (workspace) {
       for (const worktreePath of worktreePaths) {
@@ -2040,15 +2029,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
     }
-    await deleteSessionFromDb(tauriDatabase, sessionId);
+    await deleteSessionFromDb(tauriDatabase, taskId);
     set((state) => {
       const nextWorktrees = { ...state.sessionWorktrees };
-      delete nextWorktrees[sessionId];
+      delete nextWorktrees[taskId];
       const nextBranches = { ...state.sessionBranches };
-      delete nextBranches[sessionId];
+      delete nextBranches[taskId];
       return {
-        sessions: state.sessions.filter((s) => s.id !== sessionId),
-        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        sessions: state.sessions.filter((s) => s.id !== taskId),
+        currentSessionId: state.currentSessionId === taskId ? null : state.currentSessionId,
         sessionWorktrees: nextWorktrees,
         sessionBranches: nextBranches,
       };
@@ -2069,21 +2058,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 }));
 
-export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {
+export function useResolvedSettings(taskId: TaskId | null): ResolvedSettings {
   return useAppStore((state) => {
-    const session = sessionId ? (state.sessions.find((s) => s.id === sessionId) ?? null) : null;
+    const session = taskId ? (state.sessions.find((s) => s.id === taskId) ?? null) : null;
     const workspaceId = session?.workspaceId ?? null;
 
     const globalSettings: GlobalSettings = {
-      defaultProviderId: DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-      defaultPhaseTemplateId: null,
+      defaultProviderId: DEFAULT_TASK_PROVIDER_PREFERENCE.defaultProvider,
+      defaultWorkflowId: null,
       defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
       parallelEnabled:
         state.settings[SETTING_ENABLE_PARALLEL_AGENTS] === 'true' || DEFAULT_ENABLE_PARALLEL_AGENTS,
     };
 
     const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;
-    const sessionOverride = sessionId ? (state.sessionOverrides[sessionId] ?? null) : null;
+    const sessionOverride = taskId ? (state.sessionOverrides[taskId] ?? null) : null;
 
     return resolveSettings({ global: globalSettings, workspaceOverride, sessionOverride });
   });

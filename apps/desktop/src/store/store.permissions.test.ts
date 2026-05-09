@@ -4,8 +4,8 @@ import type {
   PermissionRule,
   PermissionRuleId,
   ProviderRunId,
-  Session,
-  SessionId,
+  Task,
+  TaskId,
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
@@ -54,23 +54,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
+  insertTask: vi.fn(),
+  insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
+  listContextSlotsForTask: vi.fn(async () => []),
+  listMessagesForTask: vi.fn(async () => []),
+  listTasksForWorkspace: vi.fn(async () => []),
+  listTelemetryForTask: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
-  listWorktreesForSession: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
+  listWorktreesForTask: vi.fn(async () => []),
+  deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
+  summarizeTaskTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
+  updateTaskState: vi.fn(),
   upsertContextSlot: vi.fn(),
 }));
 
@@ -134,10 +134,10 @@ vi.mock('../repo', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = 'session-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
-function buildSession(): Session {
+function buildSession(): Task {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
   return {
     id: SESSION_ID,
@@ -158,8 +158,8 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
   return {
     id: 'rule-1' as PermissionRuleId,
-    scope: 'session',
-    sessionId: SESSION_ID,
+    scope: 'task',
+    taskId: SESSION_ID,
     pattern: { tool: 'Edit' },
     decision: 'allow',
     priority: 100,
@@ -235,7 +235,7 @@ describe('sendTurn — permission proxy integration', () => {
 
   it('forwards disallowedTools when a deny rule is configured (claude)', async () => {
     permissionRuleListSpy.mockImplementation(async (args: { scope: string }) => {
-      if (args.scope === 'session') {
+      if (args.scope === 'task') {
         return [
           buildRule({
             decision: 'deny',
@@ -248,7 +248,7 @@ describe('sendTurn — permission proxy integration', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hello' });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -259,7 +259,7 @@ describe('sendTurn — permission proxy integration', () => {
 
   it('forwards allowedTools when an allow rule is configured (claude)', async () => {
     permissionRuleListSpy.mockImplementation(async (args: { scope: string }) => {
-      if (args.scope === 'session') {
+      if (args.scope === 'task') {
         return [buildRule({ decision: 'allow', pattern: { tool: 'Edit' } })];
       }
       return [];
@@ -267,7 +267,7 @@ describe('sendTurn — permission proxy integration', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hi' });
 
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(args.allowedTools).toEqual(['Edit']);
@@ -279,7 +279,7 @@ describe('sendTurn — permission proxy integration', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hi' });
 
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(args.allowedTools).toEqual([]);
@@ -299,7 +299,7 @@ describe('sendTurn — permission proxy integration', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hi' });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;

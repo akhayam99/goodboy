@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppShell, Button, KbdPill } from '@kay-am/ui';
 import { Settings } from 'lucide-react';
-import type { SessionId } from '@kay-am/types';
+import type { TaskId } from '@kay-am/types';
 import { AlertCenter } from './components/AlertCenter';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSplash } from './components/BootSplash';
@@ -18,9 +18,9 @@ import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
 import { refreshPricingTable } from './providerPricing';
 
-const CONTEXT_PANEL_KEY = (id: SessionId): string => `kayam:context-panel-open:${id}`;
+const CONTEXT_PANEL_KEY = (id: TaskId): string => `kayam:context-panel-open:${id}`;
 
-function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
+function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(CONTEXT_PANEL_KEY(id));
     if (raw === null) return fallback;
@@ -30,7 +30,7 @@ function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
   }
 }
 
-function writePersistedContextOpen(id: SessionId, open: boolean): void {
+function writePersistedContextOpen(id: TaskId, open: boolean): void {
   try {
     localStorage.setItem(CONTEXT_PANEL_KEY(id), open ? '1' : '0');
   } catch {
@@ -54,7 +54,7 @@ export function App() {
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
-  const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
+  const [contextHydratedFor, setContextHydratedFor] = useState<TaskId | null>(null);
 
   useEffect(() => {
     void hydrate();

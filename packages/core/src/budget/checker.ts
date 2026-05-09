@@ -4,8 +4,8 @@ import type {
   BudgetRule,
   IsoDateTime,
   ProviderName,
-  SessionBudget,
-  SessionId,
+  TaskBudget,
+  TaskId,
 } from '@kay-am/types';
 import type { Database } from '@kay-am/db';
 
@@ -89,23 +89,20 @@ export async function checkProviderBudget(
   };
 }
 
-export async function checkSessionBudget(
-  db: Database,
-  sessionId: SessionId,
-): Promise<BudgetCheckResult> {
+export async function checkTaskBudget(db: Database, taskId: TaskId): Promise<BudgetCheckResult> {
   const budgetRows = await db.select<SessionBudgetRow>(
     `SELECT session_id, soft_cap_usd
        FROM session_budgets
       WHERE session_id = ?
       LIMIT 1`,
-    [sessionId],
+    [taskId],
   );
 
   if (budgetRows.length === 0) return UNSET_RESULT;
 
   const budgetRow = budgetRows[0] as SessionBudgetRow;
-  const budget: SessionBudget = {
-    sessionId: budgetRow.session_id as SessionId,
+  const budget: TaskBudget = {
+    taskId: budgetRow.session_id as TaskId,
     softCapUsd: budgetRow.soft_cap_usd,
   };
 
@@ -113,7 +110,7 @@ export async function checkSessionBudget(
     `SELECT COALESCE(SUM(estimated_cost_usd), 0) AS total
        FROM telemetry_records
       WHERE session_id = ?`,
-    [sessionId],
+    [taskId],
   );
 
   const spent = costRows[0]?.total ?? 0;

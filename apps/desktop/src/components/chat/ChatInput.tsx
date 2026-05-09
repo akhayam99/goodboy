@@ -6,8 +6,8 @@ import type {
   BudgetAlertKind,
   PermissionRule,
   ProviderId,
-  Session,
-  SessionId,
+  Task,
+  TaskId,
   TurnProviderOverride,
   WorkspaceId,
 } from '@kay-am/types';
@@ -30,12 +30,12 @@ const RUNNING_KINDS = new Set(['starting', 'running']);
 const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 
 interface ChatInputProps {
-  readonly session: Session;
+  readonly session: Task;
   readonly providerDisconnected?: boolean;
 }
 
 function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
-  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
+  return kind === 'provider-exceeded' || kind === 'task-exceeded' ? 'error' : 'warning';
 }
 
 function toastMessageForAlert(alert: BudgetAlert): string {
@@ -46,7 +46,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   if (alert.kind === 'provider-exceeded') {
     return `provider ${alert.provider ?? '?'} budget exceeded`;
   }
-  if (alert.kind === 'session-threshold') {
+  if (alert.kind === 'task-threshold') {
     return `session budget at ${pct}%`;
   }
   return 'session budget exceeded';
@@ -63,7 +63,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   );
 
   const effectiveRules = useEffectivePermissionRules({
-    sessionId: session.id,
+    taskId: session.id,
     workspaceId: session.workspaceId,
   });
   const { showToast } = useToast();
@@ -130,7 +130,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setSelectedModel(null);
     try {
       await sendTurn({
-        sessionId: session.id,
+        taskId: session.id,
         content,
         override,
         onNewAlerts: (alerts) => {
@@ -177,7 +177,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         <PreflightPill
           provider={effectiveProvider}
           rules={effectiveRules}
-          sessionId={session.id}
+          taskId={session.id}
           workspaceId={session.workspaceId}
         />
         <div className="relative" ref={wrapperRef}>
@@ -276,20 +276,18 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 function PreflightPill({
   provider,
   rules,
-  sessionId,
+  taskId,
   workspaceId,
 }: {
   provider: ProviderId;
   rules: ReadonlyArray<PermissionRule>;
-  sessionId: SessionId;
+  taskId: TaskId;
   workspaceId: WorkspaceId;
 }) {
   const flags = useMemo(
     () =>
-      provider === 'anthropic'
-        ? buildClaudeFlags({ rules, scope: { sessionId, workspaceId } })
-        : null,
-    [provider, rules, sessionId, workspaceId],
+      provider === 'anthropic' ? buildClaudeFlags({ rules, scope: { taskId, workspaceId } }) : null,
+    [provider, rules, taskId, workspaceId],
   );
 
   const openSettings = () => {

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
   ProviderRunId,
-  Session,
-  SessionId,
+  Task,
+  TaskId,
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
@@ -45,23 +45,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
+  insertTask: vi.fn(),
+  insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
+  listContextSlotsForTask: vi.fn(async () => []),
+  listMessagesForTask: vi.fn(async () => []),
+  listTasksForWorkspace: vi.fn(async () => []),
+  listTelemetryForTask: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
-  listWorktreesForSession: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
+  listWorktreesForTask: vi.fn(async () => []),
+  deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
+  summarizeTaskTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
+  updateTaskState: vi.fn(),
   upsertContextSlot: vi.fn(),
 }));
 
@@ -118,10 +118,10 @@ vi.mock('../repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = 'session-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
-function buildSession(): Session {
+function buildSession(): Task {
   const now = '2026-05-08T00:00:00.000Z' as IsoDateTime;
   return {
     id: SESSION_ID,
@@ -211,7 +211,7 @@ describe('sendTurn — terminal state guarantees', () => {
     const useAppStore = await importStore();
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hello' });
 
     const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
     expect(session?.state.kind).toBe('idle');
@@ -223,7 +223,7 @@ describe('sendTurn — terminal state guarantees', () => {
     const useAppStore = await importStore();
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hello' });
 
     const transcript = useAppStore.getState().transcripts[SESSION_ID] ?? [];
     const errorEvent = transcript.find((e) => e.kind === 'error');
@@ -239,7 +239,7 @@ describe('sendTurn — terminal state guarantees', () => {
     const useAppStore = await importStore();
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'ciao mondo' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'ciao mondo' });
 
     const transcript = useAppStore.getState().transcripts[SESSION_ID] ?? [];
     const userEvent = transcript.find((e) => e.kind === 'user_text');
@@ -253,7 +253,7 @@ describe('sendTurn — terminal state guarantees', () => {
     const useAppStore = await importStore();
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hi' });
 
     const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
     expect(session?.state.kind).toBe('idle');

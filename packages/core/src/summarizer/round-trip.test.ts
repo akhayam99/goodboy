@@ -4,7 +4,7 @@ import { Readable } from 'node:stream';
 import Database from 'better-sqlite3';
 import { describe, expect, it, vi } from 'vitest';
 import { migrate, type Database as DbInterface } from '@kay-am/db';
-import type { SessionId, WorkspaceId } from '@kay-am/types';
+import type { TaskId, WorkspaceId } from '@kay-am/types';
 import { ContextEngine } from '../context/engine';
 import { SLOT_KEYS } from '../context/slots';
 import { Summarizer } from './cli';
@@ -28,17 +28,17 @@ function makeDb(): DbInterface {
   };
 }
 
-async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void> {
+async function seedSession(db: DbInterface, taskId: TaskId): Promise<void> {
   const workspaceId = 'ws_round' as WorkspaceId;
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'demo', '/tmp/demo', 0, 0],
   );
   await db.execute(
-    `INSERT INTO sessions
+    `INSERT INTO tasks
        (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [sessionId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
+    [taskId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
   );
 }
 
@@ -68,11 +68,11 @@ function makeMockSpawnWithOutput(text: string): typeof import('node:child_proces
 
 async function applyDelta(
   engine: ContextEngine,
-  sessionId: SessionId,
+  taskId: TaskId,
   upserts: ReadonlyArray<{ key: string; value: string }>,
 ): Promise<void> {
   for (const upsert of upserts) {
-    await engine.upsert(sessionId, upsert.key, upsert.value);
+    await engine.upsert(taskId, upsert.key, upsert.value);
   }
 }
 
@@ -80,15 +80,15 @@ describe('synthetic context engine round-trip', () => {
   it('all 5 slots empty → summarizer fills them all', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_empty' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_empty' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
     const fakeUpserts = SLOT_KEYS.map((key) => ({ key, value: `seeded ${key}` }));
     const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: fakeUpserts }));
     const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
-    const before = await engine.load(sessionId);
+    const before = await engine.load(taskId);
     expect(before).toHaveLength(0);
 
     const result = await summarizer.summarize({
@@ -96,9 +96,9 @@ describe('synthetic context engine round-trip', () => {
       turnInput: 'kick off',
       turnOutput: 'ack',
     });
-    await applyDelta(engine, sessionId, result.delta.upserts);
+    await applyDelta(engine, taskId, result.delta.upserts);
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     expect(after.map((s) => s.key).sort()).toEqual([...SLOT_KEYS].sort());
     for (const slot of after) {
       expect(slot.value).toBe(`seeded ${slot.key}`);
@@ -108,12 +108,12 @@ describe('synthetic context engine round-trip', () => {
   it('partial state → summarizer updates some, leaves others alone', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_partial' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_partial' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
-    await engine.upsert(sessionId, 'goal', 'original goal');
-    await engine.upsert(sessionId, 'decisions', 'original decision');
+    await engine.upsert(taskId, 'goal', 'original goal');
+    await engine.upsert(taskId, 'decisions', 'original decision');
 
     const spawnFn = makeMockSpawnWithOutput(
       JSON.stringify({
@@ -125,15 +125,15 @@ describe('synthetic context engine round-trip', () => {
     );
     const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
-    const before = await engine.load(sessionId);
+    const before = await engine.load(taskId);
     const result = await summarizer.summarize({
       prevSlots: before,
       turnInput: 'q',
       turnOutput: 'a',
     });
-    await applyDelta(engine, sessionId, result.delta.upserts);
+    await applyDelta(engine, taskId, result.delta.upserts);
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     const byKey = new Map(after.map((s) => [s.key, s.value]));
     expect(byKey.get('goal')).toBe('updated goal');
     expect(byKey.get('decisions')).toBe('original decision');
@@ -143,35 +143,35 @@ describe('synthetic context engine round-trip', () => {
   it('full state → empty delta keeps slots untouched', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_full' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_full' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
     for (const key of SLOT_KEYS) {
-      await engine.upsert(sessionId, key, `pre-${key}`);
+      await engine.upsert(taskId, key, `pre-${key}`);
     }
 
     const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: [] }));
     const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
 
-    const before = await engine.load(sessionId);
+    const before = await engine.load(taskId);
     const result = await summarizer.summarize({
       prevSlots: before,
       turnInput: 'noop',
       turnOutput: 'noop',
     });
     expect(result.delta.upserts).toEqual([]);
-    await applyDelta(engine, sessionId, result.delta.upserts);
+    await applyDelta(engine, taskId, result.delta.upserts);
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     expect(after.map((s) => s.value).sort()).toEqual(SLOT_KEYS.map((k) => `pre-${k}`).sort());
   });
 
   it('preserves stable keys (no key drift after multiple round-trips)', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_drift' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_drift' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
     for (let i = 0; i < 5; i += 1) {
@@ -179,16 +179,16 @@ describe('synthetic context engine round-trip', () => {
         JSON.stringify({ upserts: [{ key: 'goal', value: `iteration ${i}` }] }),
       );
       const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
-      const slots = await engine.load(sessionId);
+      const slots = await engine.load(taskId);
       const result = await summarizer.summarize({
         prevSlots: slots,
         turnInput: `q${i}`,
         turnOutput: `a${i}`,
       });
-      await applyDelta(engine, sessionId, result.delta.upserts);
+      await applyDelta(engine, taskId, result.delta.upserts);
     }
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     expect(after).toHaveLength(1);
     expect(after[0]?.key).toBe('goal');
     expect(after[0]?.value).toBe('iteration 4');
@@ -197,8 +197,8 @@ describe('synthetic context engine round-trip', () => {
   it('handles oversize values without truncation', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_huge' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_huge' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
     const huge = 'x'.repeat(50_000);
@@ -212,9 +212,9 @@ describe('synthetic context engine round-trip', () => {
       turnInput: 'q',
       turnOutput: 'a',
     });
-    await applyDelta(engine, sessionId, result.delta.upserts);
+    await applyDelta(engine, taskId, result.delta.upserts);
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     const slot = after.find((s) => s.key === 'last_output_summary');
     expect(slot?.value.length).toBe(50_000);
   });
@@ -222,8 +222,8 @@ describe('synthetic context engine round-trip', () => {
   it('drops summarizer-suggested keys outside the known set', async () => {
     const db = makeDb();
     await migrate(db);
-    const sessionId = 'sess_unknown_key' as SessionId;
-    await seedSession(db, sessionId);
+    const taskId = 'sess_unknown_key' as TaskId;
+    await seedSession(db, taskId);
     const engine = new ContextEngine({ db });
 
     const spawnFn = makeMockSpawnWithOutput(
@@ -243,9 +243,9 @@ describe('synthetic context engine round-trip', () => {
     });
 
     expect(result.delta.upserts.map((u) => u.key)).toEqual(['goal']);
-    await applyDelta(engine, sessionId, result.delta.upserts);
+    await applyDelta(engine, taskId, result.delta.upserts);
 
-    const after = await engine.load(sessionId);
+    const after = await engine.load(taskId);
     expect(after.map((s) => s.key)).toEqual(['goal']);
   });
 });

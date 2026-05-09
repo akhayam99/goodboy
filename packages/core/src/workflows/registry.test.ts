@@ -1,14 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
-import type {
-  IsoDateTime,
-  PhaseDefinitionId,
-  PhaseTemplate,
-  PhaseTemplateId,
-  WorkspaceId,
-} from '@kay-am/types';
+import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
 import { migrate, insertWorkspace, type Database as DbInterface } from '@kay-am/db';
-import { PhaseRegistry, PhaseRegistryError } from './registry';
+import { WorkflowRegistry, WorkflowRegistryError } from './registry';
 
 const WORKSPACE_ID = 'ws_test' as WorkspaceId;
 const FIXED_NOW = '2024-01-01T00:00:00.000Z' as IsoDateTime;
@@ -45,23 +39,23 @@ async function makeSeededDb(): Promise<DbInterface> {
   return db;
 }
 
-function makeTemplate(overrides: Partial<PhaseTemplate> = {}): PhaseTemplate {
+function makeTemplate(overrides: Partial<Workflow> = {}): Workflow {
   return {
-    id: 'pt_001' as PhaseTemplateId,
+    id: 'pt_001' as WorkflowId,
     workspaceId: WORKSPACE_ID,
     name: 'My Template',
     description: 'desc',
-    definitions: [
+    steps: [
       {
-        id: 'pd_001' as PhaseDefinitionId,
-        templateId: 'pt_001' as PhaseTemplateId,
+        id: 'pd_001' as StepId,
+        workflowId: 'pt_001' as WorkflowId,
         ordinal: 0,
         name: 'Phase One',
         promptPrefix: 'do phase one',
       },
       {
-        id: 'pd_002' as PhaseDefinitionId,
-        templateId: 'pt_001' as PhaseTemplateId,
+        id: 'pd_002' as StepId,
+        workflowId: 'pt_001' as WorkflowId,
         ordinal: 1,
         name: 'Phase Two',
         promptPrefix: 'do phase two',
@@ -73,12 +67,12 @@ function makeTemplate(overrides: Partial<PhaseTemplate> = {}): PhaseTemplate {
   };
 }
 
-describe('PhaseRegistry validation', () => {
+describe('WorkflowRegistry validation', () => {
   it('throws when template name is empty', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     await expect(registry.upsert(makeTemplate({ name: '   ' }))).rejects.toThrow(
-      PhaseRegistryError,
+      WorkflowRegistryError,
     );
     await expect(registry.upsert(makeTemplate({ name: '   ' }))).rejects.toThrow(
       'template name required',
@@ -87,77 +81,77 @@ describe('PhaseRegistry validation', () => {
 
   it('throws when ordinals have a gap', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate({
-      definitions: [
+      steps: [
         {
-          id: 'pd_001' as PhaseDefinitionId,
-          templateId: 'pt_001' as PhaseTemplateId,
+          id: 'pd_001' as StepId,
+          workflowId: 'pt_001' as WorkflowId,
           ordinal: 0,
           name: 'Phase One',
           promptPrefix: '',
         },
         {
-          id: 'pd_002' as PhaseDefinitionId,
-          templateId: 'pt_001' as PhaseTemplateId,
+          id: 'pd_002' as StepId,
+          workflowId: 'pt_001' as WorkflowId,
           ordinal: 2,
           name: 'Phase Three',
           promptPrefix: '',
         },
       ],
     });
-    await expect(registry.upsert(template)).rejects.toThrow(PhaseRegistryError);
+    await expect(registry.upsert(template)).rejects.toThrow(WorkflowRegistryError);
     await expect(registry.upsert(template)).rejects.toThrow('ordinals must be contiguous');
   });
 
   it('throws when a definition has an empty name', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate({
-      definitions: [
+      steps: [
         {
-          id: 'pd_001' as PhaseDefinitionId,
-          templateId: 'pt_001' as PhaseTemplateId,
+          id: 'pd_001' as StepId,
+          workflowId: 'pt_001' as WorkflowId,
           ordinal: 0,
           name: '  ',
           promptPrefix: '',
         },
       ],
     });
-    await expect(registry.upsert(template)).rejects.toThrow(PhaseRegistryError);
+    await expect(registry.upsert(template)).rejects.toThrow(WorkflowRegistryError);
     await expect(registry.upsert(template)).rejects.toThrow('has empty name');
   });
 
   it('throws on duplicate definition names', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate({
-      definitions: [
+      steps: [
         {
-          id: 'pd_001' as PhaseDefinitionId,
-          templateId: 'pt_001' as PhaseTemplateId,
+          id: 'pd_001' as StepId,
+          workflowId: 'pt_001' as WorkflowId,
           ordinal: 0,
           name: 'Same',
           promptPrefix: '',
         },
         {
-          id: 'pd_002' as PhaseDefinitionId,
-          templateId: 'pt_001' as PhaseTemplateId,
+          id: 'pd_002' as StepId,
+          workflowId: 'pt_001' as WorkflowId,
           ordinal: 1,
           name: 'Same',
           promptPrefix: '',
         },
       ],
     });
-    await expect(registry.upsert(template)).rejects.toThrow(PhaseRegistryError);
+    await expect(registry.upsert(template)).rejects.toThrow(WorkflowRegistryError);
     await expect(registry.upsert(template)).rejects.toThrow('duplicate definition name');
   });
 });
 
-describe('PhaseRegistry happy path', () => {
+describe('WorkflowRegistry happy path', () => {
   it('upsert → list returns template', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate();
 
     const returned = await registry.upsert(template);
@@ -171,27 +165,27 @@ describe('PhaseRegistry happy path', () => {
 
   it('get returns template by id', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate();
     await registry.upsert(template);
 
     const found = await registry.get(template.id);
     expect(found).not.toBeNull();
     expect(found?.name).toBe('My Template');
-    expect(found?.definitions).toHaveLength(2);
+    expect(found?.steps).toHaveLength(2);
   });
 
   it('get returns null for unknown id', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
 
-    const found = await registry.get('pt_unknown' as PhaseTemplateId);
+    const found = await registry.get('pt_unknown' as WorkflowId);
     expect(found).toBeNull();
   });
 
   it('delete removes template', async () => {
     const db = await makeSeededDb();
-    const registry = new PhaseRegistry({ db });
+    const registry = new WorkflowRegistry({ db });
     const template = makeTemplate();
     await registry.upsert(template);
 

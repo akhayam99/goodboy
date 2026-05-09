@@ -12,17 +12,17 @@ function alertLabel(alert: BudgetAlert): string {
   if (alert.kind === 'provider-exceeded') {
     return `provider ${alert.provider ?? '?'} budget exceeded`;
   }
-  if (alert.kind === 'session-threshold') {
+  if (alert.kind === 'task-threshold') {
     return `session budget at ${pct}%`;
   }
-  if (alert.kind === 'session-exceeded') {
+  if (alert.kind === 'task-exceeded') {
     return `session budget exceeded`;
   }
   return 'budget alert';
 }
 
 function alertKindBadge(kind: BudgetAlertKind): { label: string; className: string } {
-  if (kind === 'provider-exceeded' || kind === 'session-exceeded') {
+  if (kind === 'provider-exceeded' || kind === 'task-exceeded') {
     return { label: 'exceeded', className: 'bg-danger/10 text-danger' };
   }
   return { label: 'threshold', className: 'bg-warning/10 text-warning' };

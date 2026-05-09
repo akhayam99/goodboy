@@ -1,9 +1,9 @@
 import type {
-  ParallelPhaseGroup,
-  ParallelPhaseGroupId,
-  ParallelPhaseRun,
+  ParallelGroup,
+  ParallelGroupId,
+  ParallelSession,
   ParallelMergeStrategy,
-  PhaseRunStatus,
+  SessionStatus,
   ProviderRunId,
   TurnEvent,
 } from '@kay-am/types';
@@ -22,9 +22,9 @@ export type UnsubscribeFn = () => void;
 
 export interface SchedulerDeps {
   spawnRun: (
-    run: ParallelPhaseRun,
+    run: ParallelSession,
     onEvent: (e: TurnEvent) => void,
-  ) => Promise<{ status: PhaseRunStatus; outputSummary: string | null; error?: string }>;
+  ) => Promise<{ status: SessionStatus; outputSummary: string | null; error?: string }>;
   cancelRun: (runId: ProviderRunId) => Promise<void>;
 }
 
@@ -34,10 +34,10 @@ export interface SchedulerProgress {
 }
 
 export interface MergeResult {
-  groupId: ParallelPhaseGroupId;
+  groupId: ParallelGroupId;
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
-    status: PhaseRunStatus;
+    status: SessionStatus;
     outputSummary: string | null;
     error?: string;
   }>;
@@ -45,14 +45,14 @@ export interface MergeResult {
 }
 
 interface RunEntry {
-  run: ParallelPhaseRun;
+  run: ParallelSession;
   runId: ProviderRunId;
 }
 
 // SchedulerHandle is opaque — callers only pass it back into scheduler fns.
 // Internals: settled promise per run, shared listener set for progress.
 export interface SchedulerHandle {
-  readonly groupId: ParallelPhaseGroupId;
+  readonly groupId: ParallelGroupId;
   readonly runEntries: ReadonlyArray<RunEntry>;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly deps: SchedulerDeps;
@@ -62,8 +62,8 @@ export interface SchedulerHandle {
 
 export function fanOut(
   deps: SchedulerDeps,
-  group: ParallelPhaseGroup,
-  runs: ReadonlyArray<ParallelPhaseRun>,
+  group: ParallelGroup,
+  runs: ReadonlyArray<ParallelSession>,
 ): SchedulerHandle {
   const progressListeners: Set<(p: SchedulerProgress) => void> = new Set();
 
@@ -81,7 +81,7 @@ export function fanOut(
         // spawnRun should not reject — but if it does, treat as failed run
         (err: unknown) => ({
           runId: run.runId,
-          status: 'failed' as PhaseRunStatus,
+          status: 'failed' as SessionStatus,
           outputSummary: null,
           error: err instanceof Error ? err.message : String(err),
         }),

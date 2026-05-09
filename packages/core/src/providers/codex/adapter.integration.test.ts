@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderRunId, SessionId, TurnRequest } from '@kay-am/types';
+import type { ProviderRunId, TaskId, TurnRequest } from '@kay-am/types';
 import { CodexAdapter } from './adapter';
 
 // Integration test — requires a real `codex` binary in PATH.
@@ -20,7 +20,7 @@ describe.skipIf(!RUN)('CodexAdapter — integration', () => {
     const adapter = new CodexAdapter();
     const request: TurnRequest = {
       runId: 'run_integration' as ProviderRunId,
-      sessionId: 'sess_integration' as SessionId,
+      taskId: 'sess_integration' as TaskId,
       model: 'codex-latest',
       workingDir: '/tmp',
       systemPrompt: '',

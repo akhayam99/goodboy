@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
+import type { IsoDateTime, ProviderRunId, TaskId } from './ids';
 import type { RoutingDecision } from './budget';
 
 export type ProviderName = 'anthropic' | 'openai' | 'cursor' | 'codex';
@@ -12,7 +12,7 @@ export type ProviderRunStatus =
 
 export type ProviderRun = Readonly<{
   id: ProviderRunId;
-  sessionId: SessionId;
+  taskId: TaskId;
   provider: ProviderName;
   model: string;
   status: ProviderRunStatus;

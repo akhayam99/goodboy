@@ -10,7 +10,7 @@ export type ConfigBundleWorkspace = Readonly<{
   updatedAt: string;
   overrides: {
     defaultProviderId: string | null;
-    defaultPhaseTemplateId: string | null;
+    defaultWorkflowId: string | null;
     defaultBranchPrefix: string | null;
     parallelEnabled: boolean | null;
   };
@@ -28,9 +28,9 @@ export type ConfigBundleSkill = Readonly<{
   updatedAt: string;
 }>;
 
-export type ConfigBundlePhaseDefinition = Readonly<{
+export type ConfigBundleStep = Readonly<{
   id: string;
-  templateId: string;
+  workflowId: string;
   ordinal: number;
   name: string;
   promptPrefix: string;
@@ -38,12 +38,12 @@ export type ConfigBundlePhaseDefinition = Readonly<{
   modelOverride: string | null;
 }>;
 
-export type ConfigBundlePhaseTemplate = Readonly<{
+export type ConfigBundleWorkflow = Readonly<{
   id: string;
   workspaceId: string;
   name: string;
   description: string;
-  definitions: ReadonlyArray<ConfigBundlePhaseDefinition>;
+  steps: ReadonlyArray<ConfigBundleStep>;
   createdAt: string;
   updatedAt: string;
 }>;
@@ -52,7 +52,7 @@ export type ConfigBundlePermissionRule = Readonly<{
   id: string;
   scope: string;
   workspaceId: string | null;
-  sessionId: string | null;
+  taskId: string | null;
   patternTool: string;
   patternArgsMatcher: string | null;
   decision: string;
@@ -82,7 +82,7 @@ export type ConfigBundle = Readonly<{
   exportedAt: string;
   workspaces: ReadonlyArray<ConfigBundleWorkspace>;
   skills: ReadonlyArray<ConfigBundleSkill>;
-  phaseTemplates: ReadonlyArray<ConfigBundlePhaseTemplate>;
+  workflows: ReadonlyArray<ConfigBundleWorkflow>;
   permissionRules: ReadonlyArray<ConfigBundlePermissionRule>;
   budgetRules: ReadonlyArray<ConfigBundleBudgetRule>;
   settings: ConfigBundleSettings;
@@ -99,7 +99,7 @@ export type ConfigBundleImportResult = Readonly<{
   stats: Readonly<{
     workspaces: number;
     skills: number;
-    phaseTemplates: number;
+    workflows: number;
     permissionRules: number;
     budgetRules: number;
   }>;

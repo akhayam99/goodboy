@@ -1,9 +1,9 @@
 import { Check, Circle, Loader, Pencil, X } from 'lucide-react';
 import { cn } from '@kay-am/ui';
-import type { SessionState } from '@kay-am/types';
+import type { TurnState } from '@kay-am/types';
 
 interface StatusIconProps {
-  kind: SessionState['kind'];
+  kind: TurnState['kind'];
   className?: string;
 }
 
@@ -32,7 +32,7 @@ function StatusIcon({ kind, className }: StatusIconProps) {
   }
 }
 
-const TONE: Record<SessionState['kind'], string> = {
+const TONE: Record<TurnState['kind'], string> = {
   draft: 'text-muted-foreground',
   starting: 'text-primary',
   idle: 'text-foreground/60',
@@ -41,7 +41,7 @@ const TONE: Record<SessionState['kind'], string> = {
   ended: 'text-success',
 };
 
-export function StatusBadge({ state, className }: { state: SessionState; className?: string }) {
+export function StatusBadge({ state, className }: { state: TurnState; className?: string }) {
   return (
     <span
       className={cn('inline-flex items-center', TONE[state.kind], className)}

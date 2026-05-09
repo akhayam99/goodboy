@@ -5,7 +5,7 @@ import type {
   BudgetPeriod,
   BudgetRule,
   ProviderName,
-  SessionBudget,
+  TaskBudget,
 } from '@kay-am/types';
 
 export async function invokeBudgetRuleUpsert(rule: BudgetRule): Promise<void> {
@@ -20,12 +20,12 @@ export async function invokeBudgetRuleDelete(id: string): Promise<void> {
   return invoke<void>('budget_rule_delete', { id });
 }
 
-export async function invokeSessionBudgetSet(sessionId: string, softCapUsd: number): Promise<void> {
-  return invoke<void>('session_budget_set', { sessionId, softCapUsd });
+export async function invokeSessionBudgetSet(taskId: string, softCapUsd: number): Promise<void> {
+  return invoke<void>('session_budget_set', { taskId, softCapUsd });
 }
 
-export async function invokeSessionBudgetGet(sessionId: string): Promise<SessionBudget | null> {
-  return invoke<SessionBudget | null>('session_budget_get', { sessionId });
+export async function invokeSessionBudgetGet(taskId: string): Promise<TaskBudget | null> {
+  return invoke<TaskBudget | null>('session_budget_get', { taskId });
 }
 
 export async function invokeBudgetAlertsList(): Promise<BudgetAlert[]> {
@@ -38,7 +38,7 @@ export async function invokeBudgetAlertDismiss(id: string): Promise<void> {
 
 export async function invokeBudgetEmitAlerts(input: {
   provider: ProviderName;
-  sessionId: string;
+  taskId: string;
 }): Promise<BudgetAlert[]> {
   return invoke<BudgetAlert[]>('budget_emit_alerts', { input });
 }
@@ -50,6 +50,6 @@ export async function invokeCheckProviderBudget(
   return invoke<BudgetCheckResult>('check_provider_budget', { provider, period });
 }
 
-export async function invokeCheckSessionBudget(sessionId: string): Promise<BudgetCheckResult> {
-  return invoke<BudgetCheckResult>('check_session_budget', { sessionId });
+export async function invokeCheckSessionBudget(taskId: string): Promise<BudgetCheckResult> {
+  return invoke<BudgetCheckResult>('check_session_budget', { taskId });
 }

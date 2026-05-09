@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Select, Textarea } from '@kay-am/ui';
-import type {
-  PhaseDefinition,
-  PhaseDefinitionId,
-  PhaseTemplate,
-  PhaseTemplateId,
-  WorkspaceId,
-} from '@kay-am/types';
+import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../phases';
@@ -16,7 +10,7 @@ interface PhasesPanelProps {
 }
 
 interface DefinitionForm {
-  id?: PhaseDefinitionId;
+  id?: StepId;
   name: string;
   promptPrefix: string;
   providerOverride: string;
@@ -26,7 +20,7 @@ interface DefinitionForm {
 interface TemplateForm {
   name: string;
   description: string;
-  definitions: DefinitionForm[];
+  steps: DefinitionForm[];
 }
 
 const emptyDefinition = (): DefinitionForm => ({
@@ -39,14 +33,14 @@ const emptyDefinition = (): DefinitionForm => ({
 const emptyForm = (): TemplateForm => ({
   name: '',
   description: '',
-  definitions: [emptyDefinition()],
+  steps: [emptyDefinition()],
 });
 
-function templateToForm(t: PhaseTemplate): TemplateForm {
+function templateToForm(t: Workflow): TemplateForm {
   return {
     name: t.name,
     description: t.description,
-    definitions: t.definitions
+    steps: t.steps
       .slice()
       .sort((a, b) => a.ordinal - b.ordinal)
       .map((d) => ({
@@ -65,9 +59,9 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
-  const deletePhaseTemplate = useAppStore((s) => s.deletePhaseTemplate);
+  const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
 
-  const [editing, setEditing] = useState<PhaseTemplate | null | 'new'>(null);
+  const [editing, setEditing] = useState<Workflow | null | 'new'>(null);
   const [form, setForm] = useState<TemplateForm>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -82,7 +76,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
     setFormError(null);
   };
 
-  const openEdit = (t: PhaseTemplate) => {
+  const openEdit = (t: Workflow) => {
     setEditing(t);
     setForm(templateToForm(t));
     setFormError(null);
@@ -98,12 +92,12 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       setFormError('name is required');
       return;
     }
-    if (form.definitions.some((d) => !d.name.trim())) {
-      setFormError('all phase definitions need a name');
+    if (form.steps.some((d) => !d.name.trim())) {
+      setFormError('all phase steps need a name');
       return;
     }
 
-    const defs: PhaseDefinitionUpsertArgs[] = form.definitions.map((d, i) => ({
+    const defs: PhaseDefinitionUpsertArgs[] = form.steps.map((d, i) => ({
       ...(d.id !== undefined ? { id: d.id } : {}),
       ordinal: i,
       name: d.name.trim(),
@@ -113,11 +107,11 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
     }));
 
     const args: PhaseTemplateUpsertArgs = {
-      ...(editing !== 'new' && editing ? { id: editing.id as PhaseTemplateId } : {}),
+      ...(editing !== 'new' && editing ? { id: editing.id as WorkflowId } : {}),
       workspaceId,
       name: form.name.trim(),
       description: form.description.trim(),
-      definitions: defs,
+      steps: defs,
     };
 
     setSaving(true);
@@ -132,8 +126,8 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
     }
   };
 
-  const onDelete = async (t: PhaseTemplate) => {
-    await deletePhaseTemplate(t.id, workspaceId);
+  const onDelete = async (t: Workflow) => {
+    await deleteWorkflow(t.id, workspaceId);
   };
 
   if (editing !== null) {
@@ -184,7 +178,7 @@ function TemplateRow({
   onEdit,
   onDelete,
 }: {
-  template: PhaseTemplate;
+  template: Workflow;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -196,7 +190,7 @@ function TemplateRow({
           <span className="text-xs text-muted-foreground">{template.description}</span>
         ) : null}
         <span className="text-2xs text-muted-foreground/60">
-          {template.definitions.length} phase{template.definitions.length !== 1 ? 's' : ''}
+          {template.steps.length} phase{template.steps.length !== 1 ? 's' : ''}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -237,32 +231,32 @@ function PhaseEditor({
   isNew: boolean;
 }) {
   const addDefinition = () => {
-    onChange({ ...form, definitions: [...form.definitions, emptyDefinition()] });
+    onChange({ ...form, steps: [...form.steps, emptyDefinition()] });
   };
 
   const removeDefinition = (idx: number) => {
-    const next = form.definitions.filter((_, i) => i !== idx);
-    onChange({ ...form, definitions: next.length > 0 ? next : [emptyDefinition()] });
+    const next = form.steps.filter((_, i) => i !== idx);
+    onChange({ ...form, steps: next.length > 0 ? next : [emptyDefinition()] });
   };
 
   const moveUp = (idx: number) => {
     if (idx === 0) return;
-    const next = form.definitions.slice();
+    const next = form.steps.slice();
     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]] as [DefinitionForm, DefinitionForm];
-    onChange({ ...form, definitions: next });
+    onChange({ ...form, steps: next });
   };
 
   const moveDown = (idx: number) => {
-    if (idx === form.definitions.length - 1) return;
-    const next = form.definitions.slice();
+    if (idx === form.steps.length - 1) return;
+    const next = form.steps.slice();
     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]] as [DefinitionForm, DefinitionForm];
-    onChange({ ...form, definitions: next });
+    onChange({ ...form, steps: next });
   };
 
   const updateDef = (idx: number, patch: Partial<DefinitionForm>) => {
-    const next = form.definitions.slice();
+    const next = form.steps.slice();
     next[idx] = { ...next[idx], ...patch } as DefinitionForm;
-    onChange({ ...form, definitions: next });
+    onChange({ ...form, steps: next });
   };
 
   return (
@@ -302,12 +296,12 @@ function PhaseEditor({
             </button>
           </div>
 
-          {form.definitions.map((def, idx) => (
+          {form.steps.map((def, idx) => (
             <DefinitionEditor
               key={idx}
               def={def}
               ordinal={idx}
-              total={form.definitions.length}
+              total={form.steps.length}
               onUpdate={(patch) => updateDef(idx, patch)}
               onRemove={() => removeDefinition(idx)}
               onMoveUp={() => moveUp(idx)}

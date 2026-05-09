@@ -3,7 +3,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import { FolderOpen, FolderPlus, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
-import type { ProviderId, Session, SessionId, SessionState, Workspace } from '@kay-am/types';
+import type { ProviderId, Task, TaskId, TurnState, Workspace } from '@kay-am/types';
 import {
   useAppStore,
   useCurrentSession,
@@ -31,7 +31,7 @@ const PROVIDER_SHORT: Record<ProviderId, string> = {
   codex: 'cx',
 };
 
-const STATE_FILTER_OPTIONS: ReadonlyArray<SessionState['kind']> = [
+const STATE_FILTER_OPTIONS: ReadonlyArray<TurnState['kind']> = [
   'idle',
   'running',
   'ended',
@@ -75,7 +75,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     return matchesSearch && matchesState && matchesProvider;
   });
 
-  const toggleStateFilter = (kind: SessionState['kind']) => {
+  const toggleStateFilter = (kind: TurnState['kind']) => {
     const next = sidebarStateFilter.includes(kind)
       ? sidebarStateFilter.filter((k) => k !== kind)
       : [...sidebarStateFilter, kind];
@@ -289,17 +289,17 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
 }
 
 interface SessionListProps {
-  sessions: ReadonlyArray<Session>;
-  currentSessionId: SessionId | null;
+  sessions: ReadonlyArray<Task>;
+  currentSessionId: TaskId | null;
   sessionSearch: string;
   onSessionSearch: (v: string) => void;
-  stateFilter: ReadonlyArray<SessionState['kind']>;
+  stateFilter: ReadonlyArray<TurnState['kind']>;
   providerFilter: ReadonlyArray<ProviderId>;
-  stateFilterOptions: ReadonlyArray<SessionState['kind']>;
+  stateFilterOptions: ReadonlyArray<TurnState['kind']>;
   providerFilterOptions: ReadonlyArray<ProviderId>;
-  onToggleState: (kind: SessionState['kind']) => void;
+  onToggleState: (kind: TurnState['kind']) => void;
   onToggleProvider: (provider: ProviderId) => void;
-  onSelectSession: (id: SessionId) => void;
+  onSelectSession: (id: TaskId) => void;
   onNewSession: () => void;
 }
 
@@ -416,19 +416,19 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
 }
 
 interface SessionRowProps {
-  session: Session;
+  session: Task;
   isActive: boolean;
   onClick: () => void;
 }
 
 function SessionRow({ session, isActive, onClick }: SessionRowProps) {
   const providerId = session.providerPreference.defaultProvider;
-  const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
+  const budget = useAppStore((s) => s.sessionBudgets[session.id as TaskId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
-  const renameSession = useAppStore((s) => s.renameSession);
-  const deleteSession = useAppStore((s) => s.deleteSession);
+  const renameTask = useAppStore((s) => s.renameTask);
+  const deleteTask = useAppStore((s) => s.deleteTask);
   const budgetLoaded = useRef(false);
 
   const [editingCap, setEditingCap] = useState(false);
@@ -441,7 +441,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
   useEffect(() => {
     if (!budgetLoaded.current) {
       budgetLoaded.current = true;
-      void loadSessionBudget(session.id as SessionId);
+      void loadSessionBudget(session.id as TaskId);
     }
   }, [session.id, loadSessionBudget]);
 
@@ -461,7 +461,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
   const onCapSave = async () => {
     const parsed = parseFloat(capDraft);
     if (!isNaN(parsed) && parsed > 0) {
-      await setSessionBudget(session.id as SessionId, parsed);
+      await setSessionBudget(session.id as TaskId, parsed);
     }
     setEditingCap(false);
   };
@@ -484,7 +484,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
       return;
     }
     try {
-      await renameSession(session.id as SessionId, renameDraft.trim());
+      await renameTask(session.id as TaskId, renameDraft.trim());
       setRenaming(false);
       setRenameError(null);
     } catch (err) {
@@ -502,7 +502,7 @@ function SessionRow({ session, isActive, onClick }: SessionRowProps) {
 
   const onDeleteConfirm = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await deleteSession(session.id as SessionId);
+    await deleteTask(session.id as TaskId);
     setConfirmDelete(false);
   };
 

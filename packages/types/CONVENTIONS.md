@@ -15,9 +15,9 @@ Pure TypeScript types. **Zero runtime code.** This package exists only to be imp
 ```
 src/
 ├── index.ts          # public API (re-exports only)
-├── workspace.ts      # workspace, session, task types
+├── workspace.ts      # workspace, task, turn-state, context-slot
+├── workflow.ts       # workflow, step, session, parallel-group
 ├── provider.ts       # provider, adapter, balance types
-├── db.ts             # database row shapes
 └── ids.ts            # branded ID types
 ```
 
