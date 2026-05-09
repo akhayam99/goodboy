@@ -7,11 +7,11 @@
 
   --color-background: oklch(0.16 0 0);
   --color-foreground: oklch(0.93 0 0);
-  --color-subtle: oklch(0.20 0 0);
-  --color-muted: oklch(0.26 0 0);
+  --color-subtle: oklch(0.19 0 0);
+  --color-muted: oklch(0.24 0 0);
   --color-muted-foreground: oklch(0.62 0 0);
-  --color-border: oklch(0.32 0 0);
-  --color-border-soft: oklch(0.24 0 0);
+  --color-border: oklch(0.26 0 0);
+  --color-border-soft: oklch(0.21 0 0);
   --color-primary: oklch(0.78 0 0);
   --color-primary-foreground: oklch(0.16 0 0);
   --color-danger: oklch(0.62 0.025 25);
@@ -23,15 +23,17 @@
   --color-info: oklch(0.66 0.02 240);
   --color-info-foreground: oklch(0.16 0 0);
 
-  --text-2xs: 10px;
-  --text-xs: 11px;
-  --text-sm: 13px;
-  --text-base: 14px;
-  --text-lg: 16px;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
 
   --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.35);
   --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.45);
@@ -51,8 +53,8 @@ html,
 body,
 #root {
   height: 100%;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
   background: var(--color-background);
   color: var(--color-foreground);
   color-scheme: dark;
