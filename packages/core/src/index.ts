@@ -95,6 +95,9 @@ export {
   WORKFLOW_LIBRARY,
   type WorkflowLibraryEntry,
   type WorkflowLibraryStep,
+  seedWorkflowLibrary,
+  type SeedResult,
+  type SeedWorkflowLibraryDeps,
 } from './workflows';
 // WorkflowRegistry + seeder (@kay-am/db → node) are intentionally excluded from this
 // browser-safe barrel. Import directly from packages/core/src/workflows/registry

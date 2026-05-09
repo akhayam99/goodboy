@@ -152,39 +152,17 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
         <span
           class="text-xs font-semibold text-foreground"
         >
-          phase template (optional)
+          workflow (optional)
         </span>
-        <span
-          class="relative items-center inline-flex"
+        <p
+          class="text-xs text-muted-foreground/70"
         >
-          bound HTMLSelectElement {
-            "0": <option
-              value=""
-            >
-              none
-            </option>,
-          }
-          <svg
-            aria-hidden="true"
-            class="pointer-events-none absolute text-muted-foreground right-1.5"
-            height="11"
-            viewBox="0 0 16 16"
-            width="11"
-          >
-            <path
-              d="M4 6l4 4 4-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-            />
-          </svg>
-        </span>
+          none available
+        </p>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
         >
-          no phase templates yet — create in Settings → Phases
+          no workflows yet — create in Settings → Workflows.
         </p>
       </div>
       <div
@@ -953,39 +931,17 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         <span
           class="text-xs font-semibold text-foreground"
         >
-          phase template (optional)
+          workflow (optional)
         </span>
-        <span
-          class="relative items-center inline-flex"
+        <p
+          class="text-xs text-muted-foreground/70"
         >
-          bound HTMLSelectElement {
-            "0": <option
-              value=""
-            >
-              none
-            </option>,
-          }
-          <svg
-            aria-hidden="true"
-            class="pointer-events-none absolute text-muted-foreground right-1.5"
-            height="11"
-            viewBox="0 0 16 16"
-            width="11"
-          >
-            <path
-              d="M4 6l4 4 4-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-            />
-          </svg>
-        </span>
+          none available
+        </p>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
         >
-          no phase templates yet — create in Settings → Phases
+          no workflows yet — create in Settings → Workflows.
         </p>
       </div>
       <div
