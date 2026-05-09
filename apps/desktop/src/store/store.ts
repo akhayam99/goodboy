@@ -26,11 +26,14 @@ import {
   insertTask,
   insertTaskWorktree,
   insertTelemetry,
+  insertTurnEvent,
   insertWorkspace,
   deleteWorkspace,
   listContextSlotsForTask,
   listMessagesForAgent,
   listMessagesForTask,
+  listTurnEventsForAgent,
+  listTurnEventsForTask,
   listTasksForWorkspace,
   listTelemetryForTask,
   listWorkspaces,
@@ -395,26 +398,6 @@ function mergeSlots(
   const copy = existing.slice();
   copy[idx] = next;
   return copy;
-}
-
-function messageToTurnEvent(message: Message): TurnEvent | null {
-  if (message.role === 'user') {
-    return {
-      kind: 'user_text',
-      runId: 'history' as ProviderRunId,
-      text: message.content,
-      at: message.createdAt,
-    };
-  }
-  if (message.role === 'assistant') {
-    return {
-      kind: 'assistant_text',
-      runId: 'history' as ProviderRunId,
-      delta: message.content,
-      at: message.createdAt,
-    };
-  }
-  return null;
 }
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
@@ -794,10 +777,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const fallbackAgent = sortedAgents[0] ?? null;
       const selectedAgent =
         (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
-      const messages = selectedAgent
-        ? await listMessagesForAgent(tauriDatabase, selectedAgent.id)
-        : [];
-      const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
+      const [messages, events] = selectedAgent
+        ? await Promise.all([
+            listMessagesForAgent(tauriDatabase, selectedAgent.id),
+            listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
+          ])
+        : [[] as ReadonlyArray<Message>, [] as ReadonlyArray<TurnEvent>];
       set((state) => ({
         sessionSummary: summary,
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
@@ -990,8 +975,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadTranscript: async (taskId) => {
-    const messages = await listMessagesForTask(tauriDatabase, taskId);
-    const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
+    const [messages, events] = await Promise.all([
+      listMessagesForTask(tauriDatabase, taskId),
+      listTurnEventsForTask(tauriDatabase, taskId),
+    ]);
     set((state) => ({
       messages: { ...state.messages, [taskId]: messages },
       transcripts: { ...state.transcripts, [taskId]: events },
@@ -999,6 +986,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   appendTurnEvent: (taskId, event) => {
+    const agentId = get().selectedAgentId[taskId] ?? null;
     set((state) => {
       const existing = state.transcripts[taskId] ?? [];
       const updatedTranscripts = { ...state.transcripts, [taskId]: [...existing, event] };
@@ -1014,6 +1002,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       return { transcripts: updatedTranscripts };
     });
+    if (agentId) {
+      void insertTurnEvent(tauriDatabase, {
+        id: crypto.randomUUID(),
+        taskId,
+        agentId,
+        event,
+      }).catch((err) => {
+        if (import.meta.env.DEV) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn(`[turn-events] insert failed for task ${taskId}: ${message}`);
+        }
+      });
+    }
   },
 
   resetTranscript: (taskId) => {
@@ -2145,8 +2146,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectAgent: async (taskId, agentId) => {
-    const messages = await listMessagesForAgent(tauriDatabase, agentId);
-    const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
+    const [messages, events] = await Promise.all([
+      listMessagesForAgent(tauriDatabase, agentId),
+      listTurnEventsForAgent(tauriDatabase, agentId),
+    ]);
     set((state) => ({
       selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
       transcripts: { ...state.transcripts, [taskId]: events },

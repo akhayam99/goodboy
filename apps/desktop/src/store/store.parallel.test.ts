@@ -81,6 +81,10 @@ vi.mock('@kay-am/db', () => ({
   updateProviderRunStatus: vi.fn(),
   updateTaskState: vi.fn(),
   upsertContextSlot: vi.fn(),
+  insertTurnEvent: vi.fn(async () => undefined),
+  listTurnEventsForAgent: vi.fn(async () => []),
+  listTurnEventsForTask: vi.fn(async () => []),
+  listMessagesForAgent: vi.fn(async () => []),
 }));
 
 vi.mock('../providers', () => ({
