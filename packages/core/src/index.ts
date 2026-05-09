@@ -147,9 +147,14 @@ export {
   PlannerParseError,
   PLANNER_SYSTEM_PROMPT,
   buildPlannerUserPrompt,
+  PlannerClient,
+  PlannerClientSpawnError,
   type PlannerInput,
   type PlannerOutput,
   type PlannerStep,
+  type PlannerClientDeps,
+  type PlannerClientResult,
+  type PlannerUsage,
 } from './planner';
 // PlannerAgent (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/planner/cli in Node/Tauri command contexts.

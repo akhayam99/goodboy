@@ -21,11 +21,11 @@ export async function invokeBudgetRuleDelete(id: string): Promise<void> {
 }
 
 export async function invokeSessionBudgetSet(taskId: string, softCapUsd: number): Promise<void> {
-  return invoke<void>('session_budget_set', { taskId, softCapUsd });
+  return invoke<void>('task_budget_set', { taskId, softCapUsd });
 }
 
 export async function invokeSessionBudgetGet(taskId: string): Promise<TaskBudget | null> {
-  return invoke<TaskBudget | null>('session_budget_get', { taskId });
+  return invoke<TaskBudget | null>('task_budget_get', { taskId });
 }
 
 export async function invokeBudgetAlertsList(): Promise<BudgetAlert[]> {
@@ -51,5 +51,5 @@ export async function invokeCheckProviderBudget(
 }
 
 export async function invokeCheckSessionBudget(taskId: string): Promise<BudgetCheckResult> {
-  return invoke<BudgetCheckResult>('check_session_budget', { taskId });
+  return invoke<BudgetCheckResult>('check_task_budget', { taskId });
 }

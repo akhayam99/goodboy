@@ -1975,7 +1975,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadSessionOverrides: async (taskId) => {
-    const overrides = await invoke<OverrideSettings | null>('get_session_overrides', { taskId });
+    const overrides = await invoke<OverrideSettings | null>('get_task_overrides', { taskId });
     if (overrides) {
       set((state) => ({
         sessionOverrides: { ...state.sessionOverrides, [taskId]: overrides },
@@ -1984,7 +1984,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setTaskOverrides: async (taskId, overrides) => {
-    await invoke('set_session_overrides', { taskId, overrides });
+    await invoke('set_task_overrides', { taskId, overrides });
     set((state) => ({
       sessionOverrides: { ...state.sessionOverrides, [taskId]: overrides },
     }));

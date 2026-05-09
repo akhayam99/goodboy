@@ -93,7 +93,7 @@ pub struct TurnEventEnvelope {
 
 pub const EVENT_NAME: &str = "turn_event";
 
-/// Per-run spawn parameters used by both `turn_spawn` and `parallel_phase_run_spawn`.
+/// Per-run spawn parameters used by both `turn_spawn` and `parallel_session_spawn`.
 pub struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
     pub binary: &'a str,
@@ -108,7 +108,7 @@ pub struct SpawnOneArgs<'a> {
 /// Spawns one child process, registers it in the registry, and starts the
 /// forwarding thread. Returns `run_id` on success.
 ///
-/// Extracted so that `turn_spawn` (single run) and `parallel_phase_run_spawn`
+/// Extracted so that `turn_spawn` (single run) and `parallel_session_spawn`
 /// (N runs) share the same logic without copy-paste.
 pub(crate) fn spawn_one(
     app: &AppHandle,

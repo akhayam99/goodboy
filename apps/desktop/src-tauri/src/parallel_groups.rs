@@ -9,10 +9,10 @@ use crate::turn::{spawn_one, SpawnOneArgs, TurnError, TurnRegistry};
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ParallelPhaseGroupRow {
+pub struct ParallelGroupRow {
     pub id: String,
-    #[serde(rename = "sessionId")]
-    pub session_id: String,
+    #[serde(rename = "taskId")]
+    pub task_id: String,
     pub ordinal: i64,
     #[serde(rename = "mergeStrategy")]
     pub merge_strategy: String,
@@ -25,8 +25,8 @@ pub struct ParallelPhaseGroupRow {
 #[derive(Debug, Deserialize)]
 pub struct ParallelPhaseGroupCreateInput {
     pub id: Option<String>,
-    #[serde(rename = "sessionId")]
-    pub session_id: String,
+    #[serde(rename = "taskId")]
+    pub task_id: String,
     pub ordinal: i64,
     #[serde(rename = "mergeStrategy")]
     pub merge_strategy: String,
@@ -223,16 +223,16 @@ fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
     (year, month, day, hour, min, sec)
 }
 
-fn row_to_group(row: &rusqlite::Row<'_>) -> Result<ParallelPhaseGroupRow, rusqlite::Error> {
+fn row_to_group(row: &rusqlite::Row<'_>) -> Result<ParallelGroupRow, rusqlite::Error> {
     let id: String = row.get(0)?;
-    let session_id: String = row.get(1)?;
+    let task_id: String = row.get(1)?;
     let ordinal: i64 = row.get(2)?;
     let merge_strategy: String = row.get(3)?;
     let created_at_ms: i64 = row.get(4)?;
     let completed_at_ms: Option<i64> = row.get(5)?;
-    Ok(ParallelPhaseGroupRow {
+    Ok(ParallelGroupRow {
         id,
-        session_id,
+        task_id,
         ordinal,
         merge_strategy,
         created_at: epoch_ms_to_iso(created_at_ms),
@@ -245,10 +245,10 @@ fn row_to_group(row: &rusqlite::Row<'_>) -> Result<ParallelPhaseGroupRow, rusqli
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn parallel_phase_group_create(
+pub fn parallel_group_create(
     state: State<'_, Db>,
     input: ParallelPhaseGroupCreateInput,
-) -> Result<ParallelPhaseGroupRow, ParallelPhaseError> {
+) -> Result<ParallelGroupRow, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let id = input.id.unwrap_or_else(uuid_v4);
     let created_at_ms = input
@@ -258,21 +258,21 @@ pub fn parallel_phase_group_create(
         .unwrap_or_else(now_epoch_ms);
 
     conn.execute(
-        "INSERT INTO parallel_phase_groups
-           (id, session_id, ordinal, merge_strategy, created_at, completed_at)
+        "INSERT INTO parallel_groups
+           (id, task_id, ordinal, merge_strategy, created_at, completed_at)
          VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
         rusqlite::params![
             id,
-            input.session_id,
+            input.task_id,
             input.ordinal,
             input.merge_strategy,
             created_at_ms,
         ],
     )?;
 
-    Ok(ParallelPhaseGroupRow {
+    Ok(ParallelGroupRow {
         id,
-        session_id: input.session_id,
+        task_id: input.task_id,
         ordinal: input.ordinal,
         merge_strategy: input.merge_strategy,
         created_at: epoch_ms_to_iso(created_at_ms),
@@ -281,31 +281,31 @@ pub fn parallel_phase_group_create(
 }
 
 #[tauri::command]
-pub fn parallel_phase_group_list(
+pub fn parallel_group_list(
     state: State<'_, Db>,
-    session_id: String,
-) -> Result<Vec<ParallelPhaseGroupRow>, ParallelPhaseError> {
+    task_id: String,
+) -> Result<Vec<ParallelGroupRow>, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
-         FROM parallel_phase_groups
-         WHERE session_id = ?1
+        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+         FROM parallel_groups
+         WHERE task_id = ?1
          ORDER BY ordinal ASC",
     )?;
-    let rows = stmt.query_map(rusqlite::params![session_id], row_to_group)?;
+    let rows = stmt.query_map(rusqlite::params![task_id], row_to_group)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(ParallelPhaseError::Db)
 }
 
 #[tauri::command]
-pub fn parallel_phase_group_get(
+pub fn parallel_group_get(
     state: State<'_, Db>,
     id: String,
-) -> Result<Option<ParallelPhaseGroupRow>, ParallelPhaseError> {
+) -> Result<Option<ParallelGroupRow>, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
-         FROM parallel_phase_groups
+        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+         FROM parallel_groups
          WHERE id = ?1
          LIMIT 1",
     )?;
@@ -317,7 +317,7 @@ pub fn parallel_phase_group_get(
 }
 
 #[tauri::command]
-pub fn parallel_phase_group_delete(
+pub fn parallel_group_delete(
     state: State<'_, Db>,
     id: String,
 ) -> Result<(), ParallelPhaseError> {
@@ -325,7 +325,7 @@ pub fn parallel_phase_group_delete(
 
     let exists: bool = {
         let mut stmt =
-            conn.prepare("SELECT 1 FROM parallel_phase_groups WHERE id = ?1 LIMIT 1")?;
+            conn.prepare("SELECT 1 FROM parallel_groups WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
         rows.next().is_some()
     };
@@ -335,23 +335,23 @@ pub fn parallel_phase_group_delete(
     }
 
     conn.execute(
-        "DELETE FROM parallel_phase_groups WHERE id = ?1",
+        "DELETE FROM parallel_groups WHERE id = ?1",
         rusqlite::params![id],
     )?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn parallel_phase_group_update_completed_at(
+pub fn parallel_group_update_completed_at(
     state: State<'_, Db>,
     id: String,
     completed_at: String,
-) -> Result<ParallelPhaseGroupRow, ParallelPhaseError> {
+) -> Result<ParallelGroupRow, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let completed_at_ms = iso_to_epoch_ms(&completed_at);
 
     let updated = conn.execute(
-        "UPDATE parallel_phase_groups SET completed_at = ?2 WHERE id = ?1",
+        "UPDATE parallel_groups SET completed_at = ?2 WHERE id = ?1",
         rusqlite::params![id, completed_at_ms],
     )?;
 
@@ -360,8 +360,8 @@ pub fn parallel_phase_group_update_completed_at(
     }
 
     let mut stmt = conn.prepare(
-        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
-         FROM parallel_phase_groups
+        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+         FROM parallel_groups
          WHERE id = ?1
          LIMIT 1",
     )?;
@@ -415,7 +415,7 @@ pub struct ParallelSpawnArgs {
 /// `run_id`s once every child has been spawned (threads run independently).
 /// Cancelling a single `run_id` via `turn_cancel` does not affect siblings.
 #[tauri::command]
-pub fn parallel_phase_run_spawn(
+pub fn parallel_session_spawn(
     app: AppHandle,
     state: State<'_, TurnRegistry>,
     args: ParallelSpawnArgs,

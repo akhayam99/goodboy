@@ -8,9 +8,9 @@ use crate::db::{Db, DbError};
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PhaseDefinitionRow {
+pub struct StepRow {
     pub id: String,
-    #[serde(rename = "templateId")]
+    #[serde(rename = "workflowId")]
     pub template_id: String,
     pub ordinal: i64,
     pub name: String,
@@ -23,13 +23,13 @@ pub struct PhaseDefinitionRow {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PhaseTemplateRow {
+pub struct WorkflowRow {
     pub id: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    pub definitions: Vec<PhaseDefinitionRow>,
+    pub definitions: Vec<StepRow>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -37,7 +37,7 @@ pub struct PhaseTemplateRow {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PhaseDefinitionInput {
+pub struct StepInput {
     pub id: Option<String>,
     pub ordinal: i64,
     pub name: String,
@@ -56,16 +56,16 @@ pub struct PhaseTemplateUpsertInput {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    pub definitions: Vec<PhaseDefinitionInput>,
+    pub definitions: Vec<StepInput>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PhaseRunRow {
+pub struct SessionRow {
     pub id: String,
-    #[serde(rename = "sessionId")]
-    pub session_id: String,
-    #[serde(rename = "phaseDefinitionId")]
-    pub phase_definition_id: String,
+    #[serde(rename = "taskId")]
+    pub task_id: String,
+    #[serde(rename = "stepId")]
+    pub step_id: String,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
@@ -82,10 +82,10 @@ pub struct PhaseRunRow {
 #[derive(Debug, Deserialize)]
 pub struct PhaseRunInsertInput {
     pub id: Option<String>,
-    #[serde(rename = "sessionId")]
-    pub session_id: String,
-    #[serde(rename = "phaseDefinitionId")]
-    pub phase_definition_id: String,
+    #[serde(rename = "taskId")]
+    pub task_id: String,
+    #[serde(rename = "stepId")]
+    pub step_id: String,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
@@ -172,15 +172,15 @@ impl From<DbError> for PhaseError {
 fn load_definitions(
     conn: &rusqlite::Connection,
     template_id: &str,
-) -> Result<Vec<PhaseDefinitionRow>, rusqlite::Error> {
+) -> Result<Vec<StepRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT id, template_id, ordinal, name, prompt_prefix, provider_override, model_override
-         FROM phase_definitions
+         FROM steps
          WHERE template_id = ?1
          ORDER BY ordinal ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![template_id], |row| {
-        Ok(PhaseDefinitionRow {
+        Ok(StepRow {
             id: row.get(0)?,
             template_id: row.get(1)?,
             ordinal: row.get(2)?,
@@ -201,9 +201,9 @@ fn row_to_template(
     description: String,
     created_at: String,
     updated_at: String,
-) -> Result<PhaseTemplateRow, rusqlite::Error> {
+) -> Result<WorkflowRow, rusqlite::Error> {
     let definitions = load_definitions(conn, &id)?;
-    Ok(PhaseTemplateRow {
+    Ok(WorkflowRow {
         id,
         workspace_id,
         name,
@@ -219,14 +219,14 @@ fn row_to_template(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn phase_template_list(
+pub fn workflow_list(
     state: State<'_, Db>,
     workspace_id: String,
-) -> Result<Vec<PhaseTemplateRow>, PhaseError> {
+) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, created_at, updated_at
-         FROM phase_templates
+         FROM workflows
          WHERE workspace_id = ?1
          ORDER BY created_at ASC",
     )?;
@@ -254,14 +254,14 @@ pub fn phase_template_list(
 }
 
 #[tauri::command]
-pub fn phase_template_get(
+pub fn workflow_get(
     state: State<'_, Db>,
     id: String,
-) -> Result<Option<PhaseTemplateRow>, PhaseError> {
+) -> Result<Option<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, created_at, updated_at
-         FROM phase_templates
+         FROM workflows
          WHERE id = ?1
          LIMIT 1",
     )?;
@@ -287,10 +287,10 @@ pub fn phase_template_get(
 }
 
 #[tauri::command]
-pub fn phase_template_upsert(
+pub fn workflow_upsert(
     state: State<'_, Db>,
     input: PhaseTemplateUpsertInput,
-) -> Result<PhaseTemplateRow, PhaseError> {
+) -> Result<WorkflowRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let now = iso_now();
 
@@ -300,7 +300,7 @@ pub fn phase_template_upsert(
     } else {
         let existing: Option<String> = {
             let mut stmt = conn.prepare(
-                "SELECT id FROM phase_templates WHERE workspace_id = ?1 AND name = ?2 LIMIT 1",
+                "SELECT id FROM workflows WHERE workspace_id = ?1 AND name = ?2 LIMIT 1",
             )?;
             let mut rows = stmt.query_map(
                 rusqlite::params![input.workspace_id, input.name],
@@ -316,7 +316,7 @@ pub fn phase_template_upsert(
 
     let created_at: String = {
         let mut stmt =
-            conn.prepare("SELECT created_at FROM phase_templates WHERE id = ?1 LIMIT 1")?;
+            conn.prepare("SELECT created_at FROM workflows WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PhaseError::Db)?,
@@ -325,7 +325,7 @@ pub fn phase_template_upsert(
     };
 
     conn.execute(
-        "INSERT INTO phase_templates (id, workspace_id, name, description, created_at, updated_at)
+        "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(id) DO UPDATE SET
            name        = excluded.name,
@@ -343,7 +343,7 @@ pub fn phase_template_upsert(
 
     // Replace definitions atomically.
     conn.execute(
-        "DELETE FROM phase_definitions WHERE template_id = ?1",
+        "DELETE FROM steps WHERE template_id = ?1",
         rusqlite::params![id],
     )?;
 
@@ -351,7 +351,7 @@ pub fn phase_template_upsert(
     for def in &input.definitions {
         let def_id = def.id.clone().unwrap_or_else(uuid_v4);
         conn.execute(
-            "INSERT INTO phase_definitions
+            "INSERT INTO steps
                (id, template_id, ordinal, name, prompt_prefix, provider_override, model_override)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             rusqlite::params![
@@ -364,7 +364,7 @@ pub fn phase_template_upsert(
                 def.model_override,
             ],
         )?;
-        definitions.push(PhaseDefinitionRow {
+        definitions.push(StepRow {
             id: def_id,
             template_id: id.clone(),
             ordinal: def.ordinal,
@@ -375,7 +375,7 @@ pub fn phase_template_upsert(
         });
     }
 
-    Ok(PhaseTemplateRow {
+    Ok(WorkflowRow {
         id,
         workspace_id: input.workspace_id,
         name: input.name,
@@ -387,7 +387,7 @@ pub fn phase_template_upsert(
 }
 
 #[tauri::command]
-pub fn phase_template_delete(
+pub fn workflow_delete(
     state: State<'_, Db>,
     id: String,
 ) -> Result<(), PhaseError> {
@@ -395,7 +395,7 @@ pub fn phase_template_delete(
 
     let exists: bool = {
         let mut stmt =
-            conn.prepare("SELECT 1 FROM phase_templates WHERE id = ?1 LIMIT 1")?;
+            conn.prepare("SELECT 1 FROM workflows WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
         rows.next().is_some()
     };
@@ -406,7 +406,7 @@ pub fn phase_template_delete(
 
     // Cascade delete handled by FK ON DELETE CASCADE on phase_definitions.
     conn.execute(
-        "DELETE FROM phase_templates WHERE id = ?1",
+        "DELETE FROM workflows WHERE id = ?1",
         rusqlite::params![id],
     )?;
     Ok(())
@@ -417,23 +417,23 @@ pub fn phase_template_delete(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn phase_run_list_for_session(
+pub fn session_list_for_task(
     state: State<'_, Db>,
-    session_id: String,
-) -> Result<Vec<PhaseRunRow>, PhaseError> {
+    task_id: String,
+) -> Result<Vec<SessionRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, session_id, phase_definition_id, ordinal, name, status,
+        "SELECT id, task_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at
-         FROM session_phase_runs
-         WHERE session_id = ?1
+         FROM sessions
+         WHERE task_id = ?1
          ORDER BY ordinal ASC",
     )?;
-    let rows = stmt.query_map(rusqlite::params![session_id], |row| {
-        Ok(PhaseRunRow {
+    let rows = stmt.query_map(rusqlite::params![task_id], |row| {
+        Ok(SessionRow {
             id: row.get(0)?,
-            session_id: row.get(1)?,
-            phase_definition_id: row.get(2)?,
+            task_id: row.get(1)?,
+            step_id: row.get(2)?,
             ordinal: row.get(3)?,
             name: row.get(4)?,
             status: row.get(5)?,
@@ -447,22 +447,22 @@ pub fn phase_run_list_for_session(
 }
 
 #[tauri::command]
-pub fn phase_run_insert(
+pub fn session_insert(
     state: State<'_, Db>,
     input: PhaseRunInsertInput,
-) -> Result<PhaseRunRow, PhaseError> {
+) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let id = input.id.clone().unwrap_or_else(uuid_v4);
 
     conn.execute(
-        "INSERT INTO session_phase_runs
-           (id, session_id, phase_definition_id, ordinal, name, status,
+        "INSERT INTO sessions
+           (id, task_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         rusqlite::params![
             id,
-            input.session_id,
-            input.phase_definition_id,
+            input.task_id,
+            input.step_id,
             input.ordinal,
             input.name,
             input.status,
@@ -473,10 +473,10 @@ pub fn phase_run_insert(
         ],
     )?;
 
-    Ok(PhaseRunRow {
+    Ok(SessionRow {
         id,
-        session_id: input.session_id,
-        phase_definition_id: input.phase_definition_id,
+        task_id: input.task_id,
+        step_id: input.step_id,
         ordinal: input.ordinal,
         name: input.name,
         status: input.status,
@@ -488,14 +488,14 @@ pub fn phase_run_insert(
 }
 
 #[tauri::command]
-pub fn phase_run_update_status(
+pub fn session_update_status(
     state: State<'_, Db>,
     input: PhaseRunUpdateInput,
-) -> Result<PhaseRunRow, PhaseError> {
+) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
 
     conn.execute(
-        "UPDATE session_phase_runs SET
+        "UPDATE sessions SET
            status         = ?2,
            provider_run_id = COALESCE(?3, provider_run_id),
            output_summary  = COALESCE(?4, output_summary),
@@ -514,17 +514,17 @@ pub fn phase_run_update_status(
 
     // Fetch updated row.
     let mut stmt = conn.prepare(
-        "SELECT id, session_id, phase_definition_id, ordinal, name, status,
+        "SELECT id, task_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at
-         FROM session_phase_runs
+         FROM sessions
          WHERE id = ?1
          LIMIT 1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![input.id], |row| {
-        Ok(PhaseRunRow {
+        Ok(SessionRow {
             id: row.get(0)?,
-            session_id: row.get(1)?,
-            phase_definition_id: row.get(2)?,
+            task_id: row.get(1)?,
+            step_id: row.get(2)?,
             ordinal: row.get(3)?,
             name: row.get(4)?,
             status: row.get(5)?,
