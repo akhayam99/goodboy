@@ -305,6 +305,7 @@ export interface AppActions {
   loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
   selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
+  renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
   setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
@@ -2180,6 +2181,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       messages: { ...s.messages, [taskId]: [] },
     }));
     return inserted.id;
+  },
+
+  renameAgent: async (taskId, agentId, name) => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) return;
+    await tauriDatabase.execute('UPDATE sessions SET name = ? WHERE id = ?', [trimmed, agentId]);
+    const refreshed = await invokePhaseRunList(taskId);
+    set((s) => ({
+      sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
+    }));
   },
 
   wipeLocalDatabase: async () => {

@@ -44,8 +44,8 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
     <Dialog
       open={open}
       onClose={onClose}
-      title="end session?"
-      description="the worktree directory will be removed. the branch is preserved for manual merge."
+      title="End session?"
+      description="The worktree directory will be removed. The branch is preserved for manual merge."
       size="sm"
       footer={
         <>

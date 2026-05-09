@@ -24,9 +24,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'general', label: 'general', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'skills', label: 'skills', icon: <Zap size={14} aria-hidden /> },
-  { id: 'phases', label: 'phases', icon: <GitBranch size={14} aria-hidden />, beta: true },
+  { id: 'general', label: 'General', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'skills', label: 'Skills', icon: <Zap size={14} aria-hidden /> },
+  { id: 'phases', label: 'Workflows', icon: <GitBranch size={14} aria-hidden />, beta: true },
 ];
 
 function BetaChip() {
@@ -110,7 +110,7 @@ export function WorkspaceSettingsDialog({
       open={open}
       onClose={onClose}
       title={`${workspaceName} — settings`}
-      description="per-workspace defaults, skills, and workflow templates."
+      description="Per-workspace defaults, skills, and workflow templates."
       size="xl"
       fixedHeightClass="h-[640px]"
       fullScreenOnSmall
@@ -138,10 +138,10 @@ export function WorkspaceSettingsDialog({
               key={item.id}
               type="button"
               onClick={() => setActive(item.id)}
-              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+              className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
                 active === item.id
-                  ? 'border-l-2 border-primary bg-primary/10 pl-1.5 font-medium text-foreground'
-                  : 'border-l-2 border-transparent pl-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               }`}
             >
               {item.icon}

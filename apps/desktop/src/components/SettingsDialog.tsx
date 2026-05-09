@@ -45,13 +45,13 @@ interface NavItem {
 // global settings only — per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
-  { id: 'app', label: 'app', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'providers', label: 'providers', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
-  { id: 'agent', label: 'agent', icon: <Bot size={14} aria-hidden />, beta: true },
-  { id: 'permissions', label: 'permissions', icon: <Lock size={14} aria-hidden />, beta: true },
-  { id: 'initialization', label: 'initialization', icon: <Trash2 size={14} aria-hidden /> },
-  { id: 'advanced', label: 'advanced', icon: <FileDown size={14} aria-hidden /> },
+  { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
+  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
+  { id: 'agent', label: 'Agent', icon: <Bot size={14} aria-hidden />, beta: true },
+  { id: 'permissions', label: 'Permissions', icon: <Lock size={14} aria-hidden />, beta: true },
+  { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
+  { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
 ];
 
 function isNavSection(value: string | undefined): value is NavSection {
@@ -183,7 +183,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'app':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>app settings</SectionHeading>
+            <SectionHeading>App settings</SectionHeading>
             <Field label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
               <Input
                 value={editorBinary}
@@ -204,7 +204,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'agent':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>agent settings</SectionHeading>
+            <SectionHeading>Agent settings</SectionHeading>
             <Field
               label="enable parallel agents"
               help="split-view transcript renders N columns when a parallel phase group is active."
@@ -244,7 +244,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>initialization</SectionHeading>
+            <SectionHeading>Initialization</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
               wipe the local sqlite database — drops every workspace, session, agent, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
@@ -291,7 +291,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'advanced':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>config backup</SectionHeading>
+            <SectionHeading>Config backup</SectionHeading>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
@@ -322,8 +322,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     <Dialog
       open={open}
       onClose={onClose}
-      title="settings"
-      description="configure providers, editor, and workspace defaults."
+      title="Settings"
+      description="Configure providers, editor, and workspace defaults."
       size="xl"
       fixedHeightClass="h-[640px]"
       fullScreenOnSmall
@@ -351,10 +351,10 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               key={item.id}
               type="button"
               onClick={() => setActiveSection(item.id)}
-              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+              className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
                 activeSection === item.id
-                  ? 'border-l-2 border-primary bg-primary/10 pl-1.5 font-medium text-foreground'
-                  : 'border-l-2 border-transparent pl-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               }`}
             >
               {item.icon}
