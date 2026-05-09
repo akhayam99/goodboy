@@ -1,7 +1,7 @@
 import {
   insertTelemetry,
   summarizeProviderTelemetry,
-  summarizeSessionTelemetry,
+  summarizeTaskTelemetry,
   summarizeWorkspaceTelemetry,
   type Database,
   type TelemetrySummary,
@@ -12,7 +12,7 @@ import type {
   ProviderName,
   ProviderRunId,
   ProviderUsage,
-  SessionId,
+  TaskId,
   TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
@@ -21,14 +21,14 @@ import type {
 
 export interface RecordTurnInput {
   readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
+  readonly taskId: TaskId;
   readonly model: string;
   readonly usage: ProviderUsage;
 }
 
 export interface RecordSummarizerInput {
   readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
+  readonly taskId: TaskId;
   readonly model: string;
   readonly usage: ProviderUsage;
   readonly costUsd: number;
@@ -49,7 +49,7 @@ export class TelemetryRecorder {
     return this.persist({
       kind: 'turn',
       runId: input.runId,
-      sessionId: input.sessionId,
+      taskId: input.taskId,
       provider: this.deps.adapter.id,
       model: input.model,
       usage: input.usage,
@@ -61,7 +61,7 @@ export class TelemetryRecorder {
     return this.persist({
       kind: 'summarizer',
       runId: input.runId,
-      sessionId: input.sessionId,
+      taskId: input.taskId,
       provider: this.deps.adapter.id,
       model: input.model,
       usage: input.usage,
@@ -69,8 +69,8 @@ export class TelemetryRecorder {
     });
   }
 
-  sessionSummary(sessionId: SessionId): Promise<TelemetrySummary> {
-    return summarizeSessionTelemetry(this.deps.db, sessionId);
+  sessionSummary(taskId: TaskId): Promise<TelemetrySummary> {
+    return summarizeTaskTelemetry(this.deps.db, taskId);
   }
 
   workspaceSummary(workspaceId: WorkspaceId): Promise<TelemetrySummary> {
@@ -84,7 +84,7 @@ export class TelemetryRecorder {
   private async persist(args: {
     kind: TelemetryKind;
     runId: ProviderRunId;
-    sessionId: SessionId;
+    taskId: TaskId;
     provider: ProviderName;
     model: string;
     usage: ProviderUsage;
@@ -93,7 +93,7 @@ export class TelemetryRecorder {
     const record: TelemetryRecord = {
       id: this.deps.newId(),
       runId: args.runId,
-      sessionId: args.sessionId,
+      taskId: args.taskId,
       kind: args.kind,
       provider: args.provider,
       model: args.model,

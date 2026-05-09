@@ -6,13 +6,13 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRuleId,
-  SessionId,
+  TaskId,
   WorkspaceId,
 } from '@kay-am/types';
 import { PermissionAuditRecorder, type AuditQuery } from './audit';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
-const SESSION = 'session-1' as SessionId;
+const SESSION = 'session-1' as TaskId;
 const WS = 'ws-1' as WorkspaceId;
 
 function makeEntry(id: string): PermissionAuditEntry {
@@ -42,7 +42,7 @@ function makeInMemoryDeps() {
         store.push(entry);
       },
       list: async (_q: AuditQuery) => [...store] as ReadonlyArray<PermissionAuditEntry>,
-      clear: async (_scope: { sessionId?: SessionId; workspaceId?: WorkspaceId }) => {
+      clear: async (_scope: { taskId?: TaskId; workspaceId?: WorkspaceId }) => {
         store.splice(0, store.length);
       },
     },
@@ -67,24 +67,24 @@ describe('PermissionAuditRecorder', () => {
     const { deps } = makeInMemoryDeps();
     const recorder = new PermissionAuditRecorder(deps);
 
-    expect(() => recorder.clear({})).toThrow('clear scope required: sessionId or workspaceId');
+    expect(() => recorder.clear({})).toThrow('clear scope required: taskId or workspaceId');
   });
 
   it('clear without scope throws even with undefined values', () => {
     const { deps } = makeInMemoryDeps();
     const recorder = new PermissionAuditRecorder(deps);
 
-    expect(() => recorder.clear({ sessionId: undefined, workspaceId: undefined })).toThrow(
-      'clear scope required: sessionId or workspaceId',
+    expect(() => recorder.clear({ taskId: undefined, workspaceId: undefined })).toThrow(
+      'clear scope required: taskId or workspaceId',
     );
   });
 
-  it('clear with sessionId only succeeds', async () => {
+  it('clear with taskId only succeeds', async () => {
     const { deps } = makeInMemoryDeps();
     const recorder = new PermissionAuditRecorder(deps);
 
     await recorder.record(makeEntry('req-1'));
-    await expect(recorder.clear({ sessionId: SESSION })).resolves.toBeUndefined();
+    await expect(recorder.clear({ taskId: SESSION })).resolves.toBeUndefined();
   });
 
   it('clear with workspaceId only succeeds', async () => {

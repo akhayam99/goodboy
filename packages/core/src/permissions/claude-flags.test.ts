@@ -3,15 +3,15 @@ import type {
   IsoDateTime,
   PermissionRule,
   PermissionRuleId,
-  SessionId,
+  TaskId,
   WorkspaceId,
 } from '@kay-am/types';
 import { buildClaudeFlags } from './claude-flags';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
-const SESSION = 'session-1' as SessionId;
+const SESSION = 'session-1' as TaskId;
 const WS = 'ws-1' as WorkspaceId;
-const SCOPE = { sessionId: SESSION, workspaceId: WS };
+const SCOPE = { taskId: SESSION, workspaceId: WS };
 
 function makeRule(
   overrides: Partial<PermissionRule> & Pick<PermissionRule, 'id' | 'decision'>,
@@ -82,8 +82,8 @@ describe('buildClaudeFlags', () => {
       }),
       makeRule({
         id: 'session-deny' as PermissionRuleId,
-        scope: 'session',
-        sessionId: SESSION,
+        scope: 'task',
+        taskId: SESSION,
         decision: 'deny',
         pattern: { tool: 'Edit' },
         priority: 5,
@@ -139,8 +139,8 @@ describe('buildClaudeFlags', () => {
     const rules: PermissionRule[] = [
       makeRule({
         id: 'r1' as PermissionRuleId,
-        scope: 'session',
-        sessionId: 'other-session' as SessionId,
+        scope: 'task',
+        taskId: 'other-session' as TaskId,
         decision: 'allow',
         pattern: { tool: 'Edit' },
       }),

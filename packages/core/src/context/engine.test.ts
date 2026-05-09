@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@kay-am/db';
-import type { SessionId, WorkspaceId } from '@kay-am/types';
+import type { TaskId, WorkspaceId } from '@kay-am/types';
 import { ContextEngine } from './engine';
 import { InvalidSlotKeyError, serializeSlots, SLOT_KEYS } from './slots';
 
@@ -24,17 +24,17 @@ function makeDb(): DbInterface {
   };
 }
 
-async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void> {
+async function seedSession(db: DbInterface, taskId: TaskId): Promise<void> {
   const workspaceId = 'ws_ctx' as WorkspaceId;
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'demo', '/tmp/demo', 0, 0],
   );
   await db.execute(
-    `INSERT INTO sessions
+    `INSERT INTO tasks
        (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [sessionId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
+    [taskId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
   );
 }
 
@@ -77,10 +77,10 @@ describe('ContextEngine', () => {
   it('rejects unknown slot keys', async () => {
     const db = makeDb();
     await migrate(db);
-    await seedSession(db, 'sess_1' as SessionId);
+    await seedSession(db, 'sess_1' as TaskId);
     const engine = new ContextEngine({ db });
 
-    await expect(engine.upsert('sess_1' as SessionId, 'unknown', 'x')).rejects.toBeInstanceOf(
+    await expect(engine.upsert('sess_1' as TaskId, 'unknown', 'x')).rejects.toBeInstanceOf(
       InvalidSlotKeyError,
     );
   });
@@ -88,20 +88,20 @@ describe('ContextEngine', () => {
   it('round-trips slots through the db', async () => {
     const db = makeDb();
     await migrate(db);
-    await seedSession(db, 'sess_2' as SessionId);
+    await seedSession(db, 'sess_2' as TaskId);
     const engine = new ContextEngine({ db });
 
-    await engine.upsert('sess_2' as SessionId, 'goal', 'ship v0.1');
-    await engine.upsert('sess_2' as SessionId, 'decisions', 'use claude only');
-    await engine.upsert('sess_2' as SessionId, 'goal', 'ship v0.1 quickly');
+    await engine.upsert('sess_2' as TaskId, 'goal', 'ship v0.1');
+    await engine.upsert('sess_2' as TaskId, 'decisions', 'use claude only');
+    await engine.upsert('sess_2' as TaskId, 'goal', 'ship v0.1 quickly');
 
-    const slots = await engine.load('sess_2' as SessionId);
+    const slots = await engine.load('sess_2' as TaskId);
     const goal = slots.find((s) => s.key === 'goal');
     const decisions = slots.find((s) => s.key === 'decisions');
     expect(goal?.value).toBe('ship v0.1 quickly');
     expect(decisions?.value).toBe('use claude only');
 
-    const serialized = await engine.serialize('sess_2' as SessionId);
+    const serialized = await engine.serialize('sess_2' as TaskId);
     expect(serialized).toContain('ship v0.1 quickly');
     expect(serialized).toContain('use claude only');
   });
@@ -109,13 +109,13 @@ describe('ContextEngine', () => {
   it('keeps slot content visible even when enabled is toggled off (legacy flag is a no-op)', async () => {
     const db = makeDb();
     await migrate(db);
-    await seedSession(db, 'sess_3' as SessionId);
+    await seedSession(db, 'sess_3' as TaskId);
     const engine = new ContextEngine({ db });
 
-    await engine.upsert('sess_3' as SessionId, 'goal', 'visible');
-    await engine.setEnabled('sess_3' as SessionId, 'goal', false);
+    await engine.upsert('sess_3' as TaskId, 'goal', 'visible');
+    await engine.setEnabled('sess_3' as TaskId, 'goal', false);
 
-    const out = await engine.serialize('sess_3' as SessionId);
+    const out = await engine.serialize('sess_3' as TaskId);
     expect(out).toContain('visible');
   });
 });

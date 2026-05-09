@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, TaskId, TurnEvent, TurnRequest } from '@kay-am/types';
 import { ClaudeAdapter } from './adapter';
 
 const fakeNow = (): IsoDateTime => '2026-05-07T00:00:00.000Z' as IsoDateTime;
@@ -34,7 +34,7 @@ class StreamChild extends EventEmitter {
 function makeRequest(): TurnRequest {
   return {
     runId: 'run_contract' as ProviderRunId,
-    sessionId: 'sess_contract' as SessionId,
+    taskId: 'sess_contract' as TaskId,
     model: 'claude-opus-4-7',
     workingDir: '/tmp/contract',
     systemPrompt: 'sys',

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
   ProviderRunId,
-  SessionId,
+  TaskId,
   TurnEvent,
   TurnPermissionFlags,
   TurnRequest,
@@ -67,7 +67,7 @@ function makeOpenChild(lines: ReadonlyArray<string>): OpenChild {
 function makeRequest(permissionFlags?: TurnPermissionFlags): TurnRequest {
   return {
     runId: 'run_1' as ProviderRunId,
-    sessionId: 'sess_1' as SessionId,
+    taskId: 'sess_1' as TaskId,
     model: 'claude-opus-4-7',
     workingDir: '/tmp/demo',
     systemPrompt: 'sys',

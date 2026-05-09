@@ -6,7 +6,7 @@ import type {
   ProviderAdapter,
   ProviderRunId,
   ProviderUsage,
-  SessionId,
+  TaskId,
   TelemetryRecordId,
   WorkspaceId,
 } from '@kay-am/types';
@@ -55,23 +55,23 @@ const fakeAdapter: ProviderAdapter = {
 async function seedSession(
   db: DbInterface,
   workspaceId: WorkspaceId,
-  sessionId: SessionId,
+  taskId: TaskId,
 ): Promise<void> {
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'demo', `/tmp/${workspaceId}`, 0, 0],
   );
   await db.execute(
-    `INSERT INTO sessions
+    `INSERT INTO tasks
        (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [sessionId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
+    [taskId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
   );
   await db.execute(
     `INSERT INTO provider_runs
-       (id, session_id, provider, model, status_kind, status_payload, created_at)
+       (id, task_id, provider, model, status_kind, status_payload, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ['run_1', sessionId, 'anthropic', 'claude-opus-4-7', 'succeeded', '{}', 0],
+    ['run_1', taskId, 'anthropic', 'claude-opus-4-7', 'succeeded', '{}', 0],
   );
 }
 
@@ -84,7 +84,7 @@ describe('TelemetryRecorder', () => {
     counter = 0;
     const db = makeDb();
     await migrate(db);
-    await seedSession(db, 'ws_1' as WorkspaceId, 'sess_1' as SessionId);
+    await seedSession(db, 'ws_1' as WorkspaceId, 'sess_1' as TaskId);
 
     const recorder = new TelemetryRecorder({ db, adapter: fakeAdapter, newId, now });
     const usage: ProviderUsage = {
@@ -95,7 +95,7 @@ describe('TelemetryRecorder', () => {
     };
     const record = await recorder.recordTurn({
       runId: 'run_1' as ProviderRunId,
-      sessionId: 'sess_1' as SessionId,
+      taskId: 'sess_1' as TaskId,
       model: 'claude-opus-4-7',
       usage,
     });
@@ -108,7 +108,7 @@ describe('TelemetryRecorder', () => {
     counter = 0;
     const db = makeDb();
     await migrate(db);
-    await seedSession(db, 'ws_2' as WorkspaceId, 'sess_2' as SessionId);
+    await seedSession(db, 'ws_2' as WorkspaceId, 'sess_2' as TaskId);
 
     const recorder = new TelemetryRecorder({ db, adapter: fakeAdapter, newId, now });
     const usage = {
@@ -120,19 +120,19 @@ describe('TelemetryRecorder', () => {
 
     await recorder.recordTurn({
       runId: 'run_1' as ProviderRunId,
-      sessionId: 'sess_2' as SessionId,
+      taskId: 'sess_2' as TaskId,
       model: 'claude-opus-4-7',
       usage,
     });
     await recorder.recordSummarizer({
       runId: 'run_1' as ProviderRunId,
-      sessionId: 'sess_2' as SessionId,
+      taskId: 'sess_2' as TaskId,
       model: 'claude-haiku-4-5',
       usage,
       costUsd: 0.00002,
     });
 
-    const session = await recorder.sessionSummary('sess_2' as SessionId);
+    const session = await recorder.sessionSummary('sess_2' as TaskId);
     expect(session.recordCount).toBe(2);
     expect(session.inputTokens).toBe(200);
     expect(session.outputTokens).toBe(100);

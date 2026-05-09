@@ -1,7 +1,7 @@
 import type {
   IsoDateTime,
   ParallelMergeStrategy,
-  PhaseRunStatus,
+  SessionStatus,
   ProviderRunId,
 } from '@kay-am/types';
 
@@ -26,7 +26,7 @@ export interface ConflictResolutionInput {
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
     completedAt: IsoDateTime;
-    status: PhaseRunStatus;
+    status: SessionStatus;
   }>;
   strategy: ParallelMergeStrategy;
   manualPicks?: Record<string, ProviderRunId>;
@@ -95,7 +95,7 @@ function resolveLastWriteWins(
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
     completedAt: IsoDateTime;
-    status: PhaseRunStatus;
+    status: SessionStatus;
   }>,
 ): ReadonlyArray<ResolvedConflict> {
   const statusMap = new Map(runStatuses.map((r) => [r.runId, r]));
@@ -104,7 +104,7 @@ function resolveLastWriteWins(
     const candidates = conflict.runIds
       .map((runId) => statusMap.get(runId))
       .filter(
-        (r): r is { runId: ProviderRunId; completedAt: IsoDateTime; status: PhaseRunStatus } =>
+        (r): r is { runId: ProviderRunId; completedAt: IsoDateTime; status: SessionStatus } =>
           r !== undefined && r.status === 'completed',
       );
 

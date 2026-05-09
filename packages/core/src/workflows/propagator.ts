@@ -1,19 +1,19 @@
-import type { ContextSlot, IsoDateTime, PhaseTransition } from '@kay-am/types';
+import type { ContextSlot, IsoDateTime, StepTransition } from '@kay-am/types';
 import { serializeSlots } from '../context';
 
-export interface PhaseContextPropagatorDeps {
+export interface WorkflowPropagatorDeps {
   readonly summarizer: { summarizePhaseOutput(text: string): Promise<string> };
 }
 
-export class PhaseContextPropagator {
-  constructor(private readonly deps: PhaseContextPropagatorDeps) {}
+export class WorkflowPropagator {
+  constructor(private readonly deps: WorkflowPropagatorDeps) {}
   async buildTransition(input: {
     fromOrdinal: number;
     toOrdinal: number;
     completedPhaseOutput: string;
     existingSlots: ReadonlyArray<ContextSlot>;
     at: IsoDateTime;
-  }): Promise<PhaseTransition> {
+  }): Promise<StepTransition> {
     const summary = await this.deps.summarizer.summarizePhaseOutput(input.completedPhaseOutput);
     const slotsText = serializeSlots(input.existingSlots);
     const carryForwardContext = [summary, slotsText]

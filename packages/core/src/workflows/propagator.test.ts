@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot, IsoDateTime } from '@kay-am/types';
-import { PhaseContextPropagator } from './propagator';
+import { WorkflowPropagator } from './propagator';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
@@ -14,9 +14,9 @@ function makeSummarizer(summary: string) {
 
 const SLOTS: ReadonlyArray<ContextSlot> = [{ key: 'goal', value: 'refactor auth', enabled: true }];
 
-describe('PhaseContextPropagator.buildTransition', () => {
+describe('WorkflowPropagator.buildTransition', () => {
   it('combines summary and serialized slots in carryForwardContext', async () => {
-    const propagator = new PhaseContextPropagator({ summarizer: makeSummarizer('phase summary') });
+    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('phase summary') });
     const result = await propagator.buildTransition({
       fromOrdinal: 0,
       toOrdinal: 1,
@@ -33,7 +33,7 @@ describe('PhaseContextPropagator.buildTransition', () => {
   });
 
   it('empty summary → slots text present without a leading double-newline', async () => {
-    const propagator = new PhaseContextPropagator({ summarizer: makeSummarizer('') });
+    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('') });
     const result = await propagator.buildTransition({
       fromOrdinal: 1,
       toOrdinal: 2,
@@ -47,7 +47,7 @@ describe('PhaseContextPropagator.buildTransition', () => {
   });
 
   it('no slots → summary joined with serialized slot headers', async () => {
-    const propagator = new PhaseContextPropagator({ summarizer: makeSummarizer('only summary') });
+    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('only summary') });
     const result = await propagator.buildTransition({
       fromOrdinal: 0,
       toOrdinal: 1,
@@ -60,7 +60,7 @@ describe('PhaseContextPropagator.buildTransition', () => {
   });
 
   it('empty summary and no slots → carryForwardContext contains only slot headers', async () => {
-    const propagator = new PhaseContextPropagator({ summarizer: makeSummarizer('') });
+    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('') });
     const result = await propagator.buildTransition({
       fromOrdinal: 0,
       toOrdinal: 1,
