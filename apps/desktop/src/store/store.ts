@@ -911,6 +911,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     }
 
+    // Pre-spawn one Session row per Step in the chosen workflow so the
+    // sidebar's "agents" block is populated immediately — the user sees the
+    // full preset (e.g. scout / planner / implementer / reviewer) the moment
+    // a Task is created, instead of agents appearing one-by-one as the user
+    // types. Each row starts in `pending` and flips to `running` on its
+    // first turn (sendTurn handles the reuse).
+    let prespawnedRuns: ReadonlyArray<Session> = [];
+    if (workflowId) {
+      const templates = get().phaseTemplates[workspaceId] ?? [];
+      const template = templates.find((t) => t.id === workflowId);
+      if (template) {
+        const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+        const inserts = await Promise.all(
+          sortedSteps.map((step) =>
+            invokePhaseRunInsert({
+              taskId: session.id,
+              stepId: step.id,
+              ordinal: step.ordinal,
+              name: step.name,
+              status: 'pending',
+            }),
+          ),
+        );
+        prespawnedRuns = inserts;
+      }
+    }
+
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
@@ -928,6 +955,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...state.sessionSlots,
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
+      sessionPhaseRuns:
+        prespawnedRuns.length > 0
+          ? { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns }
+          : state.sessionPhaseRuns,
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
