@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
-import { Button, Textarea, cn } from '@kay-am/ui';
+import { Send, Square } from 'lucide-react';
+import { Textarea, cn } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -253,68 +254,72 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             disabled={isRunning || providerDisconnected}
             autoGrow
             maxRows={12}
+            className="pr-12"
           />
+          {isRunning ? (
+            <button
+              type="button"
+              onClick={() => void cancelCurrentTurn(session.id)}
+              title="cancel turn"
+              aria-label="cancel turn"
+              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-danger text-danger-foreground transition-opacity hover:opacity-90"
+            >
+              <Square size={14} aria-hidden fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void onSend()}
+              disabled={!canSend}
+              title={sendDisabledTitle ?? 'send (enter)'}
+              aria-label="send message"
+              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <Send size={14} aria-hidden />
+            </button>
+          )}
         </div>
         {error ? (
           <p role="alert" className="text-xs text-danger">
             {error}
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <ChipRow
-              label="provider"
-              disabledTitle={overrideDisabledTitle}
-              disabled={!allowOverride || isRunning}
-            >
-              {providerCandidates.map((id) => (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
+            {providerCandidates.map((id) => (
+              <Chip
+                key={id}
+                label={PROVIDER_LABEL[id]}
+                active={effectiveProvider === id}
+                onClick={() => onSelectProvider(id)}
+                disabled={!allowOverride || isRunning}
+              />
+            ))}
+          </ChipRow>
+          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
+            {modelCandidates.map((id) => (
+              <Chip
+                key={id}
+                label={id}
+                active={effectiveModel === id}
+                onClick={() => onSelectModel(id)}
+                disabled={!allowOverride || isRunning}
+                mono
+              />
+            ))}
+          </ChipRow>
+          {effectiveProvider === 'anthropic' ? (
+            <ChipRow>
+              {EFFORT_LEVELS.map((level) => (
                 <Chip
-                  key={id}
-                  label={PROVIDER_LABEL[id]}
-                  active={effectiveProvider === id}
-                  onClick={() => onSelectProvider(id)}
-                  disabled={!allowOverride || isRunning}
+                  key={level}
+                  label={level}
+                  active={effort === level}
+                  onClick={() => setEffort(level)}
                 />
               ))}
             </ChipRow>
-            <ChipRow
-              label="model"
-              disabledTitle={overrideDisabledTitle}
-              disabled={!allowOverride || isRunning}
-            >
-              {modelCandidates.map((id) => (
-                <Chip
-                  key={id}
-                  label={id}
-                  active={effectiveModel === id}
-                  onClick={() => onSelectModel(id)}
-                  disabled={!allowOverride || isRunning}
-                  mono
-                />
-              ))}
-            </ChipRow>
-            {effectiveProvider === 'anthropic' ? (
-              <ChipRow label="effort">
-                {EFFORT_LEVELS.map((level) => (
-                  <Chip
-                    key={level}
-                    label={level}
-                    active={effort === level}
-                    onClick={() => setEffort(level)}
-                  />
-                ))}
-              </ChipRow>
-            ) : null}
-          </div>
-          {isRunning ? (
-            <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
-              cancel
-            </Button>
-          ) : (
-            <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
-              send
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -322,26 +327,20 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 }
 
 function ChipRow({
-  label,
   disabled,
   disabledTitle,
   children,
 }: {
-  label: string;
   disabled?: boolean;
   disabledTitle?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className={cn(
-        'flex items-center gap-1.5 text-2xs uppercase tracking-wide',
-        disabled && 'opacity-60',
-      )}
+      className={cn('flex flex-wrap items-center gap-1', disabled && 'opacity-60')}
       title={disabled ? disabledTitle : undefined}
     >
-      <span className="text-muted-foreground">{label}</span>
-      <div className="flex flex-wrap items-center gap-1">{children}</div>
+      {children}
     </div>
   );
 }
@@ -368,7 +367,7 @@ function Chip({
         'rounded-full px-2.5 py-0.5 text-xs normal-case motion-safe:transition-colors',
         mono && 'font-mono',
         active
-          ? 'bg-foreground text-background'
+          ? 'bg-primary text-primary-foreground'
           : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}
