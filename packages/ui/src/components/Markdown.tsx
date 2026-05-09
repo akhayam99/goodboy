@@ -7,8 +7,9 @@ import { cn } from '../cn';
 // Handwritten in lieu of a dependency: react-markdown pulls a 30-package
 // remark/rehype subtree, marked has XSS surface, and LLMs only ever produce
 // a small subset of CommonMark — fenced code, headings, lists (ordered +
-// unordered, nested), blockquotes, horizontal rules, paragraphs, plus inline
-// emphasis / code / links. That's what we cover here.
+// unordered, flat), blockquotes, horizontal rules, gfm-style pipe tables,
+// paragraphs, plus inline emphasis / code / links. We also recognise the
+// agent's <<ctx-*>>...</ctx-*>> markers and render them as labelled blocks.
 //
 // Inline rendering operates on plain strings only; we never dangerouslySetHTML
 // so any unmatched delimiter just shows literal characters.

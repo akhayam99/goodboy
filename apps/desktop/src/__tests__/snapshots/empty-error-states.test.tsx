@@ -162,7 +162,7 @@ describe('snapshot — empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionDialog: no phase templates', () => {
+  it('NewSessionDialog: no workflows', () => {
     const { container } = render(
       <ToastProvider>
         <NewSessionDialog

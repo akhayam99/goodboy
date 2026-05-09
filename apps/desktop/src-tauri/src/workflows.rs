@@ -123,9 +123,9 @@ pub enum PhaseError {
     Db(#[from] rusqlite::Error),
     #[error("db mutex poisoned")]
     Poisoned,
-    #[error("phase template not found: {0}")]
+    #[error("workflow not found: {0}")]
     TemplateNotFound(String),
-    #[error("phase run not found: {0}")]
+    #[error("agent not found: {0}")]
     RunNotFound(String),
 }
 
@@ -215,7 +215,7 @@ fn row_to_template(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — phase template CRUD
+// Commands — workflow CRUD
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -413,7 +413,7 @@ pub fn workflow_delete(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — phase run lifecycle
+// Commands — agent (= session row) lifecycle
 // ---------------------------------------------------------------------------
 
 #[tauri::command]

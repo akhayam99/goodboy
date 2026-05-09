@@ -40,7 +40,7 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 </div>
 `;
 
-exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = `
+exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
   aria-describedby="_r_1_-desc"
   aria-labelledby="_r_1_-title"

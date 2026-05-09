@@ -42,7 +42,7 @@ interface NavItem {
   beta?: boolean;
 }
 
-// global settings only — per-workspace skills + phase templates live in
+// global settings only — per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'app', icon: <FolderCode size={14} aria-hidden /> },
@@ -310,7 +310,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               </Button>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              export saves workspaces, skills, phase templates, permission rules, budget rules, and
+              export saves workspaces, skills, workflows, permission rules, budget rules, and
               settings to a json file. api keys are never included.
             </p>
           </div>

@@ -18,7 +18,7 @@ export function nextStep(template: Workflow, runs: ReadonlyArray<Session>): Step
  * Replaces auto-advance: the orchestrator no longer skips to the next step
  * the moment a previous one completes — it stays on whichever step has an
  * existing in-flight or last-touched run. The user explicitly spawns a new
- * agent (future PR) to move forward; until then, every message keeps
+ * agent from the sidebar to move forward; until then, every message keeps
  * iterating with the same role.
  *
  * Resolution order:

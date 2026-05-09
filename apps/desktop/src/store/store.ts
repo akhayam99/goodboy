@@ -1112,8 +1112,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }));
         // Resolve the step the next turn should land on. Auto-advance is gone:
         // currentStep keeps the agent on its current role until the user
-        // explicitly spawns a new agent (future PR). Multiple turns now stack
-        // on the same Session row instead of inserting a fresh row per message.
+        // explicitly spawns a new agent from the sidebar. Multiple turns
+        // stack on the same Session row instead of inserting a fresh row
+        // per message.
         const nextDef = currentStep(template, freshRuns);
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);

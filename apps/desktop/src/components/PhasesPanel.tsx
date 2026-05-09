@@ -93,7 +93,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       return;
     }
     if (form.steps.some((d) => !d.name.trim())) {
-      setFormError('all phase steps need a name');
+      setFormError('all steps need a name');
       return;
     }
 
@@ -147,15 +147,15 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">phase templates</div>
+        <div className="text-xs font-semibold text-foreground">workflows</div>
         <Button variant="ghost" size="sm" onClick={openNew}>
-          new template
+          new workflow
         </Button>
       </div>
 
       {templates.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          no phase templates for this workspace. create one to run multi-phase sessions.
+          no workflows for this workspace. create one to chain multiple agents per session.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
@@ -190,7 +190,7 @@ function TemplateRow({
           <span className="text-xs text-muted-foreground">{template.description}</span>
         ) : null}
         <span className="text-2xs text-muted-foreground/60">
-          {template.steps.length} phase{template.steps.length !== 1 ? 's' : ''}
+          {template.steps.length} step{template.steps.length !== 1 ? 's' : ''}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -262,7 +262,7 @@ function PhaseEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="text-xs font-semibold text-foreground">
-        {isNew ? 'new phase template' : 'edit phase template'}
+        {isNew ? 'new workflow' : 'edit workflow'}
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
@@ -286,13 +286,13 @@ function PhaseEditor({
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground">phases</span>
+            <span className="text-xs font-semibold text-foreground">steps</span>
             <button
               type="button"
               className="text-xs text-primary underline hover:opacity-80"
               onClick={addDefinition}
             >
-              add phase
+              add step
             </button>
           </div>
 
@@ -345,7 +345,7 @@ function DefinitionEditor({
   return (
     <div className="flex flex-col gap-2 rounded border border-border-soft bg-background p-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-2xs font-semibold text-muted-foreground">phase {ordinal + 1}</span>
+        <span className="text-2xs font-semibold text-muted-foreground">step {ordinal + 1}</span>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -369,7 +369,7 @@ function DefinitionEditor({
             type="button"
             className="text-xs text-muted-foreground hover:text-danger"
             onClick={onRemove}
-            title="remove phase"
+            title="remove step"
           >
             ×
           </button>
@@ -392,7 +392,7 @@ function DefinitionEditor({
         <Textarea
           value={def.promptPrefix}
           onChange={(e) => onUpdate({ promptPrefix: e.target.value })}
-          placeholder="You are in the planning phase. Your goal is to…"
+          placeholder="You are in the planning step. Your goal is to…"
           rows={3}
           className="font-mono text-xs"
         />
