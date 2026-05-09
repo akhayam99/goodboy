@@ -1,6 +1,7 @@
 import type { IsoDateTime, Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
 import { upsertWorkflow, type Database } from '@kay-am/db';
 import { WORKFLOW_LIBRARY } from './library';
+import { defaultsForRole } from '../roles';
 
 export interface SeedWorkflowLibraryDeps {
   readonly db: Database;
@@ -31,13 +32,21 @@ export async function seedWorkflowLibrary(
 
   for (const entry of WORKFLOW_LIBRARY) {
     const workflowId = makeWorkflowId(entry.slug, workspaceId);
-    const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => ({
-      id: makeStepId(entry.slug, s.name, workspaceId),
-      workflowId,
-      ordinal,
-      name: s.name,
-      promptPrefix: s.promptPrefix,
-    }));
+    const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
+      // Apply per-role defaults so the orchestrator routes each agent to a
+      // sensibly-priced model out of the box. The user can still override at
+      // the Step level later.
+      const roleDefaults = defaultsForRole(s.role);
+      return {
+        id: makeStepId(entry.slug, s.name, workspaceId),
+        workflowId,
+        ordinal,
+        name: s.name,
+        promptPrefix: s.promptPrefix,
+        providerOverride: roleDefaults.provider,
+        modelOverride: roleDefaults.model,
+      };
+    });
 
     const workflow: Workflow = {
       id: workflowId,

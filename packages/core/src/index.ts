@@ -34,6 +34,15 @@ export {
   type SlotKey,
 } from './context';
 
+export {
+  ROLE_DEFAULTS,
+  defaultsForRole,
+  isAgentRole,
+  type AgentEffort,
+  type AgentRole,
+  type RoleDefaults,
+} from './roles';
+
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
