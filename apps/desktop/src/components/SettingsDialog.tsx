@@ -68,7 +68,7 @@ function isNavSection(value: string | undefined): value is NavSection {
 
 function BetaChip() {
   return (
-    <span className="ml-auto rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-600">
+    <span className="ml-auto rounded-sm bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
       beta
     </span>
   );
@@ -353,8 +353,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               onClick={() => setActiveSection(item.id)}
               className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                 activeSection === item.id
-                  ? 'bg-muted font-medium text-foreground'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  ? 'border-l-2 border-primary bg-primary/10 pl-1.5 font-medium text-foreground'
+                  : 'border-l-2 border-transparent pl-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
               }`}
             >
               {item.icon}

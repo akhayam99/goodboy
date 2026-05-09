@@ -1406,9 +1406,9 @@ function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
 
 const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
   pending: 'bg-muted-foreground/40',
-  running: 'bg-blue-500',
-  completed: 'bg-green-500',
-  failed: 'bg-red-500',
+  running: 'bg-info animate-pulse',
+  completed: 'bg-success',
+  failed: 'bg-danger',
   skipped: 'bg-muted-foreground/20',
 };
 
@@ -1455,7 +1455,7 @@ function AgentRow({ run, telemetry, isSelected, onClick }: AgentRowProps) {
           <span
             className={cn(
               'line-clamp-1 flex-1 rounded-full px-1.5 py-px text-2xs font-medium',
-              isSelected ? 'bg-foreground text-background' : 'bg-subtle text-foreground',
+              isSelected ? 'bg-primary text-primary-foreground' : 'bg-subtle text-foreground',
             )}
             aria-label={`role chip: ${run.name}`}
           >

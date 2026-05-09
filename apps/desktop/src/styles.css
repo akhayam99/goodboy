@@ -5,23 +5,38 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", monospace;
 
-  --color-background: oklch(0.16 0 0);
-  --color-foreground: oklch(0.93 0 0);
-  --color-subtle: oklch(0.19 0 0);
-  --color-muted: oklch(0.24 0 0);
-  --color-muted-foreground: oklch(0.62 0 0);
-  --color-border: oklch(0.26 0 0);
-  --color-border-soft: oklch(0.21 0 0);
-  --color-primary: oklch(0.78 0 0);
-  --color-primary-foreground: oklch(0.16 0 0);
-  --color-danger: oklch(0.62 0.025 25);
+  /* Neutrals: subtle cool tint instead of pure greys — page reads warmer +
+     less clinical. Sidebar and chat get a hair of separation via lightness. */
+  --color-background: oklch(0.16 0.008 260);
+  --color-foreground: oklch(0.94 0.006 90);
+  --color-subtle: oklch(0.20 0.010 260);
+  --color-muted: oklch(0.26 0.012 260);
+  --color-muted-foreground: oklch(0.66 0.018 260);
+  --color-border: oklch(0.32 0.015 260);
+  --color-border-soft: oklch(0.24 0.012 260);
+
+  /* Brand accent — teal/cyan. Used for primary actions, selected states,
+     active dots. Distinctive vs anthropic-orange + openai-green so it
+     doesn't read as "we are X provider". */
+  --color-primary: oklch(0.78 0.13 200);
+  --color-primary-foreground: oklch(0.13 0.02 200);
+
+  /* Semantics — chroma bumped from 0.025 → 0.16-0.20 so success/danger/
+     warning/info chips actually pop instead of blending into the grey. */
+  --color-danger: oklch(0.66 0.20 25);
   --color-danger-foreground: oklch(0.16 0 0);
-  --color-warning: oklch(0.72 0.025 85);
+  --color-warning: oklch(0.78 0.16 80);
   --color-warning-foreground: oklch(0.16 0 0);
-  --color-success: oklch(0.66 0.025 150);
+  --color-success: oklch(0.72 0.16 150);
   --color-success-foreground: oklch(0.16 0 0);
-  --color-info: oklch(0.66 0.02 240);
+  --color-info: oklch(0.72 0.14 240);
   --color-info-foreground: oklch(0.16 0 0);
+
+  /* Per-provider accent — used on ProvidersChip dots + per-agent provider
+     hints. Anthropic = warm amber, Cursor = violet, OpenAI/Codex = green. */
+  --color-provider-anthropic: oklch(0.74 0.15 55);
+  --color-provider-cursor: oklch(0.70 0.16 290);
+  --color-provider-codex: oklch(0.72 0.16 150);
 
   --text-2xs: 11px;
   --text-xs: 12px;

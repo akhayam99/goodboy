@@ -758,13 +758,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       </div>
     </dialog>
     <button
-      class="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted text-danger"
+      class="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted text-danger"
       title="open settings → providers"
       type="button"
     >
       <span
         aria-hidden="true"
-        class="inline-block h-1.5 w-1.5 rounded-full bg-danger"
+        class="flex items-center -space-x-0.5"
       />
       <span>
         0
