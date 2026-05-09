@@ -14,7 +14,7 @@ interface OpenInEditorButtonProps {
 export function OpenInEditorButton({
   worktreePath,
   size = 'sm',
-  variant = 'ghost',
+  variant = 'secondary',
 }: OpenInEditorButtonProps) {
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const globalEditorBinary = useAppStore(

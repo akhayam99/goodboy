@@ -134,28 +134,28 @@ export function NewSessionDialog({
     icon: ReactNode;
     ready: boolean;
   }> = [
-    { id: 'goal', label: 'goal', icon: <Target size={13} aria-hidden />, ready: goalReady },
+    { id: 'goal', label: 'Goal', icon: <Target size={13} aria-hidden />, ready: goalReady },
     {
       id: 'branch',
-      label: 'branch',
+      label: 'Branch',
       icon: <GitBranch size={13} aria-hidden />,
       ready: prefix.trim().length > 0,
     },
     {
       id: 'budget',
-      label: 'budget',
+      label: 'Budget',
       icon: <DollarSign size={13} aria-hidden />,
       ready: budgetReady,
     },
     {
       id: 'workflow',
-      label: 'workflow',
+      label: 'Workflow',
       icon: <Layers size={13} aria-hidden />,
       ready: workflowReady,
     },
     {
       id: 'provider',
-      label: 'provider',
+      label: 'Provider',
       icon: <Zap size={13} aria-hidden />,
       ready: providerReady,
     },
@@ -165,8 +165,8 @@ export function NewSessionDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="new session"
-      description="creates a worktree on a fresh branch from the workspace root."
+      title="New session"
+      description="Creates a worktree on a fresh branch from the workspace root."
       size="lg"
       footer={
         <>
@@ -181,16 +181,16 @@ export function NewSessionDialog({
       }
     >
       <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2">
+        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
           {sections.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setActiveSection(s.id)}
               className={cn(
-                'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
+                'relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
                 activeSection === s.id
-                  ? 'bg-muted font-medium text-foreground'
+                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
               )}
             >

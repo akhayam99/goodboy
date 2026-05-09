@@ -4,26 +4,34 @@ import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
   Archive,
   ArchiveRestore,
+  ArrowUpDown,
   ChevronDown,
   ChevronRight,
   FolderOpen,
   FolderPlus,
   MoreHorizontal,
+  Pencil,
   Plus,
-  Search,
+  Settings,
   Settings2,
   Trash2,
   X,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
+import { ProvidersChip } from './ProvidersChip';
+import { AlertCenter } from './AlertCenter';
+import { TelemetryPill } from './TelemetryPill';
 import type {
   ProviderId,
   Session,
+  SessionId,
   SessionStatus,
+  Step,
   Task,
   TaskId,
   TelemetryRecord,
   TurnState,
+  Workflow,
   Workspace,
 } from '@kay-am/types';
 import {
@@ -65,6 +73,8 @@ const STATE_FILTER_OPTIONS: ReadonlyArray<TurnState['kind']> = [
 
 const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
+type SessionSort = 'updated' | 'alpha';
+
 export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
@@ -73,35 +83,28 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
 
-  const sidebarWorkspaceSearch = useAppStore((s) => s.sidebarWorkspaceSearch);
-  const sidebarSessionSearch = useAppStore((s) => s.sidebarSessionSearch);
   const sidebarStateFilter = useAppStore((s) => s.sidebarStateFilter);
   const sidebarProviderFilter = useAppStore((s) => s.sidebarProviderFilter);
-  const setSidebarWorkspaceSearch = useAppStore((s) => s.setSidebarWorkspaceSearch);
-  const setSidebarSessionSearch = useAppStore((s) => s.setSidebarSessionSearch);
   const setSidebarStateFilter = useAppStore((s) => s.setSidebarStateFilter);
   const setSidebarProviderFilter = useAppStore((s) => s.setSidebarProviderFilter);
 
+  const [sessionSort, setSessionSort] = useState<SessionSort>('updated');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
 
   const filteredWorkspaces = useMemo(
-    () =>
-      [...workspaces]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .filter((ws) => ws.name.toLowerCase().includes(sidebarWorkspaceSearch.toLowerCase())),
-    [workspaces, sidebarWorkspaceSearch],
+    () => [...workspaces].sort((a, b) => a.name.localeCompare(b.name)),
+    [workspaces],
   );
 
   const filteredSessions = sessions.filter((s) => {
-    const matchesSearch = s.goal.toLowerCase().includes(sidebarSessionSearch.toLowerCase());
     const matchesState =
       sidebarStateFilter.length === 0 || sidebarStateFilter.includes(s.state.kind);
     const matchesProvider =
       sidebarProviderFilter.length === 0 ||
       sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
-    return matchesSearch && matchesState && matchesProvider;
+    return matchesState && matchesProvider;
   });
 
   const [archivedMap, archive, unarchive] = useArchivedTasks();
@@ -124,19 +127,30 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
+        <span className="px-1 text-sm font-semibold tracking-tight">kAY.am</span>
+        <div className="ml-auto flex items-center gap-0.5">
+          <AlertCenter />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title="settings (⌘,)"
+            aria-label="open settings"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Settings size={13} aria-hidden />
+          </button>
+        </div>
+      </div>
+
       <ScrollArea className="max-h-[40%] shrink-0">
-        <section className="flex flex-col px-2 pb-4 pt-3">
-          <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+        <section className="flex flex-col px-2 pb-2 pt-1">
+          <header className="flex items-baseline justify-between gap-2 px-2 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              workspaces
+              Workspaces
             </span>
           </header>
-          <SearchInput
-            value={sidebarWorkspaceSearch}
-            onChange={setSidebarWorkspaceSearch}
-            placeholder="search workspaces…"
-          />
-          <ul className="mt-1 flex flex-col gap-0.5">
+          <ul className="flex flex-col gap-0.5 pl-2">
             {filteredWorkspaces.map((ws) => (
               <WorkspaceRow
                 key={ws.id}
@@ -157,47 +171,61 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         </section>
       </ScrollArea>
 
-      <div className="my-1 border-t border-border" aria-hidden />
+      <SectionDivider />
 
       <ScrollArea className="flex-1">
-        <section className="flex flex-col px-2 pt-4">
-          <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+        <section className="flex flex-col px-2 pt-2">
+          <header className="flex items-center justify-between gap-2 px-2 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              sessions
+              Sessions
             </span>
-            {currentWorkspace ? (
-              <span className="truncate text-2xs text-muted-foreground/70">
-                {currentWorkspace.name}
-              </span>
-            ) : null}
+            <div className="flex items-center gap-1.5">
+              {currentWorkspace ? (
+                <span className="truncate text-2xs text-muted-foreground/70">
+                  {currentWorkspace.name}
+                </span>
+              ) : null}
+              <SortIconButton sort={sessionSort} onChange={setSessionSort} />
+            </div>
           </header>
           {currentWorkspace ? (
-            <SessionList
-              activeSessions={activeSessions}
-              archivedSessions={archivedSessions}
-              currentSessionId={currentSession?.id ?? null}
-              sessionSearch={sidebarSessionSearch}
-              onSessionSearch={setSidebarSessionSearch}
-              stateFilter={sidebarStateFilter}
-              providerFilter={sidebarProviderFilter}
-              stateFilterOptions={STATE_FILTER_OPTIONS}
-              providerFilterOptions={PROVIDER_FILTER_OPTIONS}
-              onToggleState={toggleStateFilter}
-              onToggleProvider={toggleProviderFilter}
-              onSelectSession={(id) => void setCurrentSession(id)}
-              onNewSession={() => setNewSessionOpen(true)}
-              onArchive={archive}
-              onUnarchive={unarchive}
-            />
+            <div className="pl-2">
+              <SessionList
+                activeSessions={activeSessions}
+                archivedSessions={archivedSessions}
+                currentSessionId={currentSession?.id ?? null}
+                sort={sessionSort}
+                stateFilter={sidebarStateFilter}
+                providerFilter={sidebarProviderFilter}
+                stateFilterOptions={STATE_FILTER_OPTIONS}
+                providerFilterOptions={PROVIDER_FILTER_OPTIONS}
+                onToggleState={toggleStateFilter}
+                onToggleProvider={toggleProviderFilter}
+                onSelectSession={(id) => void setCurrentSession(id)}
+                onNewSession={() => setNewSessionOpen(true)}
+                onArchive={archive}
+                onUnarchive={unarchive}
+              />
+            </div>
           ) : (
-            <p className="px-1 py-2 text-xs text-muted-foreground/70">
-              select a workspace to see its sessions.
+            <p className="px-2 py-2 text-xs text-muted-foreground/70">
+              Select a workspace to see its sessions.
             </p>
           )}
         </section>
 
-        {currentSession ? <AgentsSection task={currentSession} /> : null}
+        {currentSession ? (
+          <>
+            <SectionDivider />
+            <AgentsSection task={currentSession} />
+          </>
+        ) : null}
       </ScrollArea>
+
+      <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
+        <ProvidersChip onOpenSettings={onOpenSettings} />
+        <TelemetryPill />
+      </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       {currentWorkspace ? (
@@ -219,39 +247,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   );
 }
 
-interface SearchInputProps {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-}
-
-function SearchInput({ value, onChange, placeholder }: SearchInputProps) {
-  return (
-    <div className="relative flex items-center">
-      <Search
-        size={11}
-        className="pointer-events-none absolute left-2 text-muted-foreground"
-        aria-hidden
-      />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-md border border-border-soft bg-muted/40 py-1 pl-6 pr-2 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
-      />
-      {value ? (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          className="absolute right-1.5 text-muted-foreground hover:text-foreground"
-          aria-label="clear search"
-        >
-          <X size={11} />
-        </button>
-      ) : null}
-    </div>
-  );
+function SectionDivider() {
+  return <div className="mx-3 my-5 h-px bg-border-soft" aria-hidden />;
 }
 
 interface WorkspaceRowProps {
@@ -297,9 +294,9 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
             e.stopPropagation();
             setWsSettingsOpen(true);
           }}
-          className="invisible mr-0.5 shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors group-hover:visible hover:!text-foreground"
-          title="workspace settings"
-          aria-label={`settings for workspace ${workspace.name}`}
+          className="mr-0.5 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
+          title="Workspace settings"
+          aria-label={`Settings for workspace ${workspace.name}`}
         >
           <Settings2 size={12} aria-hidden />
         </button>
@@ -309,9 +306,9 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
             e.stopPropagation();
             onDelete();
           }}
-          className="invisible mr-1 shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors group-hover:visible hover:!text-danger"
-          title="delete workspace"
-          aria-label={`delete workspace ${workspace.name}`}
+          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-danger group-hover:text-muted-foreground"
+          title="Delete workspace"
+          aria-label={`Delete workspace ${workspace.name}`}
         >
           <Trash2 size={12} aria-hidden />
         </button>
@@ -330,8 +327,7 @@ interface SessionListProps {
   activeSessions: ReadonlyArray<Task>;
   archivedSessions: ReadonlyArray<Task>;
   currentSessionId: TaskId | null;
-  sessionSearch: string;
-  onSessionSearch: (v: string) => void;
+  sort: SessionSort;
   stateFilter: ReadonlyArray<TurnState['kind']>;
   providerFilter: ReadonlyArray<ProviderId>;
   stateFilterOptions: ReadonlyArray<TurnState['kind']>;
@@ -344,14 +340,11 @@ interface SessionListProps {
   onUnarchive: (id: TaskId) => void;
 }
 
-type SessionSort = 'updated' | 'alpha';
-
 function SessionList({
   activeSessions,
   archivedSessions,
   currentSessionId,
-  sessionSearch,
-  onSessionSearch,
+  sort,
   stateFilter,
   providerFilter,
   stateFilterOptions,
@@ -363,7 +356,6 @@ function SessionList({
   onArchive,
   onUnarchive,
 }: SessionListProps) {
-  const [sort, setSort] = useState<SessionSort>('updated');
   const [archivedOpen, setArchivedOpen] = useState(false);
 
   const sortedActive = useMemo(() => sortSessions(activeSessions, sort), [activeSessions, sort]);
@@ -373,29 +365,20 @@ function SessionList({
   );
   return (
     <div className="flex flex-col gap-1">
-      <SearchInput
-        value={sessionSearch}
-        onChange={onSessionSearch}
-        placeholder="search sessions…"
-      />
-
-      <div className="flex items-center justify-between">
-        <SortToggle sort={sort} onChange={setSort} />
-        {(stateFilter.length > 0 || providerFilter.length > 0) && (
-          <div className="flex flex-wrap gap-0.5">
-            {stateFilter.map((k) => (
-              <FilterChip key={k} label={k} onRemove={() => onToggleState(k)} />
-            ))}
-            {providerFilter.map((p) => (
-              <FilterChip
-                key={p}
-                label={PROVIDER_SHORT[p] ?? p}
-                onRemove={() => onToggleProvider(p)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {stateFilter.length > 0 || providerFilter.length > 0 ? (
+        <div className="flex flex-wrap gap-0.5">
+          {stateFilter.map((k) => (
+            <FilterChip key={k} label={k} onRemove={() => onToggleState(k)} />
+          ))}
+          {providerFilter.map((p) => (
+            <FilterChip
+              key={p}
+              label={PROVIDER_SHORT[p] ?? p}
+              onRemove={() => onToggleProvider(p)}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {(stateFilter.length > 0 || providerFilter.length > 0) && (
         <details>
@@ -494,30 +477,69 @@ function SessionList({
   );
 }
 
-function SortToggle({ sort, onChange }: { sort: SessionSort; onChange: (s: SessionSort) => void }) {
+const SORT_OPTIONS: ReadonlyArray<{ value: SessionSort; label: string }> = [
+  { value: 'updated', label: 'recent' },
+  { value: 'alpha', label: 'a → z' },
+];
+
+function SortIconButton({
+  sort,
+  onChange,
+}: {
+  sort: SessionSort;
+  onChange: (s: SessionSort) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = SORT_OPTIONS.find((o) => o.value === sort) ?? SORT_OPTIONS[0]!;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
   return (
-    <div className="flex items-center gap-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
-      <span>sort</span>
+    <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => onChange('updated')}
-        className={cn(
-          'rounded px-1.5 py-0.5 transition-colors',
-          sort === 'updated' ? 'bg-foreground text-background' : 'hover:text-foreground',
-        )}
+        onClick={() => setOpen((v) => !v)}
+        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={`Sort: ${current.label}`}
+        aria-label="Sort sessions"
       >
-        recent
+        <ArrowUpDown size={12} aria-hidden />
       </button>
-      <button
-        type="button"
-        onClick={() => onChange('alpha')}
-        className={cn(
-          'rounded px-1.5 py-0.5 transition-colors',
-          sort === 'alpha' ? 'bg-foreground text-background' : 'hover:text-foreground',
-        )}
-      >
-        a-z
-      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-20 mt-1 min-w-[120px] rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
+                opt.value === sort ? 'text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <span>{opt.label}</span>
+              {opt.value === sort ? <span className="text-2xs">✓</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1186,12 +1208,21 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const renameAgent = useAppStore((s) => s.renameAgent);
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const workflow = task.workflowId
+    ? (phaseTemplates.find((t) => t.id === task.workflowId) ?? null)
+    : null;
+  const [spawnError, setSpawnError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<SessionId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
 
-  // Most recent telemetry record per runId — the per-agent display reflects
-  // its latest turn (full multi-turn aggregation needs a session_runs join
-  // we don't have yet; deferred to a follow-up PR).
   const telemetryByRunId = useMemo(() => {
     const map = new Map<string, TelemetryRecord>();
     for (const rec of telemetry) {
@@ -1203,53 +1234,189 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry]);
 
+  const onPickAgent = (sid: SessionId) => {
+    if (sid === selectedAgentId) return;
+    void selectAgent(task.id, sid);
+  };
+
+  const onSpawn = async (stepId: Step['id'] | null) => {
+    setSpawnError(null);
+    try {
+      await spawnAgent(task.id, stepId ? { stepId } : {});
+    } catch (err) {
+      setSpawnError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const onRenameCommit = async (id: SessionId, name: string) => {
+    setEditingId(null);
+    try {
+      await renameAgent(task.id, id, name);
+    } catch (err) {
+      setSpawnError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   return (
-    <section className="flex flex-col px-2 pb-3 pt-4">
-      <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+    <section className="flex flex-col px-2 pb-3 pt-2">
+      <header className="flex items-center justify-between gap-2 px-2 pb-1.5">
         <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          agents
+          Agents
         </span>
         <span className="truncate text-2xs text-muted-foreground/70">
-          {sorted.length === 0 ? 'none yet' : `${sorted.length} for this task`}
+          {sorted.length === 0
+            ? 'none yet'
+            : `${sorted.length} agent${sorted.length === 1 ? '' : 's'}`}
         </span>
       </header>
       {sorted.length === 0 ? (
-        <p className="px-1 py-2 text-xs text-muted-foreground/70">
-          no agents yet — start a workflow to spawn the first one.
+        <p className="px-2 py-2 text-xs text-muted-foreground/70">
+          No agents yet — spawn one below.
         </p>
       ) : (
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex flex-col gap-1 pl-2">
           {sorted.map((run) => (
             <AgentRow
               key={run.id}
               run={run}
               telemetry={run.runId ? (telemetryByRunId.get(run.runId) ?? null) : null}
+              isSelected={run.id === selectedAgentId}
+              isEditing={editingId === run.id}
+              onClick={() => onPickAgent(run.id)}
+              onRenameStart={() => setEditingId(run.id)}
+              onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+              onRenameCancel={() => setEditingId(null)}
             />
           ))}
         </ul>
       )}
+      <div className="pl-2">
+        <SpawnAgentControl workflow={workflow} onSpawn={onSpawn} />
+      </div>
+      {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
     </section>
+  );
+}
+
+interface SpawnAgentControlProps {
+  workflow: Workflow | null;
+  onSpawn: (stepId: Step['id'] | null) => void | Promise<void>;
+}
+
+function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  const sortedSteps = useMemo(
+    () => (workflow ? [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal) : []),
+    [workflow],
+  );
+
+  return (
+    <div className="relative mt-1" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Plus size={13} aria-hidden />
+        spawn agent
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-60 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              void onSpawn(null);
+            }}
+            className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+          >
+            <span className="font-medium text-foreground">+ free agent</span>
+            <span className="text-2xs text-muted-foreground">no role</span>
+          </button>
+          {sortedSteps.length > 0 ? (
+            <>
+              <div className="mt-1 border-t border-border-soft" aria-hidden />
+              <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+                from workflow
+              </div>
+              {sortedSteps.map((step) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    void onSpawn(step.id);
+                  }}
+                  className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="font-medium text-foreground">{step.name}</span>
+                  {step.modelOverride ? (
+                    <span className="text-2xs text-muted-foreground">
+                      {shortModel(step.modelOverride)}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
 const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
   pending: 'bg-muted-foreground/40',
-  running: 'bg-blue-500',
-  completed: 'bg-green-500',
-  failed: 'bg-red-500',
+  running: 'bg-info animate-pulse',
+  completed: 'bg-success',
+  failed: 'bg-danger',
   skipped: 'bg-muted-foreground/20',
 };
 
 interface AgentRowProps {
   readonly run: Session;
   readonly telemetry: TelemetryRecord | null;
+  readonly isSelected: boolean;
+  readonly isEditing: boolean;
+  readonly onClick: () => void;
+  readonly onRenameStart: () => void;
+  readonly onRenameCommit: (name: string) => void;
+  readonly onRenameCancel: () => void;
 }
 
-function AgentRow({ run, telemetry }: AgentRowProps) {
+function AgentRow({
+  run,
+  telemetry,
+  isSelected,
+  isEditing,
+  onClick,
+  onRenameStart,
+  onRenameCommit,
+  onRenameCancel,
+}: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `step #${run.ordinal + 1}`,
+    `Agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
+    isSelected ? 'selected — chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1257,12 +1424,19 @@ function AgentRow({ run, telemetry }: AgentRowProps) {
       : null,
   ].filter((p): p is string => p !== null);
 
+  const [draft, setDraft] = useState(run.name);
+  useEffect(() => {
+    if (isEditing) setDraft(run.name);
+  }, [isEditing, run.name]);
+
   return (
     <li
-      className="group flex flex-col gap-0.5 rounded-md px-2 py-1 text-xs"
-      title={titleParts.join('\n')}
+      className={cn(
+        'group rounded-md transition-colors',
+        isSelected ? 'bg-muted' : 'hover:bg-muted/60',
+      )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
         <span
           aria-hidden
           className={cn(
@@ -1270,16 +1444,56 @@ function AgentRow({ run, telemetry }: AgentRowProps) {
             AGENT_STATUS_TONE[run.status],
           )}
         />
-        <span
-          className="line-clamp-1 flex-1 rounded-full bg-subtle px-1.5 py-px text-2xs font-medium text-foreground"
-          aria-label={`role chip: ${run.name}`}
-        >
-          {run.name}
-        </span>
+        {isEditing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onRenameCommit(draft);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                onRenameCancel();
+              }
+            }}
+            onBlur={() => onRenameCommit(draft)}
+            className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
+            aria-label="rename agent"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+              'line-clamp-1 flex-1 rounded-full px-1.5 py-0.5 text-left text-2xs font-medium',
+              isSelected ? 'bg-primary text-primary-foreground' : 'bg-subtle text-foreground',
+            )}
+            aria-label={`role chip: ${run.name}`}
+            aria-pressed={isSelected}
+          >
+            {run.name}
+          </button>
+        )}
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRenameStart();
+            }}
+            className="invisible shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:visible hover:text-foreground"
+            title="rename agent"
+            aria-label="rename agent"
+          >
+            <Pencil size={11} aria-hidden />
+          </button>
+        ) : null}
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
       </div>
       {telemetry ? (
-        <div className="flex items-center gap-1.5 pl-3.5 text-2xs text-muted-foreground/80">
+        <div className="flex items-center gap-1.5 px-2 pb-1.5 pl-[1.875rem] text-2xs text-muted-foreground/80">
           <span>{shortModel(telemetry.model)}</span>
           {total !== null ? (
             <>

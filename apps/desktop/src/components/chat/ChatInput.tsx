@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
-import { Button, Textarea, cn } from '@kay-am/ui';
+import { Send, Square } from 'lucide-react';
+import { Textarea, cn } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -19,10 +20,22 @@ import { SlashCommandPopover } from './SlashCommandPopover';
 import { useEffectivePermissionRules } from '../../permissions';
 
 const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
+  anthropic: 'Claude',
+  cursor: 'Cursor',
+  codex: 'Codex',
 };
+
+// Strip the noisy "claude-" prefix and capitalise the version segment so chip
+// labels read like "Opus 4.7" instead of "claude-opus-4-7". Falls back to the
+// raw id for unknown shapes (cursor / codex models keep their own format).
+function modelLabel(id: string): string {
+  const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
+  if (m) {
+    const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
+    return `${family} ${m[2]}.${m[3]}`;
+  }
+  return id;
+}
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -30,6 +43,15 @@ const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
 type EffortLevel = (typeof EFFORT_LEVELS)[number];
+
+const EFFORT_LABEL: Record<EffortLevel, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  'extra-high': 'Extra high',
+  max: 'Max',
+};
+
 const EFFORT_STORAGE_PREFIX = 'kayam:effort:';
 
 function readEffort(taskId: TaskId): EffortLevel {
@@ -224,12 +246,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
-        <PreflightPill
-          provider={effectiveProvider}
-          rules={effectiveRules}
-          taskId={session.id}
-          workspaceId={session.workspaceId}
-        />
         <div className="relative" ref={wrapperRef}>
           {showPopover && isSlashMode ? (
             <SlashCommandPopover
@@ -245,76 +261,87 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onKeyDown={onKeyDown}
             placeholder={
               isRunning
-                ? 'turn running… cancel to send another'
+                ? 'Turn running… cancel to send another'
                 : providerDisconnected
-                  ? 'sign in to send a message.'
-                  : 'message claude. shift+enter for newline.'
+                  ? 'Sign in to send a message.'
+                  : 'Message Claude. Shift+enter for newline.'
             }
             disabled={isRunning || providerDisconnected}
             autoGrow
             maxRows={12}
+            className="min-h-20 pr-12"
           />
+          {isRunning ? (
+            <button
+              type="button"
+              onClick={() => void cancelCurrentTurn(session.id)}
+              title="Cancel turn"
+              aria-label="Cancel turn"
+              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-danger text-danger-foreground transition-opacity hover:opacity-90"
+            >
+              <Square size={13} aria-hidden fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void onSend()}
+              disabled={!canSend}
+              title={sendDisabledTitle ?? 'Send (enter)'}
+              aria-label="Send message"
+              className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <Send size={13} aria-hidden className="-translate-x-px" />
+            </button>
+          )}
         </div>
         {error ? (
           <p role="alert" className="text-xs text-danger">
             {error}
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <ChipRow
-              label="provider"
-              disabledTitle={overrideDisabledTitle}
-              disabled={!allowOverride || isRunning}
-            >
-              {providerCandidates.map((id) => (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
+            {providerCandidates.map((id) => (
+              <Chip
+                key={id}
+                label={PROVIDER_LABEL[id]}
+                active={effectiveProvider === id}
+                onClick={() => onSelectProvider(id)}
+                disabled={!allowOverride || isRunning}
+              />
+            ))}
+          </ChipRow>
+          <ChipRow disabledTitle={overrideDisabledTitle} disabled={!allowOverride || isRunning}>
+            {modelCandidates.map((id) => (
+              <Chip
+                key={id}
+                label={modelLabel(id)}
+                active={effectiveModel === id}
+                onClick={() => onSelectModel(id)}
+                disabled={!allowOverride || isRunning}
+              />
+            ))}
+          </ChipRow>
+          {effectiveProvider === 'anthropic' ? (
+            <ChipRow>
+              {EFFORT_LEVELS.map((level) => (
                 <Chip
-                  key={id}
-                  label={PROVIDER_LABEL[id]}
-                  active={effectiveProvider === id}
-                  onClick={() => onSelectProvider(id)}
-                  disabled={!allowOverride || isRunning}
+                  key={level}
+                  label={EFFORT_LABEL[level]}
+                  active={effort === level}
+                  onClick={() => setEffort(level)}
                 />
               ))}
             </ChipRow>
-            <ChipRow
-              label="model"
-              disabledTitle={overrideDisabledTitle}
-              disabled={!allowOverride || isRunning}
-            >
-              {modelCandidates.map((id) => (
-                <Chip
-                  key={id}
-                  label={id}
-                  active={effectiveModel === id}
-                  onClick={() => onSelectModel(id)}
-                  disabled={!allowOverride || isRunning}
-                  mono
-                />
-              ))}
-            </ChipRow>
-            {effectiveProvider === 'anthropic' ? (
-              <ChipRow label="effort">
-                {EFFORT_LEVELS.map((level) => (
-                  <Chip
-                    key={level}
-                    label={level}
-                    active={effort === level}
-                    onClick={() => setEffort(level)}
-                  />
-                ))}
-              </ChipRow>
-            ) : null}
+          ) : null}
+          <div className="ml-auto">
+            <PreflightPill
+              provider={effectiveProvider}
+              rules={effectiveRules}
+              taskId={session.id}
+              workspaceId={session.workspaceId}
+            />
           </div>
-          {isRunning ? (
-            <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
-              cancel
-            </Button>
-          ) : (
-            <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
-              send
-            </Button>
-          )}
         </div>
       </div>
     </div>
@@ -322,26 +349,20 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 }
 
 function ChipRow({
-  label,
   disabled,
   disabledTitle,
   children,
 }: {
-  label: string;
   disabled?: boolean;
   disabledTitle?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className={cn(
-        'flex items-center gap-1.5 text-2xs uppercase tracking-wide',
-        disabled && 'opacity-60',
-      )}
+      className={cn('flex flex-wrap items-center gap-1', disabled && 'opacity-60')}
       title={disabled ? disabledTitle : undefined}
     >
-      <span className="text-muted-foreground">{label}</span>
-      <div className="flex flex-wrap items-center gap-1">{children}</div>
+      {children}
     </div>
   );
 }
@@ -368,7 +389,7 @@ function Chip({
         'rounded-full px-2.5 py-0.5 text-xs normal-case motion-safe:transition-colors',
         mono && 'font-mono',
         active
-          ? 'bg-foreground text-background'
+          ? 'bg-primary text-primary-foreground'
           : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}

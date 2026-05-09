@@ -56,26 +56,24 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
       <div className="border-b border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
         p{index + 1}
       </div>
-      <div
-        ref={scrollerRef}
-        onScroll={onScroll}
-        className="relative flex-1 overflow-y-auto px-3 py-3"
-      >
-        {items.length === 0 ? (
-          <p className="text-xs text-muted-foreground">no events yet for run p{index + 1}.</p>
-        ) : (
-          <ul className="flex flex-col gap-4">
-            {items.map((item) => (
-              <li key={item.key}>
-                <TranscriptCard item={item} onRefreshAuth={onRefreshAuth} />
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div ref={scrollerRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-3 py-3">
+          {items.length === 0 ? (
+            <p className="text-xs text-muted-foreground">no events yet for run p{index + 1}.</p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {items.map((item) => (
+                <li key={item.key}>
+                  <TranscriptCard item={item} onRefreshAuth={onRefreshAuth} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         {!pinned ? (
           <button
             type="button"
-            className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-xs shadow-md"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-1 text-xs shadow-md backdrop-blur-sm"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
@@ -245,43 +243,41 @@ export function ChatView({ session }: ChatViewProps) {
   return (
     <div className="flex h-full flex-col">
       <ChatHeader session={session} worktreePath={worktreePath} />
-      <div
-        ref={scrollerRef}
-        onScroll={onScroll}
-        className="relative flex-1 overflow-y-auto px-6 py-4"
-      >
-        {items.length === 0 ? (
-          isProviderDisconnected ? (
-            <AuthRequiredCallout
-              providerId={provider}
-              identity={providerIdentity}
-              onRefresh={() => void refreshProviders()}
-            />
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div ref={scrollerRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 py-4">
+          {items.length === 0 ? (
+            isProviderDisconnected ? (
+              <AuthRequiredCallout
+                providerId={provider}
+                identity={providerIdentity}
+                onRefresh={() => void refreshProviders()}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
+            )
           ) : (
-            <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
-          )
-        ) : (
-          <ul
-            className="mx-auto flex max-w-3xl flex-col gap-6"
-            aria-live="polite"
-            aria-relevant="additions"
-          >
-            {items.map((item) => (
-              <li key={item.key}>
-                <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
-              </li>
-            ))}
-            {isThinking ? (
-              <li>
-                <ThinkingIndicator />
-              </li>
-            ) : null}
-          </ul>
-        )}
+            <ul
+              className="mx-auto flex max-w-3xl flex-col gap-6"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {items.map((item) => (
+                <li key={item.key}>
+                  <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
+                </li>
+              ))}
+              {isThinking ? (
+                <li>
+                  <ThinkingIndicator />
+                </li>
+              ) : null}
+            </ul>
+          )}
+        </div>
         {!pinned ? (
           <button
             type="button"
-            className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-xs shadow-md"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-1 text-xs shadow-md backdrop-blur-sm"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;

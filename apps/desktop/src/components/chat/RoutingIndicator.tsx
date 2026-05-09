@@ -47,27 +47,19 @@ export function RoutingIndicator({
     );
   }
 
+  // Only render when there's actually something the user needs to know about
+  // — fallbacks or budget warnings. The vanilla "claude / claude-opus-4-7"
+  // routing label was redundant with the chips below the input.
+  if (decision.reason !== 'fallback-budget' || !decision.fallbackFrom) return null;
+
   const label = decision.selectedProvider === 'anthropic' ? 'claude' : decision.selectedProvider;
 
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      {decision.reason === 'fallback-budget' && decision.fallbackFrom ? (
-        <span className="text-warning">
-          ⚠ fallback: {label} / {decision.selectedModel} (budget exceeded for{' '}
-          {decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom})
-        </span>
-      ) : (
-        <>
-          <span>
-            {label} / {decision.selectedModel}
-          </span>
-          {decision.reason === 'override' ? (
-            <span className="rounded bg-accent px-1 py-0.5 text-2xs font-medium text-accent-foreground">
-              override
-            </span>
-          ) : null}
-        </>
-      )}
+      <span className="text-warning">
+        ⚠ fallback: {label} / {decision.selectedModel} (budget exceeded for{' '}
+        {decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom})
+      </span>
     </div>
   );
 }

@@ -4,7 +4,6 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 <div
   aria-label="alerts"
   aria-live="polite"
-  class="relative"
   role="region"
 >
   <span
@@ -40,15 +39,15 @@ exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
 </div>
 `;
 
-exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = `
+exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
-  aria-describedby="_r_1_-desc"
-  aria-labelledby="_r_1_-title"
+  aria-describedby="_r_2_-desc"
+  aria-labelledby="_r_2_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -58,15 +57,15 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_1_-title"
+          id="_r_2_-title"
         >
-          new session
+          New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_1_-desc"
+          id="_r_2_-desc"
         >
-          creates a worktree on a fresh branch from the workspace root.
+          Creates a worktree on a fresh branch from the workspace root.
         </p>
       </div>
       <button
@@ -89,10 +88,10 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
         class="flex h-full min-h-0 gap-0"
       >
         <nav
-          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
+          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
         >
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
             type="button"
           >
             <svg
@@ -127,11 +126,11 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             <span
               class="flex-1"
             >
-              goal
+              Goal
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -164,7 +163,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             <span
               class="flex-1"
             >
-              branch
+              Branch
             </span>
             <svg
               aria-label="filled"
@@ -185,7 +184,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             </svg>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -214,11 +213,11 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             <span
               class="flex-1"
             >
-              budget
+              Budget
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -247,11 +246,11 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             <span
               class="flex-1"
             >
-              workflow
+              Workflow
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -274,7 +273,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
             <span
               class="flex-1"
             >
-              provider
+              Provider
             </span>
           </button>
         </nav>
@@ -418,53 +417,100 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
   class="flex h-full min-h-0 flex-col"
 >
   <div
-    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] max-h-[40%] shrink-0"
+    class="flex shrink-0 items-center gap-1.5 px-2 py-2"
   >
-    <section
-      class="flex flex-col px-2 pb-4 pt-3"
+    <span
+      class="px-1 text-sm font-semibold tracking-tight"
     >
-      <header
-        class="flex items-baseline justify-between gap-2 px-1 pb-1.5"
+      kAY.am
+    </span>
+    <div
+      class="ml-auto flex items-center gap-0.5"
+    >
+      <div
+        aria-label="alerts"
+        aria-live="polite"
+        role="region"
       >
         <span
-          class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+          class="relative inline-flex"
         >
-          workspaces
+          <button
+            aria-label="alert center"
+            class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-bell"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.268 21a2 2 0 0 0 3.464 0"
+              />
+              <path
+                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+              />
+            </svg>
+          </button>
         </span>
-      </header>
-      <div
-        class="relative flex items-center"
+      </div>
+      <button
+        aria-label="open settings"
+        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        title="settings (⌘,)"
+        type="button"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-search pointer-events-none absolute left-2 text-muted-foreground"
+          class="lucide lucide-settings"
           fill="none"
-          height="11"
+          height="13"
           stroke="currentColor"
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
           viewBox="0 0 24 24"
-          width="11"
+          width="13"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="m21 21-4.34-4.34"
+            d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
           />
           <circle
-            cx="11"
-            cy="11"
-            r="8"
+            cx="12"
+            cy="12"
+            r="3"
           />
         </svg>
-        <input
-          class="w-full rounded-md border border-border-soft bg-muted/40 py-1 pl-6 pr-2 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="search workspaces…"
-          type="text"
-        />
-      </div>
+      </button>
+    </div>
+  </div>
+  <div
+    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] max-h-[40%] shrink-0"
+  >
+    <section
+      class="flex flex-col px-2 pb-2 pt-1"
+    >
+      <header
+        class="flex items-baseline justify-between gap-2 px-2 pb-1.5"
+      >
+        <span
+          class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+        >
+          Workspaces
+        </span>
+      </header>
       <ul
-        class="mt-1 flex flex-col gap-0.5"
+        class="flex flex-col gap-0.5 pl-2"
       >
         <li>
           <button
@@ -507,37 +553,244 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
   </div>
   <div
     aria-hidden="true"
-    class="my-1 border-t border-border"
+    class="mx-3 my-5 h-px bg-border-soft"
   />
   <div
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] flex-1"
   >
     <section
-      class="flex flex-col px-2 pt-4"
+      class="flex flex-col px-2 pt-2"
     >
       <header
-        class="flex items-baseline justify-between gap-2 px-1 pb-1.5"
+        class="flex items-center justify-between gap-2 px-2 pb-1.5"
       >
         <span
           class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
         >
-          sessions
+          Sessions
         </span>
+        <div
+          class="flex items-center gap-1.5"
+        >
+          <div
+            class="relative"
+          >
+            <button
+              aria-expanded="false"
+              aria-haspopup="menu"
+              aria-label="Sort sessions"
+              class="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="Sort: recent"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-arrow-up-down"
+                fill="none"
+                height="12"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="12"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m21 16-4 4-4-4"
+                />
+                <path
+                  d="M17 20V4"
+                />
+                <path
+                  d="m3 8 4-4 4 4"
+                />
+                <path
+                  d="M7 4v16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
       </header>
       <p
-        class="px-1 py-2 text-xs text-muted-foreground/70"
+        class="px-2 py-2 text-xs text-muted-foreground/70"
       >
-        select a workspace to see its sessions.
+        Select a workspace to see its sessions.
       </p>
     </section>
   </div>
+  <div
+    class="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5"
+  >
+    <button
+      class="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted text-danger"
+      title="open settings → providers"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="flex items-center -space-x-0.5"
+      />
+      <span>
+        0
+        /
+        0
+         providers
+      </span>
+    </button>
+    <button
+      aria-label="open pricing breakdown"
+      class="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
+      title="open pricing breakdown"
+      type="button"
+    >
+      <span
+        class="font-medium"
+      >
+        $0.0000
+      </span>
+      <span
+        class="text-muted-foreground"
+      >
+        session
+      </span>
+      <span
+        aria-hidden="true"
+        class="text-muted-foreground"
+      >
+        ·
+      </span>
+      <span
+        class="font-medium"
+      >
+        $0.0000
+      </span>
+      <span
+        class="text-muted-foreground"
+      >
+        total
+      </span>
+    </button>
+    <dialog
+      aria-labelledby="_r_0_-title"
+      class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+    >
+      <div
+        class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+      >
+        <header
+          class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+        >
+          <div
+            class="flex min-w-0 flex-col gap-1"
+          >
+            <h2
+              class="text-sm font-semibold tracking-tight text-foreground"
+              id="_r_0_-title"
+            >
+              pricing
+            </h2>
+          </div>
+          <button
+            aria-label="close"
+            class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="text-base leading-none"
+            >
+              ×
+            </span>
+          </button>
+        </header>
+        <div
+          class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+        >
+          <div
+            class="flex flex-col gap-4 text-sm"
+          >
+            <div
+              class="grid grid-cols-2 gap-3"
+            >
+              <div
+                class="rounded-md bg-subtle px-3 py-2"
+              >
+                <div
+                  class="text-2xs uppercase tracking-wide text-muted-foreground"
+                >
+                  current session
+                </div>
+                <div
+                  class="mt-0.5 font-mono text-base"
+                >
+                  $0.0000
+                </div>
+              </div>
+              <div
+                class="rounded-md bg-subtle px-3 py-2"
+              >
+                <div
+                  class="text-2xs uppercase tracking-wide text-muted-foreground"
+                >
+                  workspace total
+                </div>
+                <div
+                  class="mt-0.5 font-mono text-base"
+                >
+                  $0.0000
+                </div>
+              </div>
+            </div>
+            <section>
+              <div
+                class="mb-1 flex items-center justify-between"
+              >
+                <h3
+                  class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                >
+                  turns
+                </h3>
+                <div
+                  class="flex gap-1"
+                >
+                  <button
+                    class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-foreground text-background"
+                    type="button"
+                  >
+                    recent
+                  </button>
+                  <button
+                    class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-muted text-muted-foreground"
+                    type="button"
+                  >
+                    expensive
+                  </button>
+                </div>
+              </div>
+              <div
+                class="max-h-72 overflow-y-auto"
+              >
+                <p
+                  class="py-2 text-xs text-muted-foreground"
+                >
+                  no recorded turns yet.
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  </div>
   <dialog
-    aria-describedby="_r_0_-desc"
-    aria-labelledby="_r_0_-title"
+    aria-describedby="_r_1_-desc"
+    aria-labelledby="_r_1_-title"
     class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   >
     <div
-      class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
         class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -547,13 +800,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         >
           <h2
             class="text-sm font-semibold tracking-tight text-foreground"
-            id="_r_0_-title"
+            id="_r_1_-title"
           >
             add workspace
           </h2>
           <p
             class="text-xs leading-relaxed text-muted-foreground"
-            id="_r_0_-desc"
+            id="_r_1_-desc"
           >
             point at a git repository on disk. each task creates its own worktree.
           </p>
@@ -828,13 +1081,13 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
 
 exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 <dialog
-  aria-describedby="_r_3_-desc"
-  aria-labelledby="_r_3_-title"
+  aria-describedby="_r_4_-desc"
+  aria-labelledby="_r_4_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[24rem]"
+    class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -844,15 +1097,15 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_3_-title"
+          id="_r_4_-title"
         >
-          end session?
+          End session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_3_-desc"
+          id="_r_4_-desc"
         >
-          the worktree directory will be removed. the branch is preserved for manual merge.
+          The worktree directory will be removed. The branch is preserved for manual merge.
         </p>
       </div>
       <button
@@ -903,13 +1156,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 
 exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
 <dialog
-  aria-describedby="_r_2_-desc"
-  aria-labelledby="_r_2_-title"
+  aria-describedby="_r_3_-desc"
+  aria-labelledby="_r_3_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -919,15 +1172,15 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_2_-title"
+          id="_r_3_-title"
         >
-          new session
+          New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_2_-desc"
+          id="_r_3_-desc"
         >
-          creates a worktree on a fresh branch from the workspace root.
+          Creates a worktree on a fresh branch from the workspace root.
         </p>
       </div>
       <button
@@ -950,10 +1203,10 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         class="flex h-full min-h-0 gap-0"
       >
         <nav
-          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
+          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
         >
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
             type="button"
           >
             <svg
@@ -988,11 +1241,11 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             <span
               class="flex-1"
             >
-              goal
+              Goal
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -1025,7 +1278,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             <span
               class="flex-1"
             >
-              branch
+              Branch
             </span>
             <svg
               aria-label="filled"
@@ -1046,7 +1299,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             </svg>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -1075,11 +1328,11 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             <span
               class="flex-1"
             >
-              budget
+              Budget
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -1108,11 +1361,11 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             <span
               class="flex-1"
             >
-              workflow
+              Workflow
             </span>
           </button>
           <button
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             type="button"
           >
             <svg
@@ -1135,7 +1388,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
             <span
               class="flex-1"
             >
-              provider
+              Provider
             </span>
           </button>
         </nav>

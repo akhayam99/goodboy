@@ -29,6 +29,7 @@ import {
   insertWorkspace,
   deleteWorkspace,
   listContextSlotsForTask,
+  listMessagesForAgent,
   listMessagesForTask,
   listTasksForWorkspace,
   listTelemetryForTask,
@@ -60,6 +61,7 @@ import type {
   PermissionRequestId,
   PermissionRule,
   Step,
+  StepId,
   Session,
   SessionId,
   SessionStatus,
@@ -86,7 +88,7 @@ import type {
 import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { computeCostUsd, computeCodexCostUsd, computeCursorCostUsd } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
-import { runDbMigrations, tauriDatabase } from '../db';
+import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -225,6 +227,7 @@ export interface AppState {
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<TaskId, ReadonlyArray<Session>>>;
+  readonly selectedAgentId: Readonly<Record<TaskId, SessionId | null>>;
   readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
@@ -300,6 +303,10 @@ export interface AppActions {
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
+  selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
+  spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
+  renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
+  wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
   setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
   resolveMergeConflicts(
@@ -353,6 +360,7 @@ const initialState: AppState = {
   skills: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
+  selectedAgentId: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
@@ -700,6 +708,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionWorktrees: {},
       sessionBranches: {},
       sessionPhaseRuns: {},
+      selectedAgentId: {},
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -771,27 +780,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
-      const session = get().sessions.find((s) => s.id === id);
-      const [messages, summary, telemetry, slots] = await Promise.all([
-        listMessagesForTask(tauriDatabase, id),
+      const [summary, telemetry, slots, agents] = await Promise.all([
         summarizeTaskTelemetry(tauriDatabase, id),
         listTelemetryForTask(tauriDatabase, id),
         listContextSlotsForTask(tauriDatabase, id),
+        invokePhaseRunList(id),
       ]);
+      // Pick the previously-selected agent if it still exists, else the
+      // lowest-ordinal one (= default "agent 1" or first workflow step).
+      const previouslySelected = get().selectedAgentId[id] ?? null;
+      const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
+      const fallbackAgent = sortedAgents[0] ?? null;
+      const selectedAgent =
+        (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
+      const messages = selectedAgent
+        ? await listMessagesForAgent(tauriDatabase, selectedAgent.id)
+        : [];
       const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
       set((state) => ({
         sessionSummary: summary,
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+        selectedAgentId: {
+          ...state.selectedAgentId,
+          [id]: selectedAgent?.id ?? null,
+        },
         messages: { ...state.messages, [id]: messages },
         transcripts: { ...state.transcripts, [id]: events },
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
       }));
-      if (session?.workflowId) {
-        const phaseRuns = await invokePhaseRunList(id);
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: phaseRuns },
-        }));
-      }
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
   },
@@ -911,30 +928,36 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     }
 
-    // Pre-spawn one Session row per Step in the chosen workflow so the
-    // sidebar's "agents" block is populated immediately — the user sees the
-    // full preset (e.g. scout / planner / implementer / reviewer) the moment
-    // a Task is created, instead of agents appearing one-by-one as the user
-    // types. Each row starts in `pending` and flips to `running` on its
-    // first turn (sendTurn handles the reuse).
+    // Every session spawns at least one agent — the default "agent 1" — so
+    // the chat view always has something to render and the user can fire off
+    // a turn without having to spawn manually first. When a workflow is
+    // attached we pre-spawn one row per Step on top of the default; the user
+    // can then pick which agent each turn routes to from the sidebar.
     let prespawnedRuns: ReadonlyArray<Session> = [];
+    const defaultAgent = await invokePhaseRunInsert({
+      taskId: session.id,
+      ordinal: 0,
+      name: 'agent 1',
+      status: 'pending',
+    });
+    prespawnedRuns = [defaultAgent];
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
       const template = templates.find((t) => t.id === workflowId);
       if (template) {
         const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
         const inserts = await Promise.all(
-          sortedSteps.map((step) =>
+          sortedSteps.map((step, i) =>
             invokePhaseRunInsert({
               taskId: session.id,
               stepId: step.id,
-              ordinal: step.ordinal,
+              ordinal: i + 1,
               name: step.name,
               status: 'pending',
             }),
           ),
         );
-        prespawnedRuns = inserts;
+        prespawnedRuns = [defaultAgent, ...inserts];
       }
     }
 
@@ -955,10 +978,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...state.sessionSlots,
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
-      sessionPhaseRuns:
-        prespawnedRuns.length > 0
-          ? { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns }
-          : state.sessionPhaseRuns,
+      sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
+      selectedAgentId: { ...state.selectedAgentId, [session.id]: defaultAgent.id },
+      transcripts: { ...state.transcripts, [session.id]: [] },
+      messages: { ...state.messages, [session.id]: [] },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
@@ -1090,8 +1113,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }));
         // Resolve the step the next turn should land on. Auto-advance is gone:
         // currentStep keeps the agent on its current role until the user
-        // explicitly spawns a new agent (future PR). Multiple turns now stack
-        // on the same Session row instead of inserting a fresh row per message.
+        // explicitly spawns a new agent from the sidebar. Multiple turns
+        // stack on the same Session row instead of inserting a fresh row
+        // per message.
         const nextDef = currentStep(template, freshRuns);
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
@@ -1225,9 +1249,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const runId = crypto.randomUUID() as ProviderRunId;
 
     if (parallelDispatch === null) {
+      const activeAgentId = get().selectedAgentId[taskId] ?? null;
+      if (!activeAgentId) {
+        get().appendTurnEvent(taskId, {
+          kind: 'error',
+          runId,
+          message: 'no agent selected — spawn one before sending a turn',
+          at: now(),
+        });
+        return;
+      }
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
+        agentId: activeAgentId,
         role: 'user',
         content: userTurnText,
         createdAt: now(),
@@ -1375,10 +1410,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
 
-      // Persist user message once (mirrors single-run path).
+      // Persist user message once (mirrors single-run path). Parallel branch
+      // logs to the currently-selected agent — fan-out spawns separate Session
+      // rows but the user-visible chat stays anchored to the orchestrating
+      // agent's transcript.
+      const parallelAgentId = get().selectedAgentId[taskId] ?? null;
+      if (!parallelAgentId) {
+        get().appendTurnEvent(taskId, {
+          kind: 'error',
+          runId: crypto.randomUUID() as ProviderRunId,
+          message: 'no agent selected — spawn one before sending a turn',
+          at: now(),
+        });
+        return;
+      }
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
+        agentId: parallelAgentId,
         role: 'user',
         content: userTurnText,
         createdAt: now(),
@@ -1720,9 +1769,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (assistantText.length > 0) {
+      const assistantAgentId = get().selectedAgentId[taskId] ?? null;
+      if (!assistantAgentId) {
+        return;
+      }
       const assistantMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
+        agentId: assistantAgentId,
         role: 'assistant',
         content: assistantText,
         createdAt: now(),
@@ -1992,6 +2046,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionSlots: {},
             sessionWorktrees: {},
             sessionPhaseRuns: {},
+            selectedAgentId: {},
             sessionBudgets: {},
             summarizerStatus: {},
             budgetAlerts: [],
@@ -2080,6 +2135,78 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadPhaseRunsForSession: async (taskId) => {
     const runs = await invokePhaseRunList(taskId);
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: runs } }));
+  },
+
+  selectAgent: async (taskId, agentId) => {
+    const messages = await listMessagesForAgent(tauriDatabase, agentId);
+    const events = messages.map(messageToTurnEvent).filter((e): e is TurnEvent => e !== null);
+    set((state) => ({
+      selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+      transcripts: { ...state.transcripts, [taskId]: events },
+      messages: { ...state.messages, [taskId]: messages },
+    }));
+  },
+
+  spawnAgent: async (taskId, args) => {
+    const state = get();
+    const task = state.sessions.find((s) => s.id === taskId);
+    if (!task) throw new Error(`session not found: ${taskId}`);
+    let resolvedName = args.name;
+    if (args.stepId) {
+      const templates = state.phaseTemplates[task.workspaceId] ?? [];
+      const template = task.workflowId
+        ? (templates.find((t) => t.id === task.workflowId) ?? null)
+        : null;
+      const step = template?.steps.find((s) => s.id === args.stepId) ?? null;
+      if (step && !resolvedName) resolvedName = step.name;
+    }
+    if (!resolvedName) {
+      const existing = state.sessionPhaseRuns[taskId] ?? [];
+      resolvedName = `agent ${existing.length + 1}`;
+    }
+    const currentRuns = state.sessionPhaseRuns[taskId] ?? [];
+    const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+    const inserted = await invokePhaseRunInsert({
+      taskId,
+      ...(args.stepId !== undefined && { stepId: args.stepId }),
+      ordinal: nextOrdinal,
+      name: resolvedName,
+      status: 'pending',
+    });
+    const refreshed = await invokePhaseRunList(taskId);
+    set((s) => ({
+      sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
+      selectedAgentId: { ...s.selectedAgentId, [taskId]: inserted.id },
+      transcripts: { ...s.transcripts, [taskId]: [] },
+      messages: { ...s.messages, [taskId]: [] },
+    }));
+    return inserted.id;
+  },
+
+  renameAgent: async (taskId, agentId, name) => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) return;
+    await tauriDatabase.execute('UPDATE sessions SET name = ? WHERE id = ?', [trimmed, agentId]);
+    const refreshed = await invokePhaseRunList(taskId);
+    set((s) => ({
+      sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
+    }));
+  },
+
+  wipeLocalDatabase: async () => {
+    await wipeDb();
+    set({
+      ...initialState,
+      hydrated: get().hydrated,
+      bootPhase: get().bootPhase,
+      providers: get().providers,
+      providerStatus: get().providerStatus,
+      cursorStatus: get().cursorStatus,
+      codexStatus: get().codexStatus,
+      authResults: get().authResults,
+      detectedEditors: get().detectedEditors,
+    });
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
   },
 
   dismissSystemAlert: (id) => {

@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppShell, Button, KbdPill } from '@kay-am/ui';
-import { Settings } from 'lucide-react';
+import { AppShell } from '@kay-am/ui';
 import type { TaskId } from '@kay-am/types';
-import { AlertCenter } from './components/AlertCenter';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
 import { ContextPanel } from './components/ContextPanel';
 import { EndSessionDialog } from './components/EndSessionDialog';
-import { ProvidersChip } from './components/ProvidersChip';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ShortcutHelpDialog } from './components/ShortcutHelpDialog';
-import { StatusBar } from './components/StatusBar';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
@@ -114,28 +110,6 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
-        header={
-          <div className="flex w-full items-center gap-3">
-            <span className="font-semibold tracking-tight">kAY.am</span>
-            <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-              <ProvidersChip onOpenSettings={() => setSettingsOpen(true)} />
-              <AlertCenter />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSettingsOpen(true)}
-                title="settings (⌘,)"
-                aria-label="open settings"
-              >
-                <Settings size={14} aria-hidden />
-                settings
-              </Button>
-              <span className="hidden sm:inline">
-                press <KbdPill>⌘K</KbdPill>
-              </span>
-            </div>
-          </div>
-        }
         leftSidebar={<WorkspacesSidebar onOpenSettings={() => setSettingsOpen(true)} />}
         main={
           error ? (
@@ -157,7 +131,6 @@ export function App() {
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
-        footer={<StatusBar />}
       />
       <SettingsDialog
         open={settingsOpen}

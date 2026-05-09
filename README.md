@@ -4,9 +4,9 @@
 
 kAY.am sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them.
 
-Manage sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. Get real-time visibility on tokens and cost. Automate the repeatable with skills.
+Manage workspaces. Open sessions per goal. Spawn N agents per session, each with its own chat, sharing the session's context. Route work across providers (Anthropic, OpenAI, Cursor, ...) based on priority and budget. See cost in real time. Automate the repeatable with skills.
 
-> **Status**: v0.7 + pre-1.0 UX polish complete. Parallel multi-agent mode available (settings → agent). Command palette via cmd+K. v1.0 next — see [ROADMAP.md](./ROADMAP.md).
+> **Status**: per-agent chat model live. Sidebar-first IA (no header / footer chrome). v1.0 next — see [ROADMAP.md](./ROADMAP.md).
 
 ## Why
 
@@ -16,12 +16,27 @@ Manage sessions. Route work across providers (Anthropic, OpenAI, Cursor, ...) ba
 
 kAY.am is the missing orchestration layer.
 
+## Mental model
+
+```
+Workspace               registered git repo
+└── Session             a goal, its own worktree + branch + shared context
+    ├── ContextPanel    auto-populated by the LLM after every turn
+    └── Agent (n)       independent chat, own provider/model, spawned at will
+```
+
+- **Workspace** = a local git repository you registered. Sessions are scoped to it.
+- **Session** = one goal. Owns the git worktree, the branch, the context panel slots, the budget. Auto-spawns one default agent on creation.
+- **Agent** = an independent chat thread inside a session. Spawn as many as you want, switch between them by clicking in the sidebar. Every agent reads the same shared session context; the summarizer keeps it fresh after each turn.
+- **Workflow** _(optional, beta)_ = a preset that pre-spawns N named agents (e.g. scout → planner → implementer → reviewer) at session creation. Free-form spawn always available.
+
 ## Principles
 
 - **Local-first, local-only.** No backend. No telemetry. No data collection. Your machine, your keys, your data.
 - **Provider-agnostic.** No lock-in.
 - **Context is expensive.** Never send more than needed.
 - **Sessions are goals, not threads.** Structure work by intent.
+- **Each agent owns its chat.** Sessions only share context, not conversation history.
 - **Automate the repeatable.**
 
 See [VISION.md](./VISION.md) for the full product vision.
@@ -31,7 +46,7 @@ See [VISION.md](./VISION.md) for the full product vision.
 - **Tauri 2** + **React 19** + **TypeScript 5** + **Vite 6**
 - **Tailwind CSS v4** for styling
 - **Zustand** for state
-- **SQLite** for local persistence (config only — no conversation data)
+- **SQLite** for local persistence (config + transcripts only — never sent anywhere)
 - Monorepo: **pnpm workspaces** + **Turborepo**
 
 ## Project structure
@@ -39,12 +54,11 @@ See [VISION.md](./VISION.md) for the full product vision.
 ```
 kay-am/
 ├── apps/desktop/     # Tauri 2 desktop app
-├── packages/
-│   ├── ui/           # Shared React components
-│   ├── core/         # Business logic
-│   ├── db/           # SQLite schema + queries
-│   └── types/        # Shared TypeScript types
-└── scripts/
+└── packages/
+    ├── ui/           # Shared React components (AppShell, Dialog, Markdown, …)
+    ├── core/         # Business logic (workflows, providers, budget, context)
+    ├── db/           # SQLite schema + queries
+    └── types/        # Shared TypeScript types
 ```
 
 ## Development
@@ -66,14 +80,13 @@ Connect a provider: `<cli> /login` (Claude / Cursor) or `<cli> login` (Codex). S
 - **Node.js** ≥ 20 and **pnpm** ≥ 9
 - **Rust** toolchain (`rustup`) — required by Tauri 2; install from <https://rustup.rs>. After installing, make sure `cargo` is on your shell `PATH` — `rustup` writes the env to `$HOME/.cargo/env`, which most shells don't auto-source. Either add `source "$HOME/.cargo/env"` to your `~/.zshrc` / `~/.bashrc`, or restart your terminal after install. Verify with `cargo --version` (Tauri shells out to `cargo metadata` and will fail with `os error 2` if it's missing).
 - Platform Tauri prereqs — see <https://v2.tauri.app/start/prerequisites/>
-- At least one **provider CLI** on `PATH` — see [Supported providers](#supported-providers) above
-- An **Anthropic API key** if you want to exercise the summarizer (configurable from in-app settings, stored in the OS keychain)
+- At least one **provider CLI** on `PATH` — see [Supported providers](#supported-providers) above. The summarizer reuses the active provider's cheap-tier model via its CLI — no separate API token required.
 
 ### Quickstart
 
 ```bash
 pnpm install
-pnpm tauri:dev      # launches the desktop app in dev mode (root alias for the desktop workspace)
+pnpm tauri:dev      # launches the desktop app in dev mode
 ```
 
 Useful commands:
@@ -85,54 +98,87 @@ pnpm build          # vite build (frontend only)
 pnpm lint           # placeholder; lint runs in CI
 ```
 
-### Smoke test a session end-to-end
+## Layout at a glance
 
-1. Run `pnpm tauri:dev` and wait for the boot splash to reach _ready_.
-2. Open **settings** (top-right) → paste your **Anthropic API key**, set the **default editor binary** (e.g. `code`), save.
-3. From the workspace dropdown choose **add workspace…** and pick a local git repository (an existing one is fine — sessions run inside isolated git worktrees).
-4. From the left sidebar, click **+ new task**, give it a goal, accept the branch prefix.
-5. Type a message in the chat input → enter. You should see streamed assistant text, the cost meter ticking, and the `worktree-{slug}` directory created next to the repo.
-6. Use **end session** to close the worktree (the branch is preserved for manual merge).
+The shell is two columns: a **floating sidebar** on the left, the **chat + context panel** on the right. There is no separate top header or bottom footer — both rolled into the sidebar.
 
-If the **claude cli missing** banner shows in the header, install the Claude CLI and reopen the app. If **api key missing** shows, click it to jump back into settings.
+```
+┌─ floating sidebar ──┐  ┌──────────────────────────────────────┐
+│ kAY.am   🔔  ⚙       │  │  ChatHeader (goal · branch · open in code) │
+│ ─                    │  │                                      │
+│ Workspaces           │  │                                      │
+│   • app-web          │  │   Agent's chat                       │
+│ ─                    │  │                                      │
+│ Sessions  app-web ⇅  │  │                                      │
+│   • refactor auth    │  │                                      │
+│ Agents    2 agents   │  │                                      │
+│   ▣ agent 1 (sel)    │  │                                      │
+│   ▢ agent 2          │  │                                      │
+│   + spawn agent      │  │   ┌──────────────────────┐           │
+│ ─                    │  │   │ Message Claude…   ▶  │           │
+│ ⓟ providers (3/3)    │  │   └──────────────────────┘           │
+│ $0.20 · $1.40 total  │  │   [Claude] [Opus 4.7] [Medium]       │
+└──────────────────────┘  └──────────────────────────────────────┘
+                                                    ContextPanel ▸
+```
+
+- **Sidebar top**: brand, alerts bell, settings (⌘,).
+- **Sidebar middle**: workspaces → sessions → agents, separated by dividers.
+- **Sidebar footer**: providers connection chip, then the cost telemetry pill.
+- **Right rail**: shared context panel for the current session (collapsible).
 
 ## Getting started
 
-New to kAY.am? Follow these steps to spin up your first session.
-
 ### 1. Boot splash → ready
 
-Launch `pnpm tauri:dev`. Wait for the splash screen to reach _ready_. See [docs/glossary.md](./docs/glossary.md#booting) for phase breakdown.
+Launch `pnpm tauri:dev`. Wait for the splash screen to reach _ready_.
 
-### 2. Add your first workspace
+### 2. Connect a provider
 
-Top-right: **workspace dropdown** → **add workspace…** → pick a local git repo (existing or new, sandbox repos are fine). kAY.am runs all sessions inside isolated worktrees next to the repo.
+Sidebar top-right: **settings (⌘,)** → **Providers** → connect at least one of Anthropic / Cursor / Codex (see [Supported providers](#supported-providers)).
 
-### 3. Connect a provider
+### 3. Add your first workspace
 
-Top-right: **settings** → paste your **Anthropic API key**, set your **default editor** (e.g. `code`). See [Supported providers](#supported-providers) for install + login commands. kAY.am routes turns through your chosen provider's subscription cap — no separate API tokens needed.
+Sidebar **Workspaces** section → **add workspace…** → pick a local git repo. kAY.am runs every session inside an isolated worktree alongside the repo.
 
-### 4. Create your first task
+### 4. Create your first session
 
-Left sidebar: **+ new task** → give it a goal (e.g. "add dark mode toggle") → optionally pick a workflow chip → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
+Sidebar **Sessions** section → **add session** → set a goal (e.g. "Refactor auth domain"), tweak the branch prefix, optionally pick a **workflow** (beta) to pre-spawn role-named agents.
+
+A default **agent 1** is auto-spawned when the session is created — the chat is immediately ready.
 
 ### 5. First turn
 
-Type a message in the chat input → enter. You'll see:
+The chat is the central pane. Type a message → enter. You'll see streamed assistant text in agent 1's transcript, the cost meter ticking in the sidebar footer, and a `worktree-{slug}` directory created next to your repo root.
 
-- streamed assistant text (real-time as tokens arrive)
-- cost meter ticking (provider + token cost)
-- worktree-{slug} directory created next to your repo root
+### 6. Spawn another agent
 
-### 6. Monitor progress
+Sidebar **Agents** block → **+ spawn agent** → either pick `+ free agent` (no role) or one of the workflow steps if a workflow is attached.
 
-**Telemetry pill** (top-left): session elapsed time, token count, cost breakdown. **Status bar** (bottom): active worktree, branch info, provider. **Alerts**: watch for banners (missing API key, CLI not found, etc.).
+The new agent gets its own empty chat. Click any agent in the sidebar to switch the chat view to that agent's history. The right-side context panel stays the same — it's shared across all agents in the session and auto-populated by the LLM after each turn.
 
-### 7. Archive or end the task
+Hover an agent row and click the **pencil** icon to rename it inline.
 
-Sidebar kebab menu → **archive** moves a task out of the active list (still inspectable under "archived") or **delete** removes it entirely (worktree, transcripts, audit log). Use **⌘.** to end the active session and clean up the worktree while preserving the branch.
+### 7. Open the worktree in your editor
 
-**Optional: workflows.** Structure multi-step goals with workflows. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply, or use the built-in planner ("design custom" chip in the new-task dialog) to generate one from a free-text theme. The default library (refactor / bug-fix / feature / exploration) is auto-seeded on workspace add. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
+`Open in code` button in the chat header opens the active worktree in your default editor. If you have multiple editors detected, pick from the dropdown.
+
+### 8. Monitor cost + alerts
+
+Sidebar footer shows the providers chip (one dot per provider, color-coded) and the telemetry pill (`$session · $workspace`). Click the pill for a per-model breakdown.
+
+The **bell icon** in the sidebar top opens the alert center for budget thresholds and other warnings.
+
+### 9. Archive or end the session
+
+Sidebar kebab menu → **archive** moves a session out of the active list (still inspectable under "archived"). **⌘.** ends the active session and cleans up the worktree while preserving the branch.
+
+## Settings
+
+Two scopes:
+
+- **Global** (sidebar top → ⚙) — App / Providers / Budget / Agent / Permissions / Initialization / Advanced. Beta chips mark sections whose behaviour is not yet validated. **Initialization → Wipe local database** drops every workspace / session / agent / message in `~/.kay-am/data.db` and re-runs migrations on next boot. API keys in the OS keychain are not touched.
+- **Per-workspace** (workspace row → ⚙ icon on hover) — General (branch prefix), Skills, Workflows (beta). Per-workspace settings stay scoped — the global dialog never shows them.
 
 ## Roadmap & contributing
 

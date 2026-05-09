@@ -8,7 +8,7 @@ interface PhaseTransitionCardProps {
 
 export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
   const [open, setOpen] = useState(false);
-  const header = `Phase ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Phase ${item.toStep.ordinal + 1} ${item.toStep.name}`;
+  const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
   const timestamp = new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',
@@ -23,7 +23,7 @@ export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
         trigger={
           <span className="flex items-center gap-2 text-xs font-medium">
             <span className="rounded bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-              phase
+              step
             </span>
             {header}
           </span>

@@ -22,3 +22,8 @@ export const tauriDatabase: Database = {
 export async function runDbMigrations(): Promise<MigrateResult> {
   return runMigrations(tauriDatabase);
 }
+
+export async function wipeDb(): Promise<MigrateResult> {
+  await invoke('db_wipe');
+  return runMigrations(tauriDatabase);
+}

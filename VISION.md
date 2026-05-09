@@ -14,15 +14,23 @@ kAY.am is a local-first AI workspace orchestrator that sits between you and your
 
 ## Core concepts
 
-### Sessions
+### Workspaces, sessions, agents
 
-A session is a container for a goal. Not a chat. Not a thread. A goal.
+Three nested layers, each doing one thing:
 
-"Refactor authentication domain" is a session. Inside it, you declare phases — setup, planning, implementation, review — and each phase spawns its own agent with only the context it needs. The session holds the big picture. The agents do the work.
+- A **workspace** is a registered git repository. Sessions live inside it.
+- A **session** is a container for a goal — its own git worktree, branch, budget, and shared context. "Refactor authentication domain" is a session. The session holds the big picture.
+- An **agent** is an independent chat thread inside a session. You spawn as many as you want, switch between them by clicking, and rename them inline. Each agent runs its own provider/model and owns its own conversation history.
 
-### Synthetic context
+A session always has at least one agent (the default `agent 1`, auto-spawned at session creation). Spawning more is free-form — no workflow required. When a workflow preset is attached, it pre-spawns one agent per step (e.g. scout → planner → implementer → reviewer), but those agents are then independent and live alongside any free agents you add later.
 
-Agents don't inherit the full history. They receive a synthetic summary — just enough to act, nothing more. You decide what's shared. Context is a resource, not a dump.
+### Shared context
+
+Agents inside the same session do **not** share their conversation history. What they share is the **context panel** on the right — synthetic slots (goal, files touched, decisions, open questions, last summary) that the LLM auto-populates after every turn. You can also edit slots by hand.
+
+Switching between agents swaps the central chat to that agent's transcript. The context panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
+
+Context is a resource, not a dump.
 
 ### Provider routing & balance
 
