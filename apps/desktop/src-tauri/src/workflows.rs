@@ -65,7 +65,7 @@ pub struct SessionRow {
     #[serde(rename = "taskId")]
     pub task_id: String,
     #[serde(rename = "stepId")]
-    pub step_id: String,
+    pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
@@ -85,7 +85,7 @@ pub struct PhaseRunInsertInput {
     #[serde(rename = "taskId")]
     pub task_id: String,
     #[serde(rename = "stepId")]
-    pub step_id: String,
+    pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,

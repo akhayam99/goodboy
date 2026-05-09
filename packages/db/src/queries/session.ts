@@ -12,7 +12,7 @@ import type { Database } from '../client';
 interface SessionRow {
   id: string;
   task_id: string;
-  step_id: string;
+  step_id: string | null;
   ordinal: number;
   name: string;
   status: string;
@@ -26,7 +26,7 @@ function toSession(row: SessionRow): Session {
   return {
     id: row.id as SessionId,
     taskId: row.task_id as TaskId,
-    stepId: row.step_id as StepId,
+    ...(row.step_id != null && { stepId: row.step_id as StepId }),
     ordinal: row.ordinal,
     name: row.name,
     status: row.status as SessionStatus,
@@ -56,7 +56,7 @@ export async function insertSession(db: Database, session: Session): Promise<voi
     [
       session.id,
       session.taskId,
-      session.stepId,
+      session.stepId ?? null,
       session.ordinal,
       session.name,
       session.status,

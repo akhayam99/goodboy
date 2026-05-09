@@ -44,7 +44,7 @@ interface RawPhaseTemplateRow {
 interface RawPhaseRunRow {
   readonly id: string;
   readonly taskId: string;
-  readonly stepId: string;
+  readonly stepId: string | null;
   readonly ordinal: number;
   readonly name: string;
   readonly status: string;
@@ -86,7 +86,7 @@ function rowToPhaseRun(row: RawPhaseRunRow): Session {
   return {
     id: row.id as SessionId,
     taskId: row.taskId as TaskId,
-    stepId: row.stepId as StepId,
+    ...(row.stepId != null && { stepId: row.stepId as StepId }),
     ordinal: row.ordinal,
     name: row.name,
     status: row.status as SessionStatus,
@@ -164,7 +164,7 @@ export async function invokePhaseRunList(taskId: TaskId): Promise<Session[]> {
 export interface PhaseRunInsertArgs {
   readonly id?: SessionId;
   readonly taskId: TaskId;
-  readonly stepId: StepId;
+  readonly stepId?: StepId;
   readonly ordinal: number;
   readonly name: string;
   readonly status: SessionStatus;
@@ -179,7 +179,7 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Ses
     input: {
       id: run.id ?? null,
       taskId: run.taskId,
-      stepId: run.stepId,
+      stepId: run.stepId ?? null,
       ordinal: run.ordinal,
       name: run.name,
       status: run.status,

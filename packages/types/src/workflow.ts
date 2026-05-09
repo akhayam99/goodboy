@@ -39,7 +39,7 @@ export type Workflow = Readonly<{
 export type Session = Readonly<{
   id: SessionId;
   taskId: TaskId;
-  stepId: StepId;
+  stepId?: StepId;
   ordinal: number;
   name: string;
   status: SessionStatus;

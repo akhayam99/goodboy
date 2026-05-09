@@ -12,6 +12,7 @@ import { m011ParallelPhases } from './m011-parallel-phases';
 import { m012SettingsOverrides } from './m012-settings-overrides';
 import { m013BudgetExtraTokens } from './m013-budget-extra-tokens';
 import { m014RenameDomain } from './m014-rename-domain';
+import { m015AgentsNullableStep } from './m015-agents-nullable-step';
 
 export interface Migration {
   readonly version: number;
@@ -33,4 +34,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 12, sql: m012SettingsOverrides },
   { version: 13, sql: m013BudgetExtraTokens },
   { version: 14, sql: m014RenameDomain },
+  { version: 15, sql: m015AgentsNullableStep },
 ];

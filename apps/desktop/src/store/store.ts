@@ -60,6 +60,7 @@ import type {
   PermissionRequestId,
   PermissionRule,
   Step,
+  StepId,
   Session,
   SessionId,
   SessionStatus,
@@ -225,6 +226,7 @@ export interface AppState {
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<TaskId, ReadonlyArray<Session>>>;
+  readonly selectedAgentRunId: Readonly<Record<TaskId, SessionId | null>>;
   readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
@@ -300,6 +302,8 @@ export interface AppActions {
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
+  setSelectedAgent(taskId: TaskId, sessionId: SessionId | null): void;
+  spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
   dismissSystemAlert(id: string): void;
   setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
   resolveMergeConflicts(
@@ -353,6 +357,7 @@ const initialState: AppState = {
   skills: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
+  selectedAgentRunId: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
@@ -1089,10 +1094,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: freshRuns },
         }));
         // Resolve the step the next turn should land on. Auto-advance is gone:
-        // currentStep keeps the agent on its current role until the user
-        // explicitly spawns a new agent (future PR). Multiple turns now stack
-        // on the same Session row instead of inserting a fresh row per message.
-        const nextDef = currentStep(template, freshRuns);
+        // if the user picked an agent in the sidebar, route to *that* Session
+        // row's step. Otherwise currentStep keeps the agent on its current role
+        // until the user explicitly switches/spawns a new agent. Multiple turns
+        // stack on the same Session row instead of inserting a fresh row per
+        // user message.
+        const selectedRunId = get().selectedAgentRunId[taskId] ?? null;
+        const selectedRun = selectedRunId
+          ? (freshRuns.find((r) => r.id === selectedRunId) ?? null)
+          : null;
+        const nextDef = selectedRun
+          ? (template.steps.find((s) => s.id === selectedRun.stepId) ?? null)
+          : currentStep(template, freshRuns);
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
@@ -1260,7 +1273,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // it at the new providerRunId, instead of inserting a fresh row per
       // user message. New rows only appear when the user spawns a new agent.
       const runsForTask = get().sessionPhaseRuns[taskId] ?? [];
-      const reusable = findReusableSession(runsForTask, phaseDefinition.id);
+      const explicitRunId = get().selectedAgentRunId[taskId] ?? null;
+      const explicit = explicitRunId
+        ? (runsForTask.find((r) => r.id === explicitRunId && r.stepId === phaseDefinition.id) ??
+          null)
+        : null;
+      const reusable = explicit ?? findReusableSession(runsForTask, phaseDefinition.id);
       let resolved: Session;
       if (reusable) {
         resolved = await invokePhaseRunUpdateStatus(reusable.id, {
@@ -2080,6 +2098,49 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadPhaseRunsForSession: async (taskId) => {
     const runs = await invokePhaseRunList(taskId);
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: runs } }));
+  },
+
+  setSelectedAgent: (taskId, sessionId) => {
+    set((state) => ({
+      selectedAgentRunId: { ...state.selectedAgentRunId, [taskId]: sessionId },
+    }));
+  },
+
+  spawnAgent: async (taskId, args) => {
+    const state = get();
+    const task = state.sessions.find((s) => s.id === taskId);
+    if (!task) throw new Error(`task not found: ${taskId}`);
+    let resolvedName = args.name;
+    let resolvedStepId: StepId | undefined;
+    if (args.stepId) {
+      const templates = state.phaseTemplates[task.workspaceId] ?? [];
+      const template = task.workflowId
+        ? (templates.find((t) => t.id === task.workflowId) ?? null)
+        : null;
+      const step = template?.steps.find((s) => s.id === args.stepId) ?? null;
+      if (!step) throw new Error(`step not found in workflow: ${args.stepId}`);
+      resolvedStepId = args.stepId;
+      resolvedName = resolvedName ?? step.name;
+    }
+    if (!resolvedName) {
+      const free = (state.sessionPhaseRuns[taskId] ?? []).filter((r) => r.stepId === undefined);
+      resolvedName = `agent ${free.length + 1}`;
+    }
+    const currentRuns = state.sessionPhaseRuns[taskId] ?? [];
+    const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+    const inserted = await invokePhaseRunInsert({
+      taskId,
+      ...(resolvedStepId !== undefined && { stepId: resolvedStepId }),
+      ordinal: nextOrdinal,
+      name: resolvedName,
+      status: 'pending',
+    });
+    const refreshed = await invokePhaseRunList(taskId);
+    set((s) => ({
+      sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
+      selectedAgentRunId: { ...s.selectedAgentRunId, [taskId]: inserted.id },
+    }));
+    return inserted.id;
   },
 
   dismissSystemAlert: (id) => {
