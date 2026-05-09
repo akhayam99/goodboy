@@ -19,7 +19,7 @@ import {
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import { ProvidersChip } from './ProvidersChip';
 import { AlertCenter } from './AlertCenter';
-import { StatusBar } from './StatusBar';
+import { TelemetryPill } from './TelemetryPill';
 import type {
   ProviderId,
   Session,
@@ -223,8 +223,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
 
-      <div className="shrink-0 px-3 pb-2 pt-1.5 font-mono text-2xs text-muted-foreground">
-        <StatusBar />
+      <div className="flex shrink-0 items-center justify-center px-2 pb-2 pt-1.5">
+        <TelemetryPill />
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
