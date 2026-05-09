@@ -92,9 +92,13 @@ export {
   nextStep,
   WorkflowPropagator,
   type WorkflowPropagatorDeps,
+  WORKFLOW_LIBRARY,
+  type WorkflowLibraryEntry,
+  type WorkflowLibraryStep,
 } from './workflows';
-// WorkflowRegistry (@kay-am/db → node) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/workflows/registry in Node/Tauri command contexts.
+// WorkflowRegistry + seeder (@kay-am/db → node) are intentionally excluded from this
+// browser-safe barrel. Import directly from packages/core/src/workflows/registry
+// or packages/core/src/workflows/seeder in Node/Tauri command contexts.
 
 export {
   PermissionEngine,
