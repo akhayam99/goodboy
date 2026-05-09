@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
-import { Sparkles } from 'lucide-react';
+import { Check, DollarSign, GitBranch, Layers, Sparkles, Target, Zap } from 'lucide-react';
 import type {
   Workflow,
   WorkflowId,
@@ -120,156 +120,234 @@ export function NewSessionDialog({
     providers.filter((p) => p.connection === 'connected').map((p) => p.id),
   );
 
+  type SectionId = 'goal' | 'branch' | 'budget' | 'workflow' | 'provider';
+  const [activeSection, setActiveSection] = useState<SectionId>('goal');
+
+  const goalReady = goal.trim().length > 0;
+  const budgetReady = softCapRaw.trim().length > 0;
+  const workflowReady = selectedPhaseTemplateId !== '';
+  const providerReady = connectedProviderIds.has(selectedProvider);
+
+  const sections: ReadonlyArray<{
+    id: SectionId;
+    label: string;
+    icon: ReactNode;
+    ready: boolean;
+  }> = [
+    { id: 'goal', label: 'goal', icon: <Target size={13} aria-hidden />, ready: goalReady },
+    {
+      id: 'branch',
+      label: 'branch',
+      icon: <GitBranch size={13} aria-hidden />,
+      ready: prefix.trim().length > 0,
+    },
+    {
+      id: 'budget',
+      label: 'budget',
+      icon: <DollarSign size={13} aria-hidden />,
+      ready: budgetReady,
+    },
+    {
+      id: 'workflow',
+      label: 'workflow',
+      icon: <Layers size={13} aria-hidden />,
+      ready: workflowReady,
+    },
+    {
+      id: 'provider',
+      label: 'provider',
+      icon: <Zap size={13} aria-hidden />,
+      ready: providerReady,
+    },
+  ];
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       title="new session"
       description="creates a worktree on a fresh branch from the workspace root."
-      size="md"
+      size="lg"
       footer={
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose}>
             cancel
           </Button>
-          <Button onClick={onCreate} disabled={goal.trim().length === 0 || busy}>
+          <Button onClick={onCreate} disabled={!goalReady || busy}>
             {busy ? 'creating…' : 'create session'}
           </Button>
         </>
       }
     >
-      <Field label="goal" hint="what the session should accomplish.">
-        <Textarea
-          value={goal}
-          placeholder="refactor auth domain"
-          onChange={(e) => setGoal(e.target.value)}
-          autoGrow
-          maxRows={12}
-        />
-      </Field>
-
-      <Field label="branch prefix" hint="branch name will be `<prefix>/<slug>`.">
-        <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="kay" />
-      </Field>
-
-      <Field label="soft cap (usd)" hint="optional spend limit. session is flagged when exceeded.">
-        <Input
-          value={softCapRaw}
-          onChange={(e) => setSoftCapRaw(e.target.value)}
-          placeholder="e.g. 5.00"
-          type="number"
-          min="0"
-          step="0.01"
-        />
-      </Field>
-
-      <Field
-        label="workflow (optional)"
-        hint={
-          phaseTemplates.length === 0
-            ? 'no workflows yet — design one with the planner below.'
-            : 'pick a workflow blueprint. each step spawns its own agent with its own context.'
-        }
-      >
-        <div className="flex flex-wrap gap-1.5">
-          <WorkflowChip
-            label="single chat"
-            active={selectedPhaseTemplateId === ''}
-            onClick={() => setSelectedPhaseTemplateId('')}
-          />
-          {phaseTemplates.map((t) => (
-            <WorkflowChip
-              key={t.id}
-              label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
-              active={selectedPhaseTemplateId === t.id}
-              onClick={() => setSelectedPhaseTemplateId(t.id)}
-              title={t.description || undefined}
-            />
+      <div className="flex h-full min-h-0 gap-0">
+        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setActiveSection(s.id)}
+              className={cn(
+                'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
+                activeSection === s.id
+                  ? 'bg-muted font-medium text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+              )}
+            >
+              {s.icon}
+              <span className="flex-1">{s.label}</span>
+              {s.ready ? <Check size={11} className="text-success" aria-label="filled" /> : null}
+            </button>
           ))}
-          <button
-            type="button"
-            onClick={() => setPlannerOpen((v) => !v)}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors',
-              plannerOpen
-                ? 'bg-foreground text-background'
-                : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-            title="design a custom workflow with the planner agent"
-          >
-            <Sparkles size={11} aria-hidden /> design custom
-          </button>
-        </div>
-        {selectedPhaseTemplateId !== '' ? (
-          <WorkflowPreview
-            template={phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null}
-          />
-        ) : null}
-        {plannerOpen ? (
-          <PlannerWidget
-            workspaceId={workspaceId}
-            providerId={selectedProvider}
-            initialTheme={goal}
-            onWorkflowReady={(workflowId) => {
-              setSelectedPhaseTemplateId(workflowId);
-              setPlannerOpen(false);
-            }}
-          />
-        ) : null}
-      </Field>
+        </nav>
 
-      <Field label="provider">
-        <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border">
-          {PROVIDER_ORDER.map((id) => {
-            const connected = connectedProviderIds.has(id);
-            const disabled = !connected;
-            const selected = selectedProvider === id;
-            return (
-              <li
-                key={id}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors',
-                  disabled ? 'opacity-50' : 'hover:bg-muted/40',
-                  selected && !disabled ? 'bg-muted/60' : '',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="provider"
-                  id={`provider-${id}`}
-                  value={id}
-                  checked={selected}
-                  disabled={disabled}
-                  onChange={() => setSelectedProvider(id)}
-                  className="accent-primary"
+        <div className="min-w-0 flex-1 overflow-y-auto pl-4">
+          {activeSection === 'goal' ? (
+            <Field label="goal" hint="what the session should accomplish.">
+              <Textarea
+                value={goal}
+                placeholder="refactor auth domain"
+                onChange={(e) => setGoal(e.target.value)}
+                autoGrow
+                maxRows={16}
+              />
+            </Field>
+          ) : null}
+
+          {activeSection === 'branch' ? (
+            <Field label="branch prefix" hint="branch name will be `<prefix>/<slug>`.">
+              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="kay" />
+            </Field>
+          ) : null}
+
+          {activeSection === 'budget' ? (
+            <Field
+              label="soft cap (usd)"
+              hint="optional spend limit. session is flagged when exceeded."
+            >
+              <Input
+                value={softCapRaw}
+                onChange={(e) => setSoftCapRaw(e.target.value)}
+                placeholder="e.g. 5.00"
+                type="number"
+                min="0"
+                step="0.01"
+              />
+            </Field>
+          ) : null}
+
+          {activeSection === 'workflow' ? (
+            <Field
+              label="workflow (optional)"
+              hint={
+                phaseTemplates.length === 0
+                  ? 'no workflows yet — design one with the planner below.'
+                  : 'pick a workflow blueprint. each step pre-spawns its own agent.'
+              }
+            >
+              <div className="flex flex-wrap gap-1.5">
+                <WorkflowChip
+                  label="single chat"
+                  active={selectedPhaseTemplateId === ''}
+                  onClick={() => setSelectedPhaseTemplateId('')}
                 />
-                <label
-                  htmlFor={`provider-${id}`}
+                {phaseTemplates.map((t) => (
+                  <WorkflowChip
+                    key={t.id}
+                    label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
+                    active={selectedPhaseTemplateId === t.id}
+                    onClick={() => setSelectedPhaseTemplateId(t.id)}
+                    title={t.description || undefined}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPlannerOpen((v) => !v)}
                   className={cn(
-                    'flex flex-1 items-center justify-between',
-                    disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                    'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors',
+                    plannerOpen
+                      ? 'bg-foreground text-background'
+                      : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
+                  title="design a custom workflow with the planner agent"
                 >
-                  <span className="font-medium">{PROVIDER_LABEL[id]}</span>
-                  {!connected && (
-                    <button
-                      type="button"
-                      className="text-xs text-primary underline hover:opacity-80"
-                      onClick={() => {
-                        onClose();
-                        onOpenSettings();
-                      }}
+                  <Sparkles size={11} aria-hidden /> design custom
+                </button>
+              </div>
+              {selectedPhaseTemplateId !== '' ? (
+                <WorkflowPreview
+                  template={phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null}
+                />
+              ) : null}
+              {plannerOpen ? (
+                <PlannerWidget
+                  workspaceId={workspaceId}
+                  providerId={selectedProvider}
+                  initialTheme={goal}
+                  onWorkflowReady={(workflowId) => {
+                    setSelectedPhaseTemplateId(workflowId);
+                    setPlannerOpen(false);
+                  }}
+                />
+              ) : null}
+            </Field>
+          ) : null}
+
+          {activeSection === 'provider' ? (
+            <Field label="provider">
+              <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border">
+                {PROVIDER_ORDER.map((id) => {
+                  const connected = connectedProviderIds.has(id);
+                  const disabled = !connected;
+                  const selected = selectedProvider === id;
+                  return (
+                    <li
+                      key={id}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors',
+                        disabled ? 'opacity-50' : 'hover:bg-muted/40',
+                        selected && !disabled ? 'bg-muted/60' : '',
+                      )}
                     >
-                      connect in settings
-                    </button>
-                  )}
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      </Field>
+                      <input
+                        type="radio"
+                        name="provider"
+                        id={`provider-${id}`}
+                        value={id}
+                        checked={selected}
+                        disabled={disabled}
+                        onChange={() => setSelectedProvider(id)}
+                        className="accent-primary"
+                      />
+                      <label
+                        htmlFor={`provider-${id}`}
+                        className={cn(
+                          'flex flex-1 items-center justify-between',
+                          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                        )}
+                      >
+                        <span className="font-medium">{PROVIDER_LABEL[id]}</span>
+                        {!connected && (
+                          <button
+                            type="button"
+                            className="text-xs text-primary underline hover:opacity-80"
+                            onClick={() => {
+                              onClose();
+                              onOpenSettings();
+                            }}
+                          >
+                            connect in settings
+                          </button>
+                        )}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Field>
+          ) : null}
+        </div>
+      </div>
     </Dialog>
   );
 }

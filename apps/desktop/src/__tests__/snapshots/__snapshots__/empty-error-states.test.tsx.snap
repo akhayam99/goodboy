@@ -48,7 +48,7 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[32rem]"
+    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -86,91 +86,89 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
       class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
     >
       <div
-        class="flex flex-col gap-1.5"
+        class="flex h-full min-h-0 gap-0"
       >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          goal
-        </span>
-        <textarea
-          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
-          placeholder="refactor auth domain"
-          style="height: 0px; overflow-y: hidden;"
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          what the session should accomplish.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          branch prefix
-        </span>
-        <input
-          class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-          placeholder="kay"
-          type="text"
-          value="kay"
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          branch name will be \`&lt;prefix&gt;/&lt;slug&gt;\`.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          soft cap (usd)
-        </span>
-        <input
-          class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-          min="0"
-          placeholder="e.g. 5.00"
-          step="0.01"
-          type="number"
-          value=""
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          optional spend limit. session is flagged when exceeded.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          workflow (optional)
-        </span>
-        <div
-          class="flex flex-wrap gap-1.5"
+        <nav
+          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
         >
           <button
-            class="rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-foreground text-background"
-            type="button"
-          >
-            single chat
-          </button>
-          <button
-            class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="design a custom workflow with the planner agent"
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="lucide lucide-sparkles"
+              class="lucide lucide-target"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              goal
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-git-branch"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 6a9 9 0 0 0-9 9V3"
+              />
+              <circle
+                cx="18"
+                cy="6"
+                r="3"
+              />
+              <circle
+                cx="6"
+                cy="18"
+                r="3"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              branch
+            </span>
+            <svg
+              aria-label="filled"
+              class="lucide lucide-check text-success"
               fill="none"
               height="11"
               stroke="currentColor"
@@ -182,125 +180,127 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-              />
-              <path
-                d="M20 2v4"
-              />
-              <path
-                d="M22 4h-4"
-              />
-              <circle
-                cx="4"
-                cy="20"
-                r="2"
+                d="M20 6 9 17l-5-5"
               />
             </svg>
-             design custom
           </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-dollar-sign"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <line
+                x1="12"
+                x2="12"
+                y1="2"
+                y2="22"
+              />
+              <path
+                d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              budget
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-layers"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
+              />
+              <path
+                d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
+              />
+              <path
+                d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              workflow
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-zap"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              provider
+            </span>
+          </button>
+        </nav>
+        <div
+          class="min-w-0 flex-1 overflow-y-auto pl-4"
+        >
+          <div
+            class="flex flex-col gap-1.5"
+          >
+            <span
+              class="text-xs font-semibold text-foreground"
+            >
+              goal
+            </span>
+            <textarea
+              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
+              placeholder="refactor auth domain"
+              style="height: 0px; overflow-y: hidden;"
+            />
+            <p
+              class="text-xs leading-relaxed text-muted-foreground"
+            >
+              what the session should accomplish.
+            </p>
+          </div>
         </div>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          no workflows yet — design one with the planner below.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          provider
-        </span>
-        <ul
-          class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border"
-        >
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-anthropic"
-              name="provider"
-              type="radio"
-              value="anthropic"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-anthropic"
-            >
-              <span
-                class="font-medium"
-              >
-                claude
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-cursor"
-              name="provider"
-              type="radio"
-              value="cursor"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-cursor"
-            >
-              <span
-                class="font-medium"
-              >
-                cursor
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-codex"
-              name="provider"
-              type="radio"
-              value="codex"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-codex"
-            >
-              <span
-                class="font-medium"
-              >
-                codex
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-        </ul>
       </div>
     </div>
     <footer
@@ -867,7 +867,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[32rem]"
+    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -905,91 +905,89 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
     >
       <div
-        class="flex flex-col gap-1.5"
+        class="flex h-full min-h-0 gap-0"
       >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          goal
-        </span>
-        <textarea
-          class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
-          placeholder="refactor auth domain"
-          style="height: 0px; overflow-y: hidden;"
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          what the session should accomplish.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          branch prefix
-        </span>
-        <input
-          class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-          placeholder="kay"
-          type="text"
-          value="kay"
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          branch name will be \`&lt;prefix&gt;/&lt;slug&gt;\`.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          soft cap (usd)
-        </span>
-        <input
-          class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-          min="0"
-          placeholder="e.g. 5.00"
-          step="0.01"
-          type="number"
-          value=""
-        />
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          optional spend limit. session is flagged when exceeded.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          workflow (optional)
-        </span>
-        <div
-          class="flex flex-wrap gap-1.5"
+        <nav
+          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
         >
           <button
-            class="rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-foreground text-background"
-            type="button"
-          >
-            single chat
-          </button>
-          <button
-            class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="design a custom workflow with the planner agent"
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="lucide lucide-sparkles"
+              class="lucide lucide-target"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              goal
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-git-branch"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 6a9 9 0 0 0-9 9V3"
+              />
+              <circle
+                cx="18"
+                cy="6"
+                r="3"
+              />
+              <circle
+                cx="6"
+                cy="18"
+                r="3"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              branch
+            </span>
+            <svg
+              aria-label="filled"
+              class="lucide lucide-check text-success"
               fill="none"
               height="11"
               stroke="currentColor"
@@ -1001,125 +999,127 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-              />
-              <path
-                d="M20 2v4"
-              />
-              <path
-                d="M22 4h-4"
-              />
-              <circle
-                cx="4"
-                cy="20"
-                r="2"
+                d="M20 6 9 17l-5-5"
               />
             </svg>
-             design custom
           </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-dollar-sign"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <line
+                x1="12"
+                x2="12"
+                y1="2"
+                y2="22"
+              />
+              <path
+                d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              budget
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-layers"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
+              />
+              <path
+                d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
+              />
+              <path
+                d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              workflow
+            </span>
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-zap"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              provider
+            </span>
+          </button>
+        </nav>
+        <div
+          class="min-w-0 flex-1 overflow-y-auto pl-4"
+        >
+          <div
+            class="flex flex-col gap-1.5"
+          >
+            <span
+              class="text-xs font-semibold text-foreground"
+            >
+              goal
+            </span>
+            <textarea
+              class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none"
+              placeholder="refactor auth domain"
+              style="height: 0px; overflow-y: hidden;"
+            />
+            <p
+              class="text-xs leading-relaxed text-muted-foreground"
+            >
+              what the session should accomplish.
+            </p>
+          </div>
         </div>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-        >
-          no workflows yet — design one with the planner below.
-        </p>
-      </div>
-      <div
-        class="flex flex-col gap-1.5"
-      >
-        <span
-          class="text-xs font-semibold text-foreground"
-        >
-          provider
-        </span>
-        <ul
-          class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border"
-        >
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-anthropic"
-              name="provider"
-              type="radio"
-              value="anthropic"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-anthropic"
-            >
-              <span
-                class="font-medium"
-              >
-                claude
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-cursor"
-              name="provider"
-              type="radio"
-              value="cursor"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-cursor"
-            >
-              <span
-                class="font-medium"
-              >
-                cursor
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-          <li
-            class="flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors opacity-50"
-          >
-            <input
-              class="accent-primary"
-              disabled=""
-              id="provider-codex"
-              name="provider"
-              type="radio"
-              value="codex"
-            />
-            <label
-              class="flex flex-1 items-center justify-between cursor-not-allowed"
-              for="provider-codex"
-            >
-              <span
-                class="font-medium"
-              >
-                codex
-              </span>
-              <button
-                class="text-xs text-primary underline hover:opacity-80"
-                type="button"
-              >
-                connect in settings
-              </button>
-            </label>
-          </li>
-        </ul>
       </div>
     </div>
     <footer
