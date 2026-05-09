@@ -62,12 +62,20 @@ export function NewSessionDialog({
 
   useEffect(() => {
     if (!open) return;
+    // Open should always present a virgin form: reset every field, not just
+    // prefix/provider. Otherwise stale goal/template/budget/planner state from
+    // a previous (cancelled) attempt — or from a previous workspace — leaks in.
+    setGoal('');
+    setSoftCapRaw('');
+    setSelectedPhaseTemplateId('');
+    setPlannerOpen(false);
+    setError(null);
     void loadSetting(settingKey).then((value) => {
       setPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
     setSelectedProvider(pickDefaultProvider(ids));
-  }, [open, settingKey, loadSetting, providers]);
+  }, [open, settingKey, loadSetting, providers, workspaceId]);
 
   const reset = () => {
     setGoal('');
