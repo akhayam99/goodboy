@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Dialog, cn } from '@kay-am/ui';
-import { useAppStore } from '../store';
+import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { ProviderSpendEntry } from '../store';
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
@@ -76,7 +76,9 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
   const sessionTelemetry = useAppStore(
     (s) => (currentSessionId ? s.sessionTelemetry[currentSessionId] : undefined) ?? EMPTY_TELEMETRY,
   );
-  const providerSpendBreakdown = useAppStore((s) => s.providerSpendBreakdown);
+  const providerSpendBreakdown = useAppStore(
+    (s) => s.providerSpendBreakdown ?? (EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>),
+  );
 
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);

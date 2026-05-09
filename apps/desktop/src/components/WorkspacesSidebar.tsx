@@ -11,11 +11,15 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  Settings,
   Settings2,
   Trash2,
   X,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
+import { ProvidersChip } from './ProvidersChip';
+import { AlertCenter } from './AlertCenter';
+import { StatusBar } from './StatusBar';
 import type {
   ProviderId,
   Session,
@@ -127,8 +131,25 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
+        <span className="px-1 text-sm font-semibold tracking-tight">kAY.am</span>
+        <div className="ml-auto flex items-center gap-0.5">
+          <ProvidersChip onOpenSettings={onOpenSettings} />
+          <AlertCenter />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title="settings (⌘,)"
+            aria-label="open settings"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Settings size={13} aria-hidden />
+          </button>
+        </div>
+      </div>
+
       <ScrollArea className="max-h-[40%] shrink-0">
-        <section className="flex flex-col px-2 pb-4 pt-3">
+        <section className="flex flex-col px-2 pb-4 pt-1">
           <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               workspaces
@@ -201,6 +222,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
         {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
+
+      <div className="shrink-0 px-3 pb-2 pt-1.5 font-mono text-2xs text-muted-foreground">
+        <StatusBar />
+      </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       {currentWorkspace ? (
