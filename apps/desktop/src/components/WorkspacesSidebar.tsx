@@ -2,15 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
-  Archive,
-  ArchiveRestore,
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
   FolderOpen,
   FolderPlus,
-  MoreHorizontal,
-  Pencil,
+  HelpCircle,
   Plus,
   Settings,
   Settings2,
@@ -18,6 +15,8 @@ import {
   X,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
+import { SessionSettingsDialog } from './SessionSettingsDialog';
+import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
 import { AlertCenter } from './AlertCenter';
 import { TelemetryPill } from './TelemetryPill';
@@ -42,21 +41,14 @@ import {
   useSessions,
   useWorkspaces,
 } from '../store';
-import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
 import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
-import { WORKFLOW_LIBRARY } from '@kay-am/core';
+import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
 }
-
-const PROVIDER_CHIP_COLOR: Record<ProviderId, string> = {
-  anthropic: 'bg-muted text-foreground',
-  cursor: 'bg-muted text-foreground',
-  codex: 'bg-muted text-foreground',
-};
 
 const PROVIDER_SHORT: Record<ProviderId, string> = {
   anthropic: 'cl',
@@ -91,7 +83,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [sessionSort, setSessionSort] = useState<SessionSort>('updated');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const filteredWorkspaces = useMemo(
     () => [...workspaces].sort((a, b) => a.name.localeCompare(b.name)),
@@ -133,6 +125,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           <AlertCenter />
           <button
             type="button"
+            onClick={() => setGuideOpen(true)}
+            title="getting started — guide"
+            aria-label="open getting started guide"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <HelpCircle size={13} aria-hidden />
+          </button>
+          <button
+            type="button"
             onClick={onOpenSettings}
             title="settings (⌘,)"
             aria-label="open settings"
@@ -144,8 +145,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </div>
 
       <ScrollArea className="max-h-[40%] shrink-0">
-        <section className="flex flex-col px-2 pb-2 pt-1">
-          <header className="flex items-baseline justify-between gap-2 px-2 pb-1.5">
+        <section className="flex flex-col px-2">
+          <header className="flex items-baseline justify-between gap-2 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Workspaces
             </span>
@@ -157,7 +158,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 workspace={ws}
                 isActive={ws.id === currentWorkspace?.id}
                 onClick={() => void setCurrentWorkspace(ws.id)}
-                onDelete={() => setWorkspaceToDelete(ws)}
               />
             ))}
             <li>
@@ -171,11 +171,9 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         </section>
       </ScrollArea>
 
-      <SectionDivider />
-
-      <ScrollArea className="flex-1">
-        <section className="flex flex-col px-2 pt-2">
-          <header className="flex items-center justify-between gap-2 px-2 pb-1.5">
+      <ScrollArea className="mt-8 flex-1">
+        <section className="flex flex-col px-2">
+          <header className="flex items-center justify-between gap-2 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions
             </span>
@@ -214,12 +212,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           )}
         </section>
 
-        {currentSession ? (
-          <>
-            <SectionDivider />
-            <AgentsSection task={currentSession} />
-          </>
-        ) : null}
+        {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
 
       <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
@@ -228,6 +221,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
+      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       {currentWorkspace ? (
         <NewSessionDialog
           open={newSessionOpen}
@@ -236,29 +230,17 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onOpenSettings={onOpenSettings}
         />
       ) : null}
-      {workspaceToDelete ? (
-        <DeleteWorkspaceDialog
-          workspace={workspaceToDelete}
-          open={workspaceToDelete !== null}
-          onClose={() => setWorkspaceToDelete(null)}
-        />
-      ) : null}
     </div>
   );
-}
-
-function SectionDivider() {
-  return <div className="mx-3 my-5 h-px bg-border-soft" aria-hidden />;
 }
 
 interface WorkspaceRowProps {
   workspace: Workspace;
   isActive: boolean;
   onClick: () => void;
-  onDelete: () => void;
 }
 
-function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowProps) {
+function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
   const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
 
   return (
@@ -294,23 +276,11 @@ function WorkspaceRow({ workspace, isActive, onClick, onDelete }: WorkspaceRowPr
             e.stopPropagation();
             setWsSettingsOpen(true);
           }}
-          className="mr-0.5 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
-          title="Workspace settings"
+          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
+          title="Workspace settings (incl. disconnect)"
           aria-label={`Settings for workspace ${workspace.name}`}
         >
           <Settings2 size={12} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-danger group-hover:text-muted-foreground"
-          title="Delete workspace"
-          aria-label={`Delete workspace ${workspace.name}`}
-        >
-          <Trash2 size={12} aria-hidden />
         </button>
       </div>
       <WorkspaceSettingsDialog
@@ -635,7 +605,6 @@ function SessionRow({
   onArchive,
   onUnarchive,
 }: SessionRowProps) {
-  const providerId = session.providerPreference.defaultProvider;
   const budget = useAppStore((s) => s.sessionBudgets[session.id as TaskId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
@@ -650,6 +619,7 @@ function SessionRow({
   const [renameDraft, setRenameDraft] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!budgetLoaded.current) {
@@ -758,27 +728,16 @@ function SessionRow({
             <span className="line-clamp-1 flex-1">{session.goal}</span>
           )}
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <span
-              className={cn(
-                'inline-flex items-center rounded-sm px-1 py-0.5 text-2xs font-medium leading-none',
-                PROVIDER_CHIP_COLOR[providerId],
-              )}
-              title={providerId}
-            >
-              {PROVIDER_SHORT[providerId]}
-            </span>
             <StatusBadge state={session.state} />
-            <SessionRowMenu
-              archived={archived}
-              onArchive={onArchive}
-              onUnarchive={onUnarchive}
-              onDelete={() => setConfirmDelete(true)}
-              onRename={() => {
-                setRenameDraft(session.goal);
-                setRenameError(null);
-                setRenaming(true);
-              }}
-            />
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+              title="session settings (rename · budget · archive · delete)"
+              aria-label="session settings"
+            >
+              <Settings2 size={12} aria-hidden />
+            </button>
           </div>
         </div>
 
@@ -830,6 +789,14 @@ function SessionRow({
           onCancel={() => setConfirmDelete(false)}
         />
       )}
+      <SessionSettingsDialog
+        taskId={session.id as TaskId}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        archived={archived}
+        onArchive={onArchive}
+        onUnarchive={onUnarchive}
+      />
     </li>
   );
 }
@@ -838,110 +805,6 @@ interface DeleteConfirmDialogProps {
   sessionGoal: string;
   onConfirm: (e: React.MouseEvent) => void;
   onCancel: () => void;
-}
-
-interface SessionRowMenuProps {
-  archived: boolean;
-  onArchive: () => void;
-  onUnarchive: () => void;
-  onDelete: () => void;
-  onRename: () => void;
-}
-
-function SessionRowMenu({
-  archived,
-  onArchive,
-  onUnarchive,
-  onDelete,
-  onRename,
-}: SessionRowMenuProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
-    };
-    window.addEventListener('mousedown', onClick);
-    return () => window.removeEventListener('mousedown', onClick);
-  }, [open]);
-
-  const choose = (fn: () => void) => () => {
-    setOpen(false);
-    fn();
-  };
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-        title="session menu"
-        aria-label="session menu"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <MoreHorizontal size={12} aria-hidden />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-5 z-20 min-w-[8.5rem] overflow-hidden rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
-        >
-          <MenuItem onClick={choose(onRename)}>
-            <span className="flex items-center gap-2">rename</span>
-          </MenuItem>
-          {archived ? (
-            <MenuItem onClick={choose(onUnarchive)}>
-              <span className="flex items-center gap-2">
-                <ArchiveRestore size={11} aria-hidden /> unarchive
-              </span>
-            </MenuItem>
-          ) : (
-            <MenuItem onClick={choose(onArchive)}>
-              <span className="flex items-center gap-2">
-                <Archive size={11} aria-hidden /> archive
-              </span>
-            </MenuItem>
-          )}
-          <MenuItem onClick={choose(onDelete)} danger>
-            <span className="flex items-center gap-2">
-              <Trash2 size={11} aria-hidden /> delete
-            </span>
-          </MenuItem>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuItem({
-  children,
-  onClick,
-  danger,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      className={cn(
-        'flex w-full items-center px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
-        danger ? 'text-danger' : 'text-foreground',
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function DeleteConfirmDialog({ sessionGoal, onConfirm, onCancel }: DeleteConfirmDialogProps) {
@@ -1212,6 +1075,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
+  const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -1257,9 +1121,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
   };
 
+  const onDeleteAgent = async (id: SessionId) => {
+    try {
+      await deleteAgent(task.id, id);
+    } catch (err) {
+      setSpawnError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   return (
-    <section className="flex flex-col px-2 pb-3 pt-2">
-      <header className="flex items-center justify-between gap-2 px-2 pb-1.5">
+    <section className="mt-8 flex flex-col px-2 pb-3">
+      <header className="flex items-center justify-between gap-2 pb-1.5">
         <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           Agents
         </span>
@@ -1286,6 +1158,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               onRenameStart={() => setEditingId(run.id)}
               onRenameCommit={(name) => void onRenameCommit(run.id, name)}
               onRenameCancel={() => setEditingId(null)}
+              onDelete={() => void onDeleteAgent(run.id)}
             />
           ))}
         </ul>
@@ -1400,6 +1273,7 @@ interface AgentRowProps {
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
+  readonly onDelete: () => void;
 }
 
 function AgentRow({
@@ -1411,6 +1285,7 @@ function AgentRow({
   onRenameStart,
   onRenameCommit,
   onRenameCancel,
+  onDelete,
 }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
@@ -1425,14 +1300,31 @@ function AgentRow({
   ].filter((p): p is string => p !== null);
 
   const [draft, setDraft] = useState(run.name);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   useEffect(() => {
     if (isEditing) setDraft(run.name);
   }, [isEditing, run.name]);
+  useEffect(() => {
+    if (isEditing) setConfirmingDelete(false);
+  }, [isEditing]);
 
   return (
     <li
+      role={isEditing ? undefined : 'button'}
+      tabIndex={isEditing ? -1 : 0}
+      aria-pressed={isEditing ? undefined : isSelected}
+      onClick={isEditing ? undefined : onClick}
+      onDoubleClick={isEditing ? undefined : onRenameStart}
+      onKeyDown={(e) => {
+        if (isEditing) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
         'group rounded-md transition-colors',
+        isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-muted' : 'hover:bg-muted/60',
       )}
     >
@@ -1449,7 +1341,10 @@ function AgentRow({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
+              e.stopPropagation();
               if (e.key === 'Enter') {
                 e.preventDefault();
                 onRenameCommit(draft);
@@ -1463,52 +1358,179 @@ function AgentRow({
             aria-label="rename agent"
           />
         ) : (
-          <button
-            type="button"
-            onClick={onClick}
+          <span
             className={cn(
-              'line-clamp-1 flex-1 rounded-full px-1.5 py-0.5 text-left text-2xs font-medium',
-              isSelected ? 'bg-primary text-primary-foreground' : 'bg-subtle text-foreground',
+              'line-clamp-1 flex-1 text-left text-2xs font-medium',
+              isSelected ? 'text-foreground' : 'text-muted-foreground',
             )}
-            aria-label={`role chip: ${run.name}`}
-            aria-pressed={isSelected}
           >
             {run.name}
-          </button>
+          </span>
         )}
         {!isEditing ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRenameStart();
-            }}
-            className="invisible shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:visible hover:text-foreground"
-            title="rename agent"
-            aria-label="rename agent"
-          >
-            <Pencil size={11} aria-hidden />
-          </button>
+          confirmingDelete ? (
+            <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded px-1 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="cancel"
+              >
+                cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  onDelete();
+                }}
+                className="rounded px-1 py-0.5 text-2xs font-medium text-danger transition-colors hover:bg-danger/10"
+                title="confirm delete"
+              >
+                delete
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmingDelete(true);
+              }}
+              className="invisible shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:visible hover:text-danger"
+              title="delete agent (double-click row to rename)"
+              aria-label="delete agent"
+            >
+              <Trash2 size={11} aria-hidden />
+            </button>
+          )
         ) : null}
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
       </div>
-      {telemetry ? (
-        <div className="flex items-center gap-1.5 px-2 pb-1.5 pl-[1.875rem] text-2xs text-muted-foreground/80">
-          <span>{shortModel(telemetry.model)}</span>
-          {total !== null ? (
+      <div className="flex flex-col gap-0.5 px-2 pb-1.5 pl-[1.875rem]">
+        <div className="flex items-center gap-1.5 text-2xs text-muted-foreground/80">
+          {telemetry ? (
             <>
+              <span>{shortModel(telemetry.model)}</span>
               <span aria-hidden>·</span>
-              <span title={`${total.toLocaleString()} tokens (last turn)`}>
-                {formatTokens(total)} tok
-              </span>
             </>
           ) : null}
-          <span aria-hidden>·</span>
-          <span title={`$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)`}>
-            {formatCost(telemetry.estimatedCostUsd)}
+          <span
+            title={
+              telemetry
+                ? `in: ${telemetry.inputTokens.toLocaleString()} tokens (last turn)`
+                : 'no input tokens yet'
+            }
+          >
+            ↓ {telemetry ? formatTokens(telemetry.inputTokens) : '0'}
           </span>
+          <span aria-hidden>·</span>
+          <span
+            title={
+              telemetry
+                ? `out: ${telemetry.outputTokens.toLocaleString()} tokens (last turn)`
+                : 'no output tokens yet'
+            }
+          >
+            ↑ {telemetry ? formatTokens(telemetry.outputTokens) : '0'}
+          </span>
+          <span aria-hidden>·</span>
+          <span
+            title={
+              telemetry ? `$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)` : 'no cost yet'
+            }
+          >
+            {telemetry ? formatCost(telemetry.estimatedCostUsd) : '$0'}
+          </span>
+          <span aria-hidden>·</span>
+          <AgentLifetime run={run} />
         </div>
-      ) : null}
+        <ContextWindowBar telemetry={telemetry} />
+      </div>
     </li>
+  );
+}
+
+function findContextWindow(model: string): number | null {
+  for (const cap of Object.values(PROVIDER_CAPABILITIES)) {
+    const m = cap.models.find((mm) => mm.id === model);
+    if (m) return m.contextWindow;
+  }
+  return null;
+}
+
+function formatRelativeDuration(fromIso: string, toIso?: string): string {
+  const fromMs = Date.parse(fromIso);
+  if (Number.isNaN(fromMs)) return '';
+  const toMs = toIso ? Date.parse(toIso) : Date.now();
+  if (Number.isNaN(toMs)) return '';
+  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
+  if (diff < 60) return `${diff}s`;
+  const m = Math.floor(diff / 60);
+  if (m < 60) return `${m}m ${diff % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ${m % 60}m`;
+  const d = Math.floor(h / 24);
+  return `${d}d ${h % 24}h`;
+}
+
+function AgentLifetime({ run }: { run: Session }) {
+  const [now, setNow] = useState(() => Date.now());
+  const isLive = !!run.startedAt && !run.completedAt;
+  useEffect(() => {
+    if (!isLive) return;
+    const id = window.setInterval(() => setNow(Date.now()), 5000);
+    return () => window.clearInterval(id);
+  }, [isLive]);
+
+  if (!run.startedAt) {
+    return (
+      <span className="text-muted-foreground/60" title="agent spawned but has not run yet">
+        not started
+      </span>
+    );
+  }
+
+  const ageStr = formatRelativeDuration(run.startedAt, run.completedAt);
+  const dotNow = now;
+  void dotNow; // recalculation trigger
+  const tooltip = run.completedAt
+    ? `started ${run.startedAt}\ncompleted ${run.completedAt}\nworked ${ageStr}`
+    : `started ${run.startedAt}\nworking for ${ageStr}`;
+
+  return (
+    <span className="font-mono text-muted-foreground/80" title={tooltip}>
+      {run.completedAt ? `⏱ ${ageStr}` : `⏱ ${ageStr} (live)`}
+    </span>
+  );
+}
+
+function ContextWindowBar({ telemetry }: { telemetry: TelemetryRecord | null }) {
+  if (!telemetry) return null;
+  const window = findContextWindow(telemetry.model);
+  if (!window) return null;
+  const used = telemetry.inputTokens;
+  const pct = Math.min(1, used / window);
+  const tone =
+    pct >= 0.9 ? 'bg-danger' : pct >= 0.75 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
+  const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
+  return (
+    <div
+      className="flex flex-col gap-0.5"
+      title={`context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)`}
+    >
+      <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
+        <span>ctx</span>
+        <span className="font-mono">
+          {formatTokens(used)} / {windowLabel} · {Math.round(pct * 100)}%
+        </span>
+      </div>
+      <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted/60">
+        <div
+          className={cn('h-full rounded-full transition-all', tone)}
+          style={{ width: `${pct * 100}%` }}
+        />
+      </div>
+    </div>
   );
 }

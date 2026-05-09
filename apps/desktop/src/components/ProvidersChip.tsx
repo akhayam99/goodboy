@@ -2,7 +2,7 @@ import { cn } from '@kay-am/ui';
 import { useAppStore } from '../store';
 
 interface ProvidersChipProps {
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }
 
 const PROVIDER_DOT: Record<string, string> = {
@@ -11,17 +11,23 @@ const PROVIDER_DOT: Record<string, string> = {
   codex: 'bg-[var(--color-provider-codex)]',
 };
 
-export function ProvidersChip({ onOpenSettings }: ProvidersChipProps) {
+export function ProvidersChip(_: ProvidersChipProps = {}) {
   const providers = useAppStore((s) => s.providers);
   const active = providers.filter((p) => p.connection !== 'coming-soon');
   const connected = active.filter((p) => p.connection === 'connected');
   const total = active.length;
   const allOk = total > 0 && connected.length === total;
 
+  const onClick = () => {
+    window.dispatchEvent(
+      new CustomEvent('kayam:open-settings', { detail: { section: 'providers' } }),
+    );
+  };
+
   return (
     <button
       type="button"
-      onClick={onOpenSettings}
+      onClick={onClick}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted',
         allOk ? 'text-muted-foreground' : 'text-danger',

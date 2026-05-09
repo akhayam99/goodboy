@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitBranch, ShieldCheck } from 'lucide-react';
+import { GitBranch, MessagesSquare, ShieldCheck } from 'lucide-react';
 import { Button, Tooltip, cn } from '@kay-am/ui';
 import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
@@ -32,6 +32,9 @@ export function ChatHeader({
   const branch = inferBranch(worktreePath, session.id);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const events = useAppStore((s) => s.transcripts[session.id] ?? EMPTY_ARRAY);
+  const userTurns = events.filter((e) => e.kind === 'user_text').length;
+  const assistantReplies = events.filter((e) => e.kind === 'done').length;
 
   const runStatuses = Object.fromEntries(
     (parallelRunIds ?? []).map((rid) => {
@@ -53,7 +56,7 @@ export function ChatHeader({
   };
 
   return (
-    <div className="flex w-full items-center gap-3 px-4 py-2.5">
+    <div className="mx-auto flex w-full max-w-[1200px] items-center gap-3 px-8 py-2.5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
@@ -77,6 +80,17 @@ export function ChatHeader({
             <span className="font-mono">{branch}</span>
             {copied ? <span className="text-success">copied</span> : null}
           </button>
+          <span
+            className="inline-flex items-center gap-1"
+            title={`${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`}
+          >
+            <MessagesSquare size={12} aria-hidden />
+            <span className="font-mono text-foreground/85">{userTurns}</span>
+            <span>turn{userTurns === 1 ? '' : 's'}</span>
+            {assistantReplies > 0 ? (
+              <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
+            ) : null}
+          </span>
           {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
         </div>
       </div>

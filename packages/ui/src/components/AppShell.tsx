@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 
 export interface AppShellProps {
@@ -9,21 +9,53 @@ export interface AppShellProps {
   className?: string;
 }
 
-const LEFT_SIDEBAR_WIDTH = '280px';
-const RIGHT_SIDEBAR_WIDTH = '340px';
-const RIGHT_RAIL_WIDTH = '40px';
+const LEFT_SIDEBAR_MIN = 220;
+const LEFT_SIDEBAR_MAX = 480;
+const LEFT_SIDEBAR_DEFAULT = 280;
+const LEFT_SIDEBAR_STORAGE_KEY = 'kayam:left-sidebar-width';
 
-function buildLayout(opts: { collapsed: boolean; hasRightSidebar: boolean }): {
+const RIGHT_SIDEBAR_MIN = 260;
+const RIGHT_SIDEBAR_MAX = 560;
+const RIGHT_SIDEBAR_DEFAULT = 340;
+const RIGHT_SIDEBAR_STORAGE_KEY = 'kayam:right-sidebar-width';
+const RIGHT_RAIL_WIDTH = 40;
+
+function readPersistedWidth(key: string, def: number, min: number, max: number): number {
+  if (typeof localStorage === 'undefined') return def;
+  const raw = localStorage.getItem(key);
+  if (!raw) return def;
+  const parsed = parseInt(raw, 10);
+  if (Number.isNaN(parsed)) return def;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function buildLayout(opts: {
+  collapsed: boolean;
+  hasRightSidebar: boolean;
+  leftWidthPx: number;
+  rightWidthPx: number;
+}): {
   templateAreas: string;
   templateColumns: string;
 } {
-  const { collapsed, hasRightSidebar } = opts;
-  const rightColWidth = collapsed ? RIGHT_RAIL_WIDTH : RIGHT_SIDEBAR_WIDTH;
-  const templateColumns = hasRightSidebar
-    ? `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr) ${rightColWidth}`
-    : `${LEFT_SIDEBAR_WIDTH} minmax(0,1fr)`;
-  const templateAreas = hasRightSidebar ? `"left main right"` : `"left main"`;
-  return { templateAreas, templateColumns };
+  const { collapsed, hasRightSidebar, leftWidthPx, rightWidthPx } = opts;
+  const leftCol = `${leftWidthPx}px`;
+  if (!hasRightSidebar) {
+    return {
+      templateAreas: `"left lhandle main"`,
+      templateColumns: `${leftCol} 6px minmax(0,1fr)`,
+    };
+  }
+  if (collapsed) {
+    return {
+      templateAreas: `"left lhandle main right"`,
+      templateColumns: `${leftCol} 6px minmax(0,1fr) ${RIGHT_RAIL_WIDTH}px`,
+    };
+  }
+  return {
+    templateAreas: `"left lhandle main rhandle right"`,
+    templateColumns: `${leftCol} 6px minmax(0,1fr) 6px ${rightWidthPx}px`,
+  };
 }
 
 export function AppShell({
@@ -34,7 +66,103 @@ export function AppShell({
   className,
 }: AppShellProps) {
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
-  const layout = buildLayout({ collapsed: rightSidebarCollapsed, hasRightSidebar });
+  const [leftWidth, setLeftWidth] = useState<number>(() =>
+    readPersistedWidth(
+      LEFT_SIDEBAR_STORAGE_KEY,
+      LEFT_SIDEBAR_DEFAULT,
+      LEFT_SIDEBAR_MIN,
+      LEFT_SIDEBAR_MAX,
+    ),
+  );
+  const [rightWidth, setRightWidth] = useState<number>(() =>
+    readPersistedWidth(
+      RIGHT_SIDEBAR_STORAGE_KEY,
+      RIGHT_SIDEBAR_DEFAULT,
+      RIGHT_SIDEBAR_MIN,
+      RIGHT_SIDEBAR_MAX,
+    ),
+  );
+  const draggingRef = useRef<'left' | 'right' | null>(null);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
+  }, [leftWidth]);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, String(rightWidth));
+  }, [rightWidth]);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const which = draggingRef.current;
+      if (!which) return;
+      e.preventDefault();
+      if (which === 'left') {
+        const next = Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, e.clientX));
+        setLeftWidth(next);
+      } else {
+        // right handle: width grows as cursor moves toward the left edge
+        const next = Math.max(
+          RIGHT_SIDEBAR_MIN,
+          Math.min(RIGHT_SIDEBAR_MAX, window.innerWidth - e.clientX),
+        );
+        setRightWidth(next);
+      }
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const startDrag = (which: 'left' | 'right') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    draggingRef.current = which;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const onLeftKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const step = e.shiftKey ? 32 : 8;
+    setLeftWidth((w) =>
+      Math.max(
+        LEFT_SIDEBAR_MIN,
+        Math.min(LEFT_SIDEBAR_MAX, w + (e.key === 'ArrowLeft' ? -step : step)),
+      ),
+    );
+  };
+
+  const onRightKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const step = e.shiftKey ? 32 : 8;
+    // ArrowLeft → grow right sidebar; ArrowRight → shrink it
+    setRightWidth((w) =>
+      Math.max(
+        RIGHT_SIDEBAR_MIN,
+        Math.min(RIGHT_SIDEBAR_MAX, w + (e.key === 'ArrowLeft' ? step : -step)),
+      ),
+    );
+  };
+
+  const layout = buildLayout({
+    collapsed: rightSidebarCollapsed,
+    hasRightSidebar,
+    leftWidthPx: leftWidth,
+    rightWidthPx: rightWidth,
+  });
   const gridStyle: CSSProperties = {
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
@@ -44,11 +172,7 @@ export function AppShell({
   return (
     <div className="h-screen w-screen bg-background">
       <div
-        className={cn(
-          'grid h-full w-full overflow-hidden text-foreground',
-          'motion-safe:[transition:grid-template-columns_var(--motion-normal,200ms)_var(--ease-emphasized,cubic-bezier(0.2,0,0,1))]',
-          className,
-        )}
+        className={cn('grid h-full w-full overflow-hidden text-foreground', className)}
         style={gridStyle}
       >
         <aside
@@ -57,15 +181,44 @@ export function AppShell({
         >
           {leftSidebar}
         </aside>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="resize left sidebar"
+          tabIndex={0}
+          onMouseDown={startDrag('left')}
+          onKeyDown={onLeftKeyDown}
+          className="group relative cursor-col-resize select-none"
+          style={{ gridArea: 'lhandle' }}
+        >
+          <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
+        </div>
         <main
           className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
           style={{ gridArea: 'main' }}
         >
           {main}
         </main>
+        {hasRightSidebar && !rightSidebarCollapsed ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="resize right sidebar"
+            tabIndex={0}
+            onMouseDown={startDrag('right')}
+            onKeyDown={onRightKeyDown}
+            className="group relative cursor-col-resize select-none"
+            style={{ gridArea: 'rhandle' }}
+          >
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
+          </div>
+        ) : null}
         {hasRightSidebar ? (
           <aside
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+            className={cn(
+              'flex min-h-0 min-w-0 flex-col overflow-hidden',
+              rightSidebarCollapsed ? 'bg-background' : 'm-3 rounded-xl bg-subtle shadow-sm',
+            )}
             style={{ gridArea: 'right' }}
           >
             {rightSidebar}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Collapsible, CopyButton, Markdown, cn } from '@kay-am/ui';
+import { Check, ChevronRight, Copy, Wrench } from 'lucide-react';
+import { CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
@@ -21,7 +22,7 @@ interface TranscriptCardProps {
 export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
-      return <UserText text={item.text} />;
+      return <UserText text={item.text} at={item.at} />;
     case 'assistant_text':
       return <AssistantText text={item.text} />;
     case 'tool_call':
@@ -83,48 +84,111 @@ function AssistantText({ text }: { text: string }) {
   );
 }
 
-function UserText({ text }: { text: string }) {
+function formatHHMM(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function InlineCopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  };
   return (
-    <div className="group relative ml-auto w-fit max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
-      <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
-        <CopyButton value={text} label="message" />
-      </div>
+    <button
+      type="button"
+      onClick={(e) => void onCopy(e)}
+      title={copied ? 'copied' : 'copy message'}
+      aria-label="copy message"
+      className="rounded p-0.5 text-foreground/60 transition-colors hover:bg-primary/20 hover:text-foreground"
+    >
+      {copied ? <Check size={11} aria-hidden /> : <Copy size={11} aria-hidden />}
+    </button>
+  );
+}
+
+function UserText({ text, at }: { text: string; at: string }) {
+  return (
+    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1 rounded-2xl bg-primary/15 px-4 pb-1.5 pt-2.5 ring-1 ring-primary/20">
       <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+      <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
+        <span className="font-mono">{formatHHMM(at)}</span>
+        <InlineCopyButton value={text} />
+      </div>
     </div>
   );
 }
 
 function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' }> }) {
   const [open, setOpen] = useState(false);
-  const tone = item.isError ? 'border-danger/40 bg-danger/5' : 'border-border bg-muted';
+  const running = !item.ended;
+  const accent = item.isError
+    ? 'text-danger'
+    : running
+      ? 'text-muted-foreground/70'
+      : 'text-muted-foreground';
+
   return (
-    <div className={cn('rounded-md border px-2 py-1.5', tone)}>
-      <Collapsible
-        open={open}
-        onOpenChange={setOpen}
-        trigger={
-          <span className="flex items-center gap-2 text-xs font-medium">
-            <span className="rounded bg-background px-1.5 py-0.5 font-mono text-2xs uppercase">
-              tool
-            </span>
-            {item.toolName}
-            {!item.ended ? (
-              <span className="text-muted-foreground">…</span>
-            ) : item.isError ? (
-              <span className="text-danger">error</span>
-            ) : null}
-          </span>
-        }
+    <div className="group">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
+          item.isError && 'text-danger',
+        )}
       >
-        <pre className="overflow-x-auto rounded bg-background p-2 text-xs text-muted-foreground">
-          input: {JSON.stringify(item.input, null, 2)}
-        </pre>
-        {item.ended ? (
-          <pre className="mt-1 overflow-x-auto rounded bg-background p-2 text-xs text-muted-foreground">
-            output: {JSON.stringify(item.output, null, 2)}
-          </pre>
+        <ChevronRight
+          size={11}
+          aria-hidden
+          className={cn(
+            'shrink-0 text-muted-foreground/60 motion-safe:transition-transform',
+            open && 'rotate-90',
+          )}
+        />
+        <Wrench size={11} aria-hidden className={cn('shrink-0', accent)} />
+        <span className="font-mono text-foreground/85">{item.toolName}</span>
+        {running ? (
+          <span className="flex shrink-0 gap-0.5">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
+            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
+            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
+          </span>
+        ) : item.isError ? (
+          <span className="text-2xs uppercase tracking-wide text-danger">error</span>
         ) : null}
-      </Collapsible>
+      </button>
+      {open ? (
+        <div className="ml-[1.125rem] mt-1 flex flex-col gap-1">
+          <pre className="overflow-x-auto rounded bg-subtle p-2 text-2xs text-muted-foreground">
+            input: {JSON.stringify(item.input, null, 2)}
+          </pre>
+          {item.ended ? (
+            <pre className="overflow-x-auto rounded bg-subtle p-2 text-2xs text-muted-foreground">
+              output: {JSON.stringify(item.output, null, 2)}
+            </pre>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

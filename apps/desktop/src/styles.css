@@ -103,3 +103,42 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+/* Thin, non-intrusive scrollbars across the whole app. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  transition: background-color var(--motion-normal) var(--ease-default);
+}
+
+*:hover::-webkit-scrollbar-thumb,
+*:focus-within::-webkit-scrollbar-thumb {
+  background: oklch(from var(--color-border) l c h / 0.5);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(from var(--color-border) l c h / 0.85);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*:hover {
+  scrollbar-color: oklch(from var(--color-border) l c h / 0.5) transparent;
+}

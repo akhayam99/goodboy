@@ -306,6 +306,7 @@ export interface AppActions {
   selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
+  deleteAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
   setSessionMergeConflicts(taskId: TaskId, conflicts: ReadonlyArray<FileConflict>): void;
@@ -1329,6 +1330,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (nextState.kind === 'draft') {
         nextState = turnReducer(nextState, { kind: 'start', at: now() });
       }
+      if (nextState.kind === 'error') {
+        nextState = turnReducer(nextState, { kind: 'retry', at: now() });
+      }
       nextState = turnReducer(nextState, { kind: 'send', runId, at: now() });
       await updateTaskState(tauriDatabase, taskId, nextState, now());
       applySessionUpdate(set, taskId, nextState);
@@ -1447,6 +1451,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       let nextStateP: TurnState = session.state;
       if (nextStateP.kind === 'draft') {
         nextStateP = turnReducer(nextStateP, { kind: 'start', at: now() });
+      }
+      if (nextStateP.kind === 'error') {
+        nextStateP = turnReducer(nextStateP, { kind: 'retry', at: now() });
       }
       nextStateP = turnReducer(nextStateP, {
         kind: 'send',
@@ -2191,6 +2198,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
     }));
+  },
+
+  deleteAgent: async (taskId, agentId) => {
+    await tauriDatabase.execute('DELETE FROM sessions WHERE id = ?', [agentId]);
+    const refreshed = await invokePhaseRunList(taskId);
+    set((s) => {
+      const wasSelected = s.selectedAgentId[taskId] === agentId;
+      const nextSelected = { ...s.selectedAgentId };
+      if (wasSelected) {
+        const fallback = refreshed[0]?.id ?? null;
+        if (fallback) nextSelected[taskId] = fallback;
+        else delete nextSelected[taskId];
+      }
+      return {
+        sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
+        selectedAgentId: nextSelected,
+      };
+    });
   },
 
   wipeLocalDatabase: async () => {

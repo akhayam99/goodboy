@@ -37,8 +37,9 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
   anthropic: 'https://docs.claude.com/en/docs/claude-code/overview',
-  cursor: 'https://docs.cursor.com/cli',
-  codex: 'https://github.com/openai/codex',
+  // cursor-agent (CLI), NOT cursor IDE — point at the agent CLI install docs.
+  cursor: 'https://docs.cursor.com/en/cli/installation',
+  codex: 'https://github.com/openai/codex#installation',
 };
 
 const TRACKING_ISSUES: Partial<Record<ProviderId, string>> = {

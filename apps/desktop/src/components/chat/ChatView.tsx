@@ -88,19 +88,41 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
   );
 }
 
+function dayKey(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'unknown';
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function formatDayLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.round((startOf(now) - startOf(d)) / 86_400_000);
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays > 0 && diffDays < 7) {
+    return d.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase();
+  }
+  return d
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    .toLowerCase();
+}
+
 function ThinkingIndicator() {
   return (
     <div
       role="status"
       aria-label="claude is thinking"
-      className="flex w-fit items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground"
+      className="flex w-fit items-center gap-1.5 px-1 py-0.5 text-2xs italic text-muted-foreground/80"
     >
-      <span className="flex gap-1">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:0ms]" />
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:150ms]" />
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:300ms]" />
+      <span className="flex gap-0.5">
+        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:0ms]" />
+        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:150ms]" />
+        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:300ms]" />
       </span>
-      thinking…
+      thinking
     </div>
   );
 }
@@ -244,30 +266,70 @@ export function ChatView({ session }: ChatViewProps) {
     <div className="flex h-full flex-col">
       <ChatHeader session={session} worktreePath={worktreePath} />
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scrollerRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 py-4">
+        <div
+          ref={scrollerRef}
+          onScroll={onScroll}
+          className="flex-1 overflow-y-auto px-8 py-4"
+          style={{ scrollbarGutter: 'stable' }}
+        >
           {items.length === 0 ? (
             isProviderDisconnected ? (
-              <AuthRequiredCallout
-                providerId={provider}
-                identity={providerIdentity}
-                onRefresh={() => void refreshProviders()}
-              />
+              <div className="mx-auto w-full max-w-[1200px]">
+                <AuthRequiredCallout
+                  providerId={provider}
+                  identity={providerIdentity}
+                  onRefresh={() => void refreshProviders()}
+                />
+              </div>
             ) : (
-              <p className="text-sm text-muted-foreground">no turns yet — send a message.</p>
+              <p className="mx-auto w-full max-w-[1200px] text-sm text-muted-foreground">
+                no turns yet — send a message.
+              </p>
             )
           ) : (
             <ul
-              className="mx-auto flex max-w-3xl flex-col gap-6"
+              className="mx-auto flex w-full max-w-[1200px] flex-col"
               aria-live="polite"
               aria-relevant="additions"
             >
-              {items.map((item) => (
-                <li key={item.key}>
-                  <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
-                </li>
-              ))}
+              {(() => {
+                const tightKinds = new Set([
+                  'tool_call',
+                  'file_edit',
+                  'skill_invocation',
+                  'permission_request',
+                  'permission_decision',
+                  'usage',
+                ]);
+                let lastDay: string | null = null;
+                return items.map((item, idx) => {
+                  const prev = idx > 0 ? (items[idx - 1] ?? null) : null;
+                  const isTight =
+                    prev !== null && tightKinds.has(item.kind) && tightKinds.has(prev.kind);
+                  const node: React.ReactNode[] = [];
+                  if (item.kind === 'user_text') {
+                    const day = dayKey(item.at);
+                    if (day !== lastDay) {
+                      node.push(
+                        <li key={`day-${day}-${idx}`} className="my-4 flex justify-center">
+                          <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                            {formatDayLabel(item.at)}
+                          </span>
+                        </li>,
+                      );
+                      lastDay = day;
+                    }
+                  }
+                  node.push(
+                    <li key={item.key} className={isTight ? 'mt-1' : idx === 0 ? '' : 'mt-6'}>
+                      <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
+                    </li>,
+                  );
+                  return node;
+                });
+              })()}
               {isThinking ? (
-                <li>
+                <li className="mt-6">
                   <ThinkingIndicator />
                 </li>
               ) : null}

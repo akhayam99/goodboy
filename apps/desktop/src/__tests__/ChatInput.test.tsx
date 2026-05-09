@@ -100,7 +100,7 @@ describe('ChatInput — input wiring', () => {
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
   });
 
-  it('textarea is disabled when session is running', () => {
+  it('textarea stays enabled when session is running so user can queue next message', () => {
     render(
       <ChatInput
         session={makeSession({
@@ -113,7 +113,7 @@ describe('ChatInput — input wiring', () => {
       />,
     );
     const textarea = screen.getByRole('textbox');
-    expect((textarea as HTMLTextAreaElement).disabled).toBe(true);
+    expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
   });
 
   it('Enter sends the turn and clears the input', async () => {
