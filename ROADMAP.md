@@ -2,19 +2,20 @@
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues are created only as they approach implementation.
 
-> **Status**: v0.7 complete. pre-1.0 UX polish complete. v1.0 next.
+> **Status**: v0.7 complete. pre-1.0 UX polish complete. **per-agent chat model live** (workspace > session > agent (n), shared context). Sidebar-first IA shipped (no header/footer chrome). v1.0 next.
 
 ## Architectural decisions (locked)
 
-These are the non-negotiable choices that frame all of v0.1 and constrain later versions.
+These are the non-negotiable choices that frame the product. Numbers preserved for cross-references in old issues.
 
-1. **Provider integration via headless CLI spawn** — `claude -p "<prompt>" --output-format stream-json --working-dir <worktree> --dangerously-skip-permissions`. The user's existing subscription (Claude Max, Cursor Pro, ChatGPT Pro) is consumed via the official provider CLI. Anthropic / OpenAI / Cursor SDKs are explicitly NOT used in v0.1 — they require per-token billing and would defeat the "spend less" mission.
+1. **Provider integration via headless CLI spawn** — `claude -p "<prompt>" --output-format stream-json --working-dir <worktree>`. The user's existing subscription (Claude Max, Cursor Pro, ChatGPT Pro) is consumed via the official provider CLI. Anthropic / OpenAI / Cursor SDKs are explicitly NOT used — they require per-token billing and would defeat the "spend less" mission.
 2. **kAY.am owns the conversation** — history lives in our SQLite, not in `~/.claude/projects/`. Every turn is reconstructed from the synthetic context plus the new user message; we never rely on `--resume`. This is what makes context portable across providers.
 3. **Synthetic context = hybrid structured slots** — fixed slots (`goal`, `files_touched`, `decisions`, `open_questions`, `last_output_summary`), editable by hand at any time, auto-updated post-turn by a cheap summarizer (active provider's cheap-tier model via CLI — no separate API key required, runs against the user's existing subscription).
-4. **Isolation = git worktree per session** — branch prefix configurable per workspace (default `kay`). Worktree is the sandbox that makes `--dangerously-skip-permissions` acceptable in v0.1.
+4. **Isolation = git worktree per session** — branch prefix configurable per workspace (default `kay`). Worktree is the sandbox in which agents operate.
 5. **Provider scope, phased** — v0.1 ships with Claude only behind a stable adapter interface; v0.2 adds Cursor + Codex together to stress-test the contract on two new adapters at once.
-6. **Permission model v0.1** — `--dangerously-skip-permissions` ON, contained by the worktree sandbox. Permission proxy (intercept tool-calls → UI approve/deny) lands in v0.6 once we know what real usage demands.
+6. **Permission proxy** — landed in v0.6 for Claude (intercept tool-calls → UI approve/deny). Cursor + Codex coverage tracked in later milestones.
 7. **Stack (already scaffolded)** — Tauri 2 + React 19 + TypeScript 5 strict + Vite 6 + Tailwind v4 + Zustand + SQLite. Monorepo via pnpm workspaces + Turborepo. See [CLAUDE.md](./CLAUDE.md) and [CONVENTIONS.md](./CONVENTIONS.md).
+8. **Domain model = workspace > session > agent (n)** _(introduced post-v0.7)_ — sessions own a goal, a worktree, and a shared context panel. Agents are independent chat threads inside a session, spawned at will from the sidebar; they share the session's context but each owns its own message history. Workflows became an optional preset that pre-spawns N named agents at session creation, not a load-bearing concept. DB tables `tasks` (session) and `sessions` (agent) keep their legacy names; types still expose `Task` / `Session` to avoid a cascading rename.
 
 Full design spec: see the conversation that produced this roadmap. Architectural decisions are restated here so the doc stands alone.
 
