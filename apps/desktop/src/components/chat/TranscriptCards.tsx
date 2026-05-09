@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Collapsible, CopyButton, cn } from '@kay-am/ui';
+import { Collapsible, CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
@@ -78,7 +78,7 @@ function AssistantText({ text }: { text: string }) {
       <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
-      <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground">{text}</p>
+      <Markdown text={text} />
     </div>
   );
 }
