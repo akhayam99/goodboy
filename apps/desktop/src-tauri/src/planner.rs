@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum SummarizeError {
+pub enum PlannerError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
 }
 
-impl Serialize for SummarizeError {
+impl Serialize for PlannerError {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serde_json::Map::new();
         map.insert(
@@ -26,18 +26,18 @@ impl Serialize for SummarizeError {
     }
 }
 
-impl SummarizeError {
+impl PlannerError {
     fn kind(&self) -> &'static str {
         match self {
-            SummarizeError::Io(_) => "io",
-            SummarizeError::UnknownProvider(_) => "unknown_provider",
+            PlannerError::Io(_) => "io",
+            PlannerError::UnknownProvider(_) => "unknown_provider",
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SummarizeArgs {
+pub struct PlannerArgs {
     pub provider_id: String,
     pub model: String,
     pub binary: String,
@@ -47,14 +47,14 @@ pub struct SummarizeArgs {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SummarizeResult {
+pub struct PlannerResult {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
 }
 
 #[tauri::command]
-pub fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
+pub fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerError> {
     let cli_args = build_cli_args(&args)?;
 
     let output = Command::new(&args.binary)
@@ -63,14 +63,14 @@ pub fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeE
         .stderr(Stdio::piped())
         .output()?;
 
-    Ok(SummarizeResult {
+    Ok(PlannerResult {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
         stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         exit_code: output.status.code(),
     })
 }
 
-fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
+fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
     match args.provider_id.as_str() {
         "anthropic" => Ok(vec![
             "-p".to_string(),
@@ -100,6 +100,6 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             "--".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
         ]),
-        other => Err(SummarizeError::UnknownProvider(other.to_string())),
+        other => Err(PlannerError::UnknownProvider(other.to_string())),
     }
 }

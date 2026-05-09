@@ -102,12 +102,12 @@ function rowToPhaseRun(row: RawPhaseRunRow): Session {
 // ---------------------------------------------------------------------------
 
 export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise<Workflow[]> {
-  const rows = await invoke<RawPhaseTemplateRow[]>('phase_template_list', { workspaceId });
+  const rows = await invoke<RawPhaseTemplateRow[]>('workflow_list', { workspaceId });
   return rows.map(rowToTemplate);
 }
 
 export async function invokePhaseTemplateGet(id: WorkflowId): Promise<Workflow | null> {
-  const row = await invoke<RawPhaseTemplateRow | null>('phase_template_get', { id });
+  const row = await invoke<RawPhaseTemplateRow | null>('workflow_get', { id });
   return row ? rowToTemplate(row) : null;
 }
 
@@ -129,7 +129,7 @@ export interface PhaseTemplateUpsertArgs {
 }
 
 export async function invokePhaseTemplateUpsert(args: PhaseTemplateUpsertArgs): Promise<Workflow> {
-  const row = await invoke<RawPhaseTemplateRow>('phase_template_upsert', {
+  const row = await invoke<RawPhaseTemplateRow>('workflow_upsert', {
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
@@ -149,7 +149,7 @@ export async function invokePhaseTemplateUpsert(args: PhaseTemplateUpsertArgs): 
 }
 
 export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
-  return invoke<void>('phase_template_delete', { id });
+  return invoke<void>('workflow_delete', { id });
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function invokePhaseRunList(taskId: TaskId): Promise<Session[]> {
-  const rows = await invoke<RawPhaseRunRow[]>('phase_run_list_for_session', { taskId });
+  const rows = await invoke<RawPhaseRunRow[]>('session_list_for_task', { taskId });
   return rows.map(rowToPhaseRun);
 }
 
@@ -175,7 +175,7 @@ export interface PhaseRunInsertArgs {
 }
 
 export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Session> {
-  const row = await invoke<RawPhaseRunRow>('phase_run_insert', {
+  const row = await invoke<RawPhaseRunRow>('session_insert', {
     input: {
       id: run.id ?? null,
       taskId: run.taskId,
@@ -204,7 +204,7 @@ export async function invokePhaseRunUpdateStatus(
   id: SessionId,
   fields: PhaseRunUpdateFields,
 ): Promise<Session> {
-  const row = await invoke<RawPhaseRunRow>('phase_run_update_status', {
+  const row = await invoke<RawPhaseRunRow>('session_update_status', {
     input: {
       id,
       status: fields.status,
@@ -252,7 +252,7 @@ export interface ParallelPhaseGroupCreateArgs {
 export async function invokeParallelPhaseGroupCreate(
   args: ParallelPhaseGroupCreateArgs,
 ): Promise<ParallelGroup> {
-  const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_create', {
+  const row = await invoke<RawParallelPhaseGroupRow>('parallel_group_create', {
     input: {
       id: args.id ?? null,
       taskId: args.taskId,
@@ -265,7 +265,7 @@ export async function invokeParallelPhaseGroupCreate(
 }
 
 export async function invokeParallelPhaseGroupList(taskId: TaskId): Promise<ParallelGroup[]> {
-  const rows = await invoke<RawParallelPhaseGroupRow[]>('parallel_phase_group_list', {
+  const rows = await invoke<RawParallelPhaseGroupRow[]>('parallel_group_list', {
     taskId,
   });
   return rows.map(rowToParallelPhaseGroup);
@@ -274,19 +274,19 @@ export async function invokeParallelPhaseGroupList(taskId: TaskId): Promise<Para
 export async function invokeParallelPhaseGroupGet(
   id: ParallelGroupId,
 ): Promise<ParallelGroup | null> {
-  const row = await invoke<RawParallelPhaseGroupRow | null>('parallel_phase_group_get', { id });
+  const row = await invoke<RawParallelPhaseGroupRow | null>('parallel_group_get', { id });
   return row != null ? rowToParallelPhaseGroup(row) : null;
 }
 
 export async function invokeParallelPhaseGroupDelete(id: ParallelGroupId): Promise<void> {
-  return invoke<void>('parallel_phase_group_delete', { id });
+  return invoke<void>('parallel_group_delete', { id });
 }
 
 export async function invokeParallelPhaseGroupUpdateCompletedAt(
   id: ParallelGroupId,
   completedAt: IsoDateTime,
 ): Promise<ParallelGroup> {
-  const row = await invoke<RawParallelPhaseGroupRow>('parallel_phase_group_update_completed_at', {
+  const row = await invoke<RawParallelPhaseGroupRow>('parallel_group_update_completed_at', {
     id,
     completedAt,
   });

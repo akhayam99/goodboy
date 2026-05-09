@@ -7,8 +7,8 @@ use crate::db::{Db, DbError};
 pub struct SettingsOverrides {
     #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultPhaseTemplateId")]
-    pub default_phase_template_id: Option<String>,
+    #[serde(rename = "defaultWorkflowId")]
+    pub default_workflow_id: Option<String>,
     #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
     #[serde(rename = "parallelEnabled")]
@@ -22,14 +22,14 @@ pub fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_phase_template_id, default_branch_prefix, parallel_enabled
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
-            default_phase_template_id: row.get(1)?,
+            default_workflow_id: row.get(1)?,
             default_branch_prefix: row.get(2)?,
             parallel_enabled: parallel_raw.map(|v| v != 0),
         })
@@ -52,14 +52,14 @@ pub fn set_workspace_overrides(
     conn.execute(
         "UPDATE workspaces
          SET default_provider_id = ?1,
-             default_phase_template_id = ?2,
+             default_workflow_id = ?2,
              default_branch_prefix = ?3,
              parallel_enabled = ?4,
              updated_at = ?5
          WHERE id = ?6",
         rusqlite::params![
             overrides.default_provider_id,
-            overrides.default_phase_template_id,
+            overrides.default_workflow_id,
             overrides.default_branch_prefix,
             parallel_val,
             now,
@@ -70,20 +70,20 @@ pub fn set_workspace_overrides(
 }
 
 #[tauri::command]
-pub fn get_session_overrides(
+pub fn get_task_overrides(
     state: State<'_, Db>,
-    session_id: String,
+    task_id: String,
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_phase_template_id, default_branch_prefix, parallel_enabled
-         FROM sessions WHERE id = ?1",
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
+         FROM tasks WHERE id = ?1",
     )?;
-    let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
+    let mut rows = stmt.query_map(rusqlite::params![task_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
-            default_phase_template_id: row.get(1)?,
+            default_workflow_id: row.get(1)?,
             default_branch_prefix: row.get(2)?,
             parallel_enabled: parallel_raw.map(|v| v != 0),
         })
@@ -95,29 +95,29 @@ pub fn get_session_overrides(
 }
 
 #[tauri::command]
-pub fn set_session_overrides(
+pub fn set_task_overrides(
     state: State<'_, Db>,
-    session_id: String,
+    task_id: String,
     overrides: SettingsOverrides,
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
     let now = now_ms();
     conn.execute(
-        "UPDATE sessions
+        "UPDATE tasks
          SET default_provider_id = ?1,
-             default_phase_template_id = ?2,
+             default_workflow_id = ?2,
              default_branch_prefix = ?3,
              parallel_enabled = ?4,
              updated_at = ?5
          WHERE id = ?6",
         rusqlite::params![
             overrides.default_provider_id,
-            overrides.default_phase_template_id,
+            overrides.default_workflow_id,
             overrides.default_branch_prefix,
             parallel_val,
             now,
-            session_id,
+            task_id,
         ],
     )?;
     Ok(())

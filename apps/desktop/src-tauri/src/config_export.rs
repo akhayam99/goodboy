@@ -30,8 +30,8 @@ pub struct WorkspaceBundle {
 pub struct WorkspaceOverridesBundle {
     #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultPhaseTemplateId")]
-    pub default_phase_template_id: Option<String>,
+    #[serde(rename = "defaultWorkflowId")]
+    pub default_workflow_id: Option<String>,
     #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
     #[serde(rename = "parallelEnabled")]
@@ -59,7 +59,7 @@ pub struct SkillBundle {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PhaseDefinitionBundle {
     pub id: String,
-    #[serde(rename = "templateId")]
+    #[serde(rename = "workflowId")]
     pub template_id: String,
     pub ordinal: i64,
     pub name: String,
@@ -91,8 +91,8 @@ pub struct PermissionRuleBundle {
     pub scope: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "sessionId")]
-    pub session_id: Option<String>,
+    #[serde(rename = "taskId")]
+    pub task_id: Option<String>,
     #[serde(rename = "patternTool")]
     pub pattern_tool: String,
     #[serde(rename = "patternArgsMatcher")]
@@ -214,7 +214,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     let workspaces = {
         let mut stmt = conn.prepare(
             "SELECT id, name, root_path, created_at, updated_at,
-                    default_provider_id, default_phase_template_id, default_branch_prefix, parallel_enabled
+                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
              FROM workspaces
              ORDER BY created_at ASC",
         )?;
@@ -228,7 +228,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 updated_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
                 overrides: WorkspaceOverridesBundle {
                     default_provider_id: row.get(5)?,
-                    default_phase_template_id: row.get(6)?,
+                    default_workflow_id: row.get(6)?,
                     default_branch_prefix: row.get(7)?,
                     parallel_enabled: parallel_raw.map(|v| v != 0),
                 },
@@ -265,7 +265,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     let phase_templates = {
         let mut stmt = conn.prepare(
             "SELECT id, workspace_id, name, description, created_at, updated_at
-             FROM phase_templates
+             FROM workflows
              ORDER BY workspace_id, created_at ASC",
         )?;
         let template_rows = stmt.query_map([], |row| {
@@ -283,7 +283,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
             let (id, workspace_id, name, description, created_at, updated_at) = row?;
             let mut def_stmt = conn.prepare(
                 "SELECT id, template_id, ordinal, name, prompt_prefix, provider_override, model_override
-                 FROM phase_definitions
+                 FROM steps
                  WHERE template_id = ?1
                  ORDER BY ordinal ASC",
             )?;
@@ -316,7 +316,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     // permission rules — global + workspace scope only (no session-scoped rules; sessions are ephemeral)
     let permission_rules = {
         let mut stmt = conn.prepare(
-            "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
+            "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
              WHERE scope IN ('global', 'workspace')
@@ -327,7 +327,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 id: row.get(0)?,
                 scope: row.get(1)?,
                 workspace_id: row.get(2)?,
-                session_id: row.get(3)?,
+                task_id: row.get(3)?,
                 pattern_tool: row.get(4)?,
                 pattern_args_matcher: row.get(5)?,
                 decision: row.get(6)?,
@@ -507,12 +507,12 @@ pub fn import_config(
             conn.execute(
                 "INSERT INTO workspaces
                    (id, name, root_path, created_at, updated_at,
-                    default_provider_id, default_phase_template_id, default_branch_prefix, parallel_enabled)
+                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
                  ON CONFLICT(id) DO UPDATE SET
                    name                      = excluded.name,
                    default_provider_id       = excluded.default_provider_id,
-                   default_phase_template_id = excluded.default_phase_template_id,
+                   default_workflow_id = excluded.default_workflow_id,
                    default_branch_prefix     = excluded.default_branch_prefix,
                    parallel_enabled          = excluded.parallel_enabled,
                    updated_at                = excluded.updated_at",
@@ -520,7 +520,7 @@ pub fn import_config(
                     w.id, w.name, w.root_path,
                     created_ms, updated_ms,
                     w.overrides.default_provider_id,
-                    w.overrides.default_phase_template_id,
+                    w.overrides.default_workflow_id,
                     w.overrides.default_branch_prefix,
                     parallel_val,
                 ],
@@ -551,7 +551,7 @@ pub fn import_config(
         // Phase templates + definitions — upsert.
         for t in &bundle.phase_templates {
             conn.execute(
-                "INSERT INTO phase_templates (id, workspace_id, name, description, created_at, updated_at)
+                "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)
                  ON CONFLICT(id) DO UPDATE SET
                    name        = excluded.name,
@@ -564,7 +564,7 @@ pub fn import_config(
             )?;
             for d in &t.definitions {
                 conn.execute(
-                    "INSERT INTO phase_definitions
+                    "INSERT INTO steps
                        (id, template_id, ordinal, name, prompt_prefix, provider_override, model_override)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                      ON CONFLICT(id) DO UPDATE SET
@@ -585,7 +585,7 @@ pub fn import_config(
         for r in &bundle.permission_rules {
             conn.execute(
                 "INSERT INTO permission_rules
-                   (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
+                   (id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
                  ON CONFLICT(id) DO UPDATE SET
@@ -597,7 +597,7 @@ pub fn import_config(
                    priority             = excluded.priority,
                    updated_at           = excluded.updated_at",
                 rusqlite::params![
-                    r.id, r.scope, r.workspace_id, r.session_id,
+                    r.id, r.scope, r.workspace_id, r.task_id,
                     r.pattern_tool, r.pattern_args_matcher,
                     r.decision, r.priority,
                     r.created_at, r.updated_at,
@@ -886,7 +886,7 @@ mod tests {
             id: "r1".to_string(),
             scope: "session".to_string(), // not allowed in export
             workspace_id: None,
-            session_id: Some("s1".to_string()),
+            task_id: Some("s1".to_string()),
             pattern_tool: "Bash".to_string(),
             pattern_args_matcher: None,
             decision: "allow".to_string(),
