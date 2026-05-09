@@ -2,7 +2,10 @@ import type { Step, Session, Workflow } from '@kay-am/types';
 
 export function nextStep(template: Workflow, runs: ReadonlyArray<Session>): Step | null {
   const doneIds = new Set(
-    runs.filter((r) => r.status === 'completed' || r.status === 'skipped').map((r) => r.stepId),
+    runs
+      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .map((r) => r.stepId)
+      .filter((id): id is Step['id'] => id !== undefined),
   );
 
   const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
@@ -38,11 +41,15 @@ export function currentStep(template: Workflow, runs: ReadonlyArray<Session>): S
   const live = runs
     .filter((r) => r.status === 'running' || r.status === 'failed' || r.status === 'pending')
     .sort((a, b) => isStartedAt(b).localeCompare(isStartedAt(a)));
-  const liveStep = live.map((r) => stepById.get(r.stepId)).find((s): s is Step => !!s);
+  const liveStep = live
+    .map((r) => (r.stepId !== undefined ? stepById.get(r.stepId) : undefined))
+    .find((s): s is Step => !!s);
   if (liveStep) return liveStep;
 
   const recent = [...runs].sort((a, b) => isStartedAt(b).localeCompare(isStartedAt(a)));
-  const recentStep = recent.map((r) => stepById.get(r.stepId)).find((s): s is Step => !!s);
+  const recentStep = recent
+    .map((r) => (r.stepId !== undefined ? stepById.get(r.stepId) : undefined))
+    .find((s): s is Step => !!s);
   if (recentStep) return recentStep;
 
   return sorted[0] ?? null;
@@ -79,7 +86,10 @@ export function buildStepPrompt(input: {
 
 export function isWorkflowComplete(template: Workflow, runs: ReadonlyArray<Session>): boolean {
   const doneIds = new Set(
-    runs.filter((r) => r.status === 'completed' || r.status === 'skipped').map((r) => r.stepId),
+    runs
+      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .map((r) => r.stepId)
+      .filter((id): id is Step['id'] => id !== undefined),
   );
   return template.steps.every((d) => doneIds.has(d.id));
 }

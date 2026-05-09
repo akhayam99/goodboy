@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Task, TaskId, TurnEvent, WorkspaceId } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  Session,
+  SessionId,
+  Task,
+  TaskId,
+  TurnEvent,
+  WorkspaceId,
+} from '@kay-am/types';
 
 // ---------------------------------------------------------------------------
 // Module mocks — hoisted before store import
@@ -208,9 +216,18 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
+    const defaultAgent: Session = {
+      id: 'agent-1' as SessionId,
+      taskId: SESSION_ID,
+      ordinal: 0,
+      name: 'agent 1',
+      status: 'pending',
+    };
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [defaultAgent] },
+      selectedAgentId: { [SESSION_ID]: defaultAgent.id },
       providers: [
         {
           id: 'anthropic',

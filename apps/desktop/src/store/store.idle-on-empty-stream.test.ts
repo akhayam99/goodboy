@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
   ProviderRunId,
+  Session,
+  SessionId,
   Task,
   TaskId,
   TurnEvent,
@@ -175,9 +177,18 @@ describe('sendTurn — terminal state guarantees', () => {
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
+    const defaultAgent: Session = {
+      id: 'agent-1' as SessionId,
+      taskId: SESSION_ID,
+      ordinal: 0,
+      name: 'agent 1',
+      status: 'pending',
+    };
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [defaultAgent] },
+      selectedAgentId: { [SESSION_ID]: defaultAgent.id },
       transcripts: {},
       providers: [
         {

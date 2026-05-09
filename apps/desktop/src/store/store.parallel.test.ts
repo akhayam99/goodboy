@@ -214,9 +214,18 @@ function setupSession(
   useAppStore: Awaited<ReturnType<typeof importStore>>,
   steps: ReadonlyArray<Step>,
 ) {
+  const defaultAgent: Session = {
+    id: 'agent-1' as SessionId,
+    taskId: SESSION_ID,
+    ordinal: 0,
+    name: 'agent 1',
+    status: 'pending',
+  };
   useAppStore.setState({
     sessions: [buildSession()],
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+    sessionPhaseRuns: { [SESSION_ID]: [defaultAgent] },
+    selectedAgentId: { [SESSION_ID]: defaultAgent.id },
     settings: {
       'experimental.enable_parallel_agents': 'true',
       'experimental.max_parallelism': '4',

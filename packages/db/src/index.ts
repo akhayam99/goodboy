@@ -19,7 +19,7 @@ export {
   renameTask,
   deleteTask,
 } from './queries/task';
-export { insertMessage, listMessagesForTask } from './queries/message';
+export { insertMessage, listMessagesForAgent, listMessagesForTask } from './queries/message';
 export { upsertContextSlot, listContextSlotsForTask } from './queries/context-slot';
 export {
   insertProviderRun,

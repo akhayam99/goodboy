@@ -19,11 +19,14 @@ import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import type {
   ProviderId,
   Session,
+  SessionId,
   SessionStatus,
+  Step,
   Task,
   TaskId,
   TelemetryRecord,
   TurnState,
+  Workflow,
   Workspace,
 } from '@kay-am/types';
 import {
@@ -1186,12 +1189,19 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const workflow = task.workflowId
+    ? (phaseTemplates.find((t) => t.id === task.workflowId) ?? null)
+    : null;
+  const [spawnError, setSpawnError] = useState<string | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
 
-  // Most recent telemetry record per runId — the per-agent display reflects
-  // its latest turn (full multi-turn aggregation needs a session_runs join
-  // we don't have yet; deferred to a follow-up PR).
   const telemetryByRunId = useMemo(() => {
     const map = new Map<string, TelemetryRecord>();
     for (const rec of telemetry) {
@@ -1203,6 +1213,20 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry]);
 
+  const onPickAgent = (sid: SessionId) => {
+    if (sid === selectedAgentId) return;
+    void selectAgent(task.id, sid);
+  };
+
+  const onSpawn = async (stepId: Step['id'] | null) => {
+    setSpawnError(null);
+    try {
+      await spawnAgent(task.id, stepId ? { stepId } : {});
+    } catch (err) {
+      setSpawnError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   return (
     <section className="flex flex-col px-2 pb-3 pt-4">
       <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
@@ -1210,12 +1234,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
           agents
         </span>
         <span className="truncate text-2xs text-muted-foreground/70">
-          {sorted.length === 0 ? 'none yet' : `${sorted.length} for this task`}
+          {sorted.length === 0
+            ? 'none yet'
+            : `${sorted.length} agent${sorted.length === 1 ? '' : 's'}`}
         </span>
       </header>
       {sorted.length === 0 ? (
         <p className="px-1 py-2 text-xs text-muted-foreground/70">
-          no agents yet — start a workflow to spawn the first one.
+          no agents yet — spawn one below.
         </p>
       ) : (
         <ul className="flex flex-col gap-0.5">
@@ -1224,11 +1250,100 @@ function AgentsSection({ task }: AgentsSectionProps) {
               key={run.id}
               run={run}
               telemetry={run.runId ? (telemetryByRunId.get(run.runId) ?? null) : null}
+              isSelected={run.id === selectedAgentId}
+              onClick={() => onPickAgent(run.id)}
             />
           ))}
         </ul>
       )}
+      <SpawnAgentControl workflow={workflow} onSpawn={onSpawn} />
+      {spawnError ? <p className="mt-1 px-1 text-2xs text-danger">{spawnError}</p> : null}
     </section>
+  );
+}
+
+interface SpawnAgentControlProps {
+  workflow: Workflow | null;
+  onSpawn: (stepId: Step['id'] | null) => void | Promise<void>;
+}
+
+function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  const sortedSteps = useMemo(
+    () => (workflow ? [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal) : []),
+    [workflow],
+  );
+
+  return (
+    <div className="relative mt-1" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Plus size={13} aria-hidden />
+        spawn agent
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-60 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              void onSpawn(null);
+            }}
+            className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+          >
+            <span className="font-medium text-foreground">+ free agent</span>
+            <span className="text-2xs text-muted-foreground">no role</span>
+          </button>
+          {sortedSteps.length > 0 ? (
+            <>
+              <div className="mt-1 border-t border-border-soft" aria-hidden />
+              <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+                from workflow
+              </div>
+              {sortedSteps.map((step) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    void onSpawn(step.id);
+                  }}
+                  className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="font-medium text-foreground">{step.name}</span>
+                  {step.modelOverride ? (
+                    <span className="text-2xs text-muted-foreground">
+                      {shortModel(step.modelOverride)}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1243,13 +1358,16 @@ const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
 interface AgentRowProps {
   readonly run: Session;
   readonly telemetry: TelemetryRecord | null;
+  readonly isSelected: boolean;
+  readonly onClick: () => void;
 }
 
-function AgentRow({ run, telemetry }: AgentRowProps) {
+function AgentRow({ run, telemetry, isSelected, onClick }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `step #${run.ordinal + 1}`,
+    `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
+    isSelected ? 'selected — chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1258,43 +1376,56 @@ function AgentRow({ run, telemetry }: AgentRowProps) {
   ].filter((p): p is string => p !== null);
 
   return (
-    <li
-      className="group flex flex-col gap-0.5 rounded-md px-2 py-1 text-xs"
-      title={titleParts.join('\n')}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className={cn(
-            'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-            AGENT_STATUS_TONE[run.status],
-          )}
-        />
-        <span
-          className="line-clamp-1 flex-1 rounded-full bg-subtle px-1.5 py-px text-2xs font-medium text-foreground"
-          aria-label={`role chip: ${run.name}`}
-        >
-          {run.name}
-        </span>
-        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
-      </div>
-      {telemetry ? (
-        <div className="flex items-center gap-1.5 pl-3.5 text-2xs text-muted-foreground/80">
-          <span>{shortModel(telemetry.model)}</span>
-          {total !== null ? (
-            <>
-              <span aria-hidden>·</span>
-              <span title={`${total.toLocaleString()} tokens (last turn)`}>
-                {formatTokens(total)} tok
-              </span>
-            </>
-          ) : null}
-          <span aria-hidden>·</span>
-          <span title={`$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)`}>
-            {formatCost(telemetry.estimatedCostUsd)}
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'group flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-xs transition-colors',
+          isSelected ? 'bg-muted' : 'hover:bg-muted/60',
+        )}
+        title={titleParts.join('\n')}
+        aria-pressed={isSelected}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className={cn(
+              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+              AGENT_STATUS_TONE[run.status],
+            )}
+          />
+          <span
+            className={cn(
+              'line-clamp-1 flex-1 rounded-full px-1.5 py-px text-2xs font-medium',
+              isSelected ? 'bg-foreground text-background' : 'bg-subtle text-foreground',
+            )}
+            aria-label={`role chip: ${run.name}`}
+          >
+            {run.name}
+          </span>
+          <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+            {run.ordinal + 1}
           </span>
         </div>
-      ) : null}
+        {telemetry ? (
+          <div className="flex items-center gap-1.5 pl-3.5 text-2xs text-muted-foreground/80">
+            <span>{shortModel(telemetry.model)}</span>
+            {total !== null ? (
+              <>
+                <span aria-hidden>·</span>
+                <span title={`${total.toLocaleString()} tokens (last turn)`}>
+                  {formatTokens(total)} tok
+                </span>
+              </>
+            ) : null}
+            <span aria-hidden>·</span>
+            <span title={`$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)`}>
+              {formatCost(telemetry.estimatedCostUsd)}
+            </span>
+          </div>
+        ) : null}
+      </button>
     </li>
   );
 }
