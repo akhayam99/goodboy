@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
-import { Cpu } from 'lucide-react';
-import { Button, Select, Textarea } from '@kay-am/ui';
+import { Button, Textarea, cn } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -28,6 +27,28 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
 const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
+
+const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
+type EffortLevel = (typeof EFFORT_LEVELS)[number];
+const EFFORT_STORAGE_PREFIX = 'kayam:effort:';
+
+function readEffort(taskId: TaskId): EffortLevel {
+  try {
+    const raw = localStorage.getItem(`${EFFORT_STORAGE_PREFIX}${taskId}`);
+    if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
+  } catch {
+    // ignore
+  }
+  return 'medium';
+}
+
+function writeEffort(taskId: TaskId, level: EffortLevel): void {
+  try {
+    localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${taskId}`, level);
+  } catch {
+    // ignore
+  }
+}
 
 interface ChatInputProps {
   readonly session: Task;
@@ -71,6 +92,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
   const [showPopover, setShowPopover] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +133,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setShowPopover(false);
     wrapperRef.current?.querySelector('textarea')?.focus();
   }, []);
+
+  const setEffort = (level: EffortLevel) => {
+    setEffortState(level);
+    writeEffort(session.id, level);
+  };
+
+  const onSelectProvider = (id: ProviderId) => {
+    if (!allowOverride || isRunning) return;
+    setSelectedProvider(id);
+    setSelectedModel(null);
+  };
+
+  const onSelectModel = (id: string) => {
+    if (!allowOverride || isRunning) return;
+    setSelectedModel(id);
+  };
 
   const onSend = async () => {
     const content = value.trim();
@@ -163,8 +201,20 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     ? 'override disabled in session settings'
     : undefined;
 
+  const providerCandidates = useMemo<ReadonlyArray<ProviderId>>(() => {
+    const ids = new Set<ProviderId>(connectedProviderIds);
+    ids.add(defaultProvider);
+    return Array.from(ids);
+  }, [connectedProviderIds, defaultProvider]);
+
+  const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
+    const ids = new Set(providerModels.map((m) => m.id));
+    if (effectiveModel) ids.add(effectiveModel);
+    return Array.from(ids);
+  }, [providerModels, effectiveModel]);
+
   return (
-    <div className="border-t border-border px-4 py-3">
+    <div className="px-4 py-3">
       <div className="mx-auto flex max-w-3xl flex-col gap-2">
         {!isRunning && !providerDisconnected ? (
           <RoutingIndicator
@@ -210,66 +260,121 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             {error}
           </p>
         ) : null}
-        <div className="flex items-center justify-between gap-2">
-          <ModelChip
-            provider={session.providerPreference.defaultProvider}
-            model={
-              session.providerPreference.defaultModel ??
-              getDefaultTurnModel(session.providerPreference.defaultProvider)
-            }
-          />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <ChipRow
+              label="provider"
+              disabledTitle={overrideDisabledTitle}
+              disabled={!allowOverride || isRunning}
+            >
+              {providerCandidates.map((id) => (
+                <Chip
+                  key={id}
+                  label={PROVIDER_LABEL[id]}
+                  active={effectiveProvider === id}
+                  onClick={() => onSelectProvider(id)}
+                  disabled={!allowOverride || isRunning}
+                />
+              ))}
+            </ChipRow>
+            <ChipRow
+              label="model"
+              disabledTitle={overrideDisabledTitle}
+              disabled={!allowOverride || isRunning}
+            >
+              {modelCandidates.map((id) => (
+                <Chip
+                  key={id}
+                  label={id}
+                  active={effectiveModel === id}
+                  onClick={() => onSelectModel(id)}
+                  disabled={!allowOverride || isRunning}
+                  mono
+                />
+              ))}
+            </ChipRow>
+            {effectiveProvider === 'anthropic' ? (
+              <ChipRow label="effort">
+                {EFFORT_LEVELS.map((level) => (
+                  <Chip
+                    key={level}
+                    label={level}
+                    active={effort === level}
+                    onClick={() => setEffort(level)}
+                  />
+                ))}
+              </ChipRow>
+            ) : null}
+          </div>
           {isRunning ? (
             <Button variant="danger" onClick={() => void cancelCurrentTurn(session.id)}>
               cancel
             </Button>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span>via</span>
-                <Select
-                  size="sm"
-                  disabled={!allowOverride || isRunning}
-                  title={overrideDisabledTitle}
-                  value={effectiveProvider}
-                  onChange={(e) => {
-                    setSelectedProvider(e.target.value as ProviderId);
-                    setSelectedModel(null);
-                  }}
-                >
-                  {connectedProviders.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.id === 'anthropic' ? 'claude' : p.id}
-                    </option>
-                  ))}
-                  {connectedProviders.every((p) => p.id !== defaultProvider) ? (
-                    <option value={defaultProvider}>{defaultProvider}</option>
-                  ) : null}
-                </Select>
-                <Select
-                  size="sm"
-                  disabled={!allowOverride || isRunning}
-                  title={overrideDisabledTitle ?? 'model for this turn'}
-                  value={effectiveModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                >
-                  {providerModels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.id}
-                    </option>
-                  ))}
-                  {providerModels.every((m) => m.id !== effectiveModel) ? (
-                    <option value={effectiveModel}>{effectiveModel}</option>
-                  ) : null}
-                </Select>
-              </div>
-              <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
-                send
-              </Button>
-            </div>
+            <Button onClick={() => void onSend()} disabled={!canSend} title={sendDisabledTitle}>
+              send
+            </Button>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function ChipRow({
+  label,
+  disabled,
+  disabledTitle,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  disabledTitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 text-2xs uppercase tracking-wide',
+        disabled && 'opacity-60',
+      )}
+      title={disabled ? disabledTitle : undefined}
+    >
+      <span className="text-muted-foreground">{label}</span>
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onClick,
+  disabled,
+  mono,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  mono?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'rounded-full px-2.5 py-0.5 text-xs normal-case motion-safe:transition-colors',
+        mono && 'font-mono',
+        active
+          ? 'bg-foreground text-background'
+          : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
+        disabled && 'cursor-not-allowed opacity-60',
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -302,7 +407,7 @@ function PreflightPill({
         type="button"
         onClick={openSettings}
         title="v0.7 will extend permission coverage to this provider."
-        className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
+        className="self-start rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
       >
         permission proxy: claude only
       </button>
@@ -324,20 +429,9 @@ function PreflightPill({
       type="button"
       onClick={openSettings}
       title={tooltipLines || 'no permission rules configured'}
-      className="self-start rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
+      className="self-start rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
     >
       permissions: {allowedTools.length} allow / {disallowedTools.length} deny
     </button>
-  );
-}
-
-function ModelChip({ provider, model }: { provider: ProviderId; model: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-      <Cpu size={11} aria-hidden />
-      <span className="font-mono">
-        {PROVIDER_LABEL[provider]} · {model}
-      </span>
-    </span>
   );
 }
