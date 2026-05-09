@@ -37,6 +37,17 @@ const SIZE: Record<DialogSize, string> = {
   xl: 'w-[56rem]',
 };
 
+// Per-size baseline min-height. Without this the dialog collapses to the
+// height of its content, which looks thin for small forms (add workspace,
+// new session). Caps at the per-size sweet spot — large dialogs already
+// need more room. Skipped when fixedHeightClass is set (caller knows best).
+const MIN_HEIGHT: Record<DialogSize, string> = {
+  sm: 'min-h-[16rem]',
+  md: 'min-h-[24rem]',
+  lg: 'min-h-[28rem]',
+  xl: 'min-h-[32rem]',
+};
+
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
 
 export function Dialog({
@@ -112,6 +123,7 @@ export function Dialog({
         className={cn(
           'flex min-h-0 flex-col',
           fixedHeightClass ?? 'max-h-[85vh]',
+          fixedHeightClass ? null : MIN_HEIGHT[size],
           SIZE[size],
           fullScreenOnSmall && SMALL_VIEWPORT,
           className,

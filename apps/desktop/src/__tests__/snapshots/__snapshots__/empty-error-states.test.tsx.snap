@@ -47,7 +47,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -677,7 +677,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
     >
       <div
-        class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+        class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
       >
         <header
           class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -790,7 +790,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   >
     <div
-      class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
         class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -1087,7 +1087,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[24rem]"
+    class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
@@ -1162,7 +1162,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
   open=""
 >
   <div
-    class="flex min-h-0 flex-col max-h-[85vh] w-[44rem]"
+    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
       class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
