@@ -1787,6 +1787,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     await insertWorkspace(tauriDatabase, workspace);
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
+
+    // Auto-discover skills on disk so freshly linked repos work
+    // without forcing the user to click "rescan" in Settings.
+    try {
+      const skills = await invokeSkillRescan(workspace.id);
+      set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
+    } catch {
+      // Discovery failure must not block workspace creation; user can rescan from Settings.
+    }
+
     return workspace;
   },
 
