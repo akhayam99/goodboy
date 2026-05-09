@@ -14,6 +14,7 @@ import {
   type ClaudeFlagSet,
   type FileConflict,
   type SlotKey,
+  seedWorkflowLibrary,
 } from '@kay-am/core';
 import {
   getSetting,
@@ -1787,6 +1788,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     await insertWorkspace(tauriDatabase, workspace);
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
+
+    // Seed default workflow library so the new-task wizard always has presets.
+    try {
+      await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id);
+      const templates = await invokePhaseTemplateList(workspace.id);
+      set((state) => ({
+        phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates },
+      }));
+    } catch {
+      // Workflow seeding must not block workspace creation; user can edit later.
+    }
 
     // Auto-discover skills on disk so freshly linked repos work
     // without forcing the user to click "rescan" in Settings.

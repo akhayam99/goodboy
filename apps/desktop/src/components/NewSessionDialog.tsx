@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Dialog, Input, Select, Textarea, cn } from '@kay-am/ui';
+import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
 import type {
   WorkflowId,
   ProviderId,
@@ -151,26 +151,33 @@ export function NewSessionDialog({
       </Field>
 
       <Field
-        label="phase template (optional)"
+        label="workflow (optional)"
         hint={
           phaseTemplates.length === 0
-            ? 'no phase templates yet — create in Settings → Phases'
-            : 'assign a multi-phase workflow to this session.'
+            ? 'no workflows yet — create in Settings → Workflows.'
+            : 'pick a workflow blueprint. each step spawns its own agent with its own context.'
         }
       >
-        <Select
-          size="sm"
-          value={selectedPhaseTemplateId}
-          onChange={(e) => setSelectedPhaseTemplateId(e.target.value as WorkflowId | '')}
-          disabled={phaseTemplates.length === 0}
-        >
-          <option value="">none</option>
-          {phaseTemplates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
+        {phaseTemplates.length === 0 ? (
+          <p className="text-xs text-muted-foreground/70">none available</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            <WorkflowChip
+              label="single chat"
+              active={selectedPhaseTemplateId === ''}
+              onClick={() => setSelectedPhaseTemplateId('')}
+            />
+            {phaseTemplates.map((t) => (
+              <WorkflowChip
+                key={t.id}
+                label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
+                active={selectedPhaseTemplateId === t.id}
+                onClick={() => setSelectedPhaseTemplateId(t.id)}
+                title={t.description || undefined}
+              />
+            ))}
+          </div>
+        )}
       </Field>
 
       <Field label="provider">
@@ -243,5 +250,33 @@ function Field({
       {children}
       {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
     </div>
+  );
+}
+
+function WorkflowChip({
+  label,
+  active,
+  onClick,
+  title,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors',
+        active
+          ? 'bg-foreground text-background'
+          : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
+      )}
+    >
+      {label}
+    </button>
   );
 }
