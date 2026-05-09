@@ -60,7 +60,7 @@ pub struct SkillBundle {
 pub struct PhaseDefinitionBundle {
     pub id: String,
     #[serde(rename = "workflowId")]
-    pub template_id: String,
+    pub workflow_id: String,
     pub ordinal: i64,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -78,7 +78,7 @@ pub struct PhaseTemplateBundle {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    pub definitions: Vec<PhaseDefinitionBundle>,
+    pub steps: Vec<PhaseDefinitionBundle>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -261,7 +261,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         rows.collect::<Result<Vec<_>, _>>()?
     };
 
-    // phase templates + definitions
+    // workflows + steps
     let phase_templates = {
         let mut stmt = conn.prepare(
             "SELECT id, workspace_id, name, description, created_at, updated_at
@@ -282,16 +282,16 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         for row in template_rows {
             let (id, workspace_id, name, description, created_at, updated_at) = row?;
             let mut def_stmt = conn.prepare(
-                "SELECT id, template_id, ordinal, name, prompt_prefix, provider_override, model_override
+                "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override
                  FROM steps
-                 WHERE template_id = ?1
+                 WHERE workflow_id = ?1
                  ORDER BY ordinal ASC",
             )?;
             let defs = def_stmt
                 .query_map(rusqlite::params![id], |r| {
                     Ok(PhaseDefinitionBundle {
                         id: r.get(0)?,
-                        template_id: r.get(1)?,
+                        workflow_id: r.get(1)?,
                         ordinal: r.get(2)?,
                         name: r.get(3)?,
                         prompt_prefix: r.get(4)?,
@@ -305,7 +305,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 workspace_id,
                 name,
                 description,
-                definitions: defs,
+                steps: defs,
                 created_at,
                 updated_at,
             });
@@ -562,10 +562,10 @@ pub fn import_config(
                     t.created_at, t.updated_at,
                 ],
             )?;
-            for d in &t.definitions {
+            for d in &t.steps {
                 conn.execute(
                     "INSERT INTO steps
-                       (id, template_id, ordinal, name, prompt_prefix, provider_override, model_override)
+                       (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                      ON CONFLICT(id) DO UPDATE SET
                        ordinal          = excluded.ordinal,
@@ -574,7 +574,7 @@ pub fn import_config(
                        provider_override = excluded.provider_override,
                        model_override   = excluded.model_override",
                     rusqlite::params![
-                        d.id, d.template_id, d.ordinal, d.name,
+                        d.id, d.workflow_id, d.ordinal, d.name,
                         d.prompt_prefix, d.provider_override, d.model_override,
                     ],
                 )?;
