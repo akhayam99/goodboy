@@ -134,7 +134,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
         <span className="px-1 text-sm font-semibold tracking-tight">kAY.am</span>
         <div className="ml-auto flex items-center gap-0.5">
-          <ProvidersChip onOpenSettings={onOpenSettings} />
           <AlertCenter />
           <button
             type="button"
@@ -223,7 +222,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
 
-      <div className="flex shrink-0 items-center justify-center px-2 pb-2 pt-1.5">
+      <div className="flex shrink-0 items-center justify-center gap-2 px-2 pb-2 pt-1.5">
+        <ProvidersChip onOpenSettings={onOpenSettings} />
         <TelemetryPill />
       </div>
 

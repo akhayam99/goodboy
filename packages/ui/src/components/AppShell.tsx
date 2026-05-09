@@ -52,7 +52,7 @@ export function AppShell({
         style={gridStyle}
       >
         <aside
-          className="m-2 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-subtle shadow-sm"
+          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-subtle shadow-sm"
           style={{ gridArea: 'left' }}
         >
           {leftSidebar}
