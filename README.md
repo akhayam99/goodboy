@@ -39,12 +39,11 @@ See [VISION.md](./VISION.md) for the full product vision.
 ```
 kay-am/
 ├── apps/desktop/     # Tauri 2 desktop app
-├── packages/
-│   ├── ui/           # Shared React components
-│   ├── core/         # Business logic
-│   ├── db/           # SQLite schema + queries
-│   └── types/        # Shared TypeScript types
-└── scripts/
+└── packages/
+    ├── ui/           # Shared React components
+    ├── core/         # Business logic
+    ├── db/           # SQLite schema + queries
+    └── types/        # Shared TypeScript types
 ```
 
 ## Development
@@ -66,8 +65,7 @@ Connect a provider: `<cli> /login` (Claude / Cursor) or `<cli> login` (Codex). S
 - **Node.js** ≥ 20 and **pnpm** ≥ 9
 - **Rust** toolchain (`rustup`) — required by Tauri 2; install from <https://rustup.rs>. After installing, make sure `cargo` is on your shell `PATH` — `rustup` writes the env to `$HOME/.cargo/env`, which most shells don't auto-source. Either add `source "$HOME/.cargo/env"` to your `~/.zshrc` / `~/.bashrc`, or restart your terminal after install. Verify with `cargo --version` (Tauri shells out to `cargo metadata` and will fail with `os error 2` if it's missing).
 - Platform Tauri prereqs — see <https://v2.tauri.app/start/prerequisites/>
-- At least one **provider CLI** on `PATH` — see [Supported providers](#supported-providers) above
-- An **Anthropic API key** if you want to exercise the summarizer (configurable from in-app settings, stored in the OS keychain)
+- At least one **provider CLI** on `PATH` — see [Supported providers](#supported-providers) above. The summarizer reuses the active provider's cheap-tier model via its CLI — no separate API token required.
 
 ### Quickstart
 
@@ -88,13 +86,14 @@ pnpm lint           # placeholder; lint runs in CI
 ### Smoke test a session end-to-end
 
 1. Run `pnpm tauri:dev` and wait for the boot splash to reach _ready_.
-2. Open **settings** (top-right) → paste your **Anthropic API key**, set the **default editor binary** (e.g. `code`), save.
-3. From the workspace dropdown choose **add workspace…** and pick a local git repository (an existing one is fine — sessions run inside isolated git worktrees).
-4. From the left sidebar, click **+ new task**, give it a goal, accept the branch prefix.
-5. Type a message in the chat input → enter. You should see streamed assistant text, the cost meter ticking, and the `worktree-{slug}` directory created next to the repo.
-6. Use **end session** to close the worktree (the branch is preserved for manual merge).
+2. Open **settings** (top-right), set the **default editor binary** (e.g. `code`), save.
+3. Connect a provider — see [Supported providers](#supported-providers).
+4. From the workspace dropdown choose **add workspace…** and pick a local git repository (an existing one is fine — sessions run inside isolated git worktrees).
+5. From the left sidebar, click **add session**, give it a goal, accept the branch prefix.
+6. Type a message in the chat input → enter. You should see streamed assistant text, the cost meter ticking, and the `worktree-{slug}` directory created next to the repo.
+7. Use **end session** to close the worktree (the branch is preserved for manual merge).
 
-If the **claude cli missing** banner shows in the header, install the Claude CLI and reopen the app. If **api key missing** shows, click it to jump back into settings.
+If the **claude cli missing** banner shows in the header, install the Claude CLI and reopen the app.
 
 ## Getting started
 
@@ -110,11 +109,11 @@ Top-right: **workspace dropdown** → **add workspace…** → pick a local git 
 
 ### 3. Connect a provider
 
-Top-right: **settings** → paste your **Anthropic API key**, set your **default editor** (e.g. `code`). See [Supported providers](#supported-providers) for install + login commands. kAY.am routes turns through your chosen provider's subscription cap — no separate API tokens needed.
+Top-right: **settings** → set your **default editor** (e.g. `code`). See [Supported providers](#supported-providers) for install + login commands. kAY.am routes turns through your chosen provider's subscription cap — no separate API tokens needed.
 
-### 4. Create your first task
+### 4. Create your first session
 
-Left sidebar: **+ new task** → give it a goal (e.g. "add dark mode toggle") → optionally pick a workflow chip → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
+Left sidebar: **add session** → give it a goal (e.g. "add dark mode toggle") → optionally pick a workflow chip → accept the branch prefix. kAY.am creates a fresh git worktree for this goal.
 
 ### 5. First turn
 
@@ -126,13 +125,13 @@ Type a message in the chat input → enter. You'll see:
 
 ### 6. Monitor progress
 
-**Telemetry pill** (top-left): session elapsed time, token count, cost breakdown. **Status bar** (bottom): active worktree, branch info, provider. **Alerts**: watch for banners (missing API key, CLI not found, etc.).
+**Telemetry pill** (top-left): session elapsed time, token count, cost breakdown. **Status bar** (bottom): active worktree, branch info, provider. **Alerts**: watch for banners (CLI not found, provider not connected, etc.).
 
-### 7. Archive or end the task
+### 7. Archive or end the session
 
-Sidebar kebab menu → **archive** moves a task out of the active list (still inspectable under "archived") or **delete** removes it entirely (worktree, transcripts, audit log). Use **⌘.** to end the active session and clean up the worktree while preserving the branch.
+Sidebar kebab menu → **archive** moves a session out of the active list (still inspectable under "archived") or **delete** removes it entirely (worktree, transcripts, audit log). Use **⌘.** to end the active session and clean up the worktree while preserving the branch.
 
-**Optional: workflows.** Structure multi-step goals with workflows. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply, or use the built-in planner ("design custom" chip in the new-task dialog) to generate one from a free-text theme. The default library (refactor / bug-fix / feature / exploration) is auto-seeded on workspace add. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
+**Optional: workflows.** Structure multi-agent goals with workflows. See [docs/phase-templates.md](./docs/phase-templates.md) for how to author and apply, or use the built-in planner ("design custom" chip in the new-session dialog) to generate one from a free-text theme. The default library (refactor / bug-fix / feature / exploration) is auto-seeded on workspace add. Parallel agents also available — enable in **settings → agent** and see [docs/parallel-agents.md](./docs/parallel-agents.md).
 
 ## Roadmap & contributing
 

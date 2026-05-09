@@ -14,11 +14,11 @@ kAY.am is a local-first AI workspace orchestrator that sits between you and your
 
 ## Core concepts
 
-### Sessions
+### Sessions and agents
 
 A session is a container for a goal. Not a chat. Not a thread. A goal.
 
-"Refactor authentication domain" is a session. Inside it, you declare phases — setup, planning, implementation, review — and each phase spawns its own agent with only the context it needs. The session holds the big picture. The agents do the work.
+"Refactor authentication domain" is a session. Inside it, you spawn agents — at will, one at a time, or batch via a workflow preset (scout → planner → implementer → reviewer). Every agent in the session reads the same shared context; you decide what's in it. The session holds the big picture. The agents do the work. You navigate between them.
 
 ### Synthetic context
 
