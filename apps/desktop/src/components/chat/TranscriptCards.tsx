@@ -74,18 +74,18 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
 
 function AssistantText({ text }: { text: string }) {
   return (
-    <div className="group relative rounded-lg border border-border bg-background px-3 py-2">
-      <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
+    <div className="group relative">
+      <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
-      <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+      <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground">{text}</p>
     </div>
   );
 }
 
 function UserText({ text }: { text: string }) {
   return (
-    <div className="group relative ml-auto w-fit max-w-full rounded-lg bg-muted px-3 py-2">
+    <div className="group relative ml-auto w-fit max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
       <div className="absolute right-1 top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
