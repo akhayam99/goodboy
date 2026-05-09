@@ -4,9 +4,11 @@ import {
   WorkflowPropagator,
   PermissionEngine,
   buildClaudeFlags,
+  autoPopulateContext,
   buildStepPrompt,
   currentStep,
   findReusableSession,
+  serializeSlots,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
@@ -172,6 +174,24 @@ export interface SystemAlert {
   readonly kind: SystemAlertKind;
   readonly message: string;
   readonly createdAt: string;
+}
+
+const CONTEXT_MARKER_HINT =
+  '## context handoff protocol\n' +
+  'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
+  'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`.\n' +
+  "the orchestrator parses these markers and persists them to this task's shared context panel — every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
+
+function buildContextPreamble(sharedSlotsRendered: string): string {
+  const parts: string[] = [];
+  if (sharedSlotsRendered.length > 0) {
+    parts.push(
+      '## shared context (already loaded by orchestrator — do not re-derive)\n' +
+        sharedSlotsRendered,
+    );
+  }
+  parts.push(CONTEXT_MARKER_HINT);
+  return parts.join('\n\n');
 }
 
 export interface AppState {
@@ -1442,8 +1462,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     void refreshPricingTable();
 
+    // ContextPanel acts as the Task's shared memory: prepend the serialized
+    // slots + a marker hint so the agent (a) sees what previous agents in
+    // this Task already learned, and (b) knows how to write back via
+    // <<ctx-decision>> / <<ctx-question>> markers parsed in the auto-populate
+    // step after the turn ends.
+    const sharedSlots = get().sessionSlots[taskId] ?? [];
+    const sharedSlotsRendered = sharedSlots.length > 0 ? serializeSlots(sharedSlots) : '';
+    const contextPreamble = buildContextPreamble(sharedSlotsRendered);
+    if (contextPreamble.length > 0) {
+      resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
+    }
+
     let assistantText = '';
     let lastError: unknown = null;
+    const filesTouchedThisTurn = new Set<string>();
 
     try {
       for await (const event of runTurn({
@@ -1456,6 +1489,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       })) {
         get().appendTurnEvent(taskId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
+        if (event.kind === 'file_edit') filesTouchedThisTurn.add(event.path);
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
           const engine = new PermissionEngine();
@@ -1592,6 +1626,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
             s.id === taskId ? { ...s, currentStepOrdinal: completedOrdinal } : s,
           ),
         }));
+      }
+
+      // Auto-populate ContextPanel from this turn's output: file paths come
+      // from file_edit events; <<ctx-decision>> / <<ctx-question>> markers come
+      // from the assistant text. Best-effort — slot writes failing must not
+      // mask the turn itself.
+      try {
+        const result = await autoPopulateContext({
+          db: tauriDatabase,
+          taskId,
+          filesEdited: Array.from(filesTouchedThisTurn),
+          assistantText,
+        });
+        if (result.updatedSlots.length > 0) {
+          const refreshedSlots = await listContextSlotsForTask(tauriDatabase, taskId);
+          set((state) => ({
+            sessionSlots: { ...state.sessionSlots, [taskId]: refreshedSlots },
+          }));
+        }
+      } catch (e) {
+        console.error('autoPopulateContext failed', e);
       }
     } catch (err) {
       lastError = err;
