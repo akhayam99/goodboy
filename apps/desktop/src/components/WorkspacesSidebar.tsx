@@ -22,6 +22,7 @@ import type {
   SessionStatus,
   Task,
   TaskId,
+  TelemetryRecord,
   TurnState,
   Workspace,
 } from '@kay-am/types';
@@ -36,6 +37,7 @@ import {
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
+import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -1054,8 +1056,25 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
   );
+  const telemetry = useAppStore(
+    (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
+
+  // Most recent telemetry record per runId — the per-agent display reflects
+  // its latest turn (full multi-turn aggregation needs a session_runs join
+  // we don't have yet; deferred to a follow-up PR).
+  const telemetryByRunId = useMemo(() => {
+    const map = new Map<string, TelemetryRecord>();
+    for (const rec of telemetry) {
+      const existing = map.get(rec.runId);
+      if (!existing || existing.recordedAt < rec.recordedAt) {
+        map.set(rec.runId, rec);
+      }
+    }
+    return map;
+  }, [telemetry]);
 
   return (
     <section className="flex flex-col px-2 pb-3 pt-4">
@@ -1074,7 +1093,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : (
         <ul className="flex flex-col gap-0.5">
           {sorted.map((run) => (
-            <AgentRow key={run.id} run={run} />
+            <AgentRow
+              key={run.id}
+              run={run}
+              telemetry={run.runId ? (telemetryByRunId.get(run.runId) ?? null) : null}
+            />
           ))}
         </ul>
       )}
@@ -1090,21 +1113,61 @@ const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-function AgentRow({ run }: { run: Session }) {
+interface AgentRowProps {
+  readonly run: Session;
+  readonly telemetry: TelemetryRecord | null;
+}
+
+function AgentRow({ run, telemetry }: AgentRowProps) {
+  const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
+  const titleParts = [
+    `step #${run.ordinal + 1}`,
+    `status: ${run.status}`,
+    telemetry ? `provider: ${telemetry.provider}` : null,
+    telemetry ? `model: ${telemetry.model}` : null,
+    total !== null
+      ? `last turn: ${total} tokens · ${formatCost(telemetry!.estimatedCostUsd)}`
+      : null,
+  ].filter((p): p is string => p !== null);
+
   return (
     <li
-      className="group flex items-center gap-2 rounded-md px-2 py-1 text-xs"
-      title={`step #${run.ordinal + 1} · ${run.status}`}
+      className="group flex flex-col gap-0.5 rounded-md px-2 py-1 text-xs"
+      title={titleParts.join('\n')}
     >
-      <span
-        aria-hidden
-        className={cn(
-          'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-          AGENT_STATUS_TONE[run.status],
-        )}
-      />
-      <span className="line-clamp-1 flex-1 text-foreground">{run.name}</span>
-      <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className={cn(
+            'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+            AGENT_STATUS_TONE[run.status],
+          )}
+        />
+        <span
+          className="line-clamp-1 flex-1 rounded-full bg-subtle px-1.5 py-px text-2xs font-medium text-foreground"
+          aria-label={`role chip: ${run.name}`}
+        >
+          {run.name}
+        </span>
+        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
+      </div>
+      {telemetry ? (
+        <div className="flex items-center gap-1.5 pl-3.5 text-2xs text-muted-foreground/80">
+          <span>{shortModel(telemetry.model)}</span>
+          {total !== null ? (
+            <>
+              <span aria-hidden>·</span>
+              <span title={`${total.toLocaleString()} tokens (last turn)`}>
+                {formatTokens(total)} tok
+              </span>
+            </>
+          ) : null}
+          <span aria-hidden>·</span>
+          <span title={`$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)`}>
+            {formatCost(telemetry.estimatedCostUsd)}
+          </span>
+        </div>
+      ) : null}
     </li>
   );
 }
