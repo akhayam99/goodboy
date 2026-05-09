@@ -141,3 +141,15 @@ export {
 } from './worktree/parallel';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
+
+export {
+  parsePlannerOutput,
+  PlannerParseError,
+  PLANNER_SYSTEM_PROMPT,
+  buildPlannerUserPrompt,
+  type PlannerInput,
+  type PlannerOutput,
+  type PlannerStep,
+} from './planner';
+// PlannerAgent (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/planner/cli in Node/Tauri command contexts.
