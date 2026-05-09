@@ -1,16 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  Bot,
-  ChevronDown,
-  ChevronUp,
-  Cpu,
-  DollarSign,
-  FileDown,
-  FolderCode,
-  GitBranch,
-  Lock,
-  Zap,
-} from 'lucide-react';
+import { Bot, Cpu, DollarSign, FileDown, FolderCode, GitBranch, Lock, Zap } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
@@ -87,7 +76,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
   const importConfig = useAppStore((s) => s.importConfig);
-  const providers = useAppStore((s) => s.providers);
 
   const [activeSection, setActiveSection] = useState<NavSection>('providers');
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
@@ -100,12 +88,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importResult, setImportResult] = useState<ConfigBundleImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-
-  const [providerOrder, setProviderOrder] = useState(() => [...providers]);
-
-  useEffect(() => {
-    setProviderOrder([...providers]);
-  }, [providers]);
 
   useEffect(() => {
     if (!open) return;
@@ -184,19 +166,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     }
   };
 
-  const moveProvider = (index: number, direction: -1 | 1) => {
-    const next = [...providerOrder];
-    const swapIndex = index + direction;
-    if (swapIndex < 0 || swapIndex >= next.length) return;
-    const a = next[index];
-    const b = next[swapIndex];
-    if (a === undefined || b === undefined) return;
-    next[index] = b;
-    next[swapIndex] = a;
-    setProviderOrder(next);
-    // TODO (@ak): persist provider order via store action
-  };
-
   const needsSave =
     activeSection === 'app' || activeSection === 'agent' || activeSection === 'advanced';
 
@@ -272,43 +241,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                 disabled={!enableParallelAgents}
               />
             </Field>
-            <div className="flex flex-col gap-2">
-              <div className="text-xs font-semibold text-foreground">provider priority order</div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                providers are tried top-to-bottom when routing a turn.
-              </p>
-              <ul className="flex flex-col gap-1">
-                {providerOrder.map((p, i) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/40 px-3 py-2"
-                  >
-                    <span className="w-4 text-xs text-muted-foreground">{i + 1}</span>
-                    <span className="flex-1 text-sm font-medium">{p.label}</span>
-                    <div className="flex flex-col">
-                      <button
-                        type="button"
-                        onClick={() => moveProvider(i, -1)}
-                        disabled={i === 0}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
-                        aria-label={`move ${p.label} up`}
-                      >
-                        <ChevronUp size={13} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveProvider(i, 1)}
-                        disabled={i === providerOrder.length - 1}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
-                        aria-label={`move ${p.label} down`}
-                      >
-                        <ChevronDown size={13} aria-hidden />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
         );
       case 'skills':
