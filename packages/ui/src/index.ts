@@ -15,6 +15,7 @@ export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
+export { Markdown } from './components/Markdown';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { Select } from './components/Select';
