@@ -222,9 +222,9 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         {currentSession ? <AgentsSection task={currentSession} /> : null}
       </ScrollArea>
 
-      <div className="flex shrink-0 items-center justify-center gap-2 px-2 pb-2 pt-1.5">
-        <ProvidersChip onOpenSettings={onOpenSettings} />
+      <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
         <TelemetryPill />
+        <ProvidersChip onOpenSettings={onOpenSettings} />
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
