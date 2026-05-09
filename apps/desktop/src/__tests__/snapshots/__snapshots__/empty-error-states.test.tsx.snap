@@ -500,7 +500,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] max-h-[40%] shrink-0"
   >
     <section
-      class="flex flex-col px-2 pb-4 pt-1"
+      class="flex flex-col px-2 pb-2 pt-1"
     >
       <header
         class="flex items-baseline justify-between gap-2 px-1 pb-1.5"
@@ -586,13 +586,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
   </div>
   <div
     aria-hidden="true"
-    class="h-2"
+    class="mx-3 my-3 h-px bg-border-soft"
   />
   <div
     class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] flex-1"
   >
     <section
-      class="flex flex-col px-2 pt-4"
+      class="flex flex-col px-2 pt-2"
     >
       <header
         class="flex items-baseline justify-between gap-2 px-1 pb-1.5"

@@ -148,7 +148,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </div>
 
       <ScrollArea className="max-h-[40%] shrink-0">
-        <section className="flex flex-col px-2 pb-4 pt-1">
+        <section className="flex flex-col px-2 pb-2 pt-1">
           <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               workspaces
@@ -180,10 +180,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         </section>
       </ScrollArea>
 
-      <div className="h-2" aria-hidden />
+      <SectionDivider />
 
       <ScrollArea className="flex-1">
-        <section className="flex flex-col px-2 pt-4">
+        <section className="flex flex-col px-2 pt-2">
           <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               sessions
@@ -219,7 +219,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           )}
         </section>
 
-        {currentSession ? <AgentsSection task={currentSession} /> : null}
+        {currentSession ? (
+          <>
+            <SectionDivider />
+            <AgentsSection task={currentSession} />
+          </>
+        ) : null}
       </ScrollArea>
 
       <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
@@ -245,6 +250,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       ) : null}
     </div>
   );
+}
+
+function SectionDivider() {
+  return <div className="mx-3 my-3 h-px bg-border-soft" aria-hidden />;
 }
 
 interface SearchInputProps {
@@ -1285,7 +1294,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   return (
-    <section className="flex flex-col px-2 pb-3 pt-4">
+    <section className="flex flex-col px-2 pb-3 pt-2">
       <header className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
         <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           agents
