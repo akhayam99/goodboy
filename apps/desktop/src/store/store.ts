@@ -30,6 +30,8 @@ import {
   insertWorkspace,
   deleteWorkspace,
   listContextSlotsForTask,
+  insertContextSlotHistory,
+  listContextSlotHistory,
   listMessagesForAgent,
   listMessagesForTask,
   listTurnEventsForAgent,
@@ -55,6 +57,7 @@ import type {
   BudgetAlert,
   BudgetRule,
   ContextSlot,
+  ContextSlotHistoryEntry,
   GlobalSettings,
   IsoDateTime,
   Message,
@@ -221,6 +224,9 @@ export interface AppState {
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
+  readonly slotHistory: Readonly<
+    Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
+  >;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<TaskId, TaskBudget>>;
@@ -289,6 +295,7 @@ export interface AppActions {
   loadSessionTelemetry(taskId: TaskId): Promise<void>;
   loadSessionSlots(taskId: TaskId): Promise<void>;
   upsertSessionSlot(taskId: TaskId, key: SlotKey, value: string): Promise<void>;
+  loadSlotHistory(taskId: TaskId, key: SlotKey): Promise<void>;
   toggleSessionSlot(taskId: TaskId, key: SlotKey, enabled: boolean): Promise<void>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
@@ -356,6 +363,7 @@ const initialState: AppState = {
   sessionTelemetry: {},
   workspaceSummary: null,
   sessionSlots: {},
+  slotHistory: {},
   summarizerStatus: {},
   budgetRules: [],
   sessionBudgets: {},
@@ -436,6 +444,16 @@ async function runSummarizer(
 
     for (const upsert of result.delta.upserts) {
       const existing = (get().sessionSlots[taskId] ?? []).find((s) => s.key === upsert.key);
+      if (existing && existing.value !== upsert.value) {
+        await insertContextSlotHistory(
+          tauriDatabase,
+          taskId,
+          crypto.randomUUID(),
+          upsert.key,
+          existing.value,
+          'summarizer',
+        );
+      }
       const next: ContextSlot = {
         key: upsert.key,
         value: upsert.value,
@@ -689,6 +707,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       messages: {},
       sessionTelemetry: {},
       sessionSlots: {},
+      slotHistory: {},
       sessionWorktrees: {},
       sessionBranches: {},
       sessionPhaseRuns: {},
@@ -1324,6 +1343,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (phaseTransitionEvent) {
         get().appendTurnEvent(taskId, { ...phaseTransitionEvent, runId });
       }
+    } else if (!phaseDefinition && parallelDispatch === null) {
+      const manualAgentId = get().selectedAgentId[taskId] ?? null;
+      if (manualAgentId) {
+        await invokePhaseRunUpdateStatus(manualAgentId, {
+          status: 'running',
+          providerRunId: runId,
+          startedAt: now(),
+        });
+        sessionId = manualAgentId;
+        const refreshedRuns = await invokePhaseRunList(taskId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
+        }));
+      }
     }
 
     if (parallelDispatch === null) {
@@ -1700,8 +1733,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         kind: 'succeeded',
         finishedAt: now(),
       });
-      if (sessionId && phaseDefinition) {
-        const completedOrdinal = phaseDefinition.ordinal;
+      if (sessionId) {
         await invokePhaseRunUpdateStatus(sessionId, {
           status: 'completed',
           outputSummary: assistantText.slice(0, 2000),
@@ -1710,9 +1742,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const refreshedRuns = await invokePhaseRunList(taskId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
-          sessions: state.sessions.map((s) =>
-            s.id === taskId ? { ...s, currentStepOrdinal: completedOrdinal } : s,
-          ),
+          ...(phaseDefinition && {
+            sessions: state.sessions.map((s) =>
+              s.id === taskId ? { ...s, currentStepOrdinal: phaseDefinition.ordinal } : s,
+            ),
+          }),
         }));
       }
 
@@ -1840,12 +1874,43 @@ export const useAppStore = create<AppStore>((set, get) => ({
   upsertSessionSlot: async (taskId, key, value) => {
     const existing = get().sessionSlots[taskId] ?? [];
     const prev = existing.find((s) => s.key === key);
+    if (prev && prev.value !== value) {
+      await insertContextSlotHistory(
+        tauriDatabase,
+        taskId,
+        crypto.randomUUID(),
+        key,
+        prev.value,
+        'user',
+      );
+    }
     const next: ContextSlot = { key, value, enabled: prev?.enabled ?? true };
     await upsertContextSlot(tauriDatabase, taskId, next);
+    const refreshedHistory = await listContextSlotHistory(tauriDatabase, taskId, key);
     set((state) => ({
       sessionSlots: {
         ...state.sessionSlots,
         [taskId]: mergeSlots(state.sessionSlots[taskId] ?? [], next),
+      },
+      slotHistory: {
+        ...state.slotHistory,
+        [taskId]: {
+          ...(state.slotHistory[taskId] ?? {}),
+          [key]: refreshedHistory,
+        },
+      },
+    }));
+  },
+
+  loadSlotHistory: async (taskId, key) => {
+    const entries = await listContextSlotHistory(tauriDatabase, taskId, key);
+    set((state) => ({
+      slotHistory: {
+        ...state.slotHistory,
+        [taskId]: {
+          ...(state.slotHistory[taskId] ?? {}),
+          [key]: entries,
+        },
       },
     }));
   },
@@ -2052,6 +2117,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             messages: {},
             sessionTelemetry: {},
             sessionSlots: {},
+            slotHistory: {},
             sessionWorktrees: {},
             sessionPhaseRuns: {},
             selectedAgentId: {},

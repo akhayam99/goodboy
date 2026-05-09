@@ -14,6 +14,7 @@ import { m013BudgetExtraTokens } from './m013-budget-extra-tokens';
 import { m014RenameDomain } from './m014-rename-domain';
 import { m015AgentsPerChat } from './m015-agents-per-chat';
 import { m016TurnEvents } from './m016-turn-events';
+import { m017ContextSlotHistory } from './m017-context-slot-history';
 
 export interface Migration {
   readonly version: number;
@@ -37,4 +38,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 14, sql: m014RenameDomain },
   { version: 15, sql: m015AgentsPerChat },
   { version: 16, sql: m016TurnEvents },
+  { version: 17, sql: m017ContextSlotHistory },
 ];

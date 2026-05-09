@@ -15,6 +15,16 @@ export type ContextSlot = Readonly<{
   enabled: boolean;
 }>;
 
+export type ContextSlotAuthor = 'user' | 'summarizer';
+
+export type ContextSlotHistoryEntry = Readonly<{
+  id: string;
+  key: string;
+  value: string;
+  author: ContextSlotAuthor;
+  createdAt: IsoDateTime;
+}>;
+
 export type TurnState =
   | { kind: 'draft' }
   | { kind: 'starting'; startedAt: IsoDateTime }

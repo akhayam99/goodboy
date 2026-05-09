@@ -14,7 +14,14 @@ export type {
   WorkflowId,
   WorkspaceId,
 } from './ids';
-export type { ContextSlot, Task, TurnState, Workspace } from './workspace';
+export type {
+  ContextSlot,
+  ContextSlotAuthor,
+  ContextSlotHistoryEntry,
+  Task,
+  TurnState,
+  Workspace,
+} from './workspace';
 export type { Message, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {

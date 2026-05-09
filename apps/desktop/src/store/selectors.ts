@@ -1,4 +1,4 @@
-import type { ContextSlot, Task, TaskId, Workspace } from '@kay-am/types';
+import type { ContextSlot, ContextSlotHistoryEntry, Task, TaskId, Workspace } from '@kay-am/types';
 import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
@@ -21,3 +21,11 @@ const IDLE_STATUS: SummarizerSessionStatus = { status: 'idle', lastUpdate: null,
 
 export const useSummarizerStatus = (taskId: TaskId | null): SummarizerSessionStatus =>
   useAppStore((s) => (taskId ? (s.summarizerStatus[taskId] ?? IDLE_STATUS) : IDLE_STATUS));
+
+const EMPTY_HISTORY: ReadonlyArray<ContextSlotHistoryEntry> = [];
+
+export const useSlotHistory = (
+  taskId: TaskId | null,
+  key: string,
+): ReadonlyArray<ContextSlotHistoryEntry> =>
+  useAppStore((s) => (taskId ? (s.slotHistory[taskId]?.[key] ?? EMPTY_HISTORY) : EMPTY_HISTORY));
