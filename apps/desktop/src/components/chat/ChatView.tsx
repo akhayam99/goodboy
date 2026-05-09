@@ -10,7 +10,7 @@ import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDi
 
 interface ChatViewProps {
   session: Task;
-  onRequestEnd: () => void;
+  onRequestEnd?: () => void;
 }
 
 const PIN_TOLERANCE_PX = 32;
@@ -107,7 +107,7 @@ function ThinkingIndicator() {
   );
 }
 
-export function ChatView({ session, onRequestEnd }: ChatViewProps) {
+export function ChatView({ session }: ChatViewProps) {
   const events = useTranscript(session.id);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
@@ -192,7 +192,6 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
         <ChatHeader
           session={session}
           worktreePath={worktreePath}
-          onEndSession={onRequestEnd}
           parallelRunIds={parallelRunIds}
           onSelectRun={onSelectRun}
         />
@@ -245,7 +244,7 @@ export function ChatView({ session, onRequestEnd }: ChatViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <ChatHeader session={session} worktreePath={worktreePath} onEndSession={onRequestEnd} />
+      <ChatHeader session={session} worktreePath={worktreePath} />
       <div
         ref={scrollerRef}
         onScroll={onScroll}

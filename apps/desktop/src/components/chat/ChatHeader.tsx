@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitBranch, Square, ShieldCheck } from 'lucide-react';
+import { GitBranch, ShieldCheck } from 'lucide-react';
 import { Button, Tooltip, cn } from '@kay-am/ui';
 import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
@@ -10,7 +10,6 @@ import { ParallelProgressPill } from './ParallelProgressPill';
 interface ChatHeaderProps {
   session: Task;
   worktreePath: string | null;
-  onEndSession: () => void;
   parallelRunIds?: ReadonlyArray<ProviderRunId>;
   onSelectRun?: (runId: ProviderRunId) => void;
 }
@@ -24,7 +23,6 @@ function inferBranch(worktreePath: string | null, taskId: string): string {
 export function ChatHeader({
   session,
   worktreePath,
-  onEndSession,
   parallelRunIds,
   onSelectRun,
 }: ChatHeaderProps) {
@@ -32,7 +30,6 @@ export function ChatHeader({
   const [auditOpen, setAuditOpen] = useState(false);
 
   const branch = inferBranch(worktreePath, session.id);
-  const isEnded = session.state.kind === 'ended';
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
@@ -56,7 +53,7 @@ export function ChatHeader({
   };
 
   return (
-    <div className="flex w-full items-center gap-3 border-b border-border px-4 py-2.5">
+    <div className="flex w-full items-center gap-3 px-4 py-2.5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
@@ -86,16 +83,6 @@ export function ChatHeader({
 
       <div className="flex shrink-0 items-center gap-1">
         <OpenInEditorButton worktreePath={worktreePath} />
-        {!isEnded ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onEndSession}
-            title="end session — removes worktree, preserves branch"
-          >
-            <Square size={12} aria-hidden /> end session
-          </Button>
-        ) : null}
         <Tooltip content="permission audit log" side="bottom">
           <Button
             variant="ghost"
