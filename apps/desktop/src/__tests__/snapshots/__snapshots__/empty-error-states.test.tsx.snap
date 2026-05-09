@@ -154,15 +154,55 @@ exports[`snapshot — empty states > NewSessionDialog: no phase templates 1`] = 
         >
           workflow (optional)
         </span>
-        <p
-          class="text-xs text-muted-foreground/70"
+        <div
+          class="flex flex-wrap gap-1.5"
         >
-          none available
-        </p>
+          <button
+            class="rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-foreground text-background"
+            type="button"
+          >
+            single chat
+          </button>
+          <button
+            class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="design a custom workflow with the planner agent"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-sparkles"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+              />
+              <path
+                d="M20 2v4"
+              />
+              <path
+                d="M22 4h-4"
+              />
+              <circle
+                cx="4"
+                cy="20"
+                r="2"
+              />
+            </svg>
+             design custom
+          </button>
+        </div>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
         >
-          no workflows yet — create in Settings → Workflows.
+          no workflows yet — design one with the planner below.
         </p>
       </div>
       <div
@@ -933,15 +973,55 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         >
           workflow (optional)
         </span>
-        <p
-          class="text-xs text-muted-foreground/70"
+        <div
+          class="flex flex-wrap gap-1.5"
         >
-          none available
-        </p>
+          <button
+            class="rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-foreground text-background"
+            type="button"
+          >
+            single chat
+          </button>
+          <button
+            class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="design a custom workflow with the planner agent"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-sparkles"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+              />
+              <path
+                d="M20 2v4"
+              />
+              <path
+                d="M22 4h-4"
+              />
+              <circle
+                cx="4"
+                cy="20"
+                r="2"
+              />
+            </svg>
+             design custom
+          </button>
+        </div>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
         >
-          no workflows yet — create in Settings → Workflows.
+          no workflows yet — design one with the planner below.
         </p>
       </div>
       <div

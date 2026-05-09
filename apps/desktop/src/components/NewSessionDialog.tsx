@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
+import { Sparkles } from 'lucide-react';
 import type {
   WorkflowId,
   ProviderId,
@@ -9,6 +10,7 @@ import type {
 } from '@kay-am/types';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
+import { PlannerWidget } from './PlannerWidget';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -49,6 +51,7 @@ export function NewSessionDialog({
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [softCapRaw, setSoftCapRaw] = useState('');
   const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
+  const [plannerOpen, setPlannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -71,6 +74,7 @@ export function NewSessionDialog({
     setPrefix(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
     setSoftCapRaw('');
     setSelectedPhaseTemplateId('');
+    setPlannerOpen(false);
     setError(null);
   };
 
@@ -154,30 +158,50 @@ export function NewSessionDialog({
         label="workflow (optional)"
         hint={
           phaseTemplates.length === 0
-            ? 'no workflows yet — create in Settings → Workflows.'
+            ? 'no workflows yet — design one with the planner below.'
             : 'pick a workflow blueprint. each step spawns its own agent with its own context.'
         }
       >
-        {phaseTemplates.length === 0 ? (
-          <p className="text-xs text-muted-foreground/70">none available</p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
+          <WorkflowChip
+            label="single chat"
+            active={selectedPhaseTemplateId === ''}
+            onClick={() => setSelectedPhaseTemplateId('')}
+          />
+          {phaseTemplates.map((t) => (
             <WorkflowChip
-              label="single chat"
-              active={selectedPhaseTemplateId === ''}
-              onClick={() => setSelectedPhaseTemplateId('')}
+              key={t.id}
+              label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
+              active={selectedPhaseTemplateId === t.id}
+              onClick={() => setSelectedPhaseTemplateId(t.id)}
+              title={t.description || undefined}
             />
-            {phaseTemplates.map((t) => (
-              <WorkflowChip
-                key={t.id}
-                label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
-                active={selectedPhaseTemplateId === t.id}
-                onClick={() => setSelectedPhaseTemplateId(t.id)}
-                title={t.description || undefined}
-              />
-            ))}
-          </div>
-        )}
+          ))}
+          <button
+            type="button"
+            onClick={() => setPlannerOpen((v) => !v)}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors',
+              plannerOpen
+                ? 'bg-foreground text-background'
+                : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+            title="design a custom workflow with the planner agent"
+          >
+            <Sparkles size={11} aria-hidden /> design custom
+          </button>
+        </div>
+        {plannerOpen ? (
+          <PlannerWidget
+            workspaceId={workspaceId}
+            providerId={selectedProvider}
+            initialTheme={goal}
+            onWorkflowReady={(workflowId) => {
+              setSelectedPhaseTemplateId(workflowId);
+              setPlannerOpen(false);
+            }}
+          />
+        ) : null}
       </Field>
 
       <Field label="provider">
