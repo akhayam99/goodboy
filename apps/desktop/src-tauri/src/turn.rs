@@ -93,6 +93,80 @@ pub struct TurnEventEnvelope {
 
 pub const EVENT_NAME: &str = "turn_event";
 
+/// Build per-binary CLI args. The Tauri side spawns the binary directly, so
+/// flag shapes have to match each CLI: claude code uses `-p / --output-format
+/// stream-json / --permission-mode / --allowedTools / --disallowedTools`,
+/// cursor-agent uses `-p / --output-format stream-json / --workspace /
+/// --model / --force`, and codex uses `exec --json --model --cwd -- prompt`.
+/// Falls back to claude flags for unknown binaries to preserve previous
+/// behaviour.
+fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
+    let bin = std::path::Path::new(binary)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or(binary);
+
+    match bin {
+        "cursor-agent" => {
+            let mut v = vec![
+                "-p".to_string(),
+                args.prompt.to_string(),
+                "--output-format".to_string(),
+                "stream-json".to_string(),
+                "--workspace".to_string(),
+                args.working_dir.to_string(),
+                "--model".to_string(),
+                args.model.to_string(),
+                // matches the claude --dangerously-skip-permissions: cursor-agent
+                // runs tools without interactive confirmation.
+                "--force".to_string(),
+            ];
+            // permission rules + permission_mode aren't supported by cursor-agent
+            // today; intentionally dropped here to avoid unknown-flag errors.
+            let _ = (args.permission_mode, args.allowed_tools, args.disallowed_tools);
+            v.shrink_to_fit();
+            v
+        }
+        "codex" => {
+            // codex exec takes a single prompt argument after `--`. permission
+            // rules aren't supported by the codex CLI yet.
+            vec![
+                "exec".to_string(),
+                "--json".to_string(),
+                "--model".to_string(),
+                args.model.to_string(),
+                "--cwd".to_string(),
+                args.working_dir.to_string(),
+                "--".to_string(),
+                args.prompt.to_string(),
+            ]
+        }
+        _ => {
+            // claude (default).
+            let mut v = vec![
+                "-p".to_string(),
+                args.prompt.to_string(),
+                "--output-format".to_string(),
+                "stream-json".to_string(),
+                "--verbose".to_string(),
+                "--model".to_string(),
+                args.model.to_string(),
+                "--permission-mode".to_string(),
+                args.permission_mode.to_string(),
+            ];
+            if !args.allowed_tools.is_empty() {
+                v.push("--allowedTools".to_string());
+                v.push(args.allowed_tools.join(","));
+            }
+            if !args.disallowed_tools.is_empty() {
+                v.push("--disallowedTools".to_string());
+                v.push(args.disallowed_tools.join(","));
+            }
+            v
+        }
+    }
+}
+
 /// Per-run spawn parameters used by both `turn_spawn` and `parallel_session_spawn`.
 pub struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
@@ -136,26 +210,11 @@ pub(crate) fn spawn_one(
         // claude's own ~/.claude credentials.
         .env_remove("CLAUDECODE")
         .env_remove("CLAUDE_CODE_ENTRYPOINT")
-        .env_remove("CLAUDE_AGENT_SDK_VERSION")
-        .arg("-p")
-        .arg(args.prompt)
-        .arg("--output-format")
-        .arg("stream-json")
-        .arg("--verbose")
-        .arg("--model")
-        .arg(args.model)
-        .arg("--permission-mode")
-        .arg(args.permission_mode);
+        .env_remove("CLAUDE_AGENT_SDK_VERSION");
 
-    if !args.allowed_tools.is_empty() {
-        command
-            .arg("--allowedTools")
-            .arg(args.allowed_tools.join(","));
-    }
-    if !args.disallowed_tools.is_empty() {
-        command
-            .arg("--disallowedTools")
-            .arg(args.disallowed_tools.join(","));
+    let cli_args = build_provider_cli_args(args.binary, &args);
+    for a in &cli_args {
+        command.arg(a);
     }
 
     let mut child = command

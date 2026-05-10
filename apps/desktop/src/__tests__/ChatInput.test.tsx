@@ -18,6 +18,7 @@ vi.mock('../store', () => ({
       cancelCurrentTurn: cancelCurrentTurnMock,
       providers: [{ id: 'anthropic', connection: 'connected' }],
       skills: {},
+      providerSpendBreakdown: [],
     }),
   EMPTY_ARRAY: [] as never[],
 }));

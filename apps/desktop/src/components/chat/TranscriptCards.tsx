@@ -42,8 +42,13 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
     case 'usage':
       return (
         <p className="text-xs text-muted-foreground">
-          {item.usage.inputTokens} in / {item.usage.outputTokens} out tokens
-          {item.usage.cachedInputTokens > 0 ? ` · ${item.usage.cachedInputTokens} cached` : ''}
+          {formatTokens(item.usage.inputTokens)} in / {formatTokens(item.usage.outputTokens)} out
+          {item.usage.cachedInputTokens > 0
+            ? ` · ${formatTokens(item.usage.cachedInputTokens)} cached`
+            : ''}
+          {item.usage.estimatedCostUsd > 0
+            ? ` · ~${formatCostUsd(item.usage.estimatedCostUsd)}`
+            : ''}
         </p>
       );
     case 'error':
@@ -71,6 +76,18 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
     case 'permission_decision':
       return <PermissionDecisionCard item={item} />;
   }
+}
+
+function formatTokens(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
+  return `${Math.round(n / 1000)}k`;
+}
+
+function formatCostUsd(cost: number): string {
+  if (cost < 0.001) return `$${cost.toFixed(4)}`;
+  if (cost < 1) return `$${cost.toFixed(3)}`;
+  return `$${cost.toFixed(2)}`;
 }
 
 function AssistantText({ text }: { text: string }) {
@@ -178,12 +195,12 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
         ) : null}
       </button>
       {open ? (
-        <div className="ml-[1.125rem] mt-1 flex flex-col gap-1">
-          <pre className="overflow-x-auto rounded bg-subtle p-2 text-2xs text-muted-foreground">
+        <div className="ml-[1.125rem] mt-0.5 flex min-w-0 flex-col gap-1">
+          <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-2xs text-muted-foreground">
             input: {JSON.stringify(item.input, null, 2)}
           </pre>
           {item.ended ? (
-            <pre className="overflow-x-auto rounded bg-subtle p-2 text-2xs text-muted-foreground">
+            <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-2xs text-muted-foreground">
               output: {JSON.stringify(item.output, null, 2)}
             </pre>
           ) : null}

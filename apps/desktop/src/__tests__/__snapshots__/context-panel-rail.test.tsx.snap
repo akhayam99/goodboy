@@ -2,39 +2,42 @@
 
 exports[`snapshot — ContextPanel variants > collapsed: renders rail button, not slot content 1`] = `
 <div
-  aria-label="expand context panel"
-  class="flex h-full w-full cursor-pointer flex-col items-center justify-start pt-2 border-l border-border bg-background hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-  role="button"
-  tabindex="0"
-  title="expand context panel"
+  class="flex h-full w-full justify-end pr-4 pt-4"
 >
-  <svg
-    aria-hidden="true"
-    class="lucide lucide-panel-right-open text-muted-foreground"
-    fill="none"
-    height="13"
-    stroke="currentColor"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="2"
-    viewBox="0 0 24 24"
-    width="13"
-    xmlns="http://www.w3.org/2000/svg"
+  <button
+    aria-label="expand context panel"
+    class="h-fit rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+    title="expand context panel"
+    type="button"
   >
-    <rect
-      height="18"
-      rx="2"
-      width="18"
-      x="3"
-      y="3"
-    />
-    <path
-      d="M15 3v18"
-    />
-    <path
-      d="m10 15-3-3 3-3"
-    />
-  </svg>
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-panel-right-open"
+      fill="none"
+      height="13"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="13"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        height="18"
+        rx="2"
+        width="18"
+        x="3"
+        y="3"
+      />
+      <path
+        d="M15 3v18"
+      />
+      <path
+        d="m10 15-3-3 3-3"
+      />
+    </svg>
+  </button>
 </div>
 `;
 
@@ -98,11 +101,45 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
       <li
         class="flex flex-col gap-1.5"
       >
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        <div
+          class="flex items-center justify-between"
         >
-          goal
-        </label>
+          <label
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            goal
+          </label>
+          <button
+            aria-label="view history for goal"
+            class="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="view history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-history"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+              />
+              <path
+                d="M3 3v5h5"
+              />
+              <path
+                d="M12 7v5l4 2"
+              />
+            </svg>
+          </button>
+        </div>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -113,15 +150,93 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
             empty — click to edit
           </span>
         </button>
+        <dialog
+          aria-labelledby="_r_0_-title"
+          class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div
+            class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+            >
+              <div
+                class="flex min-w-0 flex-col gap-1"
+              >
+                <h2
+                  class="text-sm font-semibold tracking-tight text-foreground"
+                  id="_r_0_-title"
+                >
+                  history — goal
+                </h2>
+              </div>
+              <button
+                aria-label="close"
+                class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="text-base leading-none"
+                >
+                  ×
+                </span>
+              </button>
+            </header>
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+            >
+              <p
+                class="text-xs text-muted-foreground italic"
+              >
+                no history yet
+              </p>
+            </div>
+          </div>
+        </dialog>
       </li>
       <li
         class="flex flex-col gap-1.5"
       >
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        <div
+          class="flex items-center justify-between"
         >
-          files touched
-        </label>
+          <label
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            files touched
+          </label>
+          <button
+            aria-label="view history for files touched"
+            class="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="view history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-history"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+              />
+              <path
+                d="M3 3v5h5"
+              />
+              <path
+                d="M12 7v5l4 2"
+              />
+            </svg>
+          </button>
+        </div>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -132,15 +247,93 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
             empty — click to edit
           </span>
         </button>
+        <dialog
+          aria-labelledby="_r_1_-title"
+          class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div
+            class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+            >
+              <div
+                class="flex min-w-0 flex-col gap-1"
+              >
+                <h2
+                  class="text-sm font-semibold tracking-tight text-foreground"
+                  id="_r_1_-title"
+                >
+                  history — files touched
+                </h2>
+              </div>
+              <button
+                aria-label="close"
+                class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="text-base leading-none"
+                >
+                  ×
+                </span>
+              </button>
+            </header>
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+            >
+              <p
+                class="text-xs text-muted-foreground italic"
+              >
+                no history yet
+              </p>
+            </div>
+          </div>
+        </dialog>
       </li>
       <li
         class="flex flex-col gap-1.5"
       >
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        <div
+          class="flex items-center justify-between"
         >
-          decisions
-        </label>
+          <label
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            decisions
+          </label>
+          <button
+            aria-label="view history for decisions"
+            class="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="view history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-history"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+              />
+              <path
+                d="M3 3v5h5"
+              />
+              <path
+                d="M12 7v5l4 2"
+              />
+            </svg>
+          </button>
+        </div>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -151,15 +344,93 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
             empty — click to edit
           </span>
         </button>
+        <dialog
+          aria-labelledby="_r_2_-title"
+          class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div
+            class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+            >
+              <div
+                class="flex min-w-0 flex-col gap-1"
+              >
+                <h2
+                  class="text-sm font-semibold tracking-tight text-foreground"
+                  id="_r_2_-title"
+                >
+                  history — decisions
+                </h2>
+              </div>
+              <button
+                aria-label="close"
+                class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="text-base leading-none"
+                >
+                  ×
+                </span>
+              </button>
+            </header>
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+            >
+              <p
+                class="text-xs text-muted-foreground italic"
+              >
+                no history yet
+              </p>
+            </div>
+          </div>
+        </dialog>
       </li>
       <li
         class="flex flex-col gap-1.5"
       >
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        <div
+          class="flex items-center justify-between"
         >
-          open questions
-        </label>
+          <label
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            open questions
+          </label>
+          <button
+            aria-label="view history for open questions"
+            class="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="view history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-history"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+              />
+              <path
+                d="M3 3v5h5"
+              />
+              <path
+                d="M12 7v5l4 2"
+              />
+            </svg>
+          </button>
+        </div>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -170,15 +441,93 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
             empty — click to edit
           </span>
         </button>
+        <dialog
+          aria-labelledby="_r_3_-title"
+          class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div
+            class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+            >
+              <div
+                class="flex min-w-0 flex-col gap-1"
+              >
+                <h2
+                  class="text-sm font-semibold tracking-tight text-foreground"
+                  id="_r_3_-title"
+                >
+                  history — open questions
+                </h2>
+              </div>
+              <button
+                aria-label="close"
+                class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="text-base leading-none"
+                >
+                  ×
+                </span>
+              </button>
+            </header>
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+            >
+              <p
+                class="text-xs text-muted-foreground italic"
+              >
+                no history yet
+              </p>
+            </div>
+          </div>
+        </dialog>
       </li>
       <li
         class="flex flex-col gap-1.5"
       >
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        <div
+          class="flex items-center justify-between"
         >
-          last output summary
-        </label>
+          <label
+            class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            last output summary
+          </label>
+          <button
+            aria-label="view history for last output summary"
+            class="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="view history"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-history"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+              />
+              <path
+                d="M3 3v5h5"
+              />
+              <path
+                d="M12 7v5l4 2"
+              />
+            </svg>
+          </button>
+        </div>
         <button
           class="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
           type="button"
@@ -189,6 +538,50 @@ exports[`snapshot — ContextPanel variants > expanded: renders slot content, no
             empty — click to edit
           </span>
         </button>
+        <dialog
+          aria-labelledby="_r_4_-title"
+          class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div
+            class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+            >
+              <div
+                class="flex min-w-0 flex-col gap-1"
+              >
+                <h2
+                  class="text-sm font-semibold tracking-tight text-foreground"
+                  id="_r_4_-title"
+                >
+                  history — last output summary
+                </h2>
+              </div>
+              <button
+                aria-label="close"
+                class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="text-base leading-none"
+                >
+                  ×
+                </span>
+              </button>
+            </header>
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+            >
+              <p
+                class="text-xs text-muted-foreground italic"
+              >
+                no history yet
+              </p>
+            </div>
+          </div>
+        </dialog>
       </li>
     </ul>
   </div>

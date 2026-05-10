@@ -26,12 +26,17 @@ export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyA
 
 const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
 const QUESTION_RE = /<<ctx-question>>([\s\S]*?)<<\/ctx-question>>/g;
+const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
 
 /**
  * Pull agent-emitted markers out of an assistant turn's full text. Agents
  * are instructed (via system prompt) to wrap durable observations like:
  *   <<ctx-decision>>switching auth to OAuth2 PKCE<</ctx-decision>>
  *   <<ctx-question>>do we need refresh tokens?<</ctx-question>>
+ *   <<ctx-resolved>>do we need refresh tokens?<</ctx-resolved>>
+ *
+ * `resolved` removes a previously open question once the user has answered it
+ * — same text as the original question (case-insensitive substring match).
  *
  * The marker form is intentionally verbose so the model rarely emits it by
  * accident in casual prose. Whitespace inside is trimmed.
@@ -39,10 +44,12 @@ const QUESTION_RE = /<<ctx-question>>([\s\S]*?)<<\/ctx-question>>/g;
 export function extractMarkers(assistantText: string): {
   readonly decisions: ReadonlyArray<string>;
   readonly questions: ReadonlyArray<string>;
+  readonly resolved: ReadonlyArray<string>;
 } {
   const decisions = extractAll(assistantText, DECISION_RE);
   const questions = extractAll(assistantText, QUESTION_RE);
-  return { decisions, questions };
+  const resolved = extractAll(assistantText, RESOLVED_RE);
+  return { decisions, questions, resolved };
 }
 
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
@@ -79,4 +86,41 @@ export function mergeIntoSlot(existing: string, additions: ReadonlyArray<string>
     changed = true;
   }
   return changed ? lines.join('\n') : existing;
+}
+
+/**
+ * Remove lines from `existing` that match any string in `removals` — match is
+ * case-insensitive, ignores leading list markers (`-`, `*`, `1.`), and
+ * succeeds when one is a substring of the other. Used to clean up resolved
+ * open questions when the agent emits `<<ctx-resolved>>` markers.
+ *
+ * Returns the original string verbatim if nothing matched, so the caller can
+ * skip the upsert.
+ */
+export function removeFromSlot(existing: string, removals: ReadonlyArray<string>): string {
+  if (removals.length === 0 || existing.length === 0) return existing;
+  const norm = (s: string) =>
+    s
+      .replace(/^\s*(?:[-*]|\d+\.)\s+/, '')
+      .trim()
+      .toLowerCase();
+  const targets = removals.map(norm).filter((s) => s.length > 0);
+  if (targets.length === 0) return existing;
+  const lines = existing.split('\n');
+  const kept: string[] = [];
+  let changed = false;
+  for (const line of lines) {
+    const n = norm(line);
+    if (n.length === 0) {
+      kept.push(line);
+      continue;
+    }
+    const matches = targets.some((t) => n === t || n.includes(t) || t.includes(n));
+    if (matches) {
+      changed = true;
+      continue;
+    }
+    kept.push(line);
+  }
+  return changed ? kept.join('\n') : existing;
 }

@@ -1,7 +1,7 @@
 import type { ContextSlot, TaskId } from '@kay-am/types';
 import type { Database } from '@kay-am/db';
 import { ContextEngine } from './engine';
-import { extractMarkers, mergeIntoSlot } from './extractors';
+import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
 
 // ---------------------------------------------------------------------------
@@ -28,13 +28,22 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   const engine = new ContextEngine({ db: input.db });
   const slots = await engine.load(input.taskId);
 
-  const { decisions, questions } = extractMarkers(input.assistantText);
+  const { decisions, questions, resolved } = extractMarkers(input.assistantText);
 
   const updates: Array<{ key: SlotKey; value: string }> = [];
 
   pushUpdate(updates, slots, 'files_touched', input.filesEdited);
   pushUpdate(updates, slots, 'decisions', decisions);
-  pushUpdate(updates, slots, 'open_questions', questions);
+
+  // open_questions: add new ones, then remove resolved. Compose against the
+  // pending update if `pushUpdate` already staged one for this slot, so
+  // resolutions and additions in the same turn don't fight each other.
+  const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
+  let nextQuestions = mergeIntoSlot(existingQuestions, questions);
+  nextQuestions = removeFromSlot(nextQuestions, resolved);
+  if (nextQuestions !== existingQuestions) {
+    updates.push({ key: 'open_questions', value: nextQuestions });
+  }
 
   for (const upd of updates) {
     await engine.upsert(input.taskId, upd.key, upd.value);

@@ -1,9 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { PanelRightClose, PanelRightOpen, History, RotateCcw } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
-import type { ContextSlot, ContextSlotHistoryEntry, Task, TaskId } from '@kay-am/types';
-import { useAppStore, useSessionSlots, useSlotHistory, useSummarizerStatus } from '../store';
+import type {
+  ContextSlot,
+  ContextSlotHistoryEntry,
+  Task,
+  TaskId,
+  TelemetryRecord,
+} from '@kay-am/types';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionSlots,
+  useSlotHistory,
+  useSummarizerStatus,
+} from '../store';
 
 interface ContextPanelProps {
   session: Task;
@@ -23,31 +35,48 @@ export function ContextPanel({
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
+  const sessionTelemetry = useAppStore(
+    (s) => s.sessionTelemetry[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+
+  const summarizerTotals = useMemo(() => {
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let estimatedCostUsd = 0;
+    let count = 0;
+    for (const rec of sessionTelemetry) {
+      if (rec.kind !== 'summarizer') continue;
+      inputTokens += rec.inputTokens;
+      outputTokens += rec.outputTokens;
+      estimatedCostUsd += rec.estimatedCostUsd;
+      count += 1;
+    }
+    return { inputTokens, outputTokens, estimatedCostUsd, count };
+  }, [sessionTelemetry]);
 
   const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
 
   if (collapsed) {
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="expand context panel"
-        onClick={onExpand}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onExpand?.();
-          }
-        }}
-        className={cn(
-          'flex h-full w-full cursor-pointer flex-col items-center justify-start pt-2',
-          'border-l border-border bg-background',
-          'hover:bg-muted/50',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-        )}
-        title="expand context panel"
-      >
-        <PanelRightOpen size={13} className="text-muted-foreground" aria-hidden />
+      <div className="flex h-full w-full justify-end pr-4 pt-4">
+        <button
+          type="button"
+          onClick={onExpand}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onExpand?.();
+            }
+          }}
+          title="expand context panel"
+          aria-label="expand context panel"
+          className={cn(
+            'h-fit rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+          )}
+        >
+          <PanelRightOpen size={13} aria-hidden />
+        </button>
       </div>
     );
   }
@@ -64,6 +93,7 @@ export function ContextPanel({
               status={summarizer.status}
               lastUpdate={summarizer.lastUpdate}
               error={summarizer.error}
+              totals={summarizerTotals}
             />
             {onCollapse ? (
               <button
@@ -209,7 +239,7 @@ interface SlotHistoryDialogProps {
 
 function SlotHistoryDialog({ label, open, entries, onRestore, onClose }: SlotHistoryDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="sm">
+    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="lg">
       {entries.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">no history yet</p>
       ) : (
@@ -267,12 +297,30 @@ function SummarizerBadge({
   status,
   lastUpdate,
   error,
+  totals,
 }: {
   status: SummarizerStatusKind;
   lastUpdate: string | null;
   error: string | null;
+  totals: {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly estimatedCostUsd: number;
+    readonly count: number;
+  };
 }) {
-  if (status === 'idle') return null;
+  if (status === 'idle') {
+    if (totals.count === 0 || totals.estimatedCostUsd <= 0) return null;
+    const tooltip = `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+    return (
+      <span
+        title={tooltip}
+        className="rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground"
+      >
+        Σ ${totals.estimatedCostUsd.toFixed(4)}
+      </span>
+    );
+  }
   const styles: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
     running: 'bg-info/10 text-info',
     error: 'bg-danger/10 text-danger',
@@ -286,12 +334,22 @@ function SummarizerBadge({
       ? `last error: ${error}`
       : lastUpdate
         ? `last update: ${lastUpdate}`
-        : 'summarizer running';
+        : 'summarizer running — keep typing, the app is not blocked';
   return (
     <span
       title={tooltip}
-      className={cn('rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide', styles[status])}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide',
+        styles[status],
+      )}
     >
+      {status === 'running' ? (
+        <span className="flex gap-0.5" aria-hidden>
+          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:0ms]" />
+          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:150ms]" />
+          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:300ms]" />
+        </span>
+      ) : null}
       {labels[status]}
     </span>
   );

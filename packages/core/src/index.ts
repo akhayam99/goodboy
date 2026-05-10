@@ -27,6 +27,7 @@ export {
   extractMarkers,
   isSlotKey,
   mergeIntoSlot,
+  removeFromSlot,
   serializeSlots,
   type AutoPopulateInput,
   type AutoPopulateResult,

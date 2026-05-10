@@ -1071,6 +1071,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
+  const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
+  const agentRunHistory = useAppStore((s) => s.agentRunHistory);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
@@ -1097,6 +1099,52 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     return map;
   }, [telemetry]);
+
+  const turnsByAgentId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of messages) {
+      if (m.role !== 'user') continue;
+      map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
+    }
+    return map;
+  }, [messages]);
+
+  /**
+   * Cumulative telemetry per agent across every providerRun we recorded for
+   * that agent — needed so the cost/tokens row in the sidebar doesn't drop
+   * earlier providers' usage when the user swaps provider mid-session.
+   */
+  const aggregatesByAgentId = useMemo(() => {
+    const map = new Map<
+      string,
+      { inputTokens: number; outputTokens: number; estimatedCostUsd: number; turns: number }
+    >();
+    const telemetryByRun = new Map<string, TelemetryRecord>();
+    for (const rec of telemetry) {
+      if (rec.kind !== 'turn') continue;
+      const existing = telemetryByRun.get(rec.runId);
+      if (!existing || existing.recordedAt < rec.recordedAt) {
+        telemetryByRun.set(rec.runId, rec);
+      }
+    }
+    for (const run of phaseRuns) {
+      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let estimatedCostUsd = 0;
+      let turns = 0;
+      for (const rid of runIds) {
+        const rec = telemetryByRun.get(rid);
+        if (!rec) continue;
+        inputTokens += rec.inputTokens;
+        outputTokens += rec.outputTokens;
+        estimatedCostUsd += rec.estimatedCostUsd;
+        turns += 1;
+      }
+      map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns });
+    }
+    return map;
+  }, [telemetry, phaseRuns, agentRunHistory]);
 
   const onPickAgent = (sid: SessionId) => {
     if (sid === selectedAgentId) return;
@@ -1152,6 +1200,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
               key={run.id}
               run={run}
               telemetry={run.runId ? (telemetryByRunId.get(run.runId) ?? null) : null}
+              aggregate={aggregatesByAgentId.get(run.id) ?? null}
+              turns={turnsByAgentId.get(run.id) ?? 0}
               isSelected={run.id === selectedAgentId}
               isEditing={editingId === run.id}
               onClick={() => onPickAgent(run.id)}
@@ -1264,9 +1314,18 @@ const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
+interface AgentAggregate {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly estimatedCostUsd: number;
+  readonly turns: number;
+}
+
 interface AgentRowProps {
   readonly run: Session;
   readonly telemetry: TelemetryRecord | null;
+  readonly aggregate: AgentAggregate | null;
+  readonly turns: number;
   readonly isSelected: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
@@ -1279,6 +1338,8 @@ interface AgentRowProps {
 function AgentRow({
   run,
   telemetry,
+  aggregate,
+  turns,
   isSelected,
   isEditing,
   onClick,
@@ -1407,40 +1468,57 @@ function AgentRow({
         ) : null}
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
       </div>
-      <div className="flex flex-col gap-0.5 px-2 pb-1.5 pl-[1.875rem]">
-        <div className="flex items-center gap-1.5 text-2xs text-muted-foreground/80">
-          {telemetry ? (
-            <>
-              <span>{shortModel(telemetry.model)}</span>
-              <span aria-hidden>·</span>
-            </>
-          ) : null}
+      <div className="flex flex-col gap-1 px-2 pb-1.5 pl-[1.875rem]">
+        <div className="flex items-center gap-2 whitespace-nowrap text-2xs text-foreground/85">
           <span
+            className="inline-flex items-baseline gap-1 tabular-nums"
             title={
-              telemetry
-                ? `in: ${telemetry.inputTokens.toLocaleString()} tokens (last turn)`
+              aggregate
+                ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
                 : 'no input tokens yet'
             }
           >
-            ↓ {telemetry ? formatTokens(telemetry.inputTokens) : '0'}
+            <span aria-hidden className="text-muted-foreground/60">
+              ↓
+            </span>
+            {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
           </span>
-          <span aria-hidden>·</span>
           <span
+            className="inline-flex items-baseline gap-1 tabular-nums"
             title={
-              telemetry
-                ? `out: ${telemetry.outputTokens.toLocaleString()} tokens (last turn)`
+              aggregate
+                ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
                 : 'no output tokens yet'
             }
           >
-            ↑ {telemetry ? formatTokens(telemetry.outputTokens) : '0'}
+            <span aria-hidden className="text-muted-foreground/60">
+              ↑
+            </span>
+            {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
           </span>
-          <span aria-hidden>·</span>
+          <span aria-hidden className="text-muted-foreground/40">
+            ·
+          </span>
           <span
+            className="tabular-nums"
             title={
-              telemetry ? `$${telemetry.estimatedCostUsd.toFixed(4)} (last turn)` : 'no cost yet'
+              aggregate
+                ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
+                : 'no cost yet'
             }
           >
-            {telemetry ? formatCost(telemetry.estimatedCostUsd) : '$0'}
+            {aggregate ? formatCost(aggregate.estimatedCostUsd) : '$0'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
+          {telemetry ? (
+            <>
+              <span className="truncate">{shortModel(telemetry.model)}</span>
+              <span aria-hidden>·</span>
+            </>
+          ) : null}
+          <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
+            {turns}t
           </span>
           <span aria-hidden>·</span>
           <AgentLifetime run={run} />

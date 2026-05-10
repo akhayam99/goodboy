@@ -84,13 +84,17 @@ interface SummarizeCommandResult {
   readonly exitCode: number | null;
 }
 
-const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session.
+const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload — a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
 
 There are exactly five slots, each with a stable key:
 ${SLOT_KEYS.map((k) => `- ${k} (${SLOT_LABELS[k]})`).join('\n')}
 
 You will receive the previous slot values plus the most recent user turn and assistant turn.
-Decide which slots, if any, should change. Keep values terse: a sentence or short bullet list per slot.
+Decide which slots, if any, should change. Keep values terse: a sentence or short bullet list per slot. Prefer decisions, constraints, and unresolved items over verbose narration of what happened. Exclude raw tool output.
+
+Goal refinement: the "goal" slot is not write-once. As the conversation clarifies what the user actually wants, sharpen the goal — make it more specific, surface implicit constraints, drop vague phrasing. Update goal whenever the latest turn changed or clarified the target. Don't rewrite when nothing new emerged.
+
+Open questions: when the latest user turn answers a previously-listed open question, drop the resolved item from the open_questions slot value. Add new questions only when the assistant explicitly needs the user before continuing.
 
 You MUST respond with a single JSON object and nothing else. No prose, no markdown, no code fences.
 The schema is:

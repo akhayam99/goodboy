@@ -8,7 +8,7 @@ export {
   SLOT_LABELS,
   type SlotKey,
 } from './slots';
-export { extractFilesTouched, extractMarkers, mergeIntoSlot } from './extractors';
+export { extractFilesTouched, extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 export {
   autoPopulateContext,
   type AutoPopulateInput,
