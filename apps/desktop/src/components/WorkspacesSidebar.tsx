@@ -235,7 +235,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </ScrollArea>
 
       <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
-        <ProvidersChip onOpenSettings={onOpenSettings} />
+        <ProvidersChip />
         <TelemetryPill />
       </div>
 

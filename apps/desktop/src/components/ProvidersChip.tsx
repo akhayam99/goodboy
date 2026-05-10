@@ -1,17 +1,13 @@
 import { cn } from '@kay-am/ui';
 import { useAppStore } from '../store';
 
-interface ProvidersChipProps {
-  onOpenSettings?: () => void;
-}
-
 const PROVIDER_DOT: Record<string, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
   cursor: 'bg-[var(--color-provider-cursor)]',
   codex: 'bg-[var(--color-provider-codex)]',
 };
 
-export function ProvidersChip(_: ProvidersChipProps = {}) {
+export function ProvidersChip() {
   const providers = useAppStore((s) => s.providers);
   const connected = providers.filter((p) => p.connection === 'connected');
   const total = providers.length;
