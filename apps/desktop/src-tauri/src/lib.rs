@@ -2,6 +2,7 @@ mod budget;
 mod config_export;
 mod db;
 mod editor;
+mod github;
 mod parallel_groups;
 mod permissions;
 mod planner;
@@ -121,6 +122,11 @@ pub fn run() {
       config_export::import_config,
       config_export::export_config_to_file,
       config_export::import_config_from_file,
+      github::gh_status,
+      github::gh_set_token,
+      github::gh_clear_token,
+      github::gh_run,
+      github::gh_pr_diff,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

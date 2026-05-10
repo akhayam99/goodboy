@@ -7,6 +7,10 @@ import {
   ChevronRight,
   FolderOpen,
   FolderPlus,
+  GitMerge,
+  GitPullRequest,
+  GitPullRequestArrow,
+  GitPullRequestDraft,
   HelpCircle,
   Plus,
   Settings,
@@ -22,6 +26,7 @@ import { AlertCenter } from './AlertCenter';
 import { TelemetryPill } from './TelemetryPill';
 import type {
   ProviderId,
+  PullRequestStateKind,
   Session,
   SessionId,
   SessionStatus,
@@ -45,6 +50,7 @@ import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
 import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
+import { openUrl } from '../editor';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -74,6 +80,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const currentSession = useCurrentSession();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const sessionBranches = useAppStore((s) => s.sessionBranches);
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
 
   const sidebarStateFilter = useAppStore((s) => s.sidebarStateFilter);
   const sidebarProviderFilter = useAppStore((s) => s.sidebarProviderFilter);
@@ -81,6 +89,17 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const setSidebarProviderFilter = useAppStore((s) => s.setSidebarProviderFilter);
 
   const [sessionSort, setSessionSort] = useState<SessionSort>('updated');
+
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (warmedRef.current || sessions.length === 0) return;
+    warmedRef.current = true;
+    for (const s of sessions) {
+      if (sessionBranches[s.id]) {
+        void refreshSessionPr(s.id as TaskId);
+      }
+    }
+  }, [sessions, sessionBranches, refreshSessionPr]);
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -588,6 +607,66 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
   );
 }
 
+const PR_ICON_MAP: Record<
+  Exclude<PullRequestStateKind, 'closed'>,
+  { icon: React.ElementType; label: string; className: string }
+> = {
+  draft: {
+    icon: GitPullRequestDraft,
+    label: 'draft',
+    className: 'text-muted-foreground',
+  },
+  open: {
+    icon: GitPullRequest,
+    label: 'open',
+    className: 'text-muted-foreground',
+  },
+  approved: {
+    icon: GitPullRequestArrow,
+    label: 'approved',
+    className: 'text-success',
+  },
+  merged: {
+    icon: GitMerge,
+    label: 'merged',
+    className: 'text-muted-foreground',
+  },
+};
+
+interface PrStatusIconProps {
+  taskId: TaskId;
+}
+
+function PrStatusIcon({ taskId }: PrStatusIconProps) {
+  const github = useAppStore((s) => s.sessionGithub[taskId]);
+  const branch = useAppStore((s) => s.sessionBranches[taskId]);
+
+  if (!branch || !github?.pr || github.pr.state === 'closed') return null;
+
+  const { pr } = github;
+  const entry = PR_ICON_MAP[pr.state as Exclude<PullRequestStateKind, 'closed'>];
+  if (!entry) return null;
+
+  const Icon = entry.icon;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    void openUrl(pr.url);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={`PR #${pr.number} — ${entry.label}`}
+      aria-label={`PR #${pr.number} — ${entry.label}`}
+      className={cn('shrink-0 rounded p-0.5 transition-colors hover:bg-muted', entry.className)}
+    >
+      <Icon size={12} aria-hidden />
+    </button>
+  );
+}
+
 interface SessionRowProps {
   session: Task;
   isActive: boolean;
@@ -728,6 +807,7 @@ function SessionRow({
             <span className="line-clamp-1 flex-1">{session.goal}</span>
           )}
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <PrStatusIcon taskId={session.id as TaskId} />
             <StatusBadge state={session.state} />
             <button
               type="button"

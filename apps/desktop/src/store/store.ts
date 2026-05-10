@@ -90,11 +90,28 @@ import type {
   TurnProviderOverride,
   Workspace,
   WorkspaceId,
+  GhTokenStatus,
+  PullRequestState,
+  LinkedIssue,
 } from '@kay-am/types';
 import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
-import { computeCostUsd, computeCodexCostUsd, computeCursorCostUsd } from '@kay-am/core';
+import {
+  computeCostUsd,
+  computeCodexCostUsd,
+  computeCursorCostUsd,
+  getPrForBranch,
+  fetchLinkedIssues,
+  detectRepoSlug,
+} from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
+import {
+  ghStatus,
+  ghSetToken,
+  ghClearToken,
+  tauriGhRunner,
+  createTauriPrCacheStore,
+} from '../github';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -257,6 +274,16 @@ export interface AppState {
   readonly sidebarSessionSearch: string;
   readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
+  readonly githubStatus: GhTokenStatus | null;
+  readonly sessionGithub: Readonly<Record<TaskId, SessionGithubState>>;
+}
+
+export interface SessionGithubState {
+  readonly pr: PullRequestState | null;
+  readonly linkedIssues: ReadonlyArray<LinkedIssue>;
+  readonly fetchedAt: IsoDateTime | null;
+  readonly loading: boolean;
+  readonly error: string | null;
 }
 
 export interface SummarizerSessionStatus {
@@ -353,6 +380,11 @@ export interface AppActions {
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@kay-am/types').ConfigBundleImportResult | null>;
+  refreshGithubStatus(): Promise<void>;
+  setGithubPat(token: string): Promise<GhTokenStatus>;
+  clearGithubToken(): Promise<void>;
+  refreshSessionPr(taskId: TaskId, opts?: { force?: boolean }): Promise<void>;
+  createPrForSession(taskId: TaskId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -401,6 +433,8 @@ const initialState: AppState = {
   sidebarSessionSearch: '',
   sidebarStateFilter: [],
   sidebarProviderFilter: [],
+  githubStatus: null,
+  sessionGithub: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -724,6 +758,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Drain audit retry queue after boot — non-blocking, best-effort.
       void drainAuditRetryQueue(set);
+
+      void get().refreshGithubStatus();
     } catch (err) {
       set({
         bootPhase: 'error',
@@ -2525,6 +2561,122 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   importConfig: async () => {
     return importConfigFromFile();
+  },
+
+  refreshGithubStatus: async () => {
+    try {
+      const status = await ghStatus();
+      set({ githubStatus: status });
+    } catch (err) {
+      set({
+        githubStatus: {
+          available: false,
+          mode: 'absent',
+          version: undefined,
+          user: undefined,
+          scopes: [],
+        },
+      });
+      console.warn('gh_status failed', err);
+    }
+  },
+
+  setGithubPat: async (token) => {
+    const status = await ghSetToken(token);
+    set({ githubStatus: status });
+    return status;
+  },
+
+  clearGithubToken: async () => {
+    await ghClearToken();
+    await get().refreshGithubStatus();
+  },
+
+  refreshSessionPr: async (taskId, opts) => {
+    const branch = get().sessionBranches[taskId];
+    if (!branch) return;
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session) return;
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    if (!workspace) return;
+    set((state) => ({
+      sessionGithub: {
+        ...state.sessionGithub,
+        [taskId]: {
+          pr: state.sessionGithub[taskId]?.pr ?? null,
+          linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+          fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+          loading: true,
+          error: null,
+        },
+      },
+    }));
+    try {
+      const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+      if (!slug) {
+        set((state) => ({
+          sessionGithub: {
+            ...state.sessionGithub,
+            [taskId]: {
+              pr: null,
+              linkedIssues: [],
+              fetchedAt: new Date().toISOString() as IsoDateTime,
+              loading: false,
+              error: null,
+            },
+          },
+        }));
+        return;
+      }
+      const store = createTauriPrCacheStore(tauriDatabase);
+      const pr = await getPrForBranch(
+        { runner: tauriGhRunner, store },
+        { repoSlug: slug, branch, cwd: workspace.rootPath, force: opts?.force === true },
+      );
+      const linked = pr
+        ? await fetchLinkedIssues(tauriGhRunner, slug, pr, { cwd: workspace.rootPath })
+        : [];
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [taskId]: {
+            pr,
+            linkedIssues: linked,
+            fetchedAt: new Date().toISOString() as IsoDateTime,
+            loading: false,
+            error: null,
+          },
+        },
+      }));
+    } catch (err) {
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [taskId]: {
+            pr: state.sessionGithub[taskId]?.pr ?? null,
+            linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+            loading: false,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        },
+      }));
+    }
+  },
+
+  createPrForSession: async (taskId) => {
+    const branch = get().sessionBranches[taskId];
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!branch || !session) return;
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    if (!workspace) return;
+    const res = await tauriGhRunner.run(['pr', 'create', '--fill', '--draft'], {
+      cwd: workspace.rootPath,
+    });
+    if (res.exitCode !== 0) {
+      throw new Error(res.stderr.trim() || `gh pr create exited with ${res.exitCode}`);
+    }
+    await get().refreshSessionPr(taskId, { force: true });
   },
 }));
 

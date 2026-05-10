@@ -165,6 +165,30 @@ export {
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
 
 export {
+  DEFAULT_GH_TIMEOUT_MS,
+  DEFAULT_PR_CACHE_TTL_MS,
+  GhCliError,
+  GhJsonParseError,
+  detect as detectGh,
+  detectRepoSlug,
+  fetchLinkedIssues,
+  fetchPrDiff,
+  getPrForBranch,
+  invalidatePrCache,
+  parseLinkedIssuesFromBody,
+  parseUnifiedDiff,
+  resolvePrForBranch,
+  runJson as ghRunJson,
+  type GetPrInput,
+  type GhDetectResult,
+  type GhResult,
+  type GhRunOptions,
+  type GhRunner,
+  type PrCacheDeps,
+  type PrCacheStore,
+} from './github';
+
+export {
   parsePlannerOutput,
   PlannerParseError,
   PLANNER_SYSTEM_PROMPT,

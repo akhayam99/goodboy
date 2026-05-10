@@ -91,3 +91,17 @@ export type {
   PermissionRulePattern,
   PermissionRuleScope,
 } from './permission';
+export type {
+  DiffHunk,
+  DiffHunkLine,
+  FileDiff,
+  FileDiffStatus,
+  GhTokenMode,
+  GhTokenStatus,
+  GithubPrCacheEntry,
+  LinkedIssue,
+  PullRequestChecks,
+  PullRequestDiff,
+  PullRequestState,
+  PullRequestStateKind,
+} from './github';

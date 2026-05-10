@@ -93,3 +93,8 @@ export {
   getTaskOverrides,
   setTaskOverrides,
 } from './queries/settings-overrides';
+export {
+  getGithubPrCache,
+  upsertGithubPrCache,
+  deleteGithubPrCache,
+} from './queries/github-pr-cache';

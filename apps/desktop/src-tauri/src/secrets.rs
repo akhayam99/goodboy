@@ -27,19 +27,27 @@ pub fn read(key: &str) -> Result<Option<String>, SecretError> {
     }
 }
 
-#[tauri::command]
-pub fn secret_set(key: String, value: String) -> Result<(), SecretError> {
-    entry(&key)?.set_password(&value)?;
+pub fn set(key: &str, value: &str) -> Result<(), SecretError> {
+    entry(key)?.set_password(value)?;
     Ok(())
 }
 
-#[tauri::command]
-pub fn secret_delete(key: String) -> Result<(), SecretError> {
-    match entry(&key)?.delete_credential() {
+pub fn clear(key: &str) -> Result<(), SecretError> {
+    match entry(key)?.delete_credential() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),
         Err(err) => Err(err.into()),
     }
+}
+
+#[tauri::command]
+pub fn secret_set(key: String, value: String) -> Result<(), SecretError> {
+    set(&key, &value)
+}
+
+#[tauri::command]
+pub fn secret_delete(key: String) -> Result<(), SecretError> {
+    clear(&key)
 }
 
 #[tauri::command]
