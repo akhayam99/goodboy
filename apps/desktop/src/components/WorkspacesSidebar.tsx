@@ -1253,10 +1253,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
     void selectAgent(task.id, sid);
   };
 
-  const onSpawn = async (stepId: Step['id'] | null) => {
+  const onSpawn = async (stepId: Step['id'] | null, model?: string) => {
     setSpawnError(null);
     try {
-      await spawnAgent(task.id, stepId ? { stepId } : {});
+      await spawnAgent(task.id, stepId ? { stepId, ...(model !== undefined && { model }) } : {});
     } catch (err) {
       setSpawnError(err instanceof Error ? err.message : String(err));
     }
@@ -1327,7 +1327,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           <WorkflowNextStepCta
             workflow={workflow}
             runs={sorted}
-            onAdvance={(step) => onSpawn(step.id)}
+            onAdvance={(step, model) => onSpawn(step.id, model)}
           />
         </div>
       ) : null}
@@ -1341,7 +1341,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
 interface SpawnAgentControlProps {
   workflow: Workflow | null;
-  onSpawn: (stepId: Step['id'] | null) => void | Promise<void>;
+  onSpawn: (stepId: Step['id'] | null, model?: string) => void | Promise<void>;
 }
 
 function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {

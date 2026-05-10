@@ -185,6 +185,7 @@ import {
   type ParallelBranchEffects,
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agentKind';
 
 export type BootPhase =
   | 'pending'
@@ -280,6 +281,7 @@ export interface AppState {
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<TaskId, SessionGithubState>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
+  readonly agentModelOverride: Readonly<Record<SessionId, string>>;
 }
 
 export interface SessionGithubState {
@@ -361,7 +363,10 @@ export interface AppActions {
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(taskId: TaskId): Promise<void>;
   selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
-  spawnAgent(taskId: TaskId, args: { stepId?: StepId; name?: string }): Promise<SessionId>;
+  spawnAgent(
+    taskId: TaskId,
+    args: { stepId?: StepId; name?: string; model?: string; effort?: string },
+  ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
   deleteAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
@@ -448,6 +453,7 @@ const initialState: AppState = {
   githubStatus: null,
   sessionGithub: {},
   volatilePermissionAllows: new Set<string>(),
+  agentModelOverride: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -1168,6 +1174,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // agents bar (issue #424). Spawning all phases up-front buried the
     // current step in a list and removed any sense of progression.
     let firstAgent: Session;
+    let firstStepPromptPrefix = '';
+    let firstAgentModel: string | null = null;
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
       const template = templates.find((t) => t.id === workflowId) ?? null;
@@ -1175,6 +1183,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal)[0]
         : null;
       if (template && firstStep) {
+        firstStepPromptPrefix = firstStep.promptPrefix;
+        const kind = inferAgentKindFromName(firstStep.name);
+        firstAgentModel = AGENT_KIND_DEFAULTS[kind].model;
         firstAgent = await invokePhaseRunInsert({
           taskId: session.id,
           stepId: firstStep.id,
@@ -1222,8 +1233,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       transcripts: { ...state.transcripts, [firstAgent.id]: [] },
       messages: { ...state.messages, [session.id]: [] },
       agentTurnState: { ...state.agentTurnState, [firstAgent.id]: { kind: 'draft' } },
+      ...(firstAgentModel !== null && {
+        agentModelOverride: { ...get().agentModelOverride, [firstAgent.id]: firstAgentModel },
+      }),
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
+
+    if (firstStepPromptPrefix.length > 0) {
+      void get().sendTurn({ taskId: session.id, content: firstStepPromptPrefix });
+    }
 
     return { session, worktree };
   },
@@ -1478,10 +1496,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     const provider: ProviderId = routingDecision.selectedProvider;
+    const agentKindModel = get().agentModelOverride[activeAgentId] ?? null;
     const model =
       phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
         ? phaseDefinition.modelOverride
-        : routingDecision.selectedModel;
+        : (agentKindModel ?? routingDecision.selectedModel);
 
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
@@ -2501,6 +2520,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...s.agentTurnState,
         [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
       },
+      ...(args.model !== undefined && {
+        agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
+      }),
     }));
     return inserted.id;
   },
