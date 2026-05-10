@@ -19,6 +19,8 @@ AI workspace orchestrator. Manage macro sessions, route agents across providers,
 - **Task management**: GitHub Issues with labels. Reference issues in commits (`feat: add provider adapter #12`).
 - **Branch naming**: `feat/short-description`, `fix/short-description`, `chore/short-description`.
 
+test
+
 ## Code rules
 
 - TypeScript strict mode.
