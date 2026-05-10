@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Session, Step, Workflow } from '@kay-am/types';
+import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE, inferAgentKindFromName } from '../agentKind';
 
 export interface WorkflowNextStepCtaProps {
   readonly workflow: Workflow;
@@ -43,6 +44,9 @@ export function WorkflowNextStepCta({
 }: WorkflowNextStepCtaProps) {
   const [busy, setBusy] = useState(false);
   const next = useMemo(() => pickNextWorkflowStep(workflow, runs), [workflow, runs]);
+  const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
+  const defaults = AGENT_KIND_DEFAULTS[kind];
+  const palette = AGENT_KIND_PALETTE[kind];
   if (!next) return null;
   const onClick = async () => {
     if (busy) return;
@@ -59,21 +63,37 @@ export function WorkflowNextStepCta({
       onClick={() => void onClick()}
       disabled={busy}
       data-testid="workflow-next-step-cta"
+      title={`model: ${defaults.model} · effort: ${defaults.effort}`}
       className={cn(
         'group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
-      aria-label={`Start ${next.name}`}
+      aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort)`}
     >
       <span className="flex items-center gap-1.5">
         <span className="text-2xs uppercase tracking-wide opacity-70">start</span>
         <span className="font-semibold">{next.name}</span>
+        <span
+          className={cn(
+            'rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
+            palette.bg,
+            palette.fg,
+          )}
+          aria-hidden
+        >
+          {palette.label}
+        </span>
       </span>
-      <ArrowRight
-        size={13}
-        aria-hidden
-        className="transition-transform group-hover:translate-x-0.5"
-      />
+      <span className="flex items-center gap-1.5">
+        <span className="text-[10px] font-normal opacity-60">
+          {defaults.model.split('-').slice(1, 3).join('-')}
+        </span>
+        <ArrowRight
+          size={13}
+          aria-hidden
+          className="transition-transform group-hover:translate-x-0.5"
+        />
+      </span>
     </button>
   );
 }
