@@ -48,6 +48,7 @@ import {
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
+import { WorkflowNextStepCta } from './WorkflowNextStepCta';
 import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
 import { openUrl } from '../editor';
@@ -1293,6 +1294,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
           ))}
         </ul>
       )}
+      {workflow ? (
+        <div className="mt-2 pl-2">
+          <WorkflowNextStepCta
+            workflow={workflow}
+            runs={sorted}
+            onAdvance={(step) => onSpawn(step.id)}
+          />
+        </div>
+      ) : null}
       <div className="pl-2">
         <SpawnAgentControl workflow={workflow} onSpawn={onSpawn} />
       </div>

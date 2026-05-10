@@ -1161,38 +1161,44 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     }
 
-    // Every session spawns at least one agent — the default "agent 1" — so
-    // the chat view always has something to render and the user can fire off
-    // a turn without having to spawn manually first. When a workflow is
-    // attached we pre-spawn one row per Step on top of the default; the user
-    // can then pick which agent each turn routes to from the sidebar.
-    let prespawnedRuns: ReadonlyArray<Session> = [];
-    const defaultAgent = await invokePhaseRunInsert({
-      taskId: session.id,
-      ordinal: 0,
-      name: 'agent 1',
-      status: 'pending',
-    });
-    prespawnedRuns = [defaultAgent];
+    // Every session spawns exactly one agent up-front. Without a workflow
+    // attached this is a generic "agent 1" so the chat view has something to
+    // render. With a workflow attached this is the FIRST step's agent only —
+    // subsequent phases are user-driven via the lit "start <next>" CTA in the
+    // agents bar (issue #424). Spawning all phases up-front buried the
+    // current step in a list and removed any sense of progression.
+    let firstAgent: Session;
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
-      const template = templates.find((t) => t.id === workflowId);
-      if (template) {
-        const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-        const inserts = await Promise.all(
-          sortedSteps.map((step, i) =>
-            invokePhaseRunInsert({
-              taskId: session.id,
-              stepId: step.id,
-              ordinal: i + 1,
-              name: step.name,
-              status: 'pending',
-            }),
-          ),
-        );
-        prespawnedRuns = [defaultAgent, ...inserts];
+      const template = templates.find((t) => t.id === workflowId) ?? null;
+      const firstStep = template
+        ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal)[0]
+        : null;
+      if (template && firstStep) {
+        firstAgent = await invokePhaseRunInsert({
+          taskId: session.id,
+          stepId: firstStep.id,
+          ordinal: 0,
+          name: firstStep.name,
+          status: 'pending',
+        });
+      } else {
+        firstAgent = await invokePhaseRunInsert({
+          taskId: session.id,
+          ordinal: 0,
+          name: 'agent 1',
+          status: 'pending',
+        });
       }
+    } else {
+      firstAgent = await invokePhaseRunInsert({
+        taskId: session.id,
+        ordinal: 0,
+        name: 'agent 1',
+        status: 'pending',
+      });
     }
+    const prespawnedRuns: ReadonlyArray<Session> = [firstAgent];
 
     set((state) => ({
       sessions:
@@ -1212,10 +1218,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
-      selectedAgentId: { ...state.selectedAgentId, [session.id]: defaultAgent.id },
-      transcripts: { ...state.transcripts, [defaultAgent.id]: [] },
+      selectedAgentId: { ...state.selectedAgentId, [session.id]: firstAgent.id },
+      transcripts: { ...state.transcripts, [firstAgent.id]: [] },
       messages: { ...state.messages, [session.id]: [] },
-      agentTurnState: { ...state.agentTurnState, [defaultAgent.id]: { kind: 'draft' } },
+      agentTurnState: { ...state.agentTurnState, [firstAgent.id]: { kind: 'draft' } },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
