@@ -206,11 +206,8 @@ describe('summarizer queue — coalescing and no-stack', () => {
       )
       .mockResolvedValue(undefined); // second call (queued) resolves immediately
 
-    const { summarizerQueues } = await importStore();
+    const { useAppStore, summarizerQueues } = await import('./store');
     summarizerQueues.clear();
-
-    const { default: _, ...storeMod } = await import('./store');
-    const { useAppStore } = storeMod;
 
     useAppStore.setState({
       sessions: [buildTask()],
@@ -221,16 +218,6 @@ describe('summarizer queue — coalescing and no-stack', () => {
       ],
     });
 
-    // Directly access the enqueueSummarizer-aware path via the queue map.
-    // We test the queue logic by calling enqueueSummarizer via store internals:
-    // simulate 5 rapid triggers (only 2 should reach summarizeSpy).
-    const {
-      default: storeDefault,
-      enqueueSummarizer: _eq,
-      summarizerQueues: sq,
-    } = await import('./store');
-    void storeDefault;
-
     // Pull enqueueSummarizer — it's not exported, so we test via summarizerQueues state.
     // Strategy: verify summarizerQueues holds at most 1 queued entry when in-flight.
     const state = useAppStore.getState();
@@ -240,7 +227,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       inFlight: true,
       queued: null as null | { turnInput: string; turnOutput: string },
     };
-    sq.set(TASK_ID, queue);
+    summarizerQueues.set(TASK_ID, queue);
 
     // Simulate 4 additional triggers arriving while in-flight.
     for (let i = 1; i <= 4; i++) {
@@ -263,7 +250,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     expect(state).toBeDefined(); // store is live
 
     // Cleanup
-    sq.delete(TASK_ID);
+    summarizerQueues.delete(TASK_ID);
   });
 
   it('single trigger with nothing in-flight fires immediately and clears queue', async () => {
