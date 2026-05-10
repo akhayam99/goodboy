@@ -207,8 +207,8 @@ export function PermissionsPanel() {
       {showNonClaudeBanner && (
         <div className="flex items-start justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
           <span>
-            permission proxy is currently claude-only. rules saved here will not affect cursor/codex
-            turns until v0.7.
+            permission proxy is currently claude-only. rules saved here will not affect cursor or
+            codex turns until proxy support lands for those providers.
           </span>
           <button
             type="button"
