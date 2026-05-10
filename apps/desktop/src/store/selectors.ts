@@ -1,4 +1,5 @@
 import type { ContextSlot, ContextSlotHistoryEntry, Task, TaskId, Workspace } from '@kay-am/types';
+import type { NextAction } from '@kay-am/core';
 import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
@@ -34,3 +35,10 @@ export const useSlotHistory = (
   key: string,
 ): ReadonlyArray<ContextSlotHistoryEntry> =>
   useAppStore((s) => (taskId ? (s.slotHistory[taskId]?.[key] ?? EMPTY_HISTORY) : EMPTY_HISTORY));
+
+const EMPTY_NEXT_ACTIONS: ReadonlyArray<NextAction> = [];
+
+export const useSessionNextActions = (taskId: TaskId | null): ReadonlyArray<NextAction> =>
+  useAppStore((s) =>
+    taskId ? (s.sessionNextActions[taskId] ?? EMPTY_NEXT_ACTIONS) : EMPTY_NEXT_ACTIONS,
+  );

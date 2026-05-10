@@ -34,6 +34,7 @@ import {
 import { openUrl } from '../editor';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
+import { NextActionChips } from './NextActionChips';
 
 interface ContextPanelProps {
   session: Task;
@@ -125,6 +126,8 @@ export function ContextPanel({
           </header>
 
           <GitHubSection session={session} />
+
+          <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
 
           <ul className="flex flex-col gap-4">
             {SLOT_KEYS.map((key) => {

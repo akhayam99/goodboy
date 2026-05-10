@@ -11,3 +11,9 @@ export {
   type SummarizerResult,
   type SummarizerUsage,
 } from './client';
+export {
+  inferNextActions,
+  type InferNextActionsInput,
+  type NextAction,
+  type NextActionsPrState,
+} from './next-actions';
