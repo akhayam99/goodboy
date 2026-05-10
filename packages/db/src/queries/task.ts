@@ -1,4 +1,5 @@
 import type {
+  ClaudePermissionMode,
   IsoDateTime,
   ProviderId,
   Task,
@@ -18,6 +19,7 @@ interface TaskRow {
   state_payload: string;
   provider_default: string;
   provider_allow_override: number;
+  permission_mode: string | null;
   workflow_id: string | null;
   current_step_ordinal: number | null;
   created_at: number;
@@ -30,6 +32,19 @@ function toState(kind: TurnState['kind'], payload: string): TurnState {
 }
 
 const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex']);
+
+const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
+  'default',
+  'acceptEdits',
+  'bypassPermissions',
+  'dontAsk',
+  'plan',
+]);
+
+function toPermissionMode(raw: string | null): ClaudePermissionMode {
+  if (raw !== null && VALID_PERMISSION_MODES.has(raw)) return raw as ClaudePermissionMode;
+  return 'bypassPermissions';
+}
 
 function toProviderPreference(row: TaskRow): TaskProviderPreference {
   const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
@@ -49,6 +64,7 @@ function toDomain(row: TaskRow, contextSlots: Task['contextSlots']): Task {
     state: toState(row.state_kind, row.state_payload),
     contextSlots,
     providerPreference: toProviderPreference(row),
+    permissionMode: toPermissionMode(row.permission_mode),
     ...(row.workflow_id && { workflowId: row.workflow_id as WorkflowId }),
     ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -65,8 +81,8 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
   const { kind, payload } = splitState(task.state);
   await db.execute(
     `INSERT INTO tasks
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, workflow_id, current_step_ordinal, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       task.id,
       task.workspaceId,
@@ -75,6 +91,7 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
       payload,
       task.providerPreference.defaultProvider,
       task.providerPreference.allowTurnOverride ? 1 : 0,
+      task.permissionMode,
       task.workflowId ?? null,
       task.currentStepOrdinal ?? null,
       Date.parse(task.createdAt),
@@ -93,6 +110,18 @@ export async function updateTaskState(
   await db.execute(
     'UPDATE tasks SET state_kind = ?, state_payload = ?, updated_at = ? WHERE id = ?',
     [kind, payload, Date.parse(updatedAt), id],
+  );
+}
+
+export async function updateTaskPermissionMode(
+  db: Database,
+  id: TaskId,
+  permissionMode: ClaudePermissionMode,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute(
+    'UPDATE tasks SET permission_mode = ?, updated_at = ? WHERE id = ?',
+    [permissionMode, Date.parse(updatedAt), id],
   );
 }
 

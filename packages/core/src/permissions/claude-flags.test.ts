@@ -102,9 +102,14 @@ describe('buildClaudeFlags', () => {
     `);
   });
 
-  it('always permissionMode: default', () => {
+  it('defaults to permissionMode: default when not provided', () => {
     const result = buildClaudeFlags({ rules: [], scope: SCOPE });
     expect(result.permissionMode).toBe('default');
+  });
+
+  it('propagates provided permissionMode', () => {
+    const result = buildClaudeFlags({ rules: [], scope: SCOPE, permissionMode: 'bypassPermissions' });
+    expect(result.permissionMode).toBe('bypassPermissions');
   });
 
   it('ask rules do not appear in either list', () => {
