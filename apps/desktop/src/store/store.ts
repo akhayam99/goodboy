@@ -247,6 +247,7 @@ export interface AppState {
    * session. Lives in-memory only; rebuilt from current state on hydrate.
    */
   readonly agentRunHistory: Readonly<Record<SessionId, ReadonlyArray<ProviderRunId>>>;
+  readonly agentTurnState: Readonly<Record<SessionId, TurnState>>;
   readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
@@ -389,6 +390,7 @@ const initialState: AppState = {
   sessionPhaseRuns: {},
   selectedAgentId: {},
   agentRunHistory: {},
+  agentTurnState: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
@@ -426,11 +428,19 @@ function mergeSlots(
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
-function applySessionUpdate(set: SetFn, taskId: TaskId, state: TurnState): void {
+function applySessionUpdate(
+  set: SetFn,
+  taskId: TaskId,
+  state: TurnState,
+  agentId?: SessionId,
+): void {
   set((store) => ({
     sessions: store.sessions.map((s) =>
       s.id === taskId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
     ),
+    ...(agentId !== undefined && {
+      agentTurnState: { ...store.agentTurnState, [agentId]: state },
+    }),
   }));
 }
 
@@ -754,6 +764,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionPhaseRuns: {},
       selectedAgentId: {},
       agentRunHistory: {},
+      agentTurnState: {},
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -848,12 +859,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // agents at least have ONE entry to aggregate against. New runIds get
       // appended on each turn going forward.
       const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      const seededTurnState: Record<string, TurnState> = {};
+      const task = get().sessions.find((s) => s.id === id);
+      const taskState =
+        task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
       for (const agent of agents) {
         if (agent.runId) {
           const prev = get().agentRunHistory[agent.id] ?? [];
           if (!prev.includes(agent.runId)) {
             seededHistory[agent.id] = [...prev, agent.runId];
           }
+        }
+        if (agent.status === 'running' && agent.runId) {
+          seededTurnState[agent.id] = {
+            kind: 'running',
+            runId: agent.runId,
+            startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+          };
+        } else if (agent.status === 'failed') {
+          seededTurnState[agent.id] = {
+            kind: 'error',
+            message: 'agent failed',
+            failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+          };
+        } else {
+          seededTurnState[agent.id] =
+            taskState.kind === 'ended'
+              ? taskState
+              : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
         }
       }
       set((state) => ({
@@ -871,6 +904,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
         agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+        agentTurnState: { ...state.agentTurnState, ...seededTurnState },
       }));
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
@@ -1045,6 +1079,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedAgentId: { ...state.selectedAgentId, [session.id]: defaultAgent.id },
       transcripts: { ...state.transcripts, [defaultAgent.id]: [] },
       messages: { ...state.messages, [session.id]: [] },
+      agentTurnState: { ...state.agentTurnState, [defaultAgent.id]: { kind: 'draft' } },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
@@ -1426,7 +1461,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       nextState = turnReducer(nextState, { kind: 'send', runId, at: now() });
       await updateTaskState(tauriDatabase, taskId, nextState, now());
-      applySessionUpdate(set, taskId, nextState);
+      applySessionUpdate(set, taskId, nextState, activeAgentId);
     }
 
     const providerInfo = get().providers.find((p) => p.id === provider);
@@ -1530,7 +1565,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         at: now(),
       });
       await updateTaskState(tauriDatabase, taskId, nextStateP, now());
-      applySessionUpdate(set, taskId, nextStateP);
+      applySessionUpdate(set, taskId, nextStateP, activeAgentId);
 
       const effects: ParallelBranchEffects = {
         appendTurnEvent: (agentId, sid, ev) => get().appendTurnEvent(agentId, sid, ev),
@@ -1584,7 +1619,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             failedAt: now(),
           };
           await updateTaskState(tauriDatabase, taskId, errorState, now());
-          applySessionUpdate(set, taskId, errorState);
+          applySessionUpdate(set, taskId, errorState, activeAgentId);
         } else {
           await updateTaskState(
             tauriDatabase,
@@ -1610,7 +1645,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           failedAt: now(),
         };
         await updateTaskState(tauriDatabase, taskId, errorState, now());
-        applySessionUpdate(set, taskId, errorState);
+        applySessionUpdate(set, taskId, errorState, activeAgentId);
         throw err;
       }
       return;
@@ -1745,7 +1780,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const reduced = turnReducer(current.state, { kind: 'receive_event', event });
           if (reduced !== current.state) {
             await updateTaskState(tauriDatabase, taskId, reduced, now());
-            applySessionUpdate(set, taskId, reduced);
+            applySessionUpdate(set, taskId, reduced, activeAgentId);
           }
         }
       }
@@ -1756,7 +1791,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (afterStream?.state.kind === 'running') {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
         await updateTaskState(tauriDatabase, taskId, idleState, now());
-        applySessionUpdate(set, taskId, idleState);
+        applySessionUpdate(set, taskId, idleState, activeAgentId);
         if (assistantText.length === 0) {
           get().appendTurnEvent(activeAgentId, taskId, {
             kind: 'error',
@@ -1824,7 +1859,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         failedAt: now(),
       };
       await updateTaskState(tauriDatabase, taskId, errorState, now());
-      applySessionUpdate(set, taskId, errorState);
+      applySessionUpdate(set, taskId, errorState, activeAgentId);
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),
@@ -1870,13 +1905,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   cancelCurrentTurn: async (taskId) => {
     const session = get().sessions.find((s) => s.id === taskId);
     if (!session || session.state.kind !== 'running') return;
-    // Best-effort: if the registry already evicted the run we still want to
-    // normalize session state locally so the UI re-enables the input.
+    const cancelAgentId = get().selectedAgentId[taskId] ?? null;
     await cancelTurn(session.state.runId).catch(() => undefined);
     const now = new Date().toISOString() as IsoDateTime;
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
     await updateTaskState(tauriDatabase, taskId, idleState, now).catch(() => undefined);
-    applySessionUpdate(set, taskId, idleState);
+    applySessionUpdate(set, taskId, idleState, cancelAgentId ?? undefined);
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
@@ -1993,6 +2027,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
     const ended: TurnState = turnReducer(session.state, { kind: 'end', at: now() });
     await updateTaskState(tauriDatabase, taskId, ended, now());
+    const allAgents = get().sessionPhaseRuns[taskId] ?? [];
+    set((state) => {
+      const next = { ...state.agentTurnState };
+      for (const agent of allAgents) next[agent.id] = ended;
+      return { agentTurnState: next };
+    });
     applySessionUpdate(set, taskId, ended);
 
     set((state) => {
@@ -2156,6 +2196,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionPhaseRuns: {},
             selectedAgentId: {},
             agentRunHistory: {},
+            agentTurnState: {},
             sessionBudgets: {},
             summarizerStatus: {},
             budgetAlerts: [],
@@ -2297,6 +2338,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedAgentId: { ...s.selectedAgentId, [taskId]: inserted.id },
       transcripts: { ...s.transcripts, [inserted.id]: [] },
       messages: { ...s.messages, [taskId]: [] },
+      agentTurnState: {
+        ...s.agentTurnState,
+        [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
+      },
     }));
     return inserted.id;
   },

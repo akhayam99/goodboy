@@ -136,7 +136,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
   const isSlashMode = slashQuery !== null;
 
-  const isRunning = RUNNING_KINDS.has(session.state.kind);
+  const selectedAgentState = useAppStore((s) => {
+    const agentId = s.selectedAgentId[session.id] ?? null;
+    return agentId ? (s.agentTurnState[agentId] ?? null) : null;
+  });
+  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
   const wasRunning = useRef(isRunning);
   interface QueuedTurn {
     readonly content: string;

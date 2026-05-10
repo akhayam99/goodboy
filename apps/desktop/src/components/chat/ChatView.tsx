@@ -144,10 +144,14 @@ export function ChatView({ session }: ChatViewProps) {
   const providerIdentity = authResults?.[provider]?.identity ?? null;
   const isProviderDisconnected = providerAuthState === 'disconnected';
 
-  const isEnded = session.state.kind === 'ended';
+  const agentState = useAppStore((s) => {
+    return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null;
+  });
+  const agentKind = agentState?.kind ?? session.state.kind;
+  const isEnded = agentKind === 'ended';
   const lastItem = items[items.length - 1];
   const isThinking =
-    session.state.kind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
+    agentKind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
 
   const flagOn = settings['experimental.enable_parallel_agents'] === 'true';
 

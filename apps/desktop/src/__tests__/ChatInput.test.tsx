@@ -19,6 +19,8 @@ vi.mock('../store', () => ({
       providers: [{ id: 'anthropic', connection: 'connected' }],
       skills: {},
       providerSpendBreakdown: [],
+      selectedAgentId: {},
+      agentTurnState: {},
     }),
   EMPTY_ARRAY: [] as never[],
 }));
