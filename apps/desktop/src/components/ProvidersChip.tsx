@@ -34,7 +34,7 @@ export function ProvidersChip(_: ProvidersChipProps = {}) {
       title="open settings → providers"
     >
       <span aria-hidden className="flex items-center -space-x-0.5">
-        {active.map((p) => (
+        {providers.map((p) => (
           <span
             key={p.id}
             className={cn(
