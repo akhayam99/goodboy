@@ -1,12 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@kay-am/ui';
 import type { ProviderId } from '@kay-am/types';
-
-const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
-};
+import { PROVIDER_LABEL_LOWER } from '../../providers';
 
 async function providerAction(id: ProviderId, action: 'login' | 'logout'): Promise<void> {
   return invoke('provider_action', { id, action });
@@ -19,7 +14,7 @@ interface AuthRequiredCalloutProps {
 }
 
 export function AuthRequiredCallout({ providerId, identity, onRefresh }: AuthRequiredCalloutProps) {
-  const label = PROVIDER_LABEL[providerId];
+  const label = PROVIDER_LABEL_LOWER[providerId];
 
   const onConnect = () => {
     void providerAction(providerId, 'login');

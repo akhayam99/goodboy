@@ -28,7 +28,7 @@ export interface ProviderInfo extends ProviderInfoBase {
   readonly docsUrl: string;
 }
 
-const PROVIDER_LABEL: Record<ProviderId, string> = {
+export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor',
   codex: 'codex',
@@ -114,7 +114,7 @@ function providerInfoFromStatus(
 ): ProviderInfo {
   const base = {
     id,
-    label: PROVIDER_LABEL[id],
+    label: PROVIDER_LABEL_LOWER[id],
     binary: status?.binary ?? PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
