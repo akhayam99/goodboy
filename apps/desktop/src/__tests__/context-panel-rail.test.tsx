@@ -17,6 +17,13 @@ vi.mock('../store', () => ({
       toggleSessionSlot: vi.fn(),
       summarizerStatus: {},
       sessionTelemetry: {},
+      githubStatus: null,
+      sessionBranches: {},
+      sessionGithub: {},
+      sessions: [],
+      workspaces: [],
+      refreshSessionPr: vi.fn(),
+      createPrForSession: vi.fn(),
     };
     return selector(state);
   }),
