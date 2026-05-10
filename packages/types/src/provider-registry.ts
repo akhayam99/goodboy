@@ -1,11 +1,6 @@
 export type ProviderId = 'anthropic' | 'cursor' | 'codex';
 
-export type ProviderConnectionState =
-  | 'connected'
-  | 'installed_disconnected'
-  | 'missing'
-  | 'error'
-  | 'coming-soon';
+export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 
 export interface ModelTier {
   readonly id: string;

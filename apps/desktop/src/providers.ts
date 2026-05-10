@@ -26,7 +26,6 @@ export interface ProviderInfo extends ProviderInfoBase {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
-  readonly trackingIssueUrl?: string;
 }
 
 const PROVIDER_LABEL: Record<ProviderId, string> = {
@@ -40,11 +39,6 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   // cursor-agent (CLI), NOT cursor IDE — point at the agent CLI install docs.
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
-};
-
-const TRACKING_ISSUES: Partial<Record<ProviderId, string>> = {
-  cursor: 'https://github.com/akhayam99/kay-am/issues/68',
-  codex: 'https://github.com/akhayam99/kay-am/issues/69',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
@@ -125,7 +119,6 @@ function providerInfoFromStatus(
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
-    ...(TRACKING_ISSUES[id] !== undefined ? { trackingIssueUrl: TRACKING_ISSUES[id] } : {}),
   };
   if (id === 'anthropic') {
     if (!status) {
