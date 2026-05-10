@@ -489,15 +489,15 @@ interface SlotHistoryDialogProps {
 
 function SlotHistoryDialog({ label, open, entries, onRestore, onClose }: SlotHistoryDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="lg">
+    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="xl">
       {entries.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">no history yet</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-4">
           {entries.map((entry) => (
             <li
               key={entry.id}
-              className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-2.5"
+              className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-3"
             >
               <div className="flex items-center justify-between gap-2">
                 <span
