@@ -331,7 +331,12 @@ export function ChatView({ session }: ChatViewProps) {
                   }
                   node.push(
                     <li key={item.key} className={tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-6'}>
-                      <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
+                      <TranscriptCard
+                        item={item}
+                        taskId={session.id}
+                        agentId={selectedAgentId}
+                        onRefreshAuth={() => void refreshProviders()}
+                      />
                     </li>,
                   );
                   return node;

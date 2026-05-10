@@ -63,6 +63,8 @@ import type {
   Message,
   MessageId,
   OverrideSettings,
+  PermissionDecision,
+  PermissionDecisionKind,
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
@@ -159,6 +161,7 @@ import {
 } from '../skills';
 import {
   invokePermissionRuleList,
+  invokePermissionRuleUpsert,
   invokePermissionAuditInsert,
   invokeAuditRetryEnqueue,
   invokeAuditRetryDrain,
@@ -276,6 +279,7 @@ export interface AppState {
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<TaskId, SessionGithubState>>;
+  readonly volatilePermissionAllows: ReadonlySet<string>;
 }
 
 export interface SessionGithubState {
@@ -385,6 +389,14 @@ export interface AppActions {
   clearGithubToken(): Promise<void>;
   refreshSessionPr(taskId: TaskId, opts?: { force?: boolean }): Promise<void>;
   createPrForSession(taskId: TaskId): Promise<void>;
+  resolvePermissionRequest(input: {
+    taskId: TaskId;
+    agentId: SessionId;
+    toolUseId: string;
+    toolName: string;
+    runId: ProviderRunId;
+    scope: 'global' | 'workspace' | 'task' | 'once' | 'deny';
+  }): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -435,6 +447,7 @@ const initialState: AppState = {
   sidebarProviderFilter: [],
   githubStatus: null,
   sessionGithub: {},
+  volatilePermissionAllows: new Set<string>(),
 };
 
 function buildProviderSpendBreakdown(
@@ -1819,10 +1832,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
             input: event.input,
             at: event.at,
           };
-          const decision = engine.decide(request, effectiveRules, {
-            taskId,
-            workspaceId: session.workspaceId,
-          });
+          const volatile = get().volatilePermissionAllows;
+          const isVolatileAllow = volatile.has(event.toolUseId);
+          if (isVolatileAllow) {
+            set((state) => {
+              const next = new Set(state.volatilePermissionAllows);
+              next.delete(event.toolUseId);
+              return { volatilePermissionAllows: next };
+            });
+          }
+          const decision: PermissionDecision = isVolatileAllow
+            ? {
+                requestId: auditRequestId,
+                decision: 'allow',
+                ruleId: null,
+                decidedBy: 'user',
+                at: event.at,
+              }
+            : engine.decide(request, effectiveRules, {
+                taskId,
+                workspaceId: session.workspaceId,
+              });
           const auditPayload: PermissionAuditInsertPayload = {
             id: auditRequestId,
             runId,
@@ -2749,6 +2779,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       }));
     }
+  },
+
+  resolvePermissionRequest: async ({ taskId, agentId, toolUseId, toolName, runId, scope }) => {
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session) return;
+    const now = new Date().toISOString() as IsoDateTime;
+
+    if (scope === 'once') {
+      set((state) => ({
+        volatilePermissionAllows: new Set([...state.volatilePermissionAllows, toolUseId]),
+      }));
+    } else {
+      const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
+      const ruleScope = scope === 'deny' ? 'task' : scope;
+      await invokePermissionRuleUpsert({
+        scope: ruleScope,
+        ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
+        ...(ruleScope === 'task' ? { taskId } : {}),
+        patternTool: toolName,
+        decision: ruleDecision,
+        priority: 100,
+      });
+    }
+
+    get().appendTurnEvent(agentId, taskId, {
+      kind: 'permission_decision',
+      runId,
+      toolUseId,
+      decision: scope === 'deny' ? 'deny' : 'allow',
+      ruleId: null,
+      decidedBy: 'user',
+      at: now,
+    });
   },
 
   createPrForSession: async (taskId) => {
