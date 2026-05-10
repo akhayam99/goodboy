@@ -2503,13 +2503,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const task = state.sessions.find((s) => s.id === taskId);
     if (!task) throw new Error(`session not found: ${taskId}`);
     let resolvedName = args.name;
+    let stepPromptPrefix = '';
     if (args.stepId) {
       const templates = state.phaseTemplates[task.workspaceId] ?? [];
       const template = task.workflowId
         ? (templates.find((t) => t.id === task.workflowId) ?? null)
         : null;
       const step = template?.steps.find((s) => s.id === args.stepId) ?? null;
-      if (step && !resolvedName) resolvedName = step.name;
+      if (step) {
+        if (!resolvedName) resolvedName = step.name;
+        stepPromptPrefix = step.promptPrefix;
+      }
     }
     if (!resolvedName) {
       const existing = state.sessionPhaseRuns[taskId] ?? [];
@@ -2538,6 +2542,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
       }),
     }));
+    if (stepPromptPrefix.length > 0) {
+      void get().sendTurn({ taskId, content: stepPromptPrefix });
+    }
     return inserted.id;
   },
 

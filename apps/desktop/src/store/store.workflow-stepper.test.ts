@@ -178,6 +178,47 @@ function makeRefactorWorkflow(): Workflow {
   };
 }
 
+function makeRefactorWorkflowWithPrefixes(): Workflow {
+  return {
+    id: WORKFLOW_ID,
+    workspaceId: WS_ID,
+    name: 'Refactor',
+    description: 'scout/plan/refactor/verify',
+    steps: [
+      {
+        id: 's-scout' as StepId,
+        workflowId: WORKFLOW_ID,
+        ordinal: 0,
+        name: 'Scout',
+        promptPrefix: 'Survey the codebase.',
+      },
+      {
+        id: 's-plan' as StepId,
+        workflowId: WORKFLOW_ID,
+        ordinal: 1,
+        name: 'Plan',
+        promptPrefix: 'Produce a detailed plan.',
+      },
+      {
+        id: 's-refactor' as StepId,
+        workflowId: WORKFLOW_ID,
+        ordinal: 2,
+        name: 'Refactor',
+        promptPrefix: 'Execute the plan.',
+      },
+      {
+        id: 's-verify' as StepId,
+        workflowId: WORKFLOW_ID,
+        ordinal: 3,
+        name: 'Verify',
+        promptPrefix: 'Run and verify tests.',
+      },
+    ],
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+}
+
 let inserted: Session[] = [];
 
 function wirePhaseSpies() {
@@ -412,5 +453,113 @@ describe('spawnAgent — AGENT_KIND_DEFAULTS applied via CTA advance (#439)', ()
     expect(state.sessionPhaseRuns[session.id]?.find((r) => r.id === agentId)?.status).toBe(
       'pending',
     );
+  });
+});
+
+describe('spawnAgent — CTA auto-run next step (#442)', () => {
+  beforeEach(() => {
+    wirePhaseSpies();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fires sendTurn with the step promptPrefix when spawnAgent is called with a stepId', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'refactor Z',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    // Wait for createSession's void sendTurn (scout prefix) to settle before clearing
+    await new Promise<void>((r) => setTimeout(r, 50));
+    runTurnSpy.mockClear();
+
+    inserted = inserted.map((r) =>
+      r.stepId === ('s-scout' as StepId) ? { ...r, status: 'completed' as const } : r,
+    );
+
+    await useAppStore.getState().spawnAgent(session.id, { stepId: 's-plan' as StepId });
+
+    await new Promise<void>((r) => setTimeout(r, 50));
+
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(String(callArgs['prompt'])).toContain('Produce a detailed plan.');
+  });
+
+  it('switches selectedAgentId to the new agent before firing sendTurn', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'refactor W',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const agentId = await useAppStore
+      .getState()
+      .spawnAgent(session.id, { stepId: 's-plan' as StepId });
+
+    expect(useAppStore.getState().selectedAgentId[session.id]).toBe(agentId);
+  });
+
+  it('does NOT fire sendTurn when spawnAgent has no stepId (free session)', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
+
+    await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'free agent test',
+      branchPrefix: 'kay',
+    });
+
+    runTurnSpy.mockClear();
+
+    const state = useAppStore.getState();
+    const taskId = state.currentSessionId as TaskId;
+    await useAppStore.getState().spawnAgent(taskId, {});
+
+    await new Promise<void>((r) => setTimeout(r, 50));
+
+    expect(runTurnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does NOT fire sendTurn when step has empty promptPrefix', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'refactor V',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    runTurnSpy.mockClear();
+
+    await useAppStore.getState().spawnAgent(session.id, { stepId: 's-plan' as StepId });
+
+    await new Promise<void>((r) => setTimeout(r, 50));
+
+    expect(runTurnSpy).not.toHaveBeenCalled();
   });
 });
