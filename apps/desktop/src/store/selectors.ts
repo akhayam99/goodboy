@@ -17,7 +17,12 @@ const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 export const useSessionSlots = (taskId: TaskId | null): ReadonlyArray<ContextSlot> =>
   useAppStore((s) => (taskId ? (s.sessionSlots[taskId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
 
-const IDLE_STATUS: SummarizerSessionStatus = { status: 'idle', lastUpdate: null, error: null };
+const IDLE_STATUS: SummarizerSessionStatus = {
+  status: 'idle',
+  lastUpdate: null,
+  error: null,
+  lastUsage: null,
+};
 
 export const useSummarizerStatus = (taskId: TaskId | null): SummarizerSessionStatus =>
   useAppStore((s) => (taskId ? (s.summarizerStatus[taskId] ?? IDLE_STATUS) : IDLE_STATUS));

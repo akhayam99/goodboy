@@ -109,20 +109,17 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
 
     let slug = sanitize_slug(&args.slug);
     let branch_name = format!("{}/{}", args.branch_prefix, slug);
-    let repo_name = repo_path
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| "repo".to_string());
+    // Default location: <repo>/.kay-am/worktrees/<prefix>-<slug>. Keeps every
+    // session-scoped checkout inside the workspace folder so the user only has
+    // one project root to track. The .kay-am dir should be in the repo's
+    // .gitignore (we add it on first creation, see ensure_gitignore_entry).
     let parent = args
         .parent_dir
         .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            repo_path
-                .parent()
-                .map(Path::to_path_buf)
-                .unwrap_or_else(|| PathBuf::from("."))
-        });
-    let worktree_path = parent.join(format!("{repo_name}-{}-{slug}", args.branch_prefix));
+        .unwrap_or_else(|| repo_path.join(".kay-am").join("worktrees"));
+    let worktree_path = parent.join(format!("{}-{slug}", args.branch_prefix));
+
+    ensure_gitignore_entry(&repo_path, ".kay-am/")?;
 
     if let Some(existing) = find_existing(&repo_path, &worktree_path)? {
         return Ok(CreatedWorktree {
@@ -191,6 +188,32 @@ fn find_existing(
     Ok(entries
         .into_iter()
         .find(|w| Path::new(&w.path) == worktree_path))
+}
+
+/// Append a line to the repo's .gitignore if it isn't already present, so the
+/// worktree directory created by kay-am doesn't leak into git status. No-ops
+/// when the file is already gitignoring the entry, when no .gitignore exists
+/// and writing fails, or when the entry is already there.
+fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeError> {
+    let gitignore = repo_path.join(".gitignore");
+    let existing = std::fs::read_to_string(&gitignore).unwrap_or_default();
+    let has_entry = existing
+        .lines()
+        .any(|line| line.trim() == entry || line.trim() == entry.trim_end_matches('/'));
+    if has_entry {
+        return Ok(());
+    }
+    let needs_newline = !existing.is_empty() && !existing.ends_with('\n');
+    let mut next = existing;
+    if needs_newline {
+        next.push('\n');
+    }
+    next.push_str(entry);
+    next.push('\n');
+    // Best-effort: silently swallow write errors so a read-only repo doesn't
+    // block worktree creation.
+    let _ = std::fs::write(&gitignore, next);
+    Ok(())
 }
 
 fn ensure_clean(repo_path: &Path) -> Result<(), WorktreeError> {

@@ -177,7 +177,9 @@ describe('setCurrentWorkspace — session-scoped state cleanup', () => {
       sessionWorktrees: { [SESSION_IDLE]: ['/tmp/wt'] },
       sessionPhaseRuns: { [SESSION_IDLE]: [] },
       sessionBudgets: { [SESSION_IDLE]: { softCapUsd: 10 } as never },
-      summarizerStatus: { [SESSION_IDLE]: { status: 'idle', lastUpdate: null, error: null } },
+      summarizerStatus: {
+        [SESSION_IDLE]: { status: 'idle', lastUpdate: null, error: null, lastUsage: null },
+      },
       budgetAlerts: [{ id: 'alert-1' } as never],
     });
 

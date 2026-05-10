@@ -123,6 +123,7 @@ import {
 } from '../settings';
 import { getCodexPriceOverride, refreshPricingTable } from '../providerPricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
+import { readVerbosity, verbosityDirective } from '../verbosity';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 import {
   invokeBudgetRuleList,
@@ -188,6 +189,7 @@ const CONTEXT_MARKER_HINT =
   '## context handoff protocol\n' +
   'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
   'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`.\n' +
+  'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>` — the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
   "the orchestrator parses these markers and persists them to this task's shared context panel — every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
 
 function buildContextPreamble(sharedSlotsRendered: string): string {
@@ -237,6 +239,14 @@ export interface AppState {
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<TaskId, ReadonlyArray<Session>>>;
   readonly selectedAgentId: Readonly<Record<TaskId, SessionId | null>>;
+  /**
+   * Runtime history of providerRunIds per agent (Session). Populated as turns
+   * fire so the sidebar can aggregate telemetry across provider switches —
+   * agents whose `runId` only points at the *latest* provider run would
+   * otherwise drop costs from previous providers when the user swaps mid-
+   * session. Lives in-memory only; rebuilt from current state on hydrate.
+   */
+  readonly agentRunHistory: Readonly<Record<SessionId, ReadonlyArray<ProviderRunId>>>;
   readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
@@ -252,6 +262,11 @@ export interface SummarizerSessionStatus {
   readonly status: 'idle' | 'running' | 'error';
   readonly lastUpdate: IsoDateTime | null;
   readonly error: string | null;
+  readonly lastUsage: {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly estimatedCostUsd: number;
+  } | null;
 }
 
 export interface ProviderSpendEntry {
@@ -373,6 +388,7 @@ const initialState: AppState = {
   phaseTemplates: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
+  agentRunHistory: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
@@ -426,12 +442,20 @@ async function runSummarizer(
   turnOutput: string,
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-  set((state) => ({
-    summarizerStatus: {
-      ...state.summarizerStatus,
-      [taskId]: { status: 'running', lastUpdate: null, error: null },
-    },
-  }));
+  set((state) => {
+    const prev = state.summarizerStatus[taskId];
+    return {
+      summarizerStatus: {
+        ...state.summarizerStatus,
+        [taskId]: {
+          status: 'running',
+          lastUpdate: prev?.lastUpdate ?? null,
+          error: null,
+          lastUsage: prev?.lastUsage ?? null,
+        },
+      },
+    };
+  });
 
   try {
     const session = get().sessions.find((s) => s.id === taskId);
@@ -508,7 +532,16 @@ async function runSummarizer(
       sessionTelemetry: { ...state.sessionTelemetry, [taskId]: telemetry },
       summarizerStatus: {
         ...state.summarizerStatus,
-        [taskId]: { status: 'idle', lastUpdate: now(), error: null },
+        [taskId]: {
+          status: 'idle',
+          lastUpdate: now(),
+          error: null,
+          lastUsage: {
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            estimatedCostUsd: result.usage.estimatedCostUsd,
+          },
+        },
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
@@ -518,12 +551,20 @@ async function runSummarizer(
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${taskId}: ${message}`);
     }
-    set((state) => ({
-      summarizerStatus: {
-        ...state.summarizerStatus,
-        [taskId]: { status: 'error', lastUpdate: now(), error: message },
-      },
-    }));
+    set((state) => {
+      const prev = state.summarizerStatus[taskId];
+      return {
+        summarizerStatus: {
+          ...state.summarizerStatus,
+          [taskId]: {
+            status: 'error',
+            lastUpdate: now(),
+            error: message,
+            lastUsage: prev?.lastUsage ?? null,
+          },
+        },
+      };
+    });
   }
 }
 
@@ -712,6 +753,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionBranches: {},
       sessionPhaseRuns: {},
       selectedAgentId: {},
+      agentRunHistory: {},
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -802,6 +844,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
             listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
           ])
         : [[] as ReadonlyArray<Message>, [] as ReadonlyArray<TurnEvent>];
+      // Seed agentRunHistory from each agent's current runId so previously-run
+      // agents at least have ONE entry to aggregate against. New runIds get
+      // appended on each turn going forward.
+      const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      for (const agent of agents) {
+        if (agent.runId) {
+          const prev = get().agentRunHistory[agent.id] ?? [];
+          if (!prev.includes(agent.runId)) {
+            seededHistory[agent.id] = [...prev, agent.runId];
+          }
+        }
+      }
       set((state) => ({
         sessionSummary: summary,
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
@@ -813,6 +867,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         transcripts: { ...state.transcripts, [id]: events },
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
+        agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
       }));
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
@@ -1280,6 +1335,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
         return;
       }
+      // Track this providerRunId against the agent so the sidebar can sum
+      // tokens/cost across provider switches within the same agent.
+      set((state) => {
+        const prev = state.agentRunHistory[activeAgentId] ?? [];
+        if (prev.includes(runId)) return state;
+        return {
+          agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
+        };
+      });
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
@@ -1594,6 +1658,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
+    const verbosityHint = verbosityDirective(readVerbosity(taskId));
+    resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
     let assistantText = '';
     let lastError: unknown = null;
@@ -2121,6 +2187,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionWorktrees: {},
             sessionPhaseRuns: {},
             selectedAgentId: {},
+            agentRunHistory: {},
             sessionBudgets: {},
             summarizerStatus: {},
             budgetAlerts: [],

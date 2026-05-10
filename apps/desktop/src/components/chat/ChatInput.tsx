@@ -6,7 +6,7 @@ import {
   useEffect,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { Send, Square, X } from 'lucide-react';
+import { Send, Square, X, Gauge } from 'lucide-react';
 import { Textarea, cn } from '@kay-am/ui';
 import type {
   BudgetAlert,
@@ -25,6 +25,13 @@ import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
 import { useEffectivePermissionRules } from '../../permissions';
+import {
+  VERBOSITY_LEVELS,
+  VERBOSITY_LABEL,
+  type VerbosityLevel,
+  readVerbosity,
+  writeVerbosity,
+} from '../../verbosity';
 
 const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
@@ -122,6 +129,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
+  const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -172,6 +180,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
     writeEffort(session.id, level);
+  };
+
+  const setVerbosity = (level: VerbosityLevel) => {
+    setVerbosityState(level);
+    writeVerbosity(session.id, level);
   };
 
   const onSelectProvider = (id: ProviderId) => {
@@ -226,7 +239,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         : undefined;
 
     setSelectedProvider(null);
-    setSelectedModel(null);
 
     if (isRunning) {
       setQueued({ content, override });
@@ -310,18 +322,21 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               </span>
             ) : null}
           </div>
+          <ProviderUsagePill provider={effectiveProvider} />
           <ModelPicker
             providers={providerCandidates}
             models={modelCandidates}
             provider={effectiveProvider}
             model={effectiveModel}
             effort={effort}
+            verbosity={verbosity}
             connectedProviders={connectedProviderIds}
             disabled={!allowOverride || isRunning}
             disabledTitle={overrideDisabledTitle}
             onSelectProvider={onSelectProvider}
             onSelectModel={onSelectModel}
             onSelectEffort={setEffort}
+            onSelectVerbosity={setVerbosity}
           />
         </div>
         <div className="relative" ref={wrapperRef}>
@@ -443,18 +458,65 @@ const PROVIDER_TEXT: Record<ProviderId, string> = {
   codex: 'text-[var(--color-provider-codex)]',
 };
 
+const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
+  essential: 'bg-success',
+  minimal: 'bg-success/70',
+  normal: 'bg-info',
+  detailed: 'bg-warning',
+  verbose: 'bg-danger',
+};
+
+const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
+  essential: 'text-success',
+  minimal: 'text-success/85',
+  normal: 'text-info',
+  detailed: 'text-warning',
+  verbose: 'text-danger',
+};
+
+function nextMonthlyResetLabel(now = new Date()): string {
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return next.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).toLowerCase();
+}
+
+function ProviderUsagePill({ provider }: { provider: ProviderId }) {
+  const breakdown = useAppStore((s) => s.providerSpendBreakdown);
+  const entry = breakdown.find((e) => e.provider === provider);
+  if (!entry || entry.capUsd === null || entry.capUsd <= 0) return null;
+  const pctUsed = Math.max(0, Math.min(1, entry.pct));
+  const pctRemaining = Math.round((1 - pctUsed) * 100);
+  const tone =
+    pctRemaining > 50 ? 'text-success' : pctRemaining > 20 ? 'text-warning' : 'text-danger';
+  const reset = nextMonthlyResetLabel();
+  const tooltip = `${provider}: $${entry.spentUsd.toFixed(2)} / $${entry.capUsd.toFixed(2)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
+  return (
+    <span
+      title={tooltip}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-2xs',
+        tone,
+      )}
+    >
+      <Gauge size={10} aria-hidden />
+      {pctRemaining}% left · {reset}
+    </span>
+  );
+}
+
 interface ModelPickerProps {
   providers: ReadonlyArray<ProviderId>;
   models: ReadonlyArray<string>;
   provider: ProviderId;
   model: string;
   effort: EffortLevel;
+  verbosity: VerbosityLevel;
   connectedProviders: ReadonlyArray<ProviderId>;
   disabled: boolean;
   disabledTitle?: string;
   onSelectProvider: (id: ProviderId) => void;
   onSelectModel: (id: string) => void;
   onSelectEffort: (level: EffortLevel) => void;
+  onSelectVerbosity: (level: VerbosityLevel) => void;
 }
 
 function ModelPicker({
@@ -463,12 +525,14 @@ function ModelPicker({
   provider,
   model,
   effort,
+  verbosity,
   connectedProviders,
   disabled,
   disabledTitle,
   onSelectProvider,
   onSelectModel,
   onSelectEffort,
+  onSelectVerbosity,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -525,6 +589,15 @@ function ModelPicker({
             <span className={EFFORT_TEXT[effort]}>{EFFORT_LABEL[effort].toLowerCase()}</span>
           </>
         ) : null}
+        <span aria-hidden className="text-muted-foreground/70">
+          ·
+        </span>
+        <span
+          className={VERBOSITY_TEXT[verbosity]}
+          title={`verbosity: ${VERBOSITY_LABEL[verbosity].toLowerCase()}`}
+        >
+          v:{VERBOSITY_LABEL[verbosity].toLowerCase()}
+        </span>
       </button>
       {open ? (
         <div
@@ -584,6 +657,19 @@ function ModelPicker({
               </PickerSection>
             </>
           ) : null}
+          <PickerDivider />
+          <PickerSection label="verbosity · cheaper first">
+            {VERBOSITY_LEVELS.map((level) => (
+              <PickerRow
+                key={level}
+                label={VERBOSITY_LABEL[level]}
+                leadingDot={VERBOSITY_DOT[level]}
+                active={verbosity === level}
+                onClick={() => onSelectVerbosity(level)}
+                labelClassName={VERBOSITY_TEXT[level]}
+              />
+            ))}
+          </PickerSection>
         </div>
       ) : null}
     </div>

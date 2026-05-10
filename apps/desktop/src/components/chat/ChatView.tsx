@@ -293,7 +293,7 @@ export function ChatView({ session }: ChatViewProps) {
               aria-relevant="additions"
             >
               {(() => {
-                const tightKinds = new Set([
+                const toolishKinds = new Set([
                   'tool_call',
                   'file_edit',
                   'skill_invocation',
@@ -304,8 +304,10 @@ export function ChatView({ session }: ChatViewProps) {
                 let lastDay: string | null = null;
                 return items.map((item, idx) => {
                   const prev = idx > 0 ? (items[idx - 1] ?? null) : null;
-                  const isTight =
-                    prev !== null && tightKinds.has(item.kind) && tightKinds.has(prev.kind);
+                  const tightToTool =
+                    prev !== null &&
+                    toolishKinds.has(item.kind) &&
+                    (toolishKinds.has(prev.kind) || prev.kind === 'assistant_text');
                   const node: React.ReactNode[] = [];
                   if (item.kind === 'user_text') {
                     const day = dayKey(item.at);
@@ -321,7 +323,7 @@ export function ChatView({ session }: ChatViewProps) {
                     }
                   }
                   node.push(
-                    <li key={item.key} className={isTight ? 'mt-1' : idx === 0 ? '' : 'mt-6'}>
+                    <li key={item.key} className={tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-6'}>
                       <TranscriptCard item={item} onRefreshAuth={() => void refreshProviders()} />
                     </li>,
                   );

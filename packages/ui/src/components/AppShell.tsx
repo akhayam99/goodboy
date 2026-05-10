@@ -18,7 +18,7 @@ const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
 const RIGHT_SIDEBAR_DEFAULT = 340;
 const RIGHT_SIDEBAR_STORAGE_KEY = 'kayam:right-sidebar-width';
-const RIGHT_RAIL_WIDTH = 40;
+const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
   if (typeof localStorage === 'undefined') return def;
@@ -217,7 +217,9 @@ export function AppShell({
           <aside
             className={cn(
               'flex min-h-0 min-w-0 flex-col overflow-hidden',
-              rightSidebarCollapsed ? 'bg-background' : 'm-3 rounded-xl bg-subtle shadow-sm',
+              rightSidebarCollapsed
+                ? 'mr-3 mt-3 bg-background'
+                : 'm-3 rounded-xl bg-subtle shadow-sm',
             )}
             style={{ gridArea: 'right' }}
           >

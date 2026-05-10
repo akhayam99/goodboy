@@ -10,16 +10,21 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
 }));
 
 vi.mock('../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
     const state = {
       upsertSessionSlot: vi.fn(),
       toggleSessionSlot: vi.fn(),
       summarizerStatus: {},
+      sessionTelemetry: {},
     };
     return selector(state);
   }),
   useSessionSlots: vi.fn().mockReturnValue([]),
-  useSummarizerStatus: vi.fn().mockReturnValue({ status: 'idle', lastUpdate: null, error: null }),
+  useSummarizerStatus: vi
+    .fn()
+    .mockReturnValue({ status: 'idle', lastUpdate: null, error: null, lastUsage: null }),
+  useSlotHistory: vi.fn().mockReturnValue([]),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -81,10 +86,11 @@ describe('ContextPanel rail — a11y attributes', () => {
     expect(rail.getAttribute('aria-label')).toBe('expand context panel');
   });
 
-  it('is focusable (tabIndex=0)', () => {
+  it('is focusable (native button)', () => {
     render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
     const rail = screen.getByRole('button', { name: /expand context panel/i });
-    expect(rail.getAttribute('tabindex')).toBe('0');
+    rail.focus();
+    expect(document.activeElement).toBe(rail);
   });
 });
 
