@@ -109,6 +109,7 @@ vi.mock('@kay-am/core', async (importOriginal) => {
           delta: { upserts: [] },
           usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
           model: 'claude-haiku-4-5',
+          nextActions: [],
         }));
       }
     },

@@ -18,6 +18,7 @@ export {
   useCurrentSession,
   useCurrentWorkspace,
   useSessionSlots,
+  useSessionNextActions,
   useSlotHistory,
   useSessions,
   useSummarizerStatus,

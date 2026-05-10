@@ -3,6 +3,7 @@ import type { ContextSlot, ProviderId } from '@kay-am/types';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 
@@ -21,12 +22,14 @@ export interface SummarizeInput {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
+  readonly prState?: NextActionsPrState | null;
 }
 
 export interface SummarizerResult {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
+  readonly nextActions: ReadonlyArray<NextAction>;
 }
 
 export interface SummarizerDeps {
@@ -125,8 +128,15 @@ export class Summarizer {
 
     const { text, usage } = this.extractTextAndUsage(stdout);
     const delta = parseDelta(text);
+    const slotsAfter = applyDelta(input.prevSlots, delta);
+    const nextActions = inferNextActions({
+      input,
+      delta,
+      slotsAfter,
+      prState: input.prState ?? null,
+    });
 
-    return { delta, usage, model: this.model };
+    return { delta, usage, model: this.model, nextActions };
   }
 
   private spawnCli(
@@ -283,4 +293,21 @@ function parseDelta(raw: string): ContextSlotDelta {
 function stripCodeFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();
+}
+
+function applyDelta(
+  prev: ReadonlyArray<ContextSlot>,
+  delta: ContextSlotDelta,
+): ReadonlyArray<ContextSlot> {
+  if (delta.upserts.length === 0) return prev;
+  const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
+  for (const upsert of delta.upserts) {
+    const existing = byKey.get(upsert.key);
+    byKey.set(upsert.key, {
+      key: upsert.key,
+      value: upsert.value,
+      enabled: existing?.enabled ?? true,
+    });
+  }
+  return Array.from(byKey.values());
 }

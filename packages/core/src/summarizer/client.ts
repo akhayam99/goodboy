@@ -2,6 +2,7 @@ import type { ContextSlot, ProviderId } from '@kay-am/types';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
+import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
 export type { SlotKey };
 
@@ -42,12 +43,14 @@ export interface SummarizeInput {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
+  readonly prState?: NextActionsPrState | null;
 }
 
 export interface SummarizerResult {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
+  readonly nextActions: ReadonlyArray<NextAction>;
 }
 
 type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -135,8 +138,32 @@ export class Summarizer {
 
     const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model);
     const delta = parseDelta(text);
-    return { delta, usage, model: this.model };
+    const slotsAfter = applyDelta(input.prevSlots, delta);
+    const nextActions = inferNextActions({
+      input,
+      delta,
+      slotsAfter,
+      prState: input.prState ?? null,
+    });
+    return { delta, usage, model: this.model, nextActions };
   }
+}
+
+function applyDelta(
+  prev: ReadonlyArray<ContextSlot>,
+  delta: ContextSlotDelta,
+): ReadonlyArray<ContextSlot> {
+  if (delta.upserts.length === 0) return prev;
+  const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
+  for (const upsert of delta.upserts) {
+    const existing = byKey.get(upsert.key);
+    byKey.set(upsert.key, {
+      key: upsert.key,
+      value: upsert.value,
+      enabled: existing?.enabled ?? true,
+    });
+  }
+  return Array.from(byKey.values());
 }
 
 interface ClaudeJsonResult {

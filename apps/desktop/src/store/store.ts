@@ -16,6 +16,7 @@ import {
   Summarizer,
   type ClaudeFlagSet,
   type FileConflict,
+  type NextAction,
   type SlotKey,
   seedWorkflowLibrary,
 } from '@kay-am/core';
@@ -251,6 +252,7 @@ export interface AppState {
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
+  readonly sessionNextActions: Readonly<Record<TaskId, ReadonlyArray<NextAction>>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<TaskId, TaskBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
@@ -394,6 +396,7 @@ export interface AppActions {
   clearGithubToken(): Promise<void>;
   refreshSessionPr(taskId: TaskId, opts?: { force?: boolean }): Promise<void>;
   createPrForSession(taskId: TaskId): Promise<void>;
+  clearSessionNextActions(taskId: TaskId): void;
   resolvePermissionRequest(input: {
     taskId: TaskId;
     agentId: SessionId;
@@ -430,6 +433,7 @@ const initialState: AppState = {
   sessionSlots: {},
   slotHistory: {},
   summarizerStatus: {},
+  sessionNextActions: {},
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
@@ -599,7 +603,14 @@ async function runSummarizer(
     const providerId = session.providerPreference.defaultProvider;
     const summarizer = new Summarizer({ providerId, invokeFn: invoke });
     const prevSlots = get().sessionSlots[taskId] ?? [];
-    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
+    const ghPr = get().sessionGithub[taskId]?.pr ?? null;
+    const prState = ghPr
+      ? {
+          hasOpenPr: ghPr.state === 'open' || ghPr.state === 'draft' || ghPr.state === 'approved',
+          checksGreen: ghPr.checks === 'success',
+        }
+      : null;
+    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
 
     // Parallel slot history + upsert writes — no serial await per slot.
     await Promise.all(
@@ -693,6 +704,7 @@ async function runSummarizer(
           },
         },
       },
+      sessionNextActions: { ...state.sessionNextActions, [taskId]: result.nextActions },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
   } catch (err) {
@@ -910,6 +922,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
+      sessionNextActions: {},
       budgetAlerts: [],
       unknownPayloadCounts: {},
       sidebarSessionSearch: '',
@@ -2377,6 +2390,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             agentTurnState: {},
             sessionBudgets: {},
             summarizerStatus: {},
+            sessionNextActions: {},
             budgetAlerts: [],
             unknownPayloadCounts: {},
           }
@@ -2839,6 +2853,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ruleId: null,
       decidedBy: 'user',
       at: now,
+    });
+  },
+
+  clearSessionNextActions: (taskId) => {
+    set((state) => {
+      if (state.sessionNextActions[taskId] === undefined) return {};
+      const next = { ...state.sessionNextActions };
+      delete next[taskId];
+      return { sessionNextActions: next };
     });
   },
 
