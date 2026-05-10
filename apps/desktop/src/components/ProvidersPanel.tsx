@@ -11,7 +11,6 @@ const STATE_LABEL: Record<ProviderConnectionState, string> = {
   installed_disconnected: 'installed, not logged in',
   missing: 'not installed',
   error: 'error',
-  'coming-soon': 'integration in v0.2',
 };
 
 const STATE_DOT: Record<ProviderConnectionState, string> = {
@@ -19,7 +18,6 @@ const STATE_DOT: Record<ProviderConnectionState, string> = {
   installed_disconnected: 'bg-warning',
   missing: 'bg-muted-foreground/40',
   error: 'bg-danger',
-  'coming-soon': 'bg-muted-foreground/40',
 };
 
 export function ProvidersPanel() {
@@ -68,11 +66,8 @@ export function ProvidersPanel() {
 }
 
 function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
-  const placeholder = info.connection === 'coming-soon';
   return (
-    <li
-      className={cn('flex items-center gap-3 px-3 py-2.5 text-xs', placeholder ? 'opacity-60' : '')}
-    >
+    <li className="flex items-center gap-3 px-3 py-2.5 text-xs">
       <span
         aria-hidden
         className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_DOT[info.connection])}
@@ -129,18 +124,6 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
       // terminal launch failed — fall through to show note anyway
     }
   };
-
-  if (info.connection === 'coming-soon') {
-    return info.trackingIssueUrl ? (
-      <button
-        type="button"
-        className="shrink-0 text-xs text-muted-foreground underline hover:text-foreground"
-        onClick={() => void openUrl(info.trackingIssueUrl!)}
-      >
-        track ↗
-      </button>
-    ) : null;
-  }
 
   if (info.connection === 'missing') {
     return (

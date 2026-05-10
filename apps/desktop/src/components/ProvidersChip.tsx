@@ -13,9 +13,8 @@ const PROVIDER_DOT: Record<string, string> = {
 
 export function ProvidersChip(_: ProvidersChipProps = {}) {
   const providers = useAppStore((s) => s.providers);
-  const active = providers.filter((p) => p.connection !== 'coming-soon');
-  const connected = active.filter((p) => p.connection === 'connected');
-  const total = active.length;
+  const connected = providers.filter((p) => p.connection === 'connected');
+  const total = providers.length;
   const allOk = total > 0 && connected.length === total;
 
   const onClick = () => {
