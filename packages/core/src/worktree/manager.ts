@@ -37,7 +37,6 @@ export async function createWorktree(opts: CreateWorktreeOptions): Promise<Creat
   const parent = opts.parentDir ?? path.dirname(opts.repoPath);
   const worktreePath = path.join(parent, `${repoName}-${opts.branchPrefix}-${slug}`);
 
-  await ensureClean(opts.repoPath);
   await ensureBranchAvailable(opts.repoPath, branchName);
 
   await mkdir(parent, { recursive: true });
@@ -53,13 +52,6 @@ export async function removeWorktree(repoPath: string, worktreePath: string): Pr
 export async function listWorktrees(repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> {
   const { stdout } = await git(repoPath, ['worktree', 'list', '--porcelain']);
   return parsePorcelain(stdout);
-}
-
-async function ensureClean(repoPath: string): Promise<void> {
-  const { stdout } = await git(repoPath, ['status', '--porcelain']);
-  if (stdout.trim().length > 0) {
-    throw new WorktreeError(`repository is dirty: ${repoPath}`);
-  }
 }
 
 async function ensureBranchAvailable(repoPath: string, branchName: string): Promise<void> {

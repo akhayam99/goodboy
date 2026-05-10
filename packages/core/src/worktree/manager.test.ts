@@ -49,13 +49,6 @@ describe('worktree manager', () => {
     expect(after.some((w) => w.path === created.worktreePath)).toBe(false);
   });
 
-  it('rejects when the repo has uncommitted changes', async () => {
-    await writeFile(path.join(repoPath, 'dirty.txt'), 'work in progress');
-    await expect(
-      createWorktree({ repoPath, branchPrefix: 'kay', slug: 'dirty' }),
-    ).rejects.toBeInstanceOf(WorktreeError);
-  });
-
   it('rejects when the branch already exists', async () => {
     await git(repoPath, ['branch', 'kay/taken']);
     await expect(
