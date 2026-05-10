@@ -172,6 +172,16 @@ function openInBrowser(url: string) {
   openUrl(url).catch(() => window.open(url, '_blank'));
 }
 
+function PrSkeleton() {
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden>
+      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
+      <div className="h-2.5 flex-1 animate-pulse rounded bg-muted" />
+      <div className="h-4 w-10 animate-pulse rounded-full bg-muted" />
+    </div>
+  );
+}
+
 function GitHubSection({ session }: { session: Task }) {
   const githubStatus = useAppStore((s) => s.githubStatus);
   const branch = useAppStore((s) => s.sessionBranches[session.id]);
@@ -204,6 +214,7 @@ function GitHubSection({ session }: { session: Task }) {
   const pr = ghState?.pr ?? null;
   const linkedIssues = ghState?.linkedIssues ?? [];
   const loading = ghState?.loading ?? false;
+  const isFirstLoad = loading && ghState?.fetchedAt == null;
   const ISSUE_LIMIT = 3;
   const visibleIssues = issuesExpanded ? linkedIssues : linkedIssues.slice(0, ISSUE_LIMIT);
   const hiddenCount = linkedIssues.length - ISSUE_LIMIT;
@@ -258,7 +269,9 @@ function GitHubSection({ session }: { session: Task }) {
           </button>
         </div>
 
-        {pr ? (
+        {isFirstLoad ? (
+          <PrSkeleton />
+        ) : pr ? (
           <div className="flex items-start gap-1.5">
             <button
               type="button"
