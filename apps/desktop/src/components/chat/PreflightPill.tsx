@@ -27,7 +27,7 @@ export function PreflightPill({ provider, rules, taskId, workspaceId }: Prefligh
       <button
         type="button"
         onClick={openSettings}
-        title="v0.7 will extend permission coverage to this provider."
+        title="permission proxy currently covers claude only."
         className="self-start rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted"
       >
         permission proxy: claude only

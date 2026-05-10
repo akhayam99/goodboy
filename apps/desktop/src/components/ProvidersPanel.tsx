@@ -84,7 +84,7 @@ function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =>
           {info.id !== 'anthropic' ? (
             <span
               className="rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground"
-              title="v0.7 will extend the permission proxy to cursor and codex. For now, these providers continue with their previous defaults."
+              title="permission proxy currently covers claude only. cursor and codex run with their CLI defaults; coverage is tracked for a future milestone."
             >
               permission proxy: not supported
             </span>
