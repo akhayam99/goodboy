@@ -56,6 +56,12 @@ import {
   shortModel,
 } from '../agentRowFormat';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
+import {
+  AGENT_KIND_PALETTE,
+  type AgentKind,
+  inferAgentKindFromName,
+  inferAgentKindFromStep,
+} from '../agentKind';
 import { openUrl } from '../editor';
 
 interface WorkspacesSidebarProps {
@@ -1291,22 +1297,29 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </p>
       ) : (
         <ul className="flex flex-col gap-1 pl-2">
-          {sorted.map((run) => (
-            <AgentRow
-              key={run.id}
-              run={run}
-              telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-              aggregate={aggregatesByAgentId.get(run.id) ?? null}
-              turns={turnsByAgentId.get(run.id) ?? 0}
-              isSelected={run.id === selectedAgentId}
-              isEditing={editingId === run.id}
-              onClick={() => onPickAgent(run.id)}
-              onRenameStart={() => setEditingId(run.id)}
-              onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-              onRenameCancel={() => setEditingId(null)}
-              onDelete={() => void onDeleteAgent(run.id)}
-            />
-          ))}
+          {sorted.map((run) => {
+            const stepName = run.stepId
+              ? (workflow?.steps.find((s) => s.id === run.stepId)?.name ?? null)
+              : null;
+            const kind = inferAgentKindFromName(stepName ?? run.name);
+            return (
+              <AgentRow
+                key={run.id}
+                run={run}
+                kind={kind}
+                telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                turns={turnsByAgentId.get(run.id) ?? 0}
+                isSelected={run.id === selectedAgentId}
+                isEditing={editingId === run.id}
+                onClick={() => onPickAgent(run.id)}
+                onRenameStart={() => setEditingId(run.id)}
+                onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                onRenameCancel={() => setEditingId(null)}
+                onDelete={() => void onDeleteAgent(run.id)}
+              />
+            );
+          })}
         </ul>
       )}
       {workflow ? (
@@ -1428,6 +1441,7 @@ interface AgentAggregate {
 
 interface AgentRowProps {
   readonly run: Session;
+  readonly kind: AgentKind;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
@@ -1442,6 +1456,7 @@ interface AgentRowProps {
 
 function AgentRow({
   run,
+  kind,
   telemetry,
   aggregate,
   turns,
@@ -1502,6 +1517,16 @@ function AgentRow({
             AGENT_STATUS_TONE[run.status],
           )}
         />
+        <span
+          className={cn(
+            'shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
+            AGENT_KIND_PALETTE[kind].bg,
+            AGENT_KIND_PALETTE[kind].fg,
+          )}
+          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
+        >
+          {AGENT_KIND_PALETTE[kind].label}
+        </span>
         {isEditing ? (
           <input
             autoFocus
