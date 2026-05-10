@@ -325,7 +325,7 @@ export async function runParallelBranch(
   // issue scope keeps worktree-per-run out of v1: every run executes in the
   // session's primary worktree (existing single-run invariant). Workdir
   // collisions are still surfaced by detectConflicts via emitted file_edit events.
-  // TODO (@ak, #212-followup): wire createParallelWorktrees + per-run workingDir
+  // TODO (@ak, #414): wire createParallelWorktrees + per-run workingDir
   // once Rust phase_run_insert accepts (group_id, parallel_index).
   const parallelRuns: ParallelSession[] = cappedDefs.map((def, i) => ({
     id: crypto.randomUUID() as ParallelSessionId,
@@ -400,7 +400,7 @@ export async function runParallelBranch(
     // state (currently a TODO placeholder in MergeDialog). Default to the group's
     // mergeStrategy; if 'manual' and unresolved, swallow the rejection and emit
     // a warning event so the parallel branch never blocks the turn pipeline.
-    // TODO (@ak, #212-followup): plumb MergeResult to ChatView and gate completion
+    // TODO (@ak, #415): plumb MergeResult to ChatView and gate completion
     // on user picks for mergeStrategy === 'manual'.
     const touches: ReadonlyArray<RunFileTouches> = runIds.map((rid) => ({
       runId: rid,

@@ -207,7 +207,7 @@ export function ModelPicker({
             </>
           ) : null}
           <PickerDivider />
-          <PickerSection label="verbosity · cheaper first">
+          <PickerSection label="verbosity">
             {VERBOSITY_LEVELS.map((level) => (
               <PickerRow
                 key={level}
