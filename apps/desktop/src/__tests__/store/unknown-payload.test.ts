@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, TaskId } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, SessionId, TaskId } from '@kay-am/types';
 
 // ---------------------------------------------------------------------------
 // Module mocks — hoisted before store import
@@ -119,7 +119,8 @@ vi.mock('../../providerPricing', () => ({
 // Tests
 // ---------------------------------------------------------------------------
 
-const SESSION_ID = 'sess-1' as TaskId;
+const TASK_ID = 'sess-1' as TaskId;
+const AGENT_ID = 'agent-1' as SessionId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
@@ -143,7 +144,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('increments counter keyed by adapter:payloadType on first unknown_payload', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(SESSION_ID, {
+    appendTurnEvent(AGENT_ID, TASK_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'anthropic',
@@ -157,7 +158,7 @@ describe('store unknownPayloadCounts', () => {
   it('accumulates multiple events of the same key', () => {
     const { appendTurnEvent } = useAppStore.getState();
     for (let i = 0; i < 3; i++) {
-      appendTurnEvent(SESSION_ID, {
+      appendTurnEvent(AGENT_ID, TASK_ID, {
         kind: 'unknown_payload',
         runId: RUN_ID,
         adapter: 'cursor',
@@ -171,7 +172,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('tracks different adapter/payloadType keys independently', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(SESSION_ID, {
+    appendTurnEvent(AGENT_ID, TASK_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'anthropic',
@@ -179,7 +180,7 @@ describe('store unknownPayloadCounts', () => {
       raw: {},
       at: AT,
     });
-    appendTurnEvent(SESSION_ID, {
+    appendTurnEvent(AGENT_ID, TASK_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'codex',
@@ -194,7 +195,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('does not increment counter for non-unknown_payload events', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(SESSION_ID, {
+    appendTurnEvent(AGENT_ID, TASK_ID, {
       kind: 'assistant_text',
       runId: RUN_ID,
       delta: 'hello',

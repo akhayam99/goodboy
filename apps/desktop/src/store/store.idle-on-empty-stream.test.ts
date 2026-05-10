@@ -125,6 +125,7 @@ vi.mock('../repo', () => ({
 }));
 
 const SESSION_ID = 'session-1' as TaskId;
+const AGENT_ID = 'agent-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 function buildSession(): Task {
@@ -240,7 +241,7 @@ describe('sendTurn — terminal state guarantees', () => {
 
     await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hello' });
 
-    const transcript = useAppStore.getState().transcripts[SESSION_ID] ?? [];
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvent = transcript.find((e) => e.kind === 'error');
     expect(errorEvent).toBeDefined();
     expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
@@ -256,7 +257,7 @@ describe('sendTurn — terminal state guarantees', () => {
 
     await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'ciao mondo' });
 
-    const transcript = useAppStore.getState().transcripts[SESSION_ID] ?? [];
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const userEvent = transcript.find((e) => e.kind === 'user_text');
     expect(userEvent).toBeDefined();
     expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('ciao mondo');
@@ -273,7 +274,7 @@ describe('sendTurn — terminal state guarantees', () => {
     const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
     expect(session?.state.kind).toBe('idle');
 
-    const transcript = useAppStore.getState().transcripts[SESSION_ID] ?? [];
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvents = transcript.filter((e) => e.kind === 'error');
     expect(errorEvents).toHaveLength(0);
   });

@@ -1,22 +1,22 @@
 import { useRef } from 'react';
-import type { TaskId, TurnEvent } from '@kay-am/types';
+import type { SessionId, TurnEvent } from '@kay-am/types';
 import { useAppStore, type AppState } from './store';
 
 const EMPTY: ReadonlyArray<TurnEvent> = [];
 
 export const selectTranscript =
-  (taskId: TaskId | null) =>
+  (agentId: SessionId | null) =>
   (state: AppState): ReadonlyArray<TurnEvent> =>
-    taskId ? (state.transcripts[taskId] ?? EMPTY) : EMPTY;
+    agentId ? (state.transcripts[agentId] ?? EMPTY) : EMPTY;
 
-export function useTranscript(taskId: TaskId | null): ReadonlyArray<TurnEvent> {
-  const idRef = useRef<TaskId | null>(taskId);
+export function useTranscript(agentId: SessionId | null): ReadonlyArray<TurnEvent> {
+  const idRef = useRef<SessionId | null>(agentId);
   const selectorRef = useRef<(state: AppState) => ReadonlyArray<TurnEvent>>(
-    selectTranscript(taskId),
+    selectTranscript(agentId),
   );
-  if (idRef.current !== taskId) {
-    idRef.current = taskId;
-    selectorRef.current = selectTranscript(taskId);
+  if (idRef.current !== agentId) {
+    idRef.current = agentId;
+    selectorRef.current = selectTranscript(agentId);
   }
   return useAppStore(selectorRef.current);
 }

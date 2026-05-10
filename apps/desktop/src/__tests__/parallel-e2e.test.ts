@@ -153,6 +153,7 @@ function makeInputs(
 ): ParallelBranchInputs {
   return {
     session: makeSession(),
+    orchestratingAgentId: 'orchestrator-agent' as SessionId,
     workspace: makeWorkspace(),
     currentDef: groupDefs[0]!,
     groupDefs,
@@ -169,7 +170,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
   const events: TurnEvent[] = [];
   return {
     effects: {
-      appendTurnEvent: (_sid: TaskId, e: TurnEvent) => events.push(e),
+      appendTurnEvent: (_agentId: SessionId, _sid: TaskId, e: TurnEvent) => events.push(e),
       refreshPhaseRuns: vi.fn(async () => undefined),
       setMergeConflicts: vi.fn(),
     },

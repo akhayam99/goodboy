@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ProviderRunId, Task } from '@kay-am/types';
+import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
@@ -128,7 +128,10 @@ function ThinkingIndicator() {
 }
 
 export function ChatView({ session }: ChatViewProps) {
-  const events = useTranscript(session.id);
+  const selectedAgentId = useAppStore(
+    (s) => s.selectedAgentId[session.id] ?? null,
+  ) as SessionId | null;
+  const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
