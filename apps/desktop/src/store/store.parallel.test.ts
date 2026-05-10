@@ -167,6 +167,7 @@ function buildSession(): Task {
     state: { kind: 'idle', lastActivityAt: now },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    permissionMode: 'bypassPermissions' as const,
     workflowId: TEMPLATE_ID,
     createdAt: now,
     updatedAt: now,

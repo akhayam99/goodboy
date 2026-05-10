@@ -258,7 +258,7 @@ describe('snapshot — error states', () => {
 
   it('PermissionsPanel: form error (workspace scope)', () => {
     mockStore({ settings: {} });
-    const { container } = render(<PermissionsPanel />);
+    const { container } = render(<PermissionsPanel scope="global" />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

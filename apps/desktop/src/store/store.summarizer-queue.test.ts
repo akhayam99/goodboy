@@ -169,6 +169,7 @@ function buildTask(): Task {
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    permissionMode: 'bypassPermissions' as const,
     createdAt: NOW,
     updatedAt: NOW,
   };

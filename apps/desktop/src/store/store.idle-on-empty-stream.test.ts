@@ -140,6 +140,7 @@ function buildSession(): Task {
       defaultProvider: 'anthropic',
       allowTurnOverride: false,
     },
+    permissionMode: 'bypassPermissions' as const,
     createdAt: now,
     updatedAt: now,
   };

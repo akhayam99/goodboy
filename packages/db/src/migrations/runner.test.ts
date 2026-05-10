@@ -93,6 +93,7 @@ describe('migrate', () => {
       state: { kind: 'idle', lastActivityAt: now() },
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      permissionMode: 'bypassPermissions',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -124,6 +125,7 @@ describe('migrate', () => {
       state: { kind: 'draft' },
       contextSlots: [],
       providerPreference: { defaultProvider: 'cursor', allowTurnOverride: false },
+      permissionMode: 'bypassPermissions',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -154,6 +156,7 @@ describe('migrate', () => {
       state: { kind: 'draft' },
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      permissionMode: 'bypassPermissions',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -251,6 +254,7 @@ describe('migrate', () => {
       state: { kind: 'draft' },
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      permissionMode: 'bypassPermissions',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -305,6 +309,7 @@ describe('migrate', () => {
       state: { kind: 'draft' },
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      permissionMode: 'bypassPermissions',
       createdAt: now(),
       updatedAt: now(),
     };
