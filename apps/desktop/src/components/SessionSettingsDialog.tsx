@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
-import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Lock, Trash2 } from 'lucide-react';
 import type { TaskId } from '@kay-am/types';
 import { useAppStore } from '../store';
+import { PermissionsPanel } from './PermissionsPanel';
 
 interface SessionSettingsDialogProps {
   taskId: TaskId;
@@ -13,7 +14,7 @@ interface SessionSettingsDialogProps {
   onUnarchive: () => void;
 }
 
-type Section = 'general' | 'budget' | 'danger';
+type Section = 'general' | 'budget' | 'permissions' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -24,6 +25,7 @@ interface NavItem {
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'general', label: 'General', icon: <Bot size={14} aria-hidden /> },
   { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden /> },
+  { id: 'permissions', label: 'Permissions', icon: <Lock size={14} aria-hidden /> },
 ];
 
 const DANGER_NAV: NavItem = {
@@ -204,6 +206,19 @@ export function SessionSettingsDialog({
                 </div>
               </div>
             ) : null}
+          </div>
+        );
+
+      case 'permissions':
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Permissions for this session
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              rules here apply only to this session and override both global and workspace defaults.
+            </p>
+            <PermissionsPanel scope={{ kind: 'task', id: taskId }} />
           </div>
         );
 
