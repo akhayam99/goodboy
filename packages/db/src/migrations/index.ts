@@ -15,6 +15,7 @@ import { m014RenameDomain } from './m014-rename-domain';
 import { m015AgentsPerChat } from './m015-agents-per-chat';
 import { m016TurnEvents } from './m016-turn-events';
 import { m017ContextSlotHistory } from './m017-context-slot-history';
+import { m018GithubPrCache } from './m018-github-pr-cache';
 
 export interface Migration {
   readonly version: number;
@@ -39,4 +40,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 15, sql: m015AgentsPerChat },
   { version: 16, sql: m016TurnEvents },
   { version: 17, sql: m017ContextSlotHistory },
+  { version: 18, sql: m018GithubPrCache },
 ];
