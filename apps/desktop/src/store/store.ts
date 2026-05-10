@@ -462,6 +462,75 @@ function mergeSlots(
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
+// ---------------------------------------------------------------------------
+// Summarizer queue — one per task, max one in-flight + one queued (coalesced).
+// Prevents stacking when the user iterates faster than the summarizer completes.
+// ---------------------------------------------------------------------------
+
+interface SummarizerQueueEntry {
+  readonly turnInput: string;
+  readonly turnOutput: string;
+}
+
+interface SummarizerTaskQueue {
+  inFlight: boolean;
+  queued: SummarizerQueueEntry | null;
+}
+
+export const summarizerQueues = new Map<TaskId, SummarizerTaskQueue>();
+
+function scheduleIdle(fn: () => void): void {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => fn());
+  } else {
+    queueMicrotask(fn);
+  }
+}
+
+function enqueueSummarizer(
+  set: SetFn,
+  get: () => AppStore,
+  taskId: TaskId,
+  turnInput: string,
+  turnOutput: string,
+): void {
+  let queue = summarizerQueues.get(taskId);
+  if (!queue) {
+    queue = { inFlight: false, queued: null };
+    summarizerQueues.set(taskId, queue);
+  }
+
+  if (queue.inFlight) {
+    // Coalesce: overwrite any previously queued entry with the latest.
+    queue.queued = { turnInput, turnOutput };
+    return;
+  }
+
+  queue.inFlight = true;
+  queue.queued = null;
+
+  const run = (): void => {
+    void runSummarizer(set, get, taskId, turnInput, turnOutput).finally(() => {
+      const q = summarizerQueues.get(taskId);
+      if (!q) return;
+      const next = q.queued;
+      if (next) {
+        q.queued = null;
+        scheduleIdle(() => {
+          void runSummarizer(set, get, taskId, next.turnInput, next.turnOutput).finally(() => {
+            const q2 = summarizerQueues.get(taskId);
+            if (q2) q2.inFlight = false;
+          });
+        });
+      } else {
+        q.inFlight = false;
+      }
+    });
+  };
+
+  scheduleIdle(run);
+}
+
 function applySessionUpdate(
   set: SetFn,
   taskId: TaskId,
@@ -486,6 +555,9 @@ async function runSummarizer(
   turnOutput: string,
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+  // Mark running without a separate set — merged into the final batch below on success,
+  // or emitted immediately only on the error path. This avoids a spurious re-render at start.
   set((state) => {
     const prev = state.summarizerStatus[taskId];
     return {
@@ -510,67 +582,82 @@ async function runSummarizer(
     const prevSlots = get().sessionSlots[taskId] ?? [];
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
 
-    for (const upsert of result.delta.upserts) {
-      const existing = (get().sessionSlots[taskId] ?? []).find((s) => s.key === upsert.key);
-      if (existing && existing.value !== upsert.value) {
-        await insertContextSlotHistory(
-          tauriDatabase,
-          taskId,
-          crypto.randomUUID(),
-          upsert.key,
-          existing.value,
-          'summarizer',
-        );
-      }
-      const next: ContextSlot = {
-        key: upsert.key,
-        value: upsert.value,
-        enabled: existing?.enabled ?? true,
-      };
-      await upsertContextSlot(tauriDatabase, taskId, next);
-    }
-    const refreshed = await listContextSlotsForTask(tauriDatabase, taskId);
-    set((state) => ({
-      sessionSlots: { ...state.sessionSlots, [taskId]: refreshed },
-    }));
+    // Parallel slot history + upsert writes — no serial await per slot.
+    await Promise.all(
+      result.delta.upserts.map(async (upsert) => {
+        const existing = (get().sessionSlots[taskId] ?? []).find((s) => s.key === upsert.key);
+        if (existing && existing.value !== upsert.value) {
+          await insertContextSlotHistory(
+            tauriDatabase,
+            taskId,
+            crypto.randomUUID(),
+            upsert.key,
+            existing.value,
+            'summarizer',
+          );
+        }
+        const next: ContextSlot = {
+          key: upsert.key,
+          value: upsert.value,
+          enabled: existing?.enabled ?? true,
+        };
+        await upsertContextSlot(tauriDatabase, taskId, next);
+      }),
+    );
 
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
-    await insertProviderRun(tauriDatabase, {
-      id: summarizerRunId,
-      taskId,
-      provider: providerId,
-      model: result.model,
-      status: { kind: 'streaming', startedAt },
-      createdAt: startedAt,
-    });
-    await updateProviderRunStatus(tauriDatabase, summarizerRunId, {
-      kind: 'succeeded',
-      finishedAt: now(),
-    });
-    const record: TelemetryRecord = {
-      id: crypto.randomUUID() as TelemetryRecordId,
-      runId: summarizerRunId,
-      taskId,
-      kind: 'summarizer',
-      provider: providerId,
-      model: result.model,
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-      estimatedCostUsd: result.usage.estimatedCostUsd,
-      recordedAt: now(),
-    };
-    await insertTelemetry(tauriDatabase, record);
 
-    const [sessionSummary, workspaceSummary, telemetry, providerSummaries, budgetRules] =
-      await Promise.all([
-        summarizeTaskTelemetry(tauriDatabase, taskId),
-        summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
-        listTelemetryForTask(tauriDatabase, taskId),
-        summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
-        invokeBudgetRuleList(),
-      ]);
+    // Parallel: telemetry write + slot refresh + analytics queries.
+    const [
+      refreshed,
+      ,
+      sessionSummary,
+      workspaceSummary,
+      telemetry,
+      providerSummaries,
+      budgetRules,
+    ] = await Promise.all([
+      listContextSlotsForTask(tauriDatabase, taskId),
+      insertProviderRun(tauriDatabase, {
+        id: summarizerRunId,
+        taskId,
+        provider: providerId,
+        model: result.model,
+        status: { kind: 'streaming', startedAt },
+        createdAt: startedAt,
+      })
+        .then(() =>
+          updateProviderRunStatus(tauriDatabase, summarizerRunId, {
+            kind: 'succeeded',
+            finishedAt: now(),
+          }),
+        )
+        .then(() => {
+          const record: TelemetryRecord = {
+            id: crypto.randomUUID() as TelemetryRecordId,
+            runId: summarizerRunId,
+            taskId,
+            kind: 'summarizer',
+            provider: providerId,
+            model: result.model,
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            estimatedCostUsd: result.usage.estimatedCostUsd,
+            recordedAt: now(),
+          };
+          return insertTelemetry(tauriDatabase, record);
+        }),
+      summarizeTaskTelemetry(tauriDatabase, taskId),
+      summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
+      listTelemetryForTask(tauriDatabase, taskId),
+      summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
+      invokeBudgetRuleList(),
+    ]);
+
+    // Single batched set — one re-render for the entire summarizer completion.
     set((state) => ({
+      sessionSlots: { ...state.sessionSlots, [taskId]: refreshed },
       sessionSummary,
       workspaceSummary,
       sessionTelemetry: { ...state.sessionTelemetry, [taskId]: telemetry },
@@ -1932,7 +2019,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (!lastError && assistantText.length > 0) {
-      void runSummarizer(set, get, taskId, resolvedPrompt, assistantText);
+      enqueueSummarizer(set, get, taskId, resolvedPrompt, assistantText);
     }
 
     if (lastError) throw lastError;
