@@ -75,7 +75,7 @@ export function TranscriptCard({ item, taskId = null, agentId = null, onRefreshA
     case 'done':
       return <hr className="border-border" />;
     case 'permission_request':
-      return <PermissionRequestCard item={item} />;
+      return <PermissionRequestCard item={item} taskId={taskId} agentId={agentId} />;
     case 'permission_decision':
       return <PermissionDecisionCard item={item} taskId={taskId} agentId={agentId} />;
   }

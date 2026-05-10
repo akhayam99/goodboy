@@ -155,6 +155,7 @@ function buildSession(): Task {
       defaultProvider: 'anthropic',
       allowTurnOverride: false,
     },
+    permissionMode: 'bypassPermissions',
     createdAt: now,
     updatedAt: now,
   };
@@ -269,7 +270,7 @@ describe('sendTurn — permission proxy integration', () => {
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(args.disallowedTools).toEqual(['Bash(rm:*)']);
     expect(args.allowedTools).toEqual([]);
-    expect(args.permissionMode).toBe('default');
+    expect(args.permissionMode).toBe('bypassPermissions');
   });
 
   it('forwards allowedTools when an allow rule is configured (claude)', async () => {
@@ -299,7 +300,7 @@ describe('sendTurn — permission proxy integration', () => {
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(args.allowedTools).toEqual([]);
     expect(args.disallowedTools).toEqual([]);
-    expect(args.permissionMode).toBe('default');
+    expect(args.permissionMode).toBe('bypassPermissions');
     // regression guard: never carry the legacy bypass flag through the JS payload
     expect(JSON.stringify(args)).not.toContain('dangerously-skip-permissions');
   });
