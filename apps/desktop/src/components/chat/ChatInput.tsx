@@ -32,39 +32,28 @@ import {
   readVerbosity,
   writeVerbosity,
 } from '../../verbosity';
-
-const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'Claude',
-  cursor: 'Cursor',
-  codex: 'Codex',
-};
-
-// Strip the noisy "claude-" prefix and capitalise the version segment so chip
-// labels read like "Opus 4.7" instead of "claude-opus-4-7". Falls back to the
-// raw id for unknown shapes (cursor / codex models keep their own format).
-function modelLabel(id: string): string {
-  const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
-  if (m) {
-    const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
-    return `${family} ${m[2]}.${m[3]}`;
-  }
-  return id;
-}
+import {
+  PROVIDER_LABEL,
+  PROVIDER_TEXT,
+  EFFORT_LEVELS,
+  type EffortLevel,
+  EFFORT_LABEL,
+  EFFORT_DOT,
+  EFFORT_TEXT,
+  FAMILY_LABEL,
+  TIER_TEXT,
+  TIER_DOT,
+  VERBOSITY_DOT,
+  VERBOSITY_TEXT,
+  modelLabel,
+  modelFamily,
+  modelTier,
+  modelWeight,
+} from './chat-constants';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
 const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
-
-const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
-type EffortLevel = (typeof EFFORT_LEVELS)[number];
-
-const EFFORT_LABEL: Record<EffortLevel, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  'extra-high': 'Extra high',
-  max: 'Max',
-};
 
 const EFFORT_STORAGE_PREFIX = 'kayam:effort:';
 
@@ -402,100 +391,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     </div>
   );
 }
-
-const EFFORT_DOT: Record<EffortLevel, string> = {
-  low: 'bg-success',
-  medium: 'bg-info',
-  high: 'bg-warning',
-  'extra-high': 'bg-danger/80',
-  max: 'bg-danger',
-};
-
-const EFFORT_TEXT: Record<EffortLevel, string> = {
-  low: 'text-success',
-  medium: 'text-info',
-  high: 'text-warning',
-  'extra-high': 'text-danger/85',
-  max: 'text-danger',
-};
-
-type CostTier = 'cheap' | 'mid' | 'expensive';
-
-// Indicative cost weight per model (relative output-token price).
-// Sort ascending → cheapest first; tier drives chip color in the picker.
-const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
-  'cursor-small': { weight: 4, tier: 'cheap' },
-  'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
-  'codex-mini-latest': { weight: 6, tier: 'cheap' },
-  'claude-sonnet-4-5': { weight: 15, tier: 'mid' },
-  'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
-  'codex-latest': { weight: 20, tier: 'mid' },
-  'claude-opus-4-7': { weight: 75, tier: 'expensive' },
-};
-
-function modelFamily(id: string): string {
-  if (id.startsWith('claude-')) return 'claude';
-  if (id.startsWith('gpt-')) return 'gpt';
-  if (id.startsWith('gemini-')) return 'gemini';
-  if (id.startsWith('cursor-')) return 'cursor';
-  if (id.startsWith('codex-')) return 'codex';
-  return 'other';
-}
-
-const FAMILY_LABEL: Record<string, string> = {
-  claude: 'Claude',
-  gpt: 'GPT',
-  gemini: 'Gemini',
-  cursor: 'Cursor',
-  codex: 'Codex',
-  other: 'Other',
-};
-
-function modelTier(model: string): CostTier {
-  const known = MODEL_COST[model];
-  if (known) return known.tier;
-  if (/haiku|small|mini|flash|nano/i.test(model)) return 'cheap';
-  if (/opus|max/i.test(model)) return 'expensive';
-  return 'mid';
-}
-
-function modelWeight(model: string): number {
-  return MODEL_COST[model]?.weight ?? 10;
-}
-
-const TIER_TEXT: Record<CostTier, string> = {
-  cheap: 'text-success',
-  mid: 'text-warning',
-  expensive: 'text-danger',
-};
-
-const TIER_DOT: Record<CostTier, string> = {
-  cheap: 'bg-success',
-  mid: 'bg-warning',
-  expensive: 'bg-danger',
-};
-
-const PROVIDER_TEXT: Record<ProviderId, string> = {
-  anthropic: 'text-[var(--color-provider-anthropic)]',
-  cursor: 'text-[var(--color-provider-cursor)]',
-  codex: 'text-[var(--color-provider-codex)]',
-};
-
-const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  essential: 'bg-success',
-  minimal: 'bg-success/70',
-  normal: 'bg-info',
-  detailed: 'bg-warning',
-  verbose: 'bg-danger',
-};
-
-const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
-  essential: 'text-success',
-  minimal: 'text-success/85',
-  normal: 'text-info',
-  detailed: 'text-warning',
-  verbose: 'text-danger',
-};
 
 function nextMonthlyResetLabel(now = new Date()): string {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
