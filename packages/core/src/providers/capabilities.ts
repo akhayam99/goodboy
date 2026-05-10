@@ -1,5 +1,5 @@
 import type { ProviderId, ProviderRegistryCapabilities } from '@kay-am/types';
-import { CURSOR_CHEAP_MODEL } from './cursor/cost';
+import { CURSOR_MODELS } from './cursor/models';
 import { CODEX_CHEAP_MODEL } from './codex/constants';
 
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
@@ -14,11 +14,7 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
     supportsCheapModel: true,
   },
   cursor: {
-    models: [
-      { id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 },
-      { id: 'gpt-4o', tier: 'turn', contextWindow: 128_000 },
-      { id: CURSOR_CHEAP_MODEL, tier: 'cheap', contextWindow: 32_000 },
-    ],
+    models: CURSOR_MODELS,
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,

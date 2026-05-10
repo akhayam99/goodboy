@@ -9,18 +9,17 @@ import type {
   TurnEvent,
   TurnRequest,
 } from '@kay-am/types';
-import { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './cost';
+import { computeCursorCostUsd } from './cost';
+import { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './models';
 import { parseCursorStreamLine } from './parser';
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  // cursor-agent proxies requests through cursor's infra; actual context window varies
-  // by underlying model. 200k is a safe lower bound for supported models.
   contextWindow: 200_000,
-  defaultModel: 'claude-sonnet-4-5',
-  availableModels: [CURSOR_CHEAP_MODEL, 'claude-sonnet-4-5', 'gpt-4o'],
+  defaultModel: CURSOR_DEFAULT_MODEL,
+  availableModels: CURSOR_MODELS.map((m) => m.id),
 };
 
 export interface CursorAdapterDeps {

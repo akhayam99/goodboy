@@ -60,6 +60,7 @@ export {
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
 export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
+export { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export {
   parseCursorStreamLine,
   type ParseContext as CursorParseContext,

@@ -424,12 +424,31 @@ type CostTier = 'cheap' | 'mid' | 'expensive';
 // Indicative cost weight per model (relative output-token price).
 // Sort ascending → cheapest first; tier drives chip color in the picker.
 const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
-  'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
   'cursor-small': { weight: 4, tier: 'cheap' },
+  'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
+  'codex-mini-latest': { weight: 6, tier: 'cheap' },
   'claude-sonnet-4-5': { weight: 15, tier: 'mid' },
   'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
-  'gpt-4o': { weight: 15, tier: 'mid' },
+  'codex-latest': { weight: 20, tier: 'mid' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
+};
+
+function modelFamily(id: string): string {
+  if (id.startsWith('claude-')) return 'claude';
+  if (id.startsWith('gpt-')) return 'gpt';
+  if (id.startsWith('gemini-')) return 'gemini';
+  if (id.startsWith('cursor-')) return 'cursor';
+  if (id.startsWith('codex-')) return 'codex';
+  return 'other';
+}
+
+const FAMILY_LABEL: Record<string, string> = {
+  claude: 'Claude',
+  gpt: 'GPT',
+  gemini: 'Gemini',
+  cursor: 'Cursor',
+  codex: 'Codex',
+  other: 'Other',
 };
 
 function modelTier(model: string): CostTier {
@@ -559,10 +578,21 @@ function ModelPicker({
 
   const showEffort = provider === 'anthropic';
   const tier = modelTier(model);
-  const sortedModels = useMemo(
-    () => [...models].sort((a, b) => modelWeight(a) - modelWeight(b)),
-    [models],
-  );
+
+  const groupedModels = useMemo(() => {
+    const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b));
+    const groups = new Map<string, string[]>();
+    for (const id of sorted) {
+      const fam = modelFamily(id);
+      let arr = groups.get(fam);
+      if (!arr) {
+        arr = [];
+        groups.set(fam, arr);
+      }
+      arr.push(id);
+    }
+    return groups;
+  }, [models]);
 
   return (
     <div className="relative" ref={ref}>
@@ -629,21 +659,41 @@ function ModelPicker({
             })}
           </PickerSection>
           <PickerDivider />
-          <PickerSection label="model · cheapest first">
-            {sortedModels.map((id) => {
-              const t = modelTier(id);
-              return (
-                <PickerRow
-                  key={id}
-                  label={modelLabel(id)}
-                  active={model === id}
-                  onClick={() => onSelectModel(id)}
-                  leadingDot={TIER_DOT[t]}
-                  labelClassName={TIER_TEXT[t]}
-                />
-              );
-            })}
-          </PickerSection>
+          {groupedModels.size <= 1 ? (
+            <PickerSection label="model · cheapest first">
+              {[...groupedModels.values()].flat().map((id) => {
+                const t = modelTier(id);
+                return (
+                  <PickerRow
+                    key={id}
+                    label={modelLabel(id)}
+                    active={model === id}
+                    onClick={() => onSelectModel(id)}
+                    leadingDot={TIER_DOT[t]}
+                    labelClassName={TIER_TEXT[t]}
+                  />
+                );
+              })}
+            </PickerSection>
+          ) : (
+            [...groupedModels.entries()].map(([fam, ids]) => (
+              <PickerSection key={fam} label={FAMILY_LABEL[fam] ?? fam}>
+                {ids.map((id) => {
+                  const t = modelTier(id);
+                  return (
+                    <PickerRow
+                      key={id}
+                      label={modelLabel(id)}
+                      active={model === id}
+                      onClick={() => onSelectModel(id)}
+                      leadingDot={TIER_DOT[t]}
+                      labelClassName={TIER_TEXT[t]}
+                    />
+                  );
+                })}
+              </PickerSection>
+            ))
+          )}
           {showEffort ? (
             <>
               <PickerDivider />
