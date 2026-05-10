@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
+import type {
+  IsoDateTime,
+  ProviderName,
+  ProviderRunId,
+  TelemetryRecordId,
+  TaskId,
+  TelemetryRecord,
+} from '@kay-am/types';
+import {
+  computeLatestTelemetryByAgentId,
+  formatCost,
+  formatTokens,
+  shortModel,
+} from '../agentRowFormat';
 
 describe('formatTokens', () => {
   it('renders raw count under 1k', () => {
@@ -55,5 +68,83 @@ describe('shortModel', () => {
 
   it('handles uppercase family in claude id', () => {
     expect(shortModel('CLAUDE-HAIKU-4-5')).toBe('haiku');
+  });
+});
+
+function makeTelemetry(runId: string, inputTokens: number, recordedAt: string): TelemetryRecord {
+  return {
+    id: `tel-${runId}` as TelemetryRecordId,
+    runId: runId as ProviderRunId,
+    taskId: 'task-1' as TaskId,
+    kind: 'turn',
+    provider: 'anthropic' as ProviderName,
+    model: 'claude-sonnet-4-6',
+    inputTokens,
+    outputTokens: 100,
+    estimatedCostUsd: 0.01,
+    recordedAt: recordedAt as IsoDateTime,
+  };
+}
+
+describe('computeLatestTelemetryByAgentId', () => {
+  it('returns null for agent with no run history and no runId', () => {
+    const agents = [{ id: 'agent-1' }];
+    const result = computeLatestTelemetryByAgentId(agents, {}, new Map());
+    expect(result.get('agent-1')).toBeUndefined();
+  });
+
+  it('returns the only record when a single run exists', () => {
+    const rec = makeTelemetry('run-1', 1000, '2026-01-01T00:00:00Z');
+    const agents = [{ id: 'agent-1', runId: 'run-1' }];
+    const telemetryByRunId = new Map([['run-1', rec]]);
+    const result = computeLatestTelemetryByAgentId(agents, {}, telemetryByRunId);
+    expect(result.get('agent-1')).toBe(rec);
+  });
+
+  it('picks the most recent run when agentRunHistory has multiple runs', () => {
+    const recFirst = makeTelemetry('run-a', 34, '2026-01-01T00:00:00Z');
+    const recLatest = makeTelemetry('run-b', 55000, '2026-01-01T01:00:00Z');
+    const agents = [{ id: 'agent-1', runId: 'run-a' }];
+    const agentRunHistory = { 'agent-1': ['run-a', 'run-b'] };
+    const telemetryByRunId = new Map([
+      ['run-a', recFirst],
+      ['run-b', recLatest],
+    ]);
+    const result = computeLatestTelemetryByAgentId(agents, agentRunHistory, telemetryByRunId);
+    expect(result.get('agent-1')).toBe(recLatest);
+    expect(result.get('agent-1')!.inputTokens).toBe(55000);
+  });
+
+  it('falls back to an earlier run if the latest has no telemetry yet', () => {
+    const recFirst = makeTelemetry('run-a', 34, '2026-01-01T00:00:00Z');
+    const agents = [{ id: 'agent-1', runId: 'run-a' }];
+    const agentRunHistory = { 'agent-1': ['run-a', 'run-b'] };
+    const telemetryByRunId = new Map([['run-a', recFirst]]);
+    const result = computeLatestTelemetryByAgentId(agents, agentRunHistory, telemetryByRunId);
+    expect(result.get('agent-1')).toBe(recFirst);
+  });
+
+  it('does not mix telemetry across different agents', () => {
+    const rec1 = makeTelemetry('run-1', 10000, '2026-01-01T00:00:00Z');
+    const rec2 = makeTelemetry('run-2', 20000, '2026-01-01T01:00:00Z');
+    const agents = [
+      { id: 'agent-1', runId: 'run-1' },
+      { id: 'agent-2', runId: 'run-2' },
+    ];
+    const telemetryByRunId = new Map([
+      ['run-1', rec1],
+      ['run-2', rec2],
+    ]);
+    const result = computeLatestTelemetryByAgentId(agents, {}, telemetryByRunId);
+    expect(result.get('agent-1')!.inputTokens).toBe(10000);
+    expect(result.get('agent-2')!.inputTokens).toBe(20000);
+  });
+
+  it('uses run.runId as sole fallback when agentRunHistory is absent', () => {
+    const rec = makeTelemetry('run-x', 5000, '2026-01-01T00:00:00Z');
+    const agents = [{ id: 'agent-1', runId: 'run-x' }];
+    const telemetryByRunId = new Map([['run-x', rec]]);
+    const result = computeLatestTelemetryByAgentId(agents, {}, telemetryByRunId);
+    expect(result.get('agent-1')!.inputTokens).toBe(5000);
   });
 });
