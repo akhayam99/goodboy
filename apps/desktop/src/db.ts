@@ -11,11 +11,11 @@ export const tauriDatabase: Database = {
       params: [...params],
     });
   },
-  async select(sql, params = []) {
-    return invoke<ReadonlyArray<Record<string, unknown>>>('db_select', {
+  async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
+    return invoke('db_select', {
       sql,
       params: [...params],
-    }) as unknown as Promise<ReadonlyArray<never>>;
+    }) as Promise<ReadonlyArray<T>>;
   },
 };
 
