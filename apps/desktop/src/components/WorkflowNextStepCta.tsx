@@ -7,7 +7,7 @@ import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE, inferAgentKindFromName } from 
 export interface WorkflowNextStepCtaProps {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Session>;
-  readonly onAdvance: (step: Step) => void | Promise<void>;
+  readonly onAdvance: (step: Step, model: string) => void | Promise<void>;
   readonly className?: string;
 }
 
@@ -52,7 +52,7 @@ export function WorkflowNextStepCta({
     if (busy) return;
     setBusy(true);
     try {
-      await onAdvance(next);
+      await onAdvance(next, defaults.model);
     } finally {
       setBusy(false);
     }

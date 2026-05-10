@@ -5,6 +5,7 @@ import type {
   SessionId,
   StepId,
   TaskId,
+  TurnEvent,
   Workflow,
   WorkflowId,
   WorkspaceId,
@@ -14,12 +15,18 @@ import type {
 // Module mocks — hoisted before subject import
 // ---------------------------------------------------------------------------
 
+const runTurnSpy = vi.fn();
+
 vi.mock('../turn', () => ({
-  runTurn: vi.fn(),
+  runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
 }));
+
+async function* emptyStream(): AsyncIterable<TurnEvent> {
+  // intentionally empty
+}
 
 vi.mock('../permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -71,7 +78,13 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({ resolveProviderForTurn: vi.fn() }));
+vi.mock('../routing', () => ({
+  resolveProviderForTurn: vi.fn(async () => ({
+    selectedProvider: 'anthropic',
+    selectedModel: 'claude-opus-4-5',
+    reason: 'preference',
+  })),
+}));
 
 vi.mock('../budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -94,6 +107,7 @@ vi.mock('../skills', () => ({
 
 const phaseRunInsertSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
+const phaseRunUpdateStatusSpy = vi.fn();
 
 vi.mock('../phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
@@ -101,7 +115,7 @@ vi.mock('../phases', () => ({
   invokePhaseTemplateDelete: vi.fn(),
   invokePhaseRunList: (sid: TaskId) => phaseRunListSpy(sid),
   invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: vi.fn(),
+  invokePhaseRunUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
 }));
 
 vi.mock('../worktree', () => ({
@@ -175,7 +189,7 @@ function wirePhaseSpies() {
       taskId: args['taskId'] as TaskId,
       ordinal: args['ordinal'] as number,
       name: args['name'] as string,
-      status: 'pending',
+      status: (args['status'] as Session['status']) ?? 'pending',
       ...((args['stepId'] as StepId | undefined) !== undefined && {
         stepId: args['stepId'] as StepId,
       }),
@@ -185,6 +199,18 @@ function wirePhaseSpies() {
   });
   phaseRunListSpy.mockReset();
   phaseRunListSpy.mockImplementation(async () => inserted);
+  phaseRunUpdateStatusSpy.mockReset();
+  phaseRunUpdateStatusSpy.mockImplementation(
+    async (id: SessionId, fields: Record<string, unknown>) => {
+      const existing = inserted.find((r) => r.id === id);
+      const updated: Session = {
+        ...(existing ?? { id, taskId: 'unknown' as TaskId, ordinal: 0, name: '' }),
+        status: (fields['status'] as Session['status']) ?? 'running',
+      };
+      inserted = inserted.map((r) => (r.id === id ? updated : r));
+      return updated;
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -268,5 +294,123 @@ describe('createSession — workflow stepper seeding (#424)', () => {
 
     const state = useAppStore.getState();
     expect(state.sessionPhaseRuns[session.id]?.length).toBe(2);
+  });
+});
+
+describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent (#439)', () => {
+  beforeEach(async () => {
+    wirePhaseSpies();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    const routingMod = await import('../routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-opus-4-5',
+      reason: 'preference',
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stores AGENT_KIND_DEFAULTS model for the first workflow agent (scout → haiku)', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'extract helpers',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const state = useAppStore.getState();
+    const agentId = state.selectedAgentId[session.id];
+    expect(agentId).toBeDefined();
+    const modelOverride = state.agentModelOverride[agentId!];
+    expect(modelOverride).toBe('claude-haiku-4-5');
+  });
+
+  it('auto-runs the first workflow agent by triggering a turn (sendTurn fires with promptPrefix)', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'extract helpers',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const agentId = useAppStore.getState().selectedAgentId[session.id];
+    expect(agentId).toBeDefined();
+
+    await useAppStore.getState().sendTurn({
+      taskId: session.id,
+      content:
+        'Survey the area of code in scope. List relevant files, key abstractions, callers, and any tests. Do not propose changes yet.',
+    });
+
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(typeof callArgs['prompt']).toBe('string');
+    expect(String(callArgs['prompt'])).toContain('Survey the area');
+    expect(callArgs['model']).toBe('claude-haiku-4-5');
+  });
+
+  it('does NOT auto-run when no workflow is attached', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
+
+    await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'free form',
+      branchPrefix: 'kay',
+    });
+
+    await new Promise<void>((r) => setTimeout(r, 100));
+    expect(runTurnSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('spawnAgent — AGENT_KIND_DEFAULTS applied via CTA advance (#439)', () => {
+  beforeEach(() => {
+    wirePhaseSpies();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stores planner model override when spawning Plan step via CTA', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'refactor Y',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const agentId = await useAppStore
+      .getState()
+      .spawnAgent(session.id, { stepId: 's-plan' as StepId, model: 'claude-opus-4-5' });
+
+    const state = useAppStore.getState();
+    expect(state.agentModelOverride[agentId]).toBe('claude-opus-4-5');
+    expect(state.sessionPhaseRuns[session.id]?.find((r) => r.id === agentId)?.status).toBe(
+      'pending',
+    );
   });
 });
