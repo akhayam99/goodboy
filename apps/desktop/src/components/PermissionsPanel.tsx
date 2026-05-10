@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Select } from '@kay-am/ui';
-import type { PermissionDecisionKind, PermissionRule, PermissionRuleScope } from '@kay-am/types';
+import type {
+  PermissionDecisionKind,
+  PermissionRule,
+  PermissionRuleScope,
+  TaskId,
+  WorkspaceId,
+} from '@kay-am/types';
 import { formatToolPattern } from '@kay-am/core';
 import type { PermissionRuleId } from '@kay-am/types';
 import {
@@ -61,11 +67,66 @@ function computePreview(form: RuleForm): string {
   return `(ask — no flag emitted for "${rendered}")`;
 }
 
-export function PermissionsPanel() {
+export type PermissionsPanelScope =
+  | 'global'
+  | { kind: 'workspace'; id: WorkspaceId }
+  | { kind: 'task'; id: TaskId };
+
+interface PermissionsPanelProps {
+  /**
+   * When provided the panel is locked to this scope — no scope tabs are shown
+   * and saves/loads only touch rules within that scope.
+   * Omit for the global settings dialog where the user can switch tabs freely.
+   */
+  scope?: PermissionsPanelScope;
+}
+
+function resolveScope(
+  prop: PermissionsPanelScope | undefined,
+  tab: ScopeTab,
+  workspace: ReturnType<typeof useCurrentWorkspace>,
+  session: ReturnType<typeof useCurrentSession>,
+): {
+  activeScope: ScopeTab;
+  workspaceId: WorkspaceId | undefined;
+  taskId: TaskId | undefined;
+  canLoad: boolean;
+} {
+  if (prop === undefined) {
+    return {
+      activeScope: tab,
+      workspaceId: tab === 'workspace' && workspace ? workspace.id : undefined,
+      taskId: tab === 'task' && session ? session.id : undefined,
+      canLoad:
+        tab === 'global' ||
+        (tab === 'workspace' && workspace !== null) ||
+        (tab === 'task' && session !== null),
+    };
+  }
+  if (prop === 'global') {
+    return { activeScope: 'global', workspaceId: undefined, taskId: undefined, canLoad: true };
+  }
+  if (prop.kind === 'workspace') {
+    return {
+      activeScope: 'workspace',
+      workspaceId: prop.id,
+      taskId: undefined,
+      canLoad: true,
+    };
+  }
+  return {
+    activeScope: 'task',
+    workspaceId: undefined,
+    taskId: prop.id,
+    canLoad: true,
+  };
+}
+
+export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
   const workspace = useCurrentWorkspace();
   const session = useCurrentSession();
 
-  const [scope, setScope] = useState<ScopeTab>('global');
+  const [tab, setTab] = useState<ScopeTab>('global');
   const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
   const [loading, setLoading] = useState(false);
   const [editingRule, setEditingRule] = useState<PermissionRule | 'new' | null>(null);
@@ -75,28 +136,30 @@ export function PermissionsPanel() {
   const [pendingDeleteId, setPendingDeleteId] = useState<PermissionRuleId | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
+  const { activeScope, workspaceId, taskId, canLoad } = resolveScope(
+    scopeProp,
+    tab,
+    workspace,
+    session,
+  );
+
   const showNonClaudeBanner =
-    scope === 'task' &&
+    activeScope === 'task' &&
     session !== null &&
     session.providerPreference.defaultProvider !== 'anthropic' &&
     !bannerDismissed;
 
-  const canLoadScope =
-    scope === 'global' ||
-    (scope === 'workspace' && workspace !== null) ||
-    (scope === 'task' && session !== null);
-
   const loadRules = async () => {
-    if (!canLoadScope) {
+    if (!canLoad) {
       setRules([]);
       return;
     }
     setLoading(true);
     try {
       const list = await invokePermissionRuleList({
-        scope,
-        ...(scope === 'workspace' && workspace ? { workspaceId: workspace.id } : {}),
-        ...(scope === 'task' && session ? { taskId: session.id } : {}),
+        scope: activeScope,
+        ...(workspaceId ? { workspaceId } : {}),
+        ...(taskId ? { taskId } : {}),
       });
       setRules(list);
     } finally {
@@ -107,7 +170,7 @@ export function PermissionsPanel() {
   useEffect(() => {
     void loadRules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, workspace?.id, session?.id]);
+  }, [activeScope, workspaceId, taskId]);
 
   const openNew = () => {
     setEditingRule('new');
@@ -148,9 +211,9 @@ export function PermissionsPanel() {
       const existingId = editingRule !== 'new' && editingRule ? editingRule.id : undefined;
       await invokePermissionRuleUpsert({
         ...(existingId ? { id: existingId } : {}),
-        scope,
-        ...(scope === 'workspace' && workspace ? { workspaceId: workspace.id } : {}),
-        ...(scope === 'task' && session ? { taskId: session.id } : {}),
+        scope: activeScope,
+        ...(workspaceId ? { workspaceId } : {}),
+        ...(taskId ? { taskId } : {}),
         patternTool: tool,
         ...(form.argsMatcher.trim() ? { patternArgsMatcher: form.argsMatcher.trim() } : {}),
         decision: form.decision,
@@ -185,24 +248,38 @@ export function PermissionsPanel() {
     );
   }
 
+  const showEmptyStateMissingWorkspace = activeScope === 'workspace' && !workspaceId && !canLoad;
+  const showEmptyStateMissingSession = activeScope === 'task' && !taskId && !canLoad;
+
+  const emptyStateLabel =
+    scopeProp !== undefined
+      ? scopeProp === 'global'
+        ? 'no global rules. add one to control which tools claude can use across all workspaces.'
+        : scopeProp.kind === 'workspace'
+          ? 'no rules for this workspace. add one to override global defaults for all sessions here.'
+          : 'no rules for this session. add one to override global and workspace defaults for this session only.'
+      : 'no rules for this scope. add one to control which tools claude can use.';
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold text-foreground">permission rules</div>
-        {canLoadScope && (
+        {canLoad && (
           <Button variant="ghost" size="sm" onClick={openNew}>
             add rule
           </Button>
         )}
       </div>
 
-      <ScopeTabs
-        current={scope}
-        onChange={(s) => {
-          setScope(s);
-          setBannerDismissed(false);
-        }}
-      />
+      {scopeProp === undefined && (
+        <ScopeTabs
+          current={tab}
+          onChange={(s) => {
+            setTab(s);
+            setBannerDismissed(false);
+          }}
+        />
+      )}
 
       {showNonClaudeBanner && (
         <div className="flex items-start justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
@@ -220,22 +297,20 @@ export function PermissionsPanel() {
         </div>
       )}
 
-      {scope === 'workspace' && !workspace && (
+      {showEmptyStateMissingWorkspace && (
         <p className="text-xs text-muted-foreground">
           select a workspace to manage workspace rules.
         </p>
       )}
-      {scope === 'task' && !session && (
+      {showEmptyStateMissingSession && (
         <p className="text-xs text-muted-foreground">select a session to manage session rules.</p>
       )}
 
-      {canLoadScope && !loading && rules.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          no rules for this scope. add one to control which tools claude can use.
-        </p>
+      {canLoad && !loading && rules.length === 0 && (
+        <p className="text-xs text-muted-foreground">{emptyStateLabel}</p>
       )}
 
-      {canLoadScope && rules.length > 0 && (
+      {canLoad && rules.length > 0 && (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
           {rules.map((rule) => (
             <RuleRow
