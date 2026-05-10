@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, ChevronRight, Copy, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
+import type { SessionId, TaskId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
@@ -16,10 +17,12 @@ const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
 
 interface TranscriptCardProps {
   readonly item: TranscriptItem;
+  readonly taskId?: TaskId | null;
+  readonly agentId?: SessionId | null;
   readonly onRefreshAuth?: () => void;
 }
 
-export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
+export function TranscriptCard({ item, taskId = null, agentId = null, onRefreshAuth }: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
       return <UserText text={item.text} at={item.at} />;
@@ -74,7 +77,7 @@ export function TranscriptCard({ item, onRefreshAuth }: TranscriptCardProps) {
     case 'permission_request':
       return <PermissionRequestCard item={item} />;
     case 'permission_decision':
-      return <PermissionDecisionCard item={item} />;
+      return <PermissionDecisionCard item={item} taskId={taskId} agentId={agentId} />;
   }
 }
 

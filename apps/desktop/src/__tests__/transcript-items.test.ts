@@ -71,6 +71,7 @@ describe('reduceTranscript — permission_decision', () => {
     expect(item.decision).toBe('allow');
     expect(item.ruleId).toBe(RULE_ID);
     expect(item.decidedBy).toBe('engine');
+    expect(item.runId).toBe(RUN);
   });
 
   it('produces a deny decision with null ruleId', () => {
@@ -87,6 +88,22 @@ describe('reduceTranscript — permission_decision', () => {
     const items = reduceTranscript([permDecEvent('tu-abc')]);
     const item = items[0]!;
     expect(item.key).toContain('tu-abc');
+  });
+
+  it('carries toolName from paired permission_request event', () => {
+    const items = reduceTranscript([permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null)]);
+    const dec = items[1]!;
+    expect(dec.kind).toBe('permission_decision');
+    if (dec.kind !== 'permission_decision') return;
+    expect(dec.toolName).toBe('bash');
+  });
+
+  it('falls back to toolUseId when no prior request event', () => {
+    const items = reduceTranscript([permDecEvent('tu-orphan', 'deny', null)]);
+    const dec = items[0]!;
+    expect(dec.kind).toBe('permission_decision');
+    if (dec.kind !== 'permission_decision') return;
+    expect(dec.toolName).toBe('tu-orphan');
   });
 });
 

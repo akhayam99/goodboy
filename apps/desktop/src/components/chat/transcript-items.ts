@@ -47,6 +47,8 @@ export type TranscriptItem =
       kind: 'permission_decision';
       key: string;
       toolUseId: string;
+      toolName: string;
+      runId: ProviderRunId;
       decision: 'allow' | 'deny';
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
@@ -80,6 +82,7 @@ export function filterEventsByRunId(
 export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
   const items: TranscriptItem[] = [];
   const callIndex = new Map<string, number>();
+  const permToolNames = new Map<string, string>();
   let textBuffer = '';
   let textKey: string | null = null;
 
@@ -181,6 +184,7 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
         items.push({ kind: 'done', key: `done-${i}` });
         break;
       case 'permission_request':
+        permToolNames.set(event.toolUseId, event.toolName);
         items.push({
           kind: 'permission_request',
           key: `perm-req-${event.toolUseId}-${i}`,
@@ -195,6 +199,8 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
           kind: 'permission_decision',
           key: `perm-dec-${event.toolUseId}-${i}`,
           toolUseId: event.toolUseId,
+          toolName: permToolNames.get(event.toolUseId) ?? event.toolUseId,
+          runId: event.runId,
           decision: event.decision,
           ruleId: event.ruleId,
           decidedBy: event.decidedBy,
