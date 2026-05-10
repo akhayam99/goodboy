@@ -707,7 +707,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       set({ bootPhase: 'detecting-cli' });
       const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
-        getProviderStatus(),
+        getProviderStatus('anthropic'),
         getCursorStatus(),
         getCodexStatus(),
         detectEditors(),
@@ -985,7 +985,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   refreshProviders: async () => {
     const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
-      getProviderStatus(),
+      getProviderStatus('anthropic'),
       getCursorStatus(),
       getCodexStatus(),
     ]);

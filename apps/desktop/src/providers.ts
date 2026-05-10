@@ -47,6 +47,24 @@ const TRACKING_ISSUES: Partial<Record<ProviderId, string>> = {
   codex: 'https://github.com/akhayam99/kay-am/issues/69',
 };
 
+const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
+  anthropic: 'claude',
+  cursor: 'cursor-agent',
+  codex: 'codex',
+};
+
+const TAURI_GET_CMD: Record<ProviderId, string> = {
+  anthropic: 'get_provider_status',
+  cursor: 'get_cursor_status',
+  codex: 'get_codex_status',
+};
+
+const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
+  anthropic: 'refresh_provider_status',
+  cursor: 'refresh_cursor_status',
+  codex: 'refresh_codex_status',
+};
+
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   models: [],
   supportsTools: false,
@@ -54,29 +72,18 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsCheapModel: false,
 };
 
-export async function getProviderStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('get_provider_status');
+export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
 }
 
-export async function refreshProviderStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('refresh_provider_status');
+export async function refreshProviderStatus(id: ProviderId): Promise<ProviderStatus> {
+  return invoke<ProviderStatus>(TAURI_REFRESH_CMD[id]);
 }
 
-export async function getCursorStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('get_cursor_status');
-}
-
-export async function refreshCursorStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('refresh_cursor_status');
-}
-
-export async function getCodexStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('get_codex_status');
-}
-
-export async function refreshCodexStatus(): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>('refresh_codex_status');
-}
+export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
+export const refreshCursorStatus = (): Promise<ProviderStatus> => refreshProviderStatus('cursor');
+export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
+export const refreshCodexStatus = (): Promise<ProviderStatus> => refreshProviderStatus('codex');
 
 export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
   return invoke<AuthState>('check_provider_auth', { providerId });
@@ -106,57 +113,32 @@ function connectionFromDetectionAndAuth(
   return 'connected';
 }
 
-function claudeInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
-  const id: ProviderId = 'anthropic';
+function providerInfoFromStatus(
+  id: ProviderId,
+  status: ProviderStatus | null,
+  auth: AuthState | null,
+): ProviderInfo {
   const base = {
     id,
     label: PROVIDER_LABEL[id],
-    binary: status?.binary ?? 'claude',
+    binary: status?.binary ?? PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
+    ...(TRACKING_ISSUES[id] !== undefined ? { trackingIssueUrl: TRACKING_ISSUES[id] } : {}),
   };
-  if (!status) {
-    return { ...base, connection: 'missing', version: null, error: null };
+  if (id === 'anthropic') {
+    if (!status) {
+      return { ...base, connection: 'missing', version: null, error: null };
+    }
+    const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
+    return {
+      ...base,
+      connection,
+      version: status.available ? status.version : null,
+      error: status.available ? null : status.error,
+    };
   }
-  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
-  return {
-    ...base,
-    connection,
-    version: status.available ? status.version : null,
-    error: status.available ? null : status.error,
-  };
-}
-
-function cursorInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
-  const id: ProviderId = 'cursor';
-  const base = {
-    id,
-    label: PROVIDER_LABEL[id],
-    binary: status?.binary ?? 'cursor-agent',
-    capabilities: EMPTY_CAPABILITIES,
-    identity: auth?.identity ?? null,
-    docsUrl: PROVIDER_DOCS[id],
-    trackingIssueUrl: TRACKING_ISSUES[id],
-  };
-  if (!status || !status.available) {
-    return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
-  }
-  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
-  return { ...base, connection, version: status.version, error: null };
-}
-
-function codexInfoFromStatus(status: ProviderStatus | null, auth: AuthState | null): ProviderInfo {
-  const id: ProviderId = 'codex';
-  const base = {
-    id,
-    label: PROVIDER_LABEL[id],
-    binary: status?.binary ?? 'codex',
-    capabilities: EMPTY_CAPABILITIES,
-    identity: auth?.identity ?? null,
-    docsUrl: PROVIDER_DOCS[id],
-    trackingIssueUrl: TRACKING_ISSUES[id],
-  };
   if (!status || !status.available) {
     return { ...base, connection: 'missing', version: null, error: status?.error ?? null };
   }
@@ -174,10 +156,6 @@ export function buildProviderList(
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
 ): ReadonlyArray<ProviderInfo> {
-  const { anthropic, cursor, codex } = statuses;
-  return [
-    claudeInfoFromStatus(anthropic, auth?.anthropic ?? null),
-    cursorInfoFromStatus(cursor, auth?.cursor ?? null),
-    codexInfoFromStatus(codex, auth?.codex ?? null),
-  ];
+  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+  return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
 }
