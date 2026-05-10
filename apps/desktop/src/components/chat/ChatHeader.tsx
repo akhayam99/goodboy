@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { GitBranch, MessagesSquare, ShieldCheck } from 'lucide-react';
 import { Button, Tooltip, cn } from '@kay-am/ui';
-import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
+import type { ClaudePermissionMode, Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
-import { PermissionAuditPanel } from './PermissionAuditPanel';
+import { SessionPermissionsPanel } from './SessionPermissionsPanel';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
 interface ChatHeaderProps {
@@ -20,6 +20,27 @@ function inferBranch(worktreePath: string | null, taskId: string): string {
   return tail ?? taskId.slice(0, 8);
 }
 
+const CYCLE_MODES: ReadonlyArray<ClaudePermissionMode> = ['bypassPermissions', 'acceptEdits', 'default', 'plan'];
+
+function nextPermissionMode(current: ClaudePermissionMode): ClaudePermissionMode {
+  const idx = CYCLE_MODES.indexOf(current);
+  return CYCLE_MODES[(idx + 1) % CYCLE_MODES.length] ?? 'bypassPermissions';
+}
+
+const MODE_LABELS: Partial<Record<ClaudePermissionMode, string>> = {
+  bypassPermissions: 'bypass',
+  acceptEdits: 'edits',
+  default: 'default',
+  plan: 'plan',
+};
+
+const MODE_DESCRIPTIONS: Partial<Record<ClaudePermissionMode, string>> = {
+  bypassPermissions: 'bypass — agent uses all tools freely',
+  acceptEdits: 'accept edits — asks before bash',
+  default: 'default — asks before writes/runs',
+  plan: 'plan — no tool calls executed',
+};
+
 export function ChatHeader({
   session,
   worktreePath,
@@ -27,8 +48,10 @@ export function ChatHeader({
   onSelectRun,
 }: ChatHeaderProps) {
   const [copied, setCopied] = useState(false);
-  const [auditOpen, setAuditOpen] = useState(false);
+  const [permOpen, setPermOpen] = useState(false);
 
+  const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const branch = inferBranch(worktreePath, session.id);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -100,22 +123,40 @@ export function ChatHeader({
 
       <div className="flex shrink-0 items-center gap-1">
         <OpenInEditorButton worktreePath={worktreePath} />
-        <Tooltip content="permission audit log" side="bottom">
+        <Tooltip
+          content={MODE_DESCRIPTIONS[session.permissionMode] ?? session.permissionMode}
+          side="bottom"
+        >
+          <button
+            type="button"
+            onClick={() => void setSessionPermissionMode(
+              session.id,
+              nextPermissionMode(session.permissionMode),
+            )}
+            className="rounded border border-border-soft px-1.5 py-0.5 font-mono text-2xs text-muted-foreground hover:border-border hover:text-foreground"
+            aria-label={`permission mode: ${session.permissionMode}`}
+          >
+            {MODE_LABELS[session.permissionMode] ?? session.permissionMode}
+          </button>
+        </Tooltip>
+        <Tooltip content="permissions" side="bottom">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setAuditOpen((v) => !v)}
-            aria-label="permission audit log"
+            onClick={() => setPermOpen((v) => !v)}
+            aria-label="permissions"
           >
             <ShieldCheck size={14} aria-hidden />
           </Button>
         </Tooltip>
       </div>
 
-      <PermissionAuditPanel
+      <SessionPermissionsPanel
         taskId={session.id}
-        open={auditOpen}
-        onClose={() => setAuditOpen(false)}
+        agentId={selectedAgentId}
+        workspaceId={session.workspaceId}
+        open={permOpen}
+        onClose={() => setPermOpen(false)}
       />
     </div>
   );

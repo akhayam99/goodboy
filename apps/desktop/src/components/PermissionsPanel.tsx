@@ -14,7 +14,7 @@ import {
   invokePermissionRuleUpsert,
   invokePermissionRuleDelete,
 } from '../permissions';
-import { useCurrentSession, useCurrentWorkspace } from '../store';
+import { useCurrentSession } from '../store';
 
 const TOOL_NAMES = [
   'Bash',
@@ -73,36 +73,17 @@ export type PermissionsPanelScope =
   | { kind: 'task'; id: TaskId };
 
 interface PermissionsPanelProps {
-  /**
-   * When provided the panel is locked to this scope — no scope tabs are shown
-   * and saves/loads only touch rules within that scope.
-   * Omit for the global settings dialog where the user can switch tabs freely.
-   */
-  scope?: PermissionsPanelScope;
+  scope: PermissionsPanelScope;
 }
 
 function resolveScope(
-  prop: PermissionsPanelScope | undefined,
-  tab: ScopeTab,
-  workspace: ReturnType<typeof useCurrentWorkspace>,
-  session: ReturnType<typeof useCurrentSession>,
+  prop: PermissionsPanelScope,
 ): {
   activeScope: ScopeTab;
   workspaceId: WorkspaceId | undefined;
   taskId: TaskId | undefined;
   canLoad: boolean;
 } {
-  if (prop === undefined) {
-    return {
-      activeScope: tab,
-      workspaceId: tab === 'workspace' && workspace ? workspace.id : undefined,
-      taskId: tab === 'task' && session ? session.id : undefined,
-      canLoad:
-        tab === 'global' ||
-        (tab === 'workspace' && workspace !== null) ||
-        (tab === 'task' && session !== null),
-    };
-  }
   if (prop === 'global') {
     return { activeScope: 'global', workspaceId: undefined, taskId: undefined, canLoad: true };
   }
@@ -123,10 +104,6 @@ function resolveScope(
 }
 
 export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
-  const workspace = useCurrentWorkspace();
-  const session = useCurrentSession();
-
-  const [tab, setTab] = useState<ScopeTab>('global');
   const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
   const [loading, setLoading] = useState(false);
   const [editingRule, setEditingRule] = useState<PermissionRule | 'new' | null>(null);
@@ -136,12 +113,9 @@ export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
   const [pendingDeleteId, setPendingDeleteId] = useState<PermissionRuleId | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  const { activeScope, workspaceId, taskId, canLoad } = resolveScope(
-    scopeProp,
-    tab,
-    workspace,
-    session,
-  );
+  const session = useCurrentSession();
+
+  const { activeScope, workspaceId, taskId, canLoad } = resolveScope(scopeProp);
 
   const showNonClaudeBanner =
     activeScope === 'task' &&
@@ -252,13 +226,11 @@ export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
   const showEmptyStateMissingSession = activeScope === 'task' && !taskId && !canLoad;
 
   const emptyStateLabel =
-    scopeProp !== undefined
-      ? scopeProp === 'global'
-        ? 'no global rules. add one to control which tools claude can use across all workspaces.'
-        : scopeProp.kind === 'workspace'
-          ? 'no rules for this workspace. add one to override global defaults for all sessions here.'
-          : 'no rules for this session. add one to override global and workspace defaults for this session only.'
-      : 'no rules for this scope. add one to control which tools claude can use.';
+    scopeProp === 'global'
+      ? 'no global rules. add one to control which tools claude can use across all workspaces.'
+      : scopeProp.kind === 'workspace'
+        ? 'no rules for this workspace. add one to override global defaults for all sessions here.'
+        : 'no rules for this session. add one to override global and workspace defaults for this session only.';
 
   return (
     <div className="flex flex-col gap-3">
@@ -270,16 +242,6 @@ export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
           </Button>
         )}
       </div>
-
-      {scopeProp === undefined && (
-        <ScopeTabs
-          current={tab}
-          onChange={(s) => {
-            setTab(s);
-            setBannerDismissed(false);
-          }}
-        />
-      )}
 
       {showNonClaudeBanner && (
         <div className="flex items-start justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
@@ -329,28 +291,6 @@ export function PermissionsPanel({ scope: scopeProp }: PermissionsPanelProps) {
           onCancel={() => setPendingDeleteId(null)}
         />
       )}
-    </div>
-  );
-}
-
-function ScopeTabs({ current, onChange }: { current: ScopeTab; onChange: (s: ScopeTab) => void }) {
-  const tabs: ScopeTab[] = ['global', 'workspace', 'task'];
-  return (
-    <div className="flex gap-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab}
-          type="button"
-          className={`rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
-            current === tab
-              ? 'bg-foreground text-background'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => onChange(tab)}
-        >
-          {tab}
-        </button>
-      ))}
     </div>
   );
 }
