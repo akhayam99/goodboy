@@ -19,6 +19,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { shortModel } from '../agentRowFormat';
+import { PROVIDER_LABEL_LOWER } from '../providers';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
@@ -46,12 +47,6 @@ function formatError(err: unknown): string {
 }
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
-
-const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
-};
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
@@ -396,7 +391,7 @@ export function NewSessionDialog({
                           disabled ? 'cursor-not-allowed' : 'cursor-pointer',
                         )}
                       >
-                        <span className="font-medium">{PROVIDER_LABEL[id]}</span>
+                        <span className="font-medium">{PROVIDER_LABEL_LOWER[id]}</span>
                         {!connected && (
                           <button
                             type="button"
