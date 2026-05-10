@@ -2240,28 +2240,6 @@ exports[`snapshot — error states > PermissionsPanel: form error (workspace sco
       add rule
     </button>
   </div>
-  <div
-    class="flex gap-1"
-  >
-    <button
-      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors bg-foreground text-background"
-      type="button"
-    >
-      global
-    </button>
-    <button
-      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-      type="button"
-    >
-      workspace
-    </button>
-    <button
-      class="rounded px-2.5 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-      type="button"
-    >
-      task
-    </button>
-  </div>
 </div>
 `;
 

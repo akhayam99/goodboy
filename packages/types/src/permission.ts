@@ -7,6 +7,8 @@ import type {
   WorkspaceId,
 } from './ids';
 
+export type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
+
 export type PermissionRuleScope = 'workspace' | 'task' | 'global';
 
 export type PermissionDecisionKind = 'allow' | 'deny' | 'ask';

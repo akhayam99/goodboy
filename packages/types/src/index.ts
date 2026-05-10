@@ -81,6 +81,7 @@ export type {
 } from './config-bundle';
 export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
 export type {
+  ClaudePermissionMode,
   PermissionAuditEntry,
   PermissionDecision,
   PermissionDecisionKind,

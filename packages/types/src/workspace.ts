@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, TaskId, WorkflowId, WorkspaceId } from './ids';
 import type { TaskProviderPreference } from './provider-preference';
+import type { ClaudePermissionMode } from './permission';
 
 export type Workspace = Readonly<{
   id: WorkspaceId;
@@ -40,6 +41,7 @@ export type Task = Readonly<{
   state: TurnState;
   contextSlots: ReadonlyArray<ContextSlot>;
   providerPreference: TaskProviderPreference;
+  permissionMode: ClaudePermissionMode;
   workflowId?: WorkflowId;
   currentStepOrdinal?: number;
   createdAt: IsoDateTime;

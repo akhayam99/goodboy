@@ -40,6 +40,7 @@ export type TranscriptItem =
       key: string;
       toolUseId: string;
       toolName: string;
+      runId: ProviderRunId;
       input: unknown;
       at: IsoDateTime;
     }
@@ -190,6 +191,7 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
           key: `perm-req-${event.toolUseId}-${i}`,
           toolUseId: event.toolUseId,
           toolName: event.toolName,
+          runId: event.runId,
           input: event.input,
           at: event.at,
         });

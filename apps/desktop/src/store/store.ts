@@ -49,6 +49,7 @@ import {
   summarizeWorkspaceTelemetry,
   summarizeWorkspaceProviderTelemetry,
   updateProviderRunStatus,
+  updateTaskPermissionMode,
   updateTaskState,
   upsertContextSlot,
   type TelemetrySummary,
@@ -57,6 +58,7 @@ import {
 import type {
   BudgetAlert,
   BudgetRule,
+  ClaudePermissionMode,
   ContextSlot,
   ContextSlotHistoryEntry,
   GlobalSettings,
@@ -405,6 +407,7 @@ export interface AppActions {
     runId: ProviderRunId;
     scope: 'global' | 'workspace' | 'task' | 'once' | 'deny';
   }): Promise<void>;
+  setSessionPermissionMode(taskId: TaskId, mode: ClaudePermissionMode): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -1153,6 +1156,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? DEFAULT_TASK_PROVIDER_PREFERENCE,
+      permissionMode: 'bypassPermissions',
       ...(workflowId !== undefined ? { workflowId } : {}),
       createdAt: now,
       updatedAt: now,
@@ -1653,6 +1657,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const flags = buildClaudeFlags({
           rules: effectiveRules,
           scope: { workspaceId: session.workspaceId, taskId },
+          permissionMode: session.permissionMode,
         });
         claudeFlags = {
           allowedTools: flags.allowedTools,
@@ -1661,7 +1666,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         };
       } catch (err) {
         console.error('permission rule load failed; falling back to empty rule set', err);
-        claudeFlags = { allowedTools: [], disallowedTools: [], permissionMode: 'default' };
+        claudeFlags = { allowedTools: [], disallowedTools: [], permissionMode: 'bypassPermissions' };
       }
     }
 
@@ -2870,6 +2875,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       delete next[taskId];
       return { sessionNextActions: next };
     });
+  },
+
+  setSessionPermissionMode: async (taskId, mode) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateTaskPermissionMode(tauriDatabase, taskId, mode, now);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === taskId ? { ...s, permissionMode: mode, updatedAt: now } : s,
+      ),
+    }));
   },
 
   createPrForSession: async (taskId) => {

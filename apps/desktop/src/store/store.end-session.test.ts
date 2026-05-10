@@ -154,6 +154,7 @@ function buildSession(stateKind: 'idle' | 'running' = 'idle'): Task {
     state,
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    permissionMode: 'bypassPermissions' as const,
     createdAt: NOW,
     updatedAt: NOW,
   };

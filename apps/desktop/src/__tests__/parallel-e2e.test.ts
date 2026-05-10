@@ -112,6 +112,7 @@ function makeSession() {
     state: { kind: 'idle' as const, lastActivityAt: NOW },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic' as ProviderId, allowTurnOverride: false },
+    permissionMode: 'bypassPermissions' as const,
     workflowId: TEMPLATE_ID,
     createdAt: NOW,
     updatedAt: NOW,

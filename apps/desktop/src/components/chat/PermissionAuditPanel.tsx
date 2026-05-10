@@ -9,6 +9,7 @@ interface Props {
   taskId: TaskId;
   open: boolean;
   onClose: () => void;
+  inline?: boolean;
 }
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
@@ -36,7 +37,7 @@ function groupByRunId(
   return map as Map<ProviderRunId, ReadonlyArray<PermissionAuditEntry>>;
 }
 
-export function PermissionAuditPanel({ taskId, open, onClose }: Props) {
+export function PermissionAuditPanel({ taskId, open, onClose, inline = false }: Props) {
   const session = useAppStore((s) => s.sessions.find((x) => x.id === taskId));
   const isStreaming = RUNNING_KINDS.has(session?.state.kind ?? 'idle');
   const { showToast } = useToast();
@@ -138,6 +139,100 @@ export function PermissionAuditPanel({ taskId, open, onClose }: Props) {
 
   if (!open) return null;
 
+  const filterBar = (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
+      <input
+        type="text"
+        placeholder="filter by tool…"
+        value={filterTool}
+        onChange={(e) => setFilterTool(e.target.value)}
+        className="h-7 w-36 rounded border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground"
+      />
+      <Select
+        size="sm"
+        value={filterDecision}
+        onChange={(e) => setFilterDecision(e.target.value as 'all' | 'allow' | 'deny')}
+      >
+        <option value="all">all decisions</option>
+        <option value="allow">allow only</option>
+        <option value="deny">deny only</option>
+      </Select>
+      <input
+        type="date"
+        value={filterFrom}
+        onChange={(e) => setFilterFrom(e.target.value)}
+        className="h-7 rounded border border-border bg-background px-1 text-xs text-foreground"
+        title="from date"
+      />
+      <input
+        type="date"
+        value={filterTo}
+        onChange={(e) => setFilterTo(e.target.value)}
+        className="h-7 rounded border border-border bg-background px-1 text-xs text-foreground"
+        title="to date"
+      />
+    </div>
+  );
+
+  const auditBody = (
+    <div className="flex-1 overflow-y-auto px-4 py-3">
+      {loading ? (
+        <p className="text-xs text-muted-foreground">loading…</p>
+      ) : runIds.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          no tool calls recorded for this session yet.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {runIds.map((runId) => {
+            const runEntries = grouped.get(runId)!;
+            const firstAt = runEntries[0]?.request.at ?? '';
+            return (
+              <div key={runId} className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    run
+                  </span>
+                  <span className="font-mono text-2xs text-muted-foreground">
+                    {String(runId).slice(0, 12)}…
+                  </span>
+                  {firstAt ? (
+                    <span className="text-2xs text-muted-foreground/60">
+                      {formatTime(firstAt)}
+                    </span>
+                  ) : null}
+                </div>
+                <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle">
+                  {runEntries.map((e) => (
+                    <AuditRow key={e.request.id} entry={e} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  const clearButton = (
+    <div className="flex items-center justify-end border-t border-border px-4 py-2.5">
+      <Button variant="ghost" size="sm" onClick={() => void onClear()} disabled={clearing}>
+        {confirmClear ? 'confirm clear?' : clearing ? 'clearing…' : 'clear audit for session'}
+      </Button>
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="flex flex-col gap-0">
+        {filterBar}
+        {auditBody}
+        {clearButton}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-40" aria-hidden onClick={onClose} />
@@ -155,84 +250,9 @@ export function PermissionAuditPanel({ taskId, open, onClose }: Props) {
             </button>
           </Tooltip>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
-          <input
-            type="text"
-            placeholder="filter by tool…"
-            value={filterTool}
-            onChange={(e) => setFilterTool(e.target.value)}
-            className="h-7 w-36 rounded border border-border bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground"
-          />
-          <Select
-            size="sm"
-            value={filterDecision}
-            onChange={(e) => setFilterDecision(e.target.value as 'all' | 'allow' | 'deny')}
-          >
-            <option value="all">all decisions</option>
-            <option value="allow">allow only</option>
-            <option value="deny">deny only</option>
-          </Select>
-          <input
-            type="date"
-            value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
-            className="h-7 rounded border border-border bg-background px-1 text-xs text-foreground"
-            title="from date"
-          />
-          <input
-            type="date"
-            value={filterTo}
-            onChange={(e) => setFilterTo(e.target.value)}
-            className="h-7 rounded border border-border bg-background px-1 text-xs text-foreground"
-            title="to date"
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          {loading ? (
-            <p className="text-xs text-muted-foreground">loading…</p>
-          ) : runIds.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              no tool calls recorded for this session yet.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {runIds.map((runId) => {
-                const runEntries = grouped.get(runId)!;
-                const firstAt = runEntries[0]?.request.at ?? '';
-                return (
-                  <div key={runId} className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                        run
-                      </span>
-                      <span className="font-mono text-2xs text-muted-foreground">
-                        {String(runId).slice(0, 12)}…
-                      </span>
-                      {firstAt ? (
-                        <span className="text-2xs text-muted-foreground/60">
-                          {formatTime(firstAt)}
-                        </span>
-                      ) : null}
-                    </div>
-                    <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle">
-                      {runEntries.map((e) => (
-                        <AuditRow key={e.request.id} entry={e} />
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end border-t border-border px-4 py-2.5">
-          <Button variant="ghost" size="sm" onClick={() => void onClear()} disabled={clearing}>
-            {confirmClear ? 'confirm clear?' : clearing ? 'clearing…' : 'clear audit for session'}
-          </Button>
-        </div>
+        {filterBar}
+        {auditBody}
+        {clearButton}
       </div>
     </>
   );

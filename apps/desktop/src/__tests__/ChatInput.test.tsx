@@ -71,6 +71,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
       defaultProvider: 'anthropic' as Task['providerPreference']['defaultProvider'],
       allowTurnOverride: false,
     },
+    permissionMode: 'bypassPermissions' as const,
     createdAt: '2026-01-01T00:00:00.000Z' as Task['createdAt'],
     updatedAt: '2026-01-01T00:00:00.000Z' as Task['updatedAt'],
     ...overrides,

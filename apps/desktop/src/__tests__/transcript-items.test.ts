@@ -43,6 +43,7 @@ describe('reduceTranscript — permission_request', () => {
     if (item.kind !== 'permission_request') return;
     expect(item.toolName).toBe('bash');
     expect(item.toolUseId).toBe('tu-1');
+    expect(item.runId).toBe(RUN);
     expect(item.input).toEqual({ cmd: 'ls' });
     expect(item.at).toBe(AT);
   });

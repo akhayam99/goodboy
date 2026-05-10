@@ -16,6 +16,7 @@ import { m015AgentsPerChat } from './m015-agents-per-chat';
 import { m016TurnEvents } from './m016-turn-events';
 import { m017ContextSlotHistory } from './m017-context-slot-history';
 import { m018GithubPrCache } from './m018-github-pr-cache';
+import { m019TaskPermissionMode } from './m019-task-permission-mode';
 
 export interface Migration {
   readonly version: number;
@@ -41,4 +42,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 16, sql: m016TurnEvents },
   { version: 17, sql: m017ContextSlotHistory },
   { version: 18, sql: m018GithubPrCache },
+  { version: 19, sql: m019TaskPermissionMode },
 ];

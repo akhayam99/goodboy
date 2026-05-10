@@ -244,7 +244,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           </div>
         );
       case 'permissions':
-        return <PermissionsPanel />;
+        return <PermissionsPanel scope="global" />;
       case 'github':
         return <GithubPanel />;
       case 'initialization':

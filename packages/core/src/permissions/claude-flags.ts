@@ -1,10 +1,10 @@
-import type { PermissionRule, PermissionRuleScope, TaskId, WorkspaceId } from '@kay-am/types';
+import type { ClaudePermissionMode, PermissionRule, PermissionRuleScope, TaskId, WorkspaceId } from '@kay-am/types';
 import { formatToolPattern } from './matcher';
 
 export interface ClaudeFlagSet {
   readonly allowedTools: ReadonlyArray<string>;
   readonly disallowedTools: ReadonlyArray<string>;
-  readonly permissionMode: 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
+  readonly permissionMode: ClaudePermissionMode;
 }
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
@@ -26,6 +26,7 @@ function isApplicable(
 export function buildClaudeFlags(input: {
   readonly rules: ReadonlyArray<PermissionRule>;
   readonly scope: { workspaceId: WorkspaceId; taskId: TaskId };
+  readonly permissionMode?: ClaudeFlagSet['permissionMode'];
 }): ClaudeFlagSet {
   const applicable = input.rules.filter((r) => isApplicable(r, input.scope));
 
@@ -55,5 +56,5 @@ export function buildClaudeFlags(input: {
     }
   }
 
-  return { allowedTools, disallowedTools, permissionMode: 'default' };
+  return { allowedTools, disallowedTools, permissionMode: input.permissionMode ?? 'default' };
 }

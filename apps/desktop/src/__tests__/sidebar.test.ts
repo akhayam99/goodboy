@@ -11,6 +11,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
     state: { kind: 'idle', lastActivityAt: DT } as TurnState,
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic' as ProviderId, allowTurnOverride: true },
+    permissionMode: 'bypassPermissions' as const,
     createdAt: DT,
     updatedAt: DT,
     ...overrides,
