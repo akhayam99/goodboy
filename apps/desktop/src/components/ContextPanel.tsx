@@ -74,9 +74,9 @@ export function ContextPanel({
 
   const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
 
-  if (collapsed) {
-    return (
-      <div className="flex h-full w-full justify-end pr-4 pt-4">
+  return (
+    <>
+      <div className={cn('flex h-full w-full justify-end pr-4 pt-4', !collapsed && 'hidden')}>
         <button
           type="button"
           onClick={onExpand}
@@ -96,55 +96,53 @@ export function ContextPanel({
           <PanelRightOpen size={13} aria-hidden />
         </button>
       </div>
-    );
-  }
 
-  return (
-    <ScrollArea className="h-full">
-      <div className="flex flex-col gap-4 p-4">
-        <header className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            context
-          </span>
-          <div className="flex items-center gap-1">
-            <SummarizerBadge
-              status={summarizer.status}
-              lastUpdate={summarizer.lastUpdate}
-              error={summarizer.error}
-              totals={summarizerTotals}
-            />
-            {onCollapse ? (
-              <button
-                type="button"
-                onClick={onCollapse}
-                title="hide context panel"
-                aria-label="hide context panel"
-                className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
-              >
-                <PanelRightClose size={13} aria-hidden />
-              </button>
-            ) : null}
-          </div>
-        </header>
-
-        <GitHubSection session={session} />
-
-        <ul className="flex flex-col gap-4">
-          {SLOT_KEYS.map((key) => {
-            const slot = slotsByKey.get(key);
-            return (
-              <SlotRow
-                key={key}
-                taskId={session.id}
-                slotKey={key}
-                slot={slot}
-                onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+      <ScrollArea className={cn('h-full', collapsed && 'hidden')}>
+        <div className="flex flex-col gap-4 p-4">
+          <header className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              context
+            </span>
+            <div className="flex items-center gap-1">
+              <SummarizerBadge
+                status={summarizer.status}
+                lastUpdate={summarizer.lastUpdate}
+                error={summarizer.error}
+                totals={summarizerTotals}
               />
-            );
-          })}
-        </ul>
-      </div>
-    </ScrollArea>
+              {onCollapse ? (
+                <button
+                  type="button"
+                  onClick={onCollapse}
+                  title="hide context panel"
+                  aria-label="hide context panel"
+                  className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+                >
+                  <PanelRightClose size={13} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          </header>
+
+          <GitHubSection session={session} />
+
+          <ul className="flex flex-col gap-4">
+            {SLOT_KEYS.map((key) => {
+              const slot = slotsByKey.get(key);
+              return (
+                <SlotRow
+                  key={key}
+                  taskId={session.id}
+                  slotKey={key}
+                  slot={slot}
+                  onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                />
+              );
+            })}
+          </ul>
+        </div>
+      </ScrollArea>
+    </>
   );
 }
 
@@ -197,8 +195,9 @@ function GitHubSection({ session }: { session: Task }) {
 
   useEffect(() => {
     if (!branch || githubStatus?.mode === 'absent') return;
+    if (ghState?.fetchedAt != null) return;
     void refreshSessionPr(session.id);
-  }, [branch, githubStatus?.mode, session.id, refreshSessionPr]);
+  }, [branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
 
   if (!branch || githubStatus?.mode === 'absent') return null;
 

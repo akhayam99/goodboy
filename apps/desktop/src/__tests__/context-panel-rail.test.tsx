@@ -139,15 +139,15 @@ describe('ContextPanel rail — keyboard', () => {
 // ---------------------------------------------------------------------------
 
 describe('ContextPanel — persistence contract', () => {
-  it('collapsed=false renders context label (not rail)', () => {
+  it('collapsed=false: rail button present in DOM but visually hidden', () => {
     render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /expand context panel/i })).toBeNull();
+    const rail = screen.getByRole('button', { name: /expand context panel/i });
+    expect(rail.closest('.hidden')).not.toBeNull();
   });
 
-  it('collapsed=true does not render context header label', () => {
+  it('collapsed=true: context header present in DOM but visually hidden', () => {
     render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
-    // The "context" label in the header is only shown in expanded view
-    const labels = screen.queryAllByText(/^context$/i);
-    expect(labels).toHaveLength(0);
+    const scrollArea = document.querySelector('.h-full.hidden');
+    expect(scrollArea).not.toBeNull();
   });
 });
