@@ -32,7 +32,10 @@ export function ChatHeader({
   const branch = inferBranch(worktreePath, session.id);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const events = useAppStore((s) => s.transcripts[session.id] ?? EMPTY_ARRAY);
+  const events = useAppStore((s) => {
+    const agentId = s.selectedAgentId[session.id] ?? null;
+    return agentId ? (s.transcripts[agentId] ?? EMPTY_ARRAY) : EMPTY_ARRAY;
+  });
   const userTurns = events.filter((e) => e.kind === 'user_text').length;
   const assistantReplies = events.filter((e) => e.kind === 'done').length;
 

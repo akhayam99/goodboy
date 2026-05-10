@@ -247,6 +247,7 @@ export interface AppState {
    * session. Lives in-memory only; rebuilt from current state on hydrate.
    */
   readonly agentRunHistory: Readonly<Record<SessionId, ReadonlyArray<ProviderRunId>>>;
+  readonly agentTurnState: Readonly<Record<SessionId, TurnState>>;
   readonly sessionMergeConflicts: Readonly<Record<TaskId, ReadonlyArray<FileConflict>>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
@@ -295,9 +296,9 @@ export interface AppActions {
     providerPreference?: TaskProviderPreference;
     workflowId?: WorkflowId;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
-  loadTranscript(taskId: TaskId): Promise<void>;
-  appendTurnEvent(taskId: TaskId, event: TurnEvent): void;
-  resetTranscript(taskId: TaskId): void;
+  loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
+  appendTurnEvent(agentId: SessionId, taskId: TaskId, event: TurnEvent): void;
+  resetTranscript(agentId: SessionId): void;
   sendTurn(input: {
     taskId: TaskId;
     content: string;
@@ -389,6 +390,7 @@ const initialState: AppState = {
   sessionPhaseRuns: {},
   selectedAgentId: {},
   agentRunHistory: {},
+  agentTurnState: {},
   sessionMergeConflicts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
@@ -426,11 +428,19 @@ function mergeSlots(
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
-function applySessionUpdate(set: SetFn, taskId: TaskId, state: TurnState): void {
+function applySessionUpdate(
+  set: SetFn,
+  taskId: TaskId,
+  state: TurnState,
+  agentId?: SessionId,
+): void {
   set((store) => ({
     sessions: store.sessions.map((s) =>
       s.id === taskId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
     ),
+    ...(agentId !== undefined && {
+      agentTurnState: { ...store.agentTurnState, [agentId]: state },
+    }),
   }));
 }
 
@@ -754,6 +764,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionPhaseRuns: {},
       selectedAgentId: {},
       agentRunHistory: {},
+      agentTurnState: {},
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -848,12 +859,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // agents at least have ONE entry to aggregate against. New runIds get
       // appended on each turn going forward.
       const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      const seededTurnState: Record<string, TurnState> = {};
+      const task = get().sessions.find((s) => s.id === id);
+      const taskState =
+        task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
       for (const agent of agents) {
         if (agent.runId) {
           const prev = get().agentRunHistory[agent.id] ?? [];
           if (!prev.includes(agent.runId)) {
             seededHistory[agent.id] = [...prev, agent.runId];
           }
+        }
+        if (agent.status === 'running' && agent.runId) {
+          seededTurnState[agent.id] = {
+            kind: 'running',
+            runId: agent.runId,
+            startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+          };
+        } else if (agent.status === 'failed') {
+          seededTurnState[agent.id] = {
+            kind: 'error',
+            message: 'agent failed',
+            failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+          };
+        } else {
+          seededTurnState[agent.id] =
+            taskState.kind === 'ended'
+              ? taskState
+              : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
         }
       }
       set((state) => ({
@@ -864,10 +897,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
           [id]: selectedAgent?.id ?? null,
         },
         messages: { ...state.messages, [id]: messages },
-        transcripts: { ...state.transcripts, [id]: events },
+        transcripts: {
+          ...state.transcripts,
+          ...(selectedAgent ? { [selectedAgent.id]: events } : {}),
+        },
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
         agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+        agentTurnState: { ...state.agentTurnState, ...seededTurnState },
       }));
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
@@ -1040,30 +1077,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
       selectedAgentId: { ...state.selectedAgentId, [session.id]: defaultAgent.id },
-      transcripts: { ...state.transcripts, [session.id]: [] },
+      transcripts: { ...state.transcripts, [defaultAgent.id]: [] },
       messages: { ...state.messages, [session.id]: [] },
+      agentTurnState: { ...state.agentTurnState, [defaultAgent.id]: { kind: 'draft' } },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
     return { session, worktree };
   },
 
-  loadTranscript: async (taskId) => {
+  loadTranscript: async (agentId, taskId) => {
     const [messages, events] = await Promise.all([
-      listMessagesForTask(tauriDatabase, taskId),
-      listTurnEventsForTask(tauriDatabase, taskId),
+      listMessagesForAgent(tauriDatabase, agentId),
+      listTurnEventsForAgent(tauriDatabase, agentId),
     ]);
     set((state) => ({
       messages: { ...state.messages, [taskId]: messages },
-      transcripts: { ...state.transcripts, [taskId]: events },
+      transcripts: { ...state.transcripts, [agentId]: events },
     }));
   },
 
-  appendTurnEvent: (taskId, event) => {
-    const agentId = get().selectedAgentId[taskId] ?? null;
+  appendTurnEvent: (agentId, taskId, event) => {
     set((state) => {
-      const existing = state.transcripts[taskId] ?? [];
-      const updatedTranscripts = { ...state.transcripts, [taskId]: [...existing, event] };
+      const existing = state.transcripts[agentId] ?? [];
+      const updatedTranscripts = { ...state.transcripts, [agentId]: [...existing, event] };
       if (event.kind === 'unknown_payload') {
         const key = `${event.adapter}:${event.payloadType}`;
         return {
@@ -1076,24 +1113,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       return { transcripts: updatedTranscripts };
     });
-    if (agentId) {
-      void insertTurnEvent(tauriDatabase, {
-        id: crypto.randomUUID(),
-        taskId,
-        agentId,
-        event,
-      }).catch((err) => {
-        if (import.meta.env.DEV) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn(`[turn-events] insert failed for task ${taskId}: ${message}`);
-        }
-      });
-    }
+    void insertTurnEvent(tauriDatabase, {
+      id: crypto.randomUUID(),
+      taskId,
+      agentId,
+      event,
+    }).catch((err) => {
+      if (import.meta.env.DEV) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(`[turn-events] insert failed for agent ${agentId}: ${message}`);
+      }
+    });
   },
 
-  resetTranscript: (taskId) => {
+  resetTranscript: (agentId) => {
     set((state) => ({
-      transcripts: { ...state.transcripts, [taskId]: [] },
+      transcripts: { ...state.transcripts, [agentId]: [] },
     }));
   },
 
@@ -1110,6 +1145,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
+    const activeAgentId = before.selectedAgentId[taskId] ?? null;
+    if (!activeAgentId) {
+      throw new Error('no agent selected — spawn one before sending a turn');
+    }
+
     const userTurnText = content;
     let resolvedPrompt = content;
 
@@ -1119,7 +1159,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const skill = workspaceSkills.find((s) => s.name === slashCmd.name);
       if (!skill) {
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: errRunId,
           message: `unknown skill: /${slashCmd.name}`,
@@ -1130,7 +1170,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const workspace = before.workspaces.find((w) => w.id === session.workspaceId);
       if (!workspace) {
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: errRunId,
           message: `workspace not found: ${session.workspaceId}`,
@@ -1147,7 +1187,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
         resolvedPrompt = result.resolvedPrompt;
         const skillRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'skill_invocation',
           runId: skillRunId,
           skillName: result.skillName,
@@ -1157,7 +1197,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: errRunId,
           message,
@@ -1285,7 +1325,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (routingDecision.reason === 'all-exceeded') {
       const runId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(taskId, {
+      get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'error',
         runId,
         message:
@@ -1304,7 +1344,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const authState = get().authResults?.[provider] ?? null;
     if (authState?.state === 'disconnected') {
       const runId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(taskId, {
+      get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'error',
         runId,
         message: encodeAuthRequiredMessage({ providerId: provider, identity: authState.identity }),
@@ -1325,18 +1365,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const runId = crypto.randomUUID() as ProviderRunId;
 
     if (parallelDispatch === null) {
-      const activeAgentId = get().selectedAgentId[taskId] ?? null;
-      if (!activeAgentId) {
-        get().appendTurnEvent(taskId, {
-          kind: 'error',
-          runId,
-          message: 'no agent selected — spawn one before sending a turn',
-          at: now(),
-        });
-        return;
-      }
-      // Track this providerRunId against the agent so the sidebar can sum
-      // tokens/cost across provider switches within the same agent.
       set((state) => {
         const prev = state.agentRunHistory[activeAgentId] ?? [];
         if (prev.includes(runId)) return state;
@@ -1354,7 +1382,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
       };
       await insertMessage(tauriDatabase, userMessage);
-      get().appendTurnEvent(taskId, {
+      get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'user_text',
         runId,
         text: userTurnText,
@@ -1405,7 +1433,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
       }));
       if (phaseTransitionEvent) {
-        get().appendTurnEvent(taskId, { ...phaseTransitionEvent, runId });
+        get().appendTurnEvent(activeAgentId, taskId, { ...phaseTransitionEvent, runId });
       }
     } else if (!phaseDefinition && parallelDispatch === null) {
       const manualAgentId = get().selectedAgentId[taskId] ?? null;
@@ -1433,7 +1461,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       nextState = turnReducer(nextState, { kind: 'send', runId, at: now() });
       await updateTaskState(tauriDatabase, taskId, nextState, now());
-      applySessionUpdate(set, taskId, nextState);
+      applySessionUpdate(set, taskId, nextState, activeAgentId);
     }
 
     const providerInfo = get().providers.find((p) => p.id === provider);
@@ -1474,7 +1502,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (parallelDispatch !== null) {
       const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
       if (!workspace) {
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: crypto.randomUUID() as ProviderRunId,
           message: `workspace not found: ${session.workspaceId}`,
@@ -1490,11 +1518,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         : DEFAULT_MAX_PARALLELISM;
       const N = Math.min(parallelDispatch.groupDefs.length, maxParallelism);
 
-      // Aggregate budget pre-flight: if a session soft cap exists, ensure that
-      // running N parallel turns would not blow past it on this turn alone. We
-      // approximate per-turn cost from the most recent telemetry row for the
-      // session as a conservative ceiling. If no telemetry exists yet, we skip
-      // the check (no signal to compare against — first turn).
       const sessBudget = get().sessionBudgets[taskId];
       if (sessBudget) {
         const tele = get().sessionTelemetry[taskId] ?? [];
@@ -1502,7 +1525,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const projected = lastTurnCost * N;
         const sessSpent = (get().sessionSummary?.estimatedCostUsd ?? 0) + projected;
         if (lastTurnCost > 0 && sessSpent > sessBudget.softCapUsd) {
-          get().appendTurnEvent(taskId, {
+          get().appendTurnEvent(activeAgentId, taskId, {
             kind: 'error',
             runId: crypto.randomUUID() as ProviderRunId,
             message: `parallel turn aborted: projected spend (${sessSpent.toFixed(4)} USD) would exceed session soft cap (${sessBudget.softCapUsd.toFixed(4)} USD).`,
@@ -1512,35 +1535,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
 
-      // Persist user message once (mirrors single-run path). Parallel branch
-      // logs to the currently-selected agent — fan-out spawns separate Session
-      // rows but the user-visible chat stays anchored to the orchestrating
-      // agent's transcript.
-      const parallelAgentId = get().selectedAgentId[taskId] ?? null;
-      if (!parallelAgentId) {
-        get().appendTurnEvent(taskId, {
-          kind: 'error',
-          runId: crypto.randomUUID() as ProviderRunId,
-          message: 'no agent selected — spawn one before sending a turn',
-          at: now(),
-        });
-        return;
-      }
       const userMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
-        agentId: parallelAgentId,
+        agentId: activeAgentId,
         role: 'user',
         content: userTurnText,
         createdAt: now(),
       };
       await insertMessage(tauriDatabase, userMessage);
 
-      // Mark session running with the FIRST runId (UI uses session.state.runId
-      // for the legacy cancel path; for parallel groups, cancel routes through
-      // cancelGroup via the scheduler handle inside runParallelBranch).
       const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(taskId, {
+      get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'user_text',
         runId: groupSessionRunId,
         text: userTurnText,
@@ -1559,10 +1565,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         at: now(),
       });
       await updateTaskState(tauriDatabase, taskId, nextStateP, now());
-      applySessionUpdate(set, taskId, nextStateP);
+      applySessionUpdate(set, taskId, nextStateP, activeAgentId);
 
       const effects: ParallelBranchEffects = {
-        appendTurnEvent: (sid, ev) => get().appendTurnEvent(sid, ev),
+        appendTurnEvent: (agentId, sid, ev) => get().appendTurnEvent(agentId, sid, ev),
         refreshPhaseRuns: async (sid) => {
           const runs = await invokePhaseRunList(sid);
           set((state) => ({
@@ -1576,6 +1582,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const result = await runParallelBranch(
           {
             session,
+            orchestratingAgentId: activeAgentId,
             workspace,
             currentDef: parallelDispatch.currentDef,
             groupDefs: parallelDispatch.groupDefs,
@@ -1612,7 +1619,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             failedAt: now(),
           };
           await updateTaskState(tauriDatabase, taskId, errorState, now());
-          applySessionUpdate(set, taskId, errorState);
+          applySessionUpdate(set, taskId, errorState, activeAgentId);
         } else {
           await updateTaskState(
             tauriDatabase,
@@ -1626,7 +1633,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       } catch (err) {
         const rawMessage = err instanceof Error ? err.message : String(err);
-        get().appendTurnEvent(taskId, {
+        get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: groupSessionRunId,
           message: rawMessage,
@@ -1638,7 +1645,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           failedAt: now(),
         };
         await updateTaskState(tauriDatabase, taskId, errorState, now());
-        applySessionUpdate(set, taskId, errorState);
+        applySessionUpdate(set, taskId, errorState, activeAgentId);
         throw err;
       }
       return;
@@ -1674,7 +1681,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         binary: providerInfo?.binary,
         ...claudeFlags,
       })) {
-        get().appendTurnEvent(taskId, event);
+        get().appendTurnEvent(activeAgentId, taskId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
         if (event.kind === 'file_edit') filesTouchedThisTurn.add(event.path);
 
@@ -1773,7 +1780,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const reduced = turnReducer(current.state, { kind: 'receive_event', event });
           if (reduced !== current.state) {
             await updateTaskState(tauriDatabase, taskId, reduced, now());
-            applySessionUpdate(set, taskId, reduced);
+            applySessionUpdate(set, taskId, reduced, activeAgentId);
           }
         }
       }
@@ -1784,9 +1791,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (afterStream?.state.kind === 'running') {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
         await updateTaskState(tauriDatabase, taskId, idleState, now());
-        applySessionUpdate(set, taskId, idleState);
+        applySessionUpdate(set, taskId, idleState, activeAgentId);
         if (assistantText.length === 0) {
-          get().appendTurnEvent(taskId, {
+          get().appendTurnEvent(activeAgentId, taskId, {
             kind: 'error',
             runId,
             message:
@@ -1852,13 +1859,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         failedAt: now(),
       };
       await updateTaskState(tauriDatabase, taskId, errorState, now());
-      applySessionUpdate(set, taskId, errorState);
+      applySessionUpdate(set, taskId, errorState, activeAgentId);
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),
         error: rawMessage,
       });
-      get().appendTurnEvent(taskId, {
+      get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'error',
         runId,
         message,
@@ -1877,14 +1884,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     if (assistantText.length > 0) {
-      const assistantAgentId = get().selectedAgentId[taskId] ?? null;
-      if (!assistantAgentId) {
-        return;
-      }
       const assistantMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         taskId,
-        agentId: assistantAgentId,
+        agentId: activeAgentId,
         role: 'assistant',
         content: assistantText,
         createdAt: now(),
@@ -1902,13 +1905,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   cancelCurrentTurn: async (taskId) => {
     const session = get().sessions.find((s) => s.id === taskId);
     if (!session || session.state.kind !== 'running') return;
-    // Best-effort: if the registry already evicted the run we still want to
-    // normalize session state locally so the UI re-enables the input.
+    const cancelAgentId = get().selectedAgentId[taskId] ?? null;
     await cancelTurn(session.state.runId).catch(() => undefined);
     const now = new Date().toISOString() as IsoDateTime;
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
     await updateTaskState(tauriDatabase, taskId, idleState, now).catch(() => undefined);
-    applySessionUpdate(set, taskId, idleState);
+    applySessionUpdate(set, taskId, idleState, cancelAgentId ?? undefined);
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
@@ -2025,6 +2027,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
     const ended: TurnState = turnReducer(session.state, { kind: 'end', at: now() });
     await updateTaskState(tauriDatabase, taskId, ended, now());
+    const allAgents = get().sessionPhaseRuns[taskId] ?? [];
+    set((state) => {
+      const next = { ...state.agentTurnState };
+      for (const agent of allAgents) next[agent.id] = ended;
+      return { agentTurnState: next };
+    });
     applySessionUpdate(set, taskId, ended);
 
     set((state) => {
@@ -2188,6 +2196,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionPhaseRuns: {},
             selectedAgentId: {},
             agentRunHistory: {},
+            agentTurnState: {},
             sessionBudgets: {},
             summarizerStatus: {},
             budgetAlerts: [],
@@ -2279,13 +2288,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectAgent: async (taskId, agentId) => {
+    const cached = get().transcripts[agentId];
+    if (cached) {
+      set((state) => ({
+        selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+      }));
+      return;
+    }
     const [messages, events] = await Promise.all([
       listMessagesForAgent(tauriDatabase, agentId),
       listTurnEventsForAgent(tauriDatabase, agentId),
     ]);
     set((state) => ({
       selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
-      transcripts: { ...state.transcripts, [taskId]: events },
+      transcripts: { ...state.transcripts, [agentId]: events },
       messages: { ...state.messages, [taskId]: messages },
     }));
   },
@@ -2320,8 +2336,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
       selectedAgentId: { ...s.selectedAgentId, [taskId]: inserted.id },
-      transcripts: { ...s.transcripts, [taskId]: [] },
+      transcripts: { ...s.transcripts, [inserted.id]: [] },
       messages: { ...s.messages, [taskId]: [] },
+      agentTurnState: {
+        ...s.agentTurnState,
+        [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
+      },
     }));
     return inserted.id;
   },
@@ -2480,11 +2500,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       delete nextWorktrees[taskId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[taskId];
+      const nextTranscripts = { ...state.transcripts };
+      for (const agent of state.sessionPhaseRuns[taskId] ?? []) {
+        delete nextTranscripts[agent.id];
+      }
       return {
         sessions: state.sessions.filter((s) => s.id !== taskId),
         currentSessionId: state.currentSessionId === taskId ? null : state.currentSessionId,
         sessionWorktrees: nextWorktrees,
         sessionBranches: nextBranches,
+        transcripts: nextTranscripts,
       };
     });
   },

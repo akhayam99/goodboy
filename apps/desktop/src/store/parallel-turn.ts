@@ -21,6 +21,7 @@ import type {
   ParallelSession,
   ParallelSessionId,
   Step,
+  SessionId,
   SessionStatus,
   Workflow,
   ProviderRunId,
@@ -44,6 +45,7 @@ import { invokeParallelPhaseRunSpawn, cancelTurn } from '../turn';
 
 export interface ParallelBranchInputs {
   readonly session: Task;
+  readonly orchestratingAgentId: SessionId;
   readonly workspace: Workspace;
   readonly currentDef: Step;
   readonly groupDefs: ReadonlyArray<Step>;
@@ -55,7 +57,7 @@ export interface ParallelBranchInputs {
 }
 
 export interface ParallelBranchEffects {
-  appendTurnEvent: (taskId: TaskId, event: TurnEvent) => void;
+  appendTurnEvent: (agentId: SessionId, taskId: TaskId, event: TurnEvent) => void;
   refreshPhaseRuns: (taskId: TaskId) => Promise<void>;
   setMergeConflicts: (taskId: TaskId, conflicts: ReadonlyArray<FileConflict>) => void;
 }
@@ -215,7 +217,15 @@ export async function runParallelBranch(
   inputs: ParallelBranchInputs,
   deps: RunParallelBranchDeps,
 ): Promise<ParallelBranchResult> {
-  const { session, currentDef, groupDefs, mergeStrategy, maxParallelism, workingDir } = inputs;
+  const {
+    session,
+    orchestratingAgentId,
+    currentDef,
+    groupDefs,
+    mergeStrategy,
+    maxParallelism,
+    workingDir,
+  } = inputs;
   const { now, effects } = deps;
 
   // Cap by maxParallelism — defensive guard; UI clamps but accept any spec list.
@@ -282,7 +292,7 @@ export async function runParallelBranch(
       onEvent: (e) => {
         const cb = progressCallbacks.get(runId);
         if (cb) cb(e);
-        effects.appendTurnEvent(session.id, e);
+        effects.appendTurnEvent(orchestratingAgentId, session.id, e);
       },
       onSettle: (status, error) => {
         const r = settleResolvers.get(runId);
@@ -413,7 +423,7 @@ export async function runParallelBranch(
           });
         } catch (err) {
           if (err instanceof ManualResolutionRequiredError) {
-            effects.appendTurnEvent(session.id, {
+            effects.appendTurnEvent(orchestratingAgentId, session.id, {
               kind: 'error',
               runId: runIds[0]!,
               message: `manual merge resolution required for: ${err.unresolvedFiles.join(', ')}`,
@@ -433,7 +443,7 @@ export async function runParallelBranch(
     // Emit synthetic phase_transition marking sync-point completion.
     // We use the first runId for routing; UI treats parallel groups as one phase boundary.
     if (!allFailed) {
-      effects.appendTurnEvent(session.id, {
+      effects.appendTurnEvent(orchestratingAgentId, session.id, {
         kind: 'step_transition',
         runId: runIds[0]!,
         fromStep: { ordinal: currentDef.ordinal, name: currentDef.name },
