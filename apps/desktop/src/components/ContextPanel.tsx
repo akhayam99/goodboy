@@ -1,13 +1,28 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { PanelRightClose, PanelRightOpen, History, RotateCcw } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, cn } from '@kay-am/ui';
-import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
+import {
+  PanelRightClose,
+  PanelRightOpen,
+  History,
+  RotateCcw,
+  GitPullRequest,
+  GitPullRequestDraft,
+  GitMerge,
+  RefreshCw,
+  ExternalLink,
+  Plus,
+  Loader2,
+  Copy,
+  X,
+} from 'lucide-react';
+import { ScrollArea, Textarea, Dialog, Button, cn } from '@kay-am/ui';
+import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   Task,
   TaskId,
   TelemetryRecord,
+  PullRequestStateKind,
 } from '@kay-am/types';
 import {
   EMPTY_ARRAY,
@@ -16,6 +31,9 @@ import {
   useSlotHistory,
   useSummarizerStatus,
 } from '../store';
+import { openUrl } from '../editor';
+import { tauriGhRunner } from '../github';
+import { DiffViewerDialog } from './DiffViewerDialog';
 
 interface ContextPanelProps {
   session: Task;
@@ -109,6 +127,8 @@ export function ContextPanel({
           </div>
         </header>
 
+        <GitHubSection session={session} />
+
         <ul className="flex flex-col gap-4">
           {SLOT_KEYS.map((key) => {
             const slot = slotsByKey.get(key);
@@ -125,6 +145,236 @@ export function ContextPanel({
         </ul>
       </div>
     </ScrollArea>
+  );
+}
+
+const PR_STATE_LABEL: Record<PullRequestStateKind, string> = {
+  draft: 'draft',
+  open: 'open',
+  approved: 'approved',
+  merged: 'merged',
+  closed: 'closed',
+};
+
+const PR_STATE_STYLE: Record<PullRequestStateKind, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  open: 'bg-success/10 text-success',
+  approved: 'bg-success/20 text-success',
+  merged: 'bg-accent/10 text-accent',
+  closed: 'bg-danger/10 text-danger',
+};
+
+function PrStateIcon({ state }: { state: PullRequestStateKind }) {
+  if (state === 'draft') return <GitPullRequestDraft size={11} aria-hidden />;
+  if (state === 'merged') return <GitMerge size={11} aria-hidden />;
+  return <GitPullRequest size={11} aria-hidden />;
+}
+
+function openInBrowser(url: string) {
+  openUrl(url).catch(() => window.open(url, '_blank'));
+}
+
+function GitHubSection({ session }: { session: Task }) {
+  const githubStatus = useAppStore((s) => s.githubStatus);
+  const branch = useAppStore((s) => s.sessionBranches[session.id]);
+  const ghState = useAppStore((s) => s.sessionGithub[session.id]);
+  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === session.workspaceId));
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const createPrForSession = useAppStore((s) => s.createPrForSession);
+
+  const [repoSlug, setRepoSlug] = useState<string | null>(null);
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [issuesExpanded, setIssuesExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!branch || !workspace?.rootPath) return;
+    detectRepoSlug(tauriGhRunner, workspace.rootPath)
+      .then(setRepoSlug)
+      .catch(() => setRepoSlug(null));
+  }, [branch, workspace?.rootPath]);
+
+  useEffect(() => {
+    if (!branch || githubStatus?.mode === 'absent') return;
+    void refreshSessionPr(session.id);
+  }, [branch, githubStatus?.mode, session.id, refreshSessionPr]);
+
+  if (!branch || githubStatus?.mode === 'absent') return null;
+
+  const pr = ghState?.pr ?? null;
+  const linkedIssues = ghState?.linkedIssues ?? [];
+  const loading = ghState?.loading ?? false;
+  const ISSUE_LIMIT = 3;
+  const visibleIssues = issuesExpanded ? linkedIssues : linkedIssues.slice(0, ISSUE_LIMIT);
+  const hiddenCount = linkedIssues.length - ISSUE_LIMIT;
+
+  const copyBranch = () => {
+    navigator.clipboard.writeText(branch).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  const handleCreatePr = async () => {
+    setCreateError(null);
+    try {
+      await createPrForSession(session.id);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          github
+        </span>
+        <button
+          type="button"
+          onClick={() => void refreshSessionPr(session.id, { force: true })}
+          disabled={loading}
+          title="refresh pr status"
+          aria-label="refresh pr status"
+          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
+        >
+          <RefreshCw size={11} className={cn(loading && 'animate-spin')} aria-hidden />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+        <div className="flex items-center justify-between gap-1.5">
+          <span className="truncate font-mono text-xs text-foreground" title={branch}>
+            {branch}
+          </span>
+          <button
+            type="button"
+            onClick={copyBranch}
+            title="copy branch name"
+            aria-label="copy branch name"
+            className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            {copied ? <X size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
+          </button>
+        </div>
+
+        {pr ? (
+          <div className="flex items-start gap-1.5">
+            <button
+              type="button"
+              onClick={() => openInBrowser(pr.url)}
+              className="flex min-w-0 flex-1 items-center gap-1 text-left text-xs text-foreground hover:underline"
+              title={pr.title}
+            >
+              <PrStateIcon state={pr.state} />
+              <span className="truncate">
+                #{pr.number} {pr.title}
+              </span>
+            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <span
+                className={cn(
+                  'rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+                  PR_STATE_STYLE[pr.state],
+                )}
+              >
+                {PR_STATE_LABEL[pr.state]}
+              </span>
+              {repoSlug ? (
+                <button
+                  type="button"
+                  onClick={() => setDiffOpen(true)}
+                  title="view diff"
+                  aria-label="view pr diff"
+                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <ExternalLink size={10} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Loader2 size={10} className="animate-spin" aria-hidden />
+            checking…
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-xs italic text-muted-foreground">no pr yet</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void handleCreatePr()}
+              disabled={loading}
+              className="h-5 gap-0.5 px-1.5 text-[10px]"
+            >
+              <Plus size={10} aria-hidden />
+              open pr
+            </Button>
+          </div>
+        )}
+
+        {linkedIssues.length > 0 ? (
+          <div className="flex flex-col gap-0.5 border-t border-border-soft pt-1.5">
+            {visibleIssues.map((issue) => (
+              <div key={issue.number} className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'shrink-0 rounded-sm px-1 py-0.5 text-[9px] uppercase tracking-wide',
+                    issue.closes ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {issue.closes ? 'closes' : 'ref'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openInBrowser(issue.url)}
+                  className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  title={issue.title ?? `#${issue.number}`}
+                >
+                  #{issue.number}
+                  {issue.title ? ` ${issue.title}` : ''}
+                </button>
+              </div>
+            ))}
+            {!issuesExpanded && hiddenCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIssuesExpanded(true)}
+                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                +{hiddenCount} more
+              </button>
+            ) : issuesExpanded && hiddenCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIssuesExpanded(false)}
+                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                show less
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {createError ? (
+          <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
+            {createError}
+          </p>
+        ) : null}
+      </div>
+
+      {repoSlug && pr ? (
+        <DiffViewerDialog
+          open={diffOpen}
+          onClose={() => setDiffOpen(false)}
+          repoSlug={repoSlug}
+          prNumber={pr.number}
+          cwd={workspace?.rootPath}
+        />
+      ) : null}
+    </section>
   );
 }
 
