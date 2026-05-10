@@ -12,8 +12,6 @@ const MAX_SLUG_LEN: usize = 40;
 pub enum WorktreeError {
     #[error("repository not found: {0}")]
     RepoNotFound(String),
-    #[error("repository is dirty: {0}")]
-    Dirty(String),
     #[error("git failed: {message}")]
     Git { message: String },
     #[error("io error: {0}")]
@@ -41,7 +39,6 @@ impl WorktreeError {
     fn kind(&self) -> &'static str {
         match self {
             WorktreeError::RepoNotFound(_) => "repo_not_found",
-            WorktreeError::Dirty(_) => "dirty",
             WorktreeError::Git { .. } => "git",
             WorktreeError::Io(_) => "io",
             WorktreeError::InvalidUtf8 => "invalid_utf8",
@@ -130,7 +127,6 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         });
     }
 
-    ensure_clean(&repo_path)?;
     std::fs::create_dir_all(&parent)?;
     git(
         &repo_path,
@@ -213,14 +209,6 @@ fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeE
     // Best-effort: silently swallow write errors so a read-only repo doesn't
     // block worktree creation.
     let _ = std::fs::write(&gitignore, next);
-    Ok(())
-}
-
-fn ensure_clean(repo_path: &Path) -> Result<(), WorktreeError> {
-    let stdout = git(repo_path, &["status", "--porcelain"])?;
-    if !stdout.trim().is_empty() {
-        return Err(WorktreeError::Dirty(repo_path.to_string_lossy().into()));
-    }
     Ok(())
 }
 
