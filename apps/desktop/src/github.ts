@@ -23,60 +23,104 @@ interface RawGhStatus {
 }
 
 export async function ghStatus(): Promise<GhTokenStatus> {
-  const raw = await invoke<RawGhStatus>('gh_status');
-  return {
-    available: raw.available,
-    mode: raw.mode,
-    version: raw.version ?? undefined,
-    user: raw.user ?? undefined,
-    scopes: raw.scopes,
-  };
+  try {
+    const raw = await invoke<RawGhStatus>('gh_status');
+    return {
+      available: raw.available,
+      mode: raw.mode,
+      version: raw.version ?? undefined,
+      user: raw.user ?? undefined,
+      scopes: raw.scopes,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`gh status check failed: ${msg}`, { cause: err });
+  }
 }
 
 export async function ghSetToken(token: string): Promise<GhTokenStatus> {
-  const raw = await invoke<RawGhStatus>('gh_set_token', { token });
-  return {
-    available: raw.available,
-    mode: raw.mode,
-    version: raw.version ?? undefined,
-    user: raw.user ?? undefined,
-    scopes: raw.scopes,
-  };
+  try {
+    const raw = await invoke<RawGhStatus>('gh_set_token', { token });
+    return {
+      available: raw.available,
+      mode: raw.mode,
+      version: raw.version ?? undefined,
+      user: raw.user ?? undefined,
+      scopes: raw.scopes,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`gh set token failed: ${msg}`, { cause: err });
+  }
 }
 
 export async function ghClearToken(): Promise<void> {
-  await invoke('gh_clear_token');
+  try {
+    await invoke('gh_clear_token');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`gh clear token failed: ${msg}`, { cause: err });
+  }
 }
 
 export async function ghPrDiff(repo: string, pr: number, cwd?: string): Promise<string> {
-  return invoke<string>('gh_pr_diff', { repo, pr, cwd });
+  try {
+    return await invoke<string>('gh_pr_diff', { repo, pr, cwd });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
+  }
 }
 
 export const tauriGhRunner: GhRunner = {
   async run(args: ReadonlyArray<string>, opts: GhRunOptions = {}): Promise<GhResult> {
-    const raw = await invoke<RawGhRunResult>('gh_run', {
-      args: [...args],
-      cwd: opts.cwd,
-    });
-    return {
-      stdout: raw.stdout,
-      stderr: raw.stderr,
-      exitCode: raw.exitCode,
-    };
+    try {
+      const raw = await invoke<RawGhRunResult>('gh_run', {
+        args: [...args],
+        cwd: opts.cwd,
+      });
+      return {
+        stdout: raw.stdout,
+        stderr: raw.stderr,
+        exitCode: raw.exitCode,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`gh run [${args.join(' ')}] failed: ${msg}`, { cause: err });
+    }
   },
 };
 
 export function createTauriPrCacheStore(db: Database): PrCacheStore {
   return {
     async get(repoSlug, branch) {
-      const entry = await getGithubPrCache(db, repoSlug, branch);
-      return entry as GithubPrCacheEntry | null;
+      try {
+        const entry = await getGithubPrCache(db, repoSlug, branch);
+        return entry as GithubPrCacheEntry | null;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`PR cache get for ${repoSlug}/${branch} failed: ${msg}`, { cause: err });
+      }
     },
     async upsert(entry) {
-      await upsertGithubPrCache(db, entry);
+      try {
+        await upsertGithubPrCache(db, entry);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`PR cache upsert for ${entry.repoSlug}/${entry.branch} failed: ${msg}`, {
+          cause: err,
+        });
+      }
     },
     async invalidate(repoSlug, branch) {
-      await deleteGithubPrCache(db, repoSlug, branch);
+      try {
+        await deleteGithubPrCache(db, repoSlug, branch);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`PR cache invalidate for ${repoSlug}/${branch} failed: ${msg}`, {
+          cause: err,
+        });
+      }
     },
   };
 }
