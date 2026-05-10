@@ -49,7 +49,12 @@ import {
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
 import { WorkflowNextStepCta } from './WorkflowNextStepCta';
-import { formatCost, formatTokens, shortModel } from '../agentRowFormat';
+import {
+  computeLatestTelemetryByAgentId,
+  formatCost,
+  formatTokens,
+  shortModel,
+} from '../agentRowFormat';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
 import { openUrl } from '../editor';
 
@@ -1227,6 +1232,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
 
+  /**
+   * Most recent turn telemetry per agent — walks agentRunHistory newest-first so
+   * the context bar always shows the latest prompt size, even if Session.runId
+   * lags behind (e.g. the DB row wasn't flushed before telemetry arrived).
+   */
+  const latestTelemetryByAgentId = useMemo(
+    () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
+    [telemetryByRunId, phaseRuns, agentRunHistory],
+  );
+
   const onPickAgent = (sid: SessionId) => {
     if (sid === selectedAgentId) return;
     void selectAgent(task.id, sid);
@@ -1280,7 +1295,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
             <AgentRow
               key={run.id}
               run={run}
-              telemetry={run.runId ? (telemetryByRunId.get(run.runId) ?? null) : null}
+              telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
               aggregate={aggregatesByAgentId.get(run.id) ?? null}
               turns={turnsByAgentId.get(run.id) ?? 0}
               isSelected={run.id === selectedAgentId}

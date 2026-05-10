@@ -1,5 +1,6 @@
 // Display helpers for the sidebar agent row telemetry pill.
 // Extracted so they can be unit-tested without rendering React.
+import type { TelemetryRecord } from '@kay-am/types';
 
 export function formatTokens(n: number): string {
   if (n < 1000) return `${n}`;
@@ -20,4 +21,28 @@ export function shortModel(model: string): string {
   const m = model.match(/claude-(haiku|sonnet|opus)/i);
   if (m && m[1]) return m[1].toLowerCase();
   return model;
+}
+
+/**
+ * For each agent (keyed by Session.id), returns the telemetry record from the
+ * most recent run in agentRunHistory. Walks the history newest-first so the
+ * context bar reflects the latest prompt size even if Session.runId lags.
+ */
+export function computeLatestTelemetryByAgentId(
+  agentIds: ReadonlyArray<{ id: string; runId?: string }>,
+  agentRunHistory: Readonly<Record<string, ReadonlyArray<string>>>,
+  telemetryByRunId: ReadonlyMap<string, TelemetryRecord>,
+): Map<string, TelemetryRecord> {
+  const result = new Map<string, TelemetryRecord>();
+  for (const agent of agentIds) {
+    const runIds = agentRunHistory[agent.id] ?? (agent.runId ? [agent.runId] : []);
+    for (let i = runIds.length - 1; i >= 0; i--) {
+      const rec = telemetryByRunId.get(runIds[i]!);
+      if (rec) {
+        result.set(agent.id, rec);
+        break;
+      }
+    }
+  }
+  return result;
 }
