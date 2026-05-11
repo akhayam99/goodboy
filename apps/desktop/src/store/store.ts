@@ -50,6 +50,7 @@ import {
   summarizeWorkspaceProviderTelemetry,
   updateProviderRunStatus,
   updateTaskPermissionMode,
+  updateTaskAutoRun,
   updateTaskState,
   upsertContextSlot,
   insertDiffComment,
@@ -344,7 +345,10 @@ export interface AppActions {
     branchPrefix?: string;
     providerPreference?: TaskProviderPreference;
     workflowId?: WorkflowId;
+    autoRun?: boolean;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
+  setSessionAutoRun(taskId: TaskId, autoRun: boolean): Promise<void>;
+  maybeAutoAdvanceWorkflow(taskId: TaskId): Promise<void>;
   loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
   appendTurnEvent(agentId: SessionId, taskId: TaskId, event: TurnEvent): void;
   resetTranscript(agentId: SessionId): void;
@@ -1157,7 +1161,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  createSession: async ({ workspaceId, goal, branchPrefix, providerPreference, workflowId }) => {
+  createSession: async ({
+    workspaceId,
+    goal,
+    branchPrefix,
+    providerPreference,
+    workflowId,
+    autoRun,
+  }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
@@ -1180,6 +1191,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       providerPreference: providerPreference ?? DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       ...(workflowId !== undefined ? { workflowId } : {}),
+      autoRun: autoRun === true && workflowId !== undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -2043,6 +2055,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ),
           }),
         }));
+        void get().maybeAutoAdvanceWorkflow(taskId);
       }
 
       // Auto-populate ContextPanel from this turn's output: file paths come
@@ -2943,6 +2956,54 @@ export const useAppStore = create<AppStore>((set, get) => ({
         s.id === taskId ? { ...s, permissionMode: mode, updatedAt: now } : s,
       ),
     }));
+  },
+
+  setSessionAutoRun: async (taskId, autoRun) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateTaskAutoRun(tauriDatabase, taskId, autoRun, now);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === taskId ? { ...s, autoRun, updatedAt: now } : s,
+      ),
+    }));
+    if (autoRun) void get().maybeAutoAdvanceWorkflow(taskId);
+  },
+
+  maybeAutoAdvanceWorkflow: async (taskId) => {
+    const state = get();
+    const task = state.sessions.find((s) => s.id === taskId);
+    if (!task || !task.autoRun || !task.workflowId) return;
+    const template = (state.phaseTemplates[task.workspaceId] ?? []).find(
+      (t) => t.id === task.workflowId,
+    );
+    if (!template) return;
+    const runs = state.sessionPhaseRuns[taskId] ?? [];
+    if (runs.some((r) => r.status === 'failed')) return;
+    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+    const spawnedStepIds = new Set(
+      runs.map((r) => r.stepId).filter((id): id is StepId => id !== undefined),
+    );
+    const next = sortedSteps.find((s) => !spawnedStepIds.has(s.id));
+    if (!next) return;
+    const prevSteps = sortedSteps.filter((s) => s.ordinal < next.ordinal);
+    const prevAllCompleted = prevSteps.every((s) =>
+      runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
+    );
+    if (!prevAllCompleted) return;
+    const exceeded = state.budgetAlerts.some(
+      (a) =>
+        a.dismissedAt === undefined &&
+        ((a.kind === 'task-exceeded' && a.taskId === taskId) || a.kind === 'provider-exceeded'),
+    );
+    if (exceeded) return;
+    const kind = inferAgentKindFromName(next.name);
+    const defaults = AGENT_KIND_DEFAULTS[kind];
+    await get().spawnAgent(taskId, {
+      name: next.name,
+      stepId: next.id,
+      model: defaults.model,
+      effort: defaults.effort,
+    });
   },
 
   createPrForSession: async (taskId) => {

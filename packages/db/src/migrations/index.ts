@@ -19,6 +19,7 @@ import { m018GithubPrCache } from './m018-github-pr-cache';
 import { m019TaskPermissionMode } from './m019-task-permission-mode';
 import { m020DiffComments } from './m020-diff-comments';
 import { m021DiffCommentLine } from './m021-diff-comment-line';
+import { m022TaskAutorun } from './m022-task-autorun';
 
 export interface Migration {
   readonly version: number;
@@ -47,4 +48,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 19, sql: m019TaskPermissionMode },
   { version: 20, sql: m020DiffComments },
   { version: 21, sql: m021DiffCommentLine },
+  { version: 22, sql: m022TaskAutorun },
 ];

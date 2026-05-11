@@ -4,7 +4,8 @@ import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
 import type { TaskId } from '@kay-am/types';
 import { useAppStore, useSessionNextActions } from '../store';
-import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE, type AgentKind } from '../agentKind';
+import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agentKind';
+import { spawnKindForAction } from '../spawnFromNextAction';
 
 export interface NextActionChipsProps {
   readonly taskId: TaskId;
@@ -95,7 +96,7 @@ function Chip({
   disabled: boolean;
   onClick: () => void;
 }) {
-  const kind = spawnKindFor(action);
+  const kind = spawnKindForAction(action);
   const palette = kind ? AGENT_KIND_PALETTE[kind] : null;
   const defaults = kind ? AGENT_KIND_DEFAULTS[kind] : null;
   const title = defaults ? `model: ${defaults.model} · effort: ${defaults.effort}` : action.label;
@@ -132,17 +133,4 @@ function Chip({
       />
     </button>
   );
-}
-
-function spawnKindFor(action: NextAction): AgentKind | null {
-  switch (action.id) {
-    case 'spawn_planner':
-      return 'planner';
-    case 'spawn_implementer':
-      return 'implementer';
-    case 'spawn_debugger':
-      return 'debugger';
-    default:
-      return null;
-  }
 }

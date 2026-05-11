@@ -103,10 +103,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
   const isSlashMode = slashQuery !== null;
 
-  const selectedAgentState = useAppStore((s) => {
-    const agentId = s.selectedAgentId[session.id] ?? null;
-    return agentId ? (s.agentTurnState[agentId] ?? null) : null;
-  });
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  const selectedAgentState = useAppStore((s) =>
+    selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
+  );
+  const agentModelOverride = useAppStore((s) =>
+    selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
+  );
   const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
   const wasRunning = useRef(isRunning);
   interface QueuedTurn {
@@ -120,7 +123,9 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
   const defaultModel =
-    session.providerPreference.defaultModel ?? getDefaultTurnModel(defaultProvider);
+    agentModelOverride ??
+    session.providerPreference.defaultModel ??
+    getDefaultTurnModel(defaultProvider);
   const effectiveModel = selectedModel ?? defaultModel;
 
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
@@ -228,6 +233,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       void dispatchTurn(content, override);
     }
   }, [isRunning, queued, dispatchTurn]);
+
+  useEffect(() => {
+    setSelectedProvider(null);
+    setSelectedModel(null);
+  }, [selectedAgentId]);
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (

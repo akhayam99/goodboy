@@ -127,6 +127,7 @@ function buildIdleSession(id: TaskId, wsId: WorkspaceId): Task {
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions',
+    autoRun: false,
     createdAt: NOW,
     updatedAt: NOW,
   };
@@ -141,6 +142,7 @@ function buildRunningSession(id: TaskId, wsId: WorkspaceId, runId: ProviderRunId
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions',
+    autoRun: false,
     createdAt: NOW,
     updatedAt: NOW,
   };

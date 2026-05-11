@@ -44,6 +44,7 @@ export type Task = Readonly<{
   permissionMode: ClaudePermissionMode;
   workflowId?: WorkflowId;
   currentStepOrdinal?: number;
+  autoRun: boolean;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

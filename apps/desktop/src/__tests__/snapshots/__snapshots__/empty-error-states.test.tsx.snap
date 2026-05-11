@@ -47,10 +47,10 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
   open=""
 >
   <div
-    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+    class="flex min-h-0 flex-col h-[640px] w-[56rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -82,7 +82,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
       </button>
     </header>
     <div
-      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
       <div
         class="flex h-full min-h-0 gap-0"
@@ -793,7 +793,7 @@ workspace: $0"
         class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
       >
         <header
-          class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+          class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
         >
           <div
             class="flex min-w-0 flex-col gap-1"
@@ -819,7 +819,7 @@ workspace: $0"
           </button>
         </header>
         <div
-          class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+          class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
         >
           <div
             class="flex flex-col gap-4 text-sm"
@@ -906,7 +906,7 @@ workspace: $0"
       class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -938,7 +938,7 @@ workspace: $0"
         </button>
       </header>
       <div
-        class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
       >
         <div
           class="flex h-full min-h-0 gap-0"
@@ -1041,7 +1041,7 @@ workspace: $0"
       class="flex min-h-0 flex-col h-[640px] w-[56rem] max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -1073,7 +1073,7 @@ workspace: $0"
         </button>
       </header>
       <div
-        class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
       >
         <div
           class="flex h-full min-h-0 gap-0"
@@ -1784,7 +1784,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
     class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -1816,7 +1816,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       </button>
     </header>
     <div
-      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
       <div
         class="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
@@ -1856,10 +1856,10 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
   open=""
 >
   <div
-    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+    class="flex min-h-0 flex-col h-[640px] w-[56rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -1891,7 +1891,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       </button>
     </header>
     <div
-      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm"
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
       <div
         class="flex h-full min-h-0 gap-0"

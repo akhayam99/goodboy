@@ -48,6 +48,30 @@ function formatError(err: unknown): string {
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
+type WorkflowMode = 'one-off' | 'preset' | 'custom';
+
+const WORKFLOW_MODES: ReadonlyArray<{
+  id: WorkflowMode;
+  label: string;
+  hint: string;
+}> = [
+  {
+    id: 'one-off',
+    label: 'one-off',
+    hint: 'single chat — spawn agents manually when you need them.',
+  },
+  {
+    id: 'preset',
+    label: 'preset',
+    hint: 'pick a saved workflow blueprint. each step pre-spawns its own agent.',
+  },
+  {
+    id: 'custom',
+    label: 'custom',
+    hint: 'design a fresh workflow with the planner agent, then run it.',
+  },
+];
+
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
     if (connectedIds.has(id)) return id;
@@ -72,7 +96,8 @@ export function NewSessionDialog({
   const [prefix, setPrefix] = useState(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
   const [softCapRaw, setSoftCapRaw] = useState('');
   const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
-  const [plannerOpen, setPlannerOpen] = useState(false);
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('one-off');
+  const [autoRun, setAutoRun] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -89,7 +114,8 @@ export function NewSessionDialog({
     setGoal('');
     setSoftCapRaw('');
     setSelectedPhaseTemplateId('');
-    setPlannerOpen(false);
+    setWorkflowMode('one-off');
+    setAutoRun(false);
     setError(null);
     void loadSetting(settingKey).then((value) => {
       setPrefix(value ?? DEFAULT_BRANCH_PREFIX);
@@ -103,7 +129,8 @@ export function NewSessionDialog({
     setPrefix(storedPrefix ?? DEFAULT_BRANCH_PREFIX);
     setSoftCapRaw('');
     setSelectedPhaseTemplateId('');
-    setPlannerOpen(false);
+    setWorkflowMode('one-off');
+    setAutoRun(false);
     setError(null);
   };
 
@@ -115,12 +142,14 @@ export function NewSessionDialog({
         defaultProvider: selectedProvider,
         allowTurnOverride: true,
       };
+      const hasWorkflow = selectedPhaseTemplateId !== '';
       const { session } = await createSession({
         workspaceId,
         goal,
         branchPrefix: prefix,
         providerPreference,
-        ...(selectedPhaseTemplateId ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
+        ...(hasWorkflow ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
+        ...(hasWorkflow && autoRun ? { autoRun: true } : {}),
       });
       const parsedCap = parseFloat(softCapRaw);
       if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
@@ -191,6 +220,16 @@ export function NewSessionDialog({
     },
   ];
 
+  const onWorkflowModeChange = (next: WorkflowMode) => {
+    setWorkflowMode(next);
+    if (next === 'one-off') {
+      setSelectedPhaseTemplateId('');
+      setAutoRun(false);
+    } else if (next === 'preset' || next === 'custom') {
+      setSelectedPhaseTemplateId('');
+    }
+  };
+
   const missingRequired = sections.filter((s) => s.required && !s.ready);
   const disabledReason =
     missingRequired.length > 0
@@ -203,7 +242,8 @@ export function NewSessionDialog({
       onClose={onClose}
       title="New session"
       description="Creates a worktree on a fresh branch from the workspace root."
-      size="lg"
+      size="xl"
+      fixedHeightClass="h-[640px]"
       footer={
         <>
           {error ? (
@@ -302,58 +342,85 @@ export function NewSessionDialog({
           ) : null}
 
           {activeSection === 'workflow' ? (
-            <Field
-              label="workflow (optional)"
-              hint={
-                phaseTemplates.length === 0
-                  ? 'no workflows yet — design one with the planner below.'
-                  : 'pick a workflow blueprint. each step pre-spawns its own agent.'
-              }
-            >
-              <div className="flex flex-wrap gap-1.5">
-                <WorkflowChip
-                  label="single chat"
-                  active={selectedPhaseTemplateId === ''}
-                  onClick={() => setSelectedPhaseTemplateId('')}
-                />
-                {phaseTemplates.map((t) => (
-                  <WorkflowChip
-                    key={t.id}
-                    label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
-                    active={selectedPhaseTemplateId === t.id}
-                    onClick={() => setSelectedPhaseTemplateId(t.id)}
-                    title={t.description || undefined}
-                  />
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPlannerOpen((v) => !v)}
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs motion-safe:transition-colors',
-                    plannerOpen
-                      ? 'bg-foreground text-background'
-                      : 'bg-subtle text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                  title="design a custom workflow with the planner agent"
-                >
-                  <Sparkles size={11} aria-hidden /> design custom
-                </button>
-              </div>
-              {selectedPhaseTemplateId !== '' ? (
-                <WorkflowPreview
-                  template={phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null}
-                />
+            <Field label="workflow (optional)" hint={workflowModeHint(workflowMode)}>
+              <WorkflowModeSegmented mode={workflowMode} onChange={onWorkflowModeChange} />
+
+              {workflowMode === 'one-off' ? (
+                <div className="mt-3 rounded-md border border-dashed border-border-soft bg-subtle px-3 py-4 text-xs leading-relaxed text-muted-foreground">
+                  no workflow attached. you can spawn agents on demand from the chat sidebar.
+                </div>
               ) : null}
-              {plannerOpen ? (
-                <PlannerWidget
-                  workspaceId={workspaceId}
-                  providerId={selectedProvider}
-                  initialTheme={goal}
-                  onWorkflowReady={(workflowId) => {
-                    setSelectedPhaseTemplateId(workflowId);
-                    setPlannerOpen(false);
-                  }}
-                />
+
+              {workflowMode === 'preset' ? (
+                <div className="mt-3 flex flex-col gap-3">
+                  {phaseTemplates.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-border-soft bg-subtle px-3 py-4 text-xs leading-relaxed text-muted-foreground">
+                      no presets yet — switch to <span className="font-medium">custom</span> and
+                      design one with the planner.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {phaseTemplates.map((t) => (
+                        <WorkflowChip
+                          key={t.id}
+                          label={`${t.name.toLowerCase()}${t.steps.length > 0 ? ` · ${t.steps.length}` : ''}`}
+                          active={selectedPhaseTemplateId === t.id}
+                          onClick={() => setSelectedPhaseTemplateId(t.id)}
+                          title={t.description || undefined}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {selectedPhaseTemplateId !== '' ? (
+                    <WorkflowPreview
+                      template={
+                        phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null
+                      }
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+
+              {workflowMode === 'custom' ? (
+                <div className="mt-3 flex flex-col gap-3">
+                  <div className="rounded-md border border-border-soft bg-subtle px-3 py-3">
+                    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <Sparkles size={12} aria-hidden /> design with planner
+                    </div>
+                    <PlannerWidget
+                      workspaceId={workspaceId}
+                      providerId={selectedProvider}
+                      initialTheme={goal}
+                      onWorkflowReady={(workflowId) => {
+                        setSelectedPhaseTemplateId(workflowId);
+                      }}
+                    />
+                  </div>
+                  {selectedPhaseTemplateId !== '' ? (
+                    <WorkflowPreview
+                      template={
+                        phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null
+                      }
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+
+              {workflowMode !== 'one-off' && selectedPhaseTemplateId !== '' ? (
+                <label className="mt-4 flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={autoRun}
+                    onChange={(e) => setAutoRun(e.target.checked)}
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-medium text-foreground">run autonomously</span>
+                    <span className="text-muted-foreground">
+                      auto-spawn each step on completion. pauses on error or budget exceed.
+                    </span>
+                  </span>
+                </label>
               ) : null}
             </Field>
           ) : null}
@@ -512,4 +579,45 @@ function WorkflowChip({
       {label}
     </button>
   );
+}
+
+function WorkflowModeSegmented({
+  mode,
+  onChange,
+}: {
+  mode: WorkflowMode;
+  onChange: (next: WorkflowMode) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="workflow mode"
+      className="inline-flex rounded-md border border-border bg-subtle p-0.5"
+    >
+      {WORKFLOW_MODES.map((m) => {
+        const active = mode === m.id;
+        return (
+          <button
+            key={m.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(m.id)}
+            className={cn(
+              'rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors',
+              active
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {m.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function workflowModeHint(mode: WorkflowMode): string {
+  return WORKFLOW_MODES.find((m) => m.id === mode)?.hint ?? '';
 }

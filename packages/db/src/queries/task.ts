@@ -22,6 +22,7 @@ interface TaskRow {
   permission_mode: string | null;
   workflow_id: string | null;
   current_step_ordinal: number | null;
+  auto_run: number;
   created_at: number;
   updated_at: number;
 }
@@ -67,6 +68,7 @@ function toDomain(row: TaskRow, contextSlots: Task['contextSlots']): Task {
     permissionMode: toPermissionMode(row.permission_mode),
     ...(row.workflow_id && { workflowId: row.workflow_id as WorkflowId }),
     ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
+    autoRun: row.auto_run !== 0,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -81,8 +83,8 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
   const { kind, payload } = splitState(task.state);
   await db.execute(
     `INSERT INTO tasks
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       task.id,
       task.workspaceId,
@@ -94,10 +96,24 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
       task.permissionMode,
       task.workflowId ?? null,
       task.currentStepOrdinal ?? null,
+      task.autoRun ? 1 : 0,
       Date.parse(task.createdAt),
       Date.parse(task.updatedAt),
     ],
   );
+}
+
+export async function updateTaskAutoRun(
+  db: Database,
+  id: TaskId,
+  autoRun: boolean,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute('UPDATE tasks SET auto_run = ?, updated_at = ? WHERE id = ?', [
+    autoRun ? 1 : 0,
+    Date.parse(updatedAt),
+    id,
+  ]);
 }
 
 export async function updateTaskState(
@@ -119,10 +135,11 @@ export async function updateTaskPermissionMode(
   permissionMode: ClaudePermissionMode,
   updatedAt: IsoDateTime,
 ): Promise<void> {
-  await db.execute(
-    'UPDATE tasks SET permission_mode = ?, updated_at = ? WHERE id = ?',
-    [permissionMode, Date.parse(updatedAt), id],
-  );
+  await db.execute('UPDATE tasks SET permission_mode = ?, updated_at = ? WHERE id = ?', [
+    permissionMode,
+    Date.parse(updatedAt),
+    id,
+  ]);
 }
 
 export async function getTaskById(db: Database, id: TaskId): Promise<Task | null> {
