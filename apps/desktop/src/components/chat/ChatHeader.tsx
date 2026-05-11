@@ -59,55 +59,57 @@ export function ChatHeader({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] items-center gap-3 px-8 py-2.5">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
-          {isParallel && onSelectRun ? (
-            <ParallelProgressPill
-              parallelRunIds={parallelRunIds!}
-              runStatuses={runStatuses}
-              onSelectRun={onSelectRun}
-            />
-          ) : null}
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <button
-            type="button"
-            onClick={() => void onCopyWorktree()}
-            className="inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted hover:text-foreground"
-            aria-label={`worktree — branch: ${branch}`}
-            title={`worktree — branch: ${branch}`}
-          >
-            <GitBranch size={12} aria-hidden />
-            <span className="font-mono">{branch}</span>
-            {copied ? <span className="text-success">copied</span> : null}
-          </button>
-          <span
-            className="inline-flex items-center gap-1"
-            title={`${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`}
-          >
-            <MessagesSquare size={12} aria-hidden />
-            <span className="font-mono text-foreground/85">{userTurns}</span>
-            <span>turn{userTurns === 1 ? '' : 's'}</span>
-            {assistantReplies > 0 ? (
-              <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
+    <div className="px-10 py-2.5">
+      <div className="mx-auto flex w-full max-w-[880px] items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-sm font-semibold tracking-tight">{session.goal}</h1>
+            {isParallel && onSelectRun ? (
+              <ParallelProgressPill
+                parallelRunIds={parallelRunIds!}
+                runStatuses={runStatuses}
+                onSelectRun={onSelectRun}
+              />
             ) : null}
-          </span>
-          <span
-            className="inline-flex items-center gap-1 text-2xs text-muted-foreground"
-            title={mode.description}
-            aria-label={`permission mode: ${mode.label}`}
-          >
-            <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', mode.dot)} />
-            <span>{mode.label}</span>
-          </span>
-          {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => void onCopyWorktree()}
+              className="inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted hover:text-foreground"
+              aria-label={`worktree — branch: ${branch}`}
+              title={`worktree — branch: ${branch}`}
+            >
+              <GitBranch size={12} aria-hidden />
+              <span className="font-mono">{branch}</span>
+              {copied ? <span className="text-success">copied</span> : null}
+            </button>
+            <span
+              className="inline-flex items-center gap-1"
+              title={`${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`}
+            >
+              <MessagesSquare size={12} aria-hidden />
+              <span className="font-mono text-foreground/85">{userTurns}</span>
+              <span>turn{userTurns === 1 ? '' : 's'}</span>
+              {assistantReplies > 0 ? (
+                <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
+              ) : null}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground"
+              title={mode.description}
+              aria-label={`permission mode: ${mode.label}`}
+            >
+              <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', mode.dot)} />
+              <span>{mode.label}</span>
+            </span>
+            {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
+          </div>
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <OpenInEditorButton worktreePath={worktreePath} />
+        <div className="flex shrink-0 items-center gap-1">
+          <OpenInEditorButton worktreePath={worktreePath} />
+        </div>
       </div>
     </div>
   );

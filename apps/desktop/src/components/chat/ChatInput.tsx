@@ -108,7 +108,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
   const isSlashMode = slashQuery !== null;
 
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const selectedAgentState = useAppStore((s) =>
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
   );
@@ -272,8 +271,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   }, [providerModels, effectiveModel]);
 
   return (
-    <div className="px-8 py-3">
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2">
+    <div className="px-10 py-3">
+      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
         {!isRunning && !providerDisconnected ? (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
