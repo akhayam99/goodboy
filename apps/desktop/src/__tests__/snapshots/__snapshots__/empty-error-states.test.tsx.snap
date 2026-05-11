@@ -1071,10 +1071,10 @@ workspace: $0"
                 </div>
               </div>
               <div
-                class="max-h-72 overflow-y-auto"
+                class="max-h-72 overflow-y-auto rounded-md border border-border-soft"
               >
                 <p
-                  class="py-2 text-xs text-muted-foreground"
+                  class="py-2 text-center text-xs text-muted-foreground"
                 >
                   no recorded turns yet.
                 </p>
@@ -2509,38 +2509,57 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
       refresh all
     </button>
   </div>
-  <ul
-    class="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm"
+  <div
+    class="flex flex-col gap-2"
   >
-    <li
-      class="flex items-center gap-3 px-3 py-2.5 text-xs"
+    <div
+      class="flex flex-col gap-2 overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm"
     >
-      <span
-        aria-hidden="true"
-        class="inline-block h-2 w-2 shrink-0 rounded-full bg-danger"
-      />
       <div
-        class="flex min-w-0 flex-1 flex-col gap-0.5"
+        class="flex items-center gap-3 border-b border-border-soft px-3 py-2"
       >
+        <span
+          aria-hidden="true"
+          class="inline-block h-2 w-2 shrink-0 rounded-full bg-danger"
+        />
         <div
-          class="flex items-center gap-2"
+          class="flex min-w-0 flex-1 flex-col gap-0.5"
         >
-          <span
-            class="font-medium"
+          <div
+            class="flex items-center gap-2"
           >
-            claude
-          </span>
-          <code
+            <span
+              class="text-xs font-semibold"
+            >
+              claude
+            </span>
+            <code
+              class="text-2xs text-muted-foreground"
+            >
+              claude
+            </code>
+            <span
+              class="rounded bg-muted px-1 text-2xs text-muted-foreground"
+            >
+              1.0.0
+            </span>
+          </div>
+          <span
             class="text-2xs text-muted-foreground"
           >
-            claude
-          </code>
-          <span
-            class="rounded bg-muted px-1 text-2xs text-muted-foreground"
-          >
-            1.0.0
+            anthropic claude code cli
           </span>
         </div>
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs shrink-0"
+          type="button"
+        >
+          retry
+        </button>
+      </div>
+      <div
+        class="flex flex-col gap-1.5 px-3 pb-2.5"
+      >
         <div
           class="text-xs"
         >
@@ -2551,14 +2570,8 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
           </span>
         </div>
       </div>
-      <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs shrink-0"
-        type="button"
-      >
-        retry
-      </button>
-    </li>
-  </ul>
+    </div>
+  </div>
   <p
     class="text-xs text-muted-foreground"
   >
