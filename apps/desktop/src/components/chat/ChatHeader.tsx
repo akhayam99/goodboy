@@ -59,7 +59,7 @@ export function ChatHeader({
   };
 
   return (
-    <div className="px-10 py-2.5">
+    <div className="sticky top-0 z-10 border-b border-border/30 bg-background px-10 py-2.5 shadow-[0_4px_8px_-6px_rgb(0_0_0_/_0.12)]">
       <div className="mx-auto flex w-full max-w-[880px] items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
