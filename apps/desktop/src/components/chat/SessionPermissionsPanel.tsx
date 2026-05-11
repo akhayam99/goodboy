@@ -1,41 +1,51 @@
 import { useState } from 'react';
 import { cn } from '@kay-am/ui';
-import type { ClaudePermissionMode, SessionId, TaskId, WorkspaceId } from '@kay-am/types';
+import type { ClaudePermissionMode, TaskId } from '@kay-am/types';
 import { useAppStore } from '../../store';
-import { PermissionsPanel } from '../PermissionsPanel';
 import { PermissionAuditPanel } from './PermissionAuditPanel';
 
-type PanelTab = 'session-rules' | 'workspace-rules' | 'audit' | 'mode';
+type PanelTab = 'audit' | 'mode';
 
 const TAB_LABELS: Record<PanelTab, string> = {
-  'session-rules': 'session rules',
-  'workspace-rules': 'workspace rules',
   audit: 'audit log',
   mode: 'mode',
 };
 
-const MODE_OPTIONS: ReadonlyArray<{ value: ClaudePermissionMode; label: string; description: string }> = [
-  { value: 'bypassPermissions', label: 'bypass', description: 'agent can use all tools freely — safe in isolated worktrees' },
-  { value: 'acceptEdits', label: 'accept edits', description: 'agent can edit files; asks before running bash commands' },
-  { value: 'default', label: 'default', description: 'agent asks before any tool that writes or runs code' },
-  { value: 'plan', label: 'plan', description: 'agent produces a plan only — no tool calls executed' },
+const MODE_OPTIONS: ReadonlyArray<{
+  value: ClaudePermissionMode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: 'bypassPermissions',
+    label: 'bypass',
+    description: 'agent can use all tools freely — safe in isolated worktrees',
+  },
+  {
+    value: 'acceptEdits',
+    label: 'accept edits',
+    description: 'agent can edit files; asks before running bash commands',
+  },
+  {
+    value: 'default',
+    label: 'default',
+    description: 'agent asks before any tool that writes or runs code',
+  },
+  {
+    value: 'plan',
+    label: 'plan',
+    description: 'agent produces a plan only — no tool calls executed',
+  },
 ];
 
 interface SessionPermissionsPanelProps {
   readonly taskId: TaskId;
-  readonly agentId: SessionId | null;
-  readonly workspaceId: WorkspaceId;
   readonly open: boolean;
   readonly onClose: () => void;
 }
 
-export function SessionPermissionsPanel({
-  taskId,
-  workspaceId,
-  open,
-  onClose,
-}: SessionPermissionsPanelProps) {
-  const [tab, setTab] = useState<PanelTab>('session-rules');
+export function SessionPermissionsPanel({ taskId, open, onClose }: SessionPermissionsPanelProps) {
+  const [tab, setTab] = useState<PanelTab>('audit');
 
   const session = useAppStore((s) => s.sessions.find((x) => x.id === taskId));
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
@@ -79,15 +89,7 @@ export function SessionPermissionsPanel({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {tab === 'session-rules' && (
-            <PermissionsPanel scope={{ kind: 'task', id: taskId }} />
-          )}
-          {tab === 'workspace-rules' && (
-            <PermissionsPanel scope={{ kind: 'workspace', id: workspaceId }} />
-          )}
-          {tab === 'audit' && (
-            <AuditContent taskId={taskId} />
-          )}
+          {tab === 'audit' && <AuditContent taskId={taskId} />}
           {tab === 'mode' && (
             <ModeContent
               currentMode={currentMode}
