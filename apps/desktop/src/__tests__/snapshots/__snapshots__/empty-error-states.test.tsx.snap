@@ -516,6 +516,56 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     <div
       class="ml-auto flex items-center gap-0.5"
     >
+      <button
+        aria-label="switch to light mode"
+        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        title="switch to light mode"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-sun"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="13"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+          />
+          <path
+            d="M12 2v2"
+          />
+          <path
+            d="M12 20v2"
+          />
+          <path
+            d="m4.93 4.93 1.41 1.41"
+          />
+          <path
+            d="m17.66 17.66 1.41 1.41"
+          />
+          <path
+            d="M2 12h2"
+          />
+          <path
+            d="M20 12h2"
+          />
+          <path
+            d="m6.34 17.66-1.41 1.41"
+          />
+          <path
+            d="m19.07 4.93-1.41 1.41"
+          />
+        </svg>
+      </button>
       <div
         aria-label="alerts"
         aria-live="polite"
@@ -622,11 +672,28 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="flex flex-col px-2"
     >
       <header
-        class="flex items-baseline justify-between gap-2 pb-1.5"
+        class="flex items-center justify-between gap-2 pb-1.5"
       >
         <span
-          class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+          class="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
         >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-folder-open text-primary"
+            fill="none"
+            height="11"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="11"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
+            />
+          </svg>
           Workspaces
         </span>
       </header>
@@ -682,8 +749,28 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         class="flex items-center justify-between gap-2 pb-1.5"
       >
         <span
-          class="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+          class="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
         >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-messages-square text-info"
+            fill="none"
+            height="11"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="11"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+            />
+            <path
+              d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
+            />
+          </svg>
           Sessions
         </span>
         <div
@@ -1306,6 +1393,55 @@ workspace: $0"
               </svg>
               <span>
                 Tips
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-palette"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"
+                />
+                <circle
+                  cx="13.5"
+                  cy="6.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="17.5"
+                  cy="10.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="6.5"
+                  cy="12.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="8.5"
+                  cy="7.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+              </svg>
+              <span>
+                Legenda
               </span>
             </button>
           </nav>
