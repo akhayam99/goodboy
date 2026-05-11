@@ -54,20 +54,24 @@ pub struct SummarizeResult {
 }
 
 #[tauri::command]
-pub fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
-    let cli_args = build_cli_args(&args)?;
+pub async fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cli_args = build_cli_args(&args)?;
 
-    let output = Command::new(&args.binary)
-        .args(&cli_args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
+        let output = Command::new(&args.binary)
+            .args(&cli_args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
 
-    Ok(SummarizeResult {
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        exit_code: output.status.code(),
+        Ok(SummarizeResult {
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+            exit_code: output.status.code(),
+        })
     })
+    .await
+    .map_err(|e| SummarizeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?
 }
 
 fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
