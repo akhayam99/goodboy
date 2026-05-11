@@ -97,24 +97,40 @@ interface FileEditBlockProps {
 
 function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
   const rel = displayPath(path, workingDir);
-  return (
-    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1">
-      <FileEdit size={11} aria-hidden className="shrink-0 text-info" />
+  const inner = (
+    <>
+      <FileEdit size={11} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="text-2xs uppercase tracking-wide text-info/80">{EDIT_LABEL[editType]}</span>
       <code className="min-w-0 truncate font-mono text-xs text-foreground/80" title={path}>
         {rel}
       </code>
       {onOpenDiff ? (
-        <button
-          type="button"
-          onClick={() => onOpenDiff(path)}
-          title="open in files modal"
-          aria-label="open in files modal"
-          className="ml-auto shrink-0 rounded-sm p-0.5 text-info/60 opacity-0 transition-opacity hover:text-info group-hover:opacity-100"
-        >
-          <ArrowUpRight size={11} aria-hidden />
-        </button>
+        <ArrowUpRight
+          size={11}
+          aria-hidden
+          className="ml-auto shrink-0 text-info/60 opacity-0 transition-opacity group-hover:opacity-100"
+        />
       ) : null}
+    </>
+  );
+
+  if (onOpenDiff) {
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenDiff(path)}
+        title="open in files modal"
+        aria-label={`open ${rel} in files modal`}
+        className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1 transition-colors hover:border-info/40 hover:bg-info/10"
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1">
+      {inner}
     </div>
   );
 }

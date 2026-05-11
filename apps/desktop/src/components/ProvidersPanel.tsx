@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Info } from 'lucide-react';
 import { Button, Tooltip, cn } from '@kay-am/ui';
 import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
@@ -20,6 +21,14 @@ const STATE_DOT: Record<ProviderConnectionState, string> = {
   error: 'bg-danger',
 };
 
+const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+
+const PROVIDER_DISPLAY: Record<ProviderId, { name: string; description: string }> = {
+  anthropic: { name: 'claude', description: 'anthropic claude code cli' },
+  cursor: { name: 'cursor', description: 'cursor agent cli' },
+  codex: { name: 'codex', description: 'openai codex cli' },
+};
+
 export function ProvidersPanel() {
   const providers = useAppStore((s) => s.providers);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -33,6 +42,10 @@ export function ProvidersPanel() {
       setRefreshing(false);
     }
   };
+
+  const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
+    (p): p is ProviderInfo => p !== undefined,
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -48,14 +61,14 @@ export function ProvidersPanel() {
           {refreshing ? 'refreshing…' : 'refresh all'}
         </Button>
       </div>
-      {providers.length === 0 ? (
+      {ordered.length === 0 ? (
         <p className="text-2xs text-muted-foreground">no providers configured</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
-          {providers.map((p) => (
-            <ProviderRow key={p.id} info={p} onRefresh={onRefresh} />
+        <div className="flex flex-col gap-2">
+          {ordered.map((p) => (
+            <ProviderCard key={p.id} info={p} onRefresh={onRefresh} />
           ))}
-        </ul>
+        </div>
       )}
       <p className="text-xs text-muted-foreground">
         kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run{' '}
@@ -65,39 +78,52 @@ export function ProvidersPanel() {
   );
 }
 
-function ProviderRow({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
+function ProviderCard({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
+  const display = PROVIDER_DISPLAY[info.id as ProviderId];
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5 text-xs">
-      <span
-        aria-hidden
-        className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_DOT[info.connection])}
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{info.label}</span>
-          <code className="text-2xs text-muted-foreground">{info.binary}</code>
-          {info.version ? (
-            <span className="rounded bg-muted px-1 text-2xs text-muted-foreground">
-              {info.version}
-            </span>
-          ) : null}
-          {info.id !== 'anthropic' ? (
-            <span
-              className="rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground"
-              title="permission proxy currently covers claude only. cursor and codex run with their CLI defaults; coverage is tracked for a future milestone."
-            >
-              permission proxy: not supported
-            </span>
-          ) : null}
+    <div className="flex flex-col gap-2 overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
+      {/* header */}
+      <div className="flex items-center gap-3 border-b border-border-soft px-3 py-2">
+        <span
+          aria-hidden
+          className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_DOT[info.connection])}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold">{display?.name ?? info.label}</span>
+            <code className="text-2xs text-muted-foreground">{info.binary}</code>
+            {info.version ? (
+              <span className="rounded bg-muted px-1 text-2xs text-muted-foreground">
+                {info.version}
+              </span>
+            ) : null}
+          </div>
+          <span className="text-2xs text-muted-foreground">{display?.description}</span>
         </div>
-        <RowStatus info={info} />
+        <RowActions info={info} onRefresh={onRefresh} />
       </div>
-      <RowActions info={info} onRefresh={onRefresh} />
-    </li>
+
+      {/* status + quota */}
+      <div className="flex flex-col gap-1.5 px-3 pb-2.5">
+        <CardStatus info={info} />
+        {info.id !== 'anthropic' ? (
+          <span
+            className="w-fit rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground"
+            title="permission proxy currently covers claude only. cursor and codex run with their CLI defaults; coverage is tracked for a future milestone."
+          >
+            permission proxy: not supported
+          </span>
+        ) : null}
+        <QuotaSection
+          providerId={info.id as ProviderId}
+          connected={info.connection === 'connected'}
+        />
+      </div>
+    </div>
   );
 }
 
-function RowStatus({ info }: { info: ProviderInfo }) {
+function CardStatus({ info }: { info: ProviderInfo }) {
   if (info.connection === 'connected') {
     return (
       <div className="text-xs text-muted-foreground">{info.identity ?? 'no identity reported'}</div>
@@ -111,6 +137,40 @@ function RowStatus({ info }: { info: ProviderInfo }) {
     );
   }
   return <div className="text-xs text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
+}
+
+function QuotaSection({ providerId, connected }: { providerId: ProviderId; connected: boolean }) {
+  if (!connected) return null;
+
+  if (providerId !== 'anthropic') {
+    return (
+      <div className="flex items-center gap-1 text-2xs text-muted-foreground/70">
+        <Tooltip
+          content="quota reporting not available for this provider. check your account dashboard."
+          side="top"
+        >
+          <span className="flex cursor-default items-center gap-1">
+            <Info size={10} aria-hidden className="shrink-0" />
+            quota info unavailable
+          </span>
+        </Tooltip>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 text-2xs text-muted-foreground/70">
+      <Tooltip
+        content="anthropic does not expose quota/rate-limit data via the claude code CLI. check console.anthropic.com for usage details."
+        side="top"
+      >
+        <span className="flex cursor-default items-center gap-1">
+          <Info size={10} aria-hidden className="shrink-0" />
+          quota info unavailable
+        </span>
+      </Tooltip>
+    </div>
+  );
 }
 
 function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
