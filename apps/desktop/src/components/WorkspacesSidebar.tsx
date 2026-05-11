@@ -4,6 +4,7 @@ import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
   ArrowRight,
   ArrowUpDown,
+  Bot,
   ChevronDown,
   ChevronRight,
   FolderOpen,
@@ -13,9 +14,12 @@ import {
   GitPullRequestArrow,
   GitPullRequestDraft,
   HelpCircle,
+  MessagesSquare,
+  Moon,
   Plus,
   Settings,
   Settings2,
+  Sun,
   Trash2,
   Users,
   Workflow as WorkflowIcon,
@@ -72,6 +76,7 @@ import {
 } from '../agentKind';
 import { spawnFromNextAction, spawnKindForAction } from '../spawnFromNextAction';
 import { openUrl } from '../editor';
+import { useThemeStore } from '../theme';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -139,6 +144,9 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     return matchesState && matchesProvider;
   });
 
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
   const [archivedMap, archive, unarchive] = useArchivedTasks();
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
@@ -162,6 +170,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
         <span className="px-1 text-sm font-semibold tracking-tight">kAY.am</span>
         <div className="ml-auto flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
+          </button>
           <AlertCenter />
           <button
             type="button"
@@ -186,8 +203,9 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
       <ScrollArea className="max-h-[40%] shrink-0">
         <section className="flex flex-col px-2">
-          <header className="flex items-baseline justify-between gap-2 pb-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <FolderOpen size={11} aria-hidden className="text-primary" />
               Workspaces
             </span>
           </header>
@@ -214,7 +232,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <ScrollArea className="mt-8 flex-1">
         <section className="flex flex-col px-2">
           <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <MessagesSquare size={11} aria-hidden className="text-info" />
               Sessions
             </span>
             <div className="flex items-center gap-1.5">
@@ -1344,7 +1363,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   return (
     <section className="mt-8 flex flex-col px-2 pb-3">
       <header className="flex items-center justify-between gap-2 pb-1.5">
-        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <Bot size={11} aria-hidden className="text-success" />
           Agents
         </span>
         <span className="truncate text-2xs text-muted-foreground/70">
