@@ -3267,8 +3267,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await get().spawnAgent(taskId, {
       name: next.name,
       stepId: next.id,
-      model: defaults.model,
-      effort: defaults.effort,
+      model: next.modelOverride ?? defaults.model,
+      effort: next.effort ?? defaults.effort,
     });
     void get().emitNotification(
       'agent-auto-spawn',
