@@ -386,7 +386,13 @@ export interface AppActions {
   selectAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   spawnAgent(
     taskId: TaskId,
-    args: { stepId?: StepId; name?: string; model?: string; effort?: string },
+    args: {
+      stepId?: StepId;
+      name?: string;
+      model?: string;
+      effort?: string;
+      initialPrompt?: string;
+    },
   ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
   deleteAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
@@ -1885,9 +1891,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
-    const verbosityHint = verbosityDirective(
-      phaseDefinition?.verbosity ?? readVerbosity(taskId),
-    );
+    const verbosityHint = verbosityDirective(phaseDefinition?.verbosity ?? readVerbosity(taskId));
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
     let assistantText = '';
@@ -2623,8 +2627,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
       }),
     }));
-    if (stepPromptPrefix.length > 0) {
-      void get().sendTurn({ taskId, content: stepPromptPrefix });
+    const kickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
+    if (kickoff.length > 0) {
+      void get().sendTurn({ taskId, content: kickoff });
     }
     return inserted.id;
   },
