@@ -17,6 +17,8 @@ vi.mock('../store', () => ({
       toggleSessionSlot: vi.fn(),
       summarizerStatus: {},
       sessionTelemetry: {},
+      sessionWorktrees: {},
+      settings: {},
       githubStatus: null,
       sessionBranches: {},
       sessionGithub: {},
@@ -26,6 +28,7 @@ vi.mock('../store', () => ({
       createPrForSession: vi.fn(),
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),
+      loadDiffComments: vi.fn(),
     };
     return selector(state);
   }),
@@ -35,6 +38,7 @@ vi.mock('../store', () => ({
     .mockReturnValue({ status: 'idle', lastUpdate: null, error: null, lastUsage: null }),
   useSlotHistory: vi.fn().mockReturnValue([]),
   useSessionNextActions: vi.fn().mockReturnValue([]),
+  useDiffComments: vi.fn().mockReturnValue([]),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

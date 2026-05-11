@@ -168,6 +168,7 @@ function buildSession(): Task {
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
+    autoRun: false,
     workflowId: TEMPLATE_ID,
     createdAt: now,
     updatedAt: now,

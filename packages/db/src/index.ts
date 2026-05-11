@@ -15,6 +15,7 @@ export {
   insertTask,
   updateTaskState,
   updateTaskPermissionMode,
+  updateTaskAutoRun,
   getTaskById,
   listTasksForWorkspace,
   renameTask,
@@ -25,6 +26,7 @@ export {
   insertTurnEvent,
   listTurnEventsForAgent,
   listTurnEventsForTask,
+  listAgentRunIdsForTask,
 } from './queries/turn-event';
 export {
   upsertContextSlot,

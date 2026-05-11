@@ -156,6 +156,7 @@ function buildSession(): Task {
       allowTurnOverride: false,
     },
     permissionMode: 'bypassPermissions',
+    autoRun: false,
     createdAt: now,
     updatedAt: now,
   };

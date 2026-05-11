@@ -18,12 +18,12 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   planner: {
     bg: 'bg-violet-100',
     fg: 'text-violet-700',
-    label: 'planner',
+    label: 'plan',
   },
   implementer: {
     bg: 'bg-emerald-100',
     fg: 'text-emerald-700',
-    label: 'impl',
+    label: 'imple',
   },
   debugger: {
     bg: 'bg-orange-100',

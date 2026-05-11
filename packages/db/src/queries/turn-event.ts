@@ -1,4 +1,4 @@
-import type { SessionId, TaskId, TurnEvent } from '@kay-am/types';
+import type { ProviderRunId, SessionId, TaskId, TurnEvent } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface TurnEventRow {
@@ -61,4 +61,33 @@ export async function listTurnEventsForTask(
     [taskId],
   );
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
+}
+
+export async function listAgentRunIdsForTask(
+  db: Database,
+  taskId: TaskId,
+): Promise<Map<SessionId, ReadonlyArray<ProviderRunId>>> {
+  const rows = await db.select<TurnEventRow>(
+    'SELECT * FROM turn_events WHERE task_id = ? ORDER BY created_at ASC, rowid ASC',
+    [taskId],
+  );
+  const result = new Map<SessionId, ProviderRunId[]>();
+  const seen = new Map<SessionId, Set<string>>();
+  for (const row of rows) {
+    const event = rowToEvent(row);
+    if (!event) continue;
+    const runId = event.runId;
+    if (!runId || runId === ('history' as ProviderRunId)) continue;
+    const agentId = row.agent_id as SessionId;
+    let bucket = seen.get(agentId);
+    if (!bucket) {
+      bucket = new Set();
+      seen.set(agentId, bucket);
+      result.set(agentId, []);
+    }
+    if (bucket.has(runId)) continue;
+    bucket.add(runId);
+    result.get(agentId)!.push(runId);
+  }
+  return result;
 }

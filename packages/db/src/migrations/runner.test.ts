@@ -94,6 +94,7 @@ describe('migrate', () => {
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
+      autoRun: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -126,6 +127,7 @@ describe('migrate', () => {
       contextSlots: [],
       providerPreference: { defaultProvider: 'cursor', allowTurnOverride: false },
       permissionMode: 'bypassPermissions',
+      autoRun: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -157,6 +159,7 @@ describe('migrate', () => {
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
+      autoRun: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -255,6 +258,7 @@ describe('migrate', () => {
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
+      autoRun: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -310,6 +314,7 @@ describe('migrate', () => {
       contextSlots: [],
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
+      autoRun: false,
       createdAt: now(),
       updatedAt: now(),
     };

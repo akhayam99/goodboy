@@ -139,6 +139,7 @@ function buildSession() {
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic' as const, allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
+    autoRun: false,
     createdAt: AT,
     updatedAt: AT,
   };

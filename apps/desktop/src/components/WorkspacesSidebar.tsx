@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
+  ArrowRight,
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
@@ -16,7 +17,11 @@ import {
   Settings,
   Settings2,
   Trash2,
+  Users,
+  Workflow as WorkflowIcon,
   X,
+  Zap,
+  ZapOff,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from './SessionSettingsDialog';
@@ -43,25 +48,29 @@ import {
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
+  useSessionNextActions,
   useSessions,
   useWorkspaces,
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
 import { WorkflowNextStepCta } from './WorkflowNextStepCta';
+import { CostBadge } from './CostBadge';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
   formatTokens,
   shortModel,
 } from '../agentRowFormat';
-import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
+import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
+  AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
   inferAgentKindFromStep,
 } from '../agentKind';
+import { spawnFromNextAction, spawnKindForAction } from '../spawnFromNextAction';
 import { openUrl } from '../editor';
 
 interface WorkspacesSidebarProps {
@@ -698,8 +707,15 @@ function SessionRow({
 }: SessionRowProps) {
   const budget = useAppStore((s) => s.sessionBudgets[session.id as TaskId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
+  const agentCount = useAppStore((s) => s.sessionPhaseRuns[session.id as TaskId]?.length ?? 0);
+  const workflowName = useAppStore((s) => {
+    if (!session.workflowId) return null;
+    const templates = s.phaseTemplates[session.workspaceId] ?? [];
+    return templates.find((t) => t.id === session.workflowId)?.name ?? null;
+  });
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
+  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const renameTask = useAppStore((s) => s.renameTask);
   const deleteTask = useAppStore((s) => s.deleteTask);
   const budgetLoaded = useRef(false);
@@ -832,6 +848,52 @@ function SessionRow({
             </button>
           </div>
         </div>
+
+        {isActive && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-3.5 text-2xs text-muted-foreground">
+            {workflowName ? (
+              <span className="inline-flex items-center gap-1" title="workflow">
+                <WorkflowIcon size={10} aria-hidden />
+                <span className="truncate">{workflowName.toLowerCase()}</span>
+              </span>
+            ) : null}
+            <span
+              className="inline-flex items-center gap-1"
+              title={`${agentCount} agent${agentCount === 1 ? '' : 's'}`}
+            >
+              <Users size={10} aria-hidden />
+              <span className="tabular-nums">{agentCount}</span>
+            </span>
+            {spentUsd !== null && spentUsd > 0 ? (
+              <CostBadge
+                value={spentUsd}
+                title={`$${spentUsd.toFixed(4)} total session cost`}
+                className="text-2xs"
+              />
+            ) : null}
+            {session.workflowId ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void setSessionAutoRun(session.id as TaskId, !session.autoRun);
+                }}
+                title={
+                  session.autoRun ? 'autorun on — click to pause' : 'autorun off — click to enable'
+                }
+                className={cn(
+                  'inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide motion-safe:transition-colors',
+                  session.autoRun
+                    ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/70',
+                )}
+              >
+                {session.autoRun ? <Zap size={10} aria-hidden /> : <ZapOff size={10} aria-hidden />}
+                auto
+              </button>
+            ) : null}
+          </div>
+        )}
 
         {cap !== null && (
           <div className="flex flex-col gap-0.5 pl-3.5">
@@ -1332,7 +1394,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </div>
       ) : null}
       <div className="pl-2">
-        <SpawnAgentControl workflow={workflow} onSpawn={onSpawn} />
+        <SpawnAgentControl taskId={task.id} workflow={workflow} onSpawn={onSpawn} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
     </section>
@@ -1340,13 +1402,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
 }
 
 interface SpawnAgentControlProps {
+  taskId: TaskId;
   workflow: Workflow | null;
   onSpawn: (stepId: Step['id'] | null, model?: string) => void | Promise<void>;
 }
 
-function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
+function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const nextActions = useSessionNextActions(taskId);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
 
   useEffect(() => {
     if (!open) return;
@@ -1361,6 +1427,14 @@ function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
     () => (workflow ? [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal) : []),
     [workflow],
   );
+
+  const suggestions = workflow ? [] : nextActions;
+
+  const onPickSuggestion = async (action: NextAction) => {
+    setOpen(false);
+    const did = await spawnFromNextAction(action, taskId, spawnAgent);
+    if (did) clearSessionNextActions(taskId);
+  };
 
   return (
     <div className="relative mt-1" ref={ref}>
@@ -1377,8 +1451,23 @@ function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-60 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
         >
+          {suggestions.length > 0 ? (
+            <>
+              <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+                suggested next
+              </div>
+              {suggestions.map((action) => (
+                <SuggestionMenuItem
+                  key={action.id}
+                  action={action}
+                  onSelect={() => void onPickSuggestion(action)}
+                />
+              ))}
+              <div className="mt-1 border-t border-border-soft" aria-hidden />
+            </>
+          ) : null}
           <button
             type="button"
             role="menuitem"
@@ -1421,6 +1510,30 @@ function SpawnAgentControl({ workflow, onSpawn }: SpawnAgentControlProps) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect: () => void }) {
+  const kind = spawnKindForAction(action);
+  const palette = kind ? AGENT_KIND_PALETTE[kind] : null;
+  const defaults = kind ? AGENT_KIND_DEFAULTS[kind] : null;
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onSelect}
+      title={defaults ? `${defaults.model} · ${defaults.effort} effort` : action.label}
+      className={cn(
+        'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors',
+        palette ? `${palette.bg} ${palette.fg} hover:opacity-90` : 'hover:bg-muted',
+      )}
+    >
+      <span className="flex items-center gap-1.5">
+        <ArrowRight size={11} aria-hidden />
+        <span className="font-medium">{action.label}</span>
+      </span>
+      {defaults ? <span className="text-2xs opacity-70">{shortModel(defaults.model)}</span> : null}
+    </button>
   );
 }
 
@@ -1517,6 +1630,18 @@ function AgentRow({
             AGENT_STATUS_TONE[run.status],
           )}
         />
+        <span
+          className={cn(
+            'shrink-0 rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide',
+            'w-[3.25rem]',
+            AGENT_KIND_PALETTE[kind].bg,
+            AGENT_KIND_PALETTE[kind].fg,
+          )}
+          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
+        >
+          {AGENT_KIND_PALETTE[kind].label}
+        </span>
         {isEditing ? (
           <input
             autoFocus
@@ -1548,14 +1673,6 @@ function AgentRow({
             {run.name}
           </span>
         )}
-        {!isSelected && !isEditing && aggregate ? (
-          <span
-            className="shrink-0 tabular-nums text-2xs text-muted-foreground/70"
-            title={`$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`}
-          >
-            {formatCost(aggregate.estimatedCostUsd)}
-          </span>
-        ) : null}
         {!isEditing ? (
           confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1594,18 +1711,6 @@ function AgentRow({
             </button>
           )
         ) : null}
-        <span
-          className={cn(
-            'shrink-0 rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide',
-            'w-[3.25rem]',
-            AGENT_KIND_PALETTE[kind].bg,
-            AGENT_KIND_PALETTE[kind].fg,
-          )}
-          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
-          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
-        >
-          {AGENT_KIND_PALETTE[kind].label}
-        </span>
       </div>
       <div
         className={cn(
@@ -1645,16 +1750,14 @@ function AgentRow({
               <span aria-hidden className="text-muted-foreground/40">
                 ·
               </span>
-              <span
-                className="tabular-nums"
+              <CostBadge
+                value={aggregate?.estimatedCostUsd ?? 0}
                 title={
                   aggregate
                     ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
                     : 'no cost yet'
                 }
-              >
-                {aggregate ? formatCost(aggregate.estimatedCostUsd) : '$0'}
-              </span>
+              />
             </div>
             <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
               {telemetry ? (

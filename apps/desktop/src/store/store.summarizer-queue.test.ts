@@ -170,6 +170,7 @@ function buildTask(): Task {
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
+    autoRun: false,
     createdAt: NOW,
     updatedAt: NOW,
   };

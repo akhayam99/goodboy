@@ -37,6 +37,7 @@ import {
   listMessagesForTask,
   listTurnEventsForAgent,
   listTurnEventsForTask,
+  listAgentRunIdsForTask,
   listTasksForWorkspace,
   listTelemetryForTask,
   listWorkspaces,
@@ -50,6 +51,7 @@ import {
   summarizeWorkspaceProviderTelemetry,
   updateProviderRunStatus,
   updateTaskPermissionMode,
+  updateTaskAutoRun,
   updateTaskState,
   upsertContextSlot,
   insertDiffComment,
@@ -344,7 +346,10 @@ export interface AppActions {
     branchPrefix?: string;
     providerPreference?: TaskProviderPreference;
     workflowId?: WorkflowId;
+    autoRun?: boolean;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
+  setSessionAutoRun(taskId: TaskId, autoRun: boolean): Promise<void>;
+  maybeAutoAdvanceWorkflow(taskId: TaskId): Promise<void>;
   loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
   appendTurnEvent(agentId: SessionId, taskId: TaskId, event: TurnEvent): void;
   resetTranscript(agentId: SessionId): void;
@@ -1016,11 +1021,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
-      const [summary, telemetry, slots, agents] = await Promise.all([
+      const [summary, telemetry, slots, agents, agentRunIds] = await Promise.all([
         summarizeTaskTelemetry(tauriDatabase, id),
         listTelemetryForTask(tauriDatabase, id),
         listContextSlotsForTask(tauriDatabase, id),
         invokePhaseRunList(id),
+        listAgentRunIdsForTask(tauriDatabase, id),
       ]);
       // Pick the previously-selected agent if it still exists, else the
       // lowest-ordinal one (= default "agent 1" or first workflow step).
@@ -1035,20 +1041,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
             listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
           ])
         : [[] as ReadonlyArray<Message>, [] as ReadonlyArray<TurnEvent>];
-      // Seed agentRunHistory from each agent's current runId so previously-run
-      // agents at least have ONE entry to aggregate against. New runIds get
-      // appended on each turn going forward.
+      // Seed agentRunHistory with EVERY provider run an agent ever spawned, not
+      // just its latest. Recovered from turn_events (single source of truth post
+      // restart) so aggregate token/cost counters in the sidebar reflect the
+      // full agent lifetime — birth to death — instead of the last turn.
       const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
       const seededTurnState: Record<string, TurnState> = {};
       const task = get().sessions.find((s) => s.id === id);
       const taskState =
         task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
       for (const agent of agents) {
-        if (agent.runId) {
-          const prev = get().agentRunHistory[agent.id] ?? [];
-          if (!prev.includes(agent.runId)) {
-            seededHistory[agent.id] = [...prev, agent.runId];
-          }
+        const historical = agentRunIds.get(agent.id) ?? [];
+        const merged: ProviderRunId[] = [...historical];
+        if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+        if (merged.length > 0) {
+          seededHistory[agent.id] = merged;
         }
         if (agent.status === 'running' && agent.runId) {
           seededTurnState[agent.id] = {
@@ -1157,7 +1164,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  createSession: async ({ workspaceId, goal, branchPrefix, providerPreference, workflowId }) => {
+  createSession: async ({
+    workspaceId,
+    goal,
+    branchPrefix,
+    providerPreference,
+    workflowId,
+    autoRun,
+  }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
@@ -1180,6 +1194,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       providerPreference: providerPreference ?? DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       ...(workflowId !== undefined ? { workflowId } : {}),
+      autoRun: autoRun === true && workflowId !== undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -2043,6 +2058,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ),
           }),
         }));
+        void get().maybeAutoAdvanceWorkflow(taskId);
       }
 
       // Auto-populate ContextPanel from this turn's output: file paths come
@@ -2943,6 +2959,54 @@ export const useAppStore = create<AppStore>((set, get) => ({
         s.id === taskId ? { ...s, permissionMode: mode, updatedAt: now } : s,
       ),
     }));
+  },
+
+  setSessionAutoRun: async (taskId, autoRun) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateTaskAutoRun(tauriDatabase, taskId, autoRun, now);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === taskId ? { ...s, autoRun, updatedAt: now } : s,
+      ),
+    }));
+    if (autoRun) void get().maybeAutoAdvanceWorkflow(taskId);
+  },
+
+  maybeAutoAdvanceWorkflow: async (taskId) => {
+    const state = get();
+    const task = state.sessions.find((s) => s.id === taskId);
+    if (!task || !task.autoRun || !task.workflowId) return;
+    const template = (state.phaseTemplates[task.workspaceId] ?? []).find(
+      (t) => t.id === task.workflowId,
+    );
+    if (!template) return;
+    const runs = state.sessionPhaseRuns[taskId] ?? [];
+    if (runs.some((r) => r.status === 'failed')) return;
+    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+    const spawnedStepIds = new Set(
+      runs.map((r) => r.stepId).filter((id): id is StepId => id !== undefined),
+    );
+    const next = sortedSteps.find((s) => !spawnedStepIds.has(s.id));
+    if (!next) return;
+    const prevSteps = sortedSteps.filter((s) => s.ordinal < next.ordinal);
+    const prevAllCompleted = prevSteps.every((s) =>
+      runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
+    );
+    if (!prevAllCompleted) return;
+    const exceeded = state.budgetAlerts.some(
+      (a) =>
+        a.dismissedAt === undefined &&
+        ((a.kind === 'task-exceeded' && a.taskId === taskId) || a.kind === 'provider-exceeded'),
+    );
+    if (exceeded) return;
+    const kind = inferAgentKindFromName(next.name);
+    const defaults = AGENT_KIND_DEFAULTS[kind];
+    await get().spawnAgent(taskId, {
+      name: next.name,
+      stepId: next.id,
+      model: defaults.model,
+      effort: defaults.effort,
+    });
   },
 
   createPrForSession: async (taskId) => {
