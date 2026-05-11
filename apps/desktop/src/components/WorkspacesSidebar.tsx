@@ -33,7 +33,7 @@ import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from './SessionSettingsDialog';
 import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
-import { AlertCenter } from './AlertCenter';
+import { NotificationCenter } from './NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
 import type {
   ProviderId,
@@ -254,7 +254,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           >
             {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
           </button>
-          <AlertCenter />
+          <NotificationCenter />
           <button
             type="button"
             onClick={() => setGuideOpen(true)}

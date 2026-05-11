@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { X } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 
-export type ToastKind = 'warning' | 'error' | 'success';
+export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
 export interface ToastItem {
   readonly id: string;
@@ -101,7 +101,9 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
           ? 'border-danger/30 bg-background text-danger'
           : toast.kind === 'success'
             ? 'border-success/30 bg-background text-success'
-            : 'border-warning/30 bg-background text-warning',
+            : toast.kind === 'info'
+              ? 'border-info/30 bg-background text-info'
+              : 'border-warning/30 bg-background text-warning',
       )}
       role="alert"
     >

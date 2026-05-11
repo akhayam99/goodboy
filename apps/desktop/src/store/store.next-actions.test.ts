@@ -110,6 +110,10 @@ vi.mock('@kay-am/db', () => ({
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForTask: vi.fn(async () => []),
   listMessagesForAgent: vi.fn(async () => []),
+  insertNotification: vi.fn(async () => undefined),
+  listNotifications: vi.fn(async () => []),
+  markAllNotificationsRead: vi.fn(async () => undefined),
+  clearAllNotifications: vi.fn(async () => undefined),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
