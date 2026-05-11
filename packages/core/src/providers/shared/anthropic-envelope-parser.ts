@@ -122,8 +122,24 @@ export function parseAnthropicEnvelopeLine(
       return events;
     }
 
-    case 'system':
+    case 'system': {
+      // Claude stream-json emits `{"type":"system","subtype":"init","session_id":"..."}`.
+      // Capture the session id so it can be threaded back via --resume; ignore
+      // other system subtypes for now.
+      const subtype = payload.subtype as string | undefined;
+      const sessionId = payload.session_id;
+      if (subtype === 'init' && typeof sessionId === 'string' && sessionId.length > 0) {
+        return [
+          {
+            kind: 'provider_session_init',
+            runId: ctx.runId,
+            providerSessionId: sessionId,
+            at,
+          },
+        ];
+      }
       return [];
+    }
 
     default:
       if (typeof payload.type === 'string' && !KNOWN_PAYLOAD_TYPES.has(payload.type)) {

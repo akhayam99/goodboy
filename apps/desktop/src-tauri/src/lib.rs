@@ -99,6 +99,7 @@ pub fn run() {
       workflows::session_list_for_task,
       workflows::session_insert,
       workflows::session_update_status,
+      workflows::session_set_provider_session_id,
       parallel_groups::parallel_group_create,
       parallel_groups::parallel_group_list,
       parallel_groups::parallel_group_get,

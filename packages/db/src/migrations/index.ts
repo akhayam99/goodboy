@@ -21,6 +21,7 @@ import { m020DiffComments } from './m020-diff-comments';
 import { m021DiffCommentLine } from './m021-diff-comment-line';
 import { m022TaskAutorun } from './m022-task-autorun';
 import { m023StepEffort } from './m023-step-effort';
+import { m024SessionProviderSessionId } from './m024-session-provider-session-id';
 
 export interface Migration {
   readonly version: number;
@@ -51,4 +52,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 21, sql: m021DiffCommentLine },
   { version: 22, sql: m022TaskAutorun },
   { version: 23, sql: m023StepEffort },
+  { version: 24, sql: m024SessionProviderSessionId },
 ];

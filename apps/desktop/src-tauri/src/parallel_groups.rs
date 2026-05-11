@@ -442,6 +442,8 @@ pub fn parallel_session_spawn(
                 permission_mode: &permission_mode,
                 allowed_tools: &args.allowed_tools,
                 disallowed_tools: &args.disallowed_tools,
+                resume_session_id: None,
+                system_prompt: None,
             },
         )?;
         run_ids.push(run_id);

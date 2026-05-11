@@ -187,6 +187,7 @@ import {
   invokePhaseRunList,
   invokePhaseRunInsert,
   invokePhaseRunUpdateStatus,
+  invokeSessionSetProviderSessionId,
   type PhaseTemplateUpsertArgs,
 } from '../phases';
 import {
@@ -534,9 +535,32 @@ interface SummarizerQueueEntry {
 interface SummarizerTaskQueue {
   inFlight: boolean;
   queued: SummarizerQueueEntry | null;
+  // Resolves when the current cycle (inFlight + any drained queued run) settles.
+  // Tracked so `waitForSummarizerSettled` can `await` instead of polling.
+  // Optional so test fixtures can construct partial queues without managing
+  // the internal promise plumbing.
+  settled?: Promise<void> | null;
+  resolveSettled?: (() => void) | null;
 }
 
 export const summarizerQueues = new Map<TaskId, SummarizerTaskQueue>();
+
+// Awaits a pending summarizer cycle for `taskId` so the next preamble sees the
+// freshest slots. Resolves either when the cycle settles or after `timeoutMs`.
+// 2s default keeps the user-facing input from blocking forever if summarizer
+// stalls; staleness is preferable to indefinite UI freeze.
+export async function waitForSummarizerSettled(taskId: TaskId, timeoutMs: number): Promise<void> {
+  const queue = summarizerQueues.get(taskId);
+  if (!queue || (!queue.inFlight && queue.queued === null)) return;
+  const settled = queue.settled;
+  if (!settled) return;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+  });
+  await Promise.race([settled, timeout]);
+  if (timer) clearTimeout(timer);
+}
 
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
@@ -555,7 +579,7 @@ function enqueueSummarizer(
 ): void {
   let queue = summarizerQueues.get(taskId);
   if (!queue) {
-    queue = { inFlight: false, queued: null };
+    queue = { inFlight: false, queued: null, settled: null, resolveSettled: null };
     summarizerQueues.set(taskId, queue);
   }
 
@@ -567,6 +591,16 @@ function enqueueSummarizer(
 
   queue.inFlight = true;
   queue.queued = null;
+  queue.settled = new Promise<void>((resolve) => {
+    queue!.resolveSettled = resolve;
+  });
+
+  const resolveSettled = (q: SummarizerTaskQueue): void => {
+    const r = q.resolveSettled;
+    q.settled = null;
+    q.resolveSettled = null;
+    r?.();
+  };
 
   const run = (): void => {
     void runSummarizer(set, get, taskId, turnInput, turnOutput).finally(() => {
@@ -578,11 +612,15 @@ function enqueueSummarizer(
         scheduleIdle(() => {
           void runSummarizer(set, get, taskId, next.turnInput, next.turnOutput).finally(() => {
             const q2 = summarizerQueues.get(taskId);
-            if (q2) q2.inFlight = false;
+            if (q2) {
+              q2.inFlight = false;
+              resolveSettled(q2);
+            }
           });
         });
       } else {
         q.inFlight = false;
+        resolveSettled(q);
       }
     });
   };
@@ -1331,8 +1369,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
           },
         };
       }
+      // M1: capture claude's session id from the `system` init event so the
+      // next turn for this agent can pass `--resume <id>`. Update in-memory
+      // sessionPhaseRuns + persist; tolerate transient DB failures (worst
+      // case: next turn starts fresh, no data loss).
+      if (event.kind === 'provider_session_init') {
+        const runs = state.sessionPhaseRuns[taskId] ?? [];
+        const updatedRuns = runs.map((s) =>
+          s.id === agentId ? { ...s, providerSessionId: event.providerSessionId } : s,
+        );
+        void insertTurnEvent(tauriDatabase, {
+          id: crypto.randomUUID(),
+          taskId,
+          agentId,
+          event,
+        }).catch(() => undefined);
+        void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
+          if (import.meta.env.DEV) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
+          }
+        });
+        return {
+          transcripts: updatedTranscripts,
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: updatedRuns },
+        };
+      }
       return { transcripts: updatedTranscripts };
     });
+    if (event.kind === 'provider_session_init') return;
     void insertTurnEvent(tauriDatabase, {
       id: crypto.randomUUID(),
       taskId,
@@ -1885,6 +1950,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // this Task already learned, and (b) knows how to write back via
     // <<ctx-decision>> / <<ctx-question>> markers parsed in the auto-populate
     // step after the turn ends.
+    // Barrier: wait for any pending summarizer cycle for this task so the
+    // preamble reads the slots produced by the previous turn rather than the
+    // stale set from two turns ago. Capped at 2s to keep the UI responsive.
+    await waitForSummarizerSettled(taskId, 2000);
     const sharedSlots = get().sessionSlots[taskId] ?? [];
     const sharedSlotsRendered = sharedSlots.length > 0 ? serializeSlots(sharedSlots) : '';
     const contextPreamble = buildContextPreamble(sharedSlotsRendered);
@@ -1898,6 +1967,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     let lastError: unknown = null;
     const filesTouchedThisTurn = new Set<string>();
 
+    // M1: thread the per-agent provider session id so claude `--resume`s and
+    // keeps prior-turn context across one-shot CLI invocations. Read from the
+    // freshly loaded sessionPhaseRuns rather than a stale snapshot.
+    const agentRow =
+      (get().sessionPhaseRuns[taskId] ?? []).find((s) => s.id === activeAgentId) ?? null;
+    const resumeSessionId = agentRow?.providerSessionId;
+
+    // M3: per-kind system prompt — biases planner/implementer/debugger toward
+    // their role. Only claude consumes it today; other providers ignore the
+    // arg downstream.
+    const agentKind = inferAgentKindFromName(agentRow?.name ?? '');
+    const kindSystemPrompt = AGENT_KIND_DEFAULTS[agentKind].systemPrompt;
+
     try {
       for await (const event of runTurn({
         runId,
@@ -1905,6 +1987,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         workingDir,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
+        ...(resumeSessionId !== undefined && { resumeSessionId }),
+        ...(kindSystemPrompt !== undefined && { systemPrompt: kindSystemPrompt }),
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, taskId, event);

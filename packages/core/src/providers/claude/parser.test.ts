@@ -22,8 +22,18 @@ describe('parseStreamJsonLine', () => {
     expect(parse('{not json')).toEqual([]);
   });
 
-  it('ignores system events', () => {
+  it('ignores system events without session id', () => {
     expect(parse(JSON.stringify({ type: 'system', subtype: 'init' }))).toEqual([]);
+    expect(parse(JSON.stringify({ type: 'system', subtype: 'other' }))).toEqual([]);
+  });
+
+  it('emits provider_session_init for system init events with session_id', () => {
+    const events = parse(
+      JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-123' }),
+    );
+    expect(events).toEqual([
+      { kind: 'provider_session_init', runId: ctx.runId, providerSessionId: 'sess-123', at },
+    ]);
   });
 
   it('emits assistant_text for text content blocks', () => {

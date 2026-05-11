@@ -70,6 +70,14 @@ pub struct SpawnArgs {
     pub disallowed_tools: Vec<String>,
     #[serde(default)]
     pub permission_mode: Option<String>,
+    // claude-only: when Some, spawn carries `--resume <id>` so the CLI restores
+    // the prior conversation instead of starting fresh. Ignored by codex/cursor.
+    #[serde(default)]
+    pub resume_session_id: Option<String>,
+    // claude-only: when Some, spawn carries `--append-system-prompt <prompt>`.
+    // Used to bias planner/implementer/debugger agents toward their role.
+    #[serde(default)]
+    pub system_prompt: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -121,15 +129,24 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 // runs tools without interactive confirmation.
                 "--force".to_string(),
             ];
-            // permission rules + permission_mode aren't supported by cursor-agent
-            // today; intentionally dropped here to avoid unknown-flag errors.
-            let _ = (args.permission_mode, args.allowed_tools, args.disallowed_tools);
+            // permission rules + permission_mode + resume + system_prompt aren't
+            // supported by cursor-agent today; intentionally dropped here to
+            // avoid unknown-flag errors.
+            let _ = (
+                args.permission_mode,
+                args.allowed_tools,
+                args.disallowed_tools,
+                args.resume_session_id,
+                args.system_prompt,
+            );
             v.shrink_to_fit();
             v
         }
         "codex" => {
             // codex exec takes a single prompt argument after `--`. permission
-            // rules aren't supported by the codex CLI yet.
+            // rules + resume + system_prompt aren't supported by the codex CLI
+            // yet.
+            let _ = (args.resume_session_id, args.system_prompt);
             vec![
                 "exec".to_string(),
                 "--json".to_string(),
@@ -143,7 +160,14 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
         }
         _ => {
             // claude (default).
-            let mut v = vec![
+            let mut v: Vec<String> = Vec::new();
+            // --resume must come before -p so claude restores the prior session
+            // before consuming the new user message.
+            if let Some(sid) = args.resume_session_id {
+                v.push("--resume".to_string());
+                v.push(sid.to_string());
+            }
+            v.extend([
                 "-p".to_string(),
                 args.prompt.to_string(),
                 "--output-format".to_string(),
@@ -153,7 +177,11 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 args.model.to_string(),
                 "--permission-mode".to_string(),
                 args.permission_mode.to_string(),
-            ];
+            ]);
+            if let Some(sp) = args.system_prompt {
+                v.push("--append-system-prompt".to_string());
+                v.push(sp.to_string());
+            }
             if !args.allowed_tools.is_empty() {
                 v.push("--allowedTools".to_string());
                 v.push(args.allowed_tools.join(","));
@@ -177,6 +205,8 @@ pub struct SpawnOneArgs<'a> {
     pub permission_mode: &'a str,
     pub allowed_tools: &'a [String],
     pub disallowed_tools: &'a [String],
+    pub resume_session_id: Option<&'a str>,
+    pub system_prompt: Option<&'a str>,
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -285,6 +315,8 @@ pub fn turn_spawn(
             permission_mode: &permission_mode,
             allowed_tools: &args.allowed_tools,
             disallowed_tools: &args.disallowed_tools,
+            resume_session_id: args.resume_session_id.as_deref(),
+            system_prompt: args.system_prompt.as_deref(),
         },
     )
 }
@@ -385,9 +417,72 @@ mod tests {
             permission_mode: "default",
             allowed_tools: &allowed,
             disallowed_tools: &disallowed,
+            resume_session_id: None,
+            system_prompt: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
         assert_eq!(args.allowed_tools, &["Bash".to_string()]);
+    }
+
+    fn make_args<'a>(
+        resume: Option<&'a str>,
+        system_prompt: Option<&'a str>,
+        empty: &'a [String],
+    ) -> SpawnOneArgs<'a> {
+        SpawnOneArgs {
+            run_id: "run-1",
+            binary: "claude",
+            model: "claude-3",
+            working_dir: "/tmp",
+            prompt: "hi",
+            permission_mode: "default",
+            allowed_tools: empty,
+            disallowed_tools: empty,
+            resume_session_id: resume,
+            system_prompt,
+        }
+    }
+
+    #[test]
+    fn claude_args_omit_resume_and_system_prompt_when_none() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.contains(&"--resume".to_string()));
+        assert!(!cli.contains(&"--append-system-prompt".to_string()));
+    }
+
+    #[test]
+    fn claude_args_include_resume_before_prompt() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(Some("sess-abc"), None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        let resume_idx = cli.iter().position(|a| a == "--resume").expect("--resume");
+        let p_idx = cli.iter().position(|a| a == "-p").expect("-p");
+        assert!(resume_idx < p_idx, "--resume must precede -p");
+        assert_eq!(cli[resume_idx + 1], "sess-abc");
+    }
+
+    #[test]
+    fn claude_args_include_system_prompt() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, Some("you are a planner"), &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli
+            .iter()
+            .position(|a| a == "--append-system-prompt")
+            .expect("--append-system-prompt");
+        assert_eq!(cli[idx + 1], "you are a planner");
+    }
+
+    #[test]
+    fn cursor_and_codex_ignore_resume_and_system_prompt() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(Some("sid"), Some("sp"), &empty);
+        let cli_cursor = build_provider_cli_args("cursor-agent", &args);
+        let cli_codex = build_provider_cli_args("codex", &args);
+        assert!(!cli_cursor.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
+        assert!(!cli_codex.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
     }
 }
