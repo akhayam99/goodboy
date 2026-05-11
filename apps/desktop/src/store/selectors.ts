@@ -1,4 +1,11 @@
-import type { ContextSlot, ContextSlotHistoryEntry, Task, TaskId, Workspace } from '@kay-am/types';
+import type {
+  ContextSlot,
+  ContextSlotHistoryEntry,
+  DiffComment,
+  Task,
+  TaskId,
+  Workspace,
+} from '@kay-am/types';
 import type { NextAction } from '@kay-am/core';
 import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
 
@@ -42,3 +49,8 @@ export const useSessionNextActions = (taskId: TaskId | null): ReadonlyArray<Next
   useAppStore((s) =>
     taskId ? (s.sessionNextActions[taskId] ?? EMPTY_NEXT_ACTIONS) : EMPTY_NEXT_ACTIONS,
   );
+
+const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
+
+export const useDiffComments = (taskId: TaskId | null): ReadonlyArray<DiffComment> =>
+  useAppStore((s) => (taskId ? (s.diffComments[taskId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));

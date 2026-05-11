@@ -1,16 +1,47 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Dialog, ScrollArea, cn } from '@kay-am/ui';
+import { Fragment, useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+  ExternalLink,
+  Loader2,
+  MessageSquarePlus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { Dialog, ScrollArea, Textarea, cn } from '@kay-am/ui';
 import { parseUnifiedDiff } from '@kay-am/core';
-import type { FileDiff, FileDiffStatus } from '@kay-am/types';
+import type {
+  DiffComment,
+  DiffCommentAnchor,
+  DiffHunkLine,
+  FileDiff,
+  FileDiffStatus,
+  TaskId,
+} from '@kay-am/types';
 import { ghPrDiff } from '../github';
+import { openFileInWorkspace } from '../editor';
+import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
+import { useAppStore, useDiffComments } from '../store';
+import { AGENT_KIND_DEFAULTS } from '../agentKind';
 
 interface DiffViewerDialogProps {
   open: boolean;
   onClose: () => void;
-  repoSlug: string;
-  prNumber: number;
+  taskId?: TaskId;
+  title?: string;
+  loader?: () => Promise<string>;
+  repoSlug?: string;
+  prNumber?: number;
   cwd?: string;
+  /** Absolute path of the worktree root, used to open files in editor. */
+  workingDir?: string;
+  /** When true and the dialog opens, jump to the first file that has open comments. */
+  jumpToFirstCommented?: boolean;
 }
 
 const STATUS_GLYPH: Record<FileDiffStatus, string> = {
@@ -27,38 +58,195 @@ const STATUS_COLOR: Record<FileDiffStatus, string> = {
   renamed: 'text-warning',
 };
 
-function truncatePathLeft(path: string, maxLen = 40): string {
-  if (path.length <= maxLen) return path;
-  return `…${path.slice(path.length - maxLen + 1)}`;
+const SIDEBAR_PREF_KEY = 'kay-am:diff-sidebar-collapsed';
+
+type TreeNode =
+  | {
+      kind: 'dir';
+      name: string;
+      children: TreeNode[];
+      additions: number;
+      deletions: number;
+    }
+  | { kind: 'file'; name: string; file: FileDiff; index: number };
+
+function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
+  const root: TreeNode = { kind: 'dir', name: '', children: [], additions: 0, deletions: 0 };
+  files.forEach((f, idx) => {
+    const parts = f.path.split('/');
+    const fileName = parts.pop() ?? f.path;
+    let cur = root as Extract<TreeNode, { kind: 'dir' }>;
+    for (const part of parts) {
+      let next = cur.children.find(
+        (c): c is Extract<TreeNode, { kind: 'dir' }> => c.kind === 'dir' && c.name === part,
+      );
+      if (!next) {
+        next = { kind: 'dir', name: part, children: [], additions: 0, deletions: 0 };
+        cur.children.push(next);
+      }
+      cur = next;
+    }
+    cur.children.push({ kind: 'file', name: fileName, file: f, index: idx });
+  });
+
+  const collapse = (node: TreeNode) => {
+    if (node.kind !== 'dir') return;
+    while (node.children.length === 1) {
+      const only = node.children[0];
+      if (!only || only.kind !== 'dir') break;
+      node.name = node.name ? `${node.name}/${only.name}` : only.name;
+      node.children = only.children;
+    }
+    for (const c of node.children) collapse(c);
+  };
+  for (const c of root.children) collapse(c);
+
+  const aggregate = (node: TreeNode): { a: number; d: number } => {
+    if (node.kind === 'file') return { a: node.file.additions, d: node.file.deletions };
+    let a = 0;
+    let d = 0;
+    for (const c of node.children) {
+      const r = aggregate(c);
+      a += r.a;
+      d += r.d;
+    }
+    node.additions = a;
+    node.deletions = d;
+    return { a, d };
+  };
+  aggregate(root);
+
+  const sort = (node: TreeNode) => {
+    if (node.kind !== 'dir') return;
+    node.children.sort((x, y) => {
+      if (x.kind !== y.kind) return x.kind === 'dir' ? -1 : 1;
+      return x.name.localeCompare(y.name);
+    });
+    for (const c of node.children) sort(c);
+  };
+  sort(root);
+
+  return root;
+}
+
+function buildNotesPrompt(notes: ReadonlyArray<DiffComment>): string {
+  const byFile = new Map<string, DiffComment[]>();
+  for (const n of notes) {
+    const list = byFile.get(n.filePath) ?? [];
+    list.push(n);
+    byFile.set(n.filePath, list);
+  }
+  const sections: string[] = [];
+  for (const [file, items] of byFile) {
+    const lines = items.map((n) => {
+      const anchor = n.anchor ? `[${n.anchor.side}:${n.anchor.lineNumber}]` : '[file-level]';
+      return `  - ${anchor} (id ${n.id}) ${n.body.replace(/\n+/g, ' ')}`;
+    });
+    sections.push(`### ${file}\n${lines.join('\n')}`);
+  }
+  const header = [
+    'open review notes on these files. each note is anchored to a specific line of the diff.',
+    '',
+    '**mode: PROPOSE-ONLY**',
+    '- do NOT modify any code.',
+    '- for each note, produce: context, proposed fix (snippet), affected file/line.',
+    '- end with a summary plan (note → fix) for me to approve.',
+  ].join('\n');
+  return `${header}\n\n${sections.join('\n\n')}`;
+}
+
+function readSidebarPref(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(SIDEBAR_PREF_KEY) === '1';
+}
+
+function writeSidebarPref(collapsed: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? '1' : '0');
 }
 
 export function DiffViewerDialog({
   open,
   onClose,
+  taskId,
+  title,
+  loader,
   repoSlug,
   prNumber,
   cwd,
+  workingDir,
+  jumpToFirstCommented = false,
 }: DiffViewerDialogProps) {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
+  const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
+
+  const comments = useDiffComments(taskId ?? null);
+  const loadDiffComments = useAppStore((s) => s.loadDiffComments);
+  const addDiffComment = useAppStore((s) => s.addDiffComment);
+  const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
+  const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
+
+  const openCommentsByFile = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of comments) {
+      if (c.status !== 'open') continue;
+      m.set(c.filePath, (m.get(c.filePath) ?? 0) + 1);
+    }
+    return m;
+  }, [comments]);
 
   useEffect(() => {
     if (!open) return;
+    const fetcher =
+      loader ??
+      (repoSlug !== undefined && prNumber !== undefined
+        ? () => ghPrDiff(repoSlug, prNumber, cwd)
+        : null);
+    if (!fetcher) {
+      setError('no diff source configured');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
-    setSelectedIdx(0);
-    ghPrDiff(repoSlug, prNumber, cwd)
+    setActiveAnchor(null);
+    fetcher()
       .then((raw) => {
-        setFiles(parseUnifiedDiff(raw));
+        const parsed = parseUnifiedDiff(raw);
+        setFiles(parsed);
         setLoading(false);
+        if (jumpToFirstCommented && openCommentsByFile.size > 0) {
+          const idx = parsed.findIndex((f) => openCommentsByFile.has(f.path));
+          setSelectedIdx(idx >= 0 ? idx : 0);
+        } else {
+          setSelectedIdx(0);
+        }
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       });
-  }, [open, repoSlug, prNumber, cwd]);
+  }, [open, loader, repoSlug, prNumber, cwd, jumpToFirstCommented, openCommentsByFile]);
+
+  useEffect(() => {
+    if (open && taskId) void loadDiffComments(taskId);
+  }, [open, taskId, loadDiffComments]);
+
+  useEffect(() => {
+    if (files.length === 1) setSidebarCollapsed(true);
+  }, [files.length]);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((v) => {
+      const next = !v;
+      writeSidebarPref(next);
+      return next;
+    });
+  };
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -78,39 +266,303 @@ export function DiffViewerDialog({
   );
 
   const selected = files[selectedIdx];
+  const selectedComments = useMemo(
+    () => (selected ? comments.filter((c) => c.filePath === selected.path) : []),
+    [comments, selected],
+  );
+  const fileLevelComments = useMemo(
+    () => selectedComments.filter((c) => !c.anchor),
+    [selectedComments],
+  );
+
+  useEffect(() => {
+    setActiveAnchor(null);
+  }, [selectedIdx]);
+
+  const editorBinary = useAppStore(
+    (s) =>
+      s.settings[SETTING_DEFAULT_EDITOR] ??
+      s.settings[SETTING_EDITOR_BINARY] ??
+      DEFAULT_EDITOR_BINARY,
+  );
+
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const sendTurn = useAppStore((s) => s.sendTurn);
+  const [spawning, setSpawning] = useState(false);
+
+  const openComments = useMemo(() => comments.filter((c) => c.status === 'open'), [comments]);
+
+  const handleProposeFixes = async () => {
+    if (!taskId || openComments.length === 0 || spawning) return;
+    setSpawning(true);
+    try {
+      const prompt = buildNotesPrompt(openComments);
+      const defaults = AGENT_KIND_DEFAULTS.reviewer;
+      const fileCount = new Set(openComments.map((c) => c.filePath)).size;
+      const name = `review notes (${fileCount}F/${openComments.length}N)`;
+      await spawnAgent(taskId, {
+        name,
+        model: defaults.model,
+        effort: defaults.effort,
+      });
+      void sendTurn({ taskId, content: prompt });
+      onClose();
+    } finally {
+      setSpawning(false);
+    }
+  };
+
+  const handleOpenInEditor = async () => {
+    if (!selected || !workingDir) return;
+    const root = workingDir.replace(/\/$/, '');
+    const absPath = `${root}/${selected.path}`;
+    try {
+      await openFileInWorkspace(root, absPath, editorBinary);
+    } catch {
+      // swallow — error surfaced via console
+    }
+  };
+
+  const handleAddComment = async (anchor: DiffCommentAnchor, body: string) => {
+    if (!selected || !taskId) return;
+    await addDiffComment(taskId, selected.path, body, anchor);
+    setActiveAnchor(null);
+  };
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={`pr #${prNumber} diff`}
       size="xl"
-      fixedHeightClass="h-[80vh] max-w-6xl"
-      className="w-[80vw] max-w-6xl"
+      fixedHeightClass="h-[92vh] max-w-[1400px]"
+      className="w-[92vw] max-w-[1400px]"
+      showClose={false}
+      bodyClassName=""
     >
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- dialog handles keyboard nav */}
-      <div className="flex h-full min-h-0 flex-1 gap-0 overflow-hidden" onKeyDown={handleKeyDown}>
-        {loading ? (
-          <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 size={14} className="animate-spin" aria-hidden />
-            loading diff…
-          </div>
-        ) : error ? (
-          <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
-        ) : files.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-            no diff available
-          </div>
-        ) : (
-          <>
-            <FileRail files={files} selectedIdx={selectedIdx} onSelect={setSelectedIdx} />
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-border-soft">
-              {selected ? <FileDiffPane file={selected} /> : null}
+      <div className="flex h-full min-h-0 flex-col" onKeyDown={handleKeyDown}>
+        <Toolbar
+          title={title}
+          prNumber={prNumber}
+          selected={selected}
+          filesCount={files.length}
+          openCommentsCount={comments.filter((c) => c.status === 'open').length}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={toggleSidebar}
+          canOpenEditor={Boolean(selected && workingDir)}
+          onOpenInEditor={() => void handleOpenInEditor()}
+          onPrev={() => setSelectedIdx((i) => Math.max(i - 1, 0))}
+          onNext={() => setSelectedIdx((i) => Math.min(i + 1, files.length - 1))}
+          onClose={onClose}
+        />
+
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 size={14} className="animate-spin" aria-hidden />
+              loading diff…
             </div>
-          </>
-        )}
+          ) : error ? (
+            <div className="flex flex-1 items-center justify-center text-xs text-danger">
+              {error}
+            </div>
+          ) : files.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+              no diff available
+            </div>
+          ) : (
+            <>
+              {!sidebarCollapsed ? (
+                <FileRail
+                  files={files}
+                  selectedIdx={selectedIdx}
+                  onSelect={setSelectedIdx}
+                  commentCounts={openCommentsByFile}
+                />
+              ) : null}
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {selected ? (
+                  <FileDiffPane
+                    file={selected}
+                    comments={selectedComments}
+                    fileLevelComments={fileLevelComments}
+                    activeAnchor={activeAnchor}
+                    canComment={Boolean(taskId)}
+                    onStartComment={(anchor) => setActiveAnchor(anchor)}
+                    onCancelComment={() => setActiveAnchor(null)}
+                    onSubmitComment={(anchor, body) => void handleAddComment(anchor, body)}
+                    onResolve={(id) => taskId && void resolveDiffComment(taskId, id)}
+                    onDelete={(id) => taskId && void deleteDiffComment(taskId, id)}
+                  />
+                ) : null}
+              </div>
+            </>
+          )}
+        </div>
+
+        {taskId && openComments.length > 0 ? (
+          <NotesFooter
+            openCount={openComments.length}
+            spawning={spawning}
+            onPropose={() => void handleProposeFixes()}
+          />
+        ) : null}
       </div>
     </Dialog>
+  );
+}
+
+interface NotesFooterProps {
+  openCount: number;
+  spawning: boolean;
+  onPropose: () => void;
+}
+
+function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
+  return (
+    <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-subtle/30 px-4 py-2.5">
+      <span className="text-xs text-muted-foreground">
+        {openCount} open {openCount === 1 ? 'note' : 'notes'} · spawn a reviewer to propose fixes
+      </span>
+      <button
+        type="button"
+        onClick={onPropose}
+        disabled={spawning}
+        className="inline-flex items-center gap-1.5 rounded-sm border border-info/30 bg-info/5 px-2.5 py-1 text-xs font-medium text-info hover:bg-info/10 disabled:opacity-50"
+        title="spawn a reviewer agent that proposes fixes without touching code"
+      >
+        {spawning ? (
+          <Loader2 size={11} className="animate-spin" aria-hidden />
+        ) : (
+          <Sparkles size={11} aria-hidden />
+        )}
+        propose fixes
+      </button>
+    </div>
+  );
+}
+
+interface ToolbarProps {
+  title?: string;
+  prNumber?: number;
+  selected: FileDiff | undefined;
+  filesCount: number;
+  openCommentsCount: number;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
+  canOpenEditor: boolean;
+  onOpenInEditor: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onClose: () => void;
+}
+
+function Toolbar({
+  title,
+  prNumber,
+  selected,
+  filesCount,
+  openCommentsCount,
+  sidebarCollapsed,
+  onToggleSidebar,
+  canOpenEditor,
+  onOpenInEditor,
+  onPrev,
+  onNext,
+  onClose,
+}: ToolbarProps) {
+  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
+  return (
+    <div className="flex shrink-0 items-center gap-2 px-3 py-2">
+      <button
+        type="button"
+        onClick={onToggleSidebar}
+        className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        title={sidebarCollapsed ? 'show file list' : 'hide file list'}
+        aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
+      >
+        {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
+      </button>
+
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
+          {titleText}
+        </span>
+        {selected ? (
+          <>
+            <ChevronsRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
+            <span
+              className={cn(
+                'shrink-0 w-3 text-center font-mono font-bold text-[11px]',
+                STATUS_COLOR[selected.status],
+              )}
+              title={selected.status}
+            >
+              {STATUS_GLYPH[selected.status]}
+            </span>
+            <span
+              className="min-w-0 truncate font-mono text-xs text-muted-foreground"
+              title={selected.path}
+            >
+              {selected.path}
+            </span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {filesCount} {filesCount === 1 ? 'file' : 'files'}
+          </span>
+        )}
+        {openCommentsCount > 0 ? (
+          <span
+            className="ml-1 shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+            title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
+          >
+            {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5">
+        {canOpenEditor ? (
+          <button
+            type="button"
+            onClick={onOpenInEditor}
+            title="open file in editor"
+            aria-label="open file in editor"
+            className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ExternalLink size={12} />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onPrev}
+          title="previous file (k)"
+          aria-label="previous file"
+          className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ChevronLeft size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          title="next file (j)"
+          aria-label="next file"
+          className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ChevronRight size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          title="close"
+          aria-label="close"
+          className="ml-1 rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X size={13} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -118,58 +570,247 @@ function FileRail({
   files,
   selectedIdx,
   onSelect,
+  commentCounts,
 }: {
   files: ReadonlyArray<FileDiff>;
   selectedIdx: number;
   onSelect: (i: number) => void;
+  commentCounts: Map<string, number>;
 }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
+  const tree = useMemo(() => buildTree(files), [files]);
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest' });
   }, [selectedIdx]);
 
   return (
-    <ScrollArea className="w-[30%] shrink-0 overflow-y-auto border-r border-border-soft">
-      <ul className="flex flex-col py-1">
-        {files.map((f, i) => (
-          <li key={f.path}>
-            <button
-              ref={i === selectedIdx ? selectedRef : null}
-              type="button"
-              onClick={() => onSelect(i)}
-              className={cn(
-                'flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs transition-colors',
-                i === selectedIdx
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-              )}
-            >
-              <span className={cn('shrink-0 font-bold', STATUS_COLOR[f.status])}>
-                {STATUS_GLYPH[f.status]}
-              </span>
-              <span className="min-w-0 flex-1 truncate" title={f.path}>
-                {truncatePathLeft(f.path)}
-              </span>
-              <span className="shrink-0 text-[10px]">
-                {f.additions > 0 ? <span className="text-success">+{f.additions}</span> : null}
-                {f.additions > 0 && f.deletions > 0 ? (
-                  <span className="text-muted-foreground">/</span>
-                ) : null}
-                {f.deletions > 0 ? <span className="text-danger">-{f.deletions}</span> : null}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto border-r border-border-soft bg-subtle/20">
+      <div className="py-1">
+        {tree.kind === 'dir' &&
+          tree.children.map((child, i) => (
+            <TreeNodeView
+              key={`${child.kind}-${child.name}-${i}`}
+              node={child}
+              depth={0}
+              selectedIdx={selectedIdx}
+              onSelect={onSelect}
+              selectedRef={selectedRef}
+              commentCounts={commentCounts}
+            />
+          ))}
+      </div>
     </ScrollArea>
   );
 }
 
-function FileDiffPane({ file }: { file: FileDiff }) {
+function TreeNodeView({
+  node,
+  depth,
+  selectedIdx,
+  onSelect,
+  selectedRef,
+  commentCounts,
+}: {
+  node: TreeNode;
+  depth: number;
+  selectedIdx: number;
+  onSelect: (i: number) => void;
+  selectedRef: React.RefObject<HTMLButtonElement | null>;
+  commentCounts: Map<string, number>;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const indent = depth * 10;
+
+  if (node.kind === 'file') {
+    const { file, index } = node;
+    const isSelected = index === selectedIdx;
+    const noteCount = commentCounts.get(file.path) ?? 0;
+    return (
+      <button
+        ref={isSelected ? selectedRef : null}
+        type="button"
+        onClick={() => onSelect(index)}
+        title={file.path}
+        className={cn(
+          'relative flex w-full items-center gap-2 py-1 pr-2.5 text-left font-mono text-xs transition-colors',
+          isSelected
+            ? 'border-l-2 border-primary bg-subtle text-foreground'
+            : 'border-l-2 border-transparent text-muted-foreground/80 hover:bg-muted/30 hover:text-foreground',
+        )}
+        style={{ paddingLeft: 10 + indent }}
+      >
+        <span
+          className={cn(
+            'w-3 shrink-0 text-center text-[10px] font-bold',
+            STATUS_COLOR[file.status],
+          )}
+        >
+          {STATUS_GLYPH[file.status]}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{node.name}</span>
+        {noteCount > 0 ? (
+          <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
+            {noteCount}
+          </span>
+        ) : null}
+        <span className="shrink-0 text-[10px] tabular-nums">
+          {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
+          {file.additions > 0 && file.deletions > 0 ? <span className="opacity-40"> </span> : null}
+          {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="flex w-full items-center gap-1 py-1 pr-2.5 text-left text-xs text-muted-foreground/60 hover:text-foreground"
+        style={{ paddingLeft: 6 + indent }}
+        title={node.name}
+      >
+        <ChevronRight
+          size={10}
+          aria-hidden
+          className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')}
+        />
+        <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
+        <span className="shrink-0 text-[10px] tabular-nums opacity-60">
+          {node.additions > 0 ? <span className="text-success">+{node.additions}</span> : null}
+          {node.additions > 0 && node.deletions > 0 ? <span> </span> : null}
+          {node.deletions > 0 ? <span className="text-danger">−{node.deletions}</span> : null}
+        </span>
+      </button>
+      {expanded
+        ? node.children.map((child, i) => (
+            <TreeNodeView
+              key={`${child.kind}-${child.name}-${i}`}
+              node={child}
+              depth={depth + 1}
+              selectedIdx={selectedIdx}
+              onSelect={onSelect}
+              selectedRef={selectedRef}
+              commentCounts={commentCounts}
+            />
+          ))
+        : null}
+    </div>
+  );
+}
+
+function CommentItem({
+  comment,
+  onResolve,
+  onDelete,
+}: {
+  comment: DiffComment;
+  onResolve: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'group flex items-start gap-2 rounded-md border-l-2 border-warning bg-warning/5 px-3 py-1.5',
+        comment.status === 'resolved' && 'border-success/40 bg-success/5 opacity-60',
+      )}
+    >
+      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">
+        {comment.status === 'resolved' ? (
+          <span className="line-through">{comment.body}</span>
+        ) : (
+          comment.body
+        )}
+      </p>
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        {comment.status === 'open' ? (
+          <button
+            type="button"
+            onClick={() => onResolve(comment.id)}
+            title="mark resolved"
+            aria-label="resolve"
+            className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+          >
+            <Check size={11} />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => onDelete(comment.id)}
+          title="delete"
+          aria-label="delete"
+          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
+        >
+          <Trash2 size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function lineAnchor(line: DiffHunkLine): DiffCommentAnchor | null {
+  if (line.kind === 'del') {
+    return line.oldLine !== null ? { side: 'old', lineNumber: line.oldLine } : null;
+  }
+  return line.newLine !== null ? { side: 'new', lineNumber: line.newLine } : null;
+}
+
+function anchorKey(a: DiffCommentAnchor): string {
+  return `${a.side}:${a.lineNumber}`;
+}
+
+interface FileDiffPaneProps {
+  file: FileDiff;
+  comments: ReadonlyArray<DiffComment>;
+  fileLevelComments: ReadonlyArray<DiffComment>;
+  activeAnchor: DiffCommentAnchor | null;
+  canComment: boolean;
+  onStartComment: (anchor: DiffCommentAnchor) => void;
+  onCancelComment: () => void;
+  onSubmitComment: (anchor: DiffCommentAnchor, body: string) => void;
+  onResolve: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function FileDiffPane({
+  file,
+  comments,
+  fileLevelComments,
+  activeAnchor,
+  canComment,
+  onStartComment,
+  onCancelComment,
+  onSubmitComment,
+  onResolve,
+  onDelete,
+}: FileDiffPaneProps) {
+  const commentsByAnchor = useMemo(() => {
+    const m = new Map<string, DiffComment[]>();
+    for (const c of comments) {
+      if (!c.anchor) continue;
+      const k = anchorKey(c.anchor);
+      const arr = m.get(k);
+      if (arr) arr.push(c);
+      else m.set(k, [c]);
+    }
+    return m;
+  }, [comments]);
+
   return (
     <ScrollArea className="flex-1 overflow-auto">
       <div className="p-3">
+        {fileLevelComments.length > 0 ? (
+          <div className="mb-3 flex flex-col gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              file notes
+            </span>
+            {fileLevelComments.map((c) => (
+              <CommentItem key={c.id} comment={c} onResolve={onResolve} onDelete={onDelete} />
+            ))}
+          </div>
+        ) : null}
         {file.binary ? (
           <p className="py-4 text-center text-xs text-muted-foreground">binary file, no diff</p>
         ) : file.hunks.length === 0 ? (
@@ -178,47 +819,152 @@ function FileDiffPane({ file }: { file: FileDiff }) {
           <table className="w-full border-collapse font-mono text-xs leading-5">
             <tbody>
               {file.hunks.map((hunk, hi) => (
-                <>
-                  <tr key={`hunk-${hi}-header`}>
+                <Fragment key={`hunk-${hi}`}>
+                  <tr>
                     <td
-                      colSpan={3}
+                      colSpan={4}
                       className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
                     >
                       {hunk.header}
                     </td>
                   </tr>
-                  {hunk.lines.map((line, li) => (
-                    <tr
-                      key={`hunk-${hi}-line-${li}`}
-                      className={cn(
-                        line.kind === 'add' && 'bg-success/10',
-                        line.kind === 'del' && 'bg-danger/10',
-                      )}
-                    >
-                      <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                        {line.oldLine ?? ''}
-                      </td>
-                      <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                        {line.newLine ?? ''}
-                      </td>
-                      <td
-                        className={cn(
-                          'whitespace-pre px-2',
-                          line.kind === 'add' && 'text-success',
-                          line.kind === 'del' && 'text-danger',
-                        )}
-                      >
-                        {line.kind === 'add' ? '+' : line.kind === 'del' ? '-' : ' '}
-                        {line.text}
-                      </td>
-                    </tr>
-                  ))}
-                </>
+                  {hunk.lines.map((line, li) => {
+                    const anchor = lineAnchor(line);
+                    const lineComments = anchor
+                      ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
+                      : [];
+                    const isActive =
+                      anchor !== null &&
+                      activeAnchor !== null &&
+                      activeAnchor.side === anchor.side &&
+                      activeAnchor.lineNumber === anchor.lineNumber;
+                    return (
+                      <Fragment key={`hunk-${hi}-line-${li}`}>
+                        <tr
+                          className={cn(
+                            'group',
+                            line.kind === 'add' && 'bg-success/10',
+                            line.kind === 'del' && 'bg-danger/10',
+                          )}
+                        >
+                          <td className="w-6 select-none px-0.5 align-top">
+                            {canComment && anchor ? (
+                              <button
+                                type="button"
+                                onClick={() => onStartComment(anchor)}
+                                title="add comment on this line"
+                                aria-label="add comment on this line"
+                                className={cn(
+                                  'flex h-4 w-4 items-center justify-center rounded-sm bg-primary text-primary-foreground transition-opacity',
+                                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                                )}
+                              >
+                                <MessageSquarePlus size={9} aria-hidden />
+                              </button>
+                            ) : null}
+                          </td>
+                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                            {line.oldLine ?? ''}
+                          </td>
+                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                            {line.newLine ?? ''}
+                          </td>
+                          <td
+                            className={cn(
+                              'whitespace-pre px-2',
+                              line.kind === 'add' && 'text-success',
+                              line.kind === 'del' && 'text-danger',
+                            )}
+                          >
+                            {line.kind === 'add' ? '+' : line.kind === 'del' ? '-' : ' '}
+                            {line.text}
+                          </td>
+                        </tr>
+                        {lineComments.length > 0 ? (
+                          <tr>
+                            <td colSpan={4} className="bg-background px-3 py-2">
+                              <div className="flex flex-col gap-1.5">
+                                {lineComments.map((c) => (
+                                  <CommentItem
+                                    key={c.id}
+                                    comment={c}
+                                    onResolve={onResolve}
+                                    onDelete={onDelete}
+                                  />
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                        {isActive && anchor ? (
+                          <tr>
+                            <td colSpan={4} className="bg-background px-3 py-2">
+                              <InlineComposer
+                                onSubmit={(body) => onSubmitComment(anchor, body)}
+                                onCancel={onCancelComment}
+                              />
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </Fragment>
               ))}
             </tbody>
           </table>
         )}
       </div>
     </ScrollArea>
+  );
+}
+
+function InlineComposer({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (body: string) => void;
+  onCancel: () => void;
+}) {
+  const [body, setBody] = useState('');
+  return (
+    <div className="rounded-md border border-warning/30 bg-warning/5 p-2">
+      <Textarea
+        autoFocus
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="add a note for the agent (cmd/ctrl+enter to save)…"
+        className="text-xs"
+        autoGrow
+        maxRows={6}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          }
+          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            if (body.trim().length > 0) onSubmit(body.trim());
+          }
+        }}
+      />
+      <div className="mt-1.5 flex justify-end gap-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => body.trim().length > 0 && onSubmit(body.trim())}
+          disabled={body.trim().length === 0}
+          className="rounded-sm bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+        >
+          save
+        </button>
+      </div>
+    </div>
   );
 }

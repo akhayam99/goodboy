@@ -46,15 +46,11 @@ function buildLayout(opts: {
       templateColumns: `${leftCol} 6px minmax(0,1fr)`,
     };
   }
-  if (collapsed) {
-    return {
-      templateAreas: `"left lhandle main right"`,
-      templateColumns: `${leftCol} 6px minmax(0,1fr) ${RIGHT_RAIL_WIDTH}px`,
-    };
-  }
   return {
     templateAreas: `"left lhandle main rhandle right"`,
-    templateColumns: `${leftCol} 6px minmax(0,1fr) 6px ${rightWidthPx}px`,
+    templateColumns: `${leftCol} 6px minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
+      collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
+    }px`,
   };
 }
 
@@ -172,7 +168,10 @@ export function AppShell({
   return (
     <div className="h-screen w-screen bg-background">
       <div
-        className={cn('grid h-full w-full overflow-hidden text-foreground', className)}
+        className={cn(
+          'grid h-full w-full overflow-hidden text-foreground transition-[grid-template-columns] duration-200 ease-out',
+          className,
+        )}
         style={gridStyle}
       >
         <aside
@@ -199,15 +198,18 @@ export function AppShell({
         >
           {main}
         </main>
-        {hasRightSidebar && !rightSidebarCollapsed ? (
+        {hasRightSidebar ? (
           <div
             role="separator"
             aria-orientation="vertical"
             aria-label="resize right sidebar"
-            tabIndex={0}
-            onMouseDown={startDrag('right')}
-            onKeyDown={onRightKeyDown}
-            className="group relative cursor-col-resize select-none"
+            tabIndex={rightSidebarCollapsed ? -1 : 0}
+            onMouseDown={rightSidebarCollapsed ? undefined : startDrag('right')}
+            onKeyDown={rightSidebarCollapsed ? undefined : onRightKeyDown}
+            className={cn(
+              'group relative select-none overflow-hidden',
+              rightSidebarCollapsed ? 'pointer-events-none' : 'cursor-col-resize',
+            )}
             style={{ gridArea: 'rhandle' }}
           >
             <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
@@ -216,7 +218,7 @@ export function AppShell({
         {hasRightSidebar ? (
           <aside
             className={cn(
-              'flex min-h-0 min-w-0 flex-col overflow-hidden',
+              'flex min-h-0 min-w-0 flex-col overflow-hidden transition-[margin,background-color,border-radius,box-shadow] duration-200 ease-out',
               rightSidebarCollapsed
                 ? 'mr-3 mt-3 bg-background'
                 : 'm-3 rounded-xl bg-subtle shadow-sm',

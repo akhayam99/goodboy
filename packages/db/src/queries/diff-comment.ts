@@ -1,0 +1,81 @@
+import type {
+  DiffComment,
+  DiffCommentAnchor,
+  DiffCommentSide,
+  DiffCommentStatus,
+  IsoDateTime,
+  TaskId,
+} from '@kay-am/types';
+import type { Database } from '../client';
+
+interface DiffCommentRow {
+  id: string;
+  task_id: string;
+  file_path: string;
+  body: string;
+  status: string;
+  created_at: number;
+  resolved_at: number | null;
+  line_number: number | null;
+  line_side: string | null;
+}
+
+function toDomain(row: DiffCommentRow): DiffComment {
+  const anchor: DiffCommentAnchor | undefined =
+    row.line_number !== null && row.line_side !== null
+      ? { lineNumber: row.line_number, side: row.line_side as DiffCommentSide }
+      : undefined;
+  return {
+    id: row.id,
+    taskId: row.task_id as TaskId,
+    filePath: row.file_path,
+    body: row.body,
+    status: row.status as DiffCommentStatus,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    resolvedAt:
+      row.resolved_at !== null
+        ? (new Date(row.resolved_at).toISOString() as IsoDateTime)
+        : undefined,
+    anchor,
+  };
+}
+
+export async function insertDiffComment(
+  db: Database,
+  id: string,
+  taskId: TaskId,
+  filePath: string,
+  body: string,
+  anchor?: DiffCommentAnchor,
+): Promise<void> {
+  await db.execute(
+    `INSERT INTO diff_comments (id, task_id, file_path, body, status, created_at, line_number, line_side)
+     VALUES (?, ?, ?, ?, 'open', ?, ?, ?)`,
+    [id, taskId, filePath, body, Date.now(), anchor?.lineNumber ?? null, anchor?.side ?? null],
+  );
+}
+
+export async function listDiffCommentsForTask(
+  db: Database,
+  taskId: TaskId,
+): Promise<ReadonlyArray<DiffComment>> {
+  const rows = await db.select<DiffCommentRow>(
+    `SELECT id, task_id, file_path, body, status, created_at, resolved_at, line_number, line_side
+     FROM diff_comments
+     WHERE task_id = ?
+     ORDER BY created_at ASC`,
+    [taskId],
+  );
+  return rows.map(toDomain);
+}
+
+export async function resolveDiffComment(db: Database, id: string): Promise<void> {
+  await db.execute(`UPDATE diff_comments SET status = 'resolved', resolved_at = ? WHERE id = ?`, [
+    Date.now(),
+    id,
+  ]);
+}
+
+export async function deleteDiffComment(db: Database, id: string): Promise<void> {
+  await db.execute(`DELETE FROM diff_comments WHERE id = ?`, [id]);
+}

@@ -28,6 +28,14 @@ export interface DialogProps {
    * The fixed height yields when the viewport is too small to hold it.
    */
   fixedHeightClass?: string;
+  /**
+   * Override the body wrapper classes. Default: `gap-4 px-6 py-5`.
+   * Pass `''` for full-bleed body (no padding/gap) — useful for full-width
+   * layouts like diff viewers with their own internal toolbars.
+   */
+  bodyClassName?: string;
+  /** When false, removes the bottom border under the header. Default: true. */
+  headerBordered?: boolean;
 }
 
 const SIZE: Record<DialogSize, string> = {
@@ -64,6 +72,8 @@ export function Dialog({
   initialFocusRef,
   fullScreenOnSmall = false,
   fixedHeightClass,
+  bodyClassName,
+  headerBordered = true,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
@@ -130,7 +140,12 @@ export function Dialog({
         )}
       >
         {title || description || showClose ? (
-          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border-soft px-6 py-4">
+          <header
+            className={cn(
+              'flex shrink-0 items-start justify-between gap-4 px-6 py-4',
+              headerBordered && 'border-b border-border-soft',
+            )}
+          >
             <div className="flex min-w-0 flex-col gap-1">
               {title ? (
                 <h2 id={titleId} className="text-sm font-semibold tracking-tight text-foreground">
@@ -157,7 +172,12 @@ export function Dialog({
             ) : null}
           </header>
         ) : null}
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 text-sm">
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 flex-col overflow-y-auto text-sm',
+            bodyClassName ?? 'gap-4 px-6 py-5',
+          )}
+        >
           {children}
         </div>
         {footer ? (

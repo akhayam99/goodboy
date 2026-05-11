@@ -163,6 +163,27 @@ pub fn worktree_list(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeErr
 }
 
 #[tauri::command]
+pub fn worktree_diff(
+    worktree_path: String,
+    base: Option<String>,
+) -> Result<String, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let user_base = base.unwrap_or_else(|| "main".to_string());
+    let candidates = [user_base.clone(), format!("origin/{user_base}")];
+    let resolved = candidates
+        .iter()
+        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
+        .map(|s| s.trim().to_string())
+        .ok_or_else(|| WorktreeError::Git {
+            message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
+        })?;
+    git(p, &["diff", &resolved])
+}
+
+#[tauri::command]
 pub fn worktree_exists(
     repo_path: String,
     branch_prefix: String,

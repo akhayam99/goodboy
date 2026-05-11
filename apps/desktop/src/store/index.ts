@@ -17,6 +17,7 @@ export {
   selectWorkspaces,
   useCurrentSession,
   useCurrentWorkspace,
+  useDiffComments,
   useSessionSlots,
   useSessionNextActions,
   useSlotHistory,

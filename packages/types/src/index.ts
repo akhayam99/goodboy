@@ -93,6 +93,12 @@ export type {
   PermissionRuleScope,
 } from './permission';
 export type {
+  DiffComment,
+  DiffCommentAnchor,
+  DiffCommentSide,
+  DiffCommentStatus,
+} from './diff-comment';
+export type {
   DiffHunk,
   DiffHunkLine,
   FileDiff,

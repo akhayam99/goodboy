@@ -4,6 +4,7 @@ import {
   PanelRightOpen,
   History,
   RotateCcw,
+  GitBranch,
   GitPullRequest,
   GitPullRequestDraft,
   GitMerge,
@@ -13,6 +14,12 @@ import {
   Loader2,
   Copy,
   X,
+  FileEdit,
+  Target,
+  CheckCheck,
+  HelpCircle,
+  Activity,
+  type LucideIcon,
 } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, Button, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
@@ -27,6 +34,7 @@ import type {
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useDiffComments,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
@@ -35,6 +43,7 @@ import { openUrl } from '../editor';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { NextActionChips } from './NextActionChips';
+import { worktreeDiff } from '../worktree';
 
 interface ContextPanelProps {
   session: Task;
@@ -73,7 +82,36 @@ export function ContextPanel({
     return { inputTokens, outputTokens, estimatedCostUsd, count };
   }, [sessionTelemetry]);
 
-  const slotsByKey = new Map<string, ContextSlot>(slots.map((s) => [s.key, s]));
+  const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+
+  const slotsByKey = new Map<string, ContextSlot>(
+    slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
+  );
+
+  const visibleSlotKeys = useMemo(() => SLOT_KEYS.filter((k) => k !== 'files_touched'), []);
+
+  const filesTouchedCount = useMemo(() => {
+    const slot = slotsByKey.get('files_touched');
+    if (!slot || slot.value.length === 0) return 0;
+    return slot.value.split('\n').filter((l) => l.trim().length > 0).length;
+  }, [slotsByKey]);
+
+  const [filesDiffOpen, setFilesDiffOpen] = useState(false);
+  const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);
+  const filesDiffLoader = useCallback(
+    () => (workingDir ? worktreeDiff(workingDir) : Promise.resolve('')),
+    [workingDir],
+  );
+  const diffComments = useDiffComments(session.id);
+  const openNotesCount = useMemo(
+    () => diffComments.filter((c) => c.status === 'open').length,
+    [diffComments],
+  );
+  const loadDiffComments = useAppStore((s) => s.loadDiffComments);
+
+  useEffect(() => {
+    void loadDiffComments(session.id);
+  }, [session.id, loadDiffComments]);
 
   return (
     <>
@@ -98,53 +136,115 @@ export function ContextPanel({
         </button>
       </div>
 
-      <ScrollArea className={cn('h-full', collapsed && 'hidden')}>
-        <div className="flex flex-col gap-4 p-4">
-          <header className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              context
-            </span>
-            <div className="flex items-center gap-1">
-              <SummarizerBadge
-                status={summarizer.status}
-                lastUpdate={summarizer.lastUpdate}
-                error={summarizer.error}
-                totals={summarizerTotals}
-              />
-              {onCollapse ? (
-                <button
-                  type="button"
-                  onClick={onCollapse}
-                  title="hide context panel"
-                  aria-label="hide context panel"
-                  className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
-                >
-                  <PanelRightClose size={13} aria-hidden />
-                </button>
-              ) : null}
-            </div>
-          </header>
-
-          <GitHubSection session={session} />
-
-          <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
-
-          <ul className="flex flex-col gap-4">
-            {SLOT_KEYS.map((key) => {
-              const slot = slotsByKey.get(key);
-              return (
-                <SlotRow
-                  key={key}
-                  taskId={session.id}
-                  slotKey={key}
-                  slot={slot}
-                  onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+      <div className={cn('flex h-full min-h-0 flex-col', collapsed && 'hidden')}>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="flex flex-col gap-4 p-4">
+            <header className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                context
+              </span>
+              <div className="flex items-center gap-1">
+                <SummarizerBadge
+                  status={summarizer.status}
+                  lastUpdate={summarizer.lastUpdate}
+                  error={summarizer.error}
+                  totals={summarizerTotals}
                 />
-              );
-            })}
-          </ul>
+                {onCollapse ? (
+                  <button
+                    type="button"
+                    onClick={onCollapse}
+                    title="hide context panel"
+                    aria-label="hide context panel"
+                    className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    <PanelRightClose size={13} aria-hidden />
+                  </button>
+                ) : null}
+              </div>
+            </header>
+
+            <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
+
+            <ul className="flex flex-col gap-6">
+              {visibleSlotKeys.map((key) => {
+                const slot = slotsByKey.get(key);
+                return (
+                  <SlotRow
+                    key={key}
+                    taskId={session.id}
+                    slotKey={key}
+                    slot={slot}
+                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                  />
+                );
+              })}
+            </ul>
+          </div>
+        </ScrollArea>
+
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border-soft px-3 py-3">
+          <GitHubSection session={session} />
+          <button
+            type="button"
+            onClick={() => {
+              setFilesDiffJumpToNotes(false);
+              setFilesDiffOpen(true);
+            }}
+            disabled={filesTouchedCount === 0 || !workingDir}
+            className={cn(
+              'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+              filesTouchedCount === 0 || !workingDir
+                ? 'cursor-not-allowed text-muted-foreground/50'
+                : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+            )}
+            title={
+              filesTouchedCount === 0
+                ? 'no files touched yet'
+                : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`
+            }
+          >
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <FileEdit size={11} aria-hidden />
+              <span className="truncate">
+                {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+              </span>
+              {openNotesCount > 0 ? (
+                <>
+                  <span aria-hidden className="opacity-40">
+                    ·
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFilesDiffJumpToNotes(true);
+                      setFilesDiffOpen(true);
+                    }}
+                    className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
+                    title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
+                  >
+                    {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
+                  </button>
+                </>
+              ) : null}
+            </span>
+            <span aria-hidden className="opacity-60">
+              ↗
+            </span>
+          </button>
         </div>
-      </ScrollArea>
+      </div>
+
+      <DiffViewerDialog
+        open={filesDiffOpen}
+        onClose={() => setFilesDiffOpen(false)}
+        taskId={session.id}
+        title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
+        loader={filesDiffLoader}
+        workingDir={workingDir ?? undefined}
+        jumpToFirstCommented={filesDiffJumpToNotes}
+      />
     </>
   );
 }
@@ -241,7 +341,8 @@ function GitHubSection({ session }: { session: Task }) {
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <GitBranch size={11} aria-hidden className="text-provider-cursor" />
           github
         </span>
         <button
@@ -384,13 +485,58 @@ function GitHubSection({ session }: { session: Task }) {
         <DiffViewerDialog
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
+          taskId={session.id}
           repoSlug={repoSlug}
           prNumber={pr.number}
           cwd={workspace?.rootPath}
+          workingDir={workspace?.rootPath}
         />
       ) : null}
     </section>
   );
+}
+
+interface SlotMeta {
+  readonly icon: LucideIcon;
+  readonly iconClass: string;
+  readonly emphasis?: boolean;
+  readonly tintedWhenNonEmpty?: string;
+  readonly emptyLabel: string;
+}
+
+const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
+  goal: {
+    icon: Target,
+    iconClass: 'text-primary',
+    emphasis: true,
+    emptyLabel: 'no goal set',
+  },
+  decisions: {
+    icon: CheckCheck,
+    iconClass: 'text-success',
+    emptyLabel: 'no decisions yet',
+  },
+  open_questions: {
+    icon: HelpCircle,
+    iconClass: 'text-warning',
+    tintedWhenNonEmpty: 'border-l-2 border-warning bg-warning/5',
+    emptyLabel: 'no open questions',
+  },
+  last_output_summary: {
+    icon: Activity,
+    iconClass: 'text-info',
+    emptyLabel: 'no output yet',
+  },
+};
+
+function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
+  if (!workingDir || slot.value.length === 0) return slot;
+  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
+  const normalized = slot.value
+    .split('\n')
+    .map((p) => (p.startsWith(root) ? p.slice(root.length) : p))
+    .join('\n');
+  return normalized === slot.value ? slot : { ...slot, value: normalized };
 }
 
 interface SlotRowProps {
@@ -408,6 +554,10 @@ function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
 
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const history = useSlotHistory(taskId, slotKey);
+
+  const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
+  const Icon = meta?.icon;
+  const hasValue = value.length > 0;
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -434,7 +584,8 @@ function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
   return (
     <li className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
           {SLOT_LABELS[slotKey]}
         </label>
         <button
@@ -469,17 +620,25 @@ function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
           autoGrow
           maxRows={12}
         />
+      ) : !hasValue ? (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
+        >
+          {meta?.emptyLabel ?? 'empty — click to edit'}
+        </button>
       ) : (
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="whitespace-pre-wrap rounded-md border border-transparent bg-subtle px-2.5 py-2 text-left text-xs leading-relaxed hover:border-border-soft hover:bg-muted/40"
-        >
-          {value.length > 0 ? (
-            value
-          ) : (
-            <span className="italic text-muted-foreground">empty — click to edit</span>
+          className={cn(
+            'whitespace-pre-wrap break-all rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40',
+            meta?.emphasis ? 'bg-subtle text-sm font-medium' : 'bg-subtle text-xs',
+            meta?.tintedWhenNonEmpty,
           )}
+        >
+          {value}
         </button>
       )}
 

@@ -102,6 +102,37 @@ pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), Editor
     }
 }
 
+/// Opens a single file inside an existing workspace window of the editor.
+/// For VS Code / Cursor this means passing the workspace path first so the
+/// existing window is focused, then `-g <file>` to navigate to the file —
+/// avoiding the "new standalone window per file" behavior of `open_in_editor`,
+/// which forces `--new-window`.
+#[tauri::command]
+pub fn open_file_in_workspace(
+    workspace_path: String,
+    file_path: String,
+    editor: Option<String>,
+) -> Result<(), EditorError> {
+    let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
+
+    let mut cmd = Command::new(&binary);
+    if binary == "code" || binary == "cursor" {
+        cmd.arg(&workspace_path);
+        cmd.arg("-g");
+        cmd.arg(&file_path);
+    } else {
+        cmd.arg(&file_path);
+    }
+
+    match cmd.spawn() {
+        Ok(_) => Ok(()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            Err(EditorError::NotFound(binary))
+        }
+        Err(source) => Err(EditorError::Spawn { binary, source }),
+    }
+}
+
 #[tauri::command]
 pub fn open_url(url: String) -> Result<(), String> {
     #[cfg(target_os = "macos")]
