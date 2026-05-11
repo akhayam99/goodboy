@@ -16,11 +16,20 @@ export const PROVIDER_TEXT: Record<ProviderId, string> = {
 export const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
 export type EffortLevel = (typeof EFFORT_LEVELS)[number];
 
+const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
+const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
+
+export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
+  if (/claude-opus/i.test(model)) return OPUS_EFFORT;
+  if (/claude-sonnet|claude-haiku/i.test(model)) return SONNET_EFFORT;
+  return null;
+}
+
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
-  'extra-high': 'Extra high',
+  'extra-high': 'Very high',
   max: 'Max',
 };
 
