@@ -4,8 +4,9 @@ import { Button, Dialog, Input, cn } from '@kay-am/ui';
 import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
+import { BulkSessionDeleteDialog } from './WorkspacesSidebar';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
-import { useAppStore } from '../store';
+import { useAppStore, useSessions } from '../store';
 
 interface WorkspaceSettingsDialogProps {
   workspaceId: WorkspaceId;
@@ -53,6 +54,8 @@ export function WorkspaceSettingsDialog({
   const saveSetting = useAppStore((s) => s.saveSetting);
 
   const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
+  const sessions = useSessions();
+  const workspaceSessions = sessions.filter((s) => s.workspaceId === workspaceId);
 
   const [active, setActive] = useState<Section>('general');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
@@ -60,14 +63,33 @@ export function WorkspaceSettingsDialog({
   const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setConfirmDisconnect(false);
     setDisconnecting(false);
+    setBulkDeleteOpen(false);
   }, [open]);
 
   const onDisconnect = async () => {
+    if (workspaceSessions.length > 0) {
+      setBulkDeleteOpen(true);
+      return;
+    }
+    setDisconnecting(true);
+    setError(null);
+    try {
+      await deleteWorkspace(workspaceId);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setDisconnecting(false);
+    }
+  };
+
+  const onBulkDeleted = async () => {
+    setBulkDeleteOpen(false);
     setDisconnecting(true);
     setError(null);
     try {
@@ -193,66 +215,75 @@ export function WorkspaceSettingsDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={workspaceName}
-      description="Per-workspace defaults, skills, and workflow templates."
-      size="xl"
-      fixedHeightClass="h-[640px]"
-      fullScreenOnSmall
-      footer={
-        <>
-          {saveState === 'saved' ? (
-            <span className="mr-auto text-xs text-success">saved.</span>
-          ) : null}
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={onClose}>
-            close
-          </Button>
-          {needsSave ? (
-            <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
-              {saveState === 'saving' ? 'saving…' : 'save'}
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title={workspaceName}
+        description="Per-workspace defaults, skills, and workflow templates."
+        size="xl"
+        fixedHeightClass="h-[640px]"
+        fullScreenOnSmall
+        footer={
+          <>
+            {saveState === 'saved' ? (
+              <span className="mr-auto text-xs text-success">saved.</span>
+            ) : null}
+            {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+            <Button variant="ghost" onClick={onClose}>
+              close
             </Button>
-          ) : null}
-        </>
-      }
-    >
-      <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActive(item.id)}
-              className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
-                active === item.id
-                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-              {item.beta ? <BetaChip /> : null}
-            </button>
-          ))}
-          <div className="mt-auto pt-3">
-            <button
-              type="button"
-              onClick={() => setActive('danger')}
-              className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
-                active === 'danger'
-                  ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
-                  : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
-              }`}
-            >
-              {DANGER_NAV.icon}
-              <span>{DANGER_NAV.label}</span>
-            </button>
-          </div>
-        </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
-      </div>
-    </Dialog>
+            {needsSave ? (
+              <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
+                {saveState === 'saving' ? 'saving…' : 'save'}
+              </Button>
+            ) : null}
+          </>
+        }
+      >
+        <div className="flex h-full min-h-0 gap-0">
+          <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActive(item.id)}
+                className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                  active === item.id
+                    ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+                {item.beta ? <BetaChip /> : null}
+              </button>
+            ))}
+            <div className="mt-auto pt-3">
+              <button
+                type="button"
+                onClick={() => setActive('danger')}
+                className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                  active === 'danger'
+                    ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
+                    : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
+                }`}
+              >
+                {DANGER_NAV.icon}
+                <span>{DANGER_NAV.label}</span>
+              </button>
+            </div>
+          </nav>
+          <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
+        </div>
+      </Dialog>
+      <BulkSessionDeleteDialog
+        workspaceId={workspaceId}
+        workspaceName={workspaceName}
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onDeleted={() => void onBulkDeleted()}
+      />
+    </>
   );
 }

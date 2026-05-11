@@ -140,6 +140,7 @@ function buildSession() {
     providerPreference: { defaultProvider: 'anthropic' as const, allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
+    titleUserEdited: false,
     createdAt: AT,
     updatedAt: AT,
   };

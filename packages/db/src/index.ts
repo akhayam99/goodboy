@@ -16,6 +16,7 @@ export {
   updateTaskState,
   updateTaskPermissionMode,
   updateTaskAutoRun,
+  updateTaskTitleUserEdited,
   getTaskById,
   listTasksForWorkspace,
   renameTask,

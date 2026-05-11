@@ -115,6 +115,7 @@ function makeSession() {
     permissionMode: 'bypassPermissions' as const,
     workflowId: TEMPLATE_ID,
     autoRun: false,
+    titleUserEdited: false,
     createdAt: NOW,
     updatedAt: NOW,
   };

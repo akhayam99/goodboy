@@ -157,6 +157,7 @@ function buildSession(): Task {
     },
     permissionMode: 'bypassPermissions',
     autoRun: false,
+    titleUserEdited: false,
     createdAt: now,
     updatedAt: now,
   };

@@ -23,6 +23,7 @@ interface TaskRow {
   workflow_id: string | null;
   current_step_ordinal: number | null;
   auto_run: number;
+  title_user_edited: number;
   created_at: number;
   updated_at: number;
 }
@@ -69,6 +70,7 @@ function toDomain(row: TaskRow, contextSlots: Task['contextSlots']): Task {
     ...(row.workflow_id && { workflowId: row.workflow_id as WorkflowId }),
     ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
     autoRun: row.auto_run !== 0,
+    titleUserEdited: row.title_user_edited !== 0,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -83,8 +85,8 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
   const { kind, payload } = splitState(task.state);
   await db.execute(
     `INSERT INTO tasks
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, title_user_edited, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       task.id,
       task.workspaceId,
@@ -97,6 +99,7 @@ export async function insertTask(db: Database, task: Task): Promise<void> {
       task.workflowId ?? null,
       task.currentStepOrdinal ?? null,
       task.autoRun ? 1 : 0,
+      task.titleUserEdited ? 1 : 0,
       Date.parse(task.createdAt),
       Date.parse(task.updatedAt),
     ],
@@ -111,6 +114,19 @@ export async function updateTaskAutoRun(
 ): Promise<void> {
   await db.execute('UPDATE tasks SET auto_run = ?, updated_at = ? WHERE id = ?', [
     autoRun ? 1 : 0,
+    Date.parse(updatedAt),
+    id,
+  ]);
+}
+
+export async function updateTaskTitleUserEdited(
+  db: Database,
+  id: TaskId,
+  titleUserEdited: boolean,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute('UPDATE tasks SET title_user_edited = ?, updated_at = ? WHERE id = ?', [
+    titleUserEdited ? 1 : 0,
     Date.parse(updatedAt),
     id,
   ]);
@@ -165,12 +181,12 @@ export async function renameTask(
   id: TaskId,
   goal: string,
   updatedAt: IsoDateTime,
+  titleUserEdited = true,
 ): Promise<void> {
-  await db.execute('UPDATE tasks SET goal = ?, updated_at = ? WHERE id = ?', [
-    goal,
-    Date.parse(updatedAt),
-    id,
-  ]);
+  await db.execute(
+    'UPDATE tasks SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
+    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
+  );
 }
 
 export async function deleteTask(db: Database, id: TaskId): Promise<void> {

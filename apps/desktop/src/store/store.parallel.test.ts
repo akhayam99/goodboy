@@ -169,6 +169,7 @@ function buildSession(): Task {
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
+    titleUserEdited: false,
     workflowId: TEMPLATE_ID,
     createdAt: now,
     updatedAt: now,
