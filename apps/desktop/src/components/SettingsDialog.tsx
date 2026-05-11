@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Bot, Cpu, DollarSign, FileDown, FolderCode, GitFork, Lock, Trash2 } from 'lucide-react';
+import { Bot, Cpu, DollarSign, FileDown, FolderCode, GitFork, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
-import { PermissionsPanel } from './PermissionsPanel';
 import { GithubPanel } from './GithubPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
@@ -32,7 +31,6 @@ type NavSection =
   | 'providers'
   | 'budget'
   | 'agent'
-  | 'permissions'
   | 'github'
   | 'initialization'
   | 'advanced';
@@ -51,7 +49,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'providers', label: 'PROVIDERS', icon: <Cpu size={14} aria-hidden /> },
   { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden />, beta: true },
   { id: 'agent', label: 'AGENT', icon: <Bot size={14} aria-hidden />, beta: true },
-  { id: 'permissions', label: 'PERMISSIONS', icon: <Lock size={14} aria-hidden />, beta: true },
   { id: 'github', label: 'GITHUB', icon: <GitFork size={14} aria-hidden /> },
   { id: 'initialization', label: 'INITIALIZATION', icon: <Trash2 size={14} aria-hidden /> },
   { id: 'advanced', label: 'ADVANCED', icon: <FileDown size={14} aria-hidden /> },
@@ -63,7 +60,6 @@ function isNavSection(value: string | undefined): value is NavSection {
     value === 'providers' ||
     value === 'budget' ||
     value === 'agent' ||
-    value === 'permissions' ||
     value === 'github' ||
     value === 'initialization' ||
     value === 'advanced'
@@ -244,8 +240,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
             </Field>
           </div>
         );
-      case 'permissions':
-        return <PermissionsPanel scope="global" />;
       case 'github':
         return <GithubPanel />;
       case 'initialization':

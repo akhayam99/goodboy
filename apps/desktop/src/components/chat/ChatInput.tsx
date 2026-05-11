@@ -6,8 +6,8 @@ import {
   useMemo,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { Send, ShieldCheck, Square, X } from 'lucide-react';
-import { Textarea, Tooltip } from '@kay-am/ui';
+import { Send, Square, X } from 'lucide-react';
+import { Textarea } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -22,14 +22,11 @@ import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
-import { useEffectivePermissionRules } from '../../permissions';
 import { type VerbosityLevel, readVerbosity, writeVerbosity } from '../../verbosity';
 import { EFFORT_LEVELS, type EffortLevel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
-import { PreflightPill } from './PreflightPill';
 import { ModelPicker } from './ModelPicker';
 import { PermissionModePicker } from './PermissionModePicker';
-import { SessionPermissionsPanel } from './SessionPermissionsPanel';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -133,10 +130,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );
 
-  const effectiveRules = useEffectivePermissionRules({
-    taskId: session.id,
-    workspaceId: session.workspaceId,
-  });
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +142,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
-  const [permOpen, setPermOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
@@ -342,12 +334,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         ) : null}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <PreflightPill
-              provider={effectiveProvider}
-              rules={effectiveRules}
-              taskId={session.id}
-              workspaceId={session.workspaceId}
-            />
             {queued ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
                 queued
@@ -384,16 +370,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               onSelectEffort={setEffort}
               onSelectVerbosity={setVerbosity}
             />
-            <Tooltip content="permissions" side="top">
-              <button
-                type="button"
-                onClick={() => setPermOpen((v) => !v)}
-                aria-label="permissions"
-                className="inline-flex items-center justify-center rounded-full bg-subtle px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ShieldCheck size={13} aria-hidden />
-              </button>
-            </Tooltip>
           </div>
         </div>
         <div className="relative" ref={wrapperRef}>
@@ -452,15 +428,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           </p>
         ) : null}
       </div>
-      {permOpen ? (
-        <SessionPermissionsPanel
-          taskId={session.id}
-          agentId={selectedAgentId}
-          workspaceId={session.workspaceId}
-          open={permOpen}
-          onClose={() => setPermOpen(false)}
-        />
-      ) : null}
     </div>
   );
 }

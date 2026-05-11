@@ -112,6 +112,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
   font-size: 15px;
   line-height: 1.55;
   background: var(--color-background);

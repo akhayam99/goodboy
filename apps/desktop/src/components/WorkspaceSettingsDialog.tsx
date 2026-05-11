@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@kay-am/types';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
-import { FolderCode, GitBranch, Lock, Unplug, Zap } from 'lucide-react';
+import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
-import { PermissionsPanel } from './PermissionsPanel';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { useAppStore } from '../store';
 
@@ -15,7 +14,7 @@ interface WorkspaceSettingsDialogProps {
   onClose: () => void;
 }
 
-type Section = 'general' | 'skills' | 'phases' | 'permissions' | 'danger';
+type Section = 'general' | 'skills' | 'phases' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -28,7 +27,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'general', label: 'GENERAL', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'skills', label: 'SKILLS', icon: <Zap size={14} aria-hidden /> },
   { id: 'phases', label: 'WORKFLOWS', icon: <GitBranch size={14} aria-hidden />, beta: true },
-  { id: 'permissions', label: 'PERMISSIONS', icon: <Lock size={14} aria-hidden />, beta: true },
 ];
 
 const DANGER_NAV: NavItem = {
@@ -132,18 +130,6 @@ export function WorkspaceSettingsDialog({
         return <SkillsPanel workspaceId={workspaceId} />;
       case 'phases':
         return <PhasesPanel workspaceId={workspaceId} />;
-      case 'permissions':
-        return (
-          <div className="flex flex-col gap-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              PERMISSIONS FOR THIS WORKSPACE
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              rules here apply to all sessions in this workspace and override global defaults.
-            </p>
-            <PermissionsPanel scope={{ kind: 'workspace', id: workspaceId }} />
-          </div>
-        );
       case 'danger':
         return (
           <div className="flex flex-col gap-5">
