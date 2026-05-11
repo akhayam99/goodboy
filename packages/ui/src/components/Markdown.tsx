@@ -1,5 +1,90 @@
 import { type ReactNode } from 'react';
+import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+
+interface CtxTagStyle {
+  readonly icon: LucideIcon;
+  readonly label: string;
+  readonly iconClass: string;
+  readonly chipClass: string;
+  readonly calloutClass: string;
+  readonly calloutLabelClass: string;
+}
+
+const CTX_DEFAULT: CtxTagStyle = {
+  icon: Activity,
+  label: '',
+  iconClass: 'text-muted-foreground',
+  chipClass: 'bg-muted text-muted-foreground',
+  calloutClass: 'border-border-soft bg-muted/40',
+  calloutLabelClass: 'text-muted-foreground',
+};
+
+const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
+  [
+    /^(ctx-?)?goal$/i,
+    {
+      icon: Target,
+      label: 'goal',
+      iconClass: 'text-primary',
+      chipClass: 'bg-primary/10 text-primary',
+      calloutClass: 'border-primary/20 bg-primary/5',
+      calloutLabelClass: 'text-primary',
+    },
+  ],
+  [
+    /^(ctx-?)?(decision|decisions)$/i,
+    {
+      icon: CheckCheck,
+      label: 'decision',
+      iconClass: 'text-success',
+      chipClass: 'bg-success/10 text-success',
+      calloutClass: 'border-success/20 bg-success/5',
+      calloutLabelClass: 'text-success',
+    },
+  ],
+  [
+    /^(ctx-?)?(question|questions|open-?questions)$/i,
+    {
+      icon: HelpCircle,
+      label: 'question',
+      iconClass: 'text-warning',
+      chipClass: 'bg-warning/10 text-warning',
+      calloutClass: 'border-warning/25 bg-warning/5',
+      calloutLabelClass: 'text-warning',
+    },
+  ],
+  [
+    /^(ctx-?)?(output|last-?output|last-?output-?summary|summary)$/i,
+    {
+      icon: Activity,
+      label: 'output',
+      iconClass: 'text-info',
+      chipClass: 'bg-info/10 text-info',
+      calloutClass: 'border-info/20 bg-info/5',
+      calloutLabelClass: 'text-info',
+    },
+  ],
+  [
+    /^(ctx-?)?(files?|files-?touched)$/i,
+    {
+      icon: FileEdit,
+      label: 'files',
+      iconClass: 'text-info',
+      chipClass: 'bg-info/10 text-info',
+      calloutClass: 'border-info/20 bg-info/5',
+      calloutLabelClass: 'text-info',
+    },
+  ],
+];
+
+function ctxStyleForTag(tag: string): CtxTagStyle {
+  const stripped = tag.replace(/^ctx-?/i, '');
+  for (const [re, style] of CTX_TAG_STYLES) {
+    if (re.test(tag) || re.test(stripped)) return style;
+  }
+  return { ...CTX_DEFAULT, label: stripped || tag };
+}
 
 // ---------------------------------------------------------------------------
 // Minimal markdown renderer for assistant output.
@@ -259,12 +344,18 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         const inner = input.slice(i + 2, close);
         if (/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(inner)) {
           flush();
-          const label = inner.replace(/^ctx-?/i, '') || inner;
+          const style = ctxStyleForTag(inner);
+          const Icon = style.icon;
+          const label = style.label || inner.replace(/^ctx-?/i, '') || inner;
           out.push(
             <span
               key={nextKey()}
-              className="mx-0.5 inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide text-primary"
+              className={cn(
+                'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
+                style.chipClass,
+              )}
             >
+              <Icon size={10} aria-hidden />
               {label}
             </span>,
           );
@@ -283,12 +374,18 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         if (ctxMatch) {
           flush();
           const tag = ctxMatch[1]!;
-          const label = tag.replace(/^ctx-?/i, '') || tag;
+          const style = ctxStyleForTag(tag);
+          const Icon = style.icon;
+          const label = style.label || tag.replace(/^ctx-?/i, '') || tag;
           out.push(
             <span
               key={nextKey()}
-              className="mx-0.5 inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide text-primary"
+              className={cn(
+                'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
+                style.chipClass,
+              )}
             >
+              <Icon size={10} aria-hidden />
               {label}
             </span>,
           );
@@ -491,14 +588,21 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     }
     case 'callout': {
-      // Strip the `ctx-` prefix for the chip label so "ctx-decision" → "decision".
-      const label = block.tag.replace(/^ctx-?/i, '') || block.tag;
+      const style = ctxStyleForTag(block.tag);
+      const Icon = style.icon;
+      const label = style.label || block.tag.replace(/^ctx-?/i, '') || block.tag;
       return (
-        <div key={key} className="rounded-md border border-border-soft bg-muted/40 p-3 text-sm">
-          <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div key={key} className={cn('rounded-md border p-3 text-sm', style.calloutClass)}>
+          <div
+            className={cn(
+              'mb-1 inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide',
+              style.calloutLabelClass,
+            )}
+          >
+            <Icon size={11} aria-hidden className={style.iconClass} />
             {label}
           </div>
-          <div className="whitespace-pre-wrap leading-relaxed">
+          <div className="whitespace-pre-wrap leading-relaxed text-foreground/90">
             {renderInline(block.content, key)}
           </div>
         </div>

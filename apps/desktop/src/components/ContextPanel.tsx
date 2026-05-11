@@ -92,7 +92,29 @@ export function ContextPanel({
   const visibleSlotKeys = useMemo(() => SLOT_KEYS.filter((k) => k !== 'files_touched'), []);
 
   const filesTouched = useFilesTouched(session.id);
-  const filesTouchedCount = filesTouched.count;
+  const [diffFilesCount, setDiffFilesCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!workingDir) {
+      setDiffFilesCount(null);
+      return;
+    }
+    let cancelled = false;
+    worktreeDiff(workingDir)
+      .then((diff) => {
+        if (cancelled) return;
+        const matches = diff.match(/^diff --git /gm);
+        setDiffFilesCount(matches?.length ?? 0);
+      })
+      .catch(() => {
+        if (!cancelled) setDiffFilesCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workingDir, filesTouched.count]);
+
+  const filesTouchedCount = diffFilesCount ?? filesTouched.count;
 
   const [filesDiffOpen, setFilesDiffOpen] = useState(false);
   const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);

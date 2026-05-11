@@ -6,13 +6,13 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", monospace;
 
   /* Dark palette (default) — soft desaturated darks, lifted black base. */
-  --color-background: oklch(0.15 0.006 255);
-  --color-foreground: oklch(0.92 0.006 90);
-  --color-subtle: oklch(0.19 0.008 255);
-  --color-muted: oklch(0.24 0.010 255);
-  --color-muted-foreground: oklch(0.62 0.015 255);
-  --color-border: oklch(0.30 0.012 255);
-  --color-border-soft: oklch(0.22 0.010 255);
+  --color-background: oklch(0.25 0.006 255);
+  --color-foreground: oklch(0.91 0.006 90);
+  --color-subtle: oklch(0.29 0.008 255);
+  --color-muted: oklch(0.33 0.010 255);
+  --color-muted-foreground: oklch(0.68 0.015 255);
+  --color-border: oklch(0.40 0.012 255);
+  --color-border-soft: oklch(0.32 0.010 255);
 
   /* Brand accent — teal/cyan. */
   --color-primary: oklch(0.74 0.11 200);
@@ -45,9 +45,18 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.35);
-  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.45);
-  --shadow-lg: 0 12px 32px -8px oklch(0 0 0 / 0.55);
+  /* Dark shadows — subtle drop + faint inner highlight to lift cards on dark bg. */
+  --shadow-sm:
+    0 1px 2px 0 oklch(0 0 0 / 0.28),
+    inset 0 1px 0 0 oklch(1 0 0 / 0.03);
+  --shadow-md:
+    0 6px 16px -4px oklch(0 0 0 / 0.44),
+    0 2px 4px -1px oklch(0 0 0 / 0.30),
+    inset 0 1px 0 0 oklch(1 0 0 / 0.04);
+  --shadow-lg:
+    0 18px 40px -10px oklch(0 0 0 / 0.52),
+    0 6px 12px -4px oklch(0 0 0 / 0.38),
+    inset 0 1px 0 0 oklch(1 0 0 / 0.05);
 
   --motion-fast: 100ms;
   --motion-normal: 200ms;
@@ -61,13 +70,13 @@
 
 /* Light cream palette — applied when html[data-theme="light"]. */
 html[data-theme="light"] {
-  --color-background: oklch(0.97 0.012 80);
-  --color-foreground: oklch(0.22 0.010 60);
-  --color-subtle: oklch(0.94 0.014 80);
-  --color-muted: oklch(0.90 0.016 80);
-  --color-muted-foreground: oklch(0.46 0.018 60);
-  --color-border: oklch(0.80 0.020 80);
-  --color-border-soft: oklch(0.88 0.016 80);
+  --color-background: oklch(0.90 0.003 250);
+  --color-foreground: oklch(0.23 0.004 250);
+  --color-subtle: oklch(0.87 0.003 250);
+  --color-muted: oklch(0.83 0.004 250);
+  --color-muted-foreground: oklch(0.46 0.005 250);
+  --color-border: oklch(0.71 0.005 250);
+  --color-border-soft: oklch(0.80 0.004 250);
   --color-primary: oklch(0.52 0.13 200);
   --color-primary-foreground: oklch(0.98 0.004 200);
   --color-danger: oklch(0.52 0.19 22);
@@ -82,6 +91,16 @@ html[data-theme="light"] {
   --color-provider-cursor: oklch(0.52 0.17 290);
   --color-provider-codex: oklch(0.50 0.15 148);
   --color-focus-ring: oklch(0.52 0.13 200 / 0.45);
+  /* Light shadows — softer, multi-layered for depth without harshness. */
+  --shadow-sm:
+    0 1px 2px 0 oklch(0 0 0 / 0.06),
+    0 1px 3px 0 oklch(0 0 0 / 0.08);
+  --shadow-md:
+    0 4px 12px -2px oklch(0 0 0 / 0.10),
+    0 2px 4px -1px oklch(0 0 0 / 0.08);
+  --shadow-lg:
+    0 16px 36px -8px oklch(0 0 0 / 0.14),
+    0 6px 12px -4px oklch(0 0 0 / 0.10);
   color-scheme: light;
 }
 

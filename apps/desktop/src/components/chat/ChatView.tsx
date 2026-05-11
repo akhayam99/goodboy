@@ -314,6 +314,7 @@ export function ChatView({ session }: ChatViewProps) {
     <div className="flex h-full flex-col">
       <ChatHeader session={session} worktreePath={worktreePath} />
       <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent" />
         <div
           ref={scrollerRef}
           onScroll={onScroll}
@@ -370,16 +371,10 @@ export function ChatView({ session }: ChatViewProps) {
                       lastDay = day;
                     }
                   }
-                  const isAssistantTurn = item.kind === 'assistant_text';
-                  const prevIsAssistant = prev?.kind === 'assistant_text';
-                  const showDivider = isAssistantTurn && prevIsAssistant;
                   node.push(
                     <li
                       key={item.key}
-                      className={cn(
-                        tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-8',
-                        showDivider && 'border-t border-border/40 pt-8',
-                      )}
+                      className={cn(tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-8')}
                     >
                       <TranscriptCard
                         item={item}
