@@ -59,6 +59,14 @@ export function PermissionScopePicker({
 
   const scopes: PermissionScope[] = ['global', 'workspace', 'task', 'once', 'deny'];
 
+  const SCOPE_TITLES: Record<PermissionScope, string> = {
+    global: 'allow for all sessions',
+    workspace: 'allow for this workspace',
+    task: 'allow for this task (recommended)',
+    once: 'allow this time only (not saved)',
+    deny: 'deny this request',
+  };
+
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
       {scopes.map((scope) => (
@@ -67,11 +75,14 @@ export function PermissionScopePicker({
           type="button"
           disabled={busy}
           onClick={() => void handle(scope)}
+          title={SCOPE_TITLES[scope]}
           className={cn(
             'rounded border px-2 py-0.5 text-2xs font-medium transition-colors',
-            scope === 'deny'
-              ? 'border-danger/40 text-danger hover:bg-danger/10'
-              : 'border-success/40 text-success hover:bg-success/10',
+            scope === 'task'
+              ? 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90'
+              : scope === 'deny'
+                ? 'border-danger/40 text-danger hover:bg-danger/10'
+                : 'border-success/40 text-success hover:bg-success/10',
             busy && 'cursor-not-allowed opacity-50',
           )}
         >
