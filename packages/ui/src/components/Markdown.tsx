@@ -422,17 +422,21 @@ function renderBlock(block: Block, idx: number): ReactNode {
     case 'list':
       if (block.ordered) {
         return (
-          <ol key={key} className="ml-5 list-decimal space-y-1">
+          <ol key={key} className="list-decimal space-y-1.5 pl-5">
             {block.items.map((item, j) => (
-              <li key={`${key}-${j}`}>{renderInline(item.content, `${key}-${j}`)}</li>
+              <li key={`${key}-${j}`} className="leading-relaxed">
+                {renderInline(item.content, `${key}-${j}`)}
+              </li>
             ))}
           </ol>
         );
       }
       return (
-        <ul key={key} className="ml-5 list-disc space-y-1">
+        <ul key={key} className="list-disc space-y-1.5 pl-5">
           {block.items.map((item, j) => (
-            <li key={`${key}-${j}`}>{renderInline(item.content, `${key}-${j}`)}</li>
+            <li key={`${key}-${j}`} className="leading-relaxed">
+              {renderInline(item.content, `${key}-${j}`)}
+            </li>
           ))}
         </ul>
       );

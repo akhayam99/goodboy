@@ -8,6 +8,8 @@ import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
 import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDialog';
+import { DiffViewerDialog } from '../DiffViewerDialog';
+import { worktreeDiff } from '../../worktree';
 
 interface ChatViewProps {
   session: Task;
@@ -41,10 +43,12 @@ interface ColumnProps {
   runId: ProviderRunId;
   index: number;
   events: ReturnType<typeof useTranscript>;
+  workingDir: string | null;
   onRefreshAuth: () => void;
+  onOpenDiff: (filePath: string) => void;
 }
 
-function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
+function ParallelColumn({ runId, index, events, workingDir, onRefreshAuth, onOpenDiff }: ColumnProps) {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
   const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
@@ -65,7 +69,12 @@ function ParallelColumn({ runId, index, events, onRefreshAuth }: ColumnProps) {
             <ul className="flex flex-col gap-4">
               {items.map((item) => (
                 <li key={item.key}>
-                  <TranscriptCard item={item} onRefreshAuth={onRefreshAuth} />
+                  <TranscriptCard
+                    item={item}
+                    workingDir={workingDir}
+                    onRefreshAuth={onRefreshAuth}
+                    onOpenDiff={onOpenDiff}
+                  />
                 </li>
               ))}
             </ul>
@@ -182,6 +191,15 @@ export function ChatView({ session }: ChatViewProps) {
   };
 
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
+  const diffLoader = useMemo(
+    () => (worktreePath ? () => worktreeDiff(worktreePath) : undefined),
+    [worktreePath],
+  );
+
+  const handleOpenDiff = (filePath: string) => {
+    setDiffJumpFile(filePath);
+  };
 
   // Derive MergeConflict[] from store — populated by parallel-turn scheduler
   // when manual resolution is required. Cast FileConflict to MergeConflict:
@@ -236,7 +254,9 @@ export function ChatView({ session }: ChatViewProps) {
               runId={runId}
               index={i}
               events={events}
+              workingDir={worktreePath}
               onRefreshAuth={() => void refreshProviders()}
+              onOpenDiff={handleOpenDiff}
             />
           ))}
         </div>
@@ -266,6 +286,15 @@ export function ChatView({ session }: ChatViewProps) {
         ) : (
           <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
         )}
+        <DiffViewerDialog
+          open={diffJumpFile !== null}
+          onClose={() => setDiffJumpFile(null)}
+          taskId={session.id}
+          title="worktree diff"
+          loader={diffLoader}
+          workingDir={worktreePath ?? undefined}
+          jumpToFile={diffJumpFile ?? undefined}
+        />
       </div>
     );
   }
@@ -345,7 +374,9 @@ export function ChatView({ session }: ChatViewProps) {
                         item={item}
                         taskId={session.id}
                         agentId={selectedAgentId}
+                        workingDir={worktreePath}
                         onRefreshAuth={() => void refreshProviders()}
+                        onOpenDiff={handleOpenDiff}
                       />
                     </li>,
                   );
@@ -381,6 +412,14 @@ export function ChatView({ session }: ChatViewProps) {
       ) : (
         <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
       )}
+      <DiffViewerDialog
+        open={diffJumpFile !== null}
+        onClose={() => setDiffJumpFile(null)}
+        taskId={session.id}
+        title="worktree diff"
+        loader={diffLoader}
+        workingDir={worktreePath ?? undefined}
+      />
     </div>
   );
 }
