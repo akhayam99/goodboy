@@ -25,14 +25,14 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'general', label: 'GENERAL', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'skills', label: 'SKILLS', icon: <Zap size={14} aria-hidden /> },
-  { id: 'phases', label: 'WORKFLOWS', icon: <GitBranch size={14} aria-hidden />, beta: true },
+  { id: 'general', label: 'General', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'skills', label: 'Skills', icon: <Zap size={14} aria-hidden /> },
+  { id: 'phases', label: 'Workflows', icon: <GitBranch size={14} aria-hidden />, beta: true },
 ];
 
 const DANGER_NAV: NavItem = {
   id: 'danger',
-  label: 'DISCONNECT',
+  label: 'Disconnect',
   icon: <Unplug size={14} aria-hidden />,
 };
 
@@ -132,8 +132,8 @@ export function WorkspaceSettingsDialog({
       case 'general':
         return (
           <div className="flex flex-col gap-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              WORKSPACE DEFAULTS
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground">
+              Workspace defaults
             </div>
             <div className="flex flex-col gap-1.5">
               <div className="text-xs font-semibold text-foreground">branch prefix</div>
@@ -156,9 +156,7 @@ export function WorkspaceSettingsDialog({
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-danger">
-                DANGER ZONE
-              </div>
+              <div className="text-xs font-semibold tracking-wide text-danger">Danger zone</div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 irreversible workspace actions.
               </p>

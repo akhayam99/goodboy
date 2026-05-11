@@ -21,7 +21,7 @@ const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra
 
 export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
   if (/claude-opus/i.test(model)) return OPUS_EFFORT;
-  if (/claude-sonnet|claude-haiku/i.test(model)) return SONNET_EFFORT;
+  if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
   return null;
 }
 
@@ -55,9 +55,10 @@ export const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'cursor-small': { weight: 4, tier: 'cheap' },
   'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
   'codex-mini-latest': { weight: 6, tier: 'cheap' },
-  'claude-sonnet-4-5': { weight: 15, tier: 'mid' },
+  'claude-sonnet-4-5': { weight: 14, tier: 'mid' },
   'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
   'codex-latest': { weight: 20, tier: 'mid' },
+  'claude-opus-4-6': { weight: 60, tier: 'expensive' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
 };
 

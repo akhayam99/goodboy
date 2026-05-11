@@ -6,7 +6,9 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
   anthropic: {
     models: [
       { id: 'claude-opus-4-7', tier: 'turn', contextWindow: 1_000_000 },
+      { id: 'claude-opus-4-6', tier: 'turn', contextWindow: 200_000 },
       { id: 'claude-sonnet-4-6', tier: 'turn', contextWindow: 200_000 },
+      { id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 },
       { id: 'claude-haiku-4-5', tier: 'cheap', contextWindow: 200_000 },
     ],
     supportsTools: true,

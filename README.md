@@ -167,7 +167,7 @@ Hover an agent row and click the **pencil** icon to rename it inline.
 
 Sidebar footer shows the providers chip (one dot per provider, color-coded) and the telemetry pill (`$session · $workspace`). Click the pill for a per-model breakdown.
 
-The **bell icon** in the sidebar top opens the alert center for budget thresholds and other warnings.
+The **bell icon** in the sidebar top opens the notification center for budget thresholds and other warnings.
 
 ### 9. Archive or end the session
 
@@ -177,7 +177,7 @@ Sidebar kebab menu → **archive** moves a session out of the active list (still
 
 Two scopes:
 
-- **Global** (sidebar top → ⚙) — App / Providers / Budget / Agent / Permissions / Initialization / Advanced. Beta chips mark sections whose behaviour is not yet validated. **Initialization → Wipe local database** drops every workspace / session / agent / message in `~/.kay-am/data.db` and re-runs migrations on next boot. API keys in the OS keychain are not touched.
+- **Global** (sidebar top → ⚙) — App / Providers / Budget / Agent / Github / Advanced / Initialization. Beta chips mark sections whose behaviour is not yet validated. **Initialization → Wipe local database** drops every workspace / session / agent / message in `~/.kay-am/data.db` and re-runs migrations on next boot. API keys in the OS keychain are not touched.
 - **Per-workspace** (workspace row → ⚙ icon on hover) — General (branch prefix), Skills, Workflows (beta). Per-workspace settings stay scoped — the global dialog never shows them.
 
 ## Roadmap & contributing

@@ -196,7 +196,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   if (sidebarCollapsed) {
     return (
-      <div className="flex h-full min-h-0 flex-col items-center gap-1 px-1 py-2">
+      <div className="flex h-full min-h-0 flex-col items-center px-1 py-2.5">
         <button
           type="button"
           onClick={toggleSidebarCollapsed}
@@ -206,7 +206,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         >
           <KayAmLogo iconOnly />
         </button>
-        <div className="mt-auto flex flex-col items-center gap-1">
+        <div className="mt-auto flex flex-col items-center gap-2 border-t border-border-soft pt-3">
           <button
             type="button"
             onClick={toggleTheme}

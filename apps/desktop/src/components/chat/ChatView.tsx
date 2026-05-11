@@ -434,6 +434,7 @@ export function ChatView({ session }: ChatViewProps) {
         title="worktree diff"
         loader={diffLoader}
         workingDir={worktreePath ?? undefined}
+        jumpToFile={diffJumpFile ?? undefined}
       />
     </div>
   );

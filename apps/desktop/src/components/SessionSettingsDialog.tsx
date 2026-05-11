@@ -22,13 +22,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'general', label: 'GENERAL', icon: <Bot size={14} aria-hidden /> },
-  { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden /> },
+  { id: 'general', label: 'General', icon: <Bot size={14} aria-hidden /> },
+  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden /> },
 ];
 
 const DANGER_NAV: NavItem = {
   id: 'danger',
-  label: 'DELETE',
+  label: 'Delete',
   icon: <Trash2 size={14} aria-hidden />,
 };
 
@@ -129,9 +129,7 @@ export function SessionSettingsDialog({
       case 'general':
         return (
           <div className="flex flex-col gap-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              SESSION
-            </div>
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground">Session</div>
             <Field
               label="name"
               hint="display name for the session in the sidebar. to update the actual goal text the agent reads, use the context panel on the right."
@@ -172,8 +170,8 @@ export function SessionSettingsDialog({
       case 'budget':
         return (
           <div className="flex flex-col gap-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              SOFT CAP
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground">
+              Soft cap
             </div>
             <Field
               label="cap (usd)"
@@ -211,9 +209,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-danger">
-                DANGER ZONE
-              </div>
+              <div className="text-xs font-semibold tracking-wide text-danger">Danger zone</div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 permanent actions on this session.
               </p>
