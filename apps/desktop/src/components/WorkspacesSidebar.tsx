@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -83,6 +83,8 @@ import { useThemeStore } from '../theme';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 const PROVIDER_SHORT: Record<ProviderId, string> = {
@@ -102,31 +104,11 @@ const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor
 
 type SessionSort = 'updated' | 'alpha';
 
-const SIDEBAR_COLLAPSED_KEY = 'kayam:sidebar-collapsed';
-
-function useSidebarCollapsed(): [boolean, () => void] {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const toggle = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }, []);
-  return [collapsed, toggle];
-}
-
-export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
+export function WorkspacesSidebar({
+  onOpenSettings,
+  collapsed: sidebarCollapsed,
+  onToggleCollapsed: toggleSidebarCollapsed,
+}: WorkspacesSidebarProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
@@ -177,8 +159,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [archivedMap, archive, unarchive] = useArchivedTasks();
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
-
-  const [sidebarCollapsed, toggleSidebarCollapsed] = useSidebarCollapsed();
 
   const toggleStateFilter = (kind: TurnState['kind']) => {
     const next = sidebarStateFilter.includes(kind)

@@ -15,6 +15,15 @@ import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } 
 import { refreshPricingTable } from './providerPricing';
 
 const CONTEXT_PANEL_KEY = (id: TaskId): string => `kayam:context-panel-open:${id}`;
+const SIDEBAR_COLLAPSED_KEY = 'kayam:sidebar-collapsed';
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
   try {
@@ -48,6 +57,18 @@ export function App() {
   );
   const [endOpen, setEndOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<TaskId | null>(null);
@@ -110,7 +131,14 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
-        leftSidebar={<WorkspacesSidebar onOpenSettings={() => setSettingsOpen(true)} />}
+        leftSidebar={
+          <WorkspacesSidebar
+            onOpenSettings={() => setSettingsOpen(true)}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={toggleSidebarCollapsed}
+          />
+        }
+        leftSidebarCollapsed={sidebarCollapsed}
         main={
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>

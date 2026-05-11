@@ -3,6 +3,7 @@ import { cn } from '../cn';
 
 export interface AppShellProps {
   leftSidebar: ReactNode;
+  leftSidebarCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -13,6 +14,7 @@ const LEFT_SIDEBAR_MIN = 220;
 const LEFT_SIDEBAR_MAX = 480;
 const LEFT_SIDEBAR_DEFAULT = 280;
 const LEFT_SIDEBAR_STORAGE_KEY = 'kayam:left-sidebar-width';
+const LEFT_RAIL_WIDTH = 68;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
@@ -31,6 +33,7 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 
 function buildLayout(opts: {
   collapsed: boolean;
+  leftCollapsed: boolean;
   hasRightSidebar: boolean;
   leftWidthPx: number;
   rightWidthPx: number;
@@ -38,8 +41,8 @@ function buildLayout(opts: {
   templateAreas: string;
   templateColumns: string;
 } {
-  const { collapsed, hasRightSidebar, leftWidthPx, rightWidthPx } = opts;
-  const leftCol = `${leftWidthPx}px`;
+  const { collapsed, leftCollapsed, hasRightSidebar, leftWidthPx, rightWidthPx } = opts;
+  const leftCol = `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
   if (!hasRightSidebar) {
     return {
       templateAreas: `"left lhandle main"`,
@@ -56,6 +59,7 @@ function buildLayout(opts: {
 
 export function AppShell({
   leftSidebar,
+  leftSidebarCollapsed = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
@@ -155,6 +159,7 @@ export function AppShell({
 
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
+    leftCollapsed: leftSidebarCollapsed,
     hasRightSidebar,
     leftWidthPx: leftWidth,
     rightWidthPx: rightWidth,
