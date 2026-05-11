@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Textarea, cn } from '@kay-am/ui';
+import { Button, Textarea } from '@kay-am/ui';
 import { PlannerClient, type PlannerOutput, defaultsForRole } from '@kay-am/core';
 import type {
   AgentEffort,
@@ -11,8 +11,9 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@kay-am/types';
+import type { VerbosityLevel } from '../verbosity';
 import { useAppStore } from '../store';
-import { shortModel } from '../agentRowFormat';
+import { StepOverrideRow, type StepOverrideValues } from './overrides/StepOverrideRow';
 
 interface PlannerWidgetProps {
   workspaceId: WorkspaceId;
@@ -21,13 +22,7 @@ interface PlannerWidgetProps {
   onWorkflowReady: (workflowId: WorkflowId) => void;
 }
 
-const SELECTABLE_MODELS = ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-7'] as const;
-const SELECTABLE_EFFORTS: AgentEffort[] = ['low', 'medium', 'high', 'extra-high', 'max'];
-
-interface StepOverride {
-  model: string;
-  effort: AgentEffort;
-}
+const DEFAULT_VERBOSITY: VerbosityLevel = 'essential';
 
 export function PlannerWidget({
   workspaceId,
@@ -39,7 +34,7 @@ export function PlannerWidget({
   const [theme, setTheme] = useState(initialTheme);
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
-  const [overrides, setOverrides] = useState<Record<number, StepOverride>>({});
+  const [overrides, setOverrides] = useState<Record<number, StepOverrideValues>>({});
   const [error, setError] = useState<string | null>(null);
 
   const onPlan = async () => {
@@ -52,10 +47,10 @@ export function PlannerWidget({
       const client = new PlannerClient({ providerId, invokeFn: invoke });
       const result = await client.plan({ theme: theme.trim() });
       setPlan(result.output);
-      const initial: Record<number, StepOverride> = {};
+      const initial: Record<number, StepOverrideValues> = {};
       result.output.steps.forEach((s, i) => {
         const d = defaultsForRole(s.role);
-        initial[i] = { model: d.model, effort: d.effort };
+        initial[i] = { model: d.model, effort: d.effort, verbosity: DEFAULT_VERBOSITY };
       });
       setOverrides(initial);
     } catch (err) {
@@ -73,7 +68,7 @@ export function PlannerWidget({
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_planner_${crypto.randomUUID()}` as WorkflowId;
       const steps: ReadonlyArray<Step> = plan.steps.map((s, ordinal) => {
-        const o = overrides[ordinal] ?? defaultsForRole(s.role);
+        const o = overrides[ordinal] ?? { ...defaultsForRole(s.role), verbosity: DEFAULT_VERBOSITY };
         return {
           id: `step_planner_${crypto.randomUUID()}` as StepId,
           workflowId,
@@ -81,7 +76,8 @@ export function PlannerWidget({
           name: s.name,
           promptPrefix: s.promptPrefix,
           modelOverride: o.model,
-          effort: o.effort,
+          effort: o.effort as AgentEffort,
+          verbosity: o.verbosity,
         };
       });
       const workflow: Workflow = {
@@ -159,46 +155,12 @@ export function PlannerWidget({
                     </p>
                   ) : null}
                   {ov ? (
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <select
-                        value={ov.model}
-                        onChange={(e) =>
-                          setOverrides((prev) => ({
-                            ...prev,
-                            [i]: { ...ov, model: e.target.value },
-                          }))
-                        }
-                        className={cn(
-                          'rounded border border-border-soft bg-background px-1.5 py-0.5 text-2xs text-foreground',
-                          'focus:outline-none focus:ring-1 focus:ring-primary',
-                        )}
-                      >
-                        {SELECTABLE_MODELS.map((m) => (
-                          <option key={m} value={m}>
-                            {shortModel(m)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={ov.effort}
-                        onChange={(e) =>
-                          setOverrides((prev) => ({
-                            ...prev,
-                            [i]: { ...ov, effort: e.target.value as AgentEffort },
-                          }))
-                        }
-                        className={cn(
-                          'rounded border border-border-soft bg-background px-1.5 py-0.5 text-2xs text-foreground',
-                          'focus:outline-none focus:ring-1 focus:ring-primary',
-                        )}
-                      >
-                        {SELECTABLE_EFFORTS.map((ef) => (
-                          <option key={ef} value={ef}>
-                            {ef}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <StepOverrideRow
+                      values={ov}
+                      onChange={(next) =>
+                        setOverrides((prev) => ({ ...prev, [i]: next }))
+                      }
+                    />
                   ) : null}
                 </li>
               );
@@ -212,3 +174,4 @@ export function PlannerWidget({
     </div>
   );
 }
+

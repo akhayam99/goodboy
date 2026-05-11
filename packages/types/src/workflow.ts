@@ -38,6 +38,7 @@ export type Step = Readonly<{
   providerOverride?: ProviderId;
   modelOverride?: string;
   effort?: AgentEffort;
+  verbosity?: 'essential' | 'minimal' | 'normal' | 'detailed' | 'verbose';
   parallelGroup?: number;
 }>;
 
