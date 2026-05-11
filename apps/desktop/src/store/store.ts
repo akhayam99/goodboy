@@ -8,7 +8,6 @@ import {
   buildStepPrompt,
   currentStep,
   findReusableSession,
-  serializeSlots,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
@@ -197,6 +196,8 @@ import {
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agentKind';
+import { slotsForKind } from '../slotRouting';
+import { estimateTokens } from '../utils/estimateTokens';
 
 export type BootPhase =
   | 'pending'
@@ -208,7 +209,7 @@ export type BootPhase =
   | 'ready'
   | 'error';
 
-export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted';
+export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted' | 'context-soft-cap';
 
 export interface SystemAlert {
   readonly id: string;
@@ -217,24 +218,7 @@ export interface SystemAlert {
   readonly createdAt: string;
 }
 
-const CONTEXT_MARKER_HINT =
-  '## context handoff protocol\n' +
-  'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
-  'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`.\n' +
-  'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>` — the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
-  "the orchestrator parses these markers and persists them to this task's shared context panel — every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
-
-function buildContextPreamble(sharedSlotsRendered: string): string {
-  const parts: string[] = [];
-  if (sharedSlotsRendered.length > 0) {
-    parts.push(
-      '## shared context (already loaded by orchestrator — do not re-derive)\n' +
-        sharedSlotsRendered,
-    );
-  }
-  parts.push(CONTEXT_MARKER_HINT);
-  return parts.join('\n\n');
-}
+import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 
 function toRelPath(absPath: string, workingDir: string): string {
   if (!workingDir) return absPath;
@@ -1955,30 +1939,66 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // stale set from two turns ago. Capped at 2s to keep the UI responsive.
     await waitForSummarizerSettled(taskId, 2000);
     const sharedSlots = get().sessionSlots[taskId] ?? [];
-    const sharedSlotsRendered = sharedSlots.length > 0 ? serializeSlots(sharedSlots) : '';
-    const contextPreamble = buildContextPreamble(sharedSlotsRendered);
+
+    // M1: read the agent row once here; used by M5 (provider-id check) and M3 below.
+    const agentRowEarly =
+      (get().sessionPhaseRuns[taskId] ?? []).find((s) => s.id === activeAgentId) ?? null;
+    const earlyAgentKind = inferAgentKindFromName(agentRowEarly?.name ?? '');
+    const slotFilter = slotsForKind(earlyAgentKind);
+    const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
+
+    // M5: codex/cursor have no native --resume. inject recent turn text so
+    // they keep working memory. claude skips — duplicating context wastes tokens.
+    const needsTextHistory = provider === 'cursor' || provider === 'codex';
+    if (needsTextHistory) {
+      const priorTranscripts = get().transcripts[activeAgentId] ?? [];
+      const priorTurns = buildPriorTurnsBlock(priorTranscripts, 8000);
+      if (priorTurns.length > 0) {
+        resolvedPrompt = `${priorTurns}\n\n${resolvedPrompt}`;
+      }
+    }
+
     const verbosityHint = verbosityDirective(phaseDefinition?.verbosity ?? readVerbosity(taskId));
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
+
+    // M4: soft-cap warning. heuristic only — exact tokenization requires wasm.
+    const estimated = estimateTokens(resolvedPrompt);
+    const ctxWindow = getModelContextWindow(model);
+    if (ctxWindow !== null) {
+      const ratio = estimated / ctxWindow;
+      if (ratio >= 0.85) {
+        const pct = Math.round(ratio * 100);
+        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%) — consider /compact`;
+        if (import.meta.env.DEV) console.warn(msg);
+        set((state) => ({
+          systemAlerts: [
+            ...state.systemAlerts,
+            {
+              id: crypto.randomUUID(),
+              kind: 'context-soft-cap' as const,
+              message: msg,
+              createdAt: now(),
+            },
+          ],
+        }));
+      }
+    }
 
     let assistantText = '';
     let lastError: unknown = null;
     const filesTouchedThisTurn = new Set<string>();
 
     // M1: thread the per-agent provider session id so claude `--resume`s and
-    // keeps prior-turn context across one-shot CLI invocations. Read from the
-    // freshly loaded sessionPhaseRuns rather than a stale snapshot.
-    const agentRow =
-      (get().sessionPhaseRuns[taskId] ?? []).find((s) => s.id === activeAgentId) ?? null;
-    const resumeSessionId = agentRow?.providerSessionId;
+    // keeps prior-turn context across one-shot CLI invocations.
+    const resumeSessionId = agentRowEarly?.providerSessionId;
 
     // M3: per-kind system prompt — biases planner/implementer/debugger toward
     // their role. Only claude consumes it today; other providers ignore the
     // arg downstream.
-    const agentKind = inferAgentKindFromName(agentRow?.name ?? '');
-    const kindSystemPrompt = AGENT_KIND_DEFAULTS[agentKind].systemPrompt;
+    const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     try {
       for await (const event of runTurn({
