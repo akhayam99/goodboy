@@ -1,10 +1,6 @@
 import { cn } from '@kay-am/ui';
 import type { AgentEffort } from '@kay-am/types';
-import {
-  VERBOSITY_LEVELS,
-  VERBOSITY_LABEL,
-  type VerbosityLevel,
-} from '../../verbosity';
+import { VERBOSITY_LEVELS, VERBOSITY_LABEL, type VerbosityLevel } from '../../verbosity';
 import {
   EFFORT_LEVELS,
   EFFORT_LABEL,
@@ -44,10 +40,8 @@ const EFFORT_SHORT: Record<AgentEffort, string> = {
 };
 
 const VERBOSITY_SHORT: Record<VerbosityLevel, string> = {
-  essential: 'ess',
-  minimal: 'min',
+  brief: 'brf',
   normal: 'norm',
-  detailed: 'det',
   verbose: 'verb',
 };
 

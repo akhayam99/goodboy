@@ -84,18 +84,14 @@ export const TIER_DOT: Record<CostTier, string> = {
 };
 
 export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  essential: 'bg-success',
-  minimal: 'bg-success/70',
+  brief: 'bg-success',
   normal: 'bg-info',
-  detailed: 'bg-warning',
   verbose: 'bg-danger',
 };
 
 export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
-  essential: 'text-success',
-  minimal: 'text-success/85',
+  brief: 'text-success',
   normal: 'text-info',
-  detailed: 'text-warning',
   verbose: 'text-danger',
 };
 
