@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Session, Step, Workflow } from '@kay-am/types';
+import type { VerbosityLevel } from '../verbosity';
 import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE, inferAgentKindFromName } from '../agentKind';
 
 export interface WorkflowNextStepCtaProps {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Session>;
-  readonly onAdvance: (step: Step, model: string) => void | Promise<void>;
+  readonly onAdvance: (step: Step, model: string, verbosity: VerbosityLevel | undefined) => void | Promise<void>;
   readonly className?: string;
 }
 
@@ -48,11 +49,12 @@ export function WorkflowNextStepCta({
   const defaults = AGENT_KIND_DEFAULTS[kind];
   const palette = AGENT_KIND_PALETTE[kind];
   if (!next) return null;
+  const stepVerbosity = next.verbosity;
   const onClick = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      await onAdvance(next, defaults.model);
+      await onAdvance(next, defaults.model, stepVerbosity);
     } finally {
       setBusy(false);
     }
@@ -63,12 +65,12 @@ export function WorkflowNextStepCta({
       onClick={() => void onClick()}
       disabled={busy}
       data-testid="workflow-next-step-cta"
-      title={`model: ${defaults.model} · effort: ${defaults.effort}`}
+      title={`model: ${defaults.model} · effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`}
       className={cn(
         'group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
-      aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort)`}
+      aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
     >
       <span className="flex items-center gap-1.5">
         <span className="text-2xs uppercase tracking-wide opacity-70">start</span>

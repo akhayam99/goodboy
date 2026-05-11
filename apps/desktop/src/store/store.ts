@@ -1885,7 +1885,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
-    const verbosityHint = verbosityDirective(readVerbosity(taskId));
+    const verbosityHint = verbosityDirective(
+      phaseDefinition?.verbosity ?? readVerbosity(taskId),
+    );
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
     let assistantText = '';
