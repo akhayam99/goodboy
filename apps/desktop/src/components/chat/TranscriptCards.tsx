@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Copy, Wrench } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronRight, Copy, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { SessionId, TaskId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
@@ -8,25 +8,30 @@ import { SkillInvocationCard } from './SkillInvocationCard';
 import { PhaseTransitionCard } from './PhaseTransitionCard';
 import { PermissionRequestCard } from './PermissionRequestCard';
 import { PermissionDecisionCard } from './PermissionDecisionCard';
+import { displayPath } from '../../utils/displayPath';
 
-const EDIT_TONE: Record<'create' | 'modify' | 'delete', string> = {
-  create: 'bg-primary/10 text-primary',
-  modify: 'bg-muted text-foreground',
-  delete: 'bg-danger/10 text-danger',
+const EDIT_DOT: Record<'create' | 'modify' | 'delete', string> = {
+  create: 'bg-primary',
+  modify: 'bg-muted-foreground',
+  delete: 'bg-danger',
 };
 
 interface TranscriptCardProps {
   readonly item: TranscriptItem;
   readonly taskId?: TaskId | null;
   readonly agentId?: SessionId | null;
+  readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
+  readonly onOpenDiff?: (filePath: string) => void;
 }
 
 export function TranscriptCard({
   item,
   taskId = null,
   agentId = null,
+  workingDir = null,
   onRefreshAuth,
+  onOpenDiff,
 }: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
@@ -37,15 +42,12 @@ export function TranscriptCard({
       return <ToolCall item={item} />;
     case 'file_edit':
       return (
-        <div
-          className={cn(
-            'inline-flex w-fit items-center gap-2 rounded-md border border-border px-2 py-1 text-xs',
-            EDIT_TONE[item.editType],
-          )}
-        >
-          <span className="font-medium uppercase tracking-wide">{item.editType}</span>
-          <code className="font-mono">{item.path}</code>
-        </div>
+        <FileEditBlock
+          path={item.path}
+          editType={item.editType}
+          workingDir={workingDir}
+          onOpenDiff={onOpenDiff}
+        />
       );
     case 'usage':
       return (
@@ -84,6 +86,37 @@ export function TranscriptCard({
     case 'permission_decision':
       return <PermissionDecisionCard item={item} taskId={taskId} agentId={agentId} />;
   }
+}
+
+interface FileEditBlockProps {
+  path: string;
+  editType: 'create' | 'modify' | 'delete';
+  workingDir?: string | null;
+  onOpenDiff?: (filePath: string) => void;
+}
+
+function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
+  const rel = displayPath(path, workingDir);
+  return (
+    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-border/40 px-2 py-1">
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', EDIT_DOT[editType])} />
+      <span className="text-2xs uppercase tracking-wide text-muted-foreground">{editType}</span>
+      <code className="min-w-0 truncate font-mono text-xs text-muted-foreground" title={path}>
+        {rel}
+      </code>
+      {onOpenDiff ? (
+        <button
+          type="button"
+          onClick={() => onOpenDiff(path)}
+          title="open in files modal"
+          aria-label="open in files modal"
+          className="ml-auto shrink-0 rounded-sm p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+        >
+          <ArrowUpRight size={11} aria-hidden />
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 function formatTokens(n: number): string {
