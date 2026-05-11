@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
-import { BookOpen, Bot, Coins, GitBranch, Lightbulb, MessagesSquare, Wrench } from 'lucide-react';
+import { BookOpen, Bot, Coins, GitBranch, Lightbulb, MessagesSquare, Palette, Wrench } from 'lucide-react';
 
 interface GuideDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips';
+type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 interface NavItem {
   id: Section;
@@ -23,6 +23,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={14} aria-hidden /> },
   { id: 'agents', label: 'Agents', icon: <Bot size={14} aria-hidden /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={14} aria-hidden /> },
+  { id: 'legenda', label: 'Legenda', icon: <Palette size={14} aria-hidden /> },
 ];
 
 export function GuideDialog({ open, onClose }: GuideDialogProps) {
@@ -323,6 +324,64 @@ function Content({ section }: { section: Section }) {
           />
         </Article>
       );
+
+    case 'legenda':
+      return (
+        <Article heading="Legenda" intro="color meanings used throughout the interface.">
+          <H3>Status dots — sessions & agents</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
+              { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
+              { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
+              { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
+              { dot: 'bg-muted-foreground/30', label: 'skipped', desc: 'bypassed by workflow logic' },
+            ]}
+          />
+          <H3>Edit types — transcript</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
+              { dot: 'bg-muted-foreground/60', label: 'modify', desc: 'existing file changed' },
+              { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
+            ]}
+          />
+          <H3>Context window bar — CTX fill level</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-success', label: '< 50%', desc: 'comfortable — plenty of context remaining' },
+              { dot: 'bg-info', label: '50–75%', desc: 'moderate — monitor closely' },
+              { dot: 'bg-warning', label: '75–90%', desc: 'high — consider summarising soon' },
+              { dot: 'bg-danger', label: '≥ 90%', desc: 'critical — start a new session' },
+            ]}
+          />
+          <H3>Verbosity — output density</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-success', label: 'essential', desc: 'bare minimum — one-liners only' },
+              { dot: 'bg-success/70', label: 'minimal', desc: 'brief but complete' },
+              { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
+              { dot: 'bg-warning', label: 'detailed', desc: 'extra context and reasoning' },
+              { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
+            ]}
+          />
+          <H3>Permission mode — tool access</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely — no prompts' },
+              { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
+              { dot: 'bg-blue-500', label: 'default', desc: 'writes and runs ask for approval' },
+              { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed — read-only' },
+            ]}
+          />
+          <H3>Auto badge</H3>
+          <LegendaGrid
+            rows={[
+              { dot: 'bg-amber-400', label: 'AUTO', desc: 'autorun mode — next action fires without user confirmation' },
+            ]}
+          />
+        </Article>
+      );
   }
 }
 
@@ -375,6 +434,26 @@ function List({ items }: { items: ReadonlyArray<readonly [string, string]> }) {
         <li key={term} className="flex flex-col gap-0.5">
           <span className="text-sm font-semibold text-foreground">{term}</span>
           <span className="text-sm leading-relaxed text-muted-foreground">{desc}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+interface LegendaRow {
+  readonly dot: string;
+  readonly label: string;
+  readonly desc: string;
+}
+
+function LegendaGrid({ rows }: { rows: ReadonlyArray<LegendaRow> }) {
+  return (
+    <ul className="flex flex-col gap-1">
+      {rows.map((row) => (
+        <li key={row.label} className="flex items-center gap-2.5">
+          <span aria-hidden className={cn('inline-block h-2 w-2 shrink-0 rounded-full', row.dot)} />
+          <span className="w-20 shrink-0 text-sm font-medium text-foreground">{row.label}</span>
+          <span className="text-sm text-muted-foreground">{row.desc}</span>
         </li>
       ))}
     </ul>
