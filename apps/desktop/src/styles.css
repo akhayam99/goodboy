@@ -20,13 +20,15 @@
 
   /* Semantic tokens — slightly softer chroma for dark mode. */
   --color-danger: oklch(0.63 0.17 22);
-  --color-danger-foreground: oklch(0.15 0 0);
+  --color-danger-foreground: oklch(0.95 0.01 22);
   --color-warning: oklch(0.76 0.13 78);
   --color-warning-foreground: oklch(0.15 0 0);
   --color-success: oklch(0.69 0.13 148);
   --color-success-foreground: oklch(0.15 0 0);
   --color-info: oklch(0.69 0.11 238);
   --color-info-foreground: oklch(0.15 0 0);
+  --color-accent: oklch(0.74 0.11 200);
+  --color-accent-foreground: oklch(0.15 0.02 200);
 
   /* Per-provider accent. */
   --color-provider-anthropic: oklch(0.74 0.15 55);
@@ -79,14 +81,16 @@ html[data-theme="light"] {
   --color-border-soft: oklch(0.80 0.004 250);
   --color-primary: oklch(0.52 0.13 200);
   --color-primary-foreground: oklch(0.98 0.004 200);
-  --color-danger: oklch(0.52 0.19 22);
+  --color-danger: oklch(0.47 0.20 22);
   --color-danger-foreground: oklch(0.98 0 0);
-  --color-warning: oklch(0.56 0.15 78);
+  --color-warning: oklch(0.50 0.16 78);
   --color-warning-foreground: oklch(0.98 0 0);
-  --color-success: oklch(0.50 0.14 148);
+  --color-success: oklch(0.45 0.14 148);
   --color-success-foreground: oklch(0.98 0 0);
-  --color-info: oklch(0.50 0.12 238);
+  --color-info: oklch(0.45 0.13 238);
   --color-info-foreground: oklch(0.98 0 0);
+  --color-accent: oklch(0.52 0.13 200);
+  --color-accent-foreground: oklch(0.98 0.004 200);
   --color-provider-anthropic: oklch(0.56 0.16 55);
   --color-provider-cursor: oklch(0.52 0.17 290);
   --color-provider-codex: oklch(0.50 0.15 148);

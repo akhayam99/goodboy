@@ -45,13 +45,13 @@ interface NavItem {
 // global settings only — per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
-  { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
-  { id: 'agent', label: 'Agent', icon: <Bot size={14} aria-hidden />, beta: true },
-  { id: 'github', label: 'GitHub', icon: <GitFork size={14} aria-hidden /> },
-  { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
-  { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
+  { id: 'app', label: 'APP', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'providers', label: 'PROVIDERS', icon: <Cpu size={14} aria-hidden /> },
+  { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden />, beta: true },
+  { id: 'agent', label: 'AGENT', icon: <Bot size={14} aria-hidden />, beta: true },
+  { id: 'github', label: 'GITHUB', icon: <GitFork size={14} aria-hidden /> },
+  { id: 'initialization', label: 'INITIALIZATION', icon: <Trash2 size={14} aria-hidden /> },
+  { id: 'advanced', label: 'ADVANCED', icon: <FileDown size={14} aria-hidden /> },
 ];
 
 function isNavSection(value: string | undefined): value is NavSection {
@@ -183,7 +183,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'app':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>App settings</SectionHeading>
+            <SectionHeading>APP SETTINGS</SectionHeading>
             <Field label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
               <Input
                 value={editorBinary}
@@ -204,19 +204,20 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'agent':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>Agent settings</SectionHeading>
+            <SectionHeading>AGENT SETTINGS</SectionHeading>
             <Field
               label="enable parallel agents"
-              help="split-view transcript renders N columns when a parallel phase group is active."
+              help="Not yet correctly implemented, coming soon."
             >
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className="flex cursor-not-allowed items-center gap-2 opacity-40">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 cursor-pointer rounded border border-border accent-primary"
+                  className="h-4 w-4 rounded border border-border accent-primary"
                   checked={enableParallelAgents}
-                  onChange={(e) => setEnableParallelAgents(e.target.checked)}
+                  disabled
+                  onChange={() => undefined}
                 />
-                <span className="text-sm text-foreground">
+                <span className="text-sm text-muted-foreground">
                   {enableParallelAgents ? 'on' : 'off'}
                 </span>
               </label>
@@ -234,7 +235,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                   const v = parseInt(e.target.value, 10);
                   if (!isNaN(v)) setMaxParallelism(v);
                 }}
-                disabled={!enableParallelAgents}
+                disabled
               />
             </Field>
           </div>
@@ -244,7 +245,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>Initialization</SectionHeading>
+            <SectionHeading>INITIALIZATION</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
               wipe the local sqlite database — drops every workspace, session, agent, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
@@ -291,7 +292,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'advanced':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>Config backup</SectionHeading>
+            <SectionHeading>CONFIG BACKUP</SectionHeading>
             <div className="flex gap-2">
               <Button
                 variant="secondary"

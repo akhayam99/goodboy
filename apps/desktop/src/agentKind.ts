@@ -11,33 +11,33 @@ export type AgentKind =
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   scout: {
-    bg: 'bg-sky-100',
-    fg: 'text-sky-700',
+    bg: 'bg-info/15',
+    fg: 'text-info',
     label: 'scout',
   },
   planner: {
-    bg: 'bg-violet-100',
-    fg: 'text-violet-700',
+    bg: 'bg-primary/15',
+    fg: 'text-primary',
     label: 'plan',
   },
   implementer: {
-    bg: 'bg-emerald-100',
-    fg: 'text-emerald-700',
+    bg: 'bg-success/15',
+    fg: 'text-success',
     label: 'imple',
   },
   debugger: {
-    bg: 'bg-orange-100',
-    fg: 'text-orange-700',
+    bg: 'bg-warning/15',
+    fg: 'text-warning',
     label: 'debug',
   },
   reviewer: {
-    bg: 'bg-blue-100',
-    fg: 'text-blue-700',
+    bg: 'bg-info/20',
+    fg: 'text-info',
     label: 'review',
   },
   docs: {
-    bg: 'bg-amber-100',
-    fg: 'text-amber-700',
+    bg: 'bg-warning/10',
+    fg: 'text-warning',
     label: 'docs',
   },
   generic: {
