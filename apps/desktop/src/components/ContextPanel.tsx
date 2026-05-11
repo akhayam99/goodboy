@@ -89,7 +89,19 @@ export function ContextPanel({
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
   );
 
-  const visibleSlotKeys = useMemo(() => SLOT_KEYS.filter((k) => k !== 'files_touched'), []);
+  const visibleSlotKeys = useMemo(
+    () =>
+      SLOT_KEYS.filter((k) => k !== 'files_touched').sort((a, b) => {
+        const order: Record<string, number> = {
+          goal: 0,
+          open_questions: 1,
+          decisions: 2,
+          last_output_summary: 3,
+        };
+        return (order[a] ?? 99) - (order[b] ?? 99);
+      }),
+    [],
+  );
 
   const filesTouched = useFilesTouched(session.id);
   const [diffFilesCount, setDiffFilesCount] = useState<number | null>(null);
@@ -160,8 +172,8 @@ export function ContextPanel({
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-4 p-4">
             <header className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                context
+              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                CONTEXT
               </span>
               <div className="flex items-center gap-1">
                 <SummarizerBadge

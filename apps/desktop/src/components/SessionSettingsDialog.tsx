@@ -23,14 +23,14 @@ interface NavItem {
 }
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'general', label: 'General', icon: <Bot size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden /> },
-  { id: 'permissions', label: 'Permissions', icon: <Lock size={14} aria-hidden /> },
+  { id: 'general', label: 'GENERAL', icon: <Bot size={14} aria-hidden /> },
+  { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden /> },
+  { id: 'permissions', label: 'PERMISSIONS', icon: <Lock size={14} aria-hidden /> },
 ];
 
 const DANGER_NAV: NavItem = {
   id: 'danger',
-  label: 'Delete',
+  label: 'DELETE',
   icon: <Trash2 size={14} aria-hidden />,
 };
 
@@ -132,7 +132,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              session
+              SESSION
             </div>
             <Field
               label="name"
@@ -175,7 +175,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              soft cap
+              SOFT CAP
             </div>
             <Field
               label="cap (usd)"
@@ -213,7 +213,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Permissions for this session
+              PERMISSIONS FOR THIS SESSION
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
               rules here apply only to this session and override both global and workspace defaults.
@@ -227,7 +227,7 @@ export function SessionSettingsDialog({
           <div className="flex flex-col gap-5">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-danger">
-                danger zone
+                DANGER ZONE
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 permanent actions on this session.
