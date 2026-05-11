@@ -5,7 +5,6 @@ import { VERBOSITY_LEVELS, VERBOSITY_LABEL, type VerbosityLevel } from '../../ve
 import {
   PROVIDER_LABEL,
   PROVIDER_TEXT,
-  EFFORT_LEVELS,
   type EffortLevel,
   EFFORT_LABEL,
   EFFORT_DOT,
@@ -19,6 +18,7 @@ import {
   modelFamily,
   modelTier,
   modelWeight,
+  modelEffortLevels,
 } from './chat-constants';
 
 export interface ModelPickerProps {
@@ -71,7 +71,8 @@ export function ModelPicker({
     };
   }, [open]);
 
-  const showEffort = provider === 'anthropic';
+  const effortLevels = modelEffortLevels(model);
+  const showEffort = provider === 'anthropic' && effortLevels !== null;
   const tier = modelTier(model);
 
   const groupedModels = useMemo(() => {
@@ -115,7 +116,7 @@ export function ModelPicker({
             <span aria-hidden className="text-muted-foreground/70">
               ·
             </span>
-            <span className={EFFORT_TEXT[effort]}>{EFFORT_LABEL[effort].toLowerCase()}</span>
+            <span className={EFFORT_TEXT[effort]}>{EFFORT_LABEL[effort]}</span>
           </>
         ) : null}
         <span aria-hidden className="text-muted-foreground/70">
@@ -123,9 +124,9 @@ export function ModelPicker({
         </span>
         <span
           className={VERBOSITY_TEXT[verbosity]}
-          title={`verbosity: ${VERBOSITY_LABEL[verbosity].toLowerCase()}`}
+          title={`verbosity: ${VERBOSITY_LABEL[verbosity]}`}
         >
-          v:{VERBOSITY_LABEL[verbosity].toLowerCase()}
+          {VERBOSITY_LABEL[verbosity]}
         </span>
       </button>
       {open ? (
@@ -189,11 +190,11 @@ export function ModelPicker({
               </PickerSection>
             ))
           )}
-          {showEffort ? (
+          {showEffort && effortLevels ? (
             <>
               <PickerDivider />
               <PickerSection label="effort">
-                {EFFORT_LEVELS.map((level) => (
+                {effortLevels.map((level) => (
                   <PickerRow
                     key={level}
                     label={EFFORT_LABEL[level]}

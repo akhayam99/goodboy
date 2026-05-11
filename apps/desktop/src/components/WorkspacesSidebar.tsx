@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FolderOpen,
   FolderPlus,
+  Gauge,
   GitMerge,
   GitPullRequest,
   GitPullRequestArrow,
@@ -1874,8 +1875,16 @@ function ContextWindowBar({
   const cumulativeOutput = aggregate?.outputTokens ?? telemetry.outputTokens;
   const used = cumulativeInput + cumulativeOutput;
   const pct = Math.min(1, used / window);
-  const tone =
+  const barTone =
     pct >= 0.9 ? 'bg-danger' : pct >= 0.75 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
+  const iconTone =
+    pct >= 0.9
+      ? 'text-danger'
+      : pct >= 0.75
+        ? 'text-warning'
+        : pct >= 0.5
+          ? 'text-info'
+          : 'text-success';
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
   const tooltip =
     `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +
@@ -1883,14 +1892,17 @@ function ContextWindowBar({
   return (
     <div className="flex flex-col gap-0.5" title={tooltip}>
       <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
-        <span>ctx</span>
+        <span className={cn('flex items-center gap-0.5', iconTone)}>
+          <Gauge size={9} aria-hidden />
+          ctx
+        </span>
         <span className="font-mono">
           {formatTokens(used)} / {windowLabel} · {Math.round(pct * 100)}%
         </span>
       </div>
       <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted/60">
         <div
-          className={cn('h-full rounded-full transition-all', tone)}
+          className={cn('h-full rounded-full transition-all', barTone)}
           style={{ width: `${pct * 100}%` }}
         />
       </div>

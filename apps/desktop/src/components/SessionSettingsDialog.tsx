@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
-import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Lock, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'lucide-react';
 import type { TaskId } from '@kay-am/types';
 import { useAppStore } from '../store';
-import { PermissionsPanel } from './PermissionsPanel';
 
 interface SessionSettingsDialogProps {
   taskId: TaskId;
@@ -14,7 +13,7 @@ interface SessionSettingsDialogProps {
   onUnarchive: () => void;
 }
 
-type Section = 'general' | 'budget' | 'permissions' | 'danger';
+type Section = 'general' | 'budget' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -23,14 +22,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'general', label: 'General', icon: <Bot size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden /> },
-  { id: 'permissions', label: 'Permissions', icon: <Lock size={14} aria-hidden /> },
+  { id: 'general', label: 'GENERAL', icon: <Bot size={14} aria-hidden /> },
+  { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden /> },
 ];
 
 const DANGER_NAV: NavItem = {
   id: 'danger',
-  label: 'Delete',
+  label: 'DELETE',
   icon: <Trash2 size={14} aria-hidden />,
 };
 
@@ -132,7 +130,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              session
+              SESSION
             </div>
             <Field
               label="name"
@@ -175,7 +173,7 @@ export function SessionSettingsDialog({
         return (
           <div className="flex flex-col gap-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              soft cap
+              SOFT CAP
             </div>
             <Field
               label="cap (usd)"
@@ -209,25 +207,12 @@ export function SessionSettingsDialog({
           </div>
         );
 
-      case 'permissions':
-        return (
-          <div className="flex flex-col gap-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Permissions for this session
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              rules here apply only to this session and override both global and workspace defaults.
-            </p>
-            <PermissionsPanel scope={{ kind: 'task', id: taskId }} />
-          </div>
-        );
-
       case 'danger':
         return (
           <div className="flex flex-col gap-5">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-danger">
-                danger zone
+                DANGER ZONE
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 permanent actions on this session.

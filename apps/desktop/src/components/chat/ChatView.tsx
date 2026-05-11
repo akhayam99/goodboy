@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown } from 'lucide-react';
 import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
 import { cn } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
@@ -90,14 +91,16 @@ function ParallelColumn({
         {!pinned ? (
           <button
             type="button"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-1 text-xs shadow-md backdrop-blur-sm"
+            aria-label="jump to latest"
+            title="jump to latest"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
               if (el) el.scrollTop = el.scrollHeight;
             }}
           >
-            jump to latest
+            <ArrowDown size={14} aria-hidden />
           </button>
         ) : null}
       </div>
@@ -374,7 +377,7 @@ export function ChatView({ session }: ChatViewProps) {
                   node.push(
                     <li
                       key={item.key}
-                      className={cn(tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-8')}
+                      className={cn(tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-4')}
                     >
                       <TranscriptCard
                         item={item}
@@ -390,7 +393,7 @@ export function ChatView({ session }: ChatViewProps) {
                 });
               })()}
               {isThinking ? (
-                <li className="mt-8">
+                <li className="mt-4">
                   <ThinkingIndicator />
                 </li>
               ) : null}
@@ -400,14 +403,16 @@ export function ChatView({ session }: ChatViewProps) {
         {!pinned ? (
           <button
             type="button"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-1 text-xs shadow-md backdrop-blur-sm"
+            aria-label="jump to latest"
+            title="jump to latest"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
               if (el) el.scrollTop = el.scrollHeight;
             }}
           >
-            jump to latest
+            <ArrowDown size={14} aria-hidden />
           </button>
         ) : null}
       </div>
