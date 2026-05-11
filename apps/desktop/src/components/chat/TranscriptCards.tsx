@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, Check, ChevronRight, Copy, Wrench } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { SessionId, TaskId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
@@ -10,10 +10,10 @@ import { PermissionRequestCard } from './PermissionRequestCard';
 import { PermissionDecisionCard } from './PermissionDecisionCard';
 import { displayPath } from '../../utils/displayPath';
 
-const EDIT_DOT: Record<'create' | 'modify' | 'delete', string> = {
-  create: 'bg-primary',
-  modify: 'bg-muted-foreground',
-  delete: 'bg-danger',
+const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
+  create: 'created',
+  modify: 'modified',
+  delete: 'deleted',
 };
 
 interface TranscriptCardProps {
@@ -98,10 +98,10 @@ interface FileEditBlockProps {
 function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
   const rel = displayPath(path, workingDir);
   return (
-    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-border/40 px-2 py-1">
-      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', EDIT_DOT[editType])} />
-      <span className="text-2xs uppercase tracking-wide text-muted-foreground">{editType}</span>
-      <code className="min-w-0 truncate font-mono text-xs text-muted-foreground" title={path}>
+    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1">
+      <FileEdit size={11} aria-hidden className="shrink-0 text-info" />
+      <span className="text-2xs uppercase tracking-wide text-info/80">{EDIT_LABEL[editType]}</span>
+      <code className="min-w-0 truncate font-mono text-xs text-foreground/80" title={path}>
         {rel}
       </code>
       {onOpenDiff ? (
@@ -110,7 +110,7 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
           onClick={() => onOpenDiff(path)}
           title="open in files modal"
           aria-label="open in files modal"
-          className="ml-auto shrink-0 rounded-sm p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          className="ml-auto shrink-0 rounded-sm p-0.5 text-info/60 opacity-0 transition-opacity hover:text-info group-hover:opacity-100"
         >
           <ArrowUpRight size={11} aria-hidden />
         </button>

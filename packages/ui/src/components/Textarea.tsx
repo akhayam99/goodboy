@@ -42,7 +42,7 @@ export function Textarea({
       ref={ref}
       value={value}
       className={cn(
-        'w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 resize-none',
+        'w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
         !autoGrow && 'min-h-16',
         className,
       )}

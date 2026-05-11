@@ -175,7 +175,7 @@ export function AppShell({
         style={gridStyle}
       >
         <aside
-          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-subtle shadow-sm"
+          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-subtle shadow-md"
           style={{ gridArea: 'left' }}
         >
           {leftSidebar}
@@ -221,7 +221,7 @@ export function AppShell({
               'flex min-h-0 min-w-0 flex-col overflow-hidden transition-[margin,background-color,border-radius,box-shadow] duration-200 ease-out',
               rightSidebarCollapsed
                 ? 'mr-3 mt-3 bg-background'
-                : 'm-3 rounded-xl bg-subtle shadow-sm',
+                : 'm-3 rounded-xl bg-subtle shadow-md',
             )}
             style={{ gridArea: 'right' }}
           >

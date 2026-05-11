@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Target } from 'lucide-react';
 import { Collapsible } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
 
@@ -16,16 +17,17 @@ export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
   }).format(new Date(item.at));
 
   return (
-    <div className="rounded-md border border-border bg-muted px-2 py-1.5">
+    <div className="rounded-md border border-primary/20 bg-primary/5 px-2 py-1.5">
       <Collapsible
         open={open}
         onOpenChange={setOpen}
         trigger={
           <span className="flex items-center gap-2 text-xs font-medium">
-            <span className="rounded bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Target size={11} aria-hidden className="text-primary" />
+            <span className="text-2xs font-medium uppercase tracking-wide text-primary/80">
               step
             </span>
-            {header}
+            <span className="text-foreground/85">{header}</span>
           </span>
         }
       >
