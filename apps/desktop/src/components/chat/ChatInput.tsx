@@ -393,13 +393,15 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           </p>
         ) : null}
       </div>
-      <SessionPermissionsPanel
-        taskId={session.id}
-        agentId={selectedAgentId}
-        workspaceId={session.workspaceId}
-        open={permOpen}
-        onClose={() => setPermOpen(false)}
-      />
+      {permOpen ? (
+        <SessionPermissionsPanel
+          taskId={session.id}
+          agentId={selectedAgentId}
+          workspaceId={session.workspaceId}
+          open={permOpen}
+          onClose={() => setPermOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
