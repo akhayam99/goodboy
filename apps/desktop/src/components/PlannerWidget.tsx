@@ -1,15 +1,32 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button, Textarea, cn } from '@kay-am/ui';
-import { PlannerClient, type PlannerOutput } from '@kay-am/core';
-import type { ProviderId, Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
+import { PlannerClient, type PlannerOutput, defaultsForRole } from '@kay-am/core';
+import type {
+  AgentEffort,
+  ProviderId,
+  Step,
+  StepId,
+  Workflow,
+  WorkflowId,
+  WorkspaceId,
+} from '@kay-am/types';
 import { useAppStore } from '../store';
+import { shortModel } from '../agentRowFormat';
 
 interface PlannerWidgetProps {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialTheme: string;
   onWorkflowReady: (workflowId: WorkflowId) => void;
+}
+
+const SELECTABLE_MODELS = ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-7'] as const;
+const SELECTABLE_EFFORTS: AgentEffort[] = ['low', 'medium', 'high', 'extra-high', 'max'];
+
+interface StepOverride {
+  model: string;
+  effort: AgentEffort;
 }
 
 export function PlannerWidget({
@@ -22,17 +39,25 @@ export function PlannerWidget({
   const [theme, setTheme] = useState(initialTheme);
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
+  const [overrides, setOverrides] = useState<Record<number, StepOverride>>({});
   const [error, setError] = useState<string | null>(null);
 
   const onPlan = async () => {
     if (theme.trim().length === 0) return;
     setError(null);
     setPlan(null);
+    setOverrides({});
     setBusy(true);
     try {
       const client = new PlannerClient({ providerId, invokeFn: invoke });
       const result = await client.plan({ theme: theme.trim() });
       setPlan(result.output);
+      const initial: Record<number, StepOverride> = {};
+      result.output.steps.forEach((s, i) => {
+        const d = defaultsForRole(s.role);
+        initial[i] = { model: d.model, effort: d.effort };
+      });
+      setOverrides(initial);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -47,13 +72,18 @@ export function PlannerWidget({
     try {
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_planner_${crypto.randomUUID()}` as WorkflowId;
-      const steps: ReadonlyArray<Step> = plan.steps.map((s, ordinal) => ({
-        id: `step_planner_${crypto.randomUUID()}` as StepId,
-        workflowId,
-        ordinal,
-        name: s.name,
-        promptPrefix: s.promptPrefix,
-      }));
+      const steps: ReadonlyArray<Step> = plan.steps.map((s, ordinal) => {
+        const o = overrides[ordinal] ?? defaultsForRole(s.role);
+        return {
+          id: `step_planner_${crypto.randomUUID()}` as StepId,
+          workflowId,
+          ordinal,
+          name: s.name,
+          promptPrefix: s.promptPrefix,
+          modelOverride: o.model,
+          effort: o.effort,
+        };
+      });
       const workflow: Workflow = {
         id: workflowId,
         workspaceId,
@@ -66,6 +96,7 @@ export function PlannerWidget({
       await savePhaseTemplate(workflow);
       onWorkflowReady(workflowId);
       setPlan(null);
+      setOverrides({});
       setTheme('');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -75,9 +106,8 @@ export function PlannerWidget({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-md bg-subtle p-3">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-foreground">design with planner</span>
         <span className="text-2xs text-muted-foreground">cheap-tier · {providerId}</span>
       </div>
       <Textarea
@@ -101,7 +131,7 @@ export function PlannerWidget({
         </p>
       ) : null}
       {plan ? (
-        <div className="flex flex-col gap-2 rounded-md bg-background p-3">
+        <div className="flex flex-col gap-2 rounded-md border border-border-soft bg-background p-3">
           <div>
             <div className="text-sm font-semibold">{plan.workflowName}</div>
             {plan.reasoning ? (
@@ -111,21 +141,68 @@ export function PlannerWidget({
             ) : null}
           </div>
           <ol className="flex flex-col gap-1.5">
-            {plan.steps.map((s, i) => (
-              <li key={`${i}-${s.name}`} className={cn('rounded-md bg-subtle px-2.5 py-1.5')}>
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="font-medium">
-                    {i + 1}. {s.name}
-                  </span>
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
-                    {s.role}
-                  </span>
-                </div>
-                <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-                  {s.expectedOutput}
-                </p>
-              </li>
-            ))}
+            {plan.steps.map((s, i) => {
+              const ov = overrides[i];
+              return (
+                <li key={`${i}-${s.name}`} className="rounded-md bg-subtle px-2.5 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="pt-0.5 text-xs font-medium">
+                      {i + 1}. {s.name}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                      {s.role}
+                    </span>
+                  </div>
+                  {s.expectedOutput ? (
+                    <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
+                      {s.expectedOutput}
+                    </p>
+                  ) : null}
+                  {ov ? (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <select
+                        value={ov.model}
+                        onChange={(e) =>
+                          setOverrides((prev) => ({
+                            ...prev,
+                            [i]: { ...ov, model: e.target.value },
+                          }))
+                        }
+                        className={cn(
+                          'rounded border border-border-soft bg-background px-1.5 py-0.5 text-2xs text-foreground',
+                          'focus:outline-none focus:ring-1 focus:ring-primary',
+                        )}
+                      >
+                        {SELECTABLE_MODELS.map((m) => (
+                          <option key={m} value={m}>
+                            {shortModel(m)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={ov.effort}
+                        onChange={(e) =>
+                          setOverrides((prev) => ({
+                            ...prev,
+                            [i]: { ...ov, effort: e.target.value as AgentEffort },
+                          }))
+                        }
+                        className={cn(
+                          'rounded border border-border-soft bg-background px-1.5 py-0.5 text-2xs text-foreground',
+                          'focus:outline-none focus:ring-1 focus:ring-primary',
+                        )}
+                      >
+                        {SELECTABLE_EFFORTS.map((ef) => (
+                          <option key={ef} value={ef}>
+                            {ef}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
           <Button size="sm" onClick={onSave} disabled={busy}>
             {busy ? 'saving…' : 'use this workflow'}
