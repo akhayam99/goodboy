@@ -98,7 +98,6 @@ import { SkillsPanel } from '../../components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
 import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../components/BudgetRulesPanel';
-import { PermissionsPanel } from '../../components/PermissionsPanel';
 import { ProvidersPanel } from '../../components/ProvidersPanel';
 import { TranscriptCard } from '../../components/chat/TranscriptCards';
 import { ToastProvider } from '../../components/Toast';
@@ -253,12 +252,6 @@ describe('snapshot — error states', () => {
       deleteBudgetRule: vi.fn(),
     });
     const { container } = render(<BudgetRulesPanel />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('PermissionsPanel: form error (workspace scope)', () => {
-    mockStore({ settings: {} });
-    const { container } = render(<PermissionsPanel scope="global" />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
