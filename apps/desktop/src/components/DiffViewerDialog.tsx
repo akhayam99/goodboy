@@ -42,6 +42,8 @@ interface DiffViewerDialogProps {
   workingDir?: string;
   /** When true and the dialog opens, jump to the first file that has open comments. */
   jumpToFirstCommented?: boolean;
+  /** When set, jump to this file path after the diff loads. */
+  jumpToFile?: string;
 }
 
 const STATUS_GLYPH: Record<FileDiffStatus, string> = {
@@ -176,6 +178,7 @@ export function DiffViewerDialog({
   cwd,
   workingDir,
   jumpToFirstCommented = false,
+  jumpToFile,
 }: DiffViewerDialogProps) {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -219,7 +222,10 @@ export function DiffViewerDialog({
         const parsed = parseUnifiedDiff(raw);
         setFiles(parsed);
         setLoading(false);
-        if (jumpToFirstCommented && openCommentsByFile.size > 0) {
+        if (jumpToFile) {
+          const idx = parsed.findIndex((f) => f.path === jumpToFile || jumpToFile.endsWith(f.path));
+          setSelectedIdx(idx >= 0 ? idx : 0);
+        } else if (jumpToFirstCommented && openCommentsByFile.size > 0) {
           const idx = parsed.findIndex((f) => openCommentsByFile.has(f.path));
           setSelectedIdx(idx >= 0 ? idx : 0);
         } else {
@@ -230,7 +236,7 @@ export function DiffViewerDialog({
         setError(err instanceof Error ? err.message : String(err));
         setLoading(false);
       });
-  }, [open, loader, repoSlug, prNumber, cwd, jumpToFirstCommented, openCommentsByFile]);
+  }, [open, loader, repoSlug, prNumber, cwd, jumpToFirstCommented, jumpToFile, openCommentsByFile]);
 
   useEffect(() => {
     if (open && taskId) void loadDiffComments(taskId);
@@ -678,11 +684,6 @@ function TreeNodeView({
           className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')}
         />
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
-        <span className="shrink-0 text-[10px] tabular-nums opacity-60">
-          {node.additions > 0 ? <span className="text-success">+{node.additions}</span> : null}
-          {node.additions > 0 && node.deletions > 0 ? <span> </span> : null}
-          {node.deletions > 0 ? <span className="text-danger">−{node.deletions}</span> : null}
-        </span>
       </button>
       {expanded
         ? node.children.map((child, i) => (
