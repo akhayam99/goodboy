@@ -297,7 +297,10 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         }
         flush();
         out.push(
-          <code key={nextKey()} className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em]">
+          <code
+            key={nextKey()}
+            className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em] text-foreground"
+          >
             {inner}
           </code>,
         );
@@ -400,12 +403,12 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     case 'heading': {
       const sizes: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
-        1: 'text-lg font-semibold',
-        2: 'text-base font-semibold',
-        3: 'text-base font-semibold',
-        4: 'text-sm font-semibold',
-        5: 'text-sm font-semibold',
-        6: 'text-sm font-semibold',
+        1: 'text-lg font-semibold text-foreground',
+        2: 'text-base font-semibold text-foreground',
+        3: 'text-base font-medium text-foreground',
+        4: 'text-sm font-medium text-foreground',
+        5: 'text-sm font-medium text-foreground',
+        6: 'text-sm font-medium text-foreground',
       };
       const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
       return (
@@ -448,12 +451,12 @@ function renderBlock(block: Block, idx: number): ReactNode {
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border-soft">
+              <tr className="border-b border-border-soft/60">
                 {block.headers.map((h, j) => (
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 font-semibold text-foreground',
+                      'px-3 py-1.5 font-medium text-foreground/75',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -509,7 +512,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
 export function Markdown({ text, className }: MarkdownProps) {
   const blocks = parseBlocks(text);
   return (
-    <div className={cn('flex flex-col gap-2 text-base text-foreground', className)}>
+    <div className={cn('flex flex-col gap-2 text-base text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
   );

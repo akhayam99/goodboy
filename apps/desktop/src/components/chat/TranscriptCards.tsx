@@ -44,7 +44,7 @@ export function TranscriptCard({ item, taskId = null, agentId = null, onRefreshA
       );
     case 'usage':
       return (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground/70">
           {formatTokens(item.usage.inputTokens)} in / {formatTokens(item.usage.outputTokens)} out
           {item.usage.cachedInputTokens > 0
             ? ` · ${formatTokens(item.usage.cachedInputTokens)} cached`
@@ -186,7 +186,7 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
           )}
         />
         <Wrench size={11} aria-hidden className={cn('shrink-0', accent)} />
-        <span className="font-mono text-foreground/85">{item.toolName}</span>
+        <span className="font-mono text-muted-foreground">{item.toolName}</span>
         {running ? (
           <span className="flex shrink-0 gap-0.5">
             <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
