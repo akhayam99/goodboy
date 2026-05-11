@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
-import { BookOpen, Bot, Coins, GitBranch, Lightbulb, MessagesSquare, Palette, Wrench } from 'lucide-react';
+import {
+  BookOpen,
+  Bot,
+  Coins,
+  GitBranch,
+  Lightbulb,
+  MessagesSquare,
+  Palette,
+  Wrench,
+} from 'lucide-react';
 
 interface GuideDialogProps {
   open: boolean;
@@ -335,7 +344,11 @@ function Content({ section }: { section: Section }) {
               { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
               { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
               { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
-              { dot: 'bg-muted-foreground/30', label: 'skipped', desc: 'bypassed by workflow logic' },
+              {
+                dot: 'bg-muted-foreground/30',
+                label: 'skipped',
+                desc: 'bypassed by workflow logic',
+              },
             ]}
           />
           <H3>Edit types — transcript</H3>
@@ -349,7 +362,11 @@ function Content({ section }: { section: Section }) {
           <H3>Context window bar — CTX fill level</H3>
           <LegendaGrid
             rows={[
-              { dot: 'bg-success', label: '< 50%', desc: 'comfortable — plenty of context remaining' },
+              {
+                dot: 'bg-success',
+                label: '< 50%',
+                desc: 'comfortable — plenty of context remaining',
+              },
               { dot: 'bg-info', label: '50–75%', desc: 'moderate — monitor closely' },
               { dot: 'bg-warning', label: '75–90%', desc: 'high — consider summarising soon' },
               { dot: 'bg-danger', label: '≥ 90%', desc: 'critical — start a new session' },
@@ -358,10 +375,8 @@ function Content({ section }: { section: Section }) {
           <H3>Verbosity — output density</H3>
           <LegendaGrid
             rows={[
-              { dot: 'bg-success', label: 'essential', desc: 'bare minimum — one-liners only' },
-              { dot: 'bg-success/70', label: 'minimal', desc: 'brief but complete' },
+              { dot: 'bg-success', label: 'brief', desc: 'bare minimum — one-liners only' },
               { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
-              { dot: 'bg-warning', label: 'detailed', desc: 'extra context and reasoning' },
               { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
             ]}
           />
@@ -377,7 +392,11 @@ function Content({ section }: { section: Section }) {
           <H3>Auto badge</H3>
           <LegendaGrid
             rows={[
-              { dot: 'bg-amber-400', label: 'AUTO', desc: 'autorun mode — next action fires without user confirmation' },
+              {
+                dot: 'bg-amber-400',
+                label: 'AUTO',
+                desc: 'autorun mode — next action fires without user confirmation',
+              },
             ]}
           />
         </Article>

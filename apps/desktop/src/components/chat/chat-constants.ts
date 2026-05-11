@@ -21,7 +21,7 @@ const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra
 
 export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
   if (/claude-opus/i.test(model)) return OPUS_EFFORT;
-  if (/claude-sonnet|claude-haiku/i.test(model)) return SONNET_EFFORT;
+  if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
   return null;
 }
 
@@ -55,9 +55,10 @@ export const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'cursor-small': { weight: 4, tier: 'cheap' },
   'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
   'codex-mini-latest': { weight: 6, tier: 'cheap' },
-  'claude-sonnet-4-5': { weight: 15, tier: 'mid' },
+  'claude-sonnet-4-5': { weight: 14, tier: 'mid' },
   'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
   'codex-latest': { weight: 20, tier: 'mid' },
+  'claude-opus-4-6': { weight: 60, tier: 'expensive' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
 };
 
@@ -83,18 +84,14 @@ export const TIER_DOT: Record<CostTier, string> = {
 };
 
 export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  essential: 'bg-success',
-  minimal: 'bg-success/70',
+  brief: 'bg-success',
   normal: 'bg-info',
-  detailed: 'bg-warning',
   verbose: 'bg-danger',
 };
 
 export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
-  essential: 'text-success',
-  minimal: 'text-success/85',
+  brief: 'text-success',
   normal: 'text-info',
-  detailed: 'text-warning',
   verbose: 'text-danger',
 };
 
@@ -127,3 +124,25 @@ export function modelTier(model: string): CostTier {
 export function modelWeight(model: string): number {
   return MODEL_COST[model]?.weight ?? 10;
 }
+
+export function modelSubfamily(id: string): string {
+  const m = id.match(/^claude-(haiku|sonnet|opus)/i);
+  return m ? m[1]!.toLowerCase() : '';
+}
+
+export function modelVersion(id: string): string {
+  const m = id.match(/^claude-(?:haiku|sonnet|opus)-(\d+)-(\d+)/i);
+  return m ? `${m[1]}.${m[2]}` : id;
+}
+
+export const CLAUDE_SUBFAMILY_LABEL: Record<string, string> = {
+  haiku: 'Haiku',
+  sonnet: 'Sonnet',
+  opus: 'Opus',
+};
+
+export const CLAUDE_SUBFAMILY_TIER: Record<string, CostTier> = {
+  haiku: 'cheap',
+  sonnet: 'mid',
+  opus: 'expensive',
+};

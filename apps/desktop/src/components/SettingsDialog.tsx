@@ -45,13 +45,13 @@ interface NavItem {
 // global settings only — per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
-  { id: 'app', label: 'APP', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'providers', label: 'PROVIDERS', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'BUDGET', icon: <DollarSign size={14} aria-hidden />, beta: true },
-  { id: 'agent', label: 'AGENT', icon: <Bot size={14} aria-hidden />, beta: true },
-  { id: 'github', label: 'GITHUB', icon: <GitFork size={14} aria-hidden /> },
-  { id: 'initialization', label: 'INITIALIZATION', icon: <Trash2 size={14} aria-hidden /> },
-  { id: 'advanced', label: 'ADVANCED', icon: <FileDown size={14} aria-hidden /> },
+  { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
+  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
+  { id: 'agent', label: 'Agent', icon: <Bot size={14} aria-hidden />, beta: true },
+  { id: 'github', label: 'Github', icon: <GitFork size={14} aria-hidden /> },
+  { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
+  { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
 ];
 
 function isNavSection(value: string | undefined): value is NavSection {
@@ -183,7 +183,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'app':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>APP SETTINGS</SectionHeading>
+            <SectionHeading>App settings</SectionHeading>
             <Field label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
               <Input
                 value={editorBinary}
@@ -204,7 +204,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'agent':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>AGENT SETTINGS</SectionHeading>
+            <SectionHeading>Agent settings</SectionHeading>
             <Field
               label="enable parallel agents"
               help="Not yet correctly implemented, coming soon."
@@ -245,7 +245,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>INITIALIZATION</SectionHeading>
+            <SectionHeading>Initialization</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
               wipe the local sqlite database — drops every workspace, session, agent, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
@@ -292,7 +292,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'advanced':
         return (
           <div className="flex flex-col gap-4">
-            <SectionHeading>CONFIG BACKUP</SectionHeading>
+            <SectionHeading>Config backup</SectionHeading>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
@@ -396,9 +396,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {children}
-    </div>
+    <div className="text-xs font-semibold tracking-wide text-muted-foreground">{children}</div>
   );
 }
 

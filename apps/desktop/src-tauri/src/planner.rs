@@ -54,20 +54,24 @@ pub struct PlannerResult {
 }
 
 #[tauri::command]
-pub fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerError> {
-    let cli_args = build_cli_args(&args)?;
+pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cli_args = build_cli_args(&args)?;
 
-    let output = Command::new(&args.binary)
-        .args(&cli_args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
+        let output = Command::new(&args.binary)
+            .args(&cli_args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
 
-    Ok(PlannerResult {
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        exit_code: output.status.code(),
+        Ok(PlannerResult {
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+            exit_code: output.status.code(),
+        })
     })
+    .await
+    .map_err(|e| PlannerError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?
 }
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {

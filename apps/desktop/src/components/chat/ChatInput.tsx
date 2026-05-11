@@ -334,6 +334,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         ) : null}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
+            <PermissionModePicker session={session} />
             {queued ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
                 queued
@@ -352,9 +353,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               </span>
             ) : null}
           </div>
-          <ProviderUsagePill provider={effectiveProvider} />
           <div className="flex items-center gap-2">
-            <PermissionModePicker session={session} />
+            <ProviderUsagePill provider={effectiveProvider} />
             <ModelPicker
               providers={providerCandidates}
               models={modelCandidates}

@@ -22,7 +22,7 @@ interface PlannerWidgetProps {
   onWorkflowReady: (workflowId: WorkflowId) => void;
 }
 
-const DEFAULT_VERBOSITY: VerbosityLevel = 'essential';
+const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
 export function PlannerWidget({
   workspaceId,
@@ -68,7 +68,10 @@ export function PlannerWidget({
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_planner_${crypto.randomUUID()}` as WorkflowId;
       const steps: ReadonlyArray<Step> = plan.steps.map((s, ordinal) => {
-        const o = overrides[ordinal] ?? { ...defaultsForRole(s.role), verbosity: DEFAULT_VERBOSITY };
+        const o = overrides[ordinal] ?? {
+          ...defaultsForRole(s.role),
+          verbosity: DEFAULT_VERBOSITY,
+        };
         return {
           id: `step_planner_${crypto.randomUUID()}` as StepId,
           workflowId,
@@ -157,9 +160,7 @@ export function PlannerWidget({
                   {ov ? (
                     <StepOverrideRow
                       values={ov}
-                      onChange={(next) =>
-                        setOverrides((prev) => ({ ...prev, [i]: next }))
-                      }
+                      onChange={(next) => setOverrides((prev) => ({ ...prev, [i]: next }))}
                     />
                   ) : null}
                 </li>
@@ -174,4 +175,3 @@ export function PlannerWidget({
     </div>
   );
 }
-
