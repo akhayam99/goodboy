@@ -186,6 +186,7 @@ export function DiffViewerDialog({
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
   const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
+  const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
 
   const comments = useDiffComments(taskId ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
@@ -283,6 +284,7 @@ export function DiffViewerDialog({
 
   useEffect(() => {
     setActiveAnchor(null);
+    setFileLevelComposerOpen(false);
   }, [selectedIdx]);
 
   const editorBinary = useAppStore(
@@ -335,6 +337,24 @@ export function DiffViewerDialog({
     setActiveAnchor(null);
   };
 
+  const handleAddFileLevelComment = async (body: string) => {
+    if (!selected || !taskId) return;
+    await addDiffComment(taskId, selected.path, body);
+    setFileLevelComposerOpen(false);
+  };
+
+  const handleSelectFile = (idx: number) => {
+    setSelectedIdx(idx);
+    setFileLevelComposerOpen(false);
+    setActiveAnchor(null);
+  };
+
+  const handleRailFileComment = (idx: number) => {
+    setSelectedIdx(idx);
+    setActiveAnchor(null);
+    setFileLevelComposerOpen(true);
+  };
+
   return (
     <Dialog
       open={open}
@@ -382,7 +402,8 @@ export function DiffViewerDialog({
                 <FileRail
                   files={files}
                   selectedIdx={selectedIdx}
-                  onSelect={setSelectedIdx}
+                  onSelect={handleSelectFile}
+                  onStartFileComment={taskId ? handleRailFileComment : undefined}
                   commentCounts={openCommentsByFile}
                 />
               ) : null}
@@ -393,10 +414,14 @@ export function DiffViewerDialog({
                     comments={selectedComments}
                     fileLevelComments={fileLevelComments}
                     activeAnchor={activeAnchor}
+                    fileLevelComposerOpen={fileLevelComposerOpen}
                     canComment={Boolean(taskId)}
                     onStartComment={(anchor) => setActiveAnchor(anchor)}
                     onCancelComment={() => setActiveAnchor(null)}
                     onSubmitComment={(anchor, body) => void handleAddComment(anchor, body)}
+                    onStartFileLevelComment={() => setFileLevelComposerOpen(true)}
+                    onCancelFileLevelComment={() => setFileLevelComposerOpen(false)}
+                    onSubmitFileLevelComment={(body) => void handleAddFileLevelComment(body)}
                     onResolve={(id) => taskId && void resolveDiffComment(taskId, id)}
                     onDelete={(id) => taskId && void deleteDiffComment(taskId, id)}
                   />
@@ -576,11 +601,13 @@ function FileRail({
   files,
   selectedIdx,
   onSelect,
+  onStartFileComment,
   commentCounts,
 }: {
   files: ReadonlyArray<FileDiff>;
   selectedIdx: number;
   onSelect: (i: number) => void;
+  onStartFileComment?: (i: number) => void;
   commentCounts: Map<string, number>;
 }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
@@ -601,6 +628,7 @@ function FileRail({
               depth={0}
               selectedIdx={selectedIdx}
               onSelect={onSelect}
+              onStartFileComment={onStartFileComment}
               selectedRef={selectedRef}
               commentCounts={commentCounts}
             />
@@ -615,6 +643,7 @@ function TreeNodeView({
   depth,
   selectedIdx,
   onSelect,
+  onStartFileComment,
   selectedRef,
   commentCounts,
 }: {
@@ -622,6 +651,7 @@ function TreeNodeView({
   depth: number;
   selectedIdx: number;
   onSelect: (i: number) => void;
+  onStartFileComment?: (i: number) => void;
   selectedRef: React.RefObject<HTMLButtonElement | null>;
   commentCounts: Map<string, number>;
 }) {
@@ -633,39 +663,59 @@ function TreeNodeView({
     const isSelected = index === selectedIdx;
     const noteCount = commentCounts.get(file.path) ?? 0;
     return (
-      <button
-        ref={isSelected ? selectedRef : null}
-        type="button"
-        onClick={() => onSelect(index)}
-        title={file.path}
+      <div
         className={cn(
-          'relative flex w-full items-center gap-2 py-1 pr-2.5 text-left font-mono text-xs transition-colors',
+          'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
             ? 'border-l-2 border-primary bg-subtle text-foreground'
             : 'border-l-2 border-transparent text-muted-foreground/80 hover:bg-muted/30 hover:text-foreground',
         )}
         style={{ paddingLeft: 10 + indent }}
       >
-        <span
-          className={cn(
-            'w-3 shrink-0 text-center text-[10px] font-bold',
-            STATUS_COLOR[file.status],
-          )}
+        <button
+          ref={isSelected ? selectedRef : null}
+          type="button"
+          onClick={() => onSelect(index)}
+          title={file.path}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
-          {STATUS_GLYPH[file.status]}
-        </span>
-        <span className="min-w-0 flex-1 truncate">{node.name}</span>
-        {noteCount > 0 ? (
-          <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
-            {noteCount}
+          <span
+            className={cn(
+              'w-3 shrink-0 text-center text-[10px] font-bold',
+              STATUS_COLOR[file.status],
+            )}
+          >
+            {STATUS_GLYPH[file.status]}
           </span>
+          <span className="min-w-0 flex-1 truncate">{node.name}</span>
+          {noteCount > 0 ? (
+            <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
+              {noteCount}
+            </span>
+          ) : null}
+          <span className="shrink-0 text-[10px] tabular-nums">
+            {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
+            {file.additions > 0 && file.deletions > 0 ? (
+              <span className="opacity-40"> </span>
+            ) : null}
+            {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
+          </span>
+        </button>
+        {onStartFileComment ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartFileComment(index);
+            }}
+            title="add file-level note"
+            aria-label="add file-level note"
+            className="mr-1 shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+          >
+            <MessageSquarePlus size={10} aria-hidden />
+          </button>
         ) : null}
-        <span className="shrink-0 text-[10px] tabular-nums">
-          {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
-          {file.additions > 0 && file.deletions > 0 ? <span className="opacity-40"> </span> : null}
-          {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
-        </span>
-      </button>
+      </div>
     );
   }
 
@@ -693,6 +743,7 @@ function TreeNodeView({
               depth={depth + 1}
               selectedIdx={selectedIdx}
               onSelect={onSelect}
+              onStartFileComment={onStartFileComment}
               selectedRef={selectedRef}
               commentCounts={commentCounts}
             />
@@ -767,10 +818,14 @@ interface FileDiffPaneProps {
   comments: ReadonlyArray<DiffComment>;
   fileLevelComments: ReadonlyArray<DiffComment>;
   activeAnchor: DiffCommentAnchor | null;
+  fileLevelComposerOpen: boolean;
   canComment: boolean;
   onStartComment: (anchor: DiffCommentAnchor) => void;
   onCancelComment: () => void;
   onSubmitComment: (anchor: DiffCommentAnchor, body: string) => void;
+  onStartFileLevelComment: () => void;
+  onCancelFileLevelComment: () => void;
+  onSubmitFileLevelComment: (body: string) => void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -780,10 +835,14 @@ function FileDiffPane({
   comments,
   fileLevelComments,
   activeAnchor,
+  fileLevelComposerOpen,
   canComment,
   onStartComment,
   onCancelComment,
   onSubmitComment,
+  onStartFileLevelComment,
+  onCancelFileLevelComment,
+  onSubmitFileLevelComment,
   onResolve,
   onDelete,
 }: FileDiffPaneProps) {
@@ -802,14 +861,45 @@ function FileDiffPane({
   return (
     <ScrollArea className="flex-1 overflow-auto">
       <div className="p-3">
-        {fileLevelComments.length > 0 ? (
+        {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
           <div className="mb-3 flex flex-col gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              file notes
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                file notes
+              </span>
+              {canComment && !fileLevelComposerOpen ? (
+                <button
+                  type="button"
+                  onClick={onStartFileLevelComment}
+                  title="add file-level note"
+                  aria-label="add file-level note"
+                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <MessageSquarePlus size={11} aria-hidden />
+                </button>
+              ) : null}
+            </div>
             {fileLevelComments.map((c) => (
               <CommentItem key={c.id} comment={c} onResolve={onResolve} onDelete={onDelete} />
             ))}
+            {fileLevelComposerOpen ? (
+              <InlineComposer
+                onSubmit={onSubmitFileLevelComment}
+                onCancel={onCancelFileLevelComment}
+              />
+            ) : null}
+          </div>
+        ) : canComment ? (
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={onStartFileLevelComment}
+              title="add file-level note"
+              className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <MessageSquarePlus size={10} aria-hidden />
+              add file note
+            </button>
           </div>
         ) : null}
         {file.binary ? (
@@ -856,7 +946,7 @@ function FileDiffPane({
                                 title="add comment on this line"
                                 aria-label="add comment on this line"
                                 className={cn(
-                                  'flex h-4 w-4 items-center justify-center rounded-sm bg-primary text-primary-foreground transition-opacity',
+                                  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
                                   isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                                 )}
                               >
@@ -928,43 +1018,47 @@ function InlineComposer({
   onCancel: () => void;
 }) {
   const [body, setBody] = useState('');
+  const trimmed = body.trim();
   return (
-    <div className="rounded-md border border-warning/30 bg-warning/5 p-2">
-      <Textarea
-        autoFocus
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="add a note for the agent (cmd/ctrl+enter to save)…"
-        className="text-xs"
-        autoGrow
-        maxRows={6}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            onCancel();
-          }
-          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            if (body.trim().length > 0) onSubmit(body.trim());
-          }
-        }}
-      />
-      <div className="mt-1.5 flex justify-end gap-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => body.trim().length > 0 && onSubmit(body.trim())}
-          disabled={body.trim().length === 0}
-          className="rounded-sm bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-        >
-          save
-        </button>
+    <div className="flex gap-2 rounded-md border border-border-soft bg-background px-2 py-1.5 shadow-sm">
+      <MessageSquarePlus size={13} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <Textarea
+          autoFocus
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="note for the agent… (⌘↵ to save)"
+          className="text-xs"
+          autoGrow
+          maxRows={6}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              onCancel();
+            }
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              if (trimmed.length > 0) onSubmit(trimmed);
+            }
+          }}
+        />
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => trimmed.length > 0 && onSubmit(trimmed)}
+            disabled={trimmed.length === 0}
+            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
+          >
+            send
+          </button>
+        </div>
       </div>
     </div>
   );

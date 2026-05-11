@@ -164,34 +164,48 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               by model
             </h3>
-            <table className="w-full table-fixed text-left text-xs">
-              <thead>
-                <tr className="text-muted-foreground">
-                  <th className="w-1/3 py-1 font-normal">provider · model</th>
-                  <th className="py-1 text-right font-normal">in tokens</th>
-                  <th className="py-1 text-right font-normal">out tokens</th>
-                  <th className="py-1 text-right font-normal">cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modelBreakdown.map((entry) => (
-                  <tr
-                    key={`${entry.provider}//${entry.model}`}
-                    className="border-t border-border-soft"
-                  >
-                    <td className="py-1.5">
-                      <span className="mr-1 rounded bg-muted px-1 text-2xs uppercase text-muted-foreground">
-                        {entry.provider === 'anthropic' ? 'cl' : entry.provider.slice(0, 2)}
-                      </span>
-                      <span className="font-mono">{entry.model}</span>
-                    </td>
-                    <td className="py-1.5 text-right font-mono">{formatTokens(entry.tokensIn)}</td>
-                    <td className="py-1.5 text-right font-mono">{formatTokens(entry.tokensOut)}</td>
-                    <td className="py-1.5 text-right font-mono">{formatCost(entry.spentUsd)}</td>
+            <div className="overflow-hidden rounded-md border border-border-soft">
+              <table className="w-full table-fixed text-left text-xs">
+                <colgroup>
+                  <col className="w-[44%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 bg-subtle">
+                  <tr className="border-b border-border-soft text-muted-foreground">
+                    <th className="px-2 py-1.5 text-left font-medium">provider · model</th>
+                    <th className="px-2 py-1.5 text-right font-medium">in</th>
+                    <th className="px-2 py-1.5 text-right font-medium">out</th>
+                    <th className="px-2 py-1.5 text-right font-medium">cost</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border-soft">
+                  {modelBreakdown.map((entry) => (
+                    <tr
+                      key={`${entry.provider}//${entry.model}`}
+                      className="transition-colors hover:bg-muted/40"
+                    >
+                      <td className="px-2 py-1.5">
+                        <span className="mr-1.5 rounded bg-muted px-1 py-0.5 text-2xs font-medium uppercase text-muted-foreground">
+                          {entry.provider === 'anthropic' ? 'cl' : entry.provider.slice(0, 2)}
+                        </span>
+                        <span className="font-mono text-foreground">{entry.model}</span>
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono tabular-nums text-muted-foreground">
+                        {formatTokens(entry.tokensIn)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono tabular-nums text-muted-foreground">
+                        {formatTokens(entry.tokensOut)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono tabular-nums font-medium text-foreground">
+                        {formatCost(entry.spentUsd)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         ) : null}
 
@@ -213,20 +227,22 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
               />
             </div>
           </div>
-          <div className="max-h-72 overflow-y-auto">
+          <div className="max-h-72 overflow-y-auto rounded-md border border-border-soft">
             {sorted.length === 0 ? (
-              <p className="py-2 text-xs text-muted-foreground">no recorded turns yet.</p>
+              <p className="py-2 text-center text-xs text-muted-foreground">
+                no recorded turns yet.
+              </p>
             ) : (
-              <ul className="flex flex-col">
+              <ul className="flex flex-col divide-y divide-border-soft">
                 {sorted.map((record) => (
                   <li
                     key={record.id}
-                    className="flex items-center justify-between gap-2 border-t border-border-soft py-1.5 text-xs"
+                    className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs transition-colors hover:bg-muted/40"
                   >
-                    <span className="flex items-center gap-1 text-muted-foreground">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
                       <span
                         className={cn(
-                          'rounded px-1 text-2xs uppercase',
+                          'rounded px-1 py-0.5 text-2xs font-medium uppercase',
                           record.kind === 'summarizer'
                             ? 'bg-muted text-muted-foreground'
                             : 'bg-primary/10 text-primary',
@@ -239,11 +255,13 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
                           {record.provider === 'anthropic' ? 'claude' : record.provider}
                         </span>
                       ) : null}
-                      <span>
+                      <span className="font-mono tabular-nums">
                         {formatTokens(record.inputTokens)}↓ / {formatTokens(record.outputTokens)}↑
                       </span>
                     </span>
-                    <span className="font-mono">{formatCost(record.estimatedCostUsd)}</span>
+                    <span className="font-mono tabular-nums font-medium">
+                      {formatCost(record.estimatedCostUsd)}
+                    </span>
                   </li>
                 ))}
               </ul>
