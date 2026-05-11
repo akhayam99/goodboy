@@ -329,6 +329,7 @@ export interface AppActions {
     workspaceId: WorkspaceId;
     goal: string;
     branchPrefix?: string;
+    branchSlug?: string;
     providerPreference?: TaskProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
@@ -1196,6 +1197,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     workspaceId,
     goal,
     branchPrefix,
+    branchSlug,
     providerPreference,
     workflowId,
     autoRun,
@@ -1204,7 +1206,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
 
     const prefix = branchPrefix?.trim() || 'kay';
-    const slugSeed = goal.trim().length > 0 ? goal : `session-${Date.now()}`;
+    const slugSeed =
+      branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const worktree = await createWorktree({
       repoPath: workspace.rootPath,
       branchPrefix: prefix,
