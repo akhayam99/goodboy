@@ -541,6 +541,7 @@ function WorkflowPreview({ template }: { template: Workflow | null }) {
         {sortedSteps.map((step, i) => {
           const model = step.modelOverride ? shortModel(step.modelOverride) : null;
           const effort = step.effort ?? null;
+          const verbosity = step.verbosity ?? null;
           return (
             <li
               key={step.id}
@@ -548,9 +549,9 @@ function WorkflowPreview({ template }: { template: Workflow | null }) {
             >
               <span className="font-mono text-2xs text-muted-foreground">{i + 1}.</span>
               <span className="flex-1 truncate font-medium text-foreground">{step.name}</span>
-              {model || effort ? (
+              {model || effort || verbosity ? (
                 <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
-                  {[model, effort].filter(Boolean).join(' · ')}
+                  {[model, effort, verbosity ? `v:${verbosity}` : null].filter(Boolean).join(' · ')}
                 </span>
               ) : null}
             </li>
