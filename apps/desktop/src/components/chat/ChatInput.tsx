@@ -36,6 +36,8 @@ const RUNNING_KINDS = new Set(['starting', 'running']);
 const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 
 const EFFORT_STORAGE_PREFIX = 'kayam:effort:';
+const MODEL_STORAGE_PREFIX = 'kayam:model:';
+const PROVIDER_STORAGE_PREFIX = 'kayam:provider:';
 
 function readEffort(taskId: TaskId): EffortLevel {
   try {
@@ -50,6 +52,49 @@ function readEffort(taskId: TaskId): EffortLevel {
 function writeEffort(taskId: TaskId, level: EffortLevel): void {
   try {
     localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${taskId}`, level);
+  } catch {
+    // ignore
+  }
+}
+
+function readModel(taskId: TaskId): string | null {
+  try {
+    return localStorage.getItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+  } catch {
+    return null;
+  }
+}
+
+function writeModel(taskId: TaskId, model: string | null): void {
+  try {
+    if (model === null) {
+      localStorage.removeItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+    } else {
+      localStorage.setItem(`${MODEL_STORAGE_PREFIX}${taskId}`, model);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function readProvider(taskId: TaskId): ProviderId | null {
+  try {
+    const raw = localStorage.getItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+    const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+    if (raw && valid.includes(raw as ProviderId)) return raw as ProviderId;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function writeProvider(taskId: TaskId, provider: ProviderId | null): void {
+  try {
+    if (provider === null) {
+      localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+    } else {
+      localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`, provider);
+    }
   } catch {
     // ignore
   }
@@ -95,8 +140,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
+    readProvider(session.id),
+  );
+  const [selectedModel, setSelectedModelState] = useState<string | null>(() =>
+    readModel(session.id),
+  );
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
@@ -165,6 +214,16 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const setVerbosity = (level: VerbosityLevel) => {
     setVerbosityState(level);
     writeVerbosity(session.id, level);
+  };
+
+  const setSelectedProvider = (id: ProviderId | null) => {
+    setSelectedProviderState(id);
+    writeProvider(session.id, id);
+  };
+
+  const setSelectedModel = (id: string | null) => {
+    setSelectedModelState(id);
+    writeModel(session.id, id);
   };
 
   const onSelectProvider = (id: ProviderId) => {

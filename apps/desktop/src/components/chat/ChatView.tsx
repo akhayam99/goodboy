@@ -48,7 +48,14 @@ interface ColumnProps {
   onOpenDiff: (filePath: string) => void;
 }
 
-function ParallelColumn({ runId, index, events, workingDir, onRefreshAuth, onOpenDiff }: ColumnProps) {
+function ParallelColumn({
+  runId,
+  index,
+  events,
+  workingDir,
+  onRefreshAuth,
+  onOpenDiff,
+}: ColumnProps) {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
   const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
@@ -284,7 +291,11 @@ export function ChatView({ session }: ChatViewProps) {
             session ended — no further turns. branch preserved.
           </div>
         ) : (
-          <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
+          <ChatInput
+            key={session.id}
+            session={session}
+            providerDisconnected={isProviderDisconnected}
+          />
         )}
         <DiffViewerDialog
           open={diffJumpFile !== null}
@@ -410,7 +421,11 @@ export function ChatView({ session }: ChatViewProps) {
           session ended — no further turns. branch preserved.
         </div>
       ) : (
-        <ChatInput session={session} providerDisconnected={isProviderDisconnected} />
+        <ChatInput
+          key={session.id}
+          session={session}
+          providerDisconnected={isProviderDisconnected}
+        />
       )}
       <DiffViewerDialog
         open={diffJumpFile !== null}
