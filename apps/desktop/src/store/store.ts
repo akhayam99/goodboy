@@ -519,32 +519,9 @@ interface SummarizerQueueEntry {
 interface SummarizerTaskQueue {
   inFlight: boolean;
   queued: SummarizerQueueEntry | null;
-  // Resolves when the current cycle (inFlight + any drained queued run) settles.
-  // Tracked so `waitForSummarizerSettled` can `await` instead of polling.
-  // Optional so test fixtures can construct partial queues without managing
-  // the internal promise plumbing.
-  settled?: Promise<void> | null;
-  resolveSettled?: (() => void) | null;
 }
 
 export const summarizerQueues = new Map<TaskId, SummarizerTaskQueue>();
-
-// Awaits a pending summarizer cycle for `taskId` so the next preamble sees the
-// freshest slots. Resolves either when the cycle settles or after `timeoutMs`.
-// 2s default keeps the user-facing input from blocking forever if summarizer
-// stalls; staleness is preferable to indefinite UI freeze.
-export async function waitForSummarizerSettled(taskId: TaskId, timeoutMs: number): Promise<void> {
-  const queue = summarizerQueues.get(taskId);
-  if (!queue || (!queue.inFlight && queue.queued === null)) return;
-  const settled = queue.settled;
-  if (!settled) return;
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const timeout = new Promise<void>((resolve) => {
-    timer = setTimeout(resolve, timeoutMs);
-  });
-  await Promise.race([settled, timeout]);
-  if (timer) clearTimeout(timer);
-}
 
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
@@ -563,7 +540,7 @@ function enqueueSummarizer(
 ): void {
   let queue = summarizerQueues.get(taskId);
   if (!queue) {
-    queue = { inFlight: false, queued: null, settled: null, resolveSettled: null };
+    queue = { inFlight: false, queued: null };
     summarizerQueues.set(taskId, queue);
   }
 
@@ -575,16 +552,6 @@ function enqueueSummarizer(
 
   queue.inFlight = true;
   queue.queued = null;
-  queue.settled = new Promise<void>((resolve) => {
-    queue!.resolveSettled = resolve;
-  });
-
-  const resolveSettled = (q: SummarizerTaskQueue): void => {
-    const r = q.resolveSettled;
-    q.settled = null;
-    q.resolveSettled = null;
-    r?.();
-  };
 
   const run = (): void => {
     void runSummarizer(set, get, taskId, turnInput, turnOutput).finally(() => {
@@ -598,13 +565,11 @@ function enqueueSummarizer(
             const q2 = summarizerQueues.get(taskId);
             if (q2) {
               q2.inFlight = false;
-              resolveSettled(q2);
             }
           });
         });
       } else {
         q.inFlight = false;
-        resolveSettled(q);
       }
     });
   };
@@ -1934,10 +1899,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // this Task already learned, and (b) knows how to write back via
     // <<ctx-decision>> / <<ctx-question>> markers parsed in the auto-populate
     // step after the turn ends.
-    // Barrier: wait for any pending summarizer cycle for this task so the
-    // preamble reads the slots produced by the previous turn rather than the
-    // stale set from two turns ago. Capped at 2s to keep the UI responsive.
-    await waitForSummarizerSettled(taskId, 2000);
+    // Stale slots are acceptable: do NOT await the summarizer here — doing so
+    // blocks user input for up to 2s between turns (#461). The summarizer pill
+    // already signals in-flight status; the next turn may use previous-cycle
+    // slots and that tradeoff is explicitly accepted.
     const sharedSlots = get().sessionSlots[taskId] ?? [];
 
     // M1: read the agent row once here; used by M5 (provider-id check) and M3 below.
