@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
+import { cn } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
@@ -276,12 +277,12 @@ export function ChatView({ session }: ChatViewProps) {
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="flex-1 overflow-y-auto px-8 py-4"
+          className="flex-1 overflow-y-auto px-10 py-6"
           style={{ scrollbarGutter: 'stable' }}
         >
           {items.length === 0 ? (
             isProviderDisconnected ? (
-              <div className="mx-auto w-full max-w-[1200px]">
+              <div className="mx-auto w-full max-w-[880px]">
                 <AuthRequiredCallout
                   providerId={provider}
                   identity={providerIdentity}
@@ -289,13 +290,13 @@ export function ChatView({ session }: ChatViewProps) {
                 />
               </div>
             ) : (
-              <p className="mx-auto w-full max-w-[1200px] text-sm text-muted-foreground">
+              <p className="mx-auto w-full max-w-[880px] text-sm text-muted-foreground">
                 no turns yet — send a message.
               </p>
             )
           ) : (
             <ul
-              className="mx-auto flex w-full max-w-[1200px] flex-col"
+              className="mx-auto flex w-full max-w-[880px] flex-col"
               aria-live="polite"
               aria-relevant="additions"
             >
@@ -329,8 +330,17 @@ export function ChatView({ session }: ChatViewProps) {
                       lastDay = day;
                     }
                   }
+                  const isAssistantTurn = item.kind === 'assistant_text';
+                  const prevIsAssistant = prev?.kind === 'assistant_text';
+                  const showDivider = isAssistantTurn && prevIsAssistant;
                   node.push(
-                    <li key={item.key} className={tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-6'}>
+                    <li
+                      key={item.key}
+                      className={cn(
+                        tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-8',
+                        showDivider && 'border-t border-border/40 pt-8',
+                      )}
+                    >
                       <TranscriptCard
                         item={item}
                         taskId={session.id}
@@ -343,7 +353,7 @@ export function ChatView({ session }: ChatViewProps) {
                 });
               })()}
               {isThinking ? (
-                <li className="mt-6">
+                <li className="mt-8">
                   <ThinkingIndicator />
                 </li>
               ) : null}

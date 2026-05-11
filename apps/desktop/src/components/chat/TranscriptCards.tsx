@@ -22,7 +22,12 @@ interface TranscriptCardProps {
   readonly onRefreshAuth?: () => void;
 }
 
-export function TranscriptCard({ item, taskId = null, agentId = null, onRefreshAuth }: TranscriptCardProps) {
+export function TranscriptCard({
+  item,
+  taskId = null,
+  agentId = null,
+  onRefreshAuth,
+}: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
       return <UserText text={item.text} at={item.at} />;
@@ -95,7 +100,7 @@ function formatCostUsd(cost: number): string {
 
 function AssistantText({ text }: { text: string }) {
   return (
-    <div className="group relative">
+    <div className="group relative text-[13px]">
       <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
@@ -199,7 +204,7 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
       </button>
       {open ? (
         <div className="ml-[1.125rem] mt-0.5 flex min-w-0 flex-col gap-1">
-          <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-2xs text-muted-foreground">
+          <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-xs text-muted-foreground">
             input: {JSON.stringify(item.input, null, 2)}
           </pre>
           {item.ended ? (

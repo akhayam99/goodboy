@@ -6,8 +6,8 @@ import {
   useMemo,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { Send, Square, X } from 'lucide-react';
-import { Textarea } from '@kay-am/ui';
+import { Send, ShieldCheck, Square, X } from 'lucide-react';
+import { Textarea, Tooltip } from '@kay-am/ui';
 import type {
   BudgetAlert,
   BudgetAlertKind,
@@ -28,6 +28,8 @@ import { EFFORT_LEVELS, type EffortLevel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { PreflightPill } from './PreflightPill';
 import { ModelPicker } from './ModelPicker';
+import { PermissionModePicker } from './PermissionModePicker';
+import { SessionPermissionsPanel } from './SessionPermissionsPanel';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -98,12 +100,14 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
+  const [permOpen, setPermOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
 
   const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
   const isSlashMode = slashQuery !== null;
 
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const selectedAgentState = useAppStore((s) =>
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
   );
@@ -267,8 +271,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   }, [providerModels, effectiveModel]);
 
   return (
-    <div className="px-8 py-3">
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2">
+    <div className="px-10 py-3">
+      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
         {!isRunning && !providerDisconnected ? (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
@@ -304,21 +308,34 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             ) : null}
           </div>
           <ProviderUsagePill provider={effectiveProvider} />
-          <ModelPicker
-            providers={providerCandidates}
-            models={modelCandidates}
-            provider={effectiveProvider}
-            model={effectiveModel}
-            effort={effort}
-            verbosity={verbosity}
-            connectedProviders={connectedProviderIds}
-            disabled={!allowOverride || isRunning}
-            disabledTitle={overrideDisabledTitle}
-            onSelectProvider={onSelectProvider}
-            onSelectModel={onSelectModel}
-            onSelectEffort={setEffort}
-            onSelectVerbosity={setVerbosity}
-          />
+          <div className="flex items-center gap-2">
+            <PermissionModePicker session={session} />
+            <ModelPicker
+              providers={providerCandidates}
+              models={modelCandidates}
+              provider={effectiveProvider}
+              model={effectiveModel}
+              effort={effort}
+              verbosity={verbosity}
+              connectedProviders={connectedProviderIds}
+              disabled={!allowOverride || isRunning}
+              disabledTitle={overrideDisabledTitle}
+              onSelectProvider={onSelectProvider}
+              onSelectModel={onSelectModel}
+              onSelectEffort={setEffort}
+              onSelectVerbosity={setVerbosity}
+            />
+            <Tooltip content="permissions" side="top">
+              <button
+                type="button"
+                onClick={() => setPermOpen((v) => !v)}
+                aria-label="permissions"
+                className="inline-flex items-center justify-center rounded-full bg-subtle px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ShieldCheck size={13} aria-hidden />
+              </button>
+            </Tooltip>
+          </div>
         </div>
         <div className="relative" ref={wrapperRef}>
           {showPopover && isSlashMode ? (
@@ -376,6 +393,15 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           </p>
         ) : null}
       </div>
+      {permOpen ? (
+        <SessionPermissionsPanel
+          taskId={session.id}
+          agentId={selectedAgentId}
+          workspaceId={session.workspaceId}
+          open={permOpen}
+          onClose={() => setPermOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
