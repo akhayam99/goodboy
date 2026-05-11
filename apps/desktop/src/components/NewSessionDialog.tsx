@@ -383,26 +383,36 @@ export function NewSessionDialog({
 
               {workflowMode === 'custom' ? (
                 <div className="mt-3 flex flex-col gap-3">
-                  <div className="rounded-md border border-border-soft bg-subtle px-3 py-3">
-                    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <Sparkles size={12} aria-hidden /> design with planner
-                    </div>
-                    <PlannerWidget
-                      workspaceId={workspaceId}
-                      providerId={selectedProvider}
-                      initialTheme={goal}
-                      onWorkflowReady={(workflowId) => {
-                        setSelectedPhaseTemplateId(workflowId);
-                      }}
-                    />
-                  </div>
                   {selectedPhaseTemplateId !== '' ? (
-                    <WorkflowPreview
-                      template={
-                        phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null
-                      }
-                    />
-                  ) : null}
+                    <>
+                      <WorkflowPreview
+                        template={
+                          phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPhaseTemplateId('')}
+                        className="flex items-center gap-1 self-start text-2xs text-muted-foreground underline hover:text-foreground"
+                      >
+                        <Sparkles size={10} aria-hidden /> re-design with planner
+                      </button>
+                    </>
+                  ) : (
+                    <div className="rounded-md border border-border-soft bg-subtle px-3 py-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                        <Sparkles size={12} aria-hidden /> design with planner
+                      </div>
+                      <PlannerWidget
+                        workspaceId={workspaceId}
+                        providerId={selectedProvider}
+                        initialTheme={goal}
+                        onWorkflowReady={(workflowId) => {
+                          setSelectedPhaseTemplateId(workflowId);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : null}
 
@@ -530,6 +540,7 @@ function WorkflowPreview({ template }: { template: Workflow | null }) {
       <ol className="flex flex-col gap-1">
         {sortedSteps.map((step, i) => {
           const model = step.modelOverride ? shortModel(step.modelOverride) : null;
+          const effort = step.effort ?? null;
           return (
             <li
               key={step.id}
@@ -537,9 +548,9 @@ function WorkflowPreview({ template }: { template: Workflow | null }) {
             >
               <span className="font-mono text-2xs text-muted-foreground">{i + 1}.</span>
               <span className="flex-1 truncate font-medium text-foreground">{step.name}</span>
-              {model ? (
-                <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
-                  {model}
+              {model || effort ? (
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
+                  {[model, effort].filter(Boolean).join(' · ')}
                 </span>
               ) : null}
             </li>

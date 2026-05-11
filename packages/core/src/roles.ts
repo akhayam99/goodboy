@@ -1,33 +1,6 @@
-import type { ProviderId } from '@kay-am/types';
+import type { AgentEffort, AgentRole, ProviderId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Per-role agent defaults.
-//
-// Each agent in a Task is assigned a "role" (the chip the user sees in the
-// sidebar). The role drives sensible default routing — the user shouldn't
-// have to pick a model for every spawn, but can override when needed. These
-// defaults are intentionally conservative: cheap models for read-heavy work,
-// stronger models for design-heavy work.
-//
-// Effort is included as a hint (used as a UI default in the spawn dialog and
-// passed to claude --effort when the provider supports it). Storing effort
-// on Step itself is deferred to a follow-up PR; for now the seeder only
-// applies provider + model.
-// ---------------------------------------------------------------------------
-
-export type AgentRole =
-  | 'scout'
-  | 'planner'
-  | 'implementer'
-  | 'reviewer'
-  | 'investigator'
-  | 'product'
-  | 'architect'
-  | 'tester'
-  | 'explorer'
-  | 'custom';
-
-export type AgentEffort = 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+export type { AgentEffort, AgentRole } from '@kay-am/types';
 
 export interface RoleDefaults {
   readonly provider: ProviderId;

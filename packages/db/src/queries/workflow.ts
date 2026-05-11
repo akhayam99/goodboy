@@ -1,4 +1,5 @@
 import type {
+  AgentEffort,
   IsoDateTime,
   ProviderId,
   Step,
@@ -26,6 +27,7 @@ interface StepRow {
   prompt_prefix: string;
   provider_override: string | null;
   model_override: string | null;
+  effort: string | null;
 }
 
 function toStep(row: StepRow): Step {
@@ -37,6 +39,7 @@ function toStep(row: StepRow): Step {
     promptPrefix: row.prompt_prefix,
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
     ...(row.model_override && { modelOverride: row.model_override }),
+    ...(row.effort && { effort: row.effort as AgentEffort }),
   };
 }
 
@@ -109,8 +112,8 @@ export async function upsertWorkflow(db: Database, workflow: Workflow): Promise<
   for (const step of workflow.steps) {
     await db.execute(
       `INSERT INTO steps
-        (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override, effort)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         step.id,
         workflow.id,
@@ -119,6 +122,7 @@ export async function upsertWorkflow(db: Database, workflow: Workflow): Promise<
         step.promptPrefix,
         step.providerOverride ?? null,
         step.modelOverride ?? null,
+        step.effort ?? null,
       ],
     );
   }

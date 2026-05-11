@@ -11,6 +11,20 @@ import type {
 } from './ids';
 import type { ProviderId } from './provider-registry';
 
+export type AgentEffort = 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+
+export type AgentRole =
+  | 'scout'
+  | 'planner'
+  | 'implementer'
+  | 'reviewer'
+  | 'investigator'
+  | 'product'
+  | 'architect'
+  | 'tester'
+  | 'explorer'
+  | 'custom';
+
 export type SessionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
@@ -23,6 +37,7 @@ export type Step = Readonly<{
   promptPrefix: string;
   providerOverride?: ProviderId;
   modelOverride?: string;
+  effort?: AgentEffort;
   parallelGroup?: number;
 }>;
 

@@ -57,6 +57,8 @@ export type {
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
+  AgentEffort,
+  AgentRole,
   ParallelMergeStrategy,
   ParallelGroup,
   ParallelSession,
