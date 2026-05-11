@@ -26,6 +26,7 @@ export {
   insertTurnEvent,
   listTurnEventsForAgent,
   listTurnEventsForTask,
+  listAgentRunIdsForTask,
 } from './queries/turn-event';
 export {
   upsertContextSlot,
