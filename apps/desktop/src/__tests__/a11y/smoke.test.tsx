@@ -19,6 +19,7 @@ vi.mock('../../store', () => ({
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
     const state = {
       budgetAlerts: [],
+      notifications: [],
       providers: [],
       skills: {},
       settings: {},
@@ -31,6 +32,9 @@ vi.mock('../../store', () => ({
       providerSpendBreakdown: [],
       loadBudgetAlerts: vi.fn(),
       dismissBudgetAlert: vi.fn(),
+      loadNotifications: vi.fn(),
+      markNotificationsRead: vi.fn(),
+      clearNotifications: vi.fn(),
       refreshProviders: vi.fn(),
       loadSkills: vi.fn(),
       saveSkill: vi.fn(),
@@ -82,7 +86,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { WorkspaceId } from '@kay-am/types';
 import { runA11yCheck } from './utils';
-import { AlertCenter } from '../../components/AlertCenter';
+import { NotificationCenter } from '../../components/NotificationCenter';
 import { BootSplash } from '../../components/BootSplash';
 import { SettingsDialog } from '../../components/SettingsDialog';
 import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
@@ -95,9 +99,9 @@ afterEach(cleanup);
 
 const WS_ID = 'ws-test' as WorkspaceId;
 
-describe('a11y smoke — AlertCenter', () => {
+describe('a11y smoke — NotificationCenter', () => {
   it('no violations (empty state)', async () => {
-    const { container } = render(<AlertCenter />);
+    const { container } = render(<NotificationCenter />);
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });

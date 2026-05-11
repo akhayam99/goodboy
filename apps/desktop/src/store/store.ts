@@ -58,6 +58,13 @@ import {
   listDiffCommentsForTask,
   resolveDiffComment as dbResolveDiffComment,
   deleteDiffComment as dbDeleteDiffComment,
+  insertNotification,
+  listNotifications,
+  markAllNotificationsRead,
+  clearAllNotifications,
+  type Notification,
+  type NotificationKind,
+  type NotificationSeverity,
   type TelemetrySummary,
   type ProviderTelemetrySummary,
 } from '@kay-am/db';
@@ -286,6 +293,7 @@ export interface AppState {
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<SessionId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
+  readonly notifications: ReadonlyArray<Notification>;
 }
 
 export interface SessionGithubState {
@@ -432,6 +440,16 @@ export interface AppActions {
   ): Promise<void>;
   resolveDiffComment(taskId: TaskId, commentId: string): Promise<void>;
   deleteDiffComment(taskId: TaskId, commentId: string): Promise<void>;
+  loadNotifications(): Promise<void>;
+  emitNotification(
+    kind: NotificationKind,
+    severity: NotificationSeverity,
+    title: string,
+    body?: string,
+    opts?: { sessionId?: TaskId; workspaceId?: WorkspaceId },
+  ): Promise<void>;
+  markNotificationsRead(): Promise<void>;
+  clearNotifications(): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -486,6 +504,7 @@ const initialState: AppState = {
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   diffComments: {},
+  notifications: [],
 };
 
 function buildProviderSpendBreakdown(
@@ -737,6 +756,9 @@ async function runSummarizer(
       sessionNextActions: { ...state.sessionNextActions, [taskId]: result.nextActions },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
+    void get().emitNotification('summarizer-success', 'info', 'context summarized', undefined, {
+      sessionId: taskId,
+    });
   } catch (err) {
     // never log api key — only the error message
     const message = err instanceof Error ? err.message : String(err);
@@ -756,6 +778,9 @@ async function runSummarizer(
           },
         },
       };
+    });
+    void get().emitNotification('error', 'error', 'summarizer failed', message, {
+      sessionId: taskId,
     });
   }
 }
@@ -1357,6 +1382,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ taskId: session.id, content: firstStepPromptPrefix });
     }
+
+    void get().emitNotification(
+      'session-created',
+      'success',
+      `session created: ${session.goal}`,
+      undefined,
+      { sessionId: session.id, workspaceId: session.workspaceId },
+    );
 
     return { session, worktree };
   },
@@ -2403,6 +2436,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  loadNotifications: async () => {
+    const notifications = await listNotifications(tauriDatabase);
+    set({ notifications });
+  },
+
+  emitNotification: async (kind, severity, title, body, opts) => {
+    const n: Notification = {
+      id: crypto.randomUUID(),
+      ts: new Date().toISOString() as IsoDateTime,
+      kind,
+      title,
+      body: body ?? null,
+      severity,
+      sessionId: opts?.sessionId ?? null,
+      workspaceId: opts?.workspaceId ?? null,
+      read: false,
+    };
+    await insertNotification(tauriDatabase, n);
+    set((state) => ({ notifications: [n, ...state.notifications] }));
+  },
+
+  markNotificationsRead: async () => {
+    await markAllNotificationsRead(tauriDatabase);
+    set((state) => ({
+      notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
+    }));
+  },
+
+  clearNotifications: async () => {
+    await clearAllNotifications(tauriDatabase);
+    set({ notifications: [] });
+  },
+
   toggleSessionSlot: async (taskId, key, enabled) => {
     const existing = get().sessionSlots[taskId] ?? [];
     const prev = existing.find((s) => s.key === key);
@@ -2636,6 +2702,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }));
       throw err;
     }
+    void get().emitNotification(
+      'workspace-deleted',
+      'info',
+      `workspace deleted: ${workspace.name}`,
+      sessions.length > 0
+        ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} removed`
+        : undefined,
+    );
   },
 
   refreshProviderSpendBreakdown: async (workspaceId) => {
@@ -2955,6 +3029,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
     }
+    const sessionGoal = session.goal;
+    const sessionWorkspaceId = session.workspaceId;
     await deleteSessionFromDb(tauriDatabase, taskId);
     set((state) => {
       const nextWorktrees = { ...state.sessionWorktrees };
@@ -2973,6 +3049,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         transcripts: nextTranscripts,
       };
     });
+    void get().emitNotification(
+      'session-deleted',
+      'info',
+      `session deleted: ${sessionGoal}`,
+      undefined,
+      { workspaceId: sessionWorkspaceId },
+    );
   },
 
   setSidebarWorkspaceSearch: (query) => set({ sidebarWorkspaceSearch: query }),
@@ -3187,6 +3270,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       model: defaults.model,
       effort: defaults.effort,
     });
+    void get().emitNotification(
+      'agent-auto-spawn',
+      'info',
+      `agent auto-spawned: ${next.name}`,
+      undefined,
+      { sessionId: taskId },
+    );
   },
 
   createPrForSession: async (taskId) => {
@@ -3199,9 +3289,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
       cwd: workspace.rootPath,
     });
     if (res.exitCode !== 0) {
-      throw new Error(res.stderr.trim() || `gh pr create exited with ${res.exitCode}`);
+      const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
+      void get().emitNotification('error', 'error', 'PR creation failed', errMsg, {
+        sessionId: taskId,
+        workspaceId: workspace.id,
+      });
+      throw new Error(errMsg);
     }
     await get().refreshSessionPr(taskId, { force: true });
+    void get().emitNotification(
+      'pr-created',
+      'success',
+      `PR created for: ${session.goal}`,
+      undefined,
+      { sessionId: taskId, workspaceId: workspace.id },
+    );
   },
 }));
 

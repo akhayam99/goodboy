@@ -1,44 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`snapshot — empty states > AlertCenter: no alerts 1`] = `
-<div
-  aria-label="alerts"
-  aria-live="polite"
-  role="region"
->
-  <span
-    class="relative inline-flex"
-  >
-    <button
-      aria-label="alert center"
-      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
-      type="button"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-bell"
-        fill="none"
-        height="13"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="13"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M10.268 21a2 2 0 0 0 3.464 0"
-        />
-        <path
-          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-        />
-      </svg>
-    </button>
-  </span>
-</div>
-`;
-
 exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
   aria-describedby="_r_3_-desc"
@@ -443,6 +404,45 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 </dialog>
 `;
 
+exports[`snapshot — empty states > NotificationCenter: no notifications 1`] = `
+<div
+  aria-label="notifications"
+  aria-live="polite"
+  role="region"
+>
+  <span
+    class="relative inline-flex"
+  >
+    <button
+      aria-label="notifications"
+      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-bell"
+        fill="none"
+        height="13"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="13"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10.268 21a2 2 0 0 0 3.464 0"
+        />
+        <path
+          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+        />
+      </svg>
+    </button>
+  </span>
+</div>
+`;
+
 exports[`snapshot — empty states > ProvidersPanel: no providers (store returns []) 1`] = `
 <div
   class="flex flex-col gap-3"
@@ -644,7 +644,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         </svg>
       </button>
       <div
-        aria-label="alerts"
+        aria-label="notifications"
         aria-live="polite"
         role="region"
       >
@@ -652,7 +652,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           class="relative inline-flex"
         >
           <button
-            aria-label="alert center"
+            aria-label="notifications"
             class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
             type="button"
           >

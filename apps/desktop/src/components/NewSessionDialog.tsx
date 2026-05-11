@@ -26,6 +26,7 @@ import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
+import { useToast } from './Toast';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -165,6 +166,7 @@ export function NewSessionDialog({
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
+  const { showToast } = useToast();
   const providers = useAppStore((s) => s.providers);
   const settingKey = settingBranchPrefix(workspaceId);
   const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
@@ -292,7 +294,7 @@ export function NewSessionDialog({
       if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
         await setSessionBudget(session.id as TaskId, parsedCap);
       }
-      // TODO (@ak): fire "session created" success toast when toast system lands (#notifications)
+      showToast('success', `session created: ${session.goal}`);
       reset();
       onClose();
     } catch (err) {

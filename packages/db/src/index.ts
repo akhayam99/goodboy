@@ -108,3 +108,12 @@ export {
   resolveDiffComment,
   deleteDiffComment,
 } from './queries/diff-comment';
+export {
+  insertNotification,
+  listNotifications,
+  markAllNotificationsRead,
+  clearAllNotifications,
+  type Notification,
+  type NotificationKind,
+  type NotificationSeverity,
+} from './queries/notification';

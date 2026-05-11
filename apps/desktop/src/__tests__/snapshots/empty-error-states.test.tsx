@@ -15,6 +15,7 @@ vi.mock('../../store', () => ({
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
     const state = {
       budgetAlerts: [],
+      notifications: [],
       providers: [],
       skills: {},
       settings: {},
@@ -25,6 +26,9 @@ vi.mock('../../store', () => ({
       sessionSummary: null,
       loadBudgetAlerts: vi.fn(),
       dismissBudgetAlert: vi.fn(),
+      loadNotifications: vi.fn(),
+      markNotificationsRead: vi.fn(),
+      clearNotifications: vi.fn(),
       refreshProviders: vi.fn(),
       loadSkills: vi.fn(),
       saveSkill: vi.fn(),
@@ -90,7 +94,7 @@ function mockStore(partial: Partial<AppStore>): void {
     selector(partial as AppStore),
   );
 }
-import { AlertCenter } from '../../components/AlertCenter';
+import { NotificationCenter } from '../../components/NotificationCenter';
 import { BootSplash } from '../../components/BootSplash';
 import { NewSessionDialog } from '../../components/NewSessionDialog';
 import { EndSessionDialog } from '../../components/EndSessionDialog';
@@ -180,8 +184,8 @@ describe('snapshot — empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('AlertCenter: no alerts', () => {
-    const { container } = render(<AlertCenter />);
+  it('NotificationCenter: no notifications', () => {
+    const { container } = render(<NotificationCenter />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });
