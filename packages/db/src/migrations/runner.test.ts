@@ -95,6 +95,7 @@ describe('migrate', () => {
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
+      titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -128,6 +129,7 @@ describe('migrate', () => {
       providerPreference: { defaultProvider: 'cursor', allowTurnOverride: false },
       permissionMode: 'bypassPermissions',
       autoRun: false,
+      titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -160,6 +162,7 @@ describe('migrate', () => {
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
+      titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -259,6 +262,7 @@ describe('migrate', () => {
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
+      titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -315,6 +319,7 @@ describe('migrate', () => {
       providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
+      titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };

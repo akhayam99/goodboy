@@ -171,6 +171,7 @@ function buildTask(): Task {
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
+    titleUserEdited: false,
     createdAt: NOW,
     updatedAt: NOW,
   };

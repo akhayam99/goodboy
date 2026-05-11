@@ -45,6 +45,7 @@ export type Task = Readonly<{
   workflowId?: WorkflowId;
   currentStepOrdinal?: number;
   autoRun: boolean;
+  titleUserEdited: boolean;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

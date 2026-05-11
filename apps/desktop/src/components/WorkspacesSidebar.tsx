@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -6,10 +6,11 @@ import {
   ArrowUpDown,
   Bot,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   FolderOpen,
   FolderPlus,
-  GitMerge,
+  GitFork,
   GitPullRequest,
   GitPullRequestArrow,
   GitPullRequestDraft,
@@ -46,6 +47,7 @@ import type {
   TurnState,
   Workflow,
   Workspace,
+  WorkspaceId,
 } from '@kay-am/types';
 import {
   EMPTY_ARRAY,
@@ -99,6 +101,30 @@ const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor
 
 type SessionSort = 'updated' | 'alpha';
 
+const SIDEBAR_COLLAPSED_KEY = 'kayam:sidebar-collapsed';
+
+function useSidebarCollapsed(): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const toggle = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
+  return [collapsed, toggle];
+}
+
 export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
@@ -151,6 +177,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
 
+  const [sidebarCollapsed, toggleSidebarCollapsed] = useSidebarCollapsed();
+
   const toggleStateFilter = (kind: TurnState['kind']) => {
     const next = sidebarStateFilter.includes(kind)
       ? sidebarStateFilter.filter((k) => k !== kind)
@@ -165,10 +193,56 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     setSidebarProviderFilter(next);
   };
 
+  if (sidebarCollapsed) {
+    return (
+      <div className="flex h-full min-h-0 flex-col items-center gap-1 px-1 py-2">
+        <button
+          type="button"
+          onClick={toggleSidebarCollapsed}
+          title="expand sidebar"
+          aria-label="expand sidebar"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <KayAmLogo iconOnly />
+        </button>
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            title="getting started — guide"
+            aria-label="open getting started guide"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <HelpCircle size={13} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title="settings (⌘,)"
+            aria-label="open settings"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Settings size={13} aria-hidden />
+          </button>
+        </div>
+        <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
-        <span className="px-1 text-sm font-semibold tracking-tight">kAY.am</span>
+        <KayAmLogo />
         <div className="ml-auto flex items-center gap-0.5">
           <button
             type="button"
@@ -197,6 +271,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Settings size={13} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={toggleSidebarCollapsed}
+            title="collapse sidebar"
+            aria-label="collapse sidebar"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronLeft size={13} aria-hidden />
           </button>
         </div>
       </div>
@@ -238,7 +321,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             </span>
             <div className="flex items-center gap-1.5">
               {currentWorkspace ? (
-                <span className="truncate text-2xs text-muted-foreground/70">
+                <span className="max-w-[80px] truncate text-2xs text-muted-foreground/70">
                   {currentWorkspace.name}
                 </span>
               ) : null}
@@ -258,7 +341,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 providerFilterOptions={PROVIDER_FILTER_OPTIONS}
                 onToggleState={toggleStateFilter}
                 onToggleProvider={toggleProviderFilter}
-                onSelectSession={(id) => void setCurrentSession(id)}
+                onSelectSession={(id) => {
+                  if (id === currentSession?.id) return;
+                  void setCurrentSession(id);
+                }}
                 onNewSession={() => setNewSessionOpen(true)}
                 onArchive={archive}
                 onUnarchive={unarchive}
@@ -290,6 +376,29 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         />
       ) : null}
     </div>
+  );
+}
+
+function KayAmLogo({ iconOnly = false }: { iconOnly?: boolean }) {
+  return (
+    <span className="flex items-center gap-1.5 px-1">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        aria-hidden
+        className="shrink-0 text-foreground"
+      >
+        <circle cx="9" cy="9" r="3.5" fill="currentColor" opacity="0.9" />
+        <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.2" opacity="0.35" />
+        <line x1="9" y1="1" x2="9" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.2" />
+        <line x1="1" y1="9" x2="17" y2="9" stroke="currentColor" strokeWidth="1" opacity="0.2" />
+      </svg>
+      {!iconOnly && (
+        <span className="text-sm font-semibold tracking-tight text-foreground">kAY.am</span>
+      )}
+    </span>
   );
 }
 
@@ -667,7 +776,7 @@ const PR_ICON_MAP: Record<
     className: 'text-success',
   },
   merged: {
-    icon: GitMerge,
+    icon: GitFork,
     label: 'merged',
     className: 'text-muted-foreground',
   },
@@ -830,7 +939,7 @@ function SessionRow({
           isActive ? 'bg-muted' : 'hover:bg-muted/60',
         )}
       >
-        <div className="flex w-full items-center gap-2 text-sm">
+        <div className="flex min-w-0 w-full items-center gap-2 text-sm">
           <span
             className={cn(
               'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
@@ -839,7 +948,10 @@ function SessionRow({
             aria-hidden
           />
           {renaming ? (
-            <div className="flex flex-1 flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex min-w-0 flex-1 flex-col gap-0.5"
+              onClick={(e) => e.stopPropagation()}
+            >
               <input
                 autoFocus
                 value={renameDraft}
@@ -851,11 +963,32 @@ function SessionRow({
               {renameError ? <span className="text-2xs text-danger">{renameError}</span> : null}
             </div>
           ) : (
-            <span className="line-clamp-1 flex-1">{session.goal}</span>
+            <span className="line-clamp-1 min-w-0 flex-1 truncate">{session.goal}</span>
           )}
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <PrStatusIcon taskId={session.id as TaskId} />
             <StatusBadge state={session.state} />
+            {session.workflowId ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void setSessionAutoRun(session.id as TaskId, !session.autoRun);
+                }}
+                title={
+                  session.autoRun ? 'autorun on — click to pause' : 'autorun off — click to enable'
+                }
+                aria-label={session.autoRun ? 'autorun on' : 'autorun off'}
+                className={cn(
+                  'rounded p-0.5 transition-colors',
+                  session.autoRun
+                    ? 'text-primary hover:bg-primary/10'
+                    : 'text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground',
+                )}
+              >
+                {session.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -871,8 +1004,8 @@ function SessionRow({
         {isActive && (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-3.5 text-2xs text-muted-foreground">
             {workflowName ? (
-              <span className="inline-flex items-center gap-1" title="workflow">
-                <WorkflowIcon size={10} aria-hidden />
+              <span className="inline-flex min-w-0 items-center gap-1" title="workflow">
+                <WorkflowIcon size={10} aria-hidden className="shrink-0" />
                 <span className="truncate">{workflowName.toLowerCase()}</span>
               </span>
             ) : null}
@@ -889,27 +1022,6 @@ function SessionRow({
                 title={`$${spentUsd.toFixed(4)} total session cost`}
                 className="text-2xs"
               />
-            ) : null}
-            {session.workflowId ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void setSessionAutoRun(session.id as TaskId, !session.autoRun);
-                }}
-                title={
-                  session.autoRun ? 'autorun on — click to pause' : 'autorun off — click to enable'
-                }
-                className={cn(
-                  'inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide motion-safe:transition-colors',
-                  session.autoRun
-                    ? 'bg-primary/15 text-primary hover:bg-primary/25'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/70',
-                )}
-              >
-                {session.autoRun ? <Zap size={10} aria-hidden /> : <ZapOff size={10} aria-hidden />}
-                auto
-              </button>
             ) : null}
           </div>
         )}
@@ -1895,5 +2007,85 @@ function ContextWindowBar({
         />
       </div>
     </div>
+  );
+}
+
+interface BulkSessionDeleteDialogProps {
+  workspaceId: WorkspaceId;
+  workspaceName: string;
+  open: boolean;
+  onClose: () => void;
+  onDeleted: () => void;
+}
+
+export function BulkSessionDeleteDialog({
+  workspaceId,
+  workspaceName,
+  open,
+  onClose,
+  onDeleted,
+}: BulkSessionDeleteDialogProps) {
+  const sessions = useSessions();
+  const bulkDelete = useAppStore((s) => s.bulkDeleteSessionsForWorkspace);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const workspaceSessions = sessions.filter((s) => s.workspaceId === workspaceId);
+
+  const onConfirm = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await bulkDelete(
+        workspaceId,
+        workspaceSessions.map((s) => s.id as TaskId),
+      );
+      onDeleted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (busy) return;
+    setError(null);
+    onClose();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      title="delete all sessions?"
+      description={`disconnecting "${workspaceName}" will permanently remove all ${workspaceSessions.length} session${workspaceSessions.length === 1 ? '' : 's'} listed below. worktrees, transcripts, and audit logs will be deleted. this cannot be undone.`}
+      size="sm"
+      footer={
+        <>
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={handleClose} disabled={busy}>
+            cancel
+          </Button>
+          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
+            {busy ? 'deleting…' : 'delete all & disconnect'}
+          </Button>
+        </>
+      }
+    >
+      <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+        {workspaceSessions.map((s) => (
+          <li
+            key={s.id}
+            className="flex items-center justify-between gap-2 rounded-md border border-border-soft bg-subtle px-3 py-1.5 text-xs"
+          >
+            <span className="min-w-0 truncate font-mono text-foreground">{s.goal}</span>
+            <span className="shrink-0 text-muted-foreground/60">
+              {new Date(s.updatedAt).toLocaleDateString()}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Dialog>
   );
 }

@@ -51,6 +51,7 @@ import {
   updateProviderRunStatus,
   updateTaskPermissionMode,
   updateTaskAutoRun,
+  updateTaskTitleUserEdited,
   updateTaskState,
   upsertContextSlot,
   insertDiffComment,
@@ -394,6 +395,11 @@ export interface AppActions {
   loadSessionOverrides(taskId: TaskId): Promise<void>;
   setTaskOverrides(taskId: TaskId, overrides: OverrideSettings): Promise<void>;
   renameTask(taskId: TaskId, goal: string): Promise<void>;
+  autoTitleSession(taskId: TaskId, title: string): Promise<void>;
+  bulkDeleteSessionsForWorkspace(
+    workspaceId: WorkspaceId,
+    taskIds: ReadonlyArray<TaskId>,
+  ): Promise<void>;
   deleteTask(taskId: TaskId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
@@ -785,6 +791,64 @@ async function runSummarizer(
         },
       };
     });
+  }
+}
+
+interface SummarizeCommandResult {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly exitCode: number | null;
+}
+
+async function generateAutoTitle(
+  set: SetFn,
+  get: () => AppStore,
+  taskId: TaskId,
+  turnInput: string,
+  turnOutput: string,
+): Promise<void> {
+  try {
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session || session.titleUserEdited) return;
+    const providerId = session.providerPreference.defaultProvider;
+    const systemPrompt =
+      'You generate a short title for an AI coding session. Return ONLY the title, 5 words or fewer, no quotes, no trailing punctuation, no explanation.';
+    const userMessage = [
+      'User request (excerpt):',
+      turnInput.slice(0, 600),
+      '',
+      'Assistant reply (excerpt):',
+      turnOutput.slice(0, 300),
+      '',
+      'Write the session title now.',
+    ].join('\n');
+    const result = await invoke<SummarizeCommandResult>('summarize_task', {
+      args: { providerId, userMessage, systemPrompt },
+    });
+    if ((result.exitCode ?? 0) !== 0) return;
+    let title = '';
+    if (providerId === 'anthropic') {
+      try {
+        const parsed = JSON.parse(result.stdout.trim()) as { result?: string };
+        title = (parsed.result ?? '').trim();
+      } catch {
+        title = result.stdout.trim();
+      }
+    } else {
+      title = result.stdout.trim();
+    }
+    title = title
+      .replace(/^["']|["']$/g, '')
+      .replace(/[.!?]+$/, '')
+      .trim();
+    if (!title) return;
+    const titleNow = new Date().toISOString() as IsoDateTime;
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === taskId ? { ...s, goal: title } : s)),
+    }));
+    await renameSessionInDb(tauriDatabase, taskId, title, titleNow, false);
+  } catch {
+    // auto-title is best-effort
   }
 }
 
@@ -1223,6 +1287,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       permissionMode: 'bypassPermissions',
       ...(workflowId !== undefined ? { workflowId } : {}),
       autoRun: autoRun === true && workflowId !== undefined,
+      titleUserEdited: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -1633,6 +1698,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // every row. The runId allocated here is still used as a placeholder for the
     // gated paths so types stay consistent (it is unused if parallelDispatch fires).
     const runId = crypto.randomUUID() as ProviderRunId;
+    const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
 
     if (parallelDispatch === null) {
       set((state) => {
@@ -2245,6 +2311,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (!lastError && assistantText.length > 0) {
       enqueueSummarizer(set, get, taskId, resolvedPrompt, assistantText);
+      if (isFirstTurn) {
+        const sessionForTitle = get().sessions.find((s) => s.id === taskId);
+        if (sessionForTitle && !sessionForTitle.titleUserEdited) {
+          void generateAutoTitle(set, get, taskId, resolvedPrompt, assistantText);
+        }
+      }
     }
 
     if (lastError) throw lastError;
@@ -2854,16 +2926,45 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!prev) throw new Error(`session not found: ${taskId}`);
     set((state) => ({
       sessions: state.sessions.map((s) =>
-        s.id === taskId ? { ...s, goal: goal.trim(), updatedAt: now } : s,
+        s.id === taskId ? { ...s, goal: goal.trim(), titleUserEdited: true, updatedAt: now } : s,
       ),
     }));
     try {
-      await renameSessionInDb(tauriDatabase, taskId, goal.trim(), now);
+      await renameSessionInDb(tauriDatabase, taskId, goal.trim(), now, true);
     } catch (err) {
       set((state) => ({
         sessions: state.sessions.map((s) => (s.id === taskId ? prev : s)),
       }));
       throw err;
+    }
+  },
+
+  autoTitleSession: async (taskId, title) => {
+    if (!title.trim()) return;
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session || session.titleUserEdited) return;
+    const now = new Date().toISOString() as IsoDateTime;
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === taskId ? { ...s, goal: title.trim() } : s)),
+    }));
+    await renameSessionInDb(tauriDatabase, taskId, title.trim(), now, false);
+  },
+
+  bulkDeleteSessionsForWorkspace: async (workspaceId, taskIds) => {
+    for (const taskId of taskIds) {
+      await get().deleteTask(taskId);
+    }
+    const remaining = get().sessions.filter((s) => s.workspaceId === workspaceId);
+    if (remaining.length === 0) {
+      await deleteWorkspace(tauriDatabase, workspaceId);
+      set((state) => ({
+        workspaces: state.workspaces.filter((w) => w.id !== workspaceId),
+        currentSessionId:
+          state.currentSessionId &&
+          state.sessions.find((s) => s.id === state.currentSessionId)?.workspaceId === workspaceId
+            ? null
+            : state.currentSessionId,
+      }));
     }
   },
 

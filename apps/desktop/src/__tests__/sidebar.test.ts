@@ -13,6 +13,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
     providerPreference: { defaultProvider: 'anthropic' as ProviderId, allowTurnOverride: true },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
+    titleUserEdited: false,
     createdAt: DT,
     updatedAt: DT,
     ...overrides,

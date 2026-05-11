@@ -73,6 +73,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
     },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
+    titleUserEdited: false,
     createdAt: '2026-01-01T00:00:00.000Z' as Task['createdAt'],
     updatedAt: '2026-01-01T00:00:00.000Z' as Task['updatedAt'],
     ...overrides,
