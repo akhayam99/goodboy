@@ -63,6 +63,10 @@ export type Session = Readonly<{
   outputSummary?: string;
   startedAt?: IsoDateTime;
   completedAt?: IsoDateTime;
+  // Provider-side conversation id captured from the CLI's `system` init event
+  // (currently only claude). Threaded back via `--resume` on subsequent turns
+  // so the provider keeps full prior-turn context across one-shot invocations.
+  providerSessionId?: string;
 }>;
 
 export type StepTransition = Readonly<{

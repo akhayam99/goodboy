@@ -52,6 +52,7 @@ interface RawPhaseRunRow {
   readonly outputSummary: string | null;
   readonly startedAt: string | null;
   readonly completedAt: string | null;
+  readonly providerSessionId: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +95,7 @@ function rowToPhaseRun(row: RawPhaseRunRow): Session {
     ...(row.outputSummary != null && { outputSummary: row.outputSummary }),
     ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
     ...(row.completedAt != null && { completedAt: row.completedAt as IsoDateTime }),
+    ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
   };
 }
 
@@ -215,6 +217,16 @@ export async function invokePhaseRunUpdateStatus(
     },
   });
   return rowToPhaseRun(row);
+}
+
+export async function invokeSessionSetProviderSessionId(
+  id: SessionId,
+  providerSessionId: string,
+): Promise<void> {
+  await invoke<void>('session_set_provider_session_id', {
+    id,
+    providerSessionId,
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -49,15 +49,38 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
 
 export const AGENT_KIND_DEFAULTS: Record<
   AgentKind,
-  { model: string; effort: 'low' | 'medium' | 'high'; verbosity?: 'low' | 'medium' | 'high' }
+  {
+    model: string;
+    effort: 'low' | 'medium' | 'high';
+    verbosity?: 'low' | 'medium' | 'high';
+    // Optional role bias appended to the claude system prompt via
+    // `--append-system-prompt`. Kept short to avoid drowning the user prompt;
+    // only kinds with a sharp role have one.
+    systemPrompt?: string;
+  }
 > = {
   scout: { model: 'claude-haiku-4-5', effort: 'low' },
   docs: { model: 'claude-haiku-4-5', effort: 'low' },
   generic: { model: 'claude-haiku-4-5', effort: 'low' },
-  implementer: { model: 'claude-sonnet-4-5', effort: 'medium' },
-  debugger: { model: 'claude-sonnet-4-5', effort: 'medium' },
+  implementer: {
+    model: 'claude-sonnet-4-5',
+    effort: 'medium',
+    systemPrompt:
+      'you are an implementation agent. execute the plan precisely. write code, run tests, fix issues. do not re-plan unless blocked. report progress at key checkpoints.',
+  },
+  debugger: {
+    model: 'claude-sonnet-4-5',
+    effort: 'medium',
+    systemPrompt:
+      'you are a debugging agent. reproduce the failure, isolate the root cause, propose minimal fixes. prefer instrumentation over assumptions. report findings before patching.',
+  },
   reviewer: { model: 'claude-sonnet-4-5', effort: 'medium' },
-  planner: { model: 'claude-opus-4-5', effort: 'high' },
+  planner: {
+    model: 'claude-opus-4-5',
+    effort: 'high',
+    systemPrompt:
+      'you are a planning agent. analyze the goal, break it into ordered steps, identify risks and dependencies. do not implement — produce a plan the implementer agent will execute. be concise.',
+  },
 };
 
 const ROLE_TO_KIND: Record<string, AgentKind> = {

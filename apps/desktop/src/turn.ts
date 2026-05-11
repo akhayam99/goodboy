@@ -59,6 +59,8 @@ interface SpawnArgs {
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
   readonly permissionMode?: ClaudePermissionMode;
+  readonly resumeSessionId?: string;
+  readonly systemPrompt?: string;
 }
 
 type RawTurnEnvelope =

@@ -77,6 +77,8 @@ pub struct SessionRow {
     pub started_at: Option<String>,
     #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
+    #[serde(rename = "providerSessionId")]
+    pub provider_session_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -424,7 +426,8 @@ pub fn session_list_for_task(
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, task_id, step_id, ordinal, name, status,
-                provider_run_id, output_summary, started_at, completed_at
+                provider_run_id, output_summary, started_at, completed_at,
+                provider_session_id
          FROM sessions
          WHERE task_id = ?1
          ORDER BY ordinal ASC",
@@ -441,6 +444,7 @@ pub fn session_list_for_task(
             output_summary: row.get(7)?,
             started_at: row.get(8)?,
             completed_at: row.get(9)?,
+            provider_session_id: row.get(10)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -484,6 +488,7 @@ pub fn session_insert(
         output_summary: input.output_summary,
         started_at: input.started_at,
         completed_at: input.completed_at,
+        provider_session_id: None,
     })
 }
 
@@ -515,7 +520,8 @@ pub fn session_update_status(
     // Fetch updated row.
     let mut stmt = conn.prepare(
         "SELECT id, task_id, step_id, ordinal, name, status,
-                provider_run_id, output_summary, started_at, completed_at
+                provider_run_id, output_summary, started_at, completed_at,
+                provider_session_id
          FROM sessions
          WHERE id = ?1
          LIMIT 1",
@@ -532,12 +538,33 @@ pub fn session_update_status(
             output_summary: row.get(7)?,
             started_at: row.get(8)?,
             completed_at: row.get(9)?,
+            provider_session_id: row.get(10)?,
         })
     })?;
     match rows.next() {
         Some(r) => Ok(r.map_err(PhaseError::Db)?),
         None => Err(PhaseError::RunNotFound(input.id)),
     }
+}
+
+// Persists the provider-side session id captured from the CLI's `system` init
+// event (claude). Threaded back via `--resume <id>` on subsequent turns so the
+// provider retains full prior-turn context across one-shot invocations.
+#[tauri::command]
+pub fn session_set_provider_session_id(
+    state: State<'_, Db>,
+    id: String,
+    provider_session_id: String,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE sessions SET provider_session_id = ?2 WHERE id = ?1",
+        rusqlite::params![id, provider_session_id],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::RunNotFound(id));
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
