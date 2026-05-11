@@ -88,6 +88,19 @@ export function App() {
     return () => window.removeEventListener('kayam:open-settings', handler);
   }, []);
 
+  // Prevent macOS from exiting native fullscreen on ESC. Calling
+  // preventDefault at the capture phase marks the event as handled in
+  // WKWebView before it reaches the native responder chain. Dialogs and
+  // dropdowns still receive the keydown and close normally via their own
+  // listeners.
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') e.preventDefault();
+    };
+    document.addEventListener('keydown', onEsc, { capture: true });
+    return () => document.removeEventListener('keydown', onEsc, { capture: true });
+  }, []);
+
   useEffect(() => {
     if (!currentSession) {
       setContextOpen(false);

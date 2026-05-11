@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  DollarSign,
   FolderOpen,
   FolderPlus,
   Gauge,
@@ -156,6 +157,18 @@ export function WorkspacesSidebar({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const currentSessionRuns = useAppStore((s) =>
+    currentSession
+      ? (s.sessionPhaseRuns[currentSession.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>))
+      : (EMPTY_ARRAY as ReadonlyArray<Session>),
+  );
+  const currentSelectedAgentId = useAppStore((s) =>
+    currentSession ? (s.selectedAgentId[currentSession.id] ?? null) : null,
+  );
+  const sessionCost = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
+
   const [archivedMap, archive, unarchive] = useArchivedTasks();
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
@@ -175,24 +188,124 @@ export function WorkspacesSidebar({
   };
 
   if (sidebarCollapsed) {
+    const sortedRails = [...currentSessionRuns].sort((a, b) => a.ordinal - b.ordinal);
+    const railBtn =
+      'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
+    const sectionIcon = 'mb-1 shrink-0 opacity-50';
+
     return (
-      <div className="flex h-full min-h-0 flex-col items-center px-1 py-2.5">
+      <div className="flex h-full min-h-0 flex-col items-center overflow-hidden px-1.5 py-2.5">
+        {/* Logo / expand */}
         <button
           type="button"
           onClick={toggleSidebarCollapsed}
           title="expand sidebar"
           aria-label="expand sidebar"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className={railBtn}
         >
           <KayAmLogo iconOnly />
         </button>
+
+        {/* Workspaces */}
+        <div className="mt-4 flex w-full flex-col items-center gap-0.5">
+          <FolderOpen size={10} aria-hidden className={cn(sectionIcon, 'text-primary')} />
+          {filteredWorkspaces.map((ws) => (
+            <button
+              key={ws.id}
+              type="button"
+              title={ws.name}
+              onClick={() => void setCurrentWorkspace(ws.id)}
+              className={cn(
+                'w-full truncate rounded-md px-1 py-0.5 text-center text-[9px] font-semibold uppercase tracking-wide transition-colors',
+                ws.id === currentWorkspace?.id
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+              )}
+            >
+              {ws.name.slice(0, 5)}
+            </button>
+          ))}
+        </div>
+
+        {/* Sessions */}
+        <div className="mt-4 flex w-full flex-col items-center gap-0.5">
+          <MessagesSquare size={10} aria-hidden className={cn(sectionIcon, 'text-info')} />
+          {activeSessions.slice(0, 7).map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              title={s.goal}
+              onClick={() => void setCurrentSession(s.id as TaskId)}
+              className={cn(
+                'flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-[9px] transition-colors',
+                s.id === currentSession?.id
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'h-1 w-1 shrink-0 rounded-full',
+                  s.id === currentSession?.id ? 'bg-primary' : 'bg-muted-foreground/30',
+                )}
+              />
+              <span className="flex-1 truncate font-medium">{s.goal.slice(0, 5)}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Agents — only if current session has runs */}
+        {currentSession && sortedRails.length > 0 ? (
+          <div className="mt-4 flex w-full flex-col items-center gap-0.5">
+            <Bot size={10} aria-hidden className={cn(sectionIcon, 'text-success')} />
+            {sortedRails.map((run) => {
+              const kind = inferAgentKindFromName(run.name);
+              const isSelected = run.id === currentSelectedAgentId;
+              return (
+                <button
+                  key={run.id}
+                  type="button"
+                  title={`${run.name} — ${run.status}`}
+                  onClick={() => void selectAgent(currentSession.id, run.id)}
+                  className={cn(
+                    'w-full rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide transition-colors',
+                    AGENT_KIND_PALETTE[kind].bg,
+                    AGENT_KIND_PALETTE[kind].fg,
+                    isSelected ? 'ring-1 ring-inset ring-white/20' : '',
+                  )}
+                >
+                  {AGENT_KIND_PALETTE[kind].label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              title="spawn free agent"
+              onClick={() => void spawnAgent(currentSession.id, {})}
+              className="mt-0.5 w-full rounded border border-dashed border-border-soft py-0.5 text-[9px] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            >
+              +
+            </button>
+          </div>
+        ) : null}
+
+        {/* Footer */}
         <div className="mt-auto flex flex-col items-center gap-2 border-t border-border-soft pt-3">
+          {sessionCost !== null && sessionCost > 0 ? (
+            <span
+              title={`$${sessionCost.toFixed(4)} session cost`}
+              className="p-1.5 text-muted-foreground/60"
+            >
+              <DollarSign size={13} aria-hidden />
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
             aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={railBtn}
           >
             {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
           </button>
@@ -201,7 +314,7 @@ export function WorkspacesSidebar({
             onClick={() => setGuideOpen(true)}
             title="getting started — guide"
             aria-label="open getting started guide"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={railBtn}
           >
             <HelpCircle size={13} aria-hidden />
           </button>
@@ -210,7 +323,7 @@ export function WorkspacesSidebar({
             onClick={onOpenSettings}
             title="settings (⌘,)"
             aria-label="open settings"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={railBtn}
           >
             <Settings size={13} aria-hidden />
           </button>

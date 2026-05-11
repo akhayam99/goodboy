@@ -124,3 +124,25 @@ export function modelTier(model: string): CostTier {
 export function modelWeight(model: string): number {
   return MODEL_COST[model]?.weight ?? 10;
 }
+
+export function modelSubfamily(id: string): string {
+  const m = id.match(/^claude-(haiku|sonnet|opus)/i);
+  return m ? m[1]!.toLowerCase() : '';
+}
+
+export function modelVersion(id: string): string {
+  const m = id.match(/^claude-(?:haiku|sonnet|opus)-(\d+)-(\d+)/i);
+  return m ? `${m[1]}.${m[2]}` : id;
+}
+
+export const CLAUDE_SUBFAMILY_LABEL: Record<string, string> = {
+  haiku: 'Haiku',
+  sonnet: 'Sonnet',
+  opus: 'Opus',
+};
+
+export const CLAUDE_SUBFAMILY_TIER: Record<string, CostTier> = {
+  haiku: 'cheap',
+  sonnet: 'mid',
+  opus: 'expensive',
+};

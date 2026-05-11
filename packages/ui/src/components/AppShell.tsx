@@ -14,7 +14,7 @@ const LEFT_SIDEBAR_MIN = 220;
 const LEFT_SIDEBAR_MAX = 480;
 const LEFT_SIDEBAR_DEFAULT = 280;
 const LEFT_SIDEBAR_STORAGE_KEY = 'kayam:left-sidebar-width';
-const LEFT_RAIL_WIDTH = 68;
+const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
