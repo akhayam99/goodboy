@@ -40,3 +40,7 @@ export async function worktreeExists(
 ): Promise<boolean> {
   return invoke<boolean>('worktree_exists', { repoPath, branchPrefix, slug });
 }
+
+export async function worktreeDiff(worktreePath: string, base?: string): Promise<string> {
+  return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
+}

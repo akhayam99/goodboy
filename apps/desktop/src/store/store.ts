@@ -52,6 +52,10 @@ import {
   updateTaskPermissionMode,
   updateTaskState,
   upsertContextSlot,
+  insertDiffComment,
+  listDiffCommentsForTask,
+  resolveDiffComment as dbResolveDiffComment,
+  deleteDiffComment as dbDeleteDiffComment,
   type TelemetrySummary,
   type ProviderTelemetrySummary,
 } from '@kay-am/db';
@@ -61,6 +65,7 @@ import type {
   ClaudePermissionMode,
   ContextSlot,
   ContextSlotHistoryEntry,
+  DiffComment,
   GlobalSettings,
   IsoDateTime,
   Message,
@@ -228,6 +233,12 @@ function buildContextPreamble(sharedSlotsRendered: string): string {
   return parts.join('\n\n');
 }
 
+function toRelPath(absPath: string, workingDir: string): string {
+  if (!workingDir) return absPath;
+  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
+  return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
+}
+
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly currentWorkspaceId: WorkspaceId | null;
@@ -286,6 +297,7 @@ export interface AppState {
   readonly sessionGithub: Readonly<Record<TaskId, SessionGithubState>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<SessionId, string>>;
+  readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
 }
 
 export interface SessionGithubState {
@@ -408,6 +420,15 @@ export interface AppActions {
     scope: 'global' | 'workspace' | 'task' | 'once' | 'deny';
   }): Promise<void>;
   setSessionPermissionMode(taskId: TaskId, mode: ClaudePermissionMode): Promise<void>;
+  loadDiffComments(taskId: TaskId): Promise<void>;
+  addDiffComment(
+    taskId: TaskId,
+    filePath: string,
+    body: string,
+    anchor?: import('@kay-am/types').DiffCommentAnchor,
+  ): Promise<void>;
+  resolveDiffComment(taskId: TaskId, commentId: string): Promise<void>;
+  deleteDiffComment(taskId: TaskId, commentId: string): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -461,6 +482,7 @@ const initialState: AppState = {
   sessionGithub: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
+  diffComments: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -1666,7 +1688,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         };
       } catch (err) {
         console.error('permission rule load failed; falling back to empty rule set', err);
-        claudeFlags = { allowedTools: [], disallowedTools: [], permissionMode: 'bypassPermissions' };
+        claudeFlags = {
+          allowedTools: [],
+          disallowedTools: [],
+          permissionMode: 'bypassPermissions',
+        };
       }
     }
 
@@ -1862,7 +1888,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       })) {
         get().appendTurnEvent(activeAgentId, taskId, event);
         if (event.kind === 'assistant_text') assistantText += event.delta;
-        if (event.kind === 'file_edit') filesTouchedThisTurn.add(event.path);
+        if (event.kind === 'file_edit') filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
           const engine = new PermissionEngine();
@@ -2176,6 +2202,38 @@ export const useAppStore = create<AppStore>((set, get) => ({
           [key]: entries,
         },
       },
+    }));
+  },
+
+  loadDiffComments: async (taskId) => {
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  addDiffComment: async (taskId, filePath, body, anchor) => {
+    const id = crypto.randomUUID();
+    await insertDiffComment(tauriDatabase, id, taskId, filePath, body, anchor);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  resolveDiffComment: async (taskId, commentId) => {
+    await dbResolveDiffComment(tauriDatabase, commentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  deleteDiffComment: async (taskId, commentId) => {
+    await dbDeleteDiffComment(tauriDatabase, commentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
     }));
   },
 

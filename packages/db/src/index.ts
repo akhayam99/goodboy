@@ -99,3 +99,9 @@ export {
   upsertGithubPrCache,
   deleteGithubPrCache,
 } from './queries/github-pr-cache';
+export {
+  insertDiffComment,
+  listDiffCommentsForTask,
+  resolveDiffComment,
+  deleteDiffComment,
+} from './queries/diff-comment';

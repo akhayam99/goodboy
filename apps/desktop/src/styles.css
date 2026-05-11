@@ -88,11 +88,47 @@ body {
 
 dialog {
   margin: auto;
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--motion-normal) var(--ease-emphasized),
+    transform var(--motion-normal) var(--ease-emphasized),
+    overlay var(--motion-normal) var(--ease-emphasized) allow-discrete,
+    display var(--motion-normal) var(--ease-emphasized) allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
 }
 
 dialog::backdrop {
+  background-color: oklch(0 0 0 / 0);
+  backdrop-filter: blur(0px);
+  transition:
+    background-color var(--motion-normal) var(--ease-emphasized),
+    backdrop-filter var(--motion-normal) var(--ease-emphasized),
+    overlay var(--motion-normal) var(--ease-emphasized) allow-discrete,
+    display var(--motion-normal) var(--ease-emphasized) allow-discrete;
+}
+
+dialog[open]::backdrop {
   background-color: oklch(0 0 0 / 0.6);
   backdrop-filter: blur(2px);
+}
+
+@starting-style {
+  dialog[open]::backdrop {
+    background-color: oklch(0 0 0 / 0);
+    backdrop-filter: blur(0px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

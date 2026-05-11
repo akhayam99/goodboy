@@ -1517,16 +1517,6 @@ function AgentRow({
             AGENT_STATUS_TONE[run.status],
           )}
         />
-        <span
-          className={cn(
-            'shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
-            AGENT_KIND_PALETTE[kind].bg,
-            AGENT_KIND_PALETTE[kind].fg,
-          )}
-          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
-        >
-          {AGENT_KIND_PALETTE[kind].label}
-        </span>
         {isEditing ? (
           <input
             autoFocus
@@ -1558,6 +1548,14 @@ function AgentRow({
             {run.name}
           </span>
         )}
+        {!isSelected && !isEditing && aggregate ? (
+          <span
+            className="shrink-0 tabular-nums text-2xs text-muted-foreground/70"
+            title={`$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`}
+          >
+            {formatCost(aggregate.estimatedCostUsd)}
+          </span>
+        ) : null}
         {!isEditing ? (
           confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1596,64 +1594,84 @@ function AgentRow({
             </button>
           )
         ) : null}
-        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{run.ordinal + 1}</span>
+        <span
+          className={cn(
+            'shrink-0 rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide',
+            'w-[3.25rem]',
+            AGENT_KIND_PALETTE[kind].bg,
+            AGENT_KIND_PALETTE[kind].fg,
+          )}
+          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
+        >
+          {AGENT_KIND_PALETTE[kind].label}
+        </span>
       </div>
-      <div className="flex flex-col gap-1 px-2 pb-1.5 pl-[1.875rem]">
-        <div className="flex items-center gap-2 whitespace-nowrap text-2xs text-foreground/85">
-          <span
-            className="inline-flex items-baseline gap-1 tabular-nums"
-            title={
-              aggregate
-                ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
-                : 'no input tokens yet'
-            }
-          >
-            <span aria-hidden className="text-muted-foreground/60">
-              ↓
-            </span>
-            {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
-          </span>
-          <span
-            className="inline-flex items-baseline gap-1 tabular-nums"
-            title={
-              aggregate
-                ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
-                : 'no output tokens yet'
-            }
-          >
-            <span aria-hidden className="text-muted-foreground/60">
-              ↑
-            </span>
-            {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-          </span>
-          <span aria-hidden className="text-muted-foreground/40">
-            ·
-          </span>
-          <span
-            className="tabular-nums"
-            title={
-              aggregate
-                ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
-                : 'no cost yet'
-            }
-          >
-            {aggregate ? formatCost(aggregate.estimatedCostUsd) : '$0'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
-          {telemetry ? (
-            <>
-              <span className="truncate">{shortModel(telemetry.model)}</span>
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-200 ease-out',
+          isSelected ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-1 px-2 pb-1.5 pl-3.5">
+            <div className="flex items-center gap-2 whitespace-nowrap text-2xs text-foreground/85">
+              <span
+                className="inline-flex items-baseline gap-1 tabular-nums"
+                title={
+                  aggregate
+                    ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
+                    : 'no input tokens yet'
+                }
+              >
+                <span aria-hidden className="text-muted-foreground/60">
+                  ↓
+                </span>
+                {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
+              </span>
+              <span
+                className="inline-flex items-baseline gap-1 tabular-nums"
+                title={
+                  aggregate
+                    ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
+                    : 'no output tokens yet'
+                }
+              >
+                <span aria-hidden className="text-muted-foreground/60">
+                  ↑
+                </span>
+                {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
+              </span>
+              <span aria-hidden className="text-muted-foreground/40">
+                ·
+              </span>
+              <span
+                className="tabular-nums"
+                title={
+                  aggregate
+                    ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
+                    : 'no cost yet'
+                }
+              >
+                {aggregate ? formatCost(aggregate.estimatedCostUsd) : '$0'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
+              {telemetry ? (
+                <>
+                  <span className="truncate">{shortModel(telemetry.model)}</span>
+                  <span aria-hidden>·</span>
+                </>
+              ) : null}
+              <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
+                {turns}t
+              </span>
               <span aria-hidden>·</span>
-            </>
-          ) : null}
-          <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-            {turns}t
-          </span>
-          <span aria-hidden>·</span>
-          <AgentLifetime run={run} />
+              <AgentLifetime run={run} />
+            </div>
+            <ContextWindowBar telemetry={telemetry} />
+          </div>
         </div>
-        <ContextWindowBar telemetry={telemetry} />
       </div>
     </li>
   );
