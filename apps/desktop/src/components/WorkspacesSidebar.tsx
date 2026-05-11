@@ -1792,7 +1792,7 @@ function AgentRow({
               <span aria-hidden>·</span>
               <AgentLifetime run={run} />
             </div>
-            <ContextWindowBar telemetry={telemetry} />
+            <ContextWindowBar telemetry={telemetry} agentId={run.id} aggregate={aggregate} />
           </div>
         </div>
       </div>
@@ -1854,20 +1854,49 @@ function AgentLifetime({ run }: { run: Session }) {
   );
 }
 
-function ContextWindowBar({ telemetry }: { telemetry: TelemetryRecord | null }) {
+function ContextWindowBar({
+  telemetry,
+  agentId,
+  aggregate,
+}: {
+  telemetry: TelemetryRecord | null;
+  agentId: SessionId;
+  aggregate: AgentAggregate | null;
+}) {
+  // Last 'usage' event surfaces cachedInputTokens — telemetry table doesn't
+  // persist that field, so we read it live from the transcript. Falls back to
+  // 0 cached when no usage event has been seen yet.
+  const cachedFromTranscript = useAppStore((s) => {
+    const events = s.transcripts[agentId];
+    if (!events) return 0;
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      const ev = events[i];
+      if (ev && ev.kind === 'usage') return ev.usage.cachedInputTokens;
+    }
+    return 0;
+  });
   if (!telemetry) return null;
   const window = findContextWindow(telemetry.model);
   if (!window) return null;
-  const used = telemetry.inputTokens;
+  // Next-turn context size ≈ what the LLM will receive: latest turn's
+  // uncached input (telemetry) + cached prefix (system prompt + history
+  // already cached server-side). Output is the response, not input — excluded.
+  const latestInput = telemetry.inputTokens;
+  const used = latestInput + cachedFromTranscript;
+  // Aggregate input across all turns is a coarser fallback when the latest
+  // record happens to undercount (e.g. cache miss reset). We surface it in
+  // the tooltip for transparency but don't conflate it with the bar value.
+  const cumulativeInput = aggregate?.inputTokens ?? latestInput;
   const pct = Math.min(1, used / window);
   const tone =
     pct >= 0.9 ? 'bg-danger' : pct >= 0.75 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
+  const tooltip =
+    `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +
+    `latest turn: ${latestInput.toLocaleString()} new + ${cachedFromTranscript.toLocaleString()} cached\n` +
+    `cumulative input across turns: ${cumulativeInput.toLocaleString()}`;
   return (
-    <div
-      className="flex flex-col gap-0.5"
-      title={`context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)`}
-    >
+    <div className="flex flex-col gap-0.5" title={tooltip}>
       <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
         <span>ctx</span>
         <span className="font-mono">

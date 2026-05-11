@@ -125,16 +125,21 @@ const STATUS_DOT: Record<SessionStatus, string> = {
 
 function PhaseProgressPill({ taskId }: { taskId: TaskId }) {
   const runs = useAppStore((s) => s.sessionPhaseRuns[taskId] ?? EMPTY_ARRAY);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[taskId] ?? null);
 
   if (runs.length === 0) return null;
 
   const sorted = runs.slice().sort((a, b) => a.ordinal - b.ordinal);
+  const selectedIdx = selectedAgentId ? sorted.findIndex((r) => r.id === selectedAgentId) : -1;
   const activeIdx = sorted.findIndex((r) => r.status === 'running');
   const lastCompletedIdx = sorted.reduce(
     (acc: number, r: Session, i: number) => (r.status === 'completed' ? i : acc),
     -1,
   );
-  const displayIdx = activeIdx >= 0 ? activeIdx : lastCompletedIdx;
+  // Selected agent takes priority — pill reflects the agent the user is
+  // looking at, not workflow-wide running state. Falls back to running, then
+  // last completed when no agent is selected (e.g. fresh task).
+  const displayIdx = selectedIdx >= 0 ? selectedIdx : activeIdx >= 0 ? activeIdx : lastCompletedIdx;
   const current = displayIdx >= 0 ? sorted[displayIdx] : sorted[0];
 
   if (!current) return null;

@@ -1,13 +1,20 @@
+import { useMemo } from 'react';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
   Task,
   TaskId,
-  Workspace,
 } from '@kay-am/types';
+import type { Workspace } from '@kay-am/types';
 import type { NextAction } from '@kay-am/core';
 import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
+
+function toRelPath(absPath: string, workingDir: string | null): string {
+  if (!workingDir) return absPath;
+  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
+  return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
+}
 
 export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
 export const selectCurrentWorkspace = (state: AppState): Workspace | null =>
@@ -54,3 +61,43 @@ const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 
 export const useDiffComments = (taskId: TaskId | null): ReadonlyArray<DiffComment> =>
   useAppStore((s) => (taskId ? (s.diffComments[taskId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));
+
+export interface FilesTouched {
+  readonly paths: ReadonlyArray<string>;
+  readonly count: number;
+}
+
+const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0 };
+
+/**
+ * Distinct files edited across every agent of a task, derived from `file_edit`
+ * transcript events. Slot-based 'files_touched' lags until the summarizer
+ * runs — this gives a live count regardless of summarizer state.
+ *
+ * Selectors return raw slices so Zustand's Object.is check is stable; the
+ * derived list is memoized in React.
+ */
+export const useFilesTouched = (taskId: TaskId | null): FilesTouched => {
+  const phaseRuns = useAppStore((s) => (taskId ? (s.sessionPhaseRuns[taskId] ?? null) : null));
+  const transcripts = useAppStore((s) => s.transcripts);
+  const workingDir = useAppStore((s) =>
+    taskId ? ((s.sessionWorktrees[taskId] ?? [])[0] ?? null) : null,
+  );
+  return useMemo(() => {
+    if (!phaseRuns || phaseRuns.length === 0) return EMPTY_FILES_TOUCHED;
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    for (const run of phaseRuns) {
+      const events = transcripts[run.id] ?? [];
+      for (const ev of events) {
+        if (ev.kind !== 'file_edit') continue;
+        const rel = toRelPath(ev.path, workingDir);
+        if (seen.has(rel)) continue;
+        seen.add(rel);
+        ordered.push(rel);
+      }
+    }
+    if (ordered.length === 0) return EMPTY_FILES_TOUCHED;
+    return { paths: ordered, count: ordered.length };
+  }, [phaseRuns, transcripts, workingDir]);
+};

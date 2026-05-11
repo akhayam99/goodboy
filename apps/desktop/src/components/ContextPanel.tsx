@@ -35,6 +35,7 @@ import {
   EMPTY_ARRAY,
   useAppStore,
   useDiffComments,
+  useFilesTouched,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
@@ -90,11 +91,8 @@ export function ContextPanel({
 
   const visibleSlotKeys = useMemo(() => SLOT_KEYS.filter((k) => k !== 'files_touched'), []);
 
-  const filesTouchedCount = useMemo(() => {
-    const slot = slotsByKey.get('files_touched');
-    if (!slot || slot.value.length === 0) return 0;
-    return slot.value.split('\n').filter((l) => l.trim().length > 0).length;
-  }, [slotsByKey]);
+  const filesTouched = useFilesTouched(session.id);
+  const filesTouchedCount = filesTouched.count;
 
   const [filesDiffOpen, setFilesDiffOpen] = useState(false);
   const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);

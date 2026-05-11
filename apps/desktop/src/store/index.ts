@@ -18,6 +18,7 @@ export {
   useCurrentSession,
   useCurrentWorkspace,
   useDiffComments,
+  useFilesTouched,
   useSessionSlots,
   useSessionNextActions,
   useSlotHistory,
@@ -25,6 +26,7 @@ export {
   useSummarizerStatus,
   useWorkspaces,
 } from './selectors';
+export type { FilesTouched } from './selectors';
 export { selectTranscript, useTranscript } from './transcript';
 
 export const EMPTY_ARRAY: readonly never[] = [];
