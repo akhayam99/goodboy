@@ -55,6 +55,7 @@ import {
   useCurrentSession,
   useCurrentWorkspace,
   useSessionNextActions,
+  useSessionSlots,
   useSessions,
   useWorkspaces,
 } from '../store';
@@ -1285,6 +1286,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const workflow = task.workflowId
     ? (phaseTemplates.find((t) => t.id === task.workflowId) ?? null)
     : null;
+  const slots = useSessionSlots(task.id);
+  const hasOpenQuestions =
+    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<SessionId | null>(null);
 
@@ -1438,6 +1442,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
             workflow={workflow}
             runs={sorted}
             onAdvance={(step, model) => onSpawn(step.id, model)}
+            hasOpenQuestions={hasOpenQuestions}
           />
         </div>
       ) : null}
@@ -1457,10 +1462,14 @@ interface SpawnAgentControlProps {
 
 function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
+  const [pendingSuggestion, setPendingSuggestion] = useState<NextAction | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const nextActions = useSessionNextActions(taskId);
+  const slots = useSessionSlots(taskId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
+  const hasOpenQuestions =
+    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -1478,10 +1487,19 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
 
   const suggestions = workflow ? [] : nextActions;
 
-  const onPickSuggestion = async (action: NextAction) => {
-    setOpen(false);
+  const executeSuggestion = async (action: NextAction) => {
+    setPendingSuggestion(null);
     const did = await spawnFromNextAction(action, taskId, spawnAgent);
     if (did) clearSessionNextActions(taskId);
+  };
+
+  const onPickSuggestion = (action: NextAction) => {
+    setOpen(false);
+    if (hasOpenQuestions) {
+      setPendingSuggestion(action);
+      return;
+    }
+    void executeSuggestion(action);
   };
 
   return (
@@ -1555,6 +1573,29 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
               ))}
             </>
           ) : null}
+        </div>
+      ) : null}
+      {pendingSuggestion ? (
+        <div className="mt-1.5 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
+          <p className="mb-2 font-medium text-foreground">
+            open questions need resolution before spawning an agent.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingSuggestion(null)}
+              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
+            >
+              resolve first
+            </button>
+            <button
+              type="button"
+              onClick={() => void executeSuggestion(pendingSuggestion)}
+              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
+            >
+              force spawn
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
