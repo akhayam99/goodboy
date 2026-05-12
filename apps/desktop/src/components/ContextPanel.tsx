@@ -207,6 +207,7 @@ export function ContextPanel({
                     taskId={session.id}
                     slotKey={key}
                     slot={slot}
+                    isSummarizing={summarizer.status === 'running'}
                     onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
                   />
                 );
@@ -305,6 +306,37 @@ function PrStateIcon({ state }: { state: PullRequestStateKind }) {
 
 function openInBrowser(url: string) {
   openUrl(url).catch(() => window.open(url, '_blank'));
+}
+
+function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-2 rounded-md px-2.5 py-2 bg-subtle',
+        emphasis ? 'gap-2.5' : 'gap-1.5',
+      )}
+      aria-hidden
+    >
+      <div
+        className={cn(
+          'animate-pulse rounded bg-muted/70',
+          emphasis ? 'h-3.5 w-3/4' : 'h-2.5 w-4/5',
+        )}
+      />
+      <div
+        className={cn(
+          'animate-pulse rounded bg-muted/70',
+          emphasis ? 'h-3.5 w-full' : 'h-2.5 w-full',
+        )}
+      />
+      <div
+        className={cn(
+          'animate-pulse rounded bg-muted/70',
+          emphasis ? 'h-3.5 w-1/2' : 'h-2.5 w-2/3',
+        )}
+      />
+    </div>
+  );
 }
 
 function PrSkeleton() {
@@ -575,10 +607,11 @@ interface SlotRowProps {
   taskId: TaskId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
+  isSummarizing?: boolean;
   onCommit: (value: string) => void;
 }
 
-function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
+function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: SlotRowProps) {
   const value = slot?.value ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -652,6 +685,8 @@ function SlotRow({ taskId, slotKey, slot, onCommit }: SlotRowProps) {
           autoGrow
           maxRows={12}
         />
+      ) : isSummarizing ? (
+        <SlotSkeleton emphasis={meta?.emphasis} />
       ) : !hasValue ? (
         <button
           type="button"
