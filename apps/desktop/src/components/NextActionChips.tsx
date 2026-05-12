@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
 import type { TaskId } from '@kay-am/types';
-import { useAppStore, useSessionNextActions } from '../store';
+import { useAppStore, useSessionNextActions, useSessionSlots } from '../store';
 import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agentKind';
 import { spawnKindForAction } from '../spawnFromNextAction';
 
@@ -13,20 +13,33 @@ export interface NextActionChipsProps {
   readonly className?: string;
 }
 
+function isSpawnAction(action: NextAction): boolean {
+  return (
+    action.id === 'spawn_planner' ||
+    action.id === 'spawn_implementer' ||
+    action.id === 'spawn_debugger'
+  );
+}
+
 export function NextActionChips({ taskId, workflowBound, className }: NextActionChipsProps) {
   const actions = useSessionNextActions(taskId);
+  const slots = useSessionSlots(taskId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const createPrForSession = useAppStore((s) => s.createPrForSession);
   const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
   const [busyId, setBusyId] = useState<NextAction['id'] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<NextAction | null>(null);
+
+  const hasOpenQuestions =
+    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
 
   if (workflowBound || actions.length === 0) return null;
 
-  const onClick = async (action: NextAction) => {
-    if (busyId) return;
+  const executeAction = async (action: NextAction) => {
     setBusyId(action.id);
     setError(null);
+    setPendingAction(null);
     try {
       switch (action.id) {
         case 'spawn_planner':
@@ -56,6 +69,15 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
     }
   };
 
+  const onClick = async (action: NextAction) => {
+    if (busyId) return;
+    if (hasOpenQuestions && isSpawnAction(action)) {
+      setPendingAction(action);
+      return;
+    }
+    await executeAction(action);
+  };
+
   return (
     <section
       className={cn('flex flex-col gap-1.5', className)}
@@ -76,6 +98,29 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
           />
         ))}
       </div>
+      {pendingAction ? (
+        <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
+          <p className="mb-2 font-medium text-foreground">
+            open questions need resolution before spawning an agent.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingAction(null)}
+              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
+            >
+              resolve first
+            </button>
+            <button
+              type="button"
+              onClick={() => void executeAction(pendingAction)}
+              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
+            >
+              force spawn
+            </button>
+          </div>
+        </div>
+      ) : null}
       {error ? (
         <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
           {error}
