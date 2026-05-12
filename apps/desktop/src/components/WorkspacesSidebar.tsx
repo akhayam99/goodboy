@@ -6,7 +6,6 @@ import {
   ArrowUpDown,
   Bot,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   FolderOpen,
   FolderPlus,
@@ -75,7 +74,6 @@ import {
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
-  inferAgentKindFromStep,
 } from '../agentKind';
 import { spawnFromNextAction, spawnKindForAction } from '../spawnFromNextAction';
 import { openUrl } from '../editor';
@@ -83,8 +81,6 @@ import { useThemeStore } from '../theme';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
-  collapsed: boolean;
-  onToggleCollapsed: () => void;
 }
 
 const PROVIDER_SHORT: Record<ProviderId, string> = {
@@ -104,11 +100,7 @@ const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor
 
 type SessionSort = 'updated' | 'alpha';
 
-export function WorkspacesSidebar({
-  onOpenSettings,
-  collapsed: sidebarCollapsed,
-  onToggleCollapsed: toggleSidebarCollapsed,
-}: WorkspacesSidebarProps) {
+export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
@@ -156,18 +148,6 @@ export function WorkspacesSidebar({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const currentSessionRuns = useAppStore((s) =>
-    currentSession
-      ? (s.sessionPhaseRuns[currentSession.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>))
-      : (EMPTY_ARRAY as ReadonlyArray<Session>),
-  );
-  const currentSelectedAgentId = useAppStore((s) =>
-    currentSession ? (s.selectedAgentId[currentSession.id] ?? null) : null,
-  );
-  const sessionCost = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
-
   const [archivedMap, archive, unarchive] = useArchivedTasks();
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
@@ -185,189 +165,6 @@ export function WorkspacesSidebar({
       : [...sidebarProviderFilter, provider];
     setSidebarProviderFilter(next);
   };
-
-  if (sidebarCollapsed) {
-    const sortedRails = [...currentSessionRuns].sort((a, b) => a.ordinal - b.ordinal);
-    const railBtn =
-      'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
-
-    return (
-      <div className="flex h-full min-h-0 flex-col">
-        {/* Header — same height as expanded */}
-        <div className="flex shrink-0 items-center justify-center gap-1.5 px-2 py-2">
-          <button
-            type="button"
-            onClick={toggleSidebarCollapsed}
-            title="expand sidebar"
-            aria-label="expand sidebar"
-            className={railBtn}
-          >
-            <KayAmLogo iconOnly />
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {/* Workspaces — same vertical position as expanded */}
-          <section className="flex flex-col px-1.5">
-            <header className="flex items-center justify-center pb-1.5">
-              <FolderOpen size={11} aria-hidden className="text-primary" />
-            </header>
-            <div className="flex flex-col gap-0.5">
-              {filteredWorkspaces.map((ws) => (
-                <button
-                  key={ws.id}
-                  type="button"
-                  title={ws.name}
-                  onClick={() => void setCurrentWorkspace(ws.id)}
-                  className={cn(
-                    'w-full truncate rounded-md px-1 py-0.5 text-center text-[9px] font-semibold uppercase tracking-wide transition-colors',
-                    ws.id === currentWorkspace?.id
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                  )}
-                >
-                  {ws.name.slice(0, 5)}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Sessions — mt-8 matching expanded */}
-          <section className="mt-8 flex flex-col px-1.5">
-            <header className="flex items-center justify-center pb-1.5">
-              <MessagesSquare size={11} aria-hidden className="text-info" />
-            </header>
-            <div className="flex flex-col gap-0.5">
-              {activeSessions.slice(0, 7).map((s) => {
-                const isActive = s.id === currentSession?.id;
-                if (isActive) {
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={toggleSidebarCollapsed}
-                      title={s.goal}
-                      className="flex flex-col gap-0.5 rounded-md bg-muted px-1.5 py-1 text-left transition-colors hover:bg-muted/80"
-                    >
-                      <span className="line-clamp-2 text-[9px] font-medium leading-tight text-foreground">
-                        {s.goal}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
-                        {sortedRails.length > 0 ? (
-                          <span
-                            className="inline-flex items-center gap-0.5 tabular-nums"
-                            title={`${sortedRails.length} agent${sortedRails.length === 1 ? '' : 's'}`}
-                          >
-                            <Users size={8} aria-hidden />
-                            {sortedRails.length}
-                          </span>
-                        ) : null}
-                        {sessionCost !== null && sessionCost > 0 ? (
-                          <CostBadge
-                            value={sessionCost}
-                            title={`$${sessionCost.toFixed(4)}`}
-                            className="text-[8px]"
-                          />
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                }
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    title={s.goal}
-                    onClick={() => void setCurrentSession(s.id as TaskId)}
-                    className="flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-[9px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/30"
-                    />
-                    <span className="flex-1 truncate font-medium">{s.goal.slice(0, 5)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Agents — mt-8 matching expanded */}
-          {currentSession && sortedRails.length > 0 ? (
-            <section className="mt-8 flex flex-col px-1.5 pb-3">
-              <header className="flex items-center justify-center pb-1.5">
-                <Bot size={11} aria-hidden className="text-success" />
-              </header>
-              <div className="flex flex-col gap-0.5">
-                {sortedRails.map((run) => {
-                  const kind = inferAgentKindFromName(run.name);
-                  const isSelected = run.id === currentSelectedAgentId;
-                  return (
-                    <button
-                      key={run.id}
-                      type="button"
-                      title={`${run.name} — ${run.status}`}
-                      onClick={() => void selectAgent(currentSession.id, run.id)}
-                      className={cn(
-                        'w-full rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide transition-colors',
-                        AGENT_KIND_PALETTE[kind].bg,
-                        AGENT_KIND_PALETTE[kind].fg,
-                        isSelected ? 'ring-1 ring-inset ring-white/20' : '',
-                      )}
-                    >
-                      {AGENT_KIND_PALETTE[kind].label}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  title="spawn free agent"
-                  onClick={() => void spawnAgent(currentSession.id, {})}
-                  className="mt-0.5 w-full rounded border border-dashed border-border-soft py-0.5 text-[9px] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-                >
-                  +
-                </button>
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        {/* Footer — matches expanded sidebar */}
-        <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-              aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-              className={railBtn}
-            >
-              {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setGuideOpen(true)}
-              title="getting started — guide"
-              aria-label="open getting started guide"
-              className={railBtn}
-            >
-              <HelpCircle size={13} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              title="settings (⌘,)"
-              aria-label="open settings"
-              className={railBtn}
-            >
-              <Settings size={13} aria-hidden />
-            </button>
-          </div>
-        </div>
-        <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -401,15 +198,6 @@ export function WorkspacesSidebar({
             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Settings size={13} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={toggleSidebarCollapsed}
-            title="collapse sidebar"
-            aria-label="collapse sidebar"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <ChevronLeft size={13} aria-hidden />
           </button>
         </div>
       </div>
@@ -509,7 +297,7 @@ export function WorkspacesSidebar({
   );
 }
 
-function KayAmLogo({ iconOnly = false }: { iconOnly?: boolean }) {
+function KayAmLogo() {
   return (
     <span className="flex items-center gap-1.5 px-1">
       <svg
@@ -525,9 +313,7 @@ function KayAmLogo({ iconOnly = false }: { iconOnly?: boolean }) {
         <line x1="9" y1="1" x2="9" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.2" />
         <line x1="1" y1="9" x2="17" y2="9" stroke="currentColor" strokeWidth="1" opacity="0.2" />
       </svg>
-      {!iconOnly && (
-        <span className="text-sm font-semibold tracking-tight text-foreground">kAY.am</span>
-      )}
+      <span className="text-sm font-semibold tracking-tight text-foreground">kAY.am</span>
     </span>
   );
 }
