@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Bot, Cpu, DollarSign, FileDown, FolderCode, GitFork, Trash2 } from 'lucide-react';
+import { Bot, Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
-import { GithubPanel } from './GithubPanel';
+import { IntegrationsPanel } from './IntegrationsPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import {
@@ -31,7 +31,7 @@ type NavSection =
   | 'providers'
   | 'budget'
   | 'agent'
-  | 'github'
+  | 'integrations'
   | 'initialization'
   | 'advanced';
 
@@ -49,7 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
   { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
   { id: 'agent', label: 'Agent', icon: <Bot size={14} aria-hidden />, beta: true },
-  { id: 'github', label: 'Github', icon: <GitFork size={14} aria-hidden /> },
+  { id: 'integrations', label: 'Integrations', icon: <Link2 size={14} aria-hidden /> },
   { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
   { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
 ];
@@ -60,7 +60,7 @@ function isNavSection(value: string | undefined): value is NavSection {
     value === 'providers' ||
     value === 'budget' ||
     value === 'agent' ||
-    value === 'github' ||
+    value === 'integrations' ||
     value === 'initialization' ||
     value === 'advanced'
   );
@@ -240,8 +240,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
             </Field>
           </div>
         );
-      case 'github':
-        return <GithubPanel />;
+      case 'integrations':
+        return <IntegrationsPanel />;
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">

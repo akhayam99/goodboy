@@ -5,7 +5,7 @@ import { useAppStore } from '../store';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function GithubPanel() {
+export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) {
   const status = useAppStore((s) => s.githubStatus);
   const refreshStatus = useAppStore((s) => s.refreshGithubStatus);
   const setPat = useAppStore((s) => s.setGithubPat);
@@ -47,10 +47,12 @@ export function GithubPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">GitHub</h2>
-      </div>
+      {!hideSectionHeader ? (
+        <div className="flex items-center gap-2">
+          <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">GitHub</h2>
+        </div>
+      ) : null}
 
       {status === null ? (
         <p className="text-xs text-muted-foreground">checking gh status…</p>
