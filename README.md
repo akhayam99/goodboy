@@ -61,30 +61,10 @@ kay-am/
 
 Two columns. Floating sidebar left, chat + context panel right. No top header, no bottom footer — both fold into the sidebar.
 
-```
-┌─────────────────────────┬───────────────────────────────┬──────────────┐
-│ kAY.am          🔔  ⚙   │ goal · branch · open in code  │              │
-│                         │                               │              │
-│ WORKSPACES              │                               │              │
-│  • app-web              │                               │  Context     │
-│                         │                               │  Panel       │
-│ SESSIONS    (app-web)   │       Agent's chat            │              │
-│  • refactor auth        │       (streaming)             │  shared      │
-│                         │                               │  across      │
-│ AGENTS      2 agents    │                               │  agents      │
-│  ▣ agent 1  ← selected  │                               │              │
-│  ▢ agent 2              │                               │  (collap-    │
-│  + spawn agent          │                               │   sible)     │
-│                         │ ┌───────────────────────────┐ │              │
-│                         │ │ Message Claude…        ▶  │ │              │
-│                         │ └───────────────────────────┘ │              │
-│ ⓟ providers   3 / 3     │  [Claude] [Opus 4.7] [Med]   │              │
-│ $0.20 session · $1.40   │                               │              │
-└─────────────────────────┴───────────────────────────────┴──────────────┘
-   sidebar (floating)            chat (central)              context
-```
+<img width="3696" height="2410" alt="CleanShot 2026-05-12 at 02 21 55@2x" src="https://github.com/user-attachments/assets/9bef136e-41de-4380-845d-9c55075cd753" />
 
-- **Sidebar top** — brand · alerts bell · settings (⌘,).
+
+- **Sidebar top** — brand · light/dark mode · alerts bell · guide · settings (⌘,).
 - **Sidebar middle** — workspaces → sessions → agents.
 - **Sidebar footer** — providers chip · cost telemetry pill (click for per-model breakdown).
 - **Right rail** — shared context panel for the current session, collapsible.
