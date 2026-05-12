@@ -419,15 +419,6 @@ export function NewSessionDialog({
               <span className="shrink-0 text-xs text-muted-foreground font-mono">
                 {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
               </span>
-              {branchReady ? (
-                <Check size={11} className="shrink-0 text-success" aria-label="valid" />
-              ) : (
-                <AlertTriangle
-                  size={11}
-                  className="shrink-0 text-warning"
-                  aria-label="branch name required"
-                />
-              )}
               {slugGenerating ? (
                 <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
                   <span className="h-2 w-full rounded bg-muted-foreground/20" />
@@ -457,6 +448,14 @@ export function NewSessionDialog({
               >
                 <Wand2 size={13} aria-hidden />
               </button>
+              {branchReady ? (
+                <Check size={11} className="shrink-0 text-success" aria-label="valid" />
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <AlertTriangle size={11} className="shrink-0 text-warning" aria-hidden />
+                  <span className="text-2xs text-muted-foreground/60">fill or generate</span>
+                </span>
+              )}
             </div>
             <div className="flex-1" />
             {error ? (
