@@ -1626,7 +1626,7 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
                   role="menuitem"
                   onClick={() => {
                     setOpen(false);
-                    void onSpawn(step.id);
+                    void onSpawn(step.id, step.modelOverride);
                   }}
                   className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
                 >
