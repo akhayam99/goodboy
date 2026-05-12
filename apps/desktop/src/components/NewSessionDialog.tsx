@@ -406,21 +406,22 @@ export function NewSessionDialog({
       footer={
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center gap-2">
-            <GitBranch size={13} className="shrink-0 text-muted-foreground" aria-hidden />
-            <div className="flex min-w-0 flex-1 items-center gap-1">
-              <span className="shrink-0 text-xs text-muted-foreground">
+            <div className="flex shrink-0 items-center gap-1">
+              <GitBranch size={13} className="shrink-0 text-muted-foreground" aria-hidden />
+              <span className="shrink-0 text-xs text-muted-foreground font-mono">
                 {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
               </span>
               {slugGenerating ? (
-                <span className="flex h-6 flex-1 animate-pulse items-center rounded bg-muted px-2">
-                  <span className="h-2 w-24 rounded bg-muted-foreground/20" />
+                <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
+                  <span className="h-2 w-full rounded bg-muted-foreground/20" />
                 </span>
               ) : (
                 <Input
                   value={branchSlug}
                   onChange={(e) => setBranchSlug(e.target.value)}
                   placeholder="branch-slug"
-                  className="h-6 min-w-0 flex-1 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-6 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ width: `${Math.max(branchSlug.length || 11, 11)}ch` }}
                   disabled={busy}
                   aria-label="branch slug"
                 />
@@ -440,15 +441,11 @@ export function NewSessionDialog({
                 <Wand2 size={13} aria-hidden />
               </button>
             </div>
-            {branchSlug.trim() ? (
-              <span className="shrink-0 text-2xs text-muted-foreground/60">→ {branchDisplay}</span>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2">
+            <div className="flex-1" />
             {error ? (
-              <span className="mr-auto text-xs text-danger">{error}</span>
+              <span className="text-xs text-danger">{error}</span>
             ) : missingRequired.length > 0 ? (
-              <span className="mr-auto inline-flex items-center gap-1 text-xs text-warning">
+              <span className="inline-flex items-center gap-1 text-xs text-warning">
                 <AlertTriangle size={12} aria-hidden />
                 complete: {missingRequired.map((s) => s.label.toLowerCase()).join(', ')}
               </span>
