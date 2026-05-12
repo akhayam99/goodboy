@@ -26,6 +26,7 @@ import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
+import { fetchIssueFromUrl, type IssueData } from '../integrations';
 import { useToast } from './Toast';
 
 interface NewSessionDialogProps {
@@ -155,7 +156,31 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-const LINEAR_FEATURE_FLAG = false;
+async function generateGoalFromIssue(issue: IssueData, providerId: ProviderId): Promise<string> {
+  const systemPrompt =
+    'You are a goal extractor for AI coding sessions. Given a task or issue, write a concise goal in 2-4 sentences, imperative form (e.g. "Refactor the auth middleware to..."). Output ONLY the goal text, nothing else.';
+  const userMessage = `Title: ${issue.title}\n\nDescription:\n${issue.body}`.slice(0, 4000);
+  const result = await invoke<SummarizeTaskResult>('summarize_task', {
+    args: {
+      providerId,
+      model: getCheapModel(providerId),
+      binary: getDefaultBinary(providerId),
+      userMessage,
+      systemPrompt,
+    },
+  });
+  if ((result.exitCode ?? 0) !== 0) {
+    throw new Error(`goal generation failed: ${result.stderr}`);
+  }
+  const raw = result.stdout.trim();
+  try {
+    const parsed = JSON.parse(raw) as { result?: string };
+    if (typeof parsed.result === 'string') return parsed.result.trim();
+  } catch {
+    // not json, use raw
+  }
+  return raw;
+}
 
 export function NewSessionDialog({
   open,
@@ -243,13 +268,27 @@ export function NewSessionDialog({
   const handleIssueUrl = async (value: string) => {
     setIssueUrl(value);
     setIssueError(null);
-    const parsed = parseGithubIssueUrl(value);
-    if (!parsed) return;
+
+    const githubParsed = parseGithubIssueUrl(value);
+    const hasMatch =
+      githubParsed !== null ||
+      value.includes('linear.app') ||
+      value.includes('gitlab.com') ||
+      value.includes('atlassian.net');
+    if (!hasMatch) return;
+
     setIssueFetching(true);
     try {
-      const issue = await fetchGithubIssue(parsed.repoSlug, parsed.number);
-      const fullGoal = issue.body ? `${issue.title}\n\n${issue.body}` : issue.title;
-      setGoal(fullGoal);
+      let issueData: IssueData | null = null;
+      if (githubParsed) {
+        const gh = await fetchGithubIssue(githubParsed.repoSlug, githubParsed.number);
+        issueData = { service: 'github', title: gh.title, body: gh.body, url: gh.url };
+      } else {
+        issueData = await fetchIssueFromUrl(value);
+      }
+      if (!issueData) return;
+      const goal = await generateGoalFromIssue(issueData, selectedProvider);
+      setGoal(goal);
     } catch (err) {
       setIssueError(formatError(err));
     } finally {
@@ -453,14 +492,7 @@ export function NewSessionDialog({
               )}
             >
               {s.icon}
-              <span className="flex-1">
-                {s.label}
-                {s.required ? (
-                  <span aria-hidden className="ml-0.5 text-warning">
-                    *
-                  </span>
-                ) : null}
-              </span>
+              <span className="flex-1">{s.label}</span>
               {s.ready ? (
                 <Check size={11} className="text-success" aria-label="filled" />
               ) : s.required ? (
@@ -477,17 +509,16 @@ export function NewSessionDialog({
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">
           {activeSection === 'goal' ? (
             <div className="flex flex-col gap-4">
-              <Field label="issue link" hint="paste a GitHub issue URL or owner/repo#number.">
-                {LINEAR_FEATURE_FLAG ? (
-                  <p className="rounded-md border border-dashed border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
-                    Linear integration coming soon.
-                  </p>
-                ) : null}
+              <Field
+                label="issue link"
+                labelSuffix={<BetaChip />}
+                hint="paste a GitHub, GitLab, Jira, or Linear issue URL — goal will be generated automatically."
+              >
                 <div className="relative">
                   <Input
                     value={issueUrl}
                     onChange={(e) => void handleIssueUrl(e.target.value)}
-                    placeholder="https://github.com/owner/repo/issues/42"
+                    placeholder="github.com/…/issues/42 · linear.app/…/TEAM-1 · jira · gitlab"
                     disabled={issueFetching || busy}
                   />
                   {issueFetching ? (
@@ -701,19 +732,32 @@ export function NewSessionDialog({
 
 function Field({
   label,
+  labelSuffix,
   hint,
   children,
 }: {
   label: string;
+  labelSuffix?: React.ReactNode;
   hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold text-foreground">{label}</span>
+      <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+        {label}
+        {labelSuffix}
+      </span>
       {children}
       {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
     </div>
+  );
+}
+
+function BetaChip() {
+  return (
+    <span className="rounded-sm bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
+      beta
+    </span>
   );
 }
 
