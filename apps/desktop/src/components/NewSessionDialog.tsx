@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   Layers,
   Loader2,
   Sparkles,
+  Wand2,
   Target,
   Zap,
 } from 'lucide-react';
@@ -122,6 +123,12 @@ function getDefaultBinary(providerId: ProviderId): string {
   }
 }
 
+function isValidBranchSlug(slug: string): boolean {
+  const s = slug.trim();
+  if (!s) return false;
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+}
+
 async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
   const systemPrompt =
     'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
@@ -217,9 +224,6 @@ export function NewSessionDialog({
     return pickDefaultProvider(ids);
   });
 
-  const goalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSlugGoalRef = useRef('');
-
   useEffect(() => {
     if (!open) return;
     setGoal('');
@@ -233,7 +237,6 @@ export function NewSessionDialog({
     setWorkflowMode('one-off');
     setAutoRun(false);
     setError(null);
-    lastSlugGoalRef.current = '';
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
@@ -241,29 +244,21 @@ export function NewSessionDialog({
     setSelectedProvider(pickDefaultProvider(ids));
   }, [open, settingKey, loadSetting, providers, workspaceId]);
 
-  useEffect(() => {
-    if (!open) return;
+  const handleGenerateSlug = () => {
     const trimmed = goal.trim();
-    if (!trimmed || trimmed === lastSlugGoalRef.current) return;
-    if (goalDebounceRef.current) clearTimeout(goalDebounceRef.current);
-    goalDebounceRef.current = setTimeout(() => {
-      lastSlugGoalRef.current = trimmed;
-      setSlugGenerating(true);
-      generateBranchSlug(trimmed, selectedProvider)
-        .then((slug) => {
-          setBranchSlug(slug);
-        })
-        .catch(() => {
-          // silent — user can type manually
-        })
-        .finally(() => {
-          setSlugGenerating(false);
-        });
-    }, 800);
-    return () => {
-      if (goalDebounceRef.current) clearTimeout(goalDebounceRef.current);
-    };
-  }, [goal, selectedProvider, open]);
+    if (!trimmed || slugGenerating) return;
+    setSlugGenerating(true);
+    generateBranchSlug(trimmed, selectedProvider)
+      .then((slug) => {
+        setBranchSlug(slug);
+      })
+      .catch(() => {
+        // silent — user can type manually
+      })
+      .finally(() => {
+        setSlugGenerating(false);
+      });
+  };
 
   const handleIssueUrl = async (value: string) => {
     setIssueUrl(value);
@@ -308,7 +303,6 @@ export function NewSessionDialog({
     setWorkflowMode('one-off');
     setAutoRun(false);
     setError(null);
-    lastSlugGoalRef.current = '';
   };
 
   const onCreate = async () => {
@@ -402,8 +396,10 @@ export function NewSessionDialog({
     }
   };
 
+  const branchReady = isValidBranchSlug(branchSlug);
+
   const missingRequired = sections.filter((s) => s.required && !s.ready);
-  const canCreate = missingRequired.length === 0 && !busy;
+  const canCreate = missingRequired.length === 0 && branchReady && !busy;
 
   const branchDisplay = `${branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/${branchSlug.trim() || '…'}`;
 
@@ -418,35 +414,54 @@ export function NewSessionDialog({
       footer={
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center gap-2">
-            <GitBranch size={13} className="shrink-0 text-muted-foreground" aria-hidden />
-            <div className="flex min-w-0 flex-1 items-center gap-1">
-              <span className="shrink-0 text-xs text-muted-foreground">
+            <div className="flex shrink-0 items-center gap-1">
+              <GitBranch size={13} className="shrink-0 text-muted-foreground" aria-hidden />
+              <span className="shrink-0 text-xs text-muted-foreground font-mono">
                 {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
               </span>
               {slugGenerating ? (
-                <span className="flex h-6 flex-1 animate-pulse items-center rounded bg-muted px-2">
-                  <span className="h-2 w-24 rounded bg-muted-foreground/20" />
+                <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
+                  <span className="h-2 w-full rounded bg-muted-foreground/20" />
                 </span>
               ) : (
                 <Input
                   value={branchSlug}
                   onChange={(e) => setBranchSlug(e.target.value)}
                   placeholder="branch-slug"
-                  className="h-6 min-w-0 flex-1 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-6 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ width: `${Math.max(branchSlug.length || 11, 11)}ch` }}
                   disabled={busy}
                   aria-label="branch slug"
                 />
               )}
+              <button
+                type="button"
+                onClick={handleGenerateSlug}
+                disabled={!goal.trim() || slugGenerating || busy}
+                title="generate branch name"
+                className={cn(
+                  'shrink-0 rounded p-0.5 transition-colors',
+                  goal.trim() && !slugGenerating && !busy
+                    ? 'text-muted-foreground hover:text-foreground'
+                    : 'cursor-not-allowed text-muted-foreground/30',
+                )}
+              >
+                <Wand2 size={13} aria-hidden />
+              </button>
+              {branchReady ? (
+                <Check size={11} className="shrink-0 text-success" aria-label="valid" />
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <AlertTriangle size={11} className="shrink-0 text-warning" aria-hidden />
+                  <span className="text-2xs text-muted-foreground/60">fill or generate</span>
+                </span>
+              )}
             </div>
-            {branchSlug.trim() ? (
-              <span className="shrink-0 text-2xs text-muted-foreground/60">→ {branchDisplay}</span>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2">
+            <div className="flex-1" />
             {error ? (
-              <span className="mr-auto text-xs text-danger">{error}</span>
+              <span className="text-xs text-danger">{error}</span>
             ) : missingRequired.length > 0 ? (
-              <span className="mr-auto inline-flex items-center gap-1 text-xs text-warning">
+              <span className="inline-flex items-center gap-1 text-xs text-warning">
                 <AlertTriangle size={12} aria-hidden />
                 complete: {missingRequired.map((s) => s.label.toLowerCase()).join(', ')}
               </span>

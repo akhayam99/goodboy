@@ -161,9 +161,7 @@ describe('snapshot — empty states', () => {
   });
 
   it('WorkspacesSidebar: no workspace selected', () => {
-    const { container } = render(
-      <WorkspacesSidebar onOpenSettings={vi.fn()} collapsed={false} onToggleCollapsed={vi.fn()} />,
-    );
+    const { container } = render(<WorkspacesSidebar onOpenSettings={vi.fn()} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
