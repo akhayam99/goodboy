@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   Layers,
   Loader2,
   Sparkles,
+  Wand2,
   Target,
   Zap,
 } from 'lucide-react';
@@ -217,9 +218,6 @@ export function NewSessionDialog({
     return pickDefaultProvider(ids);
   });
 
-  const goalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSlugGoalRef = useRef('');
-
   useEffect(() => {
     if (!open) return;
     setGoal('');
@@ -233,7 +231,6 @@ export function NewSessionDialog({
     setWorkflowMode('one-off');
     setAutoRun(false);
     setError(null);
-    lastSlugGoalRef.current = '';
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
@@ -241,29 +238,21 @@ export function NewSessionDialog({
     setSelectedProvider(pickDefaultProvider(ids));
   }, [open, settingKey, loadSetting, providers, workspaceId]);
 
-  useEffect(() => {
-    if (!open) return;
+  const handleGenerateSlug = () => {
     const trimmed = goal.trim();
-    if (!trimmed || trimmed === lastSlugGoalRef.current) return;
-    if (goalDebounceRef.current) clearTimeout(goalDebounceRef.current);
-    goalDebounceRef.current = setTimeout(() => {
-      lastSlugGoalRef.current = trimmed;
-      setSlugGenerating(true);
-      generateBranchSlug(trimmed, selectedProvider)
-        .then((slug) => {
-          setBranchSlug(slug);
-        })
-        .catch(() => {
-          // silent — user can type manually
-        })
-        .finally(() => {
-          setSlugGenerating(false);
-        });
-    }, 800);
-    return () => {
-      if (goalDebounceRef.current) clearTimeout(goalDebounceRef.current);
-    };
-  }, [goal, selectedProvider, open]);
+    if (!trimmed || slugGenerating) return;
+    setSlugGenerating(true);
+    generateBranchSlug(trimmed, selectedProvider)
+      .then((slug) => {
+        setBranchSlug(slug);
+      })
+      .catch(() => {
+        // silent — user can type manually
+      })
+      .finally(() => {
+        setSlugGenerating(false);
+      });
+  };
 
   const handleIssueUrl = async (value: string) => {
     setIssueUrl(value);
@@ -308,7 +297,6 @@ export function NewSessionDialog({
     setWorkflowMode('one-off');
     setAutoRun(false);
     setError(null);
-    lastSlugGoalRef.current = '';
   };
 
   const onCreate = async () => {
@@ -437,6 +425,20 @@ export function NewSessionDialog({
                   aria-label="branch slug"
                 />
               )}
+              <button
+                type="button"
+                onClick={handleGenerateSlug}
+                disabled={!goal.trim() || slugGenerating || busy}
+                title="generate branch name"
+                className={cn(
+                  'shrink-0 rounded p-0.5 transition-colors',
+                  goal.trim() && !slugGenerating && !busy
+                    ? 'text-muted-foreground hover:text-foreground'
+                    : 'cursor-not-allowed text-muted-foreground/30',
+                )}
+              >
+                <Wand2 size={13} aria-hidden />
+              </button>
             </div>
             {branchSlug.trim() ? (
               <span className="shrink-0 text-2xs text-muted-foreground/60">→ {branchDisplay}</span>
