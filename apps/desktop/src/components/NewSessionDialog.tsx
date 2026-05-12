@@ -123,6 +123,12 @@ function getDefaultBinary(providerId: ProviderId): string {
   }
 }
 
+function isValidBranchSlug(slug: string): boolean {
+  const s = slug.trim();
+  if (!s) return false;
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+}
+
 async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
   const systemPrompt =
     'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
@@ -390,8 +396,10 @@ export function NewSessionDialog({
     }
   };
 
+  const branchReady = isValidBranchSlug(branchSlug);
+
   const missingRequired = sections.filter((s) => s.required && !s.ready);
-  const canCreate = missingRequired.length === 0 && !busy;
+  const canCreate = missingRequired.length === 0 && branchReady && !busy;
 
   const branchDisplay = `${branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/${branchSlug.trim() || '…'}`;
 
@@ -411,6 +419,15 @@ export function NewSessionDialog({
               <span className="shrink-0 text-xs text-muted-foreground font-mono">
                 {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
               </span>
+              {branchReady ? (
+                <Check size={11} className="shrink-0 text-success" aria-label="valid" />
+              ) : (
+                <AlertTriangle
+                  size={11}
+                  className="shrink-0 text-warning"
+                  aria-label="branch name required"
+                />
+              )}
               {slugGenerating ? (
                 <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
                   <span className="h-2 w-full rounded bg-muted-foreground/20" />
