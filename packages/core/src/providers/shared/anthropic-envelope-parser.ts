@@ -36,10 +36,17 @@ interface UserMessage {
   readonly content?: ReadonlyArray<ToolResultBlock | { type: string }>;
 }
 
+// Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
+// Cursor's stream-json — which is otherwise envelope-compatible — uses camelCase
+// (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
+// Accept both forms so the shared parser can serve both adapters.
 interface UsagePayload {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
   readonly cache_read_input_tokens?: number;
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly cacheReadTokens?: number;
 }
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
@@ -97,15 +104,18 @@ export function parseAnthropicEnvelopeLine(
 
     case 'result': {
       const usage = (payload.usage as UsagePayload | undefined) ?? {};
+      const input = usage.input_tokens ?? usage.inputTokens;
+      const output = usage.output_tokens ?? usage.outputTokens;
+      const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
       const events: TurnEvent[] = [];
-      if (typeof usage.input_tokens === 'number' || typeof usage.output_tokens === 'number') {
+      if (typeof input === 'number' || typeof output === 'number') {
         events.push({
           kind: 'usage',
           runId: ctx.runId,
           usage: {
-            inputTokens: usage.input_tokens ?? 0,
-            outputTokens: usage.output_tokens ?? 0,
-            cachedInputTokens: usage.cache_read_input_tokens ?? 0,
+            inputTokens: input ?? 0,
+            outputTokens: output ?? 0,
+            cachedInputTokens: cached ?? 0,
             estimatedCostUsd: 0,
           },
           at,
