@@ -9,18 +9,19 @@ import type {
   TurnEvent,
   TurnRequest,
 } from '@kay-am/types';
-import { CODEX_CHEAP_MODEL } from './constants';
+import { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
+import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
 import { parseJsonLine } from './parser';
 
-export { CODEX_CHEAP_MODEL };
+export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL };
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  contextWindow: 128_000,
-  defaultModel: 'codex-latest',
-  availableModels: ['codex-latest', CODEX_CHEAP_MODEL],
+  contextWindow: 200_000,
+  defaultModel: CODEX_DEFAULT_MODEL,
+  availableModels: CODEX_MODELS.map((m) => m.id),
 };
 
 export interface CodexAdapterDeps {
@@ -28,6 +29,7 @@ export interface CodexAdapterDeps {
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
+  readonly priceOverride?: CodexModelPriceOverride | null;
 }
 
 export class CodexAdapter implements ProviderAdapter {
@@ -38,12 +40,14 @@ export class CodexAdapter implements ProviderAdapter {
   private readonly now: () => IsoDateTime;
   private readonly spawnFn: typeof spawn;
   private readonly onUnknown: (type: string, payload: unknown) => void;
+  private readonly priceOverride: CodexModelPriceOverride | null;
 
   constructor(deps: CodexAdapterDeps = {}) {
     this.binary = deps.binary ?? 'codex';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
     this.onUnknown = deps.onUnknown ?? (() => undefined);
+    this.priceOverride = deps.priceOverride ?? null;
   }
 
   async detect(): Promise<DetectResult> {
@@ -72,9 +76,10 @@ export class CodexAdapter implements ProviderAdapter {
     });
   }
 
-  // Codex CLI does not report token counts; return zeros so cost is always 0.
-  cost(_usage: ProviderUsage, _model: string): number {
-    return 0;
+  // ChatGPT-login users are unmetered; API-key users can wire a price override
+  // via CodexAdapterDeps.priceOverride to surface estimated USD.
+  cost(usage: ProviderUsage, model: string): number {
+    return computeCodexCostUsd(usage, model, this.priceOverride);
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {
@@ -89,21 +94,23 @@ async function* spawnCodex(
   onUnknown: (type: string, payload: unknown) => void,
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
-  // Codex headless: `codex exec --json --model <model> --cwd <dir> -- <prompt>`
-  // Assumption: codex CLI supports `exec` sub-command with --json for NDJSON output,
-  // --model to select model, and --cwd to scope working directory.
-  // systemPrompt is prepended to userMessage since codex exec takes a single prompt arg.
+  // Codex CLI v0.130.0 headless flags (probed live, May 2026):
+  //   codex exec --json -m <model> -C <cwd> -s workspace-write --skip-git-repo-check <prompt>
+  // No `--` separator before prompt; prompt is the trailing positional. systemPrompt
+  // is prepended to userMessage since `exec` accepts a single prompt argument.
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;
   const args = [
     'exec',
     '--json',
-    '--model',
+    '-m',
     request.model,
-    '--cwd',
+    '-C',
     request.workingDir,
-    '--',
+    '-s',
+    'workspace-write',
+    '--skip-git-repo-check',
     prompt,
   ];
 
@@ -151,15 +158,9 @@ async function* spawnCodex(
   });
 
   lineReader.on('close', () => {
-    const at = now();
-    // Emit zero usage + done on clean stream close.
-    queue.push({
-      kind: 'usage',
-      runId: request.runId,
-      usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      at,
-    });
-    queue.push({ kind: 'done', runId: request.runId, at });
+    // Usage is emitted by the parser on `turn.completed`. We only need to seal
+    // the stream with `done` here.
+    queue.push({ kind: 'done', runId: request.runId, at: now() });
     ended = true;
     flush();
   });

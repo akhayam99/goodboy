@@ -82,12 +82,25 @@ export {
 
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/providers/codex/adapter in Node contexts.
-export { CODEX_CHEAP_MODEL } from './providers/codex/constants';
+export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
 export {
   parseJsonLine as parseCodexJsonLine,
   type ParseContext as CodexParseContext,
 } from './providers/codex/parser';
+
+// OpenCodeAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/providers/opencode/adapter in Node contexts.
+export {
+  OPENCODE_CHEAP_MODEL,
+  OPENCODE_DEFAULT_MODEL,
+  OPENCODE_MODELS,
+} from './providers/opencode/models';
+export { computeOpenCodeCostUsd } from './providers/opencode/cost';
+export {
+  parseOpenCodeLine,
+  type ParseContext as OpenCodeParseContext,
+} from './providers/opencode/parser';
 
 // SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/summarizer/cli in Node/test contexts.
