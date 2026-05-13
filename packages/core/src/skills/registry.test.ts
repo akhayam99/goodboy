@@ -14,6 +14,7 @@ const WORKSPACE_ID = 'ws_test' as WorkspaceId;
 const ROOT = '/fake/root';
 const SKILLS_DIR = `${ROOT}/.kay/skills`;
 const CLAUDE_SKILLS_DIR = `${ROOT}/.claude/skills`;
+const OPENCODE_SKILLS_DIR = `${ROOT}/.opencode/skills`;
 
 const FIXED_NOW = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
@@ -61,12 +62,12 @@ function makeFs(files: Record<string, string>): SkillFs {
           .filter((f) => f.startsWith(`${SKILLS_DIR}/`))
           .map((f) => f.slice(`${SKILLS_DIR}/`.length));
       }
-      if (path === CLAUDE_SKILLS_DIR) {
-        // Return the immediate subdirectory names under .claude/skills/
+      if (path === CLAUDE_SKILLS_DIR || path === OPENCODE_SKILLS_DIR) {
+        // Return the immediate subdirectory names under the nested layout.
         const subdirs = new Set<string>();
         for (const f of Object.keys(files)) {
-          if (f.startsWith(`${CLAUDE_SKILLS_DIR}/`)) {
-            const rel = f.slice(`${CLAUDE_SKILLS_DIR}/`.length);
+          if (f.startsWith(`${path}/`)) {
+            const rel = f.slice(`${path}/`.length);
             const firstSegment = rel.split('/')[0];
             if (firstSegment !== undefined) subdirs.add(firstSegment);
           }
@@ -282,5 +283,51 @@ Body of bar.
 
     const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('SkillRegistry.scanWorkspace – OpenCode convention (.opencode/skills)', () => {
+  const OPENCODE_SKILL_FOO = `---
+name: foo
+description: OpenCode skill foo
+---
+
+Body of foo.
+`;
+
+  it('discovers skill from .opencode/skills/<name>/SKILL.md', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({
+      [`${OPENCODE_SKILLS_DIR}/foo/SKILL.md`]: OPENCODE_SKILL_FOO,
+    });
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe('foo');
+    expect(result[0]?.filePath).toBe(`${OPENCODE_SKILLS_DIR}/foo/SKILL.md`);
+  });
+
+  it('discovers skills from all three conventions simultaneously', async () => {
+    const db = await makeSeededDb();
+    const fs = makeFs({
+      [`${SKILLS_DIR}/skill-a.md`]: SKILL_A,
+      [`${CLAUDE_SKILLS_DIR}/bar/SKILL.md`]: `---
+name: bar
+description: bar
+---
+
+Body.
+`,
+      [`${OPENCODE_SKILLS_DIR}/foo/SKILL.md`]: OPENCODE_SKILL_FOO,
+    });
+    const registry = new SkillRegistry({ fs, now: makeNow() });
+
+    const result = await registry.scanWorkspace(WORKSPACE_ID, ROOT, db);
+
+    expect(result).toHaveLength(3);
+    const names = result.map((s) => s.name).sort();
+    expect(names).toEqual(['bar', 'foo', 'skill-a']);
   });
 });

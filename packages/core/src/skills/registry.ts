@@ -66,7 +66,23 @@ export class SkillRegistry {
    * Returns an empty array when the directory is absent.
    */
   private async collectClaudeSkills(rootPath: string): Promise<SkillCandidate[]> {
-    const skillsDir = `${rootPath}/.claude/skills`;
+    return this.collectNestedSkills(`${rootPath}/.claude/skills`);
+  }
+
+  /**
+   * Collects skill file paths from the OpenCode convention:
+   * `.opencode/skills/<skill-name>/SKILL.md` (mirrors Claude's layout).
+   * Returns an empty array when the directory is absent.
+   */
+  private async collectOpencodeSkills(rootPath: string): Promise<SkillCandidate[]> {
+    return this.collectNestedSkills(`${rootPath}/.opencode/skills`);
+  }
+
+  /**
+   * Shared helper for nested skill directory layouts where each skill lives in
+   * its own subdirectory containing a `SKILL.md` (Claude + OpenCode conventions).
+   */
+  private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
     let entries: string[];
     try {
       entries = await this.fs.readDir(skillsDir);
@@ -92,12 +108,13 @@ export class SkillRegistry {
     rootPath: string,
     db: SqlDatabase,
   ): Promise<ReadonlyArray<Skill>> {
-    const [kaySkills, claudeSkills] = await Promise.all([
+    const [kaySkills, claudeSkills, opencodeSkills] = await Promise.all([
       this.collectKaySkills(rootPath),
       this.collectClaudeSkills(rootPath),
+      this.collectOpencodeSkills(rootPath),
     ]);
 
-    const candidates = [...kaySkills, ...claudeSkills];
+    const candidates = [...kaySkills, ...claudeSkills, ...opencodeSkills];
 
     const existing = await listSkillsForWorkspace(db, workspaceId);
     const existingByPath = new Map<string, Skill>(existing.map((s) => [s.filePath, s]));
