@@ -136,6 +136,7 @@ import {
   checkProviderAuth,
   getCursorStatus,
   getCodexStatus,
+  getOpenCodeStatus,
   getProviderStatus,
   type ProviderAuthResults,
   type ProviderInfo,
@@ -244,6 +245,7 @@ export interface AppState {
   readonly providerStatus: ProviderStatus | null;
   readonly cursorStatus: ProviderStatus | null;
   readonly codexStatus: ProviderStatus | null;
+  readonly opencodeStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly hydrated: boolean;
@@ -464,8 +466,9 @@ const initialState: AppState = {
   providerStatus: null,
   cursorStatus: null,
   codexStatus: null,
+  opencodeStatus: null,
   authResults: null,
-  providers: buildProviderList({ anthropic: null, cursor: null, codex: null }),
+  providers: buildProviderList({ anthropic: null, cursor: null, codex: null, opencode: null }),
   hydrated: false,
   bootPhase: 'pending',
   error: null,
@@ -937,29 +940,40 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
 
       set({ bootPhase: 'detecting-cli' });
-      const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
-        getProviderStatus('anthropic'),
-        getCursorStatus(),
-        getCodexStatus(),
-        detectEditors(),
-      ]);
+      const [providerStatus, cursorStatus, codexStatus, opencodeStatus, detectedEditors] =
+        await Promise.all([
+          getProviderStatus('anthropic'),
+          getCursorStatus(),
+          getCodexStatus(),
+          getOpenCodeStatus(),
+          detectEditors(),
+        ]);
       set({ detectedEditors });
       const statuses: ProviderStatuses = {
         anthropic: providerStatus,
         cursor: cursorStatus,
         codex: codexStatus,
+        opencode: opencodeStatus,
       };
-      set({ providerStatus, cursorStatus, codexStatus, providers: buildProviderList(statuses) });
+      set({
+        providerStatus,
+        cursorStatus,
+        codexStatus,
+        opencodeStatus,
+        providers: buildProviderList(statuses),
+      });
 
-      const [anthropicAuth, cursorAuth, codexAuth] = await Promise.all([
+      const [anthropicAuth, cursorAuth, codexAuth, opencodeAuth] = await Promise.all([
         checkProviderAuth('anthropic'),
         checkProviderAuth('cursor'),
         checkProviderAuth('codex'),
+        checkProviderAuth('opencode'),
       ]);
       const authResults: ProviderAuthResults = {
         anthropic: anthropicAuth,
         cursor: cursorAuth,
         codex: codexAuth,
+        opencode: opencodeAuth,
       };
       set({ authResults, providers: buildProviderList(statuses, authResults) });
 
@@ -1209,6 +1223,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         anthropic: status,
         cursor: state.cursorStatus,
         codex: state.codexStatus,
+        opencode: state.opencodeStatus,
       };
       return {
         providerStatus: status,
@@ -1218,30 +1233,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshProviders: async () => {
-    const [providerStatus, cursorStatus, codexStatus] = await Promise.all([
+    const [providerStatus, cursorStatus, codexStatus, opencodeStatus] = await Promise.all([
       getProviderStatus('anthropic'),
       getCursorStatus(),
       getCodexStatus(),
+      getOpenCodeStatus(),
     ]);
     const statuses: ProviderStatuses = {
       anthropic: providerStatus,
       cursor: cursorStatus,
       codex: codexStatus,
+      opencode: opencodeStatus,
     };
-    const [anthropicAuth, cursorAuth, codexAuth] = await Promise.all([
+    const [anthropicAuth, cursorAuth, codexAuth, opencodeAuth] = await Promise.all([
       checkProviderAuth('anthropic'),
       checkProviderAuth('cursor'),
       checkProviderAuth('codex'),
+      checkProviderAuth('opencode'),
     ]);
     const authResults: ProviderAuthResults = {
       anthropic: anthropicAuth,
       cursor: cursorAuth,
       codex: codexAuth,
+      opencode: opencodeAuth,
     };
     set({
       providerStatus,
       cursorStatus,
       codexStatus,
+      opencodeStatus,
       authResults,
       providers: buildProviderList(statuses, authResults),
     });
@@ -2890,6 +2910,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       providerStatus: get().providerStatus,
       cursorStatus: get().cursorStatus,
       codexStatus: get().codexStatus,
+      opencodeStatus: get().opencodeStatus,
       authResults: get().authResults,
       detectedEditors: get().detectedEditors,
     });

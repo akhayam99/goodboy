@@ -91,6 +91,7 @@ vi.mock('../providers', () => ({
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
+  getOpenCodeStatus: vi.fn(),
   getProviderStatus: vi.fn(),
 }));
 
@@ -339,8 +340,13 @@ describe('audit retry queue — drain worker (happy path)', () => {
     const { getSetting } = await import('@kay-am/db');
     (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    const { getProviderStatus, getCursorStatus, getCodexStatus, checkProviderAuth } =
-      await import('../providers');
+    const {
+      getProviderStatus,
+      getCursorStatus,
+      getCodexStatus,
+      getOpenCodeStatus,
+      checkProviderAuth,
+    } = await import('../providers');
     (getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
@@ -350,6 +356,10 @@ describe('audit retry queue — drain worker (happy path)', () => {
       identity: 'test',
     });
     (getCodexStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      state: 'connected',
+      identity: 'test',
+    });
+    (getOpenCodeStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
     });

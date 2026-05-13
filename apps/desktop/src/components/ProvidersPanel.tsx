@@ -21,12 +21,13 @@ const STATE_DOT: Record<ProviderConnectionState, string> = {
   error: 'bg-danger',
 };
 
-const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'opencode'];
 
 const PROVIDER_DISPLAY: Record<ProviderId, { name: string; description: string }> = {
   anthropic: { name: 'claude', description: 'anthropic claude code cli' },
   cursor: { name: 'cursor', description: 'cursor agent cli' },
   codex: { name: 'codex', description: 'openai codex cli' },
+  opencode: { name: 'opencode', description: 'provider-agnostic terminal agent' },
 };
 
 export function ProvidersPanel() {

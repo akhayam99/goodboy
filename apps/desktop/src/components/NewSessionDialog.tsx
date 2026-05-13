@@ -21,6 +21,7 @@ import type {
   TaskProviderPreference,
   WorkspaceId,
 } from '@kay-am/types';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
 import { shortModel } from '../agentRowFormat';
 import { PROVIDER_LABEL_LOWER } from '../providers';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
@@ -52,7 +53,7 @@ function formatError(err: unknown): string {
   return String(err);
 }
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'opencode'];
 
 type WorkflowMode = 'one-off' | 'preset' | 'custom';
 
@@ -96,9 +97,11 @@ function getCheapModel(providerId: ProviderId): string {
     case 'anthropic':
       return 'claude-haiku-4-5';
     case 'cursor':
-      return 'claude-haiku-4-5';
+      return 'composer-2-fast';
     case 'codex':
-      return 'o4-mini';
+      return 'gpt-5.4-mini';
+    case 'opencode':
+      return 'github-copilot/claude-haiku-4.5';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;
@@ -115,6 +118,8 @@ function getDefaultBinary(providerId: ProviderId): string {
       return 'cursor-agent';
     case 'codex':
       return 'codex';
+    case 'opencode':
+      return 'opencode';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;
@@ -223,6 +228,17 @@ export function NewSessionDialog({
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
     return pickDefaultProvider(ids);
   });
+  const [selectedModel, setSelectedModel] = useState<string>(() =>
+    getDefaultTurnModel(
+      pickDefaultProvider(
+        new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
+      ),
+    ),
+  );
+
+  useEffect(() => {
+    setSelectedModel(getDefaultTurnModel(selectedProvider));
+  }, [selectedProvider]);
 
   useEffect(() => {
     if (!open) return;
@@ -241,7 +257,9 @@ export function NewSessionDialog({
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
-    setSelectedProvider(pickDefaultProvider(ids));
+    const provider = pickDefaultProvider(ids);
+    setSelectedProvider(provider);
+    setSelectedModel(getDefaultTurnModel(provider));
   }, [open, settingKey, loadSetting, providers, workspaceId]);
 
   const handleGenerateSlug = () => {
@@ -311,6 +329,7 @@ export function NewSessionDialog({
     try {
       const providerPreference: TaskProviderPreference = {
         defaultProvider: selectedProvider,
+        defaultModel: selectedModel,
         allowTurnOverride: true,
       };
       const hasWorkflow = selectedPhaseTemplateId !== '';
@@ -683,61 +702,93 @@ export function NewSessionDialog({
           ) : null}
 
           {activeSection === 'provider' ? (
-            <Field label="provider">
-              <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border">
-                {PROVIDER_ORDER.map((id) => {
-                  const connected = connectedProviderIds.has(id);
-                  const disabled = !connected;
-                  const selected = selectedProvider === id;
-                  return (
-                    <li
-                      key={id}
-                      className={cn(
-                        'flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors',
-                        disabled ? 'opacity-50' : 'hover:bg-muted/40',
-                        selected && !disabled ? 'bg-muted/60' : '',
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="provider"
-                        id={`provider-${id}`}
-                        value={id}
-                        checked={selected}
-                        disabled={disabled}
-                        onChange={() => setSelectedProvider(id)}
-                        className="accent-primary"
-                      />
-                      <label
-                        htmlFor={`provider-${id}`}
+            <div className="flex flex-col gap-4">
+              <Field label="provider">
+                <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border">
+                  {PROVIDER_ORDER.map((id) => {
+                    const connected = connectedProviderIds.has(id);
+                    const disabled = !connected;
+                    const selected = selectedProvider === id;
+                    return (
+                      <li
+                        key={id}
                         className={cn(
-                          'flex flex-1 items-center justify-between',
-                          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                          'flex items-center gap-2 px-3 py-2 text-sm motion-safe:transition-colors',
+                          disabled ? 'opacity-50' : 'hover:bg-muted/40',
+                          selected && !disabled ? 'bg-muted/60' : '',
                         )}
                       >
-                        <span className="font-medium">{PROVIDER_LABEL_LOWER[id]}</span>
-                        {!connected && (
-                          <button
-                            type="button"
-                            className="text-xs text-primary underline hover:opacity-80"
-                            onClick={() => {
-                              onClose();
-                              window.dispatchEvent(
-                                new CustomEvent('kayam:open-settings', {
-                                  detail: { section: 'providers' },
-                                }),
-                              );
-                            }}
-                          >
-                            connect in settings
-                          </button>
-                        )}
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </Field>
+                        <input
+                          type="radio"
+                          name="provider"
+                          id={`provider-${id}`}
+                          value={id}
+                          checked={selected}
+                          disabled={disabled}
+                          onChange={() => setSelectedProvider(id)}
+                          className="accent-primary"
+                        />
+                        <label
+                          htmlFor={`provider-${id}`}
+                          className={cn(
+                            'flex flex-1 items-center justify-between',
+                            disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                          )}
+                        >
+                          <span className="font-medium">{PROVIDER_LABEL_LOWER[id]}</span>
+                          {!connected && (
+                            <button
+                              type="button"
+                              className="text-xs text-primary underline hover:opacity-80"
+                              onClick={() => {
+                                onClose();
+                                window.dispatchEvent(
+                                  new CustomEvent('kayam:open-settings', {
+                                    detail: { section: 'providers' },
+                                  }),
+                                );
+                              }}
+                            >
+                              connect in settings
+                            </button>
+                          )}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Field>
+              <Field
+                label="model"
+                hint="default model for turns. each agent can override at spawn."
+              >
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  disabled={busy || !providerReady}
+                  className="rounded-md border border-border bg-background px-3 py-2 text-sm motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <optgroup label="turn">
+                    {PROVIDER_CAPABILITIES[selectedProvider].models
+                      .filter((m) => m.tier === 'turn')
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {shortModel(m.id)}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="cheap">
+                    {PROVIDER_CAPABILITIES[selectedProvider].models
+                      .filter((m) => m.tier === 'cheap')
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {shortModel(m.id)}
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </Field>
+            </div>
           ) : null}
         </div>
       </div>

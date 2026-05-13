@@ -88,6 +88,7 @@ const PROVIDER_SHORT: Record<ProviderId, string> = {
   anthropic: 'cl',
   cursor: 'cu',
   codex: 'cx',
+  opencode: 'oc',
 };
 
 const STATE_FILTER_OPTIONS: ReadonlyArray<TurnState['kind']> = [

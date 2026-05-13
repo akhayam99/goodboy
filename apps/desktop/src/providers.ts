@@ -32,6 +32,7 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor',
   codex: 'codex',
+  opencode: 'opencode',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -39,24 +40,28 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   // cursor-agent (CLI), NOT cursor IDE — point at the agent CLI install docs.
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
+  opencode: 'https://opencode.ai/docs/',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor-agent',
   codex: 'codex',
+  opencode: 'opencode',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {
   anthropic: 'get_provider_status',
   cursor: 'get_cursor_status',
   codex: 'get_codex_status',
+  opencode: 'get_opencode_status',
 };
 
 const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   anthropic: 'refresh_provider_status',
   cursor: 'refresh_cursor_status',
   codex: 'refresh_codex_status',
+  opencode: 'refresh_opencode_status',
 };
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
@@ -78,6 +83,9 @@ export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus(
 export const refreshCursorStatus = (): Promise<ProviderStatus> => refreshProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 export const refreshCodexStatus = (): Promise<ProviderStatus> => refreshProviderStatus('codex');
+export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
+export const refreshOpenCodeStatus = (): Promise<ProviderStatus> =>
+  refreshProviderStatus('opencode');
 
 export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
   return invoke<AuthState>('check_provider_auth', { providerId });
@@ -143,12 +151,13 @@ export interface ProviderStatuses {
   readonly anthropic: ProviderStatus | null;
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
+  readonly opencode: ProviderStatus | null;
 }
 
 export function buildProviderList(
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
 ): ReadonlyArray<ProviderInfo> {
-  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'opencode'];
   return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
 }
