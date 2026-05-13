@@ -44,16 +44,20 @@ Requires **Claude Max** (or Claude Pro). kAY.am uses your subscription cap — n
 
 ### Install
 
-Install the Cursor editor from <https://www.cursor.com>, then enable the `cursor` CLI from **Cursor → Settings → General → Command Line**.
+```bash
+curl https://cursor.com/install -fsS | bash
+```
 
-Docs: <https://docs.cursor.com>
+Installs `cursor-agent` to `~/.local/bin/`. kAY.am invokes the CLI as `cursor-agent` (not `cursor`, which is the IDE binary).
 
-Verify: `cursor --version`
+Docs: <https://docs.cursor.com/en/cli/installation>
+
+Verify: `cursor-agent --version`
 
 ### Connect
 
 ```bash
-cursor /login
+cursor-agent login
 ```
 
 kAY.am opens an external terminal for the OAuth flow.
@@ -61,16 +65,19 @@ kAY.am opens an external terminal for the OAuth flow.
 ### Disconnect
 
 ```bash
-cursor /logout
+cursor-agent logout
 ```
 
 ### Subscription tier
 
 Requires **Cursor Pro**. kAY.am routes turns through Cursor's subscription-based model cap.
 
-### Summarizer model
+### Default models
 
-`cursor-small` — Cursor's documented cheap-tier alias. The underlying model may change; the alias is stable per Cursor docs.
+Cursor surfaces 50+ aliases via `cursor-agent models`. kAY.am exposes a curated subset:
+
+- **Turn**: `composer-2`, `gpt-5.5-high`, `gpt-5.5-medium`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium`, `gpt-5.3-codex`.
+- **Cheap**: `composer-2-fast` (default), `auto`.
 
 ---
 
@@ -82,7 +89,7 @@ Requires **Cursor Pro**. kAY.am routes turns through Cursor's subscription-based
 npm install -g @openai/codex
 ```
 
-Docs: <https://github.com/openai/codex>
+Docs: <https://developers.openai.com/codex/cli>
 
 Verify: `codex --version`
 
@@ -102,11 +109,55 @@ codex logout
 
 ### Subscription tier
 
-Requires **ChatGPT Pro**. kAY.am uses your subscription cap, not an OpenAI API key.
+Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_API_KEY` env var. kAY.am uses whichever auth the local `codex` CLI is configured with.
 
-### Summarizer model
+### Default models
 
-`codex-mini-latest` — OpenAI's cheap-tier alias for Codex. Subject to change as OpenAI publishes a stable mini model id.
+Per <https://developers.openai.com/codex/models> (May 2026):
+
+- **Turn**: `gpt-5.5` (default), `gpt-5.4`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2`.
+- **Cheap**: `gpt-5.4-mini`.
+
+---
+
+## OpenCode
+
+### Install
+
+```bash
+npm install -g opencode-ai
+```
+
+Also installable via `curl -fsSL https://opencode.ai/install | bash` or `brew install anomalyco/tap/opencode`.
+
+Docs: <https://opencode.ai/docs/>
+
+Verify: `opencode --version`
+
+### Connect
+
+OpenCode is provider-agnostic — it routes to any of 75+ upstream providers via env vars or its keyring. The simplest path:
+
+```bash
+opencode auth login
+```
+
+Or set the upstream provider env var directly (e.g. `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` for GitHub Copilot).
+
+### Disconnect
+
+```bash
+opencode auth logout
+```
+
+### Default models
+
+Models use the `<provider>/<model>` notation. kAY.am exposes a curated GitHub-Copilot-routed subset (works with the `GITHUB_TOKEN` env var most contributors already have):
+
+- **Turn**: `github-copilot/claude-opus-4.7`, `github-copilot/claude-opus-4.6`, `github-copilot/claude-sonnet-4.6` (default), `github-copilot/gpt-5.4`, `github-copilot/gpt-5.3-codex`, `github-copilot/gemini-3.1-pro-preview`.
+- **Cheap**: `github-copilot/claude-haiku-4.5`.
+
+To add custom models, override per-agent via the model picker in **New session → model**.
 
 ---
 
