@@ -24,6 +24,8 @@ pub struct CursorState(pub Mutex<ProviderStatus>);
 
 pub struct CodexState(pub Mutex<ProviderStatus>);
 
+pub struct OpenCodeState(pub Mutex<ProviderStatus>);
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthStateKind {
@@ -48,6 +50,10 @@ pub fn detect_cursor() -> ProviderStatus {
 
 pub fn detect_codex() -> ProviderStatus {
     detect_binary("codex", "codex")
+}
+
+pub fn detect_opencode() -> ProviderStatus {
+    detect_binary("opencode", "opencode")
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -383,11 +389,32 @@ pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
     next
 }
 
+#[tauri::command]
+pub fn get_opencode_status(state: State<'_, OpenCodeState>) -> ProviderStatus {
+    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
+        id: "opencode".to_string(),
+        binary: "opencode".to_string(),
+        available: false,
+        version: None,
+        error: Some("status mutex poisoned".to_string()),
+    })
+}
+
+#[tauri::command]
+pub fn refresh_opencode_status(state: State<'_, OpenCodeState>) -> ProviderStatus {
+    let next = detect_opencode();
+    if let Ok(mut current) = state.0.lock() {
+        *current = next.clone();
+    }
+    next
+}
+
 fn provider_login_command(provider_id: &str) -> Option<String> {
     match provider_id {
         "anthropic" => Some("claude /login".to_string()),
         "cursor" => Some("cursor login".to_string()),
         "codex" => Some("codex login".to_string()),
+        "opencode" => Some("opencode auth login".to_string()),
         _ => None,
     }
 }
@@ -397,6 +424,7 @@ fn provider_logout_command(provider_id: &str) -> Option<String> {
         "anthropic" => Some("claude /logout".to_string()),
         "cursor" => Some("cursor logout".to_string()),
         "codex" => Some("codex logout".to_string()),
+        "opencode" => Some("opencode auth logout".to_string()),
         _ => None,
     }
 }
@@ -459,12 +487,41 @@ pub fn provider_action(provider_id: String, action: String) -> Result<(), String
     spawn_in_terminal(&command)
 }
 
+fn check_opencode_auth() -> AuthState {
+    // `opencode auth list` prints credentials + env-based provider auth in two
+    // boxed sections. We're connected when at least one credential OR env var
+    // is wired; disconnected when both rows show "0".
+    match run_auth_command(&["opencode", "auth", "list"]) {
+        Ok(output) => {
+            // Strip ANSI escapes for robust string matching.
+            let cleaned = output.replace('\u{1b}', "");
+            let has_zero_creds = cleaned.contains("0 credentials");
+            let has_zero_env = cleaned.contains("0 environment variables");
+            if has_zero_creds && has_zero_env {
+                return AuthState {
+                    state: AuthStateKind::Disconnected,
+                    identity: None,
+                };
+            }
+            AuthState {
+                state: AuthStateKind::Connected,
+                identity: None,
+            }
+        }
+        Err(_) => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
+    }
+}
+
 #[tauri::command]
 pub fn check_provider_auth(provider_id: String) -> AuthState {
     match provider_id.as_str() {
         "anthropic" => check_claude_auth(),
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
+        "opencode" => check_opencode_auth(),
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,

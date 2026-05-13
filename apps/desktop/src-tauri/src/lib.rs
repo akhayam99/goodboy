@@ -26,6 +26,7 @@ pub fn run() {
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
+  let opencode_state = providers::OpenCodeState(Mutex::new(providers::detect_opencode()));
   let turn_registry = turn::TurnRegistry::new();
 
   tauri::Builder::default()
@@ -34,6 +35,7 @@ pub fn run() {
     .manage(provider_state)
     .manage(cursor_state)
     .manage(codex_state)
+    .manage(opencode_state)
     .manage(turn_registry)
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -69,6 +71,8 @@ pub fn run() {
       providers::refresh_cursor_status,
       providers::get_codex_status,
       providers::refresh_codex_status,
+      providers::get_opencode_status,
+      providers::refresh_opencode_status,
       providers::check_provider_auth,
       providers::provider_action,
       turn::turn_spawn,
