@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ClaudeAdapter } from './claude/adapter';
 import { CursorAdapter } from './cursor/adapter';
 import { CodexAdapter } from './codex/adapter';
+import { OpenCodeAdapter } from './opencode/adapter';
 import {
   UnknownProviderError,
   createProvider,
@@ -10,8 +11,8 @@ import {
 } from './registry';
 
 describe('listSupportedProviders', () => {
-  it('returns all three provider ids', () => {
-    expect(listSupportedProviders()).toEqual(['anthropic', 'cursor', 'codex']);
+  it('returns all four provider ids', () => {
+    expect(listSupportedProviders()).toEqual(['anthropic', 'cursor', 'codex', 'opencode']);
   });
 
   it('result is readonly array', () => {
@@ -37,6 +38,12 @@ describe('createProvider', () => {
     const adapter = createProvider('codex');
     expect(adapter).toBeInstanceOf(CodexAdapter);
     expect(adapter.id).toBe('codex');
+  });
+
+  it('returns OpenCodeAdapter for opencode', () => {
+    const adapter = createProvider('opencode');
+    expect(adapter).toBeInstanceOf(OpenCodeAdapter);
+    expect(adapter.id).toBe('opencode');
   });
 
   it('passes deps through to adapter', () => {
@@ -73,6 +80,12 @@ describe('getCapabilities', () => {
 
   it('codex capabilities have models', () => {
     const caps = getCapabilities('codex');
+    expect(caps.models.length).toBeGreaterThan(0);
+    expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
+  });
+
+  it('opencode capabilities have models', () => {
+    const caps = getCapabilities('opencode');
     expect(caps.models.length).toBeGreaterThan(0);
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });

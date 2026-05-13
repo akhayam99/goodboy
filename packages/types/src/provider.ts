@@ -1,7 +1,7 @@
 import type { IsoDateTime, ProviderRunId, TaskId } from './ids';
 import type { RoutingDecision } from './budget';
 
-export type ProviderName = 'anthropic' | 'openai' | 'cursor' | 'codex';
+export type ProviderName = 'anthropic' | 'openai' | 'cursor' | 'codex' | 'opencode';
 
 export type ProviderRunStatus =
   | { kind: 'pending' }

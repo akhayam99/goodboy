@@ -87,7 +87,7 @@ describe('Summarizer (CLI-based)', () => {
     expect(binary).toBe('cursor-agent');
     expect(args).toContain('-p');
     expect(args).toContain('--model');
-    expect(args).toContain('cursor-small');
+    expect(args).toContain('composer-2-fast');
     expect(args).toContain('--force');
   });
 
@@ -103,8 +103,9 @@ describe('Summarizer (CLI-based)', () => {
     ];
     expect(binary).toBe('codex');
     expect(args[0]).toBe('exec');
-    expect(args).toContain('--model');
-    expect(args).toContain('codex-mini-latest');
+    expect(args).toContain('-m');
+    expect(args).toContain('gpt-5.4-mini');
+    expect(args).toContain('--skip-git-repo-check');
   });
 
   it('respects custom binary override', async () => {

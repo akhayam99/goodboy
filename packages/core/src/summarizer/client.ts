@@ -19,6 +19,8 @@ function getDefaultBinary(providerId: ProviderId): string {
       return 'cursor-agent';
     case 'codex':
       return 'codex';
+    case 'opencode':
+      return 'opencode';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);

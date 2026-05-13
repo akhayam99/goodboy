@@ -114,6 +114,8 @@ function defaultBinary(providerId: ProviderId): string {
       return 'cursor-agent';
     case 'codex':
       return 'codex';
+    case 'opencode':
+      return 'opencode';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
@@ -151,7 +153,26 @@ function buildCliArgs(
         '--force',
       ];
     case 'codex':
-      return ['exec', '--json', '--model', model, '--', `${systemPrompt}\n\n${userMessage}`];
+      return [
+        'exec',
+        '--json',
+        '-m',
+        model,
+        '-s',
+        'read-only',
+        '--skip-git-repo-check',
+        `${systemPrompt}\n\n${userMessage}`,
+      ];
+    case 'opencode':
+      return [
+        'run',
+        '--format',
+        'json',
+        '--model',
+        model,
+        '--dangerously-skip-permissions',
+        `${systemPrompt}\n\n${userMessage}`,
+      ];
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);

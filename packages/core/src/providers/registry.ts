@@ -8,6 +8,7 @@ import type {
 import { ClaudeAdapter } from './claude/adapter';
 import { CursorAdapter } from './cursor/adapter';
 import { CodexAdapter } from './codex/adapter';
+import { OpenCodeAdapter } from './opencode/adapter';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type { ProviderRegistryCapabilities };
@@ -34,6 +35,8 @@ export function createProvider(id: ProviderId, deps: ProviderDeps = {}): Provide
       return new CursorAdapter(deps);
     case 'codex':
       return new CodexAdapter(deps);
+    case 'opencode':
+      return new OpenCodeAdapter(deps);
     default: {
       const _exhaustive: never = id;
       throw new UnknownProviderError(_exhaustive);
@@ -42,7 +45,7 @@ export function createProvider(id: ProviderId, deps: ProviderDeps = {}): Provide
 }
 
 export function listSupportedProviders(): ReadonlyArray<ProviderId> {
-  return ['anthropic', 'cursor', 'codex'];
+  return ['anthropic', 'cursor', 'codex', 'opencode'];
 }
 
 export function getCapabilities(id: ProviderId): ProviderRegistryCapabilities {
