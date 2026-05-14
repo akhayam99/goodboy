@@ -30,6 +30,7 @@ vi.mock('../store', () => ({
       clearSessionNextActions: vi.fn(),
       loadDiffComments: vi.fn(),
       sessionPlans: {},
+      sessionPhaseRuns: {},
       loadSessionPlans: vi.fn(),
       setPlanStatus: vi.fn(),
       updatePlanBody: vi.fn(),

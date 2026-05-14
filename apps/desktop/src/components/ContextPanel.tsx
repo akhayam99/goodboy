@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Activity,
   ClipboardList,
+  Play,
   type LucideIcon,
 } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
@@ -208,8 +209,6 @@ export function ContextPanel({
               </div>
             </header>
 
-            <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
-
             <PlansSection taskId={session.id} />
 
             <ul className="flex flex-col gap-6">
@@ -227,6 +226,8 @@ export function ContextPanel({
                 );
               })}
             </ul>
+
+            <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
           </div>
         </ScrollArea>
 
@@ -908,8 +909,10 @@ function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(planToSource(plan));
+  const [spawning, setSpawning] = useState(false);
   const setPlanStatus = useAppStore((s) => s.setPlanStatus);
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
 
   useEffect(() => {
     if (!editing) setDraft(planToSource(plan));
@@ -926,6 +929,16 @@ function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
     if (next.title.length === 0) return;
     if (next.title === plan.title && next.bodyMd === plan.bodyMd) return;
     void updatePlanBody(taskId, plan.id, next.title, next.bodyMd);
+  };
+
+  const runPlan = async () => {
+    if (spawning) return;
+    setSpawning(true);
+    try {
+      await spawnAgent(taskId, { initialPrompt: plan.bodyMd });
+    } finally {
+      setSpawning(false);
+    }
   };
 
   const Chevron = expanded ? ChevronDown : ChevronRight;
@@ -955,6 +968,25 @@ function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
         </button>
       </div>
       <span className="text-2xs text-muted-foreground">by {agentName}</span>
+      {plan.status === 'active' ? (
+        <button
+          type="button"
+          onClick={() => void runPlan()}
+          disabled={spawning}
+          className={cn(
+            'inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+            spawning && 'cursor-not-allowed opacity-60',
+          )}
+          title="avvia nuovo agent che esegue questo piano"
+        >
+          {spawning ? (
+            <Loader2 size={11} aria-hidden className="animate-spin" />
+          ) : (
+            <Play size={11} aria-hidden />
+          )}
+          Avvia nuovo agent che esegue questo piano
+        </button>
+      ) : null}
       {expanded ? (
         editing ? (
           <Textarea
