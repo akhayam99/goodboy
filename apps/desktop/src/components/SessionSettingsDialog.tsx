@@ -4,6 +4,7 @@ import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'luc
 import type { TaskId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
+import { parseCap } from '../lib/parseCap';
 
 interface SessionSettingsDialogProps {
   taskId: TaskId;
@@ -97,8 +98,8 @@ export function SessionSettingsDialog({
   };
 
   const onSaveCap = async () => {
-    const parsed = parseFloat(capDraft);
-    if (Number.isNaN(parsed) || parsed <= 0) {
+    const parsed = parseCap(capDraft);
+    if (parsed === null) {
       setError('cap must be a positive number');
       return;
     }

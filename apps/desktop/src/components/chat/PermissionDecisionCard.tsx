@@ -1,6 +1,7 @@
 import { cn } from '@kay-am/ui';
 import type { SessionId, TaskId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
+import { formatCardTime } from './format-card-time';
 
 interface PermissionDecisionCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
@@ -13,13 +14,12 @@ const DECISION_TONE: Record<'allow' | 'deny', string> = {
   deny: 'text-danger',
 };
 
-export function PermissionDecisionCard({ item, taskId: _taskId, agentId: _agentId }: PermissionDecisionCardProps) {
-
-  const timestamp = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(item.at));
+export function PermissionDecisionCard({
+  item,
+  taskId: _taskId,
+  agentId: _agentId,
+}: PermissionDecisionCardProps) {
+  const timestamp = formatCardTime(item.at);
 
   return (
     <div className="rounded-md border border-border bg-muted px-2 py-1.5 text-xs">

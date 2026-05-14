@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Target } from 'lucide-react';
 import { Collapsible } from '@kay-am/ui';
 import type { TranscriptItem } from './transcript-items';
+import { formatCardTime } from './format-card-time';
 
 interface PhaseTransitionCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
@@ -10,11 +11,7 @@ interface PhaseTransitionCardProps {
 export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
   const [open, setOpen] = useState(false);
   const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
-  const timestamp = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(item.at));
+  const timestamp = formatCardTime(item.at);
 
   return (
     <div className="rounded-md border border-primary/20 bg-primary/5 px-2 py-1.5">

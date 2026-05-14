@@ -81,6 +81,7 @@ import { openUrl } from '../editor';
 import { formatError } from '../errors';
 import { useThemeStore } from '../theme';
 import { STORAGE_KEYS } from '../storage-keys';
+import { parseCap } from '../lib/parseCap';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -808,8 +809,8 @@ function SessionRow({
   };
 
   const onCapSave = async () => {
-    const parsed = parseFloat(capDraft);
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = parseCap(capDraft);
+    if (parsed !== null) {
       await setSessionBudget(session.id as TaskId, parsed);
     }
     setEditingCap(false);

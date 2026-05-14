@@ -30,6 +30,7 @@ import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
 import { fetchIssueFromUrl, type IssueData } from '../integrations';
 import { useToast } from './Toast';
+import { parseCap } from '../lib/parseCap';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -338,8 +339,8 @@ export function NewSessionDialog({
         ...(hasWorkflow ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
         ...(hasWorkflow && autoRun ? { autoRun: true } : {}),
       });
-      const parsedCap = parseFloat(softCapRaw);
-      if (softCapRaw.trim().length > 0 && !isNaN(parsedCap) && parsedCap > 0) {
+      const parsedCap = parseCap(softCapRaw);
+      if (parsedCap !== null) {
         await setSessionBudget(session.id as TaskId, parsedCap);
       }
       showToast('success', `session created: ${session.goal}`);
