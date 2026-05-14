@@ -1133,10 +1133,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         listAgentRunIdsForTask(tauriDatabase, id),
       ]);
       // Pick the previously-selected agent if it still exists, else the
-      // lowest-ordinal one (= default "agent 1" or first workflow step).
+      // highest-ordinal one — that's the most recently spawned agent, which
+      // is almost always the one the user was last working on.
       const previouslySelected = get().selectedAgentId[id] ?? null;
       const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-      const fallbackAgent = sortedAgents[0] ?? null;
+      const fallbackAgent = sortedAgents.at(-1) ?? null;
       const selectedAgent =
         (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
       const [messages, events] = selectedAgent
