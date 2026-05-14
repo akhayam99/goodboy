@@ -79,6 +79,7 @@ import {
 import { spawnFromNextAction, spawnKindForAction } from '../spawnFromNextAction';
 import { openUrl } from '../editor';
 import { useThemeStore } from '../theme';
+import { STORAGE_KEYS } from '../storage-keys';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -606,7 +607,7 @@ function sortSessions(list: ReadonlyArray<Task>, sort: SessionSort): ReadonlyArr
   return copy;
 }
 
-const ARCHIVED_KEY = 'kayam:archived-tasks';
+const ARCHIVED_KEY = STORAGE_KEYS.archivedTasks;
 
 function readArchivedSet(): Record<string, true> {
   try {

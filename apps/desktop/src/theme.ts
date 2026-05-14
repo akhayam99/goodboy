@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { STORAGE_KEYS } from './storage-keys';
 
 type Theme = 'dark' | 'light';
 
-const STORAGE_KEY = 'kayam:theme';
+const STORAGE_KEY = STORAGE_KEYS.theme;
 
 function readStoredTheme(): Theme {
   try {

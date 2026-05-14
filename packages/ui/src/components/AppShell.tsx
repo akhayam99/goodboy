@@ -13,13 +13,13 @@ export interface AppShellProps {
 const LEFT_SIDEBAR_MIN = 220;
 const LEFT_SIDEBAR_MAX = 480;
 const LEFT_SIDEBAR_DEFAULT = 280;
-const LEFT_SIDEBAR_STORAGE_KEY = 'kayam:left-sidebar-width';
+const LEFT_SIDEBAR_STORAGE_KEY = 'kay-am:left-sidebar-width';
 const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
 const RIGHT_SIDEBAR_DEFAULT = 340;
-const RIGHT_SIDEBAR_STORAGE_KEY = 'kayam:right-sidebar-width';
+const RIGHT_SIDEBAR_STORAGE_KEY = 'kay-am:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
