@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { Button, Input, cn } from '@kay-am/ui';
+import { formatError } from '../errors';
 import { setSecret, deleteSecret, hasSecret, getSecret } from '../secrets';
 import { GithubPanel } from './GithubPanel';
 
@@ -35,7 +36,7 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -48,7 +49,7 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
       setSaveState('idle');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -154,7 +155,7 @@ function JiraCard() {
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -170,7 +171,7 @@ function JiraCard() {
       setSaveState('idle');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 

@@ -3,7 +3,7 @@ import {
   getCodexPriceOverride,
   getActivePricingTable,
   refreshPricingTable,
-} from './providerPricing';
+} from './provider-pricing';
 
 describe('getActivePricingTable', () => {
   it('returns shipped pricing by default', () => {

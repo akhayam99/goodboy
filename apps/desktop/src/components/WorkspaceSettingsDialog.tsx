@@ -5,6 +5,7 @@ import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
 import { BulkSessionDeleteDialog } from './WorkspacesSidebar';
+import { formatError } from '../errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
 import { useAppStore, useSessions } from '../store';
 
@@ -83,7 +84,7 @@ export function WorkspaceSettingsDialog({
       await deleteWorkspace(workspaceId);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
       setDisconnecting(false);
     }
   };
@@ -96,7 +97,7 @@ export function WorkspaceSettingsDialog({
       await deleteWorkspace(workspaceId);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
       setDisconnecting(false);
     }
   };
@@ -121,7 +122,7 @@ export function WorkspaceSettingsDialog({
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 

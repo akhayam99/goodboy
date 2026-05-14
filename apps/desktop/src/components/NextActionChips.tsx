@@ -3,9 +3,10 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
 import type { TaskId } from '@kay-am/types';
+import { formatError } from '../errors';
 import { useAppStore, useSessionNextActions, useSessionSlots } from '../store';
-import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agentKind';
-import { spawnKindForAction } from '../spawnFromNextAction';
+import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agent-kind';
+import { spawnKindForAction } from '../spawn-from-next-action';
 
 export interface NextActionChipsProps {
   readonly taskId: TaskId;
@@ -62,7 +63,7 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
       }
       clearSessionNextActions(taskId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusyId(null);
     }

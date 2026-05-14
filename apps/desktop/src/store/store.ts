@@ -157,7 +157,7 @@ import {
   MAX_PARALLELISM,
   MIN_PARALLELISM,
 } from '../settings';
-import { getCodexPriceOverride, refreshPricingTable } from '../providerPricing';
+import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
@@ -204,9 +204,9 @@ import {
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../errors';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agentKind';
-import { slotsForKind } from '../slotRouting';
-import { estimateTokens } from '../utils/estimateTokens';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agent-kind';
+import { slotsForKind } from '../slot-routing';
+import { estimateTokens } from '../utils/estimate-tokens';
 
 export type BootPhase =
   | 'pending'

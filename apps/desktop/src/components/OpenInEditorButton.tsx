@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderOpen } from 'lucide-react';
 import { Button, Tooltip, cn, type ButtonSize, type ButtonVariant } from '@kay-am/ui';
 import { openInEditor } from '../editor';
+import { formatError } from '../errors';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore } from '../store';
 
@@ -49,7 +50,7 @@ export function OpenInEditorButton({
         await saveSetting(SETTING_DEFAULT_EDITOR, binary);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
     setDropdownOpen(false);
   };

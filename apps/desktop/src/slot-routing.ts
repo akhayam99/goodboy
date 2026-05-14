@@ -1,5 +1,5 @@
 import type { SlotKey } from '@kay-am/core';
-import type { AgentKind } from './agentKind';
+import type { AgentKind } from './agent-kind';
 
 // slots each kind actually consumes. missing kinds get all slots (fallback).
 // reduces preamble bloat → cheaper turns + less noise.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
 import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'lucide-react';
 import type { TaskId } from '@kay-am/types';
+import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
 interface SessionSettingsDialogProps {
@@ -89,7 +90,7 @@ export function SessionSettingsDialog({
     try {
       await renameTask(taskId, trimmed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
@@ -106,7 +107,7 @@ export function SessionSettingsDialog({
     try {
       await setSessionBudget(taskId, parsed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
@@ -119,7 +120,7 @@ export function SessionSettingsDialog({
       await deleteTask(taskId);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
       setBusy(false);
     }
   };

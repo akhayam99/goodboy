@@ -25,9 +25,10 @@ import type {
 } from '@kay-am/types';
 import { ghPrDiff } from '../github';
 import { openFileInWorkspace } from '../editor';
+import { formatError } from '../errors';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore, useDiffComments } from '../store';
-import { AGENT_KIND_DEFAULTS } from '../agentKind';
+import { AGENT_KIND_DEFAULTS } from '../agent-kind';
 import { STORAGE_KEYS } from '../storage-keys';
 
 interface DiffViewerDialogProps {
@@ -241,7 +242,7 @@ export function DiffViewerDialog({
         }
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(formatError(err));
         setLoading(false);
       });
   }, [open, loader, repoSlug, prNumber, cwd, jumpToFirstCommented, jumpToFile, openCommentsByFile]);

@@ -6,7 +6,7 @@ import {
   type AgentKind,
   inferAgentKindFromName,
   inferAgentKindFromStep,
-} from './agentKind';
+} from './agent-kind';
 
 const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'scout',

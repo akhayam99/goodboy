@@ -16,6 +16,7 @@ import {
   SETTING_ENABLE_PARALLEL_AGENTS,
   SETTING_MAX_PARALLELISM,
 } from '../settings';
+import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
 interface SettingsDialogProps {
@@ -128,7 +129,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       setExportState(path ? 'done' : 'idle');
     } catch (err) {
       setExportState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -141,7 +142,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       setImportResult(result);
       setImportDialogOpen(true);
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : String(err));
+      setImportError(formatError(err));
       setImportDialogOpen(true);
     }
   };
@@ -160,7 +161,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -172,7 +173,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       setWipeState('done');
     } catch (err) {
       setWipeState('error');
-      setWipeError(err instanceof Error ? err.message : String(err));
+      setWipeError(formatError(err));
     }
   };
 

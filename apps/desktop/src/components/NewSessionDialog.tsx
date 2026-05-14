@@ -22,7 +22,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
-import { shortModel } from '../agentRowFormat';
+import { shortModel } from '../agent-row-format';
 import { PROVIDER_LABEL_LOWER } from '../providers';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';

@@ -41,6 +41,7 @@ import {
   useSummarizerStatus,
 } from '../store';
 import { openUrl } from '../editor';
+import { formatError } from '../errors';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { NextActionChips } from './NextActionChips';
@@ -398,7 +399,7 @@ function GitHubSection({ session }: { session: Task }) {
     try {
       await createPrForSession(session.id);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : String(err));
+      setCreateError(formatError(err));
     }
   };
 

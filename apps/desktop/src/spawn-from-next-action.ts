@@ -1,6 +1,6 @@
 import type { NextAction } from '@kay-am/core';
 import type { TaskId } from '@kay-am/types';
-import { AGENT_KIND_DEFAULTS, type AgentKind } from './agentKind';
+import { AGENT_KIND_DEFAULTS, type AgentKind } from './agent-kind';
 
 export type SpawnAgentFn = (
   taskId: TaskId,

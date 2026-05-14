@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SLOT_KEYS } from '@kay-am/core';
-import { AGENT_KIND_SLOTS, slotsForKind } from './slotRouting';
+import { AGENT_KIND_SLOTS, slotsForKind } from './slot-routing';
 
 describe('AGENT_KIND_SLOTS', () => {
   it('only references valid slot keys', () => {

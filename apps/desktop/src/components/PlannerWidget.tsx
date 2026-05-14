@@ -12,6 +12,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import type { VerbosityLevel } from '../verbosity';
+import { formatError } from '../errors';
 import { useAppStore } from '../store';
 import { StepOverrideRow, type StepOverrideValues } from './overrides/StepOverrideRow';
 
@@ -54,7 +55,7 @@ export function PlannerWidget({
       });
       setOverrides(initial);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
@@ -98,7 +99,7 @@ export function PlannerWidget({
       setOverrides({});
       setTheme('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
