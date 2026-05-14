@@ -19,6 +19,8 @@ export {
 
 export { fetchPrDiff, parseUnifiedDiff } from './diff';
 
+export { fetchPrDetail } from './details';
+
 export {
   DEFAULT_PR_CACHE_TTL_MS,
   getPrForBranch,

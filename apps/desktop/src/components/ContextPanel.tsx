@@ -44,6 +44,7 @@ import { openUrl } from '../editor';
 import { formatError } from '../errors';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
+import { GithubCard } from './GithubCard';
 import { NextActionChips } from './NextActionChips';
 import { worktreeDiff } from '../worktree';
 
@@ -360,6 +361,7 @@ function GitHubSection({ session }: { session: Task }) {
   const ghState = useAppStore((s) => s.sessionGithub[session.id]);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === session.workspaceId));
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const createPrForSession = useAppStore((s) => s.createPrForSession);
 
   const [repoSlug, setRepoSlug] = useState<string | null>(null);
@@ -380,6 +382,12 @@ function GitHubSection({ session }: { session: Task }) {
     if (ghState?.fetchedAt != null) return;
     void refreshSessionPr(session.id);
   }, [branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
+
+  const prNumber = ghState?.pr?.number ?? null;
+  useEffect(() => {
+    if (prNumber === null) return;
+    void refreshSessionPrDetail(session.id);
+  }, [prNumber, session.id, refreshSessionPrDetail]);
 
   if (!branch || githubStatus?.mode === 'absent') return null;
 
@@ -547,6 +555,21 @@ function GitHubSection({ session }: { session: Task }) {
           <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
             {createError}
           </p>
+        ) : null}
+
+        {pr ? (
+          <div className="border-t border-border-soft pt-1.5">
+            <GithubCard
+              pr={pr}
+              detail={ghState?.detail ?? null}
+              detailLoading={ghState?.detailLoading ?? false}
+              detailError={ghState?.detailError ?? null}
+              detailFetchedAt={ghState?.detailFetchedAt ?? null}
+              branchLastActivity={session.updatedAt}
+              onOpenUrl={openInBrowser}
+              onRefresh={() => void refreshSessionPrDetail(session.id, { force: true })}
+            />
+          </div>
         ) : null}
       </div>
 

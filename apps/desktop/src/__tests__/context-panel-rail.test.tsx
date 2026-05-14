@@ -25,6 +25,7 @@ vi.mock('../store', () => ({
       sessions: [],
       workspaces: [],
       refreshSessionPr: vi.fn(),
+      refreshSessionPrDetail: vi.fn(),
       createPrForSession: vi.fn(),
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),

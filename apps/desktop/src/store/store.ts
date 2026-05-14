@@ -112,6 +112,7 @@ import type {
   GhTokenStatus,
   PullRequestState,
   LinkedIssue,
+  PrDetail,
 } from '@kay-am/types';
 import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
 import {
@@ -120,6 +121,7 @@ import {
   computeCursorCostUsd,
   getPrForBranch,
   fetchLinkedIssues,
+  fetchPrDetail,
   detectRepoSlug,
 } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
@@ -303,6 +305,10 @@ export interface SessionGithubState {
   readonly fetchedAt: IsoDateTime | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly detail: PrDetail | null;
+  readonly detailFetchedAt: IsoDateTime | null;
+  readonly detailLoading: boolean;
+  readonly detailError: string | null;
 }
 
 export interface SummarizerSessionStatus {
@@ -421,6 +427,7 @@ export interface AppActions {
   setGithubPat(token: string): Promise<GhTokenStatus>;
   clearGithubToken(): Promise<void>;
   refreshSessionPr(taskId: TaskId, opts?: { force?: boolean }): Promise<void>;
+  refreshSessionPrDetail(taskId: TaskId, opts?: { force?: boolean }): Promise<void>;
   createPrForSession(taskId: TaskId): Promise<void>;
   clearSessionNextActions(taskId: TaskId): void;
   resolvePermissionRequest(input: {
@@ -3127,6 +3134,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
           fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
           loading: true,
           error: null,
+          detail: state.sessionGithub[taskId]?.detail ?? null,
+          detailFetchedAt: state.sessionGithub[taskId]?.detailFetchedAt ?? null,
+          detailLoading: state.sessionGithub[taskId]?.detailLoading ?? false,
+          detailError: state.sessionGithub[taskId]?.detailError ?? null,
         },
       },
     }));
@@ -3142,6 +3153,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
               fetchedAt: new Date().toISOString() as IsoDateTime,
               loading: false,
               error: null,
+              detail: null,
+              detailFetchedAt: null,
+              detailLoading: false,
+              detailError: null,
             },
           },
         }));
@@ -3164,6 +3179,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
             fetchedAt: new Date().toISOString() as IsoDateTime,
             loading: false,
             error: null,
+            detail: state.sessionGithub[taskId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[taskId]?.detailFetchedAt ?? null,
+            detailLoading: state.sessionGithub[taskId]?.detailLoading ?? false,
+            detailError: state.sessionGithub[taskId]?.detailError ?? null,
           },
         },
       }));
@@ -3177,6 +3196,99 @@ export const useAppStore = create<AppStore>((set, get) => ({
             fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
             loading: false,
             error: formatError(err),
+            detail: state.sessionGithub[taskId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[taskId]?.detailFetchedAt ?? null,
+            detailLoading: state.sessionGithub[taskId]?.detailLoading ?? false,
+            detailError: state.sessionGithub[taskId]?.detailError ?? null,
+          },
+        },
+      }));
+    }
+  },
+
+  refreshSessionPrDetail: async (taskId, opts) => {
+    const existing = get().sessionGithub[taskId];
+    const pr = existing?.pr ?? null;
+    if (!pr) return;
+    const session = get().sessions.find((s) => s.id === taskId);
+    if (!session) return;
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    if (!workspace) return;
+    const fresh = existing?.detailFetchedAt
+      ? Date.now() - new Date(existing.detailFetchedAt).getTime()
+      : Number.POSITIVE_INFINITY;
+    const DETAIL_TTL_MS = 30_000;
+    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) return;
+    set((state) => ({
+      sessionGithub: {
+        ...state.sessionGithub,
+        [taskId]: {
+          pr: state.sessionGithub[taskId]?.pr ?? pr,
+          linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+          fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+          loading: state.sessionGithub[taskId]?.loading ?? false,
+          error: state.sessionGithub[taskId]?.error ?? null,
+          detail: state.sessionGithub[taskId]?.detail ?? null,
+          detailFetchedAt: state.sessionGithub[taskId]?.detailFetchedAt ?? null,
+          detailLoading: true,
+          detailError: null,
+        },
+      },
+    }));
+    try {
+      const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+      if (!slug) {
+        set((state) => ({
+          sessionGithub: {
+            ...state.sessionGithub,
+            [taskId]: {
+              pr: state.sessionGithub[taskId]?.pr ?? pr,
+              linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+              fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+              loading: state.sessionGithub[taskId]?.loading ?? false,
+              error: state.sessionGithub[taskId]?.error ?? null,
+              detail: null,
+              detailFetchedAt: new Date().toISOString() as IsoDateTime,
+              detailLoading: false,
+              detailError: null,
+            },
+          },
+        }));
+        return;
+      }
+      const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
+        cwd: workspace.rootPath,
+      });
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [taskId]: {
+            pr: state.sessionGithub[taskId]?.pr ?? pr,
+            linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+            loading: state.sessionGithub[taskId]?.loading ?? false,
+            error: state.sessionGithub[taskId]?.error ?? null,
+            detail,
+            detailFetchedAt: new Date().toISOString() as IsoDateTime,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+      }));
+    } catch (err) {
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [taskId]: {
+            pr: state.sessionGithub[taskId]?.pr ?? pr,
+            linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
+            loading: state.sessionGithub[taskId]?.loading ?? false,
+            error: state.sessionGithub[taskId]?.error ?? null,
+            detail: state.sessionGithub[taskId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[taskId]?.detailFetchedAt ?? null,
+            detailLoading: false,
+            detailError: formatError(err),
           },
         },
       }));
