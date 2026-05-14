@@ -5,8 +5,10 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
-const AUTH_TIMEOUT: Duration = Duration::from_secs(2);
+use crate::path_env;
+
+const DETECT_TIMEOUT: Duration = Duration::from_secs(5);
+const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Clone, Serialize)]
@@ -51,7 +53,7 @@ pub fn detect_codex() -> ProviderStatus {
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
-    let mut child = match Command::new(binary)
+    let mut child = match path_env::command(binary)
         .arg("--version")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -130,9 +132,22 @@ fn read_to_string<R: std::io::Read>(mut reader: R) -> String {
     buf
 }
 
-fn run_auth_command(args: &[&str]) -> Result<String, String> {
+pub struct AuthCommandOutput {
+    pub stdout: String,
+    pub stderr: String,
+}
+
+impl AuthCommandOutput {
+    /// codex CLI v0.130 writes `codex login status` to stderr in non-TTY mode
+    /// (and Tauri children never have a TTY) — fall back when stdout is empty.
+    fn primary_text(&self) -> &str {
+        if self.stdout.trim().is_empty() { &self.stderr } else { &self.stdout }
+    }
+}
+
+fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
     let (binary, rest) = args.split_first().ok_or_else(|| "empty command".to_string())?;
-    let mut child = Command::new(binary)
+    let mut child = path_env::command(binary)
         .args(rest)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -158,7 +173,7 @@ fn run_auth_command(args: &[&str]) -> Result<String, String> {
                     .trim()
                     .to_string();
                 if status.success() {
-                    return Ok(stdout);
+                    return Ok(AuthCommandOutput { stdout, stderr });
                 } else {
                     let msg = if stderr.is_empty() { stdout } else { stderr };
                     return Err(msg);
@@ -176,7 +191,25 @@ fn run_auth_command(args: &[&str]) -> Result<String, String> {
     }
 }
 
-/// Extract a JSON string value for `key` from raw JSON text (no external deps).
+fn strip_ansi(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' && chars.peek() == Some(&'[') {
+            chars.next();
+            while let Some(&nc) = chars.peek() {
+                chars.next();
+                if nc.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+            continue;
+        }
+        out.push(c);
+    }
+    out
+}
+
 fn extract_json_string(json: &str, key: &str) -> Option<String> {
     let needle = format!("\"{}\"", key);
     let pos = json.find(&needle)?;
@@ -196,7 +229,6 @@ fn extract_json_string(json: &str, key: &str) -> Option<String> {
     }
 }
 
-/// Extract first email-like token from plain text output.
 fn extract_email(text: &str) -> Option<String> {
     for word in text.split_whitespace() {
         let w = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '@' && c != '.');
@@ -208,36 +240,53 @@ fn extract_email(text: &str) -> Option<String> {
 }
 
 fn check_claude_auth() -> AuthState {
-    // `claude auth status` outputs JSON: {"loggedIn": bool, "authMethod": "...", ...}
     match run_auth_command(&["claude", "auth", "status"]) {
-        Ok(output) => {
-            let logged_in =
-                output.contains("\"loggedIn\":true") || output.contains("\"loggedIn\": true");
-            if !logged_in {
-                return AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                };
-            }
-            let identity = extract_json_string(&output, "email")
-                .or_else(|| extract_json_string(&output, "username"))
-                .or_else(|| extract_json_string(&output, "accountName"));
+        Ok(out) => parse_claude_auth_output(&out.stdout),
+        Err(err) => {
+            eprintln!("[providers] check_claude_auth: command failed: {}", err);
             AuthState {
-                state: AuthStateKind::Connected,
-                identity,
+                state: AuthStateKind::Unknown,
+                identity: None,
             }
         }
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
+    }
+}
+
+fn parse_claude_auth_output(output: &str) -> AuthState {
+    let value: serde_json::Value = match serde_json::from_str(output) {
+        Ok(v) => v,
+        Err(_) => {
+            eprintln!(
+                "[providers] parse_claude_auth_output: non-json output (first 120 chars): {}",
+                &output.chars().take(120).collect::<String>()
+            );
+            return AuthState {
+                state: AuthStateKind::Unknown,
+                identity: None,
+            };
+        }
+    };
+
+    if value.get("loggedIn").and_then(|v| v.as_bool()) != Some(true) {
+        return AuthState {
+            state: AuthStateKind::Disconnected,
             identity: None,
-        },
+        };
+    }
+
+    let identity = ["email", "username", "accountName"]
+        .iter()
+        .find_map(|k| value.get(k).and_then(|v| v.as_str()).map(|s| s.to_string()));
+    AuthState {
+        state: AuthStateKind::Connected,
+        identity,
     }
 }
 
 fn check_cursor_auth() -> AuthState {
-    // `cursor-agent status` outputs plain text; "Not logged in" when unauthenticated
     match run_auth_command(&["cursor-agent", "status"]) {
-        Ok(output) => {
+        Ok(out) => {
+            let output = out.stdout;
             let lower = output.to_lowercase();
             if lower.contains("not logged in") || lower.contains("not authenticated") {
                 return AuthState {
@@ -260,43 +309,68 @@ fn check_cursor_auth() -> AuthState {
     }
 }
 
+fn codex_debug_enabled() -> bool {
+    std::env::var("KAYAM_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false)
+}
+
 fn check_codex_auth() -> AuthState {
-    // codex CLI subcommand layout has shifted across versions; try the variants
-    // we've seen in the wild before giving up. order matters: most recent first.
+    // Subcommand layout shifted across codex versions; try most recent first.
     let candidates: &[&[&str]] = &[
-        // codex CLI ≥ 0.13 (current). subcommand: `codex login status` →
-        // stdout "Logged in using ChatGPT" or "Not logged in".
         &["codex", "login", "status"],
-        // legacy / fallback shapes from older versions, kept in case the user
-        // still has an older binary on PATH.
         &["codex", "auth", "status"],
         &["codex", "auth", "whoami"],
         &["codex", "whoami"],
         &["codex", "status"],
     ];
-    let mut last_output: Option<String> = None;
+    let debug = codex_debug_enabled();
     for cmd in candidates {
-        match run_auth_command(cmd) {
-            Ok(output) => {
-                last_output = Some(output);
-                break;
+        if debug {
+            eprintln!("[codex-debug] auth cmd: {:?}", cmd);
+        }
+        let result = run_auth_command(cmd);
+        match result {
+            Ok(out) => {
+                if debug {
+                    eprintln!(
+                        "[codex-debug] auth ok stdout={:?} stderr={:?}",
+                        out.stdout, out.stderr
+                    );
+                }
+                let text = out.primary_text();
+                if text.trim().is_empty() {
+                    continue;
+                }
+                return parse_codex_auth_output(text);
             }
             Err(err) => {
-                last_output = Some(err);
-                continue;
+                if debug {
+                    eprintln!("[codex-debug] auth err {:?}: {}", cmd, err);
+                }
             }
         }
     }
-    let Some(output) = last_output else {
-        return AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-        };
-    };
-    let lower = output.to_lowercase();
-    if lower.contains("not logged")
-        || lower.contains("unauthenticated")
+    eprintln!("[providers] check_codex_auth: all auth subcommands returned empty");
+    AuthState {
+        state: AuthStateKind::Unknown,
+        identity: None,
+    }
+}
+
+fn parse_codex_auth_output(output: &str) -> AuthState {
+    let stripped: String = strip_ansi(output);
+    let first_line = stripped
+        .lines()
+        .map(|l| l.trim())
+        .find(|l| !l.is_empty())
+        .unwrap_or("");
+    let lower = first_line.to_lowercase();
+
+    // Disconnected before Connected: "you are not logged in" would match both.
+    if lower.starts_with("not logged")
+        || lower.starts_with("not signed")
+        || lower.contains("not logged in")
         || lower.contains("not signed in")
+        || lower.contains("unauthenticated")
         || lower.contains("no credentials")
     {
         return AuthState {
@@ -304,19 +378,25 @@ fn check_codex_auth() -> AuthState {
             identity: None,
         };
     }
-    if lower.contains("logged in")
-        || lower.contains("signed in")
-        || lower.contains("authenticated")
-        || extract_email(&output).is_some()
+    if lower.starts_with("logged in")
+        || lower.starts_with("signed in")
+        || lower.starts_with("you are logged in")
+        || lower.contains("authenticated as")
+        || extract_email(first_line).is_some()
     {
-        let identity = extract_email(&output)
-            .or_else(|| extract_json_string(&output, "email"))
-            .or_else(|| extract_json_string(&output, "username"));
+        let identity = extract_email(first_line)
+            .or_else(|| extract_json_string(output, "email"))
+            .or_else(|| extract_json_string(output, "username"));
         return AuthState {
             state: AuthStateKind::Connected,
             identity,
         };
     }
+
+    eprintln!(
+        "[providers] parse_codex_auth_output: unrecognized verdict line: {:?}",
+        first_line
+    );
     AuthState {
         state: AuthStateKind::Unknown,
         identity: None,
@@ -469,5 +549,137 @@ pub fn check_provider_auth(provider_id: String) -> AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn claude_parses_logged_in_json() {
+        let json = r#"{"loggedIn":true,"authMethod":"claude.ai","email":"a@b.com"}"#;
+        let s = parse_claude_auth_output(json);
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("a@b.com"));
+    }
+
+    #[test]
+    fn claude_parses_logged_out_json() {
+        let s = parse_claude_auth_output(r#"{"loggedIn":false}"#);
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+        assert_eq!(s.identity, None);
+    }
+
+    #[test]
+    fn claude_returns_unknown_on_non_json() {
+        let s = parse_claude_auth_output("garbage not json");
+        assert_eq!(s.state, AuthStateKind::Unknown);
+    }
+
+    #[test]
+    fn claude_falls_back_to_username_when_email_missing() {
+        let json = r#"{"loggedIn":true,"username":"alice"}"#;
+        let s = parse_claude_auth_output(json);
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("alice"));
+    }
+
+    #[test]
+    fn codex_logged_in_with_chatgpt() {
+        let s = parse_codex_auth_output("Logged in using ChatGPT\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+    }
+
+    #[test]
+    fn codex_logged_in_with_api_key() {
+        let s = parse_codex_auth_output("Logged in using API key\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+    }
+
+    #[test]
+    fn codex_not_logged_in() {
+        let s = parse_codex_auth_output("Not logged in\n");
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn codex_handles_ansi_escapes() {
+        let s = parse_codex_auth_output("\u{1b}[1mLogged in using ChatGPT\u{1b}[0m\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+    }
+
+    #[test]
+    fn codex_extracts_email_when_present() {
+        let s = parse_codex_auth_output("Logged in as alice@example.com\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
+    }
+
+    #[test]
+    fn codex_returns_unknown_on_unrecognized() {
+        let s = parse_codex_auth_output("whatever new wording\n");
+        assert_eq!(s.state, AuthStateKind::Unknown);
+    }
+
+    #[test]
+    fn codex_ignores_leading_blank_lines() {
+        let s = parse_codex_auth_output("\n\n  \nLogged in using ChatGPT\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+    }
+
+    #[test]
+    fn auth_output_prefers_stdout_when_present() {
+        let out = AuthCommandOutput {
+            stdout: "Logged in using API key (sk-…)\n".to_string(),
+            stderr: String::new(),
+        };
+        assert_eq!(out.primary_text(), "Logged in using API key (sk-…)\n");
+    }
+
+    #[test]
+    fn auth_output_falls_back_to_stderr_when_stdout_empty() {
+        let out = AuthCommandOutput {
+            stdout: String::new(),
+            stderr: "Logged in using ChatGPT\n".to_string(),
+        };
+        assert_eq!(out.primary_text(), "Logged in using ChatGPT\n");
+        let parsed = parse_codex_auth_output(out.primary_text());
+        assert_eq!(parsed.state, AuthStateKind::Connected);
+    }
+
+    #[test]
+    fn auth_output_uses_stdout_when_only_whitespace_on_stderr() {
+        let out = AuthCommandOutput {
+            stdout: "Logged in using ChatGPT\n".to_string(),
+            stderr: "  \n".to_string(),
+        };
+        assert_eq!(out.primary_text(), "Logged in using ChatGPT\n");
+    }
+
+    #[test]
+    fn auth_output_returns_empty_when_both_streams_empty() {
+        let out = AuthCommandOutput {
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+        assert!(out.primary_text().trim().is_empty());
+    }
+
+    #[test]
+    #[ignore = "requires real codex binary + active login; opt in via KAYAM_TEST_REAL_CODEX=1"]
+    fn codex_real_auth_detection_works() {
+        if std::env::var("KAYAM_TEST_REAL_CODEX")
+            .map(|v| v.is_empty())
+            .unwrap_or(true)
+        {
+            return;
+        }
+        let auth = check_codex_auth();
+        assert!(
+            !matches!(auth.state, AuthStateKind::Unknown),
+            "expected Connected or Disconnected, got Unknown — \
+             auth detection regressed (likely back to stdout-only routing)"
+        );
     }
 }

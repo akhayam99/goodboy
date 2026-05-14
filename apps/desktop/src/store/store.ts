@@ -2070,6 +2070,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       for await (const event of runTurn({
         runId,
+        provider,
         model,
         workingDir,
         prompt: resolvedPrompt,

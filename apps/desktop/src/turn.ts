@@ -1,7 +1,34 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { parseStreamJsonLine } from '@kay-am/core';
+import {
+  parseStreamJsonLine,
+  parseCursorStreamLine,
+  parseCodexJsonLine,
+  type ParseContext,
+} from '@kay-am/core';
 import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@kay-am/types';
+
+// Each provider emits its own stream-json schema; the wrong parser silently
+// returns zero events and the store reports "provider exited without a response".
+function parseForProvider(
+  provider: ProviderId,
+  line: string,
+  ctx: ParseContext,
+): ReadonlyArray<TurnEvent> {
+  switch (provider) {
+    case 'anthropic':
+      return parseStreamJsonLine(line, ctx);
+    case 'cursor':
+      return parseCursorStreamLine(line, ctx);
+    case 'codex':
+      return parseCodexJsonLine(line, ctx);
+    default: {
+      const _exhaustive: never = provider;
+      void _exhaustive;
+      return parseStreamJsonLine(line, ctx);
+    }
+  }
+}
 
 export const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
@@ -52,6 +79,7 @@ export type ClaudePermissionMode =
 
 interface SpawnArgs {
   readonly runId: ProviderRunId;
+  readonly provider: ProviderId;
   readonly model: string;
   readonly workingDir: string;
   readonly prompt: string;
@@ -114,7 +142,7 @@ export async function* runTurn(
     switch (event.payload.type) {
       case 'line':
         receivedAnyLine = true;
-        for (const ev of parseStreamJsonLine(event.payload.line, ctx)) {
+        for (const ev of parseForProvider(args.provider, event.payload.line, ctx)) {
           queue.push(ev);
         }
         flush();
@@ -122,14 +150,17 @@ export async function* runTurn(
       case 'end': {
         const exitCode = event.payload.exit_code;
         const stderr = event.payload.stderr;
-        // Only surface exit-code as error when the stream emitted nothing —
-        // if any line came through, the parsed events (result/is_error,
-        // assistant_text) already convey the outcome and a duplicate
-        // "provider exited with code N" card would be noise.
-        if (!receivedAnyLine && exitCode !== null && exitCode !== 0) {
+        // Only synthesize an error when the process produced no JSON. If lines
+        // were emitted the parsed events already convey the outcome; a second
+        // "exit N" card would just be noise.
+        if (!receivedAnyLine) {
           const tail = stderr.trim().split('\n').slice(-5).join('\n');
           const detail = tail.length > 0 ? `: ${tail}` : '';
-          error = new Error(`provider exited with code ${exitCode}${detail}`);
+          if (exitCode !== null && exitCode !== 0) {
+            error = new Error(`provider exited with code ${exitCode}${detail}`);
+          } else if (tail.length > 0) {
+            error = new Error(`provider emitted no events${detail}`);
+          }
         }
         ended = true;
         flush();
