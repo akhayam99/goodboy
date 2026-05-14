@@ -46,6 +46,8 @@ export {
   type RoleDefaults,
 } from './roles';
 
+export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
+
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';

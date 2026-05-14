@@ -1,13 +1,17 @@
-import type { WorkflowLibraryStep } from '@kay-am/core';
+import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@kay-am/core';
 
-export type AgentKind =
-  | 'scout'
-  | 'planner'
-  | 'implementer'
-  | 'debugger'
-  | 'reviewer'
-  | 'docs'
-  | 'generic';
+export type AgentKind = AgentKindLabel;
+
+export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
+  'planner',
+  'scout',
+  'implementer',
+  'debugger',
+  'tester',
+  'reviewer',
+  'docs',
+  'generic',
+];
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   scout: {
@@ -29,6 +33,11 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
     bg: 'bg-warning/15',
     fg: 'text-warning',
     label: 'debug',
+  },
+  tester: {
+    bg: 'bg-success/10',
+    fg: 'text-success',
+    label: 'test',
   },
   reviewer: {
     bg: 'bg-info/20',
@@ -74,6 +83,12 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt:
       'you are a debugging agent. reproduce the failure, isolate the root cause, propose minimal fixes. prefer instrumentation over assumptions. report findings before patching.',
   },
+  tester: {
+    model: 'claude-sonnet-4-5',
+    effort: 'medium',
+    systemPrompt:
+      'you are a testing agent. write tests covering happy path and edge cases. do not modify production code unless required to make tests pass. report coverage gaps.',
+  },
   reviewer: { model: 'claude-sonnet-4-5', effort: 'medium' },
   planner: {
     model: 'claude-opus-4-5',
@@ -91,7 +106,7 @@ const ROLE_TO_KIND: Record<string, AgentKind> = {
   architect: 'planner',
   product: 'planner',
   implementer: 'implementer',
-  tester: 'reviewer',
+  tester: 'tester',
   reviewer: 'reviewer',
   docs: 'docs',
   writer: 'docs',
@@ -108,7 +123,25 @@ export function inferAgentKindFromName(name: string): AgentKind {
   if (/plan|design|architect|spec|product/.test(lower)) return 'planner';
   if (/impl|build|develop|code|feature|refactor/.test(lower)) return 'implementer';
   if (/debug|diagno|fix|repro|investig/.test(lower)) return 'debugger';
-  if (/review|verify|test|check|qa/.test(lower)) return 'reviewer';
-  if (/doc|write|readme|changelog/.test(lower)) return 'docs';
+  if (/test|qa/.test(lower)) return 'tester';
+  if (/review|verify|check|audit/.test(lower)) return 'reviewer';
+  if (/doc|readme|changelog/.test(lower)) return 'docs';
   return 'generic';
+}
+
+/**
+ * Resolve the chip's display kind. Override (explicit user pick) wins,
+ * else name-based inference, else first-turn classification. Conservative —
+ * when nothing matches, stays `generic` (chip shows "agent").
+ */
+export function resolveAgentKind(
+  name: string,
+  firstUserText: string | null,
+  override: AgentKind | null = null,
+): AgentKind {
+  if (override) return override;
+  const fromName = inferAgentKindFromName(name);
+  if (fromName !== 'generic') return fromName;
+  if (!firstUserText) return 'generic';
+  return classifyFirstTurn(firstUserText);
 }

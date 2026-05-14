@@ -6,6 +6,7 @@ import {
   type AgentKind,
   inferAgentKindFromName,
   inferAgentKindFromStep,
+  resolveAgentKind,
 } from './agent-kind';
 
 const ALL_KINDS: ReadonlyArray<AgentKind> = [
@@ -13,6 +14,7 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'planner',
   'implementer',
   'debugger',
+  'tester',
   'reviewer',
   'docs',
   'generic',
@@ -56,8 +58,8 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('implementer / debugger / reviewer → sonnet, medium effort', () => {
-    for (const kind of ['implementer', 'debugger', 'reviewer'] as AgentKind[]) {
+  it('implementer / debugger / reviewer / tester → sonnet, medium effort', () => {
+    for (const kind of ['implementer', 'debugger', 'reviewer', 'tester'] as AgentKind[]) {
       expect(AGENT_KIND_DEFAULTS[kind].effort).toBe('medium');
       expect(AGENT_KIND_DEFAULTS[kind].model).toMatch(/sonnet/i);
     }
@@ -78,7 +80,7 @@ describe('inferAgentKindFromStep', () => {
     ['architect', 'planner'],
     ['product', 'planner'],
     ['implementer', 'implementer'],
-    ['tester', 'reviewer'],
+    ['tester', 'tester'],
     ['reviewer', 'reviewer'],
     ['docs', 'docs'],
     ['writer', 'docs'],
@@ -88,6 +90,33 @@ describe('inferAgentKindFromStep', () => {
 
   it('unknown role falls back to generic', () => {
     expect(inferAgentKindFromStep(makeStep('oracle'))).toBe('generic');
+  });
+});
+
+describe('resolveAgentKind', () => {
+  it('override wins over everything', () => {
+    expect(resolveAgentKind('Plan the migration', 'find the bug', 'docs')).toBe('docs');
+  });
+
+  it('prefers name-based inference when the name is meaningful', () => {
+    expect(resolveAgentKind('Plan the migration', 'find the bug')).toBe('planner');
+    expect(resolveAgentKind('Review diff', 'implement the feature')).toBe('reviewer');
+  });
+
+  it('falls back to first-turn classification when the name is generic', () => {
+    expect(resolveAgentKind('agent 1', 'find where AgentKind is defined')).toBe('scout');
+    expect(resolveAgentKind('agent 2', 'plan the migration')).toBe('planner');
+    expect(resolveAgentKind('agent 3', 'implement the chip auto-label')).toBe('implementer');
+    expect(resolveAgentKind('agent 4', 'audit the diff')).toBe('reviewer');
+    expect(resolveAgentKind('agent 5', 'write a test for the parser')).toBe('tester');
+    expect(resolveAgentKind('agent 6', 'update the readme')).toBe('docs');
+    expect(resolveAgentKind('agent 7', 'debug the startup crash')).toBe('debugger');
+  });
+
+  it('stays generic when first turn is missing or unclassifiable', () => {
+    expect(resolveAgentKind('agent 1', null)).toBe('generic');
+    expect(resolveAgentKind('agent 1', '')).toBe('generic');
+    expect(resolveAgentKind('agent 1', 'hello')).toBe('generic');
   });
 });
 
@@ -106,7 +135,7 @@ describe('inferAgentKindFromName', () => {
     ['Reproduce', 'debugger'],
     ['Review diff', 'reviewer'],
     ['Verify', 'reviewer'],
-    ['Test', 'reviewer'],
+    ['Test', 'tester'],
     ['Write docs', 'docs'],
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {

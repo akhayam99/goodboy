@@ -74,8 +74,9 @@ import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
-  inferAgentKindFromName,
+  resolveAgentKind,
 } from '../agent-kind';
+import { AgentKindMenu } from './AgentKindMenu';
 import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
 import { openUrl } from '../editor';
 import { formatError } from '../errors';
@@ -1294,6 +1295,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
+  const setAgentKind = useAppStore((s) => s.setAgentKind);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
@@ -1325,6 +1328,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
     for (const m of messages) {
       if (m.role !== 'user') continue;
       map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
+    }
+    return map;
+  }, [messages]);
+
+  // First user message per agent, kept stable so the chip's auto-label only
+  // ever derives from turn #1 even if later turns arrive.
+  const firstUserTextByAgentId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of messages) {
+      if (m.role !== 'user') continue;
+      if (map.has(m.agentId)) continue;
+      map.set(m.agentId, m.content);
     }
     return map;
   }, [messages]);
@@ -1430,7 +1445,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
             const stepName = run.stepId
               ? (workflow?.steps.find((s) => s.id === run.stepId)?.name ?? null)
               : null;
-            const kind = inferAgentKindFromName(stepName ?? run.name);
+            const kind = resolveAgentKind(
+              stepName ?? run.name,
+              firstUserTextByAgentId.get(run.id) ?? null,
+              agentKindOverride[run.id] ?? null,
+            );
             return (
               <AgentRow
                 key={run.id}
@@ -1442,6 +1461,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                 isSelected={run.id === selectedAgentId}
                 isEditing={editingId === run.id}
                 onClick={() => onPickAgent(run.id)}
+                onPickKind={(next) => setAgentKind(run.id, next)}
                 onRenameStart={() => setEditingId(run.id)}
                 onRenameCommit={(name) => void onRenameCommit(run.id, name)}
                 onRenameCancel={() => setEditingId(null)}
@@ -1665,6 +1685,7 @@ interface AgentRowProps {
   readonly isSelected: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
+  readonly onPickKind: (next: AgentKind) => void;
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
@@ -1680,6 +1701,7 @@ function AgentRow({
   isSelected,
   isEditing,
   onClick,
+  onPickKind,
   onRenameStart,
   onRenameCommit,
   onRenameCancel,
@@ -1734,18 +1756,7 @@ function AgentRow({
             AGENT_STATUS_TONE[run.status],
           )}
         />
-        <span
-          className={cn(
-            'shrink-0 rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide',
-            'w-[3.25rem]',
-            AGENT_KIND_PALETTE[kind].bg,
-            AGENT_KIND_PALETTE[kind].fg,
-          )}
-          aria-label={`agent kind: ${AGENT_KIND_PALETTE[kind].label}`}
-          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
-        >
-          {AGENT_KIND_PALETTE[kind].label}
-        </span>
+        <AgentKindMenu kind={kind} agentLabel={`agent ${run.ordinal + 1}`} onPick={onPickKind} />
         {isEditing ? (
           <input
             autoFocus
