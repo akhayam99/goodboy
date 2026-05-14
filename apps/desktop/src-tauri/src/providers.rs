@@ -534,10 +534,12 @@ fn provider_logout_command(provider_id: &str) -> Option<String> {
 
 #[cfg(target_os = "macos")]
 fn spawn_in_terminal(command: &str) -> Result<(), String> {
-    // osascript ensures the terminal window opens and the command runs even if Terminal is already open
+    // `do script` opens a Terminal window but does not raise Terminal.app when
+    // kay-am is frontmost; the explicit `activate` brings it to the foreground.
+    let escaped = command.replace('\\', "\\\\").replace('"', "\\\"");
     let script = format!(
-        "tell application \"Terminal\" to do script \"{}\"",
-        command.replace('\\', "\\\\").replace('"', "\\\"")
+        "tell application \"Terminal\"\n  do script \"{}\"\n  activate\nend tell",
+        escaped
     );
     Command::new("osascript")
         .args(["-e", &script])
