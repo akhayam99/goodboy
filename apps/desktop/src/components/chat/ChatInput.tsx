@@ -136,6 +136,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  interface FailedTurn {
+    readonly content: string;
+    readonly override: TurnProviderOverride | undefined;
+  }
+  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     readProvider(session.id),
   );
@@ -256,8 +261,10 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             }
           },
         });
+        setLastFailedTurn(null);
       } catch (err) {
         setError(formatError(err));
+        setLastFailedTurn({ content, override });
       }
     },
     [sendTurn, session.id, showToast],
@@ -285,6 +292,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     const content = value.trim();
     if (!content || providerDisconnected) return;
     setError(null);
+    setLastFailedTurn(null);
 
     if (allowOverride && !isRunning && rightSizeSuggested !== null && rightSizePending === null) {
       setRightSizePending(content);
@@ -302,6 +310,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
+    if (suggested !== null) setSelectedModel(suggested);
     await sendWith(content, suggested);
   };
 
@@ -490,9 +499,21 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           )}
         </div>
         {error ? (
-          <p role="alert" className="text-xs text-danger">
-            {error}
-          </p>
+          <div role="alert" className="flex items-center gap-2">
+            <p className="flex-1 text-xs text-danger">{error}</p>
+            {lastFailedTurn !== null ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  void dispatchTurn(lastFailedTurn.content, lastFailedTurn.override);
+                }}
+                className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
+              >
+                retry
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>
