@@ -101,6 +101,14 @@ const STATE_FILTER_OPTIONS: ReadonlyArray<TurnState['kind']> = [
 
 const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
+const HEADER_ICON_BTN =
+  'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground' as const;
+
+const PREVIEW_LIST_ITEM = 'rounded-md bg-subtle px-3 py-2 text-xs' as const;
+
+const SECTION_LABEL =
+  'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
+
 type SessionSort = 'updated' | 'alpha';
 
 export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
@@ -179,7 +187,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             onClick={toggleTheme}
             title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
             aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={HEADER_ICON_BTN}
           >
             {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
           </button>
@@ -189,7 +197,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             onClick={() => setGuideOpen(true)}
             title="getting started — guide"
             aria-label="open getting started guide"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={HEADER_ICON_BTN}
           >
             <HelpCircle size={13} aria-hidden />
           </button>
@@ -198,7 +206,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             onClick={onOpenSettings}
             title="settings (⌘,)"
             aria-label="open settings"
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={HEADER_ICON_BTN}
           >
             <Settings size={13} aria-hidden />
           </button>
@@ -208,7 +216,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <ScrollArea className="max-h-[40%] shrink-0">
         <section className="flex flex-col px-2">
           <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <span className={SECTION_LABEL}>
               <FolderOpen size={11} aria-hidden className="text-primary" />
               Workspaces
             </span>
@@ -236,7 +244,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <ScrollArea className="mt-8 flex-1">
         <section className="flex flex-col px-2">
           <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <span className={SECTION_LABEL}>
               <MessagesSquare size={11} aria-hidden className="text-info" />
               Sessions
             </span>
@@ -1219,13 +1227,13 @@ function AddWsSkillsPreview() {
         </p>
       </div>
       <ul className="flex flex-col gap-1.5">
-        <li className="rounded-md bg-subtle px-3 py-2 text-xs">
+        <li className={PREVIEW_LIST_ITEM}>
           <code className="font-mono text-foreground">&lt;root&gt;/.kay/skills/*.md</code>
           <p className="mt-1 leading-relaxed text-muted-foreground">
             flat directory of single-file skills (front-matter + body).
           </p>
         </li>
-        <li className="rounded-md bg-subtle px-3 py-2 text-xs">
+        <li className={PREVIEW_LIST_ITEM}>
           <code className="font-mono text-foreground">
             &lt;root&gt;/.claude/skills/&lt;name&gt;/SKILL.md
           </code>
@@ -1253,7 +1261,7 @@ function AddWsWorkflowsPreview() {
       </div>
       <ul className="flex flex-col gap-1.5">
         {WORKFLOW_LIBRARY.map((entry) => (
-          <li key={entry.slug} className="rounded-md bg-subtle px-3 py-2 text-xs">
+          <li key={entry.slug} className={PREVIEW_LIST_ITEM}>
             <div className="flex items-baseline justify-between">
               <span className="font-medium text-foreground">{entry.name.toLowerCase()}</span>
               <span className="text-2xs text-muted-foreground">
@@ -1401,7 +1409,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   return (
     <section className="mt-8 flex flex-col px-2 pb-3">
       <header className="flex items-center justify-between gap-2 pb-1.5">
-        <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <span className={SECTION_LABEL}>
           <Bot size={11} aria-hidden className="text-success" />
           Agents
         </span>

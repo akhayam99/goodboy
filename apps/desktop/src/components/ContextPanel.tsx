@@ -56,6 +56,9 @@ interface ContextPanelProps {
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
+const ICON_BTN =
+  'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+
 export function ContextPanel({
   session,
   collapsed = false,
@@ -161,7 +164,8 @@ export function ContextPanel({
           title="expand context panel"
           aria-label="expand context panel"
           className={cn(
-            'h-fit rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground',
+            'h-fit',
+            ICON_BTN,
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
           )}
         >
@@ -189,7 +193,7 @@ export function ContextPanel({
                     onClick={onCollapse}
                     title="hide context panel"
                     aria-label="hide context panel"
-                    className="rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+                    className={ICON_BTN}
                   >
                     <PanelRightClose size={13} aria-hidden />
                   </button>
@@ -416,7 +420,7 @@ function GitHubSection({ session }: { session: Task }) {
           disabled={loading}
           title="refresh pr status"
           aria-label="refresh pr status"
-          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
+          className={cn(ICON_BTN, 'disabled:opacity-40')}
         >
           <RefreshCw size={11} className={cn(loading && 'animate-spin')} aria-hidden />
         </button>
@@ -432,7 +436,7 @@ function GitHubSection({ session }: { session: Task }) {
             onClick={copyBranch}
             title="copy branch name"
             aria-label="copy branch name"
-            className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className={cn('shrink-0', ICON_BTN)}
           >
             {copied ? <X size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
           </button>
@@ -468,7 +472,7 @@ function GitHubSection({ session }: { session: Task }) {
                   onClick={() => setDiffOpen(true)}
                   title="view diff"
                   aria-label="view pr diff"
-                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className={ICON_BTN}
                 >
                   <ExternalLink size={10} aria-hidden />
                 </button>
@@ -659,7 +663,7 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
           onClick={openHistory}
           title="view history"
           aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={ICON_BTN}
         >
           <History size={11} aria-hidden />
         </button>
