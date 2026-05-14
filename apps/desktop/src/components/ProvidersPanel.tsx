@@ -133,7 +133,6 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
           />
         </Tooltip>
       ) : null}
-      <TileCaveat info={info} />
 
       <div
         aria-hidden
@@ -162,29 +161,6 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
         <TileAction info={info} onRefresh={onRefresh} />
       </div>
     </div>
-  );
-}
-
-function TileCaveat({ info }: { info: ProviderInfo }) {
-  const caveats: string[] = [];
-  if (info.id !== 'anthropic') {
-    caveats.push('Permission proxy not supported');
-  }
-  if (info.connection === 'connected') {
-    caveats.push(
-      info.id === 'anthropic'
-        ? 'Quota info unavailable (anthropic does not expose it via the cli)'
-        : 'Quota info unavailable',
-    );
-  }
-  if (caveats.length === 0) return null;
-
-  return (
-    <Tooltip content={caveats.join(' · ')} side="bottom">
-      <span className="absolute right-2.5 top-2.5 inline-flex cursor-default text-muted-foreground/70">
-        <Info size={11} aria-hidden />
-      </span>
-    </Tooltip>
   );
 }
 
