@@ -21,7 +21,7 @@ import {
   Activity,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Button, cn } from '@kay-am/ui';
+import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
 import type {
   ContextSlot,
@@ -573,6 +573,12 @@ interface SlotMeta {
   readonly emptyLabel: string;
 }
 
+const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
+  'open_questions',
+  'decisions',
+  'last_output_summary',
+]);
+
 const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   goal: {
     icon: Target,
@@ -628,6 +634,7 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
   const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
+  const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -686,9 +693,9 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
               commit();
             }
           }}
-          className="text-xs"
+          className="font-mono text-xs"
           autoGrow
-          maxRows={12}
+          maxRows={16}
         />
       ) : isSummarizing ? (
         <SlotSkeleton emphasis={meta?.emphasis} />
@@ -700,12 +707,31 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
         >
           {meta?.emptyLabel ?? 'empty — click to edit'}
         </button>
+      ) : renderAsMarkdown ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setEditing(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setEditing(true);
+            }
+          }}
+          className={cn(
+            'cursor-text rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15',
+            'bg-subtle',
+            meta?.tintedWhenNonEmpty,
+          )}
+        >
+          <Markdown text={value} className="text-[13px] text-foreground" />
+        </div>
       ) : (
         <button
           type="button"
           onClick={() => setEditing(true)}
           className={cn(
-            'whitespace-pre-wrap break-all rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40',
+            'whitespace-pre-wrap break-words rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40',
             meta?.emphasis ? 'bg-subtle text-sm font-medium' : 'bg-subtle text-xs',
             meta?.tintedWhenNonEmpty,
           )}
@@ -716,6 +742,7 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
 
       <SlotHistoryDialog
         label={SLOT_LABELS[slotKey]}
+        renderAsMarkdown={renderAsMarkdown}
         open={historyOpen}
         entries={history}
         onRestore={restore}
@@ -727,13 +754,21 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
 
 interface SlotHistoryDialogProps {
   label: string;
+  renderAsMarkdown: boolean;
   open: boolean;
   entries: ReadonlyArray<ContextSlotHistoryEntry>;
   onRestore: (entry: ContextSlotHistoryEntry) => void;
   onClose: () => void;
 }
 
-function SlotHistoryDialog({ label, open, entries, onRestore, onClose }: SlotHistoryDialogProps) {
+function SlotHistoryDialog({
+  label,
+  renderAsMarkdown,
+  open,
+  entries,
+  onRestore,
+  onClose,
+}: SlotHistoryDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="xl">
       {entries.length === 0 ? (
@@ -768,9 +803,15 @@ function SlotHistoryDialog({ label, open, entries, onRestore, onClose }: SlotHis
                   restore
                 </button>
               </div>
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground line-clamp-4">
-                {entry.value}
-              </p>
+              {renderAsMarkdown ? (
+                <div className="max-h-40 overflow-hidden text-xs leading-relaxed text-foreground">
+                  <Markdown text={entry.value} className="text-xs" />
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground line-clamp-4">
+                  {entry.value}
+                </p>
+              )}
             </li>
           ))}
         </ul>
