@@ -15,5 +15,6 @@ export {
   inferNextActions,
   type InferNextActionsInput,
   type NextAction,
+  type NextActionKind,
   type NextActionsPrState,
 } from './next-actions';

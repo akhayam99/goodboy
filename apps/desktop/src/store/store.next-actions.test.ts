@@ -127,9 +127,16 @@ vi.mock('@tauri-apps/api/core', () => ({
 const TASK_ID = 'task-next-actions' as TaskId;
 
 const ACTIONS_PLAN: ReadonlyArray<NextAction> = [
-  { id: 'spawn_planner', label: 'start plan', kind: 'planner' },
+  { id: 'next-plan', kind: 'plan', label: 'Pianifica', prompt: 'produci un piano per X' },
 ];
-const ACTIONS_PR: ReadonlyArray<NextAction> = [{ id: 'open_pr', label: 'open pr' }];
+const ACTIONS_PR: ReadonlyArray<NextAction> = [
+  {
+    id: 'next-implement',
+    kind: 'implement',
+    label: 'Implementa',
+    prompt: 'vai diretto e implementa X',
+  },
+];
 
 describe('sessionNextActions store slice', () => {
   afterEach(() => {

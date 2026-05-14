@@ -4,7 +4,7 @@ import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
 import type { TaskId } from '@kay-am/types';
 import { formatError } from '../errors';
-import { useAppStore, useSessionNextActions, useSessionSlots } from '../store';
+import { useAppStore, useSessionNextActions } from '../store';
 import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agent-kind';
 import { spawnKindForAction } from '../spawn-from-next-action';
 
@@ -14,56 +14,33 @@ export interface NextActionChipsProps {
   readonly className?: string;
 }
 
-function isSpawnAction(action: NextAction): boolean {
-  return spawnKindForAction(action) !== null;
-}
-
 export function NextActionChips({ taskId, workflowBound, className }: NextActionChipsProps) {
   const actions = useSessionNextActions(taskId);
-  const slots = useSessionSlots(taskId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
   const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
   const [busyId, setBusyId] = useState<NextAction['id'] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<NextAction | null>(null);
-
-  const hasOpenQuestions =
-    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
 
   if (workflowBound || actions.length === 0) return null;
 
   const executeAction = async (action: NextAction) => {
     setBusyId(action.id);
     setError(null);
-    setPendingAction(null);
     try {
       const kind = spawnKindForAction(action);
-      if (kind) {
-        const defaults = AGENT_KIND_DEFAULTS[kind];
-        await spawnAgent(taskId, {
-          name: action.label,
-          model: defaults.model,
-          effort: defaults.effort,
-        });
-      } else if (action.id === 'open_pr') {
-        await createPrForSession(taskId);
-      }
+      const defaults = AGENT_KIND_DEFAULTS[kind];
+      await spawnAgent(taskId, {
+        name: action.label,
+        model: defaults.model,
+        effort: defaults.effort,
+        initialPrompt: action.prompt,
+      });
       clearSessionNextActions(taskId);
     } catch (err) {
       setError(formatError(err));
     } finally {
       setBusyId(null);
     }
-  };
-
-  const onClick = async (action: NextAction) => {
-    if (busyId) return;
-    if (hasOpenQuestions && isSpawnAction(action)) {
-      setPendingAction(action);
-      return;
-    }
-    await executeAction(action);
   };
 
   return (
@@ -75,40 +52,17 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
       <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
         next
       </span>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-col gap-1.5">
         {actions.map((action) => (
-          <Chip
+          <Cta
             key={action.id}
             action={action}
             busy={busyId === action.id}
             disabled={busyId !== null && busyId !== action.id}
-            onClick={() => void onClick(action)}
+            onClick={() => void executeAction(action)}
           />
         ))}
       </div>
-      {pendingAction ? (
-        <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
-          <p className="mb-2 font-medium text-foreground">
-            open questions need resolution before spawning an agent.
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingAction(null)}
-              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
-            >
-              resolve first
-            </button>
-            <button
-              type="button"
-              onClick={() => void executeAction(pendingAction)}
-              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
-            >
-              force spawn
-            </button>
-          </div>
-        </div>
-      ) : null}
       {error ? (
         <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
           {error}
@@ -118,7 +72,7 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
   );
 }
 
-function Chip({
+function Cta({
   action,
   busy,
   disabled,
@@ -130,9 +84,9 @@ function Chip({
   onClick: () => void;
 }) {
   const kind = spawnKindForAction(action);
-  const palette = kind ? AGENT_KIND_PALETTE[kind] : null;
-  const defaults = kind ? AGENT_KIND_DEFAULTS[kind] : null;
-  const title = defaults ? `model: ${defaults.model} · effort: ${defaults.effort}` : action.label;
+  const palette = AGENT_KIND_PALETTE[kind];
+  const defaults = AGENT_KIND_DEFAULTS[kind];
+  const title = `${action.prompt} · model: ${defaults.model} · effort: ${defaults.effort}`;
 
   return (
     <button
@@ -143,11 +97,10 @@ function Chip({
       title={title}
       aria-label={action.label}
       className={cn(
-        'group inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60',
+        'group inline-flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/5 px-2.5 py-1.5 text-left text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60',
       )}
     >
-      <span>{action.label}</span>
-      {palette ? (
+      <span className="flex items-center gap-2">
         <span
           className={cn(
             'rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
@@ -158,11 +111,12 @@ function Chip({
         >
           {palette.label}
         </span>
-      ) : null}
+        <span>{action.label}</span>
+      </span>
       <ArrowRight
-        size={11}
+        size={12}
         aria-hidden
-        className="transition-transform group-hover:translate-x-0.5"
+        className="shrink-0 transition-transform group-hover:translate-x-0.5"
       />
     </button>
   );
