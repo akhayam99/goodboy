@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { create } from 'zustand';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
@@ -8,22 +9,53 @@ import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
 const sendTurnMock = vi.fn(async () => undefined);
 const cancelCurrentTurnMock = vi.fn();
 
-vi.mock('../store', () => ({
-  useAppStore: (selector: (s: unknown) => unknown) =>
-    selector({
-      sendTurn: sendTurnMock,
-      cancelCurrentTurn: cancelCurrentTurnMock,
-      providers: [
-        { id: 'anthropic', connection: 'connected' },
-        { id: 'cursor', connection: 'connected' },
-        { id: 'codex', connection: 'connected' },
-      ],
-      skills: {},
-      providerSpendBreakdown: [],
-      selectedAgentId: {},
-      agentTurnState: {},
-      agentModelOverride: {},
+interface MockStoreState {
+  sendTurn: typeof sendTurnMock;
+  cancelCurrentTurn: typeof cancelCurrentTurnMock;
+  providers: ReadonlyArray<{ id: string; connection: string }>;
+  skills: Record<string, never>;
+  providerSpendBreakdown: ReadonlyArray<never>;
+  selectedAgentId: Record<string, string>;
+  agentTurnState: Record<string, never>;
+  agentModelOverride: Record<string, never>;
+  agentRunHistory: Record<string, never>;
+  agentDraft: Record<string, string>;
+  setAgentDraft: (agentId: string, value: string) => void;
+  clearAgentDraft: (agentId: string) => void;
+}
+
+const mockStore = create<MockStoreState>((set) => ({
+  sendTurn: sendTurnMock,
+  cancelCurrentTurn: cancelCurrentTurnMock,
+  providers: [
+    { id: 'anthropic', connection: 'connected' },
+    { id: 'cursor', connection: 'connected' },
+    { id: 'codex', connection: 'connected' },
+  ],
+  skills: {},
+  providerSpendBreakdown: [],
+  selectedAgentId: { 'session-1': 'agent-1' },
+  agentTurnState: {},
+  agentModelOverride: {},
+  agentRunHistory: {},
+  agentDraft: {},
+  setAgentDraft: (agentId, value) =>
+    set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
+  clearAgentDraft: (agentId) =>
+    set((s) => {
+      if (!(agentId in s.agentDraft)) return s;
+      const next = { ...s.agentDraft };
+      delete next[agentId];
+      return { agentDraft: next };
     }),
+}));
+
+function resetMockStore() {
+  mockStore.setState({ agentDraft: {} });
+}
+
+vi.mock('../store', () => ({
+  useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
 }));
 
@@ -78,6 +110,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  resetMockStore();
 });
 
 describe('ChatInput — input wiring', () => {
