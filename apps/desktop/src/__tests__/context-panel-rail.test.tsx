@@ -29,6 +29,7 @@ vi.mock('../store', () => ({
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),
       loadDiffComments: vi.fn(),
+      sessionPlans: {},
     };
     return selector(state);
   }),
