@@ -13,8 +13,9 @@ import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
 import { refreshPricingTable } from './providerPricing';
+import { STORAGE_PREFIXES } from './storage-keys';
 
-const CONTEXT_PANEL_KEY = (id: TaskId): string => `kayam:context-panel-open:${id}`;
+const CONTEXT_PANEL_KEY = (id: TaskId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
 
 function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
   try {

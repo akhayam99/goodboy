@@ -28,14 +28,15 @@ import { EFFORT_LEVELS, type EffortLevel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';
 import { PermissionModePicker } from './PermissionModePicker';
+import { STORAGE_PREFIXES } from '../../storage-keys';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
 const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 
-const EFFORT_STORAGE_PREFIX = 'kayam:effort:';
-const MODEL_STORAGE_PREFIX = 'kayam:model:';
-const PROVIDER_STORAGE_PREFIX = 'kayam:provider:';
+const EFFORT_STORAGE_PREFIX = STORAGE_PREFIXES.effort;
+const MODEL_STORAGE_PREFIX = STORAGE_PREFIXES.model;
+const PROVIDER_STORAGE_PREFIX = STORAGE_PREFIXES.provider;
 
 function readEffort(taskId: TaskId): EffortLevel {
   try {

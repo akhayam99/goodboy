@@ -170,7 +170,7 @@ describe('ChatInput — input wiring', () => {
 
   it('provider override persists across sends (regression for bug D)', async () => {
     // Pre-populate localStorage: user previously picked cursor for this session.
-    localStorage.setItem('kayam:provider:session-1', 'cursor');
+    localStorage.setItem('kay-am:provider:session-1', 'cursor');
 
     const user = userEvent.setup();
     render(
@@ -190,6 +190,6 @@ describe('ChatInput — input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
     // After send, the selected provider must still be cursor (not reset to anthropic).
-    expect(localStorage.getItem('kayam:provider:session-1')).toBe('cursor');
+    expect(localStorage.getItem('kay-am:provider:session-1')).toBe('cursor');
   });
 });

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Dialog, cn } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { ProviderSpendEntry } from '../store';
+import { STORAGE_KEYS } from '../storage-keys';
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
 const formatTokens = (n: number): string =>
@@ -12,7 +13,7 @@ const formatTokens = (n: number): string =>
       : `${n}`;
 
 type SortKey = 'recent' | 'expensive';
-const SORT_KEY_STORAGE = 'pricing-sort-key';
+const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 
 function spendColor(pct: number): string {
   if (pct >= 1) return 'bg-danger';

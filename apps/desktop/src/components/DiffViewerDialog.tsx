@@ -28,6 +28,7 @@ import { openFileInWorkspace } from '../editor';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore, useDiffComments } from '../store';
 import { AGENT_KIND_DEFAULTS } from '../agentKind';
+import { STORAGE_KEYS } from '../storage-keys';
 
 interface DiffViewerDialogProps {
   open: boolean;
@@ -60,7 +61,7 @@ const STATUS_COLOR: Record<FileDiffStatus, string> = {
   renamed: 'text-warning',
 };
 
-const SIDEBAR_PREF_KEY = 'kay-am:diff-sidebar-collapsed';
+const SIDEBAR_PREF_KEY = STORAGE_KEYS.diffSidebarCollapsed;
 
 type TreeNode =
   | {

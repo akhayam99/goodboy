@@ -1,4 +1,5 @@
 import type { TaskId } from '@kay-am/types';
+import { STORAGE_PREFIXES } from './storage-keys';
 
 export const VERBOSITY_LEVELS = ['brief', 'normal', 'verbose'] as const;
 export type VerbosityLevel = (typeof VERBOSITY_LEVELS)[number];
@@ -9,7 +10,7 @@ export const VERBOSITY_LABEL: Record<VerbosityLevel, string> = {
   verbose: 'Verbose',
 };
 
-const STORAGE_PREFIX = 'kayam:verbosity:';
+const STORAGE_PREFIX = STORAGE_PREFIXES.verbosity;
 const DEFAULT_LEVEL: VerbosityLevel = 'normal';
 
 const LEGACY_MAP: Record<string, VerbosityLevel> = {
