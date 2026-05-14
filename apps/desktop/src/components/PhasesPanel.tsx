@@ -353,8 +353,9 @@ function DefinitionEditor({
             onClick={onMoveUp}
             disabled={ordinal === 0}
             title="move up"
+            aria-label="move step up"
           >
-            ↑
+            <span aria-hidden>↑</span>
           </button>
           <button
             type="button"
@@ -362,16 +363,18 @@ function DefinitionEditor({
             onClick={onMoveDown}
             disabled={ordinal === total - 1}
             title="move down"
+            aria-label="move step down"
           >
-            ↓
+            <span aria-hidden>↓</span>
           </button>
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-danger"
             onClick={onRemove}
             title="remove step"
+            aria-label="remove step"
           >
-            ×
+            <span aria-hidden>×</span>
           </button>
         </div>
       </div>

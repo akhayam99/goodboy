@@ -667,7 +667,7 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
         className="hover:text-danger"
         aria-label={`remove filter ${label}`}
       >
-        <X size={9} />
+        <X size={9} aria-hidden />
       </button>
     </span>
   );

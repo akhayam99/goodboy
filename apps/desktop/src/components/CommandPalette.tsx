@@ -153,7 +153,8 @@ export function CommandPalette({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full px-4 py-3 text-sm focus:outline-none bg-background border-b border-border"
+          aria-label="search workspaces, sessions, and actions"
+          className="w-full px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-background border-b border-border"
         />
         <ul ref={listRef} className="max-h-64 overflow-y-auto">
           {filteredItems.length === 0 ? (
