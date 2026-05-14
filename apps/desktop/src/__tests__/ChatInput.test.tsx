@@ -16,11 +16,16 @@ vi.mock('../store', () => ({
     selector({
       sendTurn: sendTurnMock,
       cancelCurrentTurn: cancelCurrentTurnMock,
-      providers: [{ id: 'anthropic', connection: 'connected' }],
+      providers: [
+        { id: 'anthropic', connection: 'connected' },
+        { id: 'cursor', connection: 'connected' },
+        { id: 'codex', connection: 'connected' },
+      ],
       skills: {},
       providerSpendBreakdown: [],
       selectedAgentId: {},
       agentTurnState: {},
+      agentModelOverride: {},
     }),
   EMPTY_ARRAY: [] as never[],
 }));
@@ -161,5 +166,30 @@ describe('ChatInput — input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
     expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
+  });
+
+  it('provider override persists across sends (regression for bug D)', async () => {
+    // Pre-populate localStorage: user previously picked cursor for this session.
+    localStorage.setItem('kayam:provider:session-1', 'cursor');
+
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        session={makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic' as Task['providerPreference']['defaultProvider'],
+            allowTurnOverride: true,
+          },
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'hello cursor');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledOnce();
+    // After send, the selected provider must still be cursor (not reset to anthropic).
+    expect(localStorage.getItem('kayam:provider:session-1')).toBe('cursor');
   });
 });

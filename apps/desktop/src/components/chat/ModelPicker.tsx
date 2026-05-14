@@ -9,20 +9,18 @@ import {
   EFFORT_LABEL,
   EFFORT_DOT,
   EFFORT_TEXT,
-  FAMILY_LABEL,
+  FAMILY_SECTION_LABEL,
+  type ModelFamily,
   TIER_TEXT,
-  TIER_DOT,
   VERBOSITY_DOT,
   VERBOSITY_TEXT,
-  CLAUDE_SUBFAMILY_LABEL,
-  CLAUDE_SUBFAMILY_TIER,
   modelLabel,
-  modelFamily,
-  modelSubfamily,
-  modelVersion,
   modelTier,
   modelWeight,
   modelEffortLevels,
+  parseModelId,
+  subfamilyLabel,
+  subfamilyTier,
 } from './chat-constants';
 
 export interface ModelPickerProps {
@@ -79,19 +77,26 @@ export function ModelPicker({
   const showEffort = provider === 'anthropic' && effortLevels !== null;
   const tier = modelTier(model);
 
+  // Two-level grouping: family → (subfamily ?? null) → ids. Subfamily=null
+  // means "render as a flat chip row under the family label" (composer,
+  // cursor-auto). Subfamily set means "render as a FamilyVersionRow" with
+  // a subfamily label and version chips.
   const groupedModels = useMemo(() => {
     const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b));
-    const groups = new Map<string, string[]>();
+    const byFamily = new Map<ModelFamily, Map<string | null, string[]>>();
     for (const id of sorted) {
-      const fam = modelFamily(id);
-      let arr = groups.get(fam);
-      if (!arr) {
-        arr = [];
-        groups.set(fam, arr);
+      const parsed = parseModelId(id);
+      let subMap = byFamily.get(parsed.family);
+      if (!subMap) {
+        subMap = new Map();
+        byFamily.set(parsed.family, subMap);
       }
+      const key = parsed.subfamily;
+      const arr = subMap.get(key) ?? [];
       arr.push(id);
+      subMap.set(key, arr);
     }
-    return groups;
+    return byFamily;
   }, [models]);
 
   return (
@@ -171,43 +176,48 @@ export function ModelPicker({
           </PickerSection>
           <PickerDivider />
 
-          {/* Model — family rows with version chips */}
-          {[...groupedModels.entries()].map(([fam, ids]) => {
-            const sectionLabel = groupedModels.size > 1 ? (FAMILY_LABEL[fam] ?? fam) : 'Model';
-            if (fam === 'claude') {
-              const subMap = new Map<string, string[]>();
-              for (const id of ids) {
-                const sub = modelSubfamily(id);
-                const arr = subMap.get(sub) ?? [];
-                arr.push(id);
-                subMap.set(sub, arr);
-              }
+          {/* Model — family/subfamily/variant chip layout. */}
+          {[...groupedModels.entries()].map(([fam, subMap]) => {
+            const subKeys = [...subMap.keys()];
+            const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
+            const sectionLabel = FAMILY_SECTION_LABEL[fam] ?? fam;
+
+            if (onlyFlat) {
+              const ids = subMap.get(null) ?? [];
               return (
                 <PickerSection key={fam} label={sectionLabel}>
-                  {[...subMap.entries()].map(([sub, subIds]) => (
-                    <FamilyVersionRow
-                      key={sub}
-                      subfamily={sub}
-                      ids={subIds}
-                      selectedModel={model}
-                      onSelect={onSelectModel}
-                    />
-                  ))}
+                  <FlatVariantRow
+                    family={fam}
+                    ids={ids}
+                    selectedModel={model}
+                    onSelect={onSelectModel}
+                  />
                 </PickerSection>
               );
             }
+
             return (
               <PickerSection key={fam} label={sectionLabel}>
-                {ids.map((id) => {
-                  const t = modelTier(id);
+                {[...subMap.entries()].map(([sub, ids]) => {
+                  if (sub === null) {
+                    return (
+                      <FlatVariantRow
+                        key="_flat"
+                        family={fam}
+                        ids={ids}
+                        selectedModel={model}
+                        onSelect={onSelectModel}
+                      />
+                    );
+                  }
                   return (
-                    <PickerRow
-                      key={id}
-                      label={modelLabel(id)}
-                      active={model === id}
-                      onClick={() => onSelectModel(id)}
-                      leadingDot={TIER_DOT[t]}
-                      labelClassName={TIER_TEXT[t]}
+                    <SubfamilyVariantRow
+                      key={sub}
+                      family={fam}
+                      subfamily={sub}
+                      ids={ids}
+                      selectedModel={model}
+                      onSelect={onSelectModel}
                     />
                   );
                 })}
@@ -285,33 +295,36 @@ function PickerDivider() {
   return <div className="my-1 h-px bg-border-soft" aria-hidden />;
 }
 
-function FamilyVersionRow({
+function SubfamilyVariantRow({
+  family,
   subfamily,
   ids,
   selectedModel,
   onSelect,
 }: {
+  family: ModelFamily;
   subfamily: string;
   ids: string[];
   selectedModel: string;
   onSelect: (id: string) => void;
 }) {
-  const tier = CLAUDE_SUBFAMILY_TIER[subfamily] ?? 'mid';
+  const tier = subfamilyTier(family, subfamily);
   return (
     <div className="flex items-center px-2.5 py-1.5 hover:bg-muted/60">
       <span className={cn('flex-1 text-xs', TIER_TEXT[tier])}>
-        {CLAUDE_SUBFAMILY_LABEL[subfamily] ?? subfamily}
+        {subfamilyLabel(family, subfamily)}
       </span>
-      <div className="flex gap-1">
+      <div className="flex flex-wrap gap-1">
         {ids.map((id) => {
           const selected = selectedModel === id;
           const t = modelTier(id);
+          const chip = parseModelId(id).variantLabel;
           return (
             <button
               key={id}
               type="button"
               onClick={() => onSelect(id)}
-              title={modelLabel(id)}
+              title={id}
               className={cn(
                 'rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors',
                 selected
@@ -319,7 +332,7 @@ function FamilyVersionRow({
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              {modelVersion(id)}
+              {chip}
             </button>
           );
         })}
@@ -328,42 +341,40 @@ function FamilyVersionRow({
   );
 }
 
-function PickerRow({
-  label,
-  active,
-  onClick,
-  leadingDot,
-  labelClassName,
-  trailing,
+function FlatVariantRow({
+  family: _family,
+  ids,
+  selectedModel,
+  onSelect,
 }: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  leadingDot?: string;
-  labelClassName?: string;
-  trailing?: React.ReactNode;
+  family: ModelFamily;
+  ids: string[];
+  selectedModel: string;
+  onSelect: (id: string) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
-        active ? '' : 'opacity-80',
-      )}
-    >
-      {leadingDot ? (
-        <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', leadingDot)} />
-      ) : null}
-      <span className={cn('flex-1 truncate', labelClassName ?? 'text-muted-foreground')}>
-        {label}
-      </span>
-      {trailing}
-      {active ? (
-        <span aria-hidden className="text-2xs text-primary">
-          ✓
-        </span>
-      ) : null}
-    </button>
+    <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+      {ids.map((id) => {
+        const selected = selectedModel === id;
+        const t = modelTier(id);
+        const chip = parseModelId(id).variantLabel;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            title={id}
+            className={cn(
+              'rounded-full px-2.5 py-0.5 text-xs transition-colors',
+              selected
+                ? cn('bg-muted font-semibold', TIER_TEXT[t])
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            {chip}
+          </button>
+        );
+      })}
+    </div>
   );
 }

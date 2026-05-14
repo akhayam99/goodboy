@@ -203,6 +203,7 @@ import {
   type ParallelBranchEffects,
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
+import { formatError } from '../errors';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agentKind';
 import { slotsForKind } from '../slotRouting';
 import { estimateTokens } from '../utils/estimateTokens';
@@ -761,7 +762,7 @@ async function runSummarizer(
     });
   } catch (err) {
     // never log api key — only the error message
-    const message = err instanceof Error ? err.message : String(err);
+    const message = formatError(err);
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${taskId}: ${message}`);
     }
@@ -892,7 +893,7 @@ async function drainAuditRetryQueue(set: SetFn): Promise<void> {
       await invokeAuditRetryDelete(entry.id);
     } catch (err) {
       const nextAttempts = entry.attempts + 1;
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = formatError(err);
 
       if (nextAttempts >= AUDIT_RETRY_MAX_ATTEMPTS) {
         await invokeAuditRetryDelete(entry.id).catch(() => undefined);
@@ -914,89 +915,112 @@ async function drainAuditRetryQueue(set: SetFn): Promise<void> {
   }
 }
 
+// Module-scoped guard: React StrictMode mounts the root twice in dev so
+// `useEffect(() => void hydrate(), …)` fires twice in rapid succession. Without
+// this guard both invocations race on `runDbMigrations()` → UNIQUE constraint
+// failed on schema_version.version. Returning the same in-flight promise makes
+// the second call wait for the first.
+let hydratePromise: Promise<void> | null = null;
+
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
 
   hydrate: async () => {
-    try {
-      set({ bootPhase: 'migrating', error: null });
-      await runDbMigrations();
+    if (hydratePromise) return hydratePromise;
+    hydratePromise = (async () => {
+      try {
+        set({ bootPhase: 'migrating', error: null });
+        await runDbMigrations();
 
-      set({ bootPhase: 'loading-settings' });
-      const [editorBinary, lastWorkspaceRaw, lastSessionRaw] = await Promise.all([
-        getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
-        getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
-        getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
-      ]);
-      set((state) => {
-        const next = { ...state.settings };
-        if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
-        if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
-        if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
-        return { settings: next };
-      });
+        set({ bootPhase: 'loading-settings' });
+        const [editorBinary, lastWorkspaceRaw, lastSessionRaw] = await Promise.all([
+          getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
+          getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
+          getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
+        ]);
+        set((state) => {
+          const next = { ...state.settings };
+          if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
+          if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
+          if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
+          return { settings: next };
+        });
 
-      set({ bootPhase: 'detecting-cli' });
-      const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
-        getProviderStatus('anthropic'),
-        getCursorStatus(),
-        getCodexStatus(),
-        detectEditors(),
-      ]);
-      set({ detectedEditors });
-      const statuses: ProviderStatuses = {
-        anthropic: providerStatus,
-        cursor: cursorStatus,
-        codex: codexStatus,
-      };
-      set({ providerStatus, cursorStatus, codexStatus, providers: buildProviderList(statuses) });
+        set({ bootPhase: 'detecting-cli' });
+        const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
+          getProviderStatus('anthropic'),
+          getCursorStatus(),
+          getCodexStatus(),
+          detectEditors(),
+        ]);
+        set({ detectedEditors });
+        const statuses: ProviderStatuses = {
+          anthropic: providerStatus,
+          cursor: cursorStatus,
+          codex: codexStatus,
+        };
+        set({
+          providerStatus,
+          cursorStatus,
+          codexStatus,
+          providers: buildProviderList(statuses),
+        });
 
-      const [anthropicAuth, cursorAuth, codexAuth] = await Promise.all([
-        checkProviderAuth('anthropic'),
-        checkProviderAuth('cursor'),
-        checkProviderAuth('codex'),
-      ]);
-      const authResults: ProviderAuthResults = {
-        anthropic: anthropicAuth,
-        cursor: cursorAuth,
-        codex: codexAuth,
-      };
-      set({ authResults, providers: buildProviderList(statuses, authResults) });
+        const [anthropicAuth, cursorAuth, codexAuth] = await Promise.all([
+          checkProviderAuth('anthropic'),
+          checkProviderAuth('cursor'),
+          checkProviderAuth('codex'),
+        ]);
+        const authResults: ProviderAuthResults = {
+          anthropic: anthropicAuth,
+          cursor: cursorAuth,
+          codex: codexAuth,
+        };
+        set({ authResults, providers: buildProviderList(statuses, authResults) });
 
-      set({ bootPhase: 'loading-workspaces' });
-      const workspaces = await listWorkspaces(tauriDatabase);
-      set({ workspaces });
+        set({ bootPhase: 'loading-workspaces' });
+        const workspaces = await listWorkspaces(tauriDatabase);
+        set({ workspaces });
 
-      set({ bootPhase: 'restoring-session' });
-      const lastWorkspaceId =
-        lastWorkspaceRaw && lastWorkspaceRaw.length > 0 ? (lastWorkspaceRaw as WorkspaceId) : null;
-      const targetWorkspace = lastWorkspaceId
-        ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
-        : null;
-      if (targetWorkspace) {
-        await get().setCurrentWorkspace(targetWorkspace.id);
-        const lastSessionId =
-          lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as TaskId) : null;
-        if (lastSessionId) {
-          const sessions = get().sessions;
-          if (sessions.some((s) => s.id === lastSessionId)) {
-            await get().setCurrentSession(lastSessionId);
+        set({ bootPhase: 'restoring-session' });
+        const lastWorkspaceId =
+          lastWorkspaceRaw && lastWorkspaceRaw.length > 0
+            ? (lastWorkspaceRaw as WorkspaceId)
+            : null;
+        const targetWorkspace = lastWorkspaceId
+          ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+          : null;
+        if (targetWorkspace) {
+          await get().setCurrentWorkspace(targetWorkspace.id);
+          const lastSessionId =
+            lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as TaskId) : null;
+          if (lastSessionId) {
+            const sessions = get().sessions;
+            if (sessions.some((s) => s.id === lastSessionId)) {
+              await get().setCurrentSession(lastSessionId);
+            }
           }
         }
+
+        set({ bootPhase: 'ready', hydrated: true });
+
+        // Drain audit retry queue after boot — non-blocking, best-effort.
+        void drainAuditRetryQueue(set);
+
+        void get().refreshGithubStatus();
+      } catch (err) {
+        set({
+          bootPhase: 'error',
+          error: formatError(err),
+          hydrated: true,
+        });
       }
-
-      set({ bootPhase: 'ready', hydrated: true });
-
-      // Drain audit retry queue after boot — non-blocking, best-effort.
-      void drainAuditRetryQueue(set);
-
-      void get().refreshGithubStatus();
-    } catch (err) {
-      set({
-        bootPhase: 'error',
-        error: err instanceof Error ? err.message : String(err),
-        hydrated: true,
-      });
+    })();
+    try {
+      await hydratePromise;
+    } finally {
+      // Clear so manual retry from BootSplash can re-run hydrate.
+      hydratePromise = null;
     }
   },
 
@@ -1436,7 +1460,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }).catch(() => undefined);
         void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
           if (import.meta.env.DEV) {
-            const message = err instanceof Error ? err.message : String(err);
+            const message = formatError(err);
             console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
           }
         });
@@ -1455,7 +1479,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       event,
     }).catch((err) => {
       if (import.meta.env.DEV) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = formatError(err);
         console.warn(`[turn-events] insert failed for agent ${agentId}: ${message}`);
       }
     });
@@ -1530,7 +1554,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           at: now(),
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = formatError(err);
         const errRunId = crypto.randomUUID() as ProviderRunId;
         get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
@@ -1974,7 +1998,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           );
         }
       } catch (err) {
-        const rawMessage = err instanceof Error ? err.message : String(err);
+        const rawMessage = formatError(err);
         get().appendTurnEvent(activeAgentId, taskId, {
           kind: 'error',
           runId: groupSessionRunId,
@@ -2261,7 +2285,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     } catch (err) {
       lastError = err;
-      const rawMessage = err instanceof Error ? err.message : String(err);
+      const rawMessage = formatError(err);
       const isAuthErr = isAuthErrorMessage(rawMessage);
       const message = isAuthErr
         ? encodeAuthRequiredMessage({
@@ -2503,9 +2527,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           await removeWorktree(workspace.rootPath, worktreePath);
         } catch (err) {
           // worktree may already be gone — surface as warning, continue ending
-          console.warn(
-            `worktree_remove failed: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          console.warn(`worktree_remove failed: ${formatError(err)}`);
         }
       }
     }
@@ -2597,14 +2619,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       await insertWorkspace(tauriDatabase, workspace);
     } catch (err) {
-      // Tauri serializes Rust errors as `{kind, message}`. Without normalization the dialog
-      // surfaces "[object Object]" because plain objects stringify to that.
-      const msg =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err !== null && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : String(err);
+      const msg = formatError(err);
       if (msg.toLowerCase().includes('unique')) {
         throw new Error(`workspace already exists at ${resolvedRoot}`);
       }
@@ -3166,7 +3181,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             linkedIssues: state.sessionGithub[taskId]?.linkedIssues ?? [],
             fetchedAt: state.sessionGithub[taskId]?.fetchedAt ?? null,
             loading: false,
-            error: err instanceof Error ? err.message : String(err),
+            error: formatError(err),
           },
         },
       }));

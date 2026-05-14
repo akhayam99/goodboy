@@ -104,19 +104,107 @@ export function modelLabel(id: string): string {
   return id;
 }
 
+export type ModelFamily =
+  | 'claude'
+  | 'gpt'
+  | 'composer'
+  | 'cursor-auto'
+  | 'gemini'
+  | 'codex'
+  | 'other';
+
+export interface ParsedModel {
+  readonly family: ModelFamily;
+  readonly subfamily: string | null;
+  readonly variantLabel: string;
+}
+
+// Strip a `provider/model` prefix so cursor's `gpt-5.5-high` and any future
+// prefixed id (e.g. `openai/gpt-5.5-high`) parse the same way.
+function stripProviderPrefix(id: string): string {
+  const slash = id.indexOf('/');
+  return slash >= 0 ? id.slice(slash + 1) : id;
+}
+
+export function parseModelId(id: string): ParsedModel {
+  const local = stripProviderPrefix(id);
+
+  // Canonical anthropic: claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-7
+  let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i);
+  if (m) {
+    return {
+      family: 'claude',
+      subfamily: m[1]!.toLowerCase(),
+      variantLabel: `${m[2]}.${m[3]}`,
+    };
+  }
+
+  // Cursor's anthropic naming: claude-4.6-sonnet-medium, claude-4.6-opus-high-thinking
+  m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i);
+  if (m) {
+    const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : '';
+    return {
+      family: 'claude',
+      subfamily: m[2]!.toLowerCase(),
+      variantLabel: `${m[1]}${suffix}`,
+    };
+  }
+
+  // Composer (cursor first-party): composer-2, composer-2-fast
+  m = local.match(/^composer-(.+)$/i);
+  if (m) {
+    return { family: 'composer', subfamily: null, variantLabel: m[1]! };
+  }
+
+  // Cursor's `auto` model — standalone family so it renders without a row label.
+  if (local === 'auto') {
+    return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
+  }
+
+  // gpt-X.Y-codex → its own subfamily so it visually groups separately from
+  // the generic gpt-X.Y row (mockup: `5.3-codex [codex]`).
+  m = local.match(/^gpt-(\d+\.\d+)-codex$/i);
+  if (m) {
+    return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' };
+  }
+
+  // gpt-X.Y-<variant> (variant = high/medium/mini/...)
+  m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i);
+  if (m) {
+    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! };
+  }
+
+  // bare gpt-X.Y
+  m = local.match(/^gpt-(\d+\.\d+)$/i);
+  if (m) {
+    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! };
+  }
+
+  // unparseable gpt fallback
+  m = local.match(/^gpt-(.+)$/i);
+  if (m) {
+    return { family: 'gpt', subfamily: null, variantLabel: m[1]! };
+  }
+
+  if (local.startsWith('gemini-')) {
+    return { family: 'gemini', subfamily: null, variantLabel: local.slice('gemini-'.length) };
+  }
+
+  if (local.startsWith('codex-')) {
+    return { family: 'codex', subfamily: null, variantLabel: local.slice('codex-'.length) };
+  }
+
+  return { family: 'other', subfamily: null, variantLabel: local };
+}
+
 export function modelFamily(id: string): string {
-  if (id.startsWith('claude-')) return 'claude';
-  if (id.startsWith('gpt-')) return 'gpt';
-  if (id.startsWith('gemini-')) return 'gemini';
-  if (id.startsWith('cursor-')) return 'cursor';
-  if (id.startsWith('codex-')) return 'codex';
-  return 'other';
+  return parseModelId(id).family;
 }
 
 export function modelTier(model: string): CostTier {
   const known = MODEL_COST[model];
   if (known) return known.tier;
-  if (/haiku|small|mini|flash|nano/i.test(model)) return 'cheap';
+  if (/haiku|small|mini|flash|nano|fast/i.test(model)) return 'cheap';
   if (/opus|max/i.test(model)) return 'expensive';
   return 'mid';
 }
@@ -126,23 +214,48 @@ export function modelWeight(model: string): number {
 }
 
 export function modelSubfamily(id: string): string {
-  const m = id.match(/^claude-(haiku|sonnet|opus)/i);
-  return m ? m[1]!.toLowerCase() : '';
+  return parseModelId(id).subfamily ?? '';
 }
 
 export function modelVersion(id: string): string {
-  const m = id.match(/^claude-(?:haiku|sonnet|opus)-(\d+)-(\d+)/i);
-  return m ? `${m[1]}.${m[2]}` : id;
+  return parseModelId(id).variantLabel;
 }
 
-export const CLAUDE_SUBFAMILY_LABEL: Record<string, string> = {
+export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
+  claude: 'Claude',
+  gpt: 'GPT',
+  composer: 'Composer',
+  'cursor-auto': 'Auto',
+  gemini: 'Gemini',
+  codex: 'Codex',
+  other: 'Other',
+};
+
+export const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
   sonnet: 'Sonnet',
   opus: 'Opus',
 };
 
-export const CLAUDE_SUBFAMILY_TIER: Record<string, CostTier> = {
+export const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
   sonnet: 'mid',
   opus: 'expensive',
 };
+
+export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
+  if (family === 'claude' && SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
+  if (family === 'gpt' && subfamily.endsWith('-codex')) {
+    return subfamily.replace('-codex', '-Codex');
+  }
+  return subfamily;
+}
+
+export function subfamilyTier(family: ModelFamily, subfamily: string): CostTier {
+  if (family === 'claude' && SUBFAMILY_TIER[subfamily]) return SUBFAMILY_TIER[subfamily];
+  return 'mid';
+}
+
+// Legacy aliases retained for transitional call sites; prefer SUBFAMILY_*.
+export const CLAUDE_SUBFAMILY_LABEL = SUBFAMILY_LABEL;
+export const CLAUDE_SUBFAMILY_TIER = SUBFAMILY_TIER;

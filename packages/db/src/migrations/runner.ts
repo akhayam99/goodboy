@@ -33,7 +33,11 @@ export async function migrate(
       continue;
     }
     await db.exec(migration.sql);
-    await db.execute('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)', [
+    // OR IGNORE: under React StrictMode in dev, hydrate() runs twice and two
+    // migrate() invocations race for the same version row. The SQL itself is
+    // idempotent enough (table-rebuild recipe), but the version INSERT would
+    // hit a UNIQUE constraint without OR IGNORE.
+    await db.execute('INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, ?)', [
       migration.version,
       Date.now(),
     ]);
