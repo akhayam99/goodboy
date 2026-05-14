@@ -40,7 +40,7 @@ describe('assessTurnWeight', () => {
 
   it('returns unknown for ambiguous prompts', () => {
     const ambiguous =
-      'i was looking at the parser yesterday and noticed some odd behavior, not sure where to start but i think it might be worth digging in further to understand the flow better, can you take a look';
+      'i was poking around the parser module yesterday afternoon and noticed some slightly odd behavior, not entirely sure where to start digging but i think it might be worth investigating the flow a bit further to understand what is going on, can you take a look at this when you have a moment';
     expect(assessTurnWeight(ambiguous)).toBe('unknown');
   });
 
