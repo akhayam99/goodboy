@@ -252,11 +252,3 @@ describe('keyboard — SlashCommandPopover arrow / tab navigation', () => {
     expect(screen.getByText(/no skills/i)).toBeDefined();
   });
 });
-
-// ---------------------------------------------------------------------------
-// TODO (@ak): F1 / cmd+K command palette keyboard flow — not implemented yet.
-// Will be wired in the shortcut layer tracked in #245.
-// ---------------------------------------------------------------------------
-
-// TODO (@ak): cmd+, / cmd+/ / cmd+. shortcut layer — not implemented yet (#245).
-// Tests for those shortcuts should be added when the shortcut layer lands.

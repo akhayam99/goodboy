@@ -1,23 +1,20 @@
 import { useEffect } from 'react';
 
-export type ShortcutScope = 'global' | 'dialog';
+type ShortcutScope = 'global' | 'dialog';
 
-export interface ShortcutOptions {
+interface ShortcutOptions {
   /** Prevent firing when focus is inside an input/textarea/select/contenteditable. */
   ignoreInInputs?: boolean;
   scope?: ShortcutScope;
 }
 
-export interface ShortcutCombo {
+interface ShortcutCombo {
   key: string;
   meta?: boolean;
   ctrl?: boolean;
   shift?: boolean;
   alt?: boolean;
 }
-
-/** Registry slot reserved for cmd+K command palette (#297, not yet implemented). */
-export const RESERVED_CMD_K: ShortcutCombo = { key: 'k', meta: true };
 
 function parseCombo(combo: string): ShortcutCombo {
   const parts = combo.toLowerCase().split('+');
