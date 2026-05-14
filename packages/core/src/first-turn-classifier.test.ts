@@ -79,10 +79,10 @@ describe('classifyFirstTurn', () => {
     expect(classifyFirstTurn('continue')).toBe('unknown');
   });
 
-  it('returns unknown when multiple categories match (conservative)', () => {
-    expect(classifyFirstTurn('plan and implement the migration')).toBe('unknown');
-    expect(classifyFirstTurn('debug and fix the test failure')).toBe('unknown');
-    expect(classifyFirstTurn('explore and refactor the store')).toBe('unknown');
+  it('first-match-wins across categories (order is debug > test > docs > review > plan > implement > scout)', () => {
+    expect(classifyFirstTurn('plan and implement the migration')).toBe('plan');
+    expect(classifyFirstTurn('debug and fix the test failure')).toBe('debug');
+    expect(classifyFirstTurn('explore and refactor the store')).toBe('implement');
   });
 
   it('is case-insensitive', () => {
