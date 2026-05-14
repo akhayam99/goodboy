@@ -41,5 +41,5 @@ export function classifyFirstTurn(text: string): FirstTurnClassification {
   }
   if (matches.size !== 1) return 'unknown';
   const [only] = matches;
-  return only;
+  return only ?? 'unknown';
 }
