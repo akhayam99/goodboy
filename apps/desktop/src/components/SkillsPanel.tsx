@@ -155,20 +155,20 @@ export function SkillsPanel({ workspaceId }: SkillsPanelProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">skills</div>
+        <div className="text-xs font-semibold text-foreground">Skills</div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => void onRescan()} disabled={rescanning}>
-            {rescanning ? 'rescanning…' : 'rescan'}
+            {rescanning ? 'Rescanning…' : 'Rescan'}
           </Button>
           <Button variant="ghost" size="sm" onClick={openNew}>
-            new skill
+            New skill
           </Button>
         </div>
       </div>
 
       {skills.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          no skills for this workspace. create one or rescan the workspace directory.
+          No skills for this workspace. Create one or rescan the workspace directory.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
@@ -210,14 +210,14 @@ function SkillRow({
           className="text-xs text-muted-foreground underline hover:text-foreground"
           onClick={onEdit}
         >
-          edit
+          Edit
         </button>
         <button
           type="button"
           className="text-xs text-muted-foreground underline hover:text-danger"
           onClick={onDelete}
         >
-          delete
+          Delete
         </button>
       </div>
     </li>
@@ -244,12 +244,12 @@ function SkillEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="text-xs font-semibold text-foreground">
-        {isNew ? 'new skill' : 'edit skill'}
+        {isNew ? 'New skill' : 'Edit skill'}
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-foreground">name</label>
+          <label className="text-xs font-semibold text-foreground">Name</label>
           <Input
             value={form.name}
             onChange={(e) => onChange({ ...form, name: e.target.value })}
@@ -258,17 +258,17 @@ function SkillEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-foreground">description</label>
+          <label className="text-xs font-semibold text-foreground">Description</label>
           <Input
             value={form.description}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
-            placeholder="what this skill does"
+            placeholder="What this skill does"
           />
         </div>
 
         <div className="flex gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-xs font-semibold text-foreground">args (comma-separated)</label>
+            <label className="text-xs font-semibold text-foreground">Args (comma-separated)</label>
             <Input
               value={form.args}
               onChange={(e) => onChange({ ...form, args: e.target.value })}
@@ -277,7 +277,7 @@ function SkillEditor({
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">
-              scripts (comma-separated)
+              Scripts (comma-separated)
             </label>
             <Input
               value={form.scripts}
@@ -288,11 +288,11 @@ function SkillEditor({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-foreground">body</label>
+          <label className="text-xs font-semibold text-foreground">Body</label>
           <Textarea
             value={form.body}
             onChange={(e) => onChange({ ...form, body: e.target.value })}
-            placeholder="skill prompt body…"
+            placeholder="Skill prompt body…"
             rows={6}
             className="font-mono text-xs"
           />
@@ -302,10 +302,10 @@ function SkillEditor({
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-            cancel
+            Cancel
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
-            {saving ? 'saving…' : 'save'}
+            {saving ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </div>

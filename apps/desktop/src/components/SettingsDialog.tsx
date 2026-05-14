@@ -184,7 +184,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
         return (
           <div className="flex flex-col gap-4">
             <SectionHeading>App settings</SectionHeading>
-            <Field label="default editor binary" help={`launched as: \`${editorBinary} <path>\``}>
+            <Field label="Default editor binary" help={`Launched as: \`${editorBinary} <path>\``}>
               <Input
                 value={editorBinary}
                 onChange={(e) => setEditorBinary(e.target.value)}
@@ -192,7 +192,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               />
             </Field>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
+              Workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
               next to each workspace row.
             </p>
           </div>
@@ -206,7 +206,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           <div className="flex flex-col gap-4">
             <SectionHeading>Agent settings</SectionHeading>
             <Field
-              label="enable parallel agents"
+              label="Enable parallel agents"
               help="Not yet correctly implemented, coming soon."
             >
               <label className="flex cursor-not-allowed items-center gap-2 opacity-40">
@@ -218,13 +218,13 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                   onChange={() => undefined}
                 />
                 <span className="text-sm text-muted-foreground">
-                  {enableParallelAgents ? 'on' : 'off'}
+                  {enableParallelAgents ? 'On' : 'Off'}
                 </span>
               </label>
             </Field>
             <Field
-              label="max parallelism"
-              help={`number of concurrent agent columns (${MIN_PARALLELISM}–${MAX_PARALLELISM}).`}
+              label="Max parallelism"
+              help={`Number of concurrent agent columns (${MIN_PARALLELISM}–${MAX_PARALLELISM}).`}
             >
               <Input
                 type="number"
@@ -247,9 +247,9 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           <div className="flex flex-col gap-4">
             <SectionHeading>Initialization</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              wipe the local sqlite database — drops every workspace, session, agent, message,
+              Wipe the local sqlite database — drops every workspace, session, agent, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
-              api keys in the os keychain are NOT touched. fresh schema is recreated on next boot.
+              Api keys in the os keychain are NOT touched. Fresh schema is recreated on next boot.
             </p>
             {wipeError ? (
               <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
@@ -258,20 +258,20 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
             ) : null}
             {wipeState === 'done' ? (
               <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
-                database wiped. restart the app (or just reopen settings) to start fresh.
+                Database wiped. Restart the app (or just reopen settings) to start fresh.
               </p>
             ) : null}
             {wipeState === 'confirm' ? (
               <div className="flex flex-col gap-2 rounded-md border border-danger/40 bg-danger/5 p-3">
                 <p className="text-sm font-semibold text-danger">
-                  this is irreversible. confirm wipe?
+                  This is irreversible. Confirm wipe?
                 </p>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => setWipeState('idle')}>
-                    cancel
+                    Cancel
                   </Button>
                   <Button variant="secondary" size="sm" onClick={() => void onWipe()}>
-                    wipe database
+                    Wipe database
                   </Button>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                   onClick={() => setWipeState('confirm')}
                   disabled={wipeState === 'wiping'}
                 >
-                  {wipeState === 'wiping' ? 'wiping…' : 'wipe local database'}
+                  {wipeState === 'wiping' ? 'Wiping…' : 'Wipe local database'}
                 </Button>
               </div>
             )}
@@ -301,18 +301,18 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
                 disabled={exportState === 'busy'}
               >
                 {exportState === 'busy'
-                  ? 'exporting…'
+                  ? 'Exporting…'
                   : exportState === 'done'
-                    ? 'exported ✓'
-                    : 'export config'}
+                    ? 'Exported ✓'
+                    : 'Export config'}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => void onImport()}>
-                import config
+                Import config
               </Button>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              export saves workspaces, skills, workflows, permission rules, budget rules, and
-              settings to a json file. api keys are never included.
+              Export saves workspaces, skills, workflows, permission rules, budget rules, and
+              settings to a json file. Api keys are never included.
             </p>
           </div>
         );
@@ -331,15 +331,15 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       footer={
         <>
           {saveState === 'saved' ? (
-            <span className="mr-auto text-xs text-success">saved.</span>
+            <span className="mr-auto text-xs text-success">Saved.</span>
           ) : null}
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose}>
-            close
+            Close
           </Button>
           {needsSave ? (
             <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
-              {saveState === 'saving' ? 'saving…' : 'save'}
+              {saveState === 'saving' ? 'Saving…' : 'Save'}
             </Button>
           ) : null}
         </>

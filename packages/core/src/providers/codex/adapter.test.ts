@@ -3,8 +3,9 @@ import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TaskId, TurnEvent, TurnRequest } from '@kay-am/types';
 import { CodexAdapter } from './adapter';
+import { CODEX_DEFAULT_MODEL } from './constants';
 
-const fakeNow = (): IsoDateTime => '2026-05-07T00:00:00.000Z' as IsoDateTime;
+const fakeNow = (): IsoDateTime => '2026-05-13T00:00:00.000Z' as IsoDateTime;
 
 class FakeChild extends EventEmitter {
   stdout: Readable;
@@ -57,7 +58,7 @@ function makeRequest(): TurnRequest {
   return {
     runId: 'run_codex' as ProviderRunId,
     taskId: 'sess_1' as TaskId,
-    model: 'codex-latest',
+    model: CODEX_DEFAULT_MODEL,
     workingDir: '/tmp/demo',
     systemPrompt: 'sys',
     userMessage: 'hi',
@@ -65,22 +66,30 @@ function makeRequest(): TurnRequest {
 }
 
 const FIXTURES = {
-  assistantText: JSON.stringify({
-    type: 'message',
-    role: 'assistant',
-    content: [{ type: 'output_text', text: 'hello world' }],
+  threadStart: JSON.stringify({ type: 'thread.started', thread_id: 'thr_1' }),
+  turnStart: JSON.stringify({ type: 'turn.started' }),
+  assistantMessage: JSON.stringify({
+    type: 'item.completed',
+    item: { id: 'item_msg', type: 'agent_message', text: 'hello world' },
   }),
-  functionCall: JSON.stringify({
-    type: 'function_call',
-    call_id: 'call_1',
-    name: 'bash',
-    arguments: JSON.stringify({ command: 'ls' }),
+  cmdStart: JSON.stringify({
+    type: 'item.started',
+    item: { id: 'item_cmd', type: 'command_execution', command: 'ls', status: 'in_progress' },
   }),
-  functionCallOutput: JSON.stringify({
-    type: 'function_call_output',
-    call_id: 'call_1',
-    output: 'file1\nfile2',
-    is_error: false,
+  cmdEnd: JSON.stringify({
+    type: 'item.completed',
+    item: {
+      id: 'item_cmd',
+      type: 'command_execution',
+      command: 'ls',
+      aggregated_output: 'file1\n',
+      exit_code: 0,
+      status: 'completed',
+    },
+  }),
+  turnComplete: JSON.stringify({
+    type: 'turn.completed',
+    usage: { input_tokens: 100, cached_input_tokens: 30, output_tokens: 50 },
   }),
   errorEvent: JSON.stringify({ type: 'error', message: 'quota exceeded' }),
 };
@@ -95,48 +104,56 @@ async function collect(adapter: CodexAdapter, request?: TurnRequest): Promise<Tu
 
 describe('CodexAdapter.spawn', () => {
   it('emits parsed TurnEvents for a full turn', async () => {
-    const lines = [FIXTURES.assistantText, FIXTURES.functionCall, FIXTURES.functionCallOutput];
+    const lines = [
+      FIXTURES.threadStart,
+      FIXTURES.turnStart,
+      FIXTURES.cmdStart,
+      FIXTURES.cmdEnd,
+      FIXTURES.assistantMessage,
+      FIXTURES.turnComplete,
+    ];
     const child = new FakeChild(lines);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
 
     const events = await collect(adapter);
     expect(events.map((e) => e.kind)).toEqual([
-      'assistant_text',
+      'provider_session_init',
       'tool_call_start',
       'tool_call_end',
+      'assistant_text',
       'usage',
       'done',
     ]);
   });
 
-  it('emits assistant_text event with correct delta', async () => {
-    const child = new FakeChild([FIXTURES.assistantText]);
+  it('emits assistant_text with correct delta from agent_message item', async () => {
+    const child = new FakeChild([FIXTURES.assistantMessage]);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     const text = events.find((e) => e.kind === 'assistant_text');
     expect(text).toMatchObject({ delta: 'hello world' });
   });
 
-  it('emits usage with zeros (codex CLI has no token counts)', async () => {
-    const child = new FakeChild([FIXTURES.assistantText]);
+  it('emits usage with real token counts from turn.completed', async () => {
+    const child = new FakeChild([FIXTURES.turnComplete]);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     const usage = events.find((e) => e.kind === 'usage');
     expect(usage).toMatchObject({
       kind: 'usage',
-      usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
+      usage: { inputTokens: 100, outputTokens: 50, cachedInputTokens: 30, estimatedCostUsd: 0 },
     });
   });
 
   it('always emits done as the last event', async () => {
-    const child = new FakeChild([FIXTURES.assistantText]);
+    const child = new FakeChild([FIXTURES.assistantMessage]);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     expect(events[events.length - 1]?.kind).toBe('done');
   });
 
   it('tolerates malformed JSON lines without crashing', async () => {
-    const lines = ['not json', '{ broken', FIXTURES.assistantText];
+    const lines = ['not json', '{ broken', FIXTURES.assistantMessage];
     const child = new FakeChild(lines);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
@@ -151,7 +168,7 @@ describe('CodexAdapter.spawn', () => {
     expect(errorEvent).toMatchObject({ kind: 'error', message: 'quota exceeded' });
   });
 
-  it('throws when child process emits error (non-zero exit)', async () => {
+  it('throws when child process emits error', async () => {
     const child = new FakeChild([], 1);
     queueMicrotask(() => child.emit('error', new Error('ENOENT codex')));
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
@@ -159,7 +176,7 @@ describe('CodexAdapter.spawn', () => {
   });
 
   it('kills the child on early break', async () => {
-    const child = new OpenChild([FIXTURES.assistantText]);
+    const child = new OpenChild([FIXTURES.assistantMessage]);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const iterator = adapter.spawn(makeRequest())[Symbol.asyncIterator]();
     const first = await iterator.next();
@@ -169,12 +186,14 @@ describe('CodexAdapter.spawn', () => {
     expect(child.signal).toBe('SIGTERM');
   });
 
-  it('emits file_edit alongside tool_call_start for write_file', async () => {
+  it('emits file_edit alongside tool_call_end for apply_patch items', async () => {
     const writeCall = JSON.stringify({
-      type: 'function_call',
-      call_id: 'call_w',
-      name: 'write_file',
-      arguments: JSON.stringify({ path: '/tmp/out.ts', content: 'export {};' }),
+      type: 'item.completed',
+      item: {
+        id: 'item_p',
+        type: 'apply_patch',
+        changes: [{ path: '/tmp/out.ts', kind: 'create' }],
+      },
     });
     const child = new FakeChild([writeCall]);
     const adapter = new CodexAdapter({ now: fakeNow, spawnFn: (() => child) as never });
@@ -202,13 +221,31 @@ describe('CodexAdapter.detect', () => {
 });
 
 describe('CodexAdapter.cost', () => {
-  it('always returns 0', () => {
+  it('returns 0 when no priceOverride is set (ChatGPT subscription users)', () => {
     const adapter = new CodexAdapter();
     expect(
       adapter.cost(
         { inputTokens: 100, outputTokens: 50, cachedInputTokens: 0, estimatedCostUsd: 0 },
-        'codex-latest',
+        CODEX_DEFAULT_MODEL,
       ),
     ).toBe(0);
+  });
+
+  it('computes USD when priceOverride is provided', () => {
+    const adapter = new CodexAdapter({
+      priceOverride: { inputPerMtok: 3, outputPerMtok: 15 },
+    });
+    // 1M input @ $3 + 1M output @ $15 = $18
+    expect(
+      adapter.cost(
+        {
+          inputTokens: 1_000_000,
+          outputTokens: 1_000_000,
+          cachedInputTokens: 0,
+          estimatedCostUsd: 0,
+        },
+        CODEX_DEFAULT_MODEL,
+      ),
+    ).toBeCloseTo(18);
   });
 });

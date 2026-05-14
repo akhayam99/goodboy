@@ -66,7 +66,14 @@ export class SkillRegistry {
    * Returns an empty array when the directory is absent.
    */
   private async collectClaudeSkills(rootPath: string): Promise<SkillCandidate[]> {
-    const skillsDir = `${rootPath}/.claude/skills`;
+    return this.collectNestedSkills(`${rootPath}/.claude/skills`);
+  }
+
+  /**
+   * Shared helper for nested skill directory layouts where each skill lives in
+   * its own subdirectory containing a `SKILL.md` (Claude convention).
+   */
+  private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
     let entries: string[];
     try {
       entries = await this.fs.readDir(skillsDir);

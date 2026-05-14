@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use serde::Serialize;
 use thiserror::Error;
@@ -44,7 +44,7 @@ pub struct GhRunResult {
 }
 
 fn gh_available() -> bool {
-    Command::new("gh")
+    crate::path_env::command("gh")
         .arg("--version")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -61,7 +61,7 @@ fn run_gh(
     if !gh_available() {
         return Err(GithubError::NotFound);
     }
-    let mut cmd = Command::new("gh");
+    let mut cmd = crate::path_env::command("gh");
     cmd.args(args);
     if let Some(dir) = cwd {
         if !dir.is_empty() {

@@ -4,6 +4,7 @@ mod db;
 mod editor;
 mod github;
 mod parallel_groups;
+mod path_env;
 mod permissions;
 mod planner;
 mod workflows;

@@ -11,30 +11,28 @@ const usage: ProviderUsage = {
 };
 
 describe('computeCursorCostUsd', () => {
-  it('cursor-small uses haiku-tier proxy pricing', () => {
+  it('composer-2-fast (cheap default) uses Composer-tier pricing', () => {
     // 1M input @ $0.8 + 1M output @ $4
     expect(computeCursorCostUsd(usage, CURSOR_CHEAP_MODEL)).toBeCloseTo(0.8 + 4);
   });
 
-  it('claude-sonnet-4-5 matches anthropic list price', () => {
-    const cursorCost = computeCursorCostUsd(usage, 'claude-sonnet-4-5');
-    const claudeCost = computeCostUsd(usage, 'claude-sonnet-4-6');
-    // both are sonnet-tier at $3/$15 — should match
-    expect(cursorCost).toBeCloseTo(claudeCost);
-  });
-
-  it('claude-sonnet-4-6 matches anthropic list price', () => {
-    const cursorCost = computeCursorCostUsd(usage, 'claude-sonnet-4-6');
+  it('claude-4.6-sonnet-medium matches anthropic sonnet list price', () => {
+    const cursorCost = computeCursorCostUsd(usage, 'claude-4.6-sonnet-medium');
     const claudeCost = computeCostUsd(usage, 'claude-sonnet-4-6');
     expect(cursorCost).toBeCloseTo(claudeCost);
   });
 
-  it('gpt-4o uses documented pricing', () => {
+  it('claude-opus-4-7-thinking-high uses opus-tier pricing', () => {
+    // 1M input @ $15 + 1M output @ $75
+    expect(computeCursorCostUsd(usage, 'claude-opus-4-7-thinking-high')).toBeCloseTo(15 + 75);
+  });
+
+  it('gpt-5.5-high uses GPT-5 pricing proxy', () => {
     // 1M input @ $5 + 1M output @ $15
-    expect(computeCursorCostUsd(usage, 'gpt-4o')).toBeCloseTo(5 + 15);
+    expect(computeCursorCostUsd(usage, 'gpt-5.5-high')).toBeCloseTo(5 + 15);
   });
 
-  it('unknown model falls back to cursor-small pricing', () => {
+  it('unknown model falls back to composer-2-fast pricing', () => {
     expect(computeCursorCostUsd(usage, 'mystery-model-9')).toBeCloseTo(
       computeCursorCostUsd(usage, CURSOR_CHEAP_MODEL),
     );
@@ -51,7 +49,7 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd(partial, 'claude-sonnet-4-5')).toBeCloseTo(3 + 0.3);
   });
 
-  it('cursorPriceFor returns cursor-small for unknown model', () => {
+  it('cursorPriceFor returns composer-2-fast fallback for unknown model', () => {
     const p = cursorPriceFor('totally-unknown');
     const fallback = cursorPriceFor(CURSOR_CHEAP_MODEL);
     expect(p).toEqual(fallback);

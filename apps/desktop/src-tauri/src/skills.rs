@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -540,7 +539,7 @@ pub fn skill_run_script(input: SkillRunScriptInput) -> Result<SkillRunScriptResu
     let script_path = PathBuf::from(&input.script_path);
     let canonical = guard_path(&script_path, &allowed_prefix)?;
 
-    let output = Command::new("bash")
+    let output = crate::path_env::command("bash")
         .arg(&canonical)
         .args(&input.args)
         .current_dir(&input.working_dir)

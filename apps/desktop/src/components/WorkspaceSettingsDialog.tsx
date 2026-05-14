@@ -225,15 +225,15 @@ export function WorkspaceSettingsDialog({
         footer={
           <>
             {saveState === 'saved' ? (
-              <span className="mr-auto text-xs text-success">saved.</span>
+              <span className="mr-auto text-xs text-success">Saved.</span>
             ) : null}
             {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
             <Button variant="ghost" onClick={onClose}>
-              close
+              Close
             </Button>
             {needsSave ? (
               <Button onClick={() => void onSave()} disabled={saveState === 'saving'}>
-                {saveState === 'saving' ? 'saving…' : 'save'}
+                {saveState === 'saving' ? 'Saving…' : 'Save'}
               </Button>
             ) : null}
           </>

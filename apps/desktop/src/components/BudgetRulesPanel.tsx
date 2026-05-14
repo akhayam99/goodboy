@@ -81,17 +81,17 @@ export function BudgetRulesPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">budget rules</div>
+        <div className="text-xs font-semibold text-foreground">Budget rules</div>
         {!showForm && (
           <Button variant="ghost" size="sm" onClick={() => setShowForm(true)}>
-            add rule
+            Add rule
           </Button>
         )}
       </div>
 
       {budgetRules.length === 0 && !showForm && (
         <p className="text-xs text-muted-foreground">
-          no rules defined. add one to cap monthly spend per provider.
+          No rules defined. Add one to cap monthly spend per provider.
         </p>
       )}
 
@@ -224,10 +224,10 @@ function AddRuleForm({
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-          cancel
+          Cancel
         </Button>
         <Button size="sm" onClick={onSave} disabled={saving}>
-          {saving ? 'saving…' : 'save'}
+          {saving ? 'Saving…' : 'Save'}
         </Button>
       </div>
     </div>

@@ -82,7 +82,7 @@ export {
 
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/providers/codex/adapter in Node contexts.
-export { CODEX_CHEAP_MODEL } from './providers/codex/constants';
+export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
 export {
   parseJsonLine as parseCodexJsonLine,

@@ -1,6 +1,6 @@
 import type { ProviderId, ProviderRegistryCapabilities } from '@kay-am/types';
 import { CURSOR_MODELS } from './cursor/models';
-import { CODEX_CHEAP_MODEL } from './codex/constants';
+import { CODEX_MODELS } from './codex/constants';
 
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
   anthropic: {
@@ -22,10 +22,7 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
     supportsCheapModel: true,
   },
   codex: {
-    models: [
-      { id: 'codex-latest', tier: 'turn', contextWindow: 128_000 },
-      { id: CODEX_CHEAP_MODEL, tier: 'cheap', contextWindow: 128_000 },
-    ],
+    models: CODEX_MODELS,
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,

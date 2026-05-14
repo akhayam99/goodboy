@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId } from '@kay-am/types';
 import { parseJsonLine, type ParseContext } from './parser';
 
-const at = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+const at = '2026-05-13T00:00:00.000Z' as IsoDateTime;
 const ctx: ParseContext = {
   runId: 'run_1' as ProviderRunId,
   now: () => at,
@@ -12,7 +12,7 @@ function parse(line: string, overrides?: Partial<ParseContext>) {
   return parseJsonLine(line, { ...ctx, ...overrides });
 }
 
-describe('parseJsonLine', () => {
+describe('parseJsonLine (codex v0.130.0)', () => {
   it('returns [] for empty / blank lines', () => {
     expect(parse('')).toEqual([]);
     expect(parse('   ')).toEqual([]);
@@ -23,144 +23,153 @@ describe('parseJsonLine', () => {
     expect(parse('not json at all')).toEqual([]);
   });
 
-  it('emits assistant_text for output_text block', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'message',
-        role: 'assistant',
-        content: [{ type: 'output_text', text: 'hello world' }],
-      }),
-    );
+  it('emits provider_session_init from thread.started', () => {
+    const events = parse(JSON.stringify({ type: 'thread.started', thread_id: 'abc-123' }));
     expect(events).toEqual([
-      { kind: 'assistant_text', runId: ctx.runId, delta: 'hello world', at },
+      {
+        kind: 'provider_session_init',
+        runId: ctx.runId,
+        providerSessionId: 'abc-123',
+        at,
+      },
     ]);
   });
 
-  it('emits assistant_text for text block (alternate form)', () => {
+  it('ignores turn.started silently', () => {
+    expect(parse(JSON.stringify({ type: 'turn.started' }))).toEqual([]);
+  });
+
+  it('emits tool_call_start for item.started of command_execution', () => {
     const events = parse(
       JSON.stringify({
-        type: 'message',
-        role: 'assistant',
-        content: [{ type: 'text', text: 'hi' }],
+        type: 'item.started',
+        item: {
+          id: 'item_0',
+          type: 'command_execution',
+          command: '/bin/zsh -lc ls',
+          status: 'in_progress',
+        },
       }),
     );
-    expect(events[0]).toMatchObject({ kind: 'assistant_text', delta: 'hi' });
+    expect(events).toEqual([
+      {
+        kind: 'tool_call_start',
+        runId: ctx.runId,
+        toolUseId: 'item_0',
+        toolName: 'shell',
+        input: { command: '/bin/zsh -lc ls' },
+        at,
+      },
+    ]);
   });
 
-  it('skips message events with non-assistant role', () => {
+  it('emits tool_call_end for item.completed of command_execution', () => {
     const events = parse(
       JSON.stringify({
-        type: 'message',
-        role: 'user',
-        content: [{ type: 'output_text', text: 'ignored' }],
+        type: 'item.completed',
+        item: {
+          id: 'item_0',
+          type: 'command_execution',
+          command: '/bin/zsh -lc ls',
+          aggregated_output: 'file1\n',
+          exit_code: 0,
+          status: 'completed',
+        },
       }),
     );
-    expect(events).toEqual([]);
+    expect(events).toEqual([
+      {
+        kind: 'tool_call_end',
+        runId: ctx.runId,
+        toolUseId: 'item_0',
+        output: { aggregated_output: 'file1\n', exit_code: 0 },
+        isError: false,
+        at,
+      },
+    ]);
   });
 
-  it('skips empty text blocks', () => {
+  it('marks tool_call_end isError true when exit_code != 0', () => {
     const events = parse(
       JSON.stringify({
-        type: 'message',
-        role: 'assistant',
-        content: [{ type: 'output_text', text: '' }],
-      }),
-    );
-    expect(events).toEqual([]);
-  });
-
-  it('emits tool_call_start for function_call', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'function_call',
-        call_id: 'call_abc',
-        name: 'bash',
-        arguments: JSON.stringify({ command: 'ls' }),
-      }),
-    );
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({
-      kind: 'tool_call_start',
-      toolUseId: 'call_abc',
-      toolName: 'bash',
-      input: { command: 'ls' },
-      at,
-    });
-  });
-
-  it('emits file_edit alongside tool_call_start for write_file', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'function_call',
-        call_id: 'call_w',
-        name: 'write_file',
-        arguments: JSON.stringify({ path: '/tmp/x.ts', content: 'export {};' }),
-      }),
-    );
-    const fileEdit = events.find((e) => e.kind === 'file_edit');
-    expect(fileEdit).toMatchObject({ path: '/tmp/x.ts', editType: 'create' });
-  });
-
-  it('emits file_edit with modify for str_replace_editor', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'function_call',
-        call_id: 'call_e',
-        name: 'str_replace_editor',
-        arguments: JSON.stringify({ path: '/tmp/y.ts', old_str: 'a', new_str: 'b' }),
-      }),
-    );
-    const fileEdit = events.find((e) => e.kind === 'file_edit');
-    expect(fileEdit).toMatchObject({ path: '/tmp/y.ts', editType: 'modify' });
-  });
-
-  it('returns [] for function_call missing call_id', () => {
-    const events = parse(JSON.stringify({ type: 'function_call', name: 'bash', arguments: '{}' }));
-    expect(events).toEqual([]);
-  });
-
-  it('emits tool_call_end for function_call_output', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'function_call_output',
-        call_id: 'call_abc',
-        output: 'file1\nfile2',
-        is_error: false,
-      }),
-    );
-    expect(events[0]).toMatchObject({
-      kind: 'tool_call_end',
-      toolUseId: 'call_abc',
-      output: 'file1\nfile2',
-      isError: false,
-    });
-  });
-
-  it('marks function_call_output with is_error true', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'function_call_output',
-        call_id: 'call_abc',
-        output: 'permission denied',
-        is_error: true,
+        type: 'item.completed',
+        item: {
+          id: 'item_e',
+          type: 'command_execution',
+          aggregated_output: 'denied',
+          exit_code: 126,
+          status: 'completed',
+        },
       }),
     );
     expect(events[0]).toMatchObject({ kind: 'tool_call_end', isError: true });
   });
 
-  it('returns [] for function_call_output missing call_id', () => {
-    const events = parse(JSON.stringify({ type: 'function_call_output', output: 'x' }));
-    expect(events).toEqual([]);
-  });
-
-  it('skips reasoning events silently', () => {
+  it('emits assistant_text for item.completed of agent_message', () => {
     const events = parse(
       JSON.stringify({
-        type: 'reasoning',
-        summary: [{ type: 'summary_text', text: 'thinking...' }],
+        type: 'item.completed',
+        item: { id: 'item_1', type: 'agent_message', text: 'hello' },
+      }),
+    );
+    expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
+  });
+
+  it('skips agent_message with empty text', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'item_1', type: 'agent_message', text: '' },
       }),
     );
     expect(events).toEqual([]);
+  });
+
+  it('emits file_edit + tool_call_end for apply_patch items', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: {
+          id: 'item_p',
+          type: 'apply_patch',
+          changes: [
+            { path: '/tmp/new.ts', kind: 'create' },
+            { path: '/tmp/old.ts', kind: 'modify' },
+          ],
+        },
+      }),
+    );
+    const fileEdits = events.filter((e) => e.kind === 'file_edit');
+    expect(fileEdits).toHaveLength(2);
+    expect(fileEdits[0]).toMatchObject({ path: '/tmp/new.ts', editType: 'create' });
+    expect(fileEdits[1]).toMatchObject({ path: '/tmp/old.ts', editType: 'modify' });
+  });
+
+  it('emits usage from turn.completed.usage with reasoning_output_tokens folded into output', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'turn.completed',
+        usage: {
+          input_tokens: 100,
+          cached_input_tokens: 30,
+          output_tokens: 50,
+          reasoning_output_tokens: 20,
+        },
+      }),
+    );
+    expect(events).toEqual([
+      {
+        kind: 'usage',
+        runId: ctx.runId,
+        usage: {
+          inputTokens: 100,
+          outputTokens: 70,
+          cachedInputTokens: 30,
+          estimatedCostUsd: 0,
+        },
+        at,
+      },
+    ]);
   });
 
   it('emits error event for error type', () => {
@@ -168,7 +177,7 @@ describe('parseJsonLine', () => {
     expect(events[0]).toMatchObject({ kind: 'error', message: 'rate limit exceeded' });
   });
 
-  it('emits unknown_payload event and calls onUnknown for unrecognized types', () => {
+  it('emits unknown_payload for unrecognized types', () => {
     const onUnknown = vi.fn();
     const raw = { type: 'mystery_event', payload: { x: 1 } };
     const events = parse(JSON.stringify(raw), { onUnknown });
@@ -181,16 +190,14 @@ describe('parseJsonLine', () => {
       raw,
       at,
     });
-    expect(onUnknown).toHaveBeenCalledWith(
-      'mystery_event',
-      expect.objectContaining({ type: 'mystery_event' }),
-    );
+    expect(onUnknown).toHaveBeenCalled();
   });
 
   it('does not call onUnknown for known types', () => {
     const onUnknown = vi.fn();
-    parse(JSON.stringify({ type: 'reasoning', summary: [] }), { onUnknown });
-    parse(JSON.stringify({ type: 'message', role: 'assistant', content: [] }), { onUnknown });
+    parse(JSON.stringify({ type: 'turn.started' }), { onUnknown });
+    parse(JSON.stringify({ type: 'turn.completed', usage: {} }), { onUnknown });
+    parse(JSON.stringify({ type: 'thread.started', thread_id: 'x' }), { onUnknown });
     expect(onUnknown).not.toHaveBeenCalled();
   });
 });

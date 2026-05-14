@@ -19,6 +19,7 @@ import type {
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
+import { formatError } from '../../errors';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
@@ -249,7 +250,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           },
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(formatError(err));
       }
     },
     [sendTurn, session.id, showToast],
@@ -269,8 +270,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           }
         : undefined;
 
-    setSelectedProvider(null);
-
     if (isRunning) {
       setQueued({ content, override });
       return;
@@ -289,7 +288,10 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     }
   }, [isRunning, queued, dispatchTurn]);
 
+  const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
+    if (lastAgentIdRef.current === selectedAgentId) return;
+    lastAgentIdRef.current = selectedAgentId;
     setSelectedProvider(null);
     setSelectedModel(null);
   }, [selectedAgentId]);

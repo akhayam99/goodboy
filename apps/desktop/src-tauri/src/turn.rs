@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
-use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStderr, ChildStdout, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -101,13 +101,7 @@ pub struct TurnEventEnvelope {
 
 pub const EVENT_NAME: &str = "turn_event";
 
-/// Build per-binary CLI args. The Tauri side spawns the binary directly, so
-/// flag shapes have to match each CLI: claude code uses `-p / --output-format
-/// stream-json / --permission-mode / --allowedTools / --disallowedTools`,
-/// cursor-agent uses `-p / --output-format stream-json / --workspace /
-/// --model / --force`, and codex uses `exec --json --model --cwd -- prompt`.
-/// Falls back to claude flags for unknown binaries to preserve previous
-/// behaviour.
+/// Per-binary CLI flag set. Unknown binaries fall through to claude.
 fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
     let bin = std::path::Path::new(binary)
         .file_name()
@@ -116,6 +110,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
 
     match bin {
         "cursor-agent" => {
+            // --force is cursor's equivalent of claude --dangerously-skip-permissions.
             let mut v = vec![
                 "-p".to_string(),
                 args.prompt.to_string(),
@@ -125,13 +120,9 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 args.working_dir.to_string(),
                 "--model".to_string(),
                 args.model.to_string(),
-                // matches the claude --dangerously-skip-permissions: cursor-agent
-                // runs tools without interactive confirmation.
                 "--force".to_string(),
             ];
-            // permission rules + permission_mode + resume + system_prompt aren't
-            // supported by cursor-agent today; intentionally dropped here to
-            // avoid unknown-flag errors.
+            // cursor-agent ignores permission rules + resume + system_prompt.
             let _ = (
                 args.permission_mode,
                 args.allowed_tools,
@@ -143,25 +134,34 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             v
         }
         "codex" => {
-            // codex exec takes a single prompt argument after `--`. permission
-            // rules + resume + system_prompt aren't supported by the codex CLI
-            // yet.
+            // codex exec v0.130 gotchas:
+            //   --cd, NOT --cwd (codex exits 1 with "unexpected argument").
+            //   --skip-git-repo-check, else codex refuses non-trusted dirs.
+            //   default sandbox is read-only and silently drops writes; force
+            //     workspace-write unless bypass replaces it entirely.
             let _ = (args.resume_session_id, args.system_prompt);
-            vec![
+            let mut v: Vec<String> = vec![
                 "exec".to_string(),
                 "--json".to_string(),
+                "--skip-git-repo-check".to_string(),
                 "--model".to_string(),
                 args.model.to_string(),
-                "--cwd".to_string(),
+                "--cd".to_string(),
                 args.working_dir.to_string(),
-                "--".to_string(),
-                args.prompt.to_string(),
-            ]
+            ];
+            if args.permission_mode == "bypassPermissions" {
+                v.push("--dangerously-bypass-approvals-and-sandbox".to_string());
+            } else {
+                v.push("-s".to_string());
+                v.push("workspace-write".to_string());
+            }
+            v.push("--".to_string());
+            v.push(args.prompt.to_string());
+            v
         }
         _ => {
-            // claude (default).
             let mut v: Vec<String> = Vec::new();
-            // --resume must come before -p so claude restores the prior session
+            // --resume must precede -p so claude restores the prior session
             // before consuming the new user message.
             if let Some(sid) = args.resume_session_id {
                 v.push("--resume".to_string());
@@ -229,7 +229,7 @@ pub(crate) fn spawn_one(
         );
     }
 
-    let mut command = Command::new(args.binary);
+    let mut command = crate::path_env::command(args.binary);
     command
         .current_dir(args.working_dir)
         // Strip env vars that signal "running inside another Claude Code /
@@ -245,6 +245,15 @@ pub(crate) fn spawn_one(
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
         command.arg(a);
+    }
+
+    let codex_debug = args.binary == "codex"
+        && std::env::var("KAYAM_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false);
+    if codex_debug {
+        eprintln!(
+            "[codex-debug] turn args binary={:?} cwd={:?} cli_args={:?}",
+            args.binary, args.working_dir, cli_args
+        );
     }
 
     let mut child = command
@@ -275,6 +284,14 @@ pub(crate) fn spawn_one(
         forward_lines(&app_clone, &run_id_owned, stdout);
         let stderr_buf = capture_stderr(stderr);
         let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
+        if codex_debug {
+            eprintln!(
+                "[codex-debug] turn exit={:?} stderr_bytes={} stderr_tail={:?}",
+                exit_code,
+                stderr_buf.len(),
+                stderr_buf.lines().rev().take(5).collect::<Vec<_>>(),
+            );
+        }
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
@@ -477,6 +494,47 @@ mod tests {
     }
 
     #[test]
+    fn codex_args_use_cd_not_cwd() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("codex", &args);
+        assert!(cli.iter().any(|a| a == "--cd"));
+        assert!(!cli.iter().any(|a| a == "--cwd"));
+        let idx = cli.iter().position(|a| a == "--cd").expect("--cd");
+        assert_eq!(cli[idx + 1], "/tmp");
+    }
+
+    #[test]
+    fn codex_args_always_skip_git_repo_check() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("codex", &args);
+        assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
+    }
+
+    #[test]
+    fn codex_args_default_to_workspace_write_sandbox() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("codex", &args);
+        let idx = cli.iter().position(|a| a == "-s").expect("-s");
+        assert_eq!(cli[idx + 1], "workspace-write");
+        assert!(!cli.iter().any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+    }
+
+    #[test]
+    fn codex_args_bypass_replaces_sandbox_flag() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.binary = "codex";
+        args.permission_mode = "bypassPermissions";
+        let cli = build_provider_cli_args("codex", &args);
+        assert!(cli.iter().any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+        assert!(!cli.iter().any(|a| a == "-s"));
+        assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
+    }
+
+    #[test]
     fn cursor_and_codex_ignore_resume_and_system_prompt() {
         let empty: Vec<String> = vec![];
         let args = make_args(Some("sid"), Some("sp"), &empty);
@@ -484,5 +542,60 @@ mod tests {
         let cli_codex = build_provider_cli_args("codex", &args);
         assert!(!cli_cursor.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
         assert!(!cli_codex.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
+    }
+
+    #[test]
+    #[ignore = "requires real codex binary + active login; opt in via KAYAM_TEST_REAL_CODEX=1"]
+    fn codex_real_spawn_emits_json_events() {
+        if std::env::var("KAYAM_TEST_REAL_CODEX")
+            .map(|v| v.is_empty())
+            .unwrap_or(true)
+        {
+            return;
+        }
+        let allowed: Vec<String> = vec![];
+        let disallowed: Vec<String> = vec![];
+        let args = SpawnOneArgs {
+            run_id: "smoke-test",
+            binary: "codex",
+            model: "gpt-5.5",
+            working_dir: "/tmp",
+            prompt: "say hello",
+            permission_mode: "default",
+            allowed_tools: &allowed,
+            disallowed_tools: &disallowed,
+            resume_session_id: None,
+            system_prompt: None,
+        };
+        let cli = build_provider_cli_args("codex", &args);
+        let out = std::process::Command::new("codex")
+            .args(&cli)
+            .output()
+            .expect("spawn codex");
+
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            out.status.success(),
+            "codex exited {:?}\nstdout: {}\nstderr: {}",
+            out.status.code(),
+            stdout,
+            stderr
+        );
+        assert!(
+            stdout.contains(r#""type":"thread.started""#),
+            "missing thread.started in stdout: {}",
+            stdout
+        );
+        assert!(
+            stdout.contains(r#""type":"item.completed""#),
+            "missing item.completed in stdout: {}",
+            stdout
+        );
+        assert!(
+            stdout.contains(r#""type":"turn.completed""#),
+            "missing turn.completed in stdout: {}",
+            stdout
+        );
     }
 }

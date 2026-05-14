@@ -55,7 +55,7 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
   };
 
   if (cardState === 'loading') {
-    return <p className="text-xs text-muted-foreground">checking…</p>;
+    return <p className="text-xs text-muted-foreground">Checking…</p>;
   }
 
   if (cardState === 'connected') {
@@ -64,7 +64,7 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
         <div className="rounded-md border border-success/40 bg-success/10 px-3 py-2.5 text-xs text-success">
           <div className="flex items-center gap-2">
             <Check size={13} aria-hidden />
-            <span className="font-medium">connected</span>
+            <span className="font-medium">Connected</span>
           </div>
         </div>
         <div className="flex justify-end">
@@ -75,7 +75,7 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
             disabled={saveState === 'saving'}
             className={cn(saveState === 'saving' && 'opacity-60')}
           >
-            disconnect
+            Disconnect
           </Button>
         </div>
         {error ? <ErrorBanner>{error}</ErrorBanner> : null}
@@ -103,12 +103,12 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
           {saveState === 'saving' ? (
             <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
           ) : null}
-          connect
+          Connect
         </Button>
       </div>
       {error ? <ErrorBanner>{error}</ErrorBanner> : null}
       <p className="text-[10px] text-muted-foreground">
-        stored in your OS keychain. never leaves your machine.
+        Stored in your OS keychain. Never leaves your machine.
       </p>
     </div>
   );
@@ -179,7 +179,7 @@ function JiraCard() {
   };
 
   if (cardState === 'loading') {
-    return <p className="text-xs text-muted-foreground">checking…</p>;
+    return <p className="text-xs text-muted-foreground">Checking…</p>;
   }
 
   if (cardState === 'connected') {
@@ -189,7 +189,7 @@ function JiraCard() {
           <div className="flex items-center gap-2">
             <Check size={13} aria-hidden />
             <span className="font-medium">
-              connected{connectedDomain ? ` · ${connectedDomain}` : ''}
+              Connected{connectedDomain ? ` · ${connectedDomain}` : ''}
             </span>
           </div>
         </div>
@@ -201,7 +201,7 @@ function JiraCard() {
             disabled={saveState === 'saving'}
             className={cn(saveState === 'saving' && 'opacity-60')}
           >
-            disconnect
+            Disconnect
           </Button>
         </div>
         {error ? <ErrorBanner>{error}</ErrorBanner> : null}
@@ -250,13 +250,13 @@ function JiraCard() {
             {saveState === 'saving' ? (
               <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
             ) : null}
-            connect
+            Connect
           </Button>
         </div>
       </div>
       {error ? <ErrorBanner>{error}</ErrorBanner> : null}
       <p className="text-[10px] text-muted-foreground">
-        stored in your OS keychain. never leaves your machine.
+        Stored in your OS keychain. Never leaves your machine.
       </p>
     </div>
   );

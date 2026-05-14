@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Info } from 'lucide-react';
-import { Button, Tooltip, cn } from '@kay-am/ui';
+import { Code2, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { Tooltip, cn } from '@kay-am/ui';
 import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
 import type { ProviderId } from '../providers';
@@ -8,10 +9,10 @@ import { useAppStore } from '../store';
 import { openUrl } from '../editor';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
-  connected: 'connected',
-  installed_disconnected: 'installed, not logged in',
-  missing: 'not installed',
-  error: 'error',
+  connected: 'Connected',
+  installed_disconnected: 'Not logged in',
+  missing: 'Not installed',
+  error: 'Error',
 };
 
 const STATE_DOT: Record<ProviderConnectionState, string> = {
@@ -23,10 +24,32 @@ const STATE_DOT: Record<ProviderConnectionState, string> = {
 
 const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex'];
 
-const PROVIDER_DISPLAY: Record<ProviderId, { name: string; description: string }> = {
-  anthropic: { name: 'claude', description: 'anthropic claude code cli' },
-  cursor: { name: 'cursor', description: 'cursor agent cli' },
-  codex: { name: 'codex', description: 'openai codex cli' },
+interface ProviderBrand {
+  readonly name: string;
+  readonly description: string;
+  readonly icon: LucideIcon;
+  readonly cssVar: string;
+}
+
+const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
+  anthropic: {
+    name: 'claude',
+    description: 'anthropic claude code cli',
+    icon: Sparkles,
+    cssVar: '--color-provider-anthropic',
+  },
+  cursor: {
+    name: 'cursor',
+    description: 'cursor agent cli',
+    icon: MousePointer2,
+    cssVar: '--color-provider-cursor',
+  },
+  codex: {
+    name: 'codex',
+    description: 'openai codex cli',
+    icon: Code2,
+    cssVar: '--color-provider-codex',
+  },
 };
 
 export function ProvidersPanel() {
@@ -50,130 +73,119 @@ export function ProvidersPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">providers</div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void onRefresh()}
-          disabled={refreshing}
-          title="re-detect installed CLIs"
-        >
-          {refreshing ? 'refreshing…' : 'refresh all'}
-        </Button>
+        <div className="text-xs font-semibold text-foreground">Providers</div>
+        <Tooltip content="Re-detect installed CLIs" side="top">
+          <button
+            type="button"
+            aria-label="Re-detect installed CLIs"
+            disabled={refreshing}
+            onClick={() => void onRefresh()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          >
+            <RotateCw size={14} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
       {ordered.length === 0 ? (
-        <p className="text-2xs text-muted-foreground">no providers configured</p>
+        <p className="text-2xs text-muted-foreground">No providers configured</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-3 gap-2.5">
           {ordered.map((p) => (
-            <ProviderCard key={p.id} info={p} onRefresh={onRefresh} />
+            <ProviderTile key={p.id} info={p} onRefresh={onRefresh} />
           ))}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run{' '}
-        <code className="rounded bg-muted px-1">claude</code> in a terminal once).
-      </p>
+      <div className="flex items-start gap-1.5 text-2xs text-muted-foreground">
+        <Info size={11} aria-hidden className="mt-0.5 shrink-0" />
+        <span>
+          Sign in once via each provider's CLI (e.g. run{' '}
+          <code className="rounded bg-muted px-1">claude</code> in a terminal). kay-am picks up the
+          credentials.
+        </span>
+      </div>
     </div>
   );
 }
 
-function ProviderCard({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
-  const display = PROVIDER_DISPLAY[info.id as ProviderId];
+function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
+  const brand = PROVIDER_BRAND[info.id as ProviderId];
+  const Icon = brand?.icon ?? Sparkles;
+  const connected = info.connection === 'connected';
+  const errored = info.connection === 'error';
+  const dim = !connected && !errored;
+  const color = brand ? `var(${brand.cssVar})` : 'var(--color-primary)';
+
   return (
-    <div className="flex flex-col gap-2 overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
-      {/* header */}
-      <div className="flex items-center gap-3 border-b border-border-soft px-3 py-2">
-        <span
-          aria-hidden
-          className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_DOT[info.connection])}
-        />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold">{display?.name ?? info.label}</span>
-            <code className="text-2xs text-muted-foreground">{info.binary}</code>
-            {info.version ? (
-              <span className="rounded bg-muted px-1 text-2xs text-muted-foreground">
-                {info.version}
-              </span>
-            ) : null}
-          </div>
-          <span className="text-2xs text-muted-foreground">{display?.description}</span>
-        </div>
-        <RowActions info={info} onRefresh={onRefresh} />
+    <div
+      className="relative flex flex-col items-center gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
+      style={{
+        borderColor: `color-mix(in oklch, ${color} 25%, var(--color-border-soft))`,
+      }}
+    >
+      {info.connection !== 'connected' ? (
+        <Tooltip content={STATE_LABEL[info.connection]} side="top">
+          <span
+            aria-hidden
+            className={cn(
+              'absolute left-2.5 top-2.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+              STATE_DOT[info.connection],
+            )}
+          />
+        </Tooltip>
+      ) : null}
+
+      <div
+        aria-hidden
+        className={cn(
+          'mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-opacity',
+          dim && 'opacity-50',
+        )}
+        style={{
+          backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`,
+          color,
+        }}
+      >
+        <Icon size={18} strokeWidth={2} />
       </div>
 
-      {/* status + quota */}
-      <div className="flex flex-col gap-1.5 px-3 pb-2.5">
-        <CardStatus info={info} />
-        {info.id !== 'anthropic' ? (
-          <span
-            className="w-fit rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground"
-            title="permission proxy currently covers claude only. cursor and codex run with their CLI defaults; coverage is tracked for a future milestone."
-          >
-            permission proxy: not supported
-          </span>
-        ) : null}
-        <QuotaSection
-          providerId={info.id as ProviderId}
-          connected={info.connection === 'connected'}
-        />
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-sm font-semibold lowercase">{brand?.name ?? info.label}</span>
+        <span className="text-2xs text-muted-foreground">
+          {info.version ?? brand?.description ?? info.binary}
+        </span>
+      </div>
+
+      <TileStatus info={info} />
+
+      <div className="mt-1 w-full">
+        <TileAction info={info} onRefresh={onRefresh} />
       </div>
     </div>
   );
 }
 
-function CardStatus({ info }: { info: ProviderInfo }) {
+function TileStatus({ info }: { info: ProviderInfo }) {
   if (info.connection === 'connected') {
     return (
-      <div className="text-xs text-muted-foreground">{info.identity ?? 'no identity reported'}</div>
+      <div
+        className="max-w-full truncate text-2xs text-muted-foreground"
+        title={info.identity ?? ''}
+      >
+        {info.identity ?? 'No identity found'}
+      </div>
     );
   }
   if (info.connection === 'error') {
     return (
-      <div className="text-xs">
-        <span className="text-danger">{info.error ?? 'unknown error'}</span>
+      <div className="line-clamp-2 text-center text-2xs text-danger" title={info.error ?? ''}>
+        {info.error ?? 'unknown error'}
       </div>
     );
   }
-  return <div className="text-xs text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
+  return <div className="text-2xs text-muted-foreground">{STATE_LABEL[info.connection]}</div>;
 }
 
-function QuotaSection({ providerId, connected }: { providerId: ProviderId; connected: boolean }) {
-  if (!connected) return null;
-
-  if (providerId !== 'anthropic') {
-    return (
-      <div className="flex items-center gap-1 text-2xs text-muted-foreground/70">
-        <Tooltip
-          content="quota reporting not available for this provider. check your account dashboard."
-          side="top"
-        >
-          <span className="flex cursor-default items-center gap-1">
-            <Info size={10} aria-hidden className="shrink-0" />
-            quota info unavailable
-          </span>
-        </Tooltip>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1 text-2xs text-muted-foreground/70">
-      <Tooltip
-        content="anthropic does not expose quota/rate-limit data via the claude code CLI. check console.anthropic.com for usage details."
-        side="top"
-      >
-        <span className="flex cursor-default items-center gap-1">
-          <Info size={10} aria-hidden className="shrink-0" />
-          quota info unavailable
-        </span>
-      </Tooltip>
-    </div>
-  );
-}
-
-function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
+function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => Promise<void> }) {
   const [pending, setPending] = useState<'login' | 'logout' | null>(null);
 
   const onAction = async (action: 'login' | 'logout') => {
@@ -181,7 +193,7 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     try {
       await providerAction(info.id as ProviderId, action);
     } catch {
-      // terminal launch failed — fall through to show note anyway
+      // terminal launch failed — surface as no-op; user can retry
     }
   };
 
@@ -189,42 +201,46 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     return (
       <button
         type="button"
-        className="shrink-0 text-xs text-primary underline hover:opacity-80"
+        className="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs text-primary hover:bg-muted"
         onClick={() => void openUrl(info.docsUrl)}
       >
-        install ↗
+        Install ↗
       </button>
     );
   }
 
   if (info.connection === 'error') {
     return (
-      <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void onRefresh()}>
-        retry
-      </Button>
+      <button
+        type="button"
+        className="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs hover:bg-muted"
+        onClick={() => void onRefresh()}
+      >
+        Retry
+      </button>
     );
   }
 
   if (info.connection === 'installed_disconnected') {
     return (
-      <div className="flex shrink-0 flex-col items-end gap-0.5">
+      <div className="flex flex-col items-center gap-1">
         <button
           type="button"
-          className="text-xs text-primary underline hover:opacity-80 disabled:opacity-50"
+          className="w-full rounded-md border border-border-soft py-1.5 text-center text-xs text-primary hover:bg-muted disabled:opacity-50"
           disabled={pending === 'login'}
           onClick={() => void onAction('login')}
         >
-          connect ↗
+          Connect ↗
         </button>
         {pending === 'login' ? (
-          <span className="text-2xs text-muted-foreground">
-            complete in terminal, then{' '}
+          <span className="text-center text-2xs text-muted-foreground">
+            Complete in terminal, then{' '}
             <button
               type="button"
               className="underline hover:text-foreground"
               onClick={() => void onRefresh()}
             >
-              refresh ↻
+              Refresh ↻
             </button>
           </span>
         ) : null}
@@ -232,44 +248,41 @@ function RowActions({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     );
   }
 
-  if (info.connection === 'connected') {
-    return (
-      <div className="flex shrink-0 items-center gap-1">
-        <Tooltip content="re-check identity" side="top">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="re-check identity"
+  // connected
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex w-full items-stretch gap-1.5">
+        <Tooltip content="Re-check identity" side="top">
+          <button
+            type="button"
+            aria-label="Re-check identity"
+            className="rounded-md border border-border-soft px-2 text-xs hover:bg-muted"
             onClick={() => void onRefresh()}
           >
             ↻
-          </Button>
+          </button>
         </Tooltip>
-        <div className="flex flex-col items-end gap-0.5">
+        <button
+          type="button"
+          className="flex-1 rounded-md border border-border-soft py-1.5 text-center text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          disabled={pending === 'logout'}
+          onClick={() => void onAction('logout')}
+        >
+          Disconnect ↗
+        </button>
+      </div>
+      {pending === 'logout' ? (
+        <span className="text-center text-2xs text-muted-foreground">
+          Complete in terminal, then{' '}
           <button
             type="button"
-            className="text-xs text-muted-foreground underline hover:text-foreground disabled:opacity-50"
-            disabled={pending === 'logout'}
-            onClick={() => void onAction('logout')}
+            className="underline hover:text-foreground"
+            onClick={() => void onRefresh()}
           >
-            disconnect ↗
+            Refresh ↻
           </button>
-          {pending === 'logout' ? (
-            <span className="text-2xs text-muted-foreground">
-              complete in terminal, then{' '}
-              <button
-                type="button"
-                className="underline hover:text-foreground"
-                onClick={() => void onRefresh()}
-              >
-                refresh ↻
-              </button>
-            </span>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+        </span>
+      ) : null}
+    </div>
+  );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ComponentProps } from 'react';
+import { useCallback, useLayoutEffect, useRef, type ComponentProps } from 'react';
 import { cn } from '../cn';
 
 export type TextareaProps = ComponentProps<'textarea'> & {
@@ -33,8 +33,13 @@ export function Textarea({
     el.style.overflowY = el.scrollHeight > maxPx ? 'auto' : 'hidden';
   }, [autoGrow, maxPx, minPx]);
 
-  useEffect(() => {
-    resize();
+  // rAF inside useLayoutEffect: the consumer often mounts the textarea inside
+  // an animating Dialog. Measuring scrollHeight before the parent has finished
+  // layout returns inflated values, which is what made the input spawn at a
+  // huge height on first mount.
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(resize);
+    return () => cancelAnimationFrame(id);
   }, [resize, value]);
 
   return (
@@ -46,7 +51,7 @@ export function Textarea({
         !autoGrow && 'min-h-16',
         className,
       )}
-      style={autoGrow ? { ...style, height: `${minPx}px`, overflowY: 'hidden' } : style}
+      style={autoGrow ? { ...style, overflowY: 'hidden' } : style}
       onChange={(e) => {
         onChange?.(e);
         resize();
