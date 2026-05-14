@@ -16,7 +16,7 @@ import type {
   TaskId,
   TurnProviderOverride,
 } from '@kay-am/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
+import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { formatError } from '../../errors';
@@ -24,10 +24,11 @@ import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
 import { type VerbosityLevel, readVerbosity, writeVerbosity } from '../../verbosity';
-import { EFFORT_LEVELS, type EffortLevel } from './chat-constants';
+import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';
 import { PermissionModePicker } from './PermissionModePicker';
+import { RightSizeCard } from './RightSizeCard';
 import { STORAGE_PREFIXES } from '../../storage-keys';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
@@ -157,6 +158,9 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const agentModelOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
   );
+  const isFirstTurnForAgent = useAppStore((s) =>
+    selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
+  );
   const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
   const wasRunning = useRef(isRunning);
   interface QueuedTurn {
@@ -164,6 +168,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     readonly override: TurnProviderOverride | undefined;
   }
   const [queued, setQueued] = useState<QueuedTurn | null>(null);
+  const [rightSizePending, setRightSizePending] = useState<string | null>(null);
+  const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
   const canSend = !providerDisconnected && value.trim().length > 0;
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
@@ -257,17 +263,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     [sendTurn, session.id, showToast],
   );
 
-  const onSend = async () => {
-    const content = value.trim();
-    if (!content || providerDisconnected) return;
-    setError(null);
-    setValue('');
-
+  const sendWith = async (content: string, modelOverrideId: string | null) => {
+    const useModel = modelOverrideId ?? (modelChanged ? effectiveModel : null);
     const override: TurnProviderOverride | undefined =
-      allowOverride && (providerChanged || modelChanged)
+      allowOverride && (providerChanged || useModel !== null)
         ? {
             providerId: effectiveProvider,
-            ...(modelChanged ? { model: effectiveModel } : {}),
+            ...(useModel !== null ? { model: useModel } : {}),
           }
         : undefined;
 
@@ -277,6 +279,44 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     }
 
     await dispatchTurn(content, override);
+  };
+
+  const onSend = async () => {
+    const content = value.trim();
+    if (!content || providerDisconnected) return;
+    setError(null);
+
+    if (allowOverride && !isRunning && rightSizeSuggested !== null && rightSizePending === null) {
+      setRightSizePending(content);
+      return;
+    }
+
+    setValue('');
+    await sendWith(content, null);
+  };
+
+  const onUseSuggested = async () => {
+    const content = rightSizePending;
+    if (content === null) return;
+    const suggested = rightSizeSuggested;
+    setRightSizePending(null);
+    setRightSizeDismissed(true);
+    setValue('');
+    await sendWith(content, suggested);
+  };
+
+  const onKeepCurrent = async () => {
+    const content = rightSizePending;
+    if (content === null) return;
+    setRightSizePending(null);
+    setRightSizeDismissed(true);
+    setValue('');
+    await sendWith(content, null);
+  };
+
+  const onChangeModel = () => {
+    setRightSizePending(null);
+    setRightSizeDismissed(true);
   };
 
   useEffect(() => {
@@ -295,6 +335,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     lastAgentIdRef.current = selectedAgentId;
     setSelectedProvider(null);
     setSelectedModel(null);
+    setRightSizePending(null);
+    setRightSizeDismissed(false);
   }, [selectedAgentId]);
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
@@ -323,6 +365,19 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     if (effectiveModel) ids.add(effectiveModel);
     return Array.from(ids);
   }, [providerModels, effectiveModel]);
+
+  const rightSizeSuggested = useMemo<string | null>(() => {
+    if (!isFirstTurnForAgent || rightSizeDismissed) return null;
+    const weight = assessTurnWeight(value);
+    if (weight !== 'light') return null;
+    return suggestLighterModel(effectiveModel, modelCandidates);
+  }, [isFirstTurnForAgent, rightSizeDismissed, value, effectiveModel, modelCandidates]);
+
+  useEffect(() => {
+    if (rightSizePending !== null && rightSizeSuggested === null) {
+      setRightSizePending(null);
+    }
+  }, [rightSizePending, rightSizeSuggested]);
 
   return (
     <div className="px-10 py-3">
@@ -375,6 +430,15 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             />
           </div>
         </div>
+        {rightSizePending !== null && rightSizeSuggested !== null ? (
+          <RightSizeCard
+            currentModel={effectiveModel}
+            suggestedModel={rightSizeSuggested}
+            onUseSuggested={() => void onUseSuggested()}
+            onKeepCurrent={() => void onKeepCurrent()}
+            onChangeModel={onChangeModel}
+          />
+        ) : null}
         <div className="relative" ref={wrapperRef}>
           {showPopover && isSlashMode ? (
             <SlashCommandPopover

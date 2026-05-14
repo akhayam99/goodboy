@@ -194,6 +194,31 @@ export function modelWeight(model: string): number {
   return MODEL_COST[model]?.weight ?? 10;
 }
 
+// Heuristic floor used by the first-turn right-sizing card.
+// Never suggest Haiku — user explicitly disallows it for this workspace.
+const SUGGESTION_FLOOR_PATTERN = /haiku|small|mini|nano|cursor-small/i;
+
+// Weight delta below which a suggestion is not worth surfacing (avoid nagging
+// for marginal savings like Sonnet 4.6 → 4.5).
+const MIN_WEIGHT_GAP = 20;
+
+export function suggestLighterModel(
+  current: string,
+  candidates: ReadonlyArray<string>,
+): string | null {
+  const currentWeight = modelWeight(current);
+  let best: { id: string; weight: number } | null = null;
+  for (const id of candidates) {
+    if (id === current) continue;
+    if (SUGGESTION_FLOOR_PATTERN.test(id)) continue;
+    const w = modelWeight(id);
+    if (w >= currentWeight) continue;
+    if (currentWeight - w < MIN_WEIGHT_GAP) continue;
+    if (!best || w > best.weight) best = { id, weight: w };
+  }
+  return best?.id ?? null;
+}
+
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   claude: 'Claude',
   gpt: 'GPT',
