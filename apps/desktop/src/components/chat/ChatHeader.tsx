@@ -1,11 +1,9 @@
-import { useState } from 'react';
-import { GitBranch, MessagesSquare } from 'lucide-react';
+import { FolderOpen, MessagesSquare } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
-import { EMPTY_ARRAY, useAppStore } from '../../store';
+import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
 import { ParallelProgressPill } from './ParallelProgressPill';
-import { permissionModeMeta } from './PermissionModePicker';
 
 interface ChatHeaderProps {
   session: Task;
@@ -14,22 +12,13 @@ interface ChatHeaderProps {
   onSelectRun?: (runId: ProviderRunId) => void;
 }
 
-function inferBranch(worktreePath: string | null, taskId: string): string {
-  if (!worktreePath) return taskId.slice(0, 8);
-  const tail = worktreePath.split('/').filter(Boolean).at(-1);
-  return tail ?? taskId.slice(0, 8);
-}
-
 export function ChatHeader({
   session,
   worktreePath,
   parallelRunIds,
   onSelectRun,
 }: ChatHeaderProps) {
-  const [copied, setCopied] = useState(false);
-
-  const branch = inferBranch(worktreePath, session.id);
-  const mode = permissionModeMeta(session.permissionMode);
+  const workspace = useCurrentWorkspace();
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => {
@@ -48,16 +37,6 @@ export function ChatHeader({
 
   const isParallel = (parallelRunIds?.length ?? 0) > 1;
 
-  const onCopyWorktree = async () => {
-    try {
-      await navigator.clipboard.writeText(branch);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // clipboard denied — silent
-    }
-  };
-
   return (
     <div className="sticky top-0 z-10 bg-background px-10 py-2.5 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent">
       <div className="mx-auto flex w-full max-w-[880px] items-center gap-3">
@@ -73,17 +52,16 @@ export function ChatHeader({
             ) : null}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <button
-              type="button"
-              onClick={() => void onCopyWorktree()}
-              className="inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted hover:text-foreground"
-              aria-label={`worktree — branch: ${branch}`}
-              title={`worktree — branch: ${branch}`}
-            >
-              <GitBranch size={12} aria-hidden />
-              <span className="font-mono">{branch}</span>
-              {copied ? <span className="text-success">copied</span> : null}
-            </button>
+            {workspace ? (
+              <span
+                className="inline-flex items-center gap-1"
+                title={workspace.rootPath}
+                aria-label={`workspace: ${workspace.name}`}
+              >
+                <FolderOpen size={12} aria-hidden />
+                <span className="truncate">{workspace.name}</span>
+              </span>
+            ) : null}
             <span
               className="inline-flex items-center gap-1"
               title={`${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`}
@@ -94,14 +72,6 @@ export function ChatHeader({
               {assistantReplies > 0 ? (
                 <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
               ) : null}
-            </span>
-            <span
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground"
-              title={mode.description}
-              aria-label={`permission mode: ${mode.label}`}
-            >
-              <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', mode.dot)} />
-              <span>{mode.label}</span>
             </span>
             {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
           </div>
