@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SessionId, TaskId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
 import { PermissionScopePicker } from './PermissionScopePicker';
+import { formatCardTime } from './format-card-time';
 
 interface PermissionRequestCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
@@ -12,11 +13,7 @@ interface PermissionRequestCardProps {
 export function PermissionRequestCard({ item, taskId, agentId }: PermissionRequestCardProps) {
   const [resolved, setResolved] = useState(false);
 
-  const timestamp = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(item.at));
+  const timestamp = formatCardTime(item.at);
 
   const showPicker = !resolved && taskId !== null && agentId !== null;
 
