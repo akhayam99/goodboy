@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCap } from './parseCap';
+import { parseCap } from './parse-cap';
 
 describe('parseCap', () => {
   it('returns null for an empty string', () => {

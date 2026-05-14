@@ -30,7 +30,7 @@ import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
 import { fetchIssueFromUrl, type IssueData } from '../integrations';
 import { useToast } from './Toast';
-import { parseCap } from '../lib/parseCap';
+import { parseCap } from '../lib/parse-cap';
 
 interface NewSessionDialogProps {
   open: boolean;

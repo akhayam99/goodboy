@@ -4,7 +4,7 @@ import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'luc
 import type { TaskId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
-import { parseCap } from '../lib/parseCap';
+import { parseCap } from '../lib/parse-cap';
 
 interface SessionSettingsDialogProps {
   taskId: TaskId;
