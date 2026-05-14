@@ -454,6 +454,7 @@ export function NewSessionDialog({
                 onClick={handleGenerateSlug}
                 disabled={!goal.trim() || slugGenerating || busy}
                 title="generate branch name"
+                aria-label="generate branch name"
                 className={cn(
                   'shrink-0 rounded p-0.5 transition-colors',
                   goal.trim() && !slugGenerating && !busy

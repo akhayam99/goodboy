@@ -344,6 +344,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               value=""
             />
             <button
+              aria-label="generate branch name"
               class="shrink-0 rounded p-0.5 transition-colors cursor-not-allowed text-muted-foreground/30"
               disabled=""
               title="generate branch name"
@@ -2547,6 +2548,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               value=""
             />
             <button
+              aria-label="generate branch name"
               class="shrink-0 rounded p-0.5 transition-colors cursor-not-allowed text-muted-foreground/30"
               disabled=""
               title="generate branch name"
