@@ -7,8 +7,6 @@ export interface IssueData {
   readonly service: 'github' | 'gitlab' | 'jira' | 'linear';
 }
 
-// ─── Linear ────────────────────────────────────────────────────────────────────
-
 function parseLinearIssueUrl(input: string): string | null {
   const trimmed = input.trim();
   const urlMatch = trimmed.match(/linear\.app\/[^/]+\/issue\/([A-Z]+-\d+)/i);
@@ -50,8 +48,6 @@ async function fetchLinearIssue(issueId: string): Promise<IssueData> {
   };
 }
 
-// ─── GitLab ────────────────────────────────────────────────────────────────────
-
 function parseGitLabIssueUrl(input: string): { projectPath: string; iid: number } | null {
   const trimmed = input.trim();
   const match = trimmed.match(/gitlab\.com\/(.+?)\/-\/issues\/(\d+)/);
@@ -83,8 +79,6 @@ async function fetchGitLabIssue(projectPath: string, iid: number): Promise<Issue
     url: issue.web_url,
   };
 }
-
-// ─── Jira ──────────────────────────────────────────────────────────────────────
 
 function parseJiraIssueUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -145,8 +139,6 @@ function extractJiraDocText(doc: JiraDocNode | string | null | undefined): strin
   walk(doc);
   return parts.join(' ').trim();
 }
-
-// ─── unified detector ──────────────────────────────────────────────────────────
 
 export async function fetchIssueFromUrl(input: string): Promise<IssueData | null> {
   const linear = parseLinearIssueUrl(input);

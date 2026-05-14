@@ -1,10 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-// ---------------------------------------------------------------------------
-// Module mocks — factories must not reference outer-scope variables
-// (vi.mock is hoisted before variable initialization)
-// ---------------------------------------------------------------------------
-
+// Module mocks — factories must not reference outer-scope variables (vi.mock
+// is hoisted before variable initialization).
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
@@ -13,18 +10,11 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-// ---------------------------------------------------------------------------
-// Subject under test (imported after mocks are registered)
-// ---------------------------------------------------------------------------
-
+// Imported after mocks are registered.
 import { invoke } from '@tauri-apps/api/core';
 import { invokeParallelPhaseRunSpawn, type ParallelSpawnArgs } from '../turn';
 
 const invokeMock = vi.mocked(invoke);
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('invokeParallelPhaseRunSpawn', () => {
   beforeEach(() => {

@@ -199,10 +199,6 @@ export async function cancelTurn(runId: ProviderRunId): Promise<void> {
   await invoke('turn_cancel', { runId });
 }
 
-// ---------------------------------------------------------------------------
-// Parallel phase run spawn
-// ---------------------------------------------------------------------------
-
 interface ParallelRunSpec {
   readonly runId: ProviderRunId;
   /** Worktree path from C3 worktree helper. */

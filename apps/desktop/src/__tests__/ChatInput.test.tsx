@@ -4,10 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before imports that transitively pull the mocked modules
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before imports that transitively pull the mocked modules.
 const sendTurnMock = vi.fn(async () => undefined);
 const cancelCurrentTurnMock = vi.fn();
 
@@ -55,15 +52,8 @@ vi.mock('@kay-am/core', () => ({
   })),
 }));
 
-// ---------------------------------------------------------------------------
-// Import component AFTER mocks are in place
-// ---------------------------------------------------------------------------
-
+// Import component AFTER mocks are in place.
 import { ChatInput } from '../components/chat/ChatInput';
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
 
 function makeSession(overrides: Partial<Task> = {}): Task {
   return {
@@ -89,10 +79,6 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('ChatInput — input wiring', () => {
   it('typed characters appear in the textarea', async () => {

@@ -95,10 +95,6 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
   );
 }
 
-// ---------------------------------------------------------------------------
-// ConflictRow
-// ---------------------------------------------------------------------------
-
 interface ConflictRowProps {
   conflict: MergeConflict;
   pick: MergeResolution | undefined;

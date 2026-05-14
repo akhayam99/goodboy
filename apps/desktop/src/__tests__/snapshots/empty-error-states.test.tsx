@@ -143,10 +143,6 @@ function makeProviderInfo(overrides: Partial<ProviderInfo> = {}): ProviderInfo {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Empty states
-// ---------------------------------------------------------------------------
-
 describe('snapshot — empty states', () => {
   it('SkillsPanel: no skills', () => {
     const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
@@ -189,10 +185,6 @@ describe('snapshot — empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 });
-
-// ---------------------------------------------------------------------------
-// Error states
-// ---------------------------------------------------------------------------
 
 describe('snapshot — error states', () => {
   it('App init error — BootSplash with error message', () => {

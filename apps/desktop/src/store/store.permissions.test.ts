@@ -12,10 +12,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — these MUST be hoisted before importing the store
-// ---------------------------------------------------------------------------
-
+// Module mocks — these MUST be hoisted before importing the store.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -140,10 +137,6 @@ vi.mock('../repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const SESSION_ID = 'session-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
@@ -185,10 +178,6 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
 async function* emptyStream(): AsyncIterable<TurnEvent> {
   // emit nothing — turn ends immediately
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('sendTurn — permission proxy integration', () => {
   beforeEach(async () => {

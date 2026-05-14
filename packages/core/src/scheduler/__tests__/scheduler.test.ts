@@ -53,8 +53,6 @@ function makeDoneTurnEvent(runId: string): TurnEvent {
   return { kind: 'done', runId: runId as ProviderRunId, at: NOW };
 }
 
-// --- happy path: 3 runs all complete ---
-
 describe('fanOut + awaitMerge — 3-run happy path', () => {
   it('returns MergeResult with completed status for all runs', async () => {
     const runs = [makeRun(0), makeRun(1), makeRun(2)];
@@ -82,8 +80,6 @@ describe('fanOut + awaitMerge — 3-run happy path', () => {
     expect(spawnRun).toHaveBeenCalledTimes(3);
   });
 });
-
-// --- partial failure: 1 fails, 2 complete ---
 
 describe('fanOut + awaitMerge — partial failure', () => {
   it('includes failed run in result without cancelling siblings', async () => {
@@ -117,8 +113,6 @@ describe('fanOut + awaitMerge — partial failure', () => {
   });
 });
 
-// --- all fail: empty success set ---
-
 describe('fanOut + awaitMerge — all fail', () => {
   it('returns MergeResult with all runs failed', async () => {
     const runs = [makeRun(0), makeRun(1)];
@@ -140,8 +134,6 @@ describe('fanOut + awaitMerge — all fail', () => {
   });
 });
 
-// --- spawnRun rejects unexpectedly ---
-
 describe('fanOut + awaitMerge — unexpected rejection', () => {
   it('treats thrown error as failed run', async () => {
     const runs = [makeRun(0, 'run-0')];
@@ -159,8 +151,6 @@ describe('fanOut + awaitMerge — unexpected rejection', () => {
     expect(result.runStatuses[0]?.error).toBe('crash');
   });
 });
-
-// --- cancelGroup propagates to all run ids ---
 
 describe('cancelGroup', () => {
   it('calls cancelRun for every run in the handle', async () => {
@@ -182,8 +172,6 @@ describe('cancelGroup', () => {
     expect(cancelRun).toHaveBeenCalledWith('run-2' as ProviderRunId);
   });
 });
-
-// --- onProgress receives events tagged with correct runId ---
 
 describe('onProgress', () => {
   it('delivers events with correct runId to subscriber', async () => {

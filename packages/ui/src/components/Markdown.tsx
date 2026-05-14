@@ -86,19 +86,15 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
   return { ...CTX_DEFAULT, label: stripped || tag };
 }
 
-// ---------------------------------------------------------------------------
-// Minimal markdown renderer for assistant output.
-//
-// Handwritten in lieu of a dependency: react-markdown pulls a 30-package
-// remark/rehype subtree, marked has XSS surface, and LLMs only ever produce
-// a small subset of CommonMark — fenced code, headings, lists (ordered +
-// unordered, flat), blockquotes, horizontal rules, gfm-style pipe tables,
-// paragraphs, plus inline emphasis / code / links. We also recognise the
-// agent's <<ctx-*>>...</ctx-*>> markers and render them as labelled blocks.
-//
-// Inline rendering operates on plain strings only; we never dangerouslySetHTML
-// so any unmatched delimiter just shows literal characters.
-// ---------------------------------------------------------------------------
+// Minimal markdown renderer for assistant output. Handwritten in lieu of a
+// dependency: react-markdown pulls a 30-package remark/rehype subtree, marked
+// has XSS surface, and LLMs only ever produce a small subset of CommonMark —
+// fenced code, headings, lists (ordered + unordered, flat), blockquotes,
+// horizontal rules, gfm-style pipe tables, paragraphs, plus inline emphasis /
+// code / links. We also recognise the agent's <<ctx-*>>...</ctx-*>> markers
+// and render them as labelled blocks. Inline rendering operates on plain
+// strings only; we never dangerouslySetHTML so any unmatched delimiter just
+// shows literal characters.
 
 interface MarkdownProps {
   readonly text: string;
@@ -276,7 +272,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         const m = (lines[i] ?? '').match(re);
         if (!m) break;
         // Indent depth (number of leading spaces) is currently unused — flat lists only.
-        // Future: nest based on indent.
         items.push({ content: m[2]!.trim(), children: [] });
         i++;
       }
@@ -314,12 +309,10 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   return blocks;
 }
 
-// ---------------------------------------------------------------------------
-// Inline rendering — bold, italic, inline code, links.
-// We tokenize manually instead of using regex with backreferences, which keeps
-// nested emphasis predictable and means an unmatched delimiter renders as a
-// literal char rather than swallowing the rest of the line.
-// ---------------------------------------------------------------------------
+// Inline rendering — bold, italic, inline code, links. We tokenize manually
+// instead of using regex with backreferences, which keeps nested emphasis
+// predictable and means an unmatched delimiter renders as a literal char
+// rather than swallowing the rest of the line.
 
 function renderInline(input: string, keyPrefix: string): ReactNode {
   const out: ReactNode[] = [];
@@ -481,10 +474,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
   flush();
   return out.length === 1 ? out[0] : <>{out}</>;
 }
-
-// ---------------------------------------------------------------------------
-// Block rendering
-// ---------------------------------------------------------------------------
 
 function renderBlock(block: Block, idx: number): ReactNode {
   const key = `b-${idx}`;

@@ -533,11 +533,8 @@ function mergeSlots(
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
-// ---------------------------------------------------------------------------
 // Summarizer queue — one per task, max one in-flight + one queued (coalesced).
 // Prevents stacking when the user iterates faster than the summarizer completes.
-// ---------------------------------------------------------------------------
-
 interface SummarizerQueueEntry {
   readonly turnInput: string;
   readonly turnOutput: string;
@@ -1857,8 +1854,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    // ---- Parallel-agents branch -----------------------------------------
-    // Triggered iff: enableParallelAgents on + phaseTemplate active + current
+    // Parallel-agents branch — triggered iff: enableParallelAgents on + phaseTemplate active + current
     // phase has parallelGroup with >= 2 siblings (already resolved above).
     // Pre-flight: aggregate cost = single-run estimate × N. Existing single-run
     // pre-flight is the routing decision itself (resolveProviderForTurn already
@@ -2016,8 +2012,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       return;
     }
-    // ---- /Parallel-agents branch ----------------------------------------
-
     void refreshPricingTable();
 
     // ContextPanel acts as the Task's shared memory: prepend the serialized

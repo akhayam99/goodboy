@@ -9,10 +9,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before store import.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -145,10 +142,6 @@ vi.mock('../providerPricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const SESSION_ID = 'session-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
@@ -196,10 +189,6 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
 async function* emptyStream(): AsyncIterable<TurnEvent> {
   // intentionally empty
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('audit retry queue — sendTurn enqueue on failure', () => {
   beforeEach(() => {
