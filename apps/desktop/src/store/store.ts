@@ -210,7 +210,7 @@ import {
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../errors';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agent-kind';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
 import {
   deletePlan as invokeDeletePlan,
   listPlansForSession as invokeListPlansForSession,
@@ -306,6 +306,7 @@ export interface AppState {
   readonly sessionGithub: Readonly<Record<TaskId, SessionGithubState>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<SessionId, string>>;
+  readonly agentKindOverride: Readonly<Record<SessionId, AgentKind>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
@@ -409,6 +410,7 @@ export interface AppActions {
     },
   ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
+  setAgentKind(agentId: SessionId, kind: AgentKind): void;
   deleteAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
@@ -527,6 +529,7 @@ const initialState: AppState = {
   sessionGithub: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
+  agentKindOverride: {},
   diffComments: {},
   notifications: [],
   sessionPlans: {},
@@ -871,13 +874,14 @@ async function generateAutoTitle(
   taskId: TaskId,
   turnInput: string,
   turnOutput: string,
+  agentId: SessionId | null,
 ): Promise<void> {
   try {
     const session = get().sessions.find((s) => s.id === taskId);
-    if (!session || session.titleUserEdited) return;
+    if (!session) return;
     const providerId = session.providerPreference.defaultProvider;
     const systemPrompt =
-      'You generate a short title for an AI coding session. Return ONLY the title, 5 words or fewer, no quotes, no trailing punctuation, no explanation.';
+      'You generate a short title for an AI coding session. Return ONLY the title, 3-5 words, no quotes, no trailing punctuation, no explanation. The title should be a concise micro-summary of what the agent is doing (e.g. "refactor auth module", "debug startup crash"). It will be used as both the session title and the agent name.';
     const userMessage = [
       'User request (excerpt):',
       turnInput.slice(0, 600),
@@ -885,7 +889,7 @@ async function generateAutoTitle(
       'Assistant reply (excerpt):',
       turnOutput.slice(0, 300),
       '',
-      'Write the session title now.',
+      'Write the title now.',
     ].join('\n');
     const result = await invoke<SummarizeCommandResult>('summarize_task', {
       args: { providerId, userMessage, systemPrompt },
@@ -908,10 +912,15 @@ async function generateAutoTitle(
       .trim();
     if (!title) return;
     const titleNow = new Date().toISOString() as IsoDateTime;
-    set((state) => ({
-      sessions: state.sessions.map((s) => (s.id === taskId ? { ...s, goal: title } : s)),
-    }));
-    await renameSessionInDb(tauriDatabase, taskId, title, titleNow, false);
+    if (!session.titleUserEdited) {
+      set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === taskId ? { ...s, goal: title } : s)),
+      }));
+      await renameSessionInDb(tauriDatabase, taskId, title, titleNow, false);
+    }
+    if (agentId) {
+      await get().renameAgent(taskId, agentId, title);
+    }
   } catch {
     // auto-title is best-effort
   }
@@ -2420,8 +2429,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
       void capturePlanFromTurn(set, taskId, activeAgentId, assistantText);
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === taskId);
-        if (sessionForTitle && !sessionForTitle.titleUserEdited) {
-          void generateAutoTitle(set, get, taskId, resolvedPrompt, assistantText);
+        const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
+        // Only auto-rename agents whose name still matches the default
+        // `agent N` pattern — workflow-step names and user edits stay.
+        const agentRecord = (get().sessionPhaseRuns[taskId] ?? []).find(
+          (r) => r.id === activeAgentId,
+        );
+        const agentNameEditable = agentRecord ? /^agent \d+$/i.test(agentRecord.name) : false;
+        if (sessionForTitle && (titleEditable || agentNameEditable)) {
+          void generateAutoTitle(
+            set,
+            get,
+            taskId,
+            resolvedPrompt,
+            assistantText,
+            agentNameEditable ? activeAgentId : null,
+          );
         }
       }
     }
@@ -2990,6 +3013,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [taskId]: refreshed },
     }));
+  },
+
+  setAgentKind: (agentId, kind) => {
+    set((s) => {
+      const nextModelOverride = { ...s.agentModelOverride };
+      const defaults = AGENT_KIND_DEFAULTS[kind];
+      if (defaults?.model) {
+        nextModelOverride[agentId] = defaults.model;
+      }
+      return {
+        agentKindOverride: { ...s.agentKindOverride, [agentId]: kind },
+        agentModelOverride: nextModelOverride,
+      };
+    });
   },
 
   deleteAgent: async (taskId, agentId) => {
