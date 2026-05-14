@@ -13,6 +13,7 @@ export interface ProviderRegistryCapabilities {
   readonly supportsTools: boolean;
   readonly supportsStream: boolean;
   readonly supportsCheapModel: boolean;
+  readonly supportsImages: boolean;
 }
 
 export interface ProviderInfo {

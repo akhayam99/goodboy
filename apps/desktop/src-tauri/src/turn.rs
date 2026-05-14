@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::process::{Child, ChildStderr, ChildStdout, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -55,6 +55,13 @@ impl TurnRegistry {
     }
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SpawnImage {
+    pub mime: String,
+    pub base64_data: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpawnArgs {
@@ -78,6 +85,11 @@ pub struct SpawnArgs {
     // Used to bias planner/implementer/debugger agents toward their role.
     #[serde(default)]
     pub system_prompt: Option<String>,
+    // claude-only: when non-empty, switches to `--input-format stream-json`
+    // and writes one user message JSON line (with image content blocks) to
+    // stdin. cursor/codex ignore since their headless mode is text-only.
+    #[serde(default)]
+    pub images: Vec<SpawnImage>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -167,9 +179,18 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("--resume".to_string());
                 v.push(sid.to_string());
             }
+            // Text-only path uses -p <prompt>. With images we swap to
+            // --input-format stream-json and pipe the user message via stdin
+            // (see spawn_one: stdin holds a single content-block JSON line).
+            if args.images.is_empty() {
+                v.push("-p".to_string());
+                v.push(args.prompt.to_string());
+            } else {
+                v.push("--print".to_string());
+                v.push("--input-format".to_string());
+                v.push("stream-json".to_string());
+            }
             v.extend([
-                "-p".to_string(),
-                args.prompt.to_string(),
                 "--output-format".to_string(),
                 "stream-json".to_string(),
                 "--verbose".to_string(),
@@ -195,6 +216,34 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
     }
 }
 
+/// Builds a single stream-json input line carrying a user message with text +
+/// image content blocks. Only used on the claude branch when images are
+/// attached. Format follows claude CLI's stream-json input schema.
+fn build_stream_json_input(prompt: &str, images: &[SpawnImage]) -> String {
+    let mut content: Vec<serde_json::Value> = Vec::with_capacity(1 + images.len());
+    content.push(serde_json::json!({ "type": "text", "text": prompt }));
+    for img in images {
+        content.push(serde_json::json!({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": img.mime,
+                "data": img.base64_data,
+            }
+        }));
+    }
+    let message = serde_json::json!({
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": content,
+        }
+    });
+    let mut line = serde_json::to_string(&message).unwrap_or_default();
+    line.push('\n');
+    line
+}
+
 /// Per-run spawn parameters used by both `turn_spawn` and `parallel_session_spawn`.
 pub struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
@@ -207,6 +256,7 @@ pub struct SpawnOneArgs<'a> {
     pub disallowed_tools: &'a [String],
     pub resume_session_id: Option<&'a str>,
     pub system_prompt: Option<&'a str>,
+    pub images: &'a [SpawnImage],
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -256,10 +306,24 @@ pub(crate) fn spawn_one(
         );
     }
 
+    let stdin_mode = if args.images.is_empty() {
+        Stdio::null()
+    } else {
+        Stdio::piped()
+    };
     let mut child = command
+        .stdin(stdin_mode)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
+
+    if !args.images.is_empty() {
+        if let Some(mut stdin) = child.stdin.take() {
+            let line = build_stream_json_input(args.prompt, args.images);
+            stdin.write_all(line.as_bytes())?;
+            // Drop closes stdin so claude knows the user message is complete.
+        }
+    }
 
     let stdout = child
         .stdout
@@ -334,6 +398,7 @@ pub fn turn_spawn(
             disallowed_tools: &args.disallowed_tools,
             resume_session_id: args.resume_session_id.as_deref(),
             system_prompt: args.system_prompt.as_deref(),
+            images: &args.images,
         },
     )
 }
@@ -425,6 +490,7 @@ mod tests {
     fn spawn_one_args_fields_accessible() {
         let allowed: Vec<String> = vec!["Bash".to_string()];
         let disallowed: Vec<String> = vec![];
+        let no_imgs: Vec<SpawnImage> = vec![];
         let args = SpawnOneArgs {
             run_id: "run-1",
             binary: "echo",
@@ -436,6 +502,7 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            images: &no_imgs,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -446,6 +513,7 @@ mod tests {
         resume: Option<&'a str>,
         system_prompt: Option<&'a str>,
         empty: &'a [String],
+        no_imgs: &'a [SpawnImage],
     ) -> SpawnOneArgs<'a> {
         SpawnOneArgs {
             run_id: "run-1",
@@ -458,13 +526,15 @@ mod tests {
             disallowed_tools: empty,
             resume_session_id: resume,
             system_prompt,
+            images: no_imgs,
         }
     }
 
     #[test]
     fn claude_args_omit_resume_and_system_prompt_when_none() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(None, None, &empty, &no_imgs);
         let cli = build_provider_cli_args("claude", &args);
         assert!(!cli.contains(&"--resume".to_string()));
         assert!(!cli.contains(&"--append-system-prompt".to_string()));
@@ -473,7 +543,8 @@ mod tests {
     #[test]
     fn claude_args_include_resume_before_prompt() {
         let empty: Vec<String> = vec![];
-        let args = make_args(Some("sess-abc"), None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(Some("sess-abc"), None, &empty, &no_imgs);
         let cli = build_provider_cli_args("claude", &args);
         let resume_idx = cli.iter().position(|a| a == "--resume").expect("--resume");
         let p_idx = cli.iter().position(|a| a == "-p").expect("-p");
@@ -484,7 +555,8 @@ mod tests {
     #[test]
     fn claude_args_include_system_prompt() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, Some("you are a planner"), &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(None, Some("you are a planner"), &empty, &no_imgs);
         let cli = build_provider_cli_args("claude", &args);
         let idx = cli
             .iter()
@@ -494,9 +566,68 @@ mod tests {
     }
 
     #[test]
+    fn claude_args_swap_to_stream_json_input_when_images_present() {
+        let empty: Vec<String> = vec![];
+        let imgs: Vec<SpawnImage> = vec![SpawnImage {
+            mime: "image/png".to_string(),
+            base64_data: "AAAA".to_string(),
+        }];
+        let args = make_args(None, None, &empty, &imgs);
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.iter().any(|a| a == "-p"));
+        assert!(cli.iter().any(|a| a == "--print"));
+        let in_idx = cli
+            .iter()
+            .position(|a| a == "--input-format")
+            .expect("--input-format");
+        assert_eq!(cli[in_idx + 1], "stream-json");
+    }
+
+    #[test]
+    fn build_stream_json_input_embeds_text_then_images() {
+        let imgs = vec![
+            SpawnImage {
+                mime: "image/png".to_string(),
+                base64_data: "aGVsbG8=".to_string(),
+            },
+            SpawnImage {
+                mime: "image/jpeg".to_string(),
+                base64_data: "d29ybGQ=".to_string(),
+            },
+        ];
+        let line = build_stream_json_input("look", &imgs);
+        let parsed: serde_json::Value =
+            serde_json::from_str(line.trim_end()).expect("json");
+        let content = parsed
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_array())
+            .expect("content array");
+        assert_eq!(content.len(), 3);
+        assert_eq!(content[0].get("type").and_then(|t| t.as_str()), Some("text"));
+        assert_eq!(content[0].get("text").and_then(|t| t.as_str()), Some("look"));
+        assert_eq!(content[1].get("type").and_then(|t| t.as_str()), Some("image"));
+        assert_eq!(
+            content[1]
+                .get("source")
+                .and_then(|s| s.get("media_type"))
+                .and_then(|m| m.as_str()),
+            Some("image/png")
+        );
+        assert_eq!(
+            content[2]
+                .get("source")
+                .and_then(|s| s.get("media_type"))
+                .and_then(|m| m.as_str()),
+            Some("image/jpeg")
+        );
+    }
+
+    #[test]
     fn codex_args_use_cd_not_cwd() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(None, None, &empty, &no_imgs);
         let cli = build_provider_cli_args("codex", &args);
         assert!(cli.iter().any(|a| a == "--cd"));
         assert!(!cli.iter().any(|a| a == "--cwd"));
@@ -507,7 +638,8 @@ mod tests {
     #[test]
     fn codex_args_always_skip_git_repo_check() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(None, None, &empty, &no_imgs);
         let cli = build_provider_cli_args("codex", &args);
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
     }
@@ -515,7 +647,8 @@ mod tests {
     #[test]
     fn codex_args_default_to_workspace_write_sandbox() {
         let empty: Vec<String> = vec![];
-        let args = make_args(None, None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(None, None, &empty, &no_imgs);
         let cli = build_provider_cli_args("codex", &args);
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
@@ -525,7 +658,8 @@ mod tests {
     #[test]
     fn codex_args_bypass_replaces_sandbox_flag() {
         let empty: Vec<String> = vec![];
-        let mut args = make_args(None, None, &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let mut args = make_args(None, None, &empty, &no_imgs);
         args.binary = "codex";
         args.permission_mode = "bypassPermissions";
         let cli = build_provider_cli_args("codex", &args);
@@ -537,7 +671,8 @@ mod tests {
     #[test]
     fn cursor_and_codex_ignore_resume_and_system_prompt() {
         let empty: Vec<String> = vec![];
-        let args = make_args(Some("sid"), Some("sp"), &empty);
+        let no_imgs: Vec<SpawnImage> = vec![];
+        let args = make_args(Some("sid"), Some("sp"), &empty, &no_imgs);
         let cli_cursor = build_provider_cli_args("cursor-agent", &args);
         let cli_codex = build_provider_cli_args("codex", &args);
         assert!(!cli_cursor.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
@@ -555,6 +690,7 @@ mod tests {
         }
         let allowed: Vec<String> = vec![];
         let disallowed: Vec<String> = vec![];
+        let no_imgs: Vec<SpawnImage> = vec![];
         let args = SpawnOneArgs {
             run_id: "smoke-test",
             binary: "codex",
@@ -566,6 +702,7 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            images: &no_imgs,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

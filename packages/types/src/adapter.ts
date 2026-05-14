@@ -1,5 +1,13 @@
+import type { AttachmentMime } from './attachment';
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, TaskId } from './ids';
 import type { ProviderName } from './provider';
+
+export interface TurnImageInput {
+  readonly mime: AttachmentMime;
+  // Base64-encoded image bytes (no data: prefix). Loaded just-in-time before
+  // spawn — the store reads from the on-disk attachment store and inflates here.
+  readonly base64Data: string;
+}
 
 export interface ProviderCapabilities {
   readonly streaming: boolean;
@@ -37,6 +45,9 @@ export interface TurnRequest {
   readonly systemPrompt: string;
   readonly userMessage: string;
   readonly permissionFlags?: TurnPermissionFlags;
+  // Optional image attachments. Only consumed by providers whose
+  // ProviderRegistryCapabilities.supportsImages is true; others ignore.
+  readonly images?: ReadonlyArray<TurnImageInput>;
 }
 
 export type TurnEvent =

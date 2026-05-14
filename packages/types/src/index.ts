@@ -23,6 +23,8 @@ export type {
   Workspace,
 } from './workspace';
 export type { Message, MessageRole } from './message';
+export type { Attachment, AttachmentMime, AttachmentRef } from './attachment';
+export { ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_PER_TURN, ATTACHMENT_MIME_TYPES } from './attachment';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {
   DetectResult,
@@ -31,6 +33,7 @@ export type {
   ProviderCapabilities,
   ProviderUsage,
   TurnEvent,
+  TurnImageInput,
   TurnPermissionFlags,
   TurnRequest,
 } from './adapter';

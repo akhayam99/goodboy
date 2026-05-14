@@ -14,18 +14,25 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
+    // claude CLI headless mode accepts images via --input-format stream-json
+    // (content-block array on stdin). See turn.rs `build_provider_cli_args`.
+    supportsImages: true,
   },
   cursor: {
     models: CURSOR_MODELS,
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
+    // cursor-agent CLI -p mode is text-only.
+    supportsImages: false,
   },
   codex: {
     models: CODEX_MODELS,
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
+    // codex exec --json takes a text-only prompt arg.
+    supportsImages: false,
   },
 };
 

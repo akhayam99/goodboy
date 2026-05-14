@@ -21,6 +21,7 @@ import {
 } from '@kay-am/core';
 import {
   getSetting,
+  insertAttachment,
   insertMessage,
   insertProviderRun,
   insertTask,
@@ -69,6 +70,8 @@ import {
   type ProviderTelemetrySummary,
 } from '@kay-am/db';
 import type {
+  Attachment,
+  AttachmentRef,
   BudgetAlert,
   BudgetRule,
   ClaudePermissionMode,
@@ -121,6 +124,7 @@ import {
   getPrForBranch,
   fetchLinkedIssues,
   detectRepoSlug,
+  PROVIDER_CAPABILITIES,
 } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
@@ -159,6 +163,7 @@ import {
 } from '../settings';
 import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
+import { loadAttachmentBase64 } from '../attachments';
 import { readVerbosity, verbosityDirective } from '../verbosity';
 import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
 import {
@@ -353,6 +358,7 @@ export interface AppActions {
     taskId: TaskId;
     content: string;
     override?: TurnProviderOverride;
+    attachments?: ReadonlyArray<AttachmentRef>;
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
   cancelCurrentTurn(taskId: TaskId): Promise<void>;
@@ -1488,7 +1494,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  sendTurn: async ({ taskId, content, override, onNewAlerts }) => {
+  sendTurn: async ({ taskId, content, override, attachments, onNewAlerts }) => {
     const before = get();
     const session = before.sessions.find((s) => s.id === taskId);
     if (!session) throw new Error(`session not found: ${taskId}`);
@@ -1710,6 +1716,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    const hasAttachments = (attachments?.length ?? 0) > 0;
+    if (hasAttachments && !PROVIDER_CAPABILITIES[provider].supportsImages) {
+      const runId = crypto.randomUUID() as ProviderRunId;
+      get().appendTurnEvent(activeAgentId, taskId, {
+        kind: 'error',
+        runId,
+        message: `provider ${provider} does not support image attachments. switch to a provider that supports images or remove the attached images before sending.`,
+        at: now(),
+      });
+      return;
+    }
+
     const resolvedOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
 
@@ -1740,6 +1758,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
       };
       await insertMessage(tauriDatabase, userMessage);
+      if (hasAttachments && attachments) {
+        for (const att of attachments) {
+          const row: Attachment = {
+            id: crypto.randomUUID(),
+            taskId,
+            agentId: activeAgentId,
+            messageId: userMessage.id,
+            mime: att.mime,
+            sha256: att.sha256,
+            sizeBytes: att.sizeBytes,
+            createdAt: now(),
+          };
+          await insertAttachment(tauriDatabase, row);
+        }
+      }
       get().appendTurnEvent(activeAgentId, taskId, {
         kind: 'user_text',
         runId,
@@ -2085,6 +2118,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
+    // Load image bytes from disk just-in-time so payloads stay out of memory
+    // between turns. Capability gate above already blocked non-image providers.
+    const turnImages =
+      hasAttachments && attachments
+        ? await Promise.all(
+            attachments.map(async (att) => ({
+              mime: att.mime,
+              base64Data: await loadAttachmentBase64(att),
+            })),
+          )
+        : [];
+
     try {
       for await (const event of runTurn({
         runId,
@@ -2095,6 +2140,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         binary: providerInfo?.binary,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         ...(kindSystemPrompt !== undefined && { systemPrompt: kindSystemPrompt }),
+        ...(turnImages.length > 0 && { images: turnImages }),
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, taskId, event);

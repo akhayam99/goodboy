@@ -24,6 +24,11 @@ export {
 } from './queries/task';
 export { insertMessage, listMessagesForAgent, listMessagesForTask } from './queries/message';
 export {
+  insertAttachment,
+  listAttachmentsForMessage,
+  listAttachmentsForTask,
+} from './queries/attachment';
+export {
   insertTurnEvent,
   listTurnEventsForAgent,
   listTurnEventsForTask,

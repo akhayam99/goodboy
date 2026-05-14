@@ -4,11 +4,14 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  type ClipboardEvent as ReactClipboardEvent,
+  type DragEvent as ReactDragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { Send, Square, X } from 'lucide-react';
 import { Textarea } from '@kay-am/ui';
 import type {
+  AttachmentRef,
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
@@ -17,6 +20,12 @@ import type {
   TurnProviderOverride,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
+import {
+  AttachmentValidationError,
+  fileToAttachment,
+  revokePendingPreview,
+  type PendingAttachment,
+} from '../../attachments';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { formatError } from '../../errors';
@@ -135,6 +144,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const { showToast } = useToast();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<ReadonlyArray<PendingAttachment>>(
+    [],
+  );
+  const [isDragging, setIsDragging] = useState(false);
+  const dragDepth = useRef(0);
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     readProvider(session.id),
   );
@@ -162,9 +176,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   interface QueuedTurn {
     readonly content: string;
     readonly override: TurnProviderOverride | undefined;
+    readonly attachments: ReadonlyArray<AttachmentRef>;
   }
   const [queued, setQueued] = useState<QueuedTurn | null>(null);
-  const canSend = !providerDisconnected && value.trim().length > 0;
+  const canSend =
+    !providerDisconnected && (value.trim().length > 0 || pendingAttachments.length > 0);
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
 
@@ -238,12 +254,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   };
 
   const dispatchTurn = useCallback(
-    async (content: string, override: TurnProviderOverride | undefined) => {
+    async (
+      content: string,
+      override: TurnProviderOverride | undefined,
+      attachments: ReadonlyArray<AttachmentRef>,
+    ) => {
       try {
         await sendTurn({
           taskId: session.id,
           content,
           override,
+          ...(attachments.length > 0 ? { attachments } : {}),
           onNewAlerts: (alerts) => {
             for (const alert of alerts) {
               showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
@@ -259,7 +280,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   const onSend = async () => {
     const content = value.trim();
-    if (!content || providerDisconnected) return;
+    if ((!content && pendingAttachments.length === 0) || providerDisconnected) return;
+    if (pendingAttachments.length > 0 && !PROVIDER_CAPABILITIES[effectiveProvider].supportsImages) {
+      setError(`provider ${effectiveProvider} does not support image attachments.`);
+      return;
+    }
     setError(null);
     setValue('');
 
@@ -271,21 +296,32 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           }
         : undefined;
 
+    const refs: ReadonlyArray<AttachmentRef> = pendingAttachments.map((a) => ({
+      mime: a.mime,
+      sha256: a.sha256,
+      sizeBytes: a.sizeBytes,
+    }));
+    const previews = pendingAttachments;
+    setPendingAttachments([]);
+
     if (isRunning) {
-      setQueued({ content, override });
+      setQueued({ content, override, attachments: refs });
+      // Preview URLs are revoked on next render via cleanup effect.
+      for (const p of previews) revokePendingPreview(p);
       return;
     }
 
-    await dispatchTurn(content, override);
+    await dispatchTurn(content, override, refs);
+    for (const p of previews) revokePendingPreview(p);
   };
 
   useEffect(() => {
     const wasRun = wasRunning.current;
     wasRunning.current = isRunning;
     if (wasRun && !isRunning && queued) {
-      const { content, override } = queued;
+      const { content, override, attachments } = queued;
       setQueued(null);
-      void dispatchTurn(content, override);
+      void dispatchTurn(content, override, attachments);
     }
   }, [isRunning, queued, dispatchTurn]);
 
@@ -296,6 +332,105 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setSelectedProvider(null);
     setSelectedModel(null);
   }, [selectedAgentId]);
+
+  const supportsImages = PROVIDER_CAPABILITIES[effectiveProvider].supportsImages;
+
+  const ingestFiles = useCallback(
+    async (files: ReadonlyArray<File | Blob>) => {
+      if (!supportsImages) {
+        setError(
+          `provider ${effectiveProvider} does not support image attachments. switch provider before attaching.`,
+        );
+        return;
+      }
+      const accepted: PendingAttachment[] = [];
+      let nextCount = pendingAttachments.length;
+      for (const file of files) {
+        try {
+          const att = await fileToAttachment(file, nextCount);
+          accepted.push(att);
+          nextCount += 1;
+        } catch (err) {
+          if (err instanceof AttachmentValidationError) {
+            setError(err.message);
+          } else {
+            setError(formatError(err));
+          }
+          break;
+        }
+      }
+      if (accepted.length > 0) {
+        setPendingAttachments((prev) => [...prev, ...accepted]);
+        setError(null);
+      }
+    },
+    [effectiveProvider, pendingAttachments.length, supportsImages],
+  );
+
+  const onPaste = useCallback(
+    (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i];
+        if (item && item.kind === 'file' && item.type.startsWith('image/')) {
+          const f = item.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length > 0) {
+        event.preventDefault();
+        void ingestFiles(files);
+      }
+    },
+    [ingestFiles],
+  );
+
+  const onDragEnter = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    dragDepth.current += 1;
+    setIsDragging(true);
+  };
+
+  const onDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  };
+
+  const onDragLeave = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setIsDragging(false);
+  };
+
+  const onDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    dragDepth.current = 0;
+    setIsDragging(false);
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) void ingestFiles(files);
+  };
+
+  const onRemoveAttachment = (sha256: string) => {
+    setPendingAttachments((prev) => {
+      const target = prev.find((p) => p.sha256 === sha256);
+      if (target) revokePendingPreview(target);
+      return prev.filter((p) => p.sha256 !== sha256);
+    });
+  };
+
+  useEffect(() => {
+    // Cleanup any preview URLs still held when the component unmounts.
+    return () => {
+      for (const p of pendingAttachments) revokePendingPreview(p);
+    };
+    // Intentionally empty deps: we capture the closure at unmount time only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
@@ -375,7 +510,40 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             />
           </div>
         </div>
-        <div className="relative" ref={wrapperRef}>
+        {pendingAttachments.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {pendingAttachments.map((att) => (
+              <div
+                key={att.sha256}
+                className="group relative h-14 w-14 overflow-hidden rounded-md border border-border bg-muted"
+                title={`${att.mime} · ${Math.round(att.sizeBytes / 1024)} KB`}
+              >
+                <img
+                  src={att.previewUrl}
+                  alt="attachment preview"
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => onRemoveAttachment(att.sha256)}
+                  aria-label="remove attachment"
+                  title="remove attachment"
+                  className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <X size={10} aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div
+          className={`relative ${isDragging ? 'rounded-md ring-2 ring-info/60' : ''}`}
+          ref={wrapperRef}
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
           {showPopover && isSlashMode ? (
             <SlashCommandPopover
               items={workspaceSkills}
@@ -388,6 +556,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
             onKeyDown={onKeyDown}
+            onPaste={onPaste}
             placeholder={
               providerDisconnected
                 ? 'Sign in to send a message.'
@@ -395,7 +564,9 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                   ? queued
                     ? 'Message queued — type to replace.'
                     : 'Turn running — type to queue next message.'
-                  : 'Message Claude. Shift+enter for newline.'
+                  : supportsImages
+                    ? 'Message Claude. Shift+enter for newline. Drop or paste images to attach.'
+                    : 'Message Claude. Shift+enter for newline.'
             }
             disabled={providerDisconnected}
             autoGrow
