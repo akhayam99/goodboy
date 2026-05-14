@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@kay-am/types';
-import { extractFilesTouched, extractMarkers, mergeIntoSlot } from './extractors';
+import {
+  extractFilesTouched,
+  extractMarkers,
+  extractPlanFromMarker,
+  mergeIntoSlot,
+} from './extractors';
 
 function fileEdit(path: string): TurnEvent {
   return {
@@ -89,6 +94,60 @@ line three<</ctx-decision>>`;
     expect(extractMarkers(text).decisions).toEqual(['x']);
     expect(extractMarkers(text).decisions).toEqual(['x']);
     expect(extractMarkers(text).decisions).toEqual(['x']);
+  });
+});
+
+describe('extractPlanFromMarker', () => {
+  it('returns null when no plan marker present', () => {
+    expect(extractPlanFromMarker('no plan here')).toBeNull();
+  });
+
+  it('extracts title from first non-empty line and body as markdown rest', () => {
+    const text = `prose before. <<plan>>migrate auth to oauth2
+- step 1: scaffolding
+- step 2: token exchange<</plan>>`;
+    expect(extractPlanFromMarker(text)).toEqual({
+      title: 'migrate auth to oauth2',
+      bodyMd: '- step 1: scaffolding\n- step 2: token exchange',
+    });
+  });
+
+  it('strips leading # from title', () => {
+    const text = `<<plan>>### refactor everything
+
+body line.<</plan>>`;
+    const out = extractPlanFromMarker(text);
+    expect(out?.title).toBe('refactor everything');
+    expect(out?.bodyMd).toBe('body line.');
+  });
+
+  it('falls back to title-as-body when body empty', () => {
+    const text = '<<plan>>only title<</plan>>';
+    expect(extractPlanFromMarker(text)).toEqual({
+      title: 'only title',
+      bodyMd: 'only title',
+    });
+  });
+
+  it('returns null when marker content is whitespace only', () => {
+    const text = '<<plan>>   \n  <</plan>>';
+    expect(extractPlanFromMarker(text)).toBeNull();
+  });
+
+  it('picks the LAST plan when multiple emitted in a turn', () => {
+    const text = `<<plan>>first
+body 1<</plan>>
+intermediate prose
+<<plan>>final
+body 2<</plan>>`;
+    expect(extractPlanFromMarker(text)?.title).toBe('final');
+  });
+
+  it('survives repeat calls (no leaked lastIndex)', () => {
+    const text = '<<plan>>x\nb<</plan>>';
+    expect(extractPlanFromMarker(text)?.title).toBe('x');
+    expect(extractPlanFromMarker(text)?.title).toBe('x');
+    expect(extractPlanFromMarker(text)?.title).toBe('x');
   });
 });
 

@@ -85,6 +85,9 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
+  Plan,
+  PlanId,
+  PlanStatus,
   Step,
   StepId,
   Session,
@@ -118,6 +121,7 @@ import {
   computeCostUsd,
   computeCodexCostUsd,
   computeCursorCostUsd,
+  extractPlanFromMarker,
   getPrForBranch,
   fetchLinkedIssues,
   detectRepoSlug,
@@ -205,6 +209,13 @@ import {
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../errors';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../agent-kind';
+import {
+  deletePlan as invokeDeletePlan,
+  listPlansForSession as invokeListPlansForSession,
+  setPlanBody as invokeSetPlanBody,
+  setPlanStatus as invokeSetPlanStatus,
+  upsertPlan as invokeUpsertPlan,
+} from '../plans';
 import { slotsForKind } from '../slot-routing';
 import { estimateTokens } from '../utils/estimate-tokens';
 
@@ -295,6 +306,7 @@ export interface AppState {
   readonly agentModelOverride: Readonly<Record<SessionId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
+  readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
 }
 
 export interface SessionGithubState {
@@ -451,6 +463,10 @@ export interface AppActions {
   ): Promise<void>;
   markNotificationsRead(): Promise<void>;
   clearNotifications(): Promise<void>;
+  loadSessionPlans(taskId: TaskId): Promise<void>;
+  setPlanStatus(taskId: TaskId, planId: PlanId, status: PlanStatus): Promise<void>;
+  updatePlanBody(taskId: TaskId, planId: PlanId, title: string, bodyMd: string): Promise<void>;
+  deletePlan(taskId: TaskId, planId: PlanId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -506,6 +522,7 @@ const initialState: AppState = {
   agentModelOverride: {},
   diffComments: {},
   notifications: [],
+  sessionPlans: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -780,6 +797,58 @@ async function runSummarizer(
     void get().emitNotification('error', 'error', 'summarizer failed', message, {
       sessionId: taskId,
     });
+  }
+}
+
+async function buildPlanKickoffSection(taskId: TaskId): Promise<string> {
+  try {
+    const plans = await invokeListPlansForSession(taskId);
+    const plan = plans[0];
+    if (!plan) return '';
+    if (plan.status === 'completed') {
+      return [
+        'The most recent plan in this session was completed and should NOT be re-executed. Provided for context only:',
+        '',
+        plan.bodyMd,
+      ].join('\n');
+    }
+    if (plan.status === 'superseded') return '';
+    return ['Active plan to execute:', '', plan.bodyMd].join('\n');
+  } catch {
+    return '';
+  }
+}
+
+function composeKickoff(planSection: string, baseKickoff: string): string {
+  if (planSection.length === 0) return baseKickoff;
+  if (baseKickoff.length === 0) return planSection;
+  return `${planSection}\n\n${baseKickoff}`;
+}
+
+async function capturePlanFromTurn(
+  set: SetFn,
+  taskId: TaskId,
+  agentId: SessionId,
+  assistantText: string,
+): Promise<void> {
+  try {
+    const extracted = extractPlanFromMarker(assistantText);
+    if (!extracted) return;
+    await invokeUpsertPlan({
+      sessionId: taskId,
+      agentId,
+      title: extracted.title,
+      bodyMd: extracted.bodyMd,
+      status: 'active',
+    });
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn(`[plan-capture] failed for session ${taskId}: ${formatError(err)}`);
+    }
   }
 }
 
@@ -1125,12 +1194,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCurrentSession: async (id) => {
     set({ currentSessionId: id, sessionSummary: null });
     if (id) {
-      const [summary, telemetry, slots, agents, agentRunIds] = await Promise.all([
+      const safePlans = (): Promise<ReadonlyArray<Plan>> => {
+        try {
+          return invokeListPlansForSession(id).catch(() => [] as ReadonlyArray<Plan>);
+        } catch {
+          return Promise.resolve([] as ReadonlyArray<Plan>);
+        }
+      };
+      const [summary, telemetry, slots, agents, agentRunIds, plans] = await Promise.all([
         summarizeTaskTelemetry(tauriDatabase, id),
         listTelemetryForTask(tauriDatabase, id),
         listContextSlotsForTask(tauriDatabase, id),
         invokePhaseRunList(id),
         listAgentRunIdsForTask(tauriDatabase, id),
+        safePlans(),
       ]);
       // Pick the previously-selected agent if it still exists, else the
       // lowest-ordinal one (= default "agent 1" or first workflow step).
@@ -1194,6 +1271,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
         sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
         sessionSlots: { ...state.sessionSlots, [id]: slots },
+        sessionPlans: { ...state.sessionPlans, [id]: plans },
         agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
         agentTurnState: { ...state.agentTurnState, ...seededTurnState },
       }));
@@ -2332,6 +2410,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (!lastError && assistantText.length > 0) {
       enqueueSummarizer(set, get, taskId, resolvedPrompt, assistantText);
+      void capturePlanFromTurn(set, taskId, activeAgentId, assistantText);
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === taskId);
         if (sessionForTitle && !sessionForTitle.titleUserEdited) {
@@ -2487,6 +2566,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clearNotifications: async () => {
     await clearAllNotifications(tauriDatabase);
     set({ notifications: [] });
+  },
+
+  loadSessionPlans: async (taskId) => {
+    const plans = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: plans },
+    }));
+  },
+
+  setPlanStatus: async (taskId, planId, status) => {
+    await invokeSetPlanStatus(planId, status);
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
+  },
+
+  updatePlanBody: async (taskId, planId, title, bodyMd) => {
+    await invokeSetPlanBody(planId, title, bodyMd);
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
+  },
+
+  deletePlan: async (taskId, planId) => {
+    await invokeDeletePlan(planId);
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
   },
 
   toggleSessionSlot: async (taskId, key, enabled) => {
@@ -2856,7 +2966,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
       }),
     }));
-    const kickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
+    const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
+    const planSection = await buildPlanKickoffSection(taskId);
+    const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
       void get().sendTurn({ taskId, content: kickoff });
     }

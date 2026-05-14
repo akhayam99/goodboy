@@ -5,6 +5,8 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
+  useMostRecentPlan,
+  useSessionPlans,
   useSessionSlots,
   useSessionNextActions,
   useSlotHistory,

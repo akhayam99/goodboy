@@ -117,3 +117,11 @@ export {
   type NotificationKind,
   type NotificationSeverity,
 } from './queries/notification';
+export {
+  listPlansForSession,
+  upsertPlan,
+  updatePlanStatus,
+  updatePlanBody,
+  deletePlan,
+  type UpsertPlanInput,
+} from './queries/plan';

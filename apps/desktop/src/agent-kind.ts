@@ -79,7 +79,7 @@ export const AGENT_KIND_DEFAULTS: Record<
     model: 'claude-opus-4-5',
     effort: 'high',
     systemPrompt:
-      'you are a planning agent. analyze the goal, break it into ordered steps, identify risks and dependencies. do not implement — produce a plan the implementer agent will execute. be concise.',
+      'you are a planning agent. analyze the goal, break it into ordered steps, identify risks and dependencies. do not implement — produce a plan the implementer agent will execute. be concise. wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. the first line of the plan body is the title; the rest is markdown. emit exactly one plan block per turn.',
   },
 };
 

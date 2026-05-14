@@ -14,18 +14,24 @@ import {
   Loader2,
   Copy,
   X,
+  ChevronRight,
+  ChevronDown,
   FileEdit,
   Target,
   CheckCheck,
   HelpCircle,
   Activity,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Button, cn } from '@kay-am/ui';
+import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
+  Plan,
+  PlanStatus,
+  Session,
   Task,
   TaskId,
   TelemetryRecord,
@@ -36,6 +42,7 @@ import {
   useAppStore,
   useDiffComments,
   useFilesTouched,
+  useSessionPlans,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
@@ -202,6 +209,8 @@ export function ContextPanel({
             </header>
 
             <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
+
+            <PlansSection taskId={session.id} />
 
             <ul className="flex flex-col gap-6">
               {visibleSlotKeys.map((key) => {
@@ -848,4 +857,159 @@ function SummarizerBadge({
       {labels[status]}
     </span>
   );
+}
+
+const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
+  active: 'bg-success/10 text-success',
+  completed: 'bg-muted text-muted-foreground',
+  superseded: 'bg-warning/10 text-warning',
+};
+
+function PlansSection({ taskId }: { taskId: TaskId }) {
+  const plans = useSessionPlans(taskId);
+  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
+  const agents = useAppStore(
+    (s) => s.sessionPhaseRuns[taskId] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
+  );
+
+  useEffect(() => {
+    void loadSessionPlans(taskId);
+  }, [taskId, loadSessionPlans]);
+
+  if (plans.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2">
+      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <ClipboardList size={11} aria-hidden className="text-primary" />
+        plans
+      </span>
+      <ul className="flex flex-col gap-1.5">
+        {plans.map((plan) => (
+          <PlanRow
+            key={plan.id}
+            taskId={taskId}
+            plan={plan}
+            agentName={agents.find((a) => a.id === plan.agentId)?.name ?? 'unknown agent'}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+interface PlanRowProps {
+  readonly taskId: TaskId;
+  readonly plan: Plan;
+  readonly agentName: string;
+}
+
+function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(planToSource(plan));
+  const setPlanStatus = useAppStore((s) => s.setPlanStatus);
+  const updatePlanBody = useAppStore((s) => s.updatePlanBody);
+
+  useEffect(() => {
+    if (!editing) setDraft(planToSource(plan));
+  }, [plan, editing]);
+
+  const toggleStatus = () => {
+    const next: PlanStatus = plan.status === 'active' ? 'completed' : 'active';
+    void setPlanStatus(taskId, plan.id, next);
+  };
+
+  const commit = () => {
+    setEditing(false);
+    const next = parsePlanSource(draft);
+    if (next.title.length === 0) return;
+    if (next.title === plan.title && next.bodyMd === plan.bodyMd) return;
+    void updatePlanBody(taskId, plan.id, next.title, next.bodyMd);
+  };
+
+  const Chevron = expanded ? ChevronDown : ChevronRight;
+
+  return (
+    <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+          title={expanded ? 'collapse plan' : 'expand plan'}
+        >
+          <Chevron size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+          <span className="truncate text-xs font-medium text-foreground">{plan.title}</span>
+        </button>
+        <button
+          type="button"
+          onClick={toggleStatus}
+          title={`mark as ${plan.status === 'active' ? 'completed' : 'active'}`}
+          className={cn(
+            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+            PLAN_STATUS_STYLE[plan.status],
+          )}
+        >
+          {plan.status}
+        </button>
+      </div>
+      <span className="text-2xs text-muted-foreground">by {agentName}</span>
+      {expanded ? (
+        editing ? (
+          <Textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                setDraft(planToSource(plan));
+                setEditing(false);
+              }
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                commit();
+              }
+            }}
+            className="font-mono text-xs"
+            autoGrow
+            maxRows={24}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            title="edit plan source"
+            className="rounded-md border border-transparent px-1 py-1 text-left hover:border-border-soft hover:bg-muted/40"
+          >
+            <Markdown text={plan.bodyMd} className="text-xs" />
+          </button>
+        )
+      ) : null}
+    </li>
+  );
+}
+
+function planToSource(plan: Plan): string {
+  const head = plan.title.startsWith('#') ? plan.title : `# ${plan.title}`;
+  return plan.bodyMd.length > 0 ? `${head}\n\n${plan.bodyMd}` : head;
+}
+
+function parsePlanSource(raw: string): { title: string; bodyMd: string } {
+  const lines = raw.split('\n');
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if ((lines[i] ?? '').trim().length > 0) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return { title: '', bodyMd: '' };
+  const titleLine = (lines[firstIdx] ?? '').trim();
+  const title = titleLine.replace(/^#+\s*/, '').trim();
+  const restLines = lines.slice(firstIdx + 1);
+  const bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  return { title, bodyMd };
 }
