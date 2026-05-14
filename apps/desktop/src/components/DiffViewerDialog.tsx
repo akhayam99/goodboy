@@ -70,6 +70,9 @@ const STATUS_COLOR: Record<FileDiffStatus, string> = {
 
 const SIDEBAR_PREF_KEY = STORAGE_KEYS.diffSidebarCollapsed;
 
+const TOOLBAR_ICON_BTN =
+  'rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+
 type TreeNode =
   | {
       kind: 'dir';
@@ -516,7 +519,7 @@ function Toolbar({
       <button
         type="button"
         onClick={onToggleSidebar}
-        className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        className={TOOLBAR_ICON_BTN}
         title={sidebarCollapsed ? 'show file list' : 'hide file list'}
         aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
       >
@@ -568,7 +571,7 @@ function Toolbar({
             onClick={onOpenInEditor}
             title="open file in editor"
             aria-label="open file in editor"
-            className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className={TOOLBAR_ICON_BTN}
           >
             <ExternalLink size={12} />
           </button>
@@ -578,7 +581,7 @@ function Toolbar({
           onClick={onPrev}
           title="previous file (k)"
           aria-label="previous file"
-          className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={TOOLBAR_ICON_BTN}
         >
           <ChevronLeft size={13} />
         </button>
@@ -587,7 +590,7 @@ function Toolbar({
           onClick={onNext}
           title="next file (j)"
           aria-label="next file"
-          className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={TOOLBAR_ICON_BTN}
         >
           <ChevronRight size={13} />
         </button>
@@ -596,7 +599,7 @@ function Toolbar({
           onClick={onClose}
           title="close"
           aria-label="close"
-          className="ml-1 rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={cn('ml-1', TOOLBAR_ICON_BTN)}
         >
           <X size={13} />
         </button>
@@ -728,7 +731,7 @@ function TreeNodeView({
   }
 
   return (
-    <div>
+    <>
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
@@ -757,7 +760,7 @@ function TreeNodeView({
             />
           ))
         : null}
-    </div>
+    </>
   );
 }
 

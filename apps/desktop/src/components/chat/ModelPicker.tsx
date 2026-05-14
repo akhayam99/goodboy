@@ -23,6 +23,9 @@ import {
   subfamilyTier,
 } from './chat-constants';
 
+const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
+const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+
 export interface ModelPickerProps {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly models: ReadonlyArray<string>;
@@ -146,14 +149,13 @@ export function ModelPicker({
         >
           {/* Provider */}
           <PickerSection label="Provider">
-            <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+            <div className={CHIP_ROW}>
               {providers.map((id) => {
                 const isConnected = connectedProviders.includes(id);
                 const active = provider === id;
                 const chipTone = (() => {
                   if (active) return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
-                  if (isConnected)
-                    return 'text-muted-foreground hover:bg-muted hover:text-foreground';
+                  if (isConnected) return CHIP_INACTIVE;
                   return 'text-muted-foreground/35 hover:bg-muted/50';
                 })();
                 return (
@@ -228,7 +230,7 @@ export function ModelPicker({
           {/* Effort — always visible */}
           <PickerSection label="Effort">
             {showEffort && effortLevels ? (
-              <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+              <div className={CHIP_ROW}>
                 {effortLevels.map((level) => (
                   <button
                     key={level}
@@ -238,7 +240,7 @@ export function ModelPicker({
                       'rounded px-2 py-0.5 transition-colors',
                       effort === level
                         ? cn('bg-muted font-semibold', EFFORT_TEXT[level])
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        : CHIP_INACTIVE,
                     )}
                   >
                     {EFFORT_LABEL[level]}
@@ -255,7 +257,7 @@ export function ModelPicker({
 
           {/* Verbosity */}
           <PickerSection label="Verbosity">
-            <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+            <div className={CHIP_ROW}>
               {VERBOSITY_LEVELS.map((level) => (
                 <button
                   key={level}
@@ -265,7 +267,7 @@ export function ModelPicker({
                     'rounded px-2 py-0.5 transition-colors',
                     verbosity === level
                       ? cn('bg-muted font-semibold', VERBOSITY_TEXT[level])
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      : CHIP_INACTIVE,
                   )}
                 >
                   {VERBOSITY_LABEL[level]}
@@ -326,9 +328,7 @@ function SubfamilyVariantRow({
               title={id}
               className={cn(
                 'rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors',
-                selected
-                  ? cn('bg-muted font-semibold', TIER_TEXT[t])
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                selected ? cn('bg-muted font-semibold', TIER_TEXT[t]) : CHIP_INACTIVE,
               )}
             >
               {chip}
@@ -352,7 +352,7 @@ function FlatVariantRow({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+    <div className={CHIP_ROW}>
       {ids.map((id) => {
         const selected = selectedModel === id;
         const t = modelTier(id);
@@ -365,9 +365,7 @@ function FlatVariantRow({
             title={id}
             className={cn(
               'rounded-full px-2.5 py-0.5 text-xs transition-colors',
-              selected
-                ? cn('bg-muted font-semibold', TIER_TEXT[t])
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              selected ? cn('bg-muted font-semibold', TIER_TEXT[t]) : CHIP_INACTIVE,
             )}
           >
             {chip}
