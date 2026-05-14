@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
+  Copy,
   ExternalLink,
   Loader2,
   MessageSquarePlus,
@@ -14,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { Dialog, ScrollArea, Textarea, cn } from '@kay-am/ui';
+import { useToast } from './Toast';
 import { parseUnifiedDiff } from '@kay-am/core';
 import type {
   DiffComment,
@@ -667,7 +669,23 @@ function TreeNodeView({
   commentCounts: Map<string, number>;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const [pathCopied, setPathCopied] = useState(false);
+  const { showToast } = useToast();
   const indent = depth * 10;
+
+  const copyPath = (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(path).then(
+      () => {
+        setPathCopied(true);
+        showToast('success', 'path copied');
+        window.setTimeout(() => setPathCopied(false), 1500);
+      },
+      () => {
+        showToast('error', 'failed to copy path');
+      },
+    );
+  };
 
   if (node.kind === 'file') {
     const { file, index } = node;
@@ -712,6 +730,15 @@ function TreeNodeView({
             {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
           </span>
         </button>
+        <button
+          type="button"
+          onClick={(e) => copyPath(file.path, e)}
+          title="copy path"
+          aria-label="copy file path"
+          className="shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+        >
+          {pathCopied ? <Check size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
+        </button>
         {onStartFileComment ? (
           <button
             type="button"
@@ -721,7 +748,7 @@ function TreeNodeView({
             }}
             title="add file-level note"
             aria-label="add file-level note"
-            className="mr-1 shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+            className="shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
           >
             <MessageSquarePlus size={10} aria-hidden />
           </button>
