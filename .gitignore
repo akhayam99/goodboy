@@ -42,4 +42,3 @@ coverage/
 .claude/launch.json
 .claude/scheduled_tasks.lock
 .kay-am/
-REFACTOR_PROMPT.md
