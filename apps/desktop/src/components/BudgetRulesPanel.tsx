@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Select } from '@kay-am/ui';
 import type { BudgetRule, ProviderName } from '@kay-am/types';
+import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
 const PROVIDER_OPTIONS: ProviderName[] = ['anthropic', 'cursor', 'codex'];
@@ -68,7 +69,7 @@ export function BudgetRulesPanel() {
       setForm(emptyForm());
       setShowForm(false);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : String(err));
+      setFormError(formatError(err));
     } finally {
       setSaving(false);
     }

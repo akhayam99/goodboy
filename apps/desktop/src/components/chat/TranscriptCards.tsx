@@ -8,7 +8,7 @@ import { SkillInvocationCard } from './SkillInvocationCard';
 import { PhaseTransitionCard } from './PhaseTransitionCard';
 import { PermissionRequestCard } from './PermissionRequestCard';
 import { PermissionDecisionCard } from './PermissionDecisionCard';
-import { displayPath } from '../../utils/displayPath';
+import { displayPath } from '../../utils/display-path';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',

@@ -109,7 +109,7 @@ vi.mock('../../worktree', () => ({
 
 vi.mock('../../repo', () => ({ validateGitRepo: vi.fn() }));
 
-vi.mock('../../providerPricing', () => ({
+vi.mock('../../provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),

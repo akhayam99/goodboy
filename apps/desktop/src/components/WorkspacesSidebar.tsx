@@ -68,16 +68,17 @@ import {
   formatCost,
   formatTokens,
   shortModel,
-} from '../agentRowFormat';
+} from '../agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
-} from '../agentKind';
-import { spawnFromNextAction, spawnKindForAction } from '../spawnFromNextAction';
+} from '../agent-kind';
+import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
 import { openUrl } from '../editor';
+import { formatError } from '../errors';
 import { useThemeStore } from '../theme';
 import { STORAGE_KEYS } from '../storage-keys';
 
@@ -828,7 +829,7 @@ function SessionRow({
       setRenaming(false);
       setRenameError(null);
     } catch (err) {
-      setRenameError(err instanceof Error ? err.message : String(err));
+      setRenameError(formatError(err));
     }
   };
 
@@ -1096,7 +1097,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
       reset();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }
@@ -1376,7 +1377,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     try {
       await spawnAgent(task.id, stepId ? { stepId, ...(model !== undefined && { model }) } : {});
     } catch (err) {
-      setSpawnError(err instanceof Error ? err.message : String(err));
+      setSpawnError(formatError(err));
     }
   };
 
@@ -1385,7 +1386,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     try {
       await renameAgent(task.id, id, name);
     } catch (err) {
-      setSpawnError(err instanceof Error ? err.message : String(err));
+      setSpawnError(formatError(err));
     }
   };
 
@@ -1393,7 +1394,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     try {
       await deleteAgent(task.id, id);
     } catch (err) {
-      setSpawnError(err instanceof Error ? err.message : String(err));
+      setSpawnError(formatError(err));
     }
   };
 
@@ -2017,7 +2018,7 @@ export function BulkSessionDeleteDialog({
       );
       onDeleted();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(false);
     }

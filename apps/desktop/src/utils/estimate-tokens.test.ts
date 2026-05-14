@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateTokens } from './estimateTokens';
+import { estimateTokens } from './estimate-tokens';
 
 describe('estimateTokens', () => {
   it('empty string → 0', () => {

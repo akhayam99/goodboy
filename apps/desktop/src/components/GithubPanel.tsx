@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitFork as GithubIcon, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Input, cn } from '@kay-am/ui';
+import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -29,7 +30,7 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
       setSave('saved');
     } catch (err) {
       setSave('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 
@@ -41,7 +42,7 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
       setSave('saved');
     } catch (err) {
       setSave('error');
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     }
   };
 

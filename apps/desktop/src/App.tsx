@@ -12,7 +12,7 @@ import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
-import { refreshPricingTable } from './providerPricing';
+import { refreshPricingTable } from './provider-pricing';
 import { STORAGE_PREFIXES } from './storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: TaskId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Input, Select, Textarea } from '@kay-am/ui';
 import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
+import { formatError } from '../errors';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../phases';
 
@@ -120,7 +121,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       await savePhaseTemplate(args);
       setEditing(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : String(err));
+      setFormError(formatError(err));
     } finally {
       setSaving(false);
     }

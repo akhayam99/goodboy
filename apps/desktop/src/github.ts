@@ -7,6 +7,7 @@ import {
   deleteGithubPrCache,
   type Database,
 } from '@kay-am/db';
+import { formatError } from './errors';
 
 interface RawGhRunResult {
   stdout: string;
@@ -33,7 +34,7 @@ export async function ghStatus(): Promise<GhTokenStatus> {
       scopes: raw.scopes,
     };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = formatError(err);
     throw new Error(`gh status check failed: ${msg}`, { cause: err });
   }
 }
@@ -49,7 +50,7 @@ export async function ghSetToken(token: string): Promise<GhTokenStatus> {
       scopes: raw.scopes,
     };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = formatError(err);
     throw new Error(`gh set token failed: ${msg}`, { cause: err });
   }
 }
@@ -58,7 +59,7 @@ export async function ghClearToken(): Promise<void> {
   try {
     await invoke('gh_clear_token');
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = formatError(err);
     throw new Error(`gh clear token failed: ${msg}`, { cause: err });
   }
 }
@@ -67,7 +68,7 @@ export async function ghPrDiff(repo: string, pr: number, cwd?: string): Promise<
   try {
     return await invoke<string>('gh_pr_diff', { repo, pr, cwd });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = formatError(err);
     throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
   }
 }
@@ -85,7 +86,7 @@ export const tauriGhRunner: GhRunner = {
         exitCode: raw.exitCode,
       };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = formatError(err);
       throw new Error(`gh run [${args.join(' ')}] failed: ${msg}`, { cause: err });
     }
   },
@@ -140,7 +141,7 @@ export function createTauriPrCacheStore(db: Database): PrCacheStore {
         const entry = await getGithubPrCache(db, repoSlug, branch);
         return entry as GithubPrCacheEntry | null;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = formatError(err);
         throw new Error(`PR cache get for ${repoSlug}/${branch} failed: ${msg}`, { cause: err });
       }
     },
@@ -148,7 +149,7 @@ export function createTauriPrCacheStore(db: Database): PrCacheStore {
       try {
         await upsertGithubPrCache(db, entry);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = formatError(err);
         throw new Error(`PR cache upsert for ${entry.repoSlug}/${entry.branch} failed: ${msg}`, {
           cause: err,
         });
@@ -158,7 +159,7 @@ export function createTauriPrCacheStore(db: Database): PrCacheStore {
       try {
         await deleteGithubPrCache(db, repoSlug, branch);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = formatError(err);
         throw new Error(`PR cache invalidate for ${repoSlug}/${branch} failed: ${msg}`, {
           cause: err,
         });
