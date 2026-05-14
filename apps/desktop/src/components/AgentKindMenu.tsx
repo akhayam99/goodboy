@@ -54,7 +54,7 @@ export function AgentKindMenu({ kind, agentLabel, onPick }: AgentKindMenuProps) 
       {open ? (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-1 flex min-w-[8rem] flex-col rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
+          className="absolute left-0 top-full z-50 mt-1 flex min-w-[8rem] flex-col rounded-md border border-border bg-subtle p-1 text-foreground shadow-md"
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
         >
