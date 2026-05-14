@@ -57,8 +57,7 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
           await createPrForSession(taskId);
           break;
         case 'merge_pr':
-          // TODO (#425 follow-up): no merge action exists in the store yet.
-          // The chip stays a no-op so the user sees no failure.
+          // No-op until #415 lands the merge action on the store.
           break;
       }
       clearSessionNextActions(taskId);
