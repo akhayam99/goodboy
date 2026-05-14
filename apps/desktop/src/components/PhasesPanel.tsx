@@ -147,15 +147,15 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">workflows</div>
+        <div className="text-xs font-semibold text-foreground">Workflows</div>
         <Button variant="ghost" size="sm" onClick={openNew}>
-          new workflow
+          New workflow
         </Button>
       </div>
 
       {templates.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          no workflows for this workspace. create one to chain multiple agents per session.
+          No workflows for this workspace. Create one to chain multiple agents per session.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
@@ -199,14 +199,14 @@ function TemplateRow({
           className="text-xs text-muted-foreground underline hover:text-foreground"
           onClick={onEdit}
         >
-          edit
+          Edit
         </button>
         <button
           type="button"
           className="text-xs text-muted-foreground underline hover:text-danger"
           onClick={onDelete}
         >
-          delete
+          Delete
         </button>
       </div>
     </li>
@@ -262,7 +262,7 @@ function PhaseEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="text-xs font-semibold text-foreground">
-        {isNew ? 'new workflow' : 'edit workflow'}
+        {isNew ? 'New workflow' : 'Edit workflow'}
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
@@ -314,10 +314,10 @@ function PhaseEditor({
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-            cancel
+            Cancel
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
-            {saving ? 'saving…' : 'save'}
+            {saving ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </div>

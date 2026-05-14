@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Code2, Info, MousePointer2, Sparkles } from 'lucide-react';
+import { Code2, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Tooltip, cn } from '@kay-am/ui';
+import { Tooltip, cn } from '@kay-am/ui';
 import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
 import type { ProviderId } from '../providers';
@@ -9,10 +9,10 @@ import { useAppStore } from '../store';
 import { openUrl } from '../editor';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
-  connected: 'connected',
-  installed_disconnected: 'not logged in',
-  missing: 'not installed',
-  error: 'error',
+  connected: 'Connected',
+  installed_disconnected: 'Not logged in',
+  missing: 'Not installed',
+  error: 'Error',
 };
 
 const STATE_DOT: Record<ProviderConnectionState, string> = {
@@ -73,30 +73,36 @@ export function ProvidersPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">providers</div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void onRefresh()}
-          disabled={refreshing}
-          title="re-detect installed CLIs"
-        >
-          {refreshing ? 'refreshing…' : 'refresh all'}
-        </Button>
+        <div className="text-xs font-semibold text-foreground">Providers</div>
+        <Tooltip content="Re-detect installed CLIs" side="top">
+          <button
+            type="button"
+            aria-label="Re-detect installed CLIs"
+            disabled={refreshing}
+            onClick={() => void onRefresh()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          >
+            <RotateCw size={14} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
       {ordered.length === 0 ? (
-        <p className="text-2xs text-muted-foreground">no providers configured</p>
+        <p className="text-2xs text-muted-foreground">No providers configured</p>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2.5">
           {ordered.map((p) => (
             <ProviderTile key={p.id} info={p} onRefresh={onRefresh} />
           ))}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        kay-am orchestrates via each provider's CLI. login is handled by the CLI itself (e.g. run{' '}
-        <code className="rounded bg-muted px-1">claude</code> in a terminal once).
-      </p>
+      <div className="flex items-start gap-1.5 text-2xs text-muted-foreground">
+        <Info size={11} aria-hidden className="mt-0.5 shrink-0" />
+        <span>
+          Sign in once via each provider's CLI (e.g. run{' '}
+          <code className="rounded bg-muted px-1">claude</code> in a terminal). kay-am picks up the
+          credentials.
+        </span>
+      </div>
     </div>
   );
 }
@@ -111,26 +117,28 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
 
   return (
     <div
-      className="relative flex min-h-[200px] flex-col items-center gap-2.5 overflow-hidden rounded-lg border bg-subtle p-4 shadow-sm transition-colors"
+      className="relative flex flex-col items-center gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
       style={{
         borderColor: `color-mix(in oklch, ${color} 25%, var(--color-border-soft))`,
       }}
     >
-      <Tooltip content={STATE_LABEL[info.connection]} side="top">
-        <span
-          aria-hidden
-          className={cn(
-            'absolute left-3 top-3 inline-block h-2 w-2 shrink-0 rounded-full',
-            STATE_DOT[info.connection],
-          )}
-        />
-      </Tooltip>
+      {info.connection !== 'connected' ? (
+        <Tooltip content={STATE_LABEL[info.connection]} side="top">
+          <span
+            aria-hidden
+            className={cn(
+              'absolute left-2.5 top-2.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+              STATE_DOT[info.connection],
+            )}
+          />
+        </Tooltip>
+      ) : null}
       <TileCaveat info={info} />
 
       <div
         aria-hidden
         className={cn(
-          'mt-2 flex h-14 w-14 items-center justify-center rounded-full transition-opacity',
+          'mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-opacity',
           dim && 'opacity-50',
         )}
         style={{
@@ -138,7 +146,7 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
           color,
         }}
       >
-        <Icon size={26} strokeWidth={2} />
+        <Icon size={18} strokeWidth={2} />
       </div>
 
       <div className="flex flex-col items-center gap-0.5">
@@ -150,7 +158,7 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
 
       <TileStatus info={info} />
 
-      <div className="mt-auto w-full">
+      <div className="mt-1 w-full">
         <TileAction info={info} onRefresh={onRefresh} />
       </div>
     </div>
@@ -160,21 +168,21 @@ function ProviderTile({ info, onRefresh }: { info: ProviderInfo; onRefresh: () =
 function TileCaveat({ info }: { info: ProviderInfo }) {
   const caveats: string[] = [];
   if (info.id !== 'anthropic') {
-    caveats.push('permission proxy not supported');
+    caveats.push('Permission proxy not supported');
   }
   if (info.connection === 'connected') {
     caveats.push(
       info.id === 'anthropic'
-        ? 'quota info unavailable (anthropic does not expose it via the cli)'
-        : 'quota info unavailable',
+        ? 'Quota info unavailable (anthropic does not expose it via the cli)'
+        : 'Quota info unavailable',
     );
   }
   if (caveats.length === 0) return null;
 
   return (
-    <Tooltip content={caveats.join(' · ')} side="top">
-      <span className="absolute right-3 top-3 inline-flex cursor-default text-muted-foreground/70">
-        <Info size={12} aria-hidden />
+    <Tooltip content={caveats.join(' · ')} side="bottom">
+      <span className="absolute right-2.5 top-2.5 inline-flex cursor-default text-muted-foreground/70">
+        <Info size={11} aria-hidden />
       </span>
     </Tooltip>
   );
@@ -187,7 +195,7 @@ function TileStatus({ info }: { info: ProviderInfo }) {
         className="max-w-full truncate text-2xs text-muted-foreground"
         title={info.identity ?? ''}
       >
-        {info.identity ?? 'no identity reported'}
+        {info.identity ?? 'No identity found'}
       </div>
     );
   }
@@ -220,7 +228,7 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
         className="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs text-primary hover:bg-muted"
         onClick={() => void openUrl(info.docsUrl)}
       >
-        install ↗
+        Install ↗
       </button>
     );
   }
@@ -232,7 +240,7 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
         className="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs hover:bg-muted"
         onClick={() => void onRefresh()}
       >
-        retry
+        Retry
       </button>
     );
   }
@@ -246,17 +254,17 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
           disabled={pending === 'login'}
           onClick={() => void onAction('login')}
         >
-          connect ↗
+          Connect ↗
         </button>
         {pending === 'login' ? (
           <span className="text-center text-2xs text-muted-foreground">
-            complete in terminal, then{' '}
+            Complete in terminal, then{' '}
             <button
               type="button"
               className="underline hover:text-foreground"
               onClick={() => void onRefresh()}
             >
-              refresh ↻
+              Refresh ↻
             </button>
           </span>
         ) : null}
@@ -268,10 +276,10 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="flex w-full items-stretch gap-1.5">
-        <Tooltip content="re-check identity" side="top">
+        <Tooltip content="Re-check identity" side="top">
           <button
             type="button"
-            aria-label="re-check identity"
+            aria-label="Re-check identity"
             className="rounded-md border border-border-soft px-2 text-xs hover:bg-muted"
             onClick={() => void onRefresh()}
           >
@@ -284,18 +292,18 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
           disabled={pending === 'logout'}
           onClick={() => void onAction('logout')}
         >
-          disconnect ↗
+          Disconnect ↗
         </button>
       </div>
       {pending === 'logout' ? (
         <span className="text-center text-2xs text-muted-foreground">
-          complete in terminal, then{' '}
+          Complete in terminal, then{' '}
           <button
             type="button"
             className="underline hover:text-foreground"
             onClick={() => void onRefresh()}
           >
-            refresh ↻
+            Refresh ↻
           </button>
         </span>
       ) : null}

@@ -239,6 +239,56 @@ fn extract_email(text: &str) -> Option<String> {
     None
 }
 
+/// base64url decoder (no padding, URL-safe alphabet). std-only.
+fn base64url_decode(s: &str) -> Option<Vec<u8>> {
+    let lookup = |c: u8| -> Option<u32> {
+        match c {
+            b'A'..=b'Z' => Some((c - b'A') as u32),
+            b'a'..=b'z' => Some((c - b'a' + 26) as u32),
+            b'0'..=b'9' => Some((c - b'0' + 52) as u32),
+            b'-' => Some(62),
+            b'_' => Some(63),
+            _ => None,
+        }
+    };
+    let mut out = Vec::with_capacity(s.len() * 3 / 4);
+    let mut buf: u32 = 0;
+    let mut bits: u32 = 0;
+    for c in s.bytes() {
+        let v = lookup(c)?;
+        buf = (buf << 6) | v;
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((buf >> bits) as u8);
+            buf &= (1 << bits) - 1;
+        }
+    }
+    Some(out)
+}
+
+/// Decode a JWT payload (`header.payload.signature`) and return the `email`
+/// claim. Codex stores its ChatGPT-login id_token in `~/.codex/auth.json`,
+/// which is the only carrier of the user's email when `codex login status`
+/// outputs a generic "Logged in using ChatGPT" line.
+fn extract_email_from_id_token(token: &str) -> Option<String> {
+    let payload_b64 = token.split('.').nth(1)?;
+    let payload_bytes = base64url_decode(payload_b64)?;
+    let payload: serde_json::Value = serde_json::from_slice(&payload_bytes).ok()?;
+    payload
+        .get("email")
+        .and_then(|v| v.as_str())
+        .map(String::from)
+}
+
+fn extract_codex_identity_from_auth_json() -> Option<String> {
+    let path = dirs::home_dir()?.join(".codex/auth.json");
+    let content = std::fs::read_to_string(path).ok()?;
+    let root: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let id_token = root.get("tokens")?.get("id_token")?.as_str()?;
+    extract_email_from_id_token(id_token)
+}
+
 fn check_claude_auth() -> AuthState {
     match run_auth_command(&["claude", "auth", "status"]) {
         Ok(out) => parse_claude_auth_output(&out.stdout),
@@ -386,7 +436,8 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
     {
         let identity = extract_email(first_line)
             .or_else(|| extract_json_string(output, "email"))
-            .or_else(|| extract_json_string(output, "username"));
+            .or_else(|| extract_json_string(output, "username"))
+            .or_else(extract_codex_identity_from_auth_json);
         return AuthState {
             state: AuthStateKind::Connected,
             identity,
@@ -626,6 +677,53 @@ mod tests {
     fn codex_ignores_leading_blank_lines() {
         let s = parse_codex_auth_output("\n\n  \nLogged in using ChatGPT\n");
         assert_eq!(s.state, AuthStateKind::Connected);
+    }
+
+    fn base64url_encode(bytes: &[u8]) -> String {
+        const ALPHA: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        let mut out = String::with_capacity(bytes.len() * 4 / 3 + 4);
+        let mut buf: u32 = 0;
+        let mut bits: u32 = 0;
+        for &b in bytes {
+            buf = (buf << 8) | b as u32;
+            bits += 8;
+            while bits >= 6 {
+                bits -= 6;
+                out.push(ALPHA[((buf >> bits) & 0x3f) as usize] as char);
+            }
+        }
+        if bits > 0 {
+            out.push(ALPHA[((buf << (6 - bits)) & 0x3f) as usize] as char);
+        }
+        out
+    }
+
+    #[test]
+    fn base64url_decode_roundtrip() {
+        let payload = b"{\"email\":\"a@b.com\"}";
+        let encoded = base64url_encode(payload);
+        let decoded = super::base64url_decode(&encoded).unwrap();
+        assert_eq!(decoded, payload);
+    }
+
+    #[test]
+    fn extract_email_from_id_token_decodes_jwt_payload() {
+        let header = base64url_encode(b"{\"alg\":\"RS256\"}");
+        let payload = base64url_encode(b"{\"email\":\"alice@example.com\",\"sub\":\"x\"}");
+        let token = format!("{}.{}.sig", header, payload);
+        assert_eq!(
+            super::extract_email_from_id_token(&token),
+            Some("alice@example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn extract_email_from_id_token_returns_none_on_garbage() {
+        assert_eq!(super::extract_email_from_id_token("not-a-jwt"), None);
+        assert_eq!(super::extract_email_from_id_token("x.&&.z"), None);
+        let no_email = base64url_encode(b"{\"sub\":\"x\"}");
+        let token = format!("h.{}.s", no_email);
+        assert_eq!(super::extract_email_from_id_token(&token), None);
     }
 
     #[test]
