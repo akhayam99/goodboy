@@ -1,12 +1,8 @@
 import type { TurnEvent } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Extractors that turn raw turn output into ContextPanel updates.
-//
-// Each exported fn is pure — caller is responsible for persisting the result
-// via the ContextEngine. This split keeps the extractors trivially testable
-// and lets the store decide when to flush (after each turn vs on demand).
-// ---------------------------------------------------------------------------
+// Extractors that turn raw turn output into ContextPanel updates. Each
+// exported fn is pure — caller persists via the ContextEngine. Split kept
+// extractors trivially testable and lets the store decide when to flush.
 
 /**
  * Collect the unique file paths an agent touched during a turn from its

@@ -2,19 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderRunId, TurnEvent, IsoDateTime } from '@kay-am/types';
 import { detectParallelRunIds, filterEventsByRunId } from '../components/chat/transcript-items';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;
 
 function makeEvent(runId: string, delta = 'text'): TurnEvent {
   return { kind: 'assistant_text', runId: runId as ProviderRunId, delta, at: AT };
 }
-
-// ---------------------------------------------------------------------------
-// detectParallelRunIds
-// ---------------------------------------------------------------------------
 
 describe('detectParallelRunIds', () => {
   it('returns [] when events is empty', () => {
@@ -64,10 +56,6 @@ describe('detectParallelRunIds', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// filterEventsByRunId
-// ---------------------------------------------------------------------------
-
 describe('filterEventsByRunId', () => {
   it('returns only events matching the given runId', () => {
     const events = [
@@ -92,10 +80,6 @@ describe('filterEventsByRunId', () => {
     expect(filterEventsByRunId(events, 'run-a' as ProviderRunId)).toHaveLength(3);
   });
 });
-
-// ---------------------------------------------------------------------------
-// isSplitView derivation (flag guard)
-// ---------------------------------------------------------------------------
 
 describe('isSplitView derivation', () => {
   function isSplitView(flagOn: boolean, events: ReadonlyArray<TurnEvent>): boolean {
@@ -132,10 +116,6 @@ describe('isSplitView derivation', () => {
     expect(isSplitView(true, events)).toBe(true);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Column event filtering (correct per-column isolation)
-// ---------------------------------------------------------------------------
 
 describe('per-column event isolation', () => {
   it('each column sees only its own events', () => {

@@ -95,10 +95,6 @@ function makeSession(overrides: Partial<Task> = {}): Task {
   } as Task;
 }
 
-// ---------------------------------------------------------------------------
-// EndSessionDialog
-// ---------------------------------------------------------------------------
-
 describe('keyboard — EndSessionDialog', () => {
   it('Escape key triggers onClose', async () => {
     const onClose = vi.fn();
@@ -141,10 +137,6 @@ describe('keyboard — EndSessionDialog', () => {
     expect(second?.tagName.toLowerCase()).toBe('button');
   });
 });
-
-// ---------------------------------------------------------------------------
-// NewSessionDialog
-// ---------------------------------------------------------------------------
 
 describe('keyboard — NewSessionDialog', () => {
   it('renders without crash when open (multiple textbox inputs present)', () => {
@@ -203,10 +195,6 @@ describe('keyboard — NewSessionDialog', () => {
     expect(createBtn).toBeDefined();
   });
 });
-
-// ---------------------------------------------------------------------------
-// SlashCommandPopover — arrow/tab navigation
-// ---------------------------------------------------------------------------
 
 describe('keyboard — SlashCommandPopover arrow / tab navigation', () => {
   const items = [

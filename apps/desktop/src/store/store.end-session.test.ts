@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Task, TaskId, WorkspaceId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
 vi.mock('../turn', () => ({
@@ -132,10 +129,6 @@ vi.mock('../providerPricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const SESSION_ID = 'session-end-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-08T00:00:00.000Z' as IsoDateTime;
@@ -170,10 +163,6 @@ async function importStore() {
   const mod = await import('./store');
   return mod.useAppStore;
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('endSession — happy path', () => {
   beforeEach(() => {
@@ -211,7 +200,6 @@ describe('endSession — happy path', () => {
 
   it('marks session ended when session has persisted turns (non-empty)', async () => {
     const useAppStore = await importStore();
-    // Task has turns in transcript (non-empty state)
     useAppStore.setState({
       sessions: [buildSession('idle')],
       sessionWorktrees: { [SESSION_ID]: [WORKTREE_PATH] },
@@ -311,7 +299,6 @@ describe('endSession — Tauri error propagation (#242)', () => {
       ],
     });
 
-    // Should not throw
     await expect(useAppStore.getState().endSession(SESSION_ID)).resolves.toBeUndefined();
 
     const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);

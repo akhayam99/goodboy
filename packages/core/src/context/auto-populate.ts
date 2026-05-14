@@ -4,14 +4,10 @@ import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
 
-// ---------------------------------------------------------------------------
 // Glue layer between turn output (files touched + assistant text markers)
-// and the persistent ContextPanel slots.
-//
-// Called by the desktop store at the end of every turn. Purposefully thin:
-// the heavy logic lives in extractors.ts and ContextEngine; this fn only
-// orchestrates load → merge → upsert per slot.
-// ---------------------------------------------------------------------------
+// and the persistent ContextPanel slots. Called by the desktop store at the
+// end of every turn. Thin on purpose: heavy logic lives in extractors.ts and
+// ContextEngine; this fn orchestrates load → merge → upsert per slot.
 
 export interface AutoPopulateInput {
   readonly db: Database;

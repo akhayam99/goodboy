@@ -14,10 +14,6 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Raw row shapes returned by rust commands
-// ---------------------------------------------------------------------------
-
 interface RawPermissionRuleRow {
   readonly id: string;
   readonly scope: string;
@@ -44,10 +40,6 @@ interface RawPermissionAuditRow {
   readonly requestedAt: string;
   readonly decidedAt: string;
 }
-
-// ---------------------------------------------------------------------------
-// Row → domain converters
-// ---------------------------------------------------------------------------
 
 function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
   return {
@@ -86,10 +78,6 @@ function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Payload interfaces
-// ---------------------------------------------------------------------------
-
 export interface PermissionRuleUpsertPayload {
   readonly id?: PermissionRuleId;
   readonly scope: PermissionRuleScope;
@@ -115,10 +103,7 @@ export interface PermissionAuditInsertPayload {
   readonly decidedAt: IsoDateTime;
 }
 
-// ---------------------------------------------------------------------------
-// Permission rule commands (#176)
-// ---------------------------------------------------------------------------
-
+// Permission rule commands (#176).
 export async function invokePermissionRuleList(args: {
   scope: PermissionRuleScope;
   workspaceId?: WorkspaceId;
@@ -150,10 +135,7 @@ export async function invokePermissionRuleUpsert(
   return rowToPermissionRule(row);
 }
 
-// ---------------------------------------------------------------------------
-// Permission audit commands (#177)
-// ---------------------------------------------------------------------------
-
+// Permission audit commands (#177).
 export async function invokePermissionAuditInsert(
   input: PermissionAuditInsertPayload,
 ): Promise<PermissionAuditEntry> {
@@ -175,9 +157,7 @@ export async function invokePermissionAuditInsert(
   return rowToAuditEntry(row);
 }
 
-// ---------------------------------------------------------------------------
-// Permission audit retry queue (#196)
-// ---------------------------------------------------------------------------
+// Permission audit retry queue (#196).
 
 interface RawAuditRetryRow {
   readonly id: string;

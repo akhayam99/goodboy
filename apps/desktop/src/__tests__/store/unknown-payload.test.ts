@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, SessionId, TaskId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before store import.
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -114,10 +111,6 @@ vi.mock('../../providerPricing', () => ({
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 const TASK_ID = 'sess-1' as TaskId;
 const AGENT_ID = 'agent-1' as SessionId;

@@ -219,7 +219,6 @@ export function ChatView({ session }: ChatViewProps) {
     [rawMergeConflicts],
   );
 
-  // Derive terminal runStatuses for the current session's phaseRuns.
   const terminalRunStatuses = useMemo(
     () =>
       phaseRuns

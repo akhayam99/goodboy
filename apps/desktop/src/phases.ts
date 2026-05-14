@@ -17,10 +17,6 @@ import type {
 } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Raw row shapes returned by rust commands
-// ---------------------------------------------------------------------------
-
 interface RawPhaseDefinitionRow {
   readonly id: string;
   readonly workflowId: string;
@@ -54,10 +50,6 @@ interface RawPhaseRunRow {
   readonly completedAt: string | null;
   readonly providerSessionId: string | null;
 }
-
-// ---------------------------------------------------------------------------
-// Row → domain converters
-// ---------------------------------------------------------------------------
 
 function rowToDefinition(row: RawPhaseDefinitionRow): Step {
   return {
@@ -99,10 +91,7 @@ function rowToPhaseRun(row: RawPhaseRunRow): Session {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Phase template commands (#155)
-// ---------------------------------------------------------------------------
-
+// Phase template commands (#155).
 export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise<Workflow[]> {
   const rows = await invoke<RawPhaseTemplateRow[]>('workflow_list', { workspaceId });
   return rows.map(rowToTemplate);
@@ -149,10 +138,7 @@ export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
   return invoke<void>('workflow_delete', { id });
 }
 
-// ---------------------------------------------------------------------------
-// Phase run commands (#156)
-// ---------------------------------------------------------------------------
-
+// Phase run commands (#156).
 export async function invokePhaseRunList(taskId: TaskId): Promise<Session[]> {
   const rows = await invoke<RawPhaseRunRow[]>('session_list_for_task', { taskId });
   return rows.map(rowToPhaseRun);
@@ -224,10 +210,7 @@ export async function invokeSessionSetProviderSessionId(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Parallel phase group commands (#207)
-// ---------------------------------------------------------------------------
-
+// Parallel phase group commands (#207).
 interface RawParallelPhaseGroupRow {
   readonly id: string;
   readonly taskId: string;

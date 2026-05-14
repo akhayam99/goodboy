@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, Task, TaskId, WorkspaceId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
 vi.mock('../turn', () => ({
@@ -111,10 +108,6 @@ vi.mock('../repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const WS_A = 'workspace-a' as WorkspaceId;
 const WS_B = 'workspace-b' as WorkspaceId;
 const SESSION_IDLE = 'session-idle' as TaskId;
@@ -153,10 +146,6 @@ function buildRunningSession(id: TaskId, wsId: WorkspaceId, runId: ProviderRunId
     updatedAt: NOW,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('setCurrentWorkspace — session-scoped state cleanup', () => {
   beforeEach(() => {

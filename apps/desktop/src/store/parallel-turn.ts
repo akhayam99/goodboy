@@ -39,10 +39,6 @@ import {
 } from '../phases';
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../turn';
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
-
 export interface ParallelBranchInputs {
   readonly session: Task;
   readonly orchestratingAgentId: SessionId;
@@ -70,10 +66,6 @@ export interface ParallelBranchResult {
   readonly allFailed: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Detection helpers
-// ---------------------------------------------------------------------------
-
 export interface ParallelDetection {
   readonly currentDef: Step;
   readonly groupDefs: ReadonlyArray<Step>;
@@ -98,12 +90,9 @@ export function detectParallelGroup(
   return { currentDef, groupDefs: siblings };
 }
 
-// ---------------------------------------------------------------------------
-// Listener — multiplexes turn_event envelopes to per-runId callbacks.
-// Single global listener, routed by runId — avoids N independent listeners
-// (each subscribing to the same Tauri channel) which would be wasteful.
-// ---------------------------------------------------------------------------
-
+// Multiplexes turn_event envelopes to per-runId callbacks. Single global
+// listener routed by runId — N independent listeners on the same Tauri
+// channel would be wasteful.
 interface RawTurnEnvelope {
   readonly runId: string;
   readonly type: 'line' | 'end' | 'error';
@@ -156,12 +145,9 @@ async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<Mul
   };
 }
 
-// ---------------------------------------------------------------------------
 // Scheduler deps factory — design (b): pre-batch via invokeParallelPhaseRunSpawn,
 // scheduler.spawnRun resolves on per-runId 'end' envelope. Aligns with T2 (#208)
 // batched spawn design and keeps the scheduler purely an await-only orchestrator.
-// ---------------------------------------------------------------------------
-
 interface BuildSchedulerDepsArgs {
   readonly listener: MultiplexedListener;
   readonly settleHandlers: Map<
@@ -196,10 +182,6 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
     },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Main entry — orchestrates the parallel branch end-to-end.
-// ---------------------------------------------------------------------------
 
 export interface RunParallelBranchDeps {
   readonly now: () => IsoDateTime;
@@ -376,7 +358,6 @@ export async function runParallelBranch(
 
     const merge = await awaitMerge(handle);
 
-    // Update each phase_run row with terminal status.
     for (let i = 0; i < cappedDefs.length; i++) {
       const def = cappedDefs[i]!;
       const runId = runIds[i]!;
@@ -392,7 +373,6 @@ export async function runParallelBranch(
     }
     await effects.refreshPhaseRuns(session.id);
 
-    // Conflict detection + auto-resolve.
     // Auto-resolution path only — manual MergeDialog wiring is deferred. Reason:
     // surfacing conflicts to the user requires emitting MergeResult into ChatView
     // state (currently a TODO placeholder in MergeDialog). Default to the group's

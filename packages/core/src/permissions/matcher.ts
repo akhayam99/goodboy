@@ -21,7 +21,6 @@ function globToRegex(glob: string): RegExp {
       pattern += '[^:/]*';
       i += 1;
     } else {
-      // escape regex metachar
       pattern += ch!.replace(REGEX_METACHARS, '\\$&');
       i += 1;
     }
@@ -54,7 +53,6 @@ export function parseToolPattern(pattern: string): ToolMatcher {
   const parenIdx = pattern.indexOf('(');
 
   if (parenIdx === -1) {
-    // bare tool name or wildcard `*`
     const tool = pattern.trim();
     if (tool === '*') {
       return { matches: () => true };

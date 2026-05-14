@@ -28,10 +28,6 @@ export async function resolveSkillInvocation(
   return { resolvedPrompt, skillName: input.skill.name, args: input.args };
 }
 
-// ---------------------------------------------------------------------------
-// Internal shape returned by rust commands
-// ---------------------------------------------------------------------------
-
 interface RawSkillRow {
   readonly id: string;
   readonly workspaceId: string;
@@ -58,10 +54,7 @@ function rowToSkill(row: RawSkillRow): Skill {
   };
 }
 
-// ---------------------------------------------------------------------------
-// CRUD wrappers (#132)
-// ---------------------------------------------------------------------------
-
+// CRUD wrappers (#132).
 export async function invokeSkillList(workspaceId: WorkspaceId): Promise<Skill[]> {
   const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId });
   return rows.map(rowToSkill);
@@ -101,10 +94,7 @@ export async function invokeSkillRescan(workspaceId: WorkspaceId): Promise<Skill
   return rows.map(rowToSkill);
 }
 
-// ---------------------------------------------------------------------------
-// Invoke (#133)
-// ---------------------------------------------------------------------------
-
+// Invoke (#133).
 interface SkillInvokeArgs {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
@@ -138,7 +128,6 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
 
   const workspaceRoot = args.workspaceRoot;
 
-  // Script runner delegates to rust `skill_run_script` command.
   const tauriRunner: SkillScriptRunner = {
     async runScript(
       scriptPath: string,

@@ -86,7 +86,6 @@ export async function resolveConflicts(
     return resolveManual(conflicts, manualPicks ?? {});
   }
 
-  // synthesizer_driven
   return resolveSynthesizer(conflicts, synthesize);
 }
 

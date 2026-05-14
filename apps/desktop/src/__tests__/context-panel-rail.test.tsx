@@ -65,10 +65,6 @@ function makeSession(overrides: Partial<Task> = {}): Task {
   } as Task;
 }
 
-// ---------------------------------------------------------------------------
-// Snapshot — rail (collapsed) vs expanded
-// ---------------------------------------------------------------------------
-
 describe('snapshot — ContextPanel variants', () => {
   it('collapsed: renders rail button, not slot content', () => {
     const { container } = render(
@@ -84,10 +80,6 @@ describe('snapshot — ContextPanel variants', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 });
-
-// ---------------------------------------------------------------------------
-// Rail semantics
-// ---------------------------------------------------------------------------
 
 describe('ContextPanel rail — a11y attributes', () => {
   it('has role=button', () => {
@@ -108,10 +100,6 @@ describe('ContextPanel rail — a11y attributes', () => {
     expect(document.activeElement).toBe(rail);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Keyboard interaction
-// ---------------------------------------------------------------------------
 
 describe('ContextPanel rail — keyboard', () => {
   it('Enter key calls onExpand', async () => {
@@ -141,10 +129,6 @@ describe('ContextPanel rail — keyboard', () => {
     expect(onExpand).toHaveBeenCalledOnce();
   });
 });
-
-// ---------------------------------------------------------------------------
-// Persistence — collapsed state survives toggle cycle
-// ---------------------------------------------------------------------------
 
 describe('ContextPanel — persistence contract', () => {
   it('collapsed=false: rail button present in DOM but visually hidden', () => {

@@ -7,8 +7,6 @@ import { GithubPanel } from './GithubPanel';
 type CardState = 'loading' | 'connected' | 'disconnected';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-// ─── generic single-token card ────────────────────────────────────────────────
-
 interface TokenCardProps {
   secretKey: string;
   label: string;
@@ -113,8 +111,6 @@ function TokenCard({ secretKey, label, placeholder, hint }: TokenCardProps) {
     </div>
   );
 }
-
-// ─── jira card (domain + email + token) ───────────────────────────────────────
 
 const JIRA_KEY_DOMAIN = 'integration.jira.domain';
 const JIRA_KEY_EMAIL = 'integration.jira.email';
@@ -262,8 +258,6 @@ function JiraCard() {
   );
 }
 
-// ─── section wrapper ───────────────────────────────────────────────────────────
-
 function IntegrationSection({
   icon,
   name,
@@ -298,8 +292,6 @@ function ErrorBanner({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-// ─── svgs for brand icons (minimal inline) ────────────────────────────────────
 
 function GitLabIcon({ size = 14 }: { size?: number }) {
   return (
@@ -345,8 +337,6 @@ function LinearIcon({ size = 14 }: { size?: number }) {
     </svg>
   );
 }
-
-// ─── public panel ─────────────────────────────────────────────────────────────
 
 export function IntegrationsPanel() {
   return (

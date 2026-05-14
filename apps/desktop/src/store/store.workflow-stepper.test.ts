@@ -11,10 +11,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before subject import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before subject import.
 const runTurnSpy = vi.fn();
 
 vi.mock('../turn', () => ({
@@ -132,10 +129,6 @@ vi.mock('../worktree', () => ({
 }));
 
 vi.mock('../repo', () => ({ validateGitRepo: vi.fn() }));
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-refactor' as WorkflowId;
@@ -257,10 +250,6 @@ function wirePhaseSpies() {
     },
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('createSession — workflow stepper seeding (#424)', () => {
   beforeEach(() => {

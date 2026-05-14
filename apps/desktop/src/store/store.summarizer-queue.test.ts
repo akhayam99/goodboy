@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Task, TaskId, WorkspaceId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — must be hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — must be hoisted before store import.
 vi.mock('../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -157,10 +154,6 @@ vi.mock('@tauri-apps/api/core', () => ({
   })),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const TASK_ID = 'task-queue-test' as TaskId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-10T00:00:00.000Z' as IsoDateTime;
@@ -185,10 +178,6 @@ async function importStore() {
   const mod = await import('./store');
   return mod;
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('summarizer queue — coalescing and no-stack', () => {
   beforeEach(() => {
@@ -237,14 +226,12 @@ describe('summarizer queue — coalescing and no-stack', () => {
     };
     summarizerQueues.set(TASK_ID, queue);
 
-    // Simulate 4 additional triggers arriving while in-flight.
     for (let i = 1; i <= 4; i++) {
       if (queue.inFlight) {
         queue.queued = { turnInput: `input-${i}`, turnOutput: `output-${i}` };
       }
     }
 
-    // Only the last coalesced entry should survive.
     expect(queue.queued?.turnInput).toBe('input-4');
 
     // Now simulate in-flight completing: the queued entry fires → 1 more call.
@@ -253,11 +240,9 @@ describe('summarizer queue — coalescing and no-stack', () => {
     firstResolve();
     await Promise.resolve();
 
-    // Queue should now have queued=null after drain.
     expect(callsBefore).toBeLessThanOrEqual(2);
     expect(state).toBeDefined(); // store is live
 
-    // Cleanup
     summarizerQueues.delete(TASK_ID);
   });
 
@@ -270,7 +255,6 @@ describe('summarizer queue — coalescing and no-stack', () => {
     const { summarizerQueues: sq } = await import('./store');
     sq.clear();
 
-    // No in-flight: queue starts empty, inFlight=false.
     const queue = {
       inFlight: false,
       queued: null as null | { turnInput: string; turnOutput: string },
@@ -299,7 +283,6 @@ describe('summarizer queue — coalescing and no-stack', () => {
     };
     sq.set(TASK_ID, queue);
 
-    // Simulate 10 rapid calls while in-flight.
     for (let i = 0; i < 10; i++) {
       if (queue.inFlight) {
         queue.queued = { turnInput: `t${i}`, turnOutput: `o${i}` };

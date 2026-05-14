@@ -14,10 +14,7 @@ import type {
 } from '@kay-am/types';
 import type { MergeResult } from '@kay-am/core';
 
-// ---------------------------------------------------------------------------
 // Module mocks — hoisted before subject imports.
-// ---------------------------------------------------------------------------
-
 // Tauri invoke — stubbed per-test.
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
@@ -76,16 +73,8 @@ vi.mock('../turn', () => ({
 // orchestration logic is exercised end-to-end. Only the Tauri surface is mocked.
 // detectConflicts + resolveConflicts stay real too.
 
-// ---------------------------------------------------------------------------
-// Subject under test.
-// ---------------------------------------------------------------------------
-
 import { runParallelBranch } from '../store/parallel-turn';
 import type { ParallelBranchInputs, ParallelBranchEffects } from '../store/parallel-turn';
-
-// ---------------------------------------------------------------------------
-// Helpers.
-// ---------------------------------------------------------------------------
 
 const NOW = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'ses-1' as TaskId;
@@ -221,10 +210,6 @@ function wirePhaseRunSpies(
   phaseRunListSpy.mockImplementation(async () => insertedPhaseRuns.slice());
 }
 
-// ---------------------------------------------------------------------------
-// Tests.
-// ---------------------------------------------------------------------------
-
 describe('parallel e2e — fan-out/fan-in', () => {
   beforeEach(() => {
     parallelPhaseGroupCreateSpy.mockReset();
@@ -254,10 +239,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
-  // -------------------------------------------------------------------------
-  // Happy path: 3 parallel runs, all succeed.
-  // -------------------------------------------------------------------------
 
   it('happy path: 3 runs complete → transcript has events from all runIds, group marked complete', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
@@ -333,10 +314,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
     expect(phaseTransitions).toHaveLength(1);
   });
 
-  // -------------------------------------------------------------------------
-  // Error path: 1 of 3 runs fails.
-  // -------------------------------------------------------------------------
-
   it('error path: 1 of 3 runs fails → partial merge proceeds, anyFailed=true, group still completes', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
     wirePhaseRunSpies(insertedPhaseRuns);
@@ -391,10 +368,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
     expect(seenRunIds.has(idC as ProviderRunId)).toBe(false);
   });
 
-  // -------------------------------------------------------------------------
-  // All-fail path: no runs succeed → group NOT marked complete.
-  // -------------------------------------------------------------------------
-
   it('all-fail path: all 3 runs fail → allFailed=true, group completedAt not set', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
     wirePhaseRunSpies(insertedPhaseRuns);
@@ -422,11 +395,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
     // Group NOT marked complete when all fail.
     expect(parallelPhaseGroupUpdateCompletedAtSpy).not.toHaveBeenCalled();
   });
-
-  // -------------------------------------------------------------------------
-  // Transcript event ordering: events from each runId arrive interleaved
-  // but each lane sees only its own events when filtered.
-  // -------------------------------------------------------------------------
 
   it('transcript multi-lane: interleaved events remain correctly tagged per runId', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
@@ -477,10 +445,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
     for (const e of laneC) expect(e.runId).toBe(idC as ProviderRunId);
   });
 
-  // -------------------------------------------------------------------------
-  // Cancel mid-flight: cancelGroup propagates to all N runIds.
-  // -------------------------------------------------------------------------
-
   it('cancel mid-flight: spawn throws → cancelGroup teardown, listener unlistened', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
     wirePhaseRunSpies(insertedPhaseRuns);
@@ -507,10 +471,6 @@ describe('parallel e2e — fan-out/fan-in', () => {
     // No completedAt set on failure path.
     expect(parallelPhaseGroupUpdateCompletedAtSpy).not.toHaveBeenCalled();
   });
-
-  // -------------------------------------------------------------------------
-  // Parallelism cap: maxParallelism=2 with 3 defs → only 2 spawned.
-  // -------------------------------------------------------------------------
 
   it('maxParallelism cap: only 2 runs spawned when maxParallelism=2', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];

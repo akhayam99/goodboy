@@ -20,10 +20,6 @@ import {
   type SchedulerDeps,
 } from '../index';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const rid = (id: string) => id as ProviderRunId;
 const iso = (s: string) => s as IsoDateTime;
 
@@ -53,10 +49,6 @@ function makeRun(index: number, runId: string = `run-${index}`): ParallelSession
     completedAt: null,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Scenario 1 — happy path: 3 runs, no conflict, last_write_wins merge
-// ---------------------------------------------------------------------------
 
 describe('orchestration — happy path: 3 runs, no conflict, last_write_wins', () => {
   it('fan-out completes, merge has 3 success statuses, detectConflicts returns 0', async () => {
@@ -106,10 +98,6 @@ describe('orchestration — happy path: 3 runs, no conflict, last_write_wins', (
     expect(resolutions).toHaveLength(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Scenario 2 — 1 run fails, 2 complete; partial merge
-// ---------------------------------------------------------------------------
 
 describe('orchestration — 1 run fails, 2 complete', () => {
   it('MergeResult includes failure; resolveConflicts only considers completed runs', async () => {
@@ -164,10 +152,6 @@ describe('orchestration — 1 run fails, 2 complete', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Scenario 3 — all 3 fail; resolveConflicts on empty completed → []
-// ---------------------------------------------------------------------------
-
 describe('orchestration — all 3 runs fail', () => {
   it('MergeResult has 3 failures; resolveConflicts with no completed returns empty', async () => {
     const runs = [makeRun(0, 'run-a'), makeRun(1, 'run-b'), makeRun(2, 'run-c')];
@@ -196,10 +180,6 @@ describe('orchestration — all 3 runs fail', () => {
     expect(resolutions).toHaveLength(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Scenario 4 — conflict detected, last_write_wins: 2 of 3 touch same file
-// ---------------------------------------------------------------------------
 
 describe('orchestration — conflict detected, last_write_wins', () => {
   it('picks later completedAt; deterministic tie-break via runId', async () => {
@@ -277,10 +257,6 @@ describe('orchestration — conflict detected, last_write_wins', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Scenario 5 — conflict, manual strategy, missing pick → ManualResolutionRequiredError
-// ---------------------------------------------------------------------------
-
 describe('orchestration — manual strategy, missing pick throws ManualResolutionRequiredError', () => {
   it('throws with the conflicted file in unresolvedFiles when no manualPicks provided', async () => {
     const runs = [makeRun(0, 'run-a'), makeRun(1, 'run-b')];
@@ -325,10 +301,6 @@ describe('orchestration — manual strategy, missing pick throws ManualResolutio
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// Scenario 6 — cancel mid-flight: cancelRun called for all runIds
-// ---------------------------------------------------------------------------
 
 describe('orchestration — cancel mid-flight', () => {
   it('cancelGroup calls cancelRun for all 3 runIds; awaitMerge still resolves', async () => {

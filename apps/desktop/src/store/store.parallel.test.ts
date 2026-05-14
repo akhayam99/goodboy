@@ -15,10 +15,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
 // Module mocks — hoisted before importing the store.
-// ---------------------------------------------------------------------------
-
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 const invokeParallelPhaseRunSpawnSpy = vi.fn();
@@ -154,10 +151,6 @@ vi.mock('../repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const SESSION_ID = 'session-1' as TaskId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const TEMPLATE_ID = 'template-1' as WorkflowId;
@@ -268,10 +261,6 @@ function setupSession(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('sendTurn — parallel agents branch', () => {
   beforeEach(() => {
     runTurnSpy.mockReset();
@@ -358,7 +347,6 @@ describe('sendTurn — parallel agents branch', () => {
     expect(invokeParallelPhaseRunSpawnSpy).toHaveBeenCalledTimes(2);
     expect(parallelPhaseGroupCreateSpy).toHaveBeenCalledOnce();
 
-    // Pull runIds from the spawn calls and emit 'end' for each.
     const allCalls = invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
       [{ runs: ReadonlyArray<{ runId: ProviderRunId }> }]
     >;
@@ -369,9 +357,7 @@ describe('sendTurn — parallel agents branch', () => {
 
     await turnPromise;
 
-    // Merge completion was persisted.
     expect(parallelPhaseGroupUpdateCompletedAtSpy).toHaveBeenCalledOnce();
-    // Both phase runs were inserted then updated.
     expect(phaseRunInsertSpy).toHaveBeenCalledTimes(2);
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(2);
   });
@@ -411,7 +397,6 @@ describe('sendTurn — parallel agents branch', () => {
 
     await turnPromise;
 
-    // Mixed result: at least one completed → group completedAt is set.
     expect(parallelPhaseGroupUpdateCompletedAtSpy).toHaveBeenCalledOnce();
   });
 });

@@ -248,7 +248,6 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     );
   }
 
-  // connected
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="flex w-full items-stretch gap-1.5">

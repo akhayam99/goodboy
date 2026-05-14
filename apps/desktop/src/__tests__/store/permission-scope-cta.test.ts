@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, SessionId, TaskId, WorkspaceId } from '@kay-am/types';
 
-// ---------------------------------------------------------------------------
-// Module mocks — hoisted before store import
-// ---------------------------------------------------------------------------
-
+// Module mocks — hoisted before store import.
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -118,10 +115,6 @@ vi.mock('../../providerPricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const TASK_ID = 'sess-1' as TaskId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const AGENT_ID = 'agent-1' as SessionId;
@@ -145,10 +138,6 @@ function buildSession() {
     updatedAt: AT,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('resolvePermissionRequest', () => {
   let useAppStore: (typeof import('../../store/store'))['useAppStore'];
