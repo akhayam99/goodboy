@@ -55,6 +55,7 @@ import {
   useCurrentSession,
   useCurrentWorkspace,
   useSessionNextActions,
+  useSessionLoading,
   useSessionSlots,
   useSessions,
   useWorkspaces,
@@ -1305,6 +1306,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     ? (phaseTemplates.find((t) => t.id === task.workflowId) ?? null)
     : null;
   const slots = useSessionSlots(task.id);
+  const loading = useSessionLoading(task.id);
   const hasOpenQuestions =
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const [spawnError, setSpawnError] = useState<string | null>(null);
@@ -1436,9 +1438,23 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </span>
       </header>
       {sorted.length === 0 ? (
-        <p className="px-2 py-2 text-xs text-muted-foreground/70">
-          No agents yet — spawn one below.
-        </p>
+        loading.agents ? (
+          <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
+            {[0, 1].map((i) => (
+              <li
+                key={i}
+                className="flex items-center gap-2 rounded-md px-2 py-1.5"
+              >
+                <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
+                <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-2 py-2 text-xs text-muted-foreground/70">
+            No agents yet — spawn one below.
+          </p>
+        )
       ) : (
         <ul className="flex flex-col gap-1 pl-2">
           {sorted.map((run) => {

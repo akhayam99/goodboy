@@ -75,6 +75,8 @@ export {
   insertTaskWorktree,
   listWorktreesForTask,
   deleteWorktreesForTask,
+  updateTaskWorktreeBranch,
+  listAllTaskWorktrees,
   type TaskWorktree,
 } from './queries/task-worktree';
 export {

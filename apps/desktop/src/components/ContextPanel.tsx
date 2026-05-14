@@ -43,6 +43,7 @@ import {
   useAppStore,
   useDiffComments,
   useFilesTouched,
+  useSessionLoading,
   useSessionPlans,
   useSessionSlots,
   useSlotHistory,
@@ -76,6 +77,7 @@ export function ContextPanel({
 }: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
+  const loading = useSessionLoading(session.id);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const sessionTelemetry = useAppStore(
     (s) => s.sessionTelemetry[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
@@ -212,21 +214,25 @@ export function ContextPanel({
 
             <PlansSection taskId={session.id} />
 
-            <ul className="flex flex-col gap-6">
-              {visibleSlotKeys.map((key) => {
-                const slot = slotsByKey.get(key);
-                return (
-                  <SlotRow
-                    key={key}
-                    taskId={session.id}
-                    slotKey={key}
-                    slot={slot}
-                    isSummarizing={summarizer.status === 'running'}
-                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                  />
-                );
-              })}
-            </ul>
+            {loading.slots && slots.length === 0 ? (
+              <ContextSlotsSkeleton />
+            ) : (
+              <ul className="flex flex-col gap-6">
+                {visibleSlotKeys.map((key) => {
+                  const slot = slotsByKey.get(key);
+                  return (
+                    <SlotRow
+                      key={key}
+                      taskId={session.id}
+                      slotKey={key}
+                      slot={slot}
+                      isSummarizing={summarizer.status === 'running'}
+                      onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                    />
+                  );
+                })}
+              </ul>
+            )}
 
             <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
           </div>
@@ -352,6 +358,20 @@ function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
         )}
       />
     </div>
+  );
+}
+
+function ContextSlotsSkeleton() {
+  return (
+    <ul role="status" aria-label="loading context" className="flex flex-col gap-6">
+      {[0, 1, 2, 3].map((i) => (
+        <li key={i} className="flex flex-col gap-2">
+          <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
+          <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
+          <div className="h-3 w-3/4 animate-pulse rounded bg-muted/70" />
+        </li>
+      ))}
+    </ul>
   );
 }
 

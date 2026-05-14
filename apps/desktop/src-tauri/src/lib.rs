@@ -64,6 +64,8 @@ pub fn run() {
       worktree::worktree_list,
       worktree::worktree_exists,
       worktree::worktree_diff,
+      worktree::worktree_list_local_branches,
+      worktree::worktree_change_branch,
       providers::get_provider_status,
       providers::refresh_provider_status,
       providers::get_cursor_status,

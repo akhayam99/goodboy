@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
-import { Archive, ArchiveRestore, Bot, DollarSign, GitBranch, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  Bot,
+  DollarSign,
+  GitBranch,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import type { TaskId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
 import { parseCap } from '../lib/parse-cap';
+import { listLocalBranches, type LocalBranchInfo } from '../worktree';
+import { useToast } from './Toast';
 
 interface SessionSettingsDialogProps {
   taskId: TaskId;
@@ -44,12 +55,18 @@ export function SessionSettingsDialog({
 }: SessionSettingsDialogProps) {
   const session = useAppStore((s) => s.sessions.find((x) => x.id === taskId) ?? null);
   const branch = useAppStore((s) => s.sessionBranches[taskId] ?? null);
+  const sessionBranches = useAppStore((s) => s.sessionBranches);
   const budget = useAppStore((s) => s.sessionBudgets[taskId] ?? null);
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const renameTask = useAppStore((s) => s.renameTask);
   const deleteTask = useAppStore((s) => s.deleteTask);
+  const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
+  const workspace = useAppStore((s) =>
+    session ? s.workspaces.find((w) => w.id === session.workspaceId) ?? null : null,
+  );
+  const { showToast } = useToast();
 
   const [active, setActive] = useState<Section>('general');
   const [goalDraft, setGoalDraft] = useState('');
@@ -58,14 +75,33 @@ export function SessionSettingsDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [branchEditOpen, setBranchEditOpen] = useState(false);
+  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing');
+  const [branchTarget, setBranchTarget] = useState('');
+  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [confirmReuse, setConfirmReuse] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     setActive('general');
     setError(null);
     setBusy(false);
     setConfirmDelete(false);
+    setBranchEditOpen(false);
     void loadSessionBudget(taskId);
   }, [open, taskId, loadSessionBudget]);
+
+  useEffect(() => {
+    if (!branchEditOpen || !workspace?.rootPath) return;
+    setBranchesLoading(true);
+    setConfirmReuse(false);
+    setBranchTarget('');
+    listLocalBranches(workspace.rootPath)
+      .then(setBranches)
+      .catch(() => setBranches([]))
+      .finally(() => setBranchesLoading(false));
+  }, [branchEditOpen, workspace?.rootPath]);
 
   useEffect(() => {
     setGoalDraft(session?.goal ?? '');
@@ -114,6 +150,48 @@ export function SessionSettingsDialog({
     }
   };
 
+  const targetTrimmed = branchTarget.trim();
+  const targetInfo = branches.find((b) => b.name === targetTrimmed) ?? null;
+  // Friction sources: branch already owned by another session, branch in use
+  // in another worktree, branch has uncommitted work in its current worktree.
+  const targetOwnedByOtherSession = Object.entries(sessionBranches).some(
+    ([otherTaskId, b]) => otherTaskId !== taskId && b === targetTrimmed,
+  );
+  const targetInUseElsewhere = targetInfo?.inUse === true;
+  const targetDirty = targetInfo?.hasUncommitted === true;
+  const targetNeedsConfirm =
+    branchMode === 'existing' &&
+    (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty);
+
+  const onChangeBranch = async () => {
+    if (!targetTrimmed) {
+      setError('branch is required');
+      return;
+    }
+    if (targetTrimmed === branch) {
+      setBranchEditOpen(false);
+      return;
+    }
+    if (targetNeedsConfirm && !confirmReuse) {
+      setConfirmReuse(true);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await changeSessionBranch(taskId, {
+        branch: targetTrimmed,
+        createNew: branchMode === 'new',
+      });
+      showToast('success', `branch switched to ${targetTrimmed}`);
+      setBranchEditOpen(false);
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onDelete = async () => {
     setBusy(true);
     setError(null);
@@ -154,11 +232,20 @@ export function SessionSettingsDialog({
             </Field>
             <Field
               label="branch"
-              hint="branch is created when the session spawns and cannot be renamed."
+              hint="switch this session to a different branch. existing checkouts with uncommitted work require confirmation."
             >
-              <div className="inline-flex items-center gap-2 rounded-md bg-subtle px-2.5 py-2 text-xs text-muted-foreground ring-1 ring-border-soft">
-                <GitBranch size={12} aria-hidden />
-                <code className="font-mono text-foreground">{branch ?? 'unknown'}</code>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-md bg-subtle px-2.5 py-2 text-xs text-muted-foreground ring-1 ring-border-soft">
+                  <GitBranch size={12} aria-hidden />
+                  <code className="font-mono text-foreground">{branch ?? 'unknown'}</code>
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() => setBranchEditOpen(true)}
+                  disabled={busy || !workspace}
+                >
+                  Change branch
+                </Button>
               </div>
             </Field>
             <Field label="provider" hint="set at creation time.">
@@ -310,6 +397,7 @@ export function SessionSettingsDialog({
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
@@ -362,6 +450,134 @@ export function SessionSettingsDialog({
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
       </div>
     </Dialog>
+    <Dialog
+      open={branchEditOpen}
+      onClose={() => setBranchEditOpen(false)}
+      title="Change session branch"
+      description="point this session's worktree at a different branch."
+      size="md"
+      footer={
+        <>
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={() => setBranchEditOpen(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void onChangeBranch()}
+            disabled={busy || branchesLoading || targetTrimmed.length === 0}
+            variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
+          >
+            {busy ? (
+              <>
+                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                Switching…
+              </>
+            ) : targetNeedsConfirm && confirmReuse ? (
+              'Confirm switch'
+            ) : (
+              'Switch branch'
+            )}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div
+          role="tablist"
+          aria-label="branch source"
+          className="inline-flex rounded-md border border-border bg-subtle p-0.5"
+        >
+          {(['existing', 'new'] as const).map((m) => {
+            const active = branchMode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setBranchMode(m);
+                  setBranchTarget('');
+                  setConfirmReuse(false);
+                }}
+                disabled={busy}
+                className={cn(
+                  'rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors',
+                  active
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {m === 'existing' ? 'existing branch' : 'new branch'}
+              </button>
+            );
+          })}
+        </div>
+
+        {branchMode === 'existing' ? (
+          <Field label="branch" hint="pick from local branches in this workspace.">
+            <select
+              value={branchTarget}
+              onChange={(e) => {
+                setBranchTarget(e.target.value);
+                setConfirmReuse(false);
+              }}
+              disabled={busy || branchesLoading}
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">
+                {branchesLoading
+                  ? 'loading…'
+                  : branches.length === 0
+                    ? 'no local branches'
+                    : 'select branch…'}
+              </option>
+              {branches
+                .filter((b) => b.name !== branch)
+                .map((b) => (
+                  <option key={b.name} value={b.name}>
+                    {b.name}
+                    {b.inUse ? ' · in use' : ''}
+                    {b.hasUncommitted ? ' · dirty' : ''}
+                  </option>
+                ))}
+            </select>
+          </Field>
+        ) : (
+          <Field label="new branch name" hint="creates and switches to a new branch from current HEAD.">
+            <Input
+              value={branchTarget}
+              onChange={(e) => {
+                setBranchTarget(e.target.value);
+                setConfirmReuse(false);
+              }}
+              placeholder="feat/something"
+              disabled={busy}
+            />
+          </Field>
+        )}
+
+        {targetNeedsConfirm ? (
+          <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs text-warning">
+            <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0" />
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold">heads up</span>
+              <ul className="list-disc pl-4">
+                {targetOwnedByOtherSession ? (
+                  <li>this branch is already attached to another kay-am session.</li>
+                ) : null}
+                {targetInUseElsewhere ? (
+                  <li>this branch is checked out in another git worktree.</li>
+                ) : null}
+                {targetDirty ? <li>that worktree has uncommitted changes.</li> : null}
+              </ul>
+              <span className="text-2xs text-warning/80">click again to confirm.</span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Dialog>
+    </>
   );
 }
 
