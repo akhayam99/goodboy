@@ -3,9 +3,9 @@ pre-commit:
   commands:
     format:
       glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
-      run: pnpm prettier --write {staged_files} && git add {staged_files}
+      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec prettier --write {staged_files} && git add {staged_files}
 
 commit-msg:
   commands:
     commitlint:
-      run: pnpm commitlint --edit {1}
+      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec commitlint --edit {1}
