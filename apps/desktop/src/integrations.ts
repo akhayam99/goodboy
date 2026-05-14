@@ -7,38 +7,54 @@ export interface IssueData {
   readonly service: 'github' | 'gitlab' | 'jira' | 'linear';
 }
 
-function parseLinearIssueUrl(input: string): string | null {
-  const trimmed = input.trim();
-  const urlMatch = trimmed.match(/linear\.app\/[^/]+\/issue\/([A-Z]+-\d+)/i);
-  if (urlMatch) return urlMatch[1]!.toUpperCase();
-  return null;
+interface LinearIssueRef {
+  readonly identifier: string;
+  readonly teamKey: string;
+  readonly number: number;
 }
 
-async function fetchLinearIssue(issueId: string): Promise<IssueData> {
+function parseLinearIssueUrl(input: string): LinearIssueRef | null {
+  const trimmed = input.trim();
+  const urlMatch = trimmed.match(/linear\.app\/[^/]+\/issue\/([A-Za-z]+)-(\d+)/);
+  if (!urlMatch) return null;
+  const teamKey = urlMatch[1]!.toUpperCase();
+  const number = parseInt(urlMatch[2]!, 10);
+  return { identifier: `${teamKey}-${number}`, teamKey, number };
+}
+
+async function fetchLinearIssue(ref: LinearIssueRef): Promise<IssueData> {
   const token = await getSecret('integration.linear.token');
   if (!token)
     throw new Error('Linear not connected — add your API key in Settings → Integrations.');
 
-  const query = `{ issue(id: "${issueId}") { title description url } }`;
+  const query = `query($team: String!, $number: Float!) {
+    issues(filter: { team: { key: { eq: $team } }, number: { eq: $number } }, first: 1) {
+      nodes { title description url }
+    }
+  }`;
   const res = await fetch('https://api.linear.app/graphql', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: token,
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, variables: { team: ref.teamKey, number: ref.number } }),
   });
 
   if (!res.ok) throw new Error(`Linear API error: ${res.status} ${res.statusText}`);
 
   const json = (await res.json()) as {
-    data?: { issue?: { title: string; description?: string | null; url: string } };
+    data?: {
+      issues?: {
+        nodes?: ReadonlyArray<{ title: string; description?: string | null; url: string }>;
+      };
+    };
     errors?: ReadonlyArray<{ message: string }>;
   };
   if (json.errors?.length) throw new Error(`Linear: ${json.errors[0]!.message}`);
 
-  const issue = json.data?.issue;
-  if (!issue) throw new Error(`Linear issue ${issueId} not found.`);
+  const issue = json.data?.issues?.nodes?.[0];
+  if (!issue) throw new Error(`Linear issue ${ref.identifier} not found.`);
 
   return {
     service: 'linear',
