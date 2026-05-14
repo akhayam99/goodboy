@@ -12,7 +12,7 @@ interface ModeMeta {
   readonly text: string;
 }
 
-export const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
+const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
     value: 'bypassPermissions',
     label: 'bypass',

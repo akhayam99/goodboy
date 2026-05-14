@@ -4,7 +4,7 @@ import { useAppStore, type AppState } from './store';
 
 const EMPTY: ReadonlyArray<TurnEvent> = [];
 
-export const selectTranscript =
+const selectTranscript =
   (agentId: SessionId | null) =>
   (state: AppState): ReadonlyArray<TurnEvent> =>
     agentId ? (state.transcripts[agentId] ?? EMPTY) : EMPTY;

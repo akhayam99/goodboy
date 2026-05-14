@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@kay-am/types';
-import { parseSkillMarkdown, serializeSkillMarkdown, SkillExecutor } from '@kay-am/core';
+import { serializeSkillMarkdown, SkillExecutor } from '@kay-am/core';
 import type { SkillScriptRunner } from '@kay-am/core';
 
 export interface ResolveSkillInvocationArgs {
@@ -67,11 +67,6 @@ export async function invokeSkillList(workspaceId: WorkspaceId): Promise<Skill[]
   return rows.map(rowToSkill);
 }
 
-export async function invokeSkillGet(skillId: SkillId): Promise<Skill | null> {
-  const row = await invoke<RawSkillRow | null>('skill_get', { skillId });
-  return row ? rowToSkill(row) : null;
-}
-
 export interface SkillUpsertArgs {
   readonly workspaceId: WorkspaceId;
   readonly name: string;
@@ -110,7 +105,7 @@ export async function invokeSkillRescan(workspaceId: WorkspaceId): Promise<Skill
 // Invoke (#133)
 // ---------------------------------------------------------------------------
 
-export interface SkillInvokeArgs {
+interface SkillInvokeArgs {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
@@ -118,11 +113,11 @@ export interface SkillInvokeArgs {
   readonly workspaceRoot: string;
 }
 
-export interface SkillInvokeResult {
+interface SkillInvokeResult {
   readonly resolvedPrompt: string;
 }
 
-export async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResult> {
+async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResult> {
   const rawRow = await invoke<RawSkillRow | null>('skill_get', { skillId: args.skillId });
   if (!rawRow) {
     throw new Error(`skill not found: ${args.skillId}`);
@@ -172,8 +167,3 @@ export async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInv
 
   return { resolvedPrompt };
 }
-
-// ---------------------------------------------------------------------------
-// Re-export parse helpers so callers don't need to depend on @kay-am/core directly
-// ---------------------------------------------------------------------------
-export { parseSkillMarkdown, serializeSkillMarkdown };

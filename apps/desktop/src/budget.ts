@@ -36,20 +36,9 @@ export async function invokeBudgetAlertDismiss(id: string): Promise<void> {
   return invoke<void>('budget_alert_dismiss', { id });
 }
 
-export async function invokeBudgetEmitAlerts(input: {
-  provider: ProviderName;
-  taskId: string;
-}): Promise<BudgetAlert[]> {
-  return invoke<BudgetAlert[]>('budget_emit_alerts', { input });
-}
-
 export async function invokeCheckProviderBudget(
   provider: ProviderName,
   period: BudgetPeriod,
 ): Promise<BudgetCheckResult> {
   return invoke<BudgetCheckResult>('check_provider_budget', { provider, period });
-}
-
-export async function invokeCheckSessionBudget(taskId: string): Promise<BudgetCheckResult> {
-  return invoke<BudgetCheckResult>('check_task_budget', { taskId });
 }

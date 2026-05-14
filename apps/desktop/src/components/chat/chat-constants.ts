@@ -51,7 +51,7 @@ export const EFFORT_TEXT: Record<EffortLevel, string> = {
 
 export type CostTier = 'cheap' | 'mid' | 'expensive';
 
-export const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
+const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'cursor-small': { weight: 4, tier: 'cheap' },
   'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
   'codex-mini-latest': { weight: 6, tier: 'cheap' },
@@ -62,25 +62,10 @@ export const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
 };
 
-export const FAMILY_LABEL: Record<string, string> = {
-  claude: 'Claude',
-  gpt: 'GPT',
-  gemini: 'Gemini',
-  cursor: 'Cursor',
-  codex: 'Codex',
-  other: 'Other',
-};
-
 export const TIER_TEXT: Record<CostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
-};
-
-export const TIER_DOT: Record<CostTier, string> = {
-  cheap: 'bg-success',
-  mid: 'bg-warning',
-  expensive: 'bg-danger',
 };
 
 export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
@@ -197,10 +182,6 @@ export function parseModelId(id: string): ParsedModel {
   return { family: 'other', subfamily: null, variantLabel: local };
 }
 
-export function modelFamily(id: string): string {
-  return parseModelId(id).family;
-}
-
 export function modelTier(model: string): CostTier {
   const known = MODEL_COST[model];
   if (known) return known.tier;
@@ -213,14 +194,6 @@ export function modelWeight(model: string): number {
   return MODEL_COST[model]?.weight ?? 10;
 }
 
-export function modelSubfamily(id: string): string {
-  return parseModelId(id).subfamily ?? '';
-}
-
-export function modelVersion(id: string): string {
-  return parseModelId(id).variantLabel;
-}
-
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   claude: 'Claude',
   gpt: 'GPT',
@@ -231,13 +204,13 @@ export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   other: 'Other',
 };
 
-export const SUBFAMILY_LABEL: Record<string, string> = {
+const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
   sonnet: 'Sonnet',
   opus: 'Opus',
 };
 
-export const SUBFAMILY_TIER: Record<string, CostTier> = {
+const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
   sonnet: 'mid',
   opus: 'expensive',

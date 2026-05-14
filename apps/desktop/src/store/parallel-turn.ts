@@ -119,15 +119,13 @@ interface RunListenerState {
   collectedFiles: Set<string>;
 }
 
-export interface MultiplexedListener {
+interface MultiplexedListener {
   unlisten: () => Promise<void>;
   registerRun: (runId: ProviderRunId, state: RunListenerState) => void;
   filesTouchedByRun: (runId: ProviderRunId) => ReadonlyArray<string>;
 }
 
-export async function startMultiplexedTurnListener(
-  now: () => IsoDateTime,
-): Promise<MultiplexedListener> {
+async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<MultiplexedListener> {
   const states = new Map<string, RunListenerState>();
 
   const unlistenFn: UnlistenFn = await listen<RawTurnEnvelope>('turn_event', (event) => {
@@ -164,7 +162,7 @@ export async function startMultiplexedTurnListener(
 // batched spawn design and keeps the scheduler purely an await-only orchestrator.
 // ---------------------------------------------------------------------------
 
-export interface BuildSchedulerDepsArgs {
+interface BuildSchedulerDepsArgs {
   readonly listener: MultiplexedListener;
   readonly settleHandlers: Map<
     ProviderRunId,
@@ -175,7 +173,7 @@ export interface BuildSchedulerDepsArgs {
   >;
 }
 
-export function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
+function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
   const { settleHandlers } = args;
 
   return {
