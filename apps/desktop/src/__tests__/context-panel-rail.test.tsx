@@ -41,6 +41,8 @@ vi.mock('../store', () => ({
   useSessionNextActions: vi.fn().mockReturnValue([]),
   useDiffComments: vi.fn().mockReturnValue([]),
   useFilesTouched: vi.fn().mockReturnValue({ paths: [], count: 0 }),
+  useSessionPlans: vi.fn().mockReturnValue([]),
+  useMostRecentPlan: vi.fn().mockReturnValue(null),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
