@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::process::Command;
 
 use serde::Serialize;
 
@@ -22,7 +21,7 @@ pub fn validate_git_repo(path: String) -> GitRepoCheck {
             error: Some(format!("path does not exist: {path}")),
         };
     }
-    let output = match Command::new("git")
+    let output = match crate::path_env::command("git")
         .args(["rev-parse", "--show-toplevel"])
         .current_dir(candidate)
         .output()

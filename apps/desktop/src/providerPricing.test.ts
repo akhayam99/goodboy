@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getCodexPriceOverride,
   getActivePricingTable,
@@ -40,44 +40,17 @@ describe('getCodexPriceOverride', () => {
 });
 
 describe('refreshPricingTable', () => {
-  beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('handles fetch network failure gracefully', async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network error'));
-    await expect(refreshPricingTable()).resolves.toBeUndefined();
-  });
-
-  it('handles non-ok fetch response gracefully', async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 503 });
-    await expect(refreshPricingTable()).resolves.toBeUndefined();
-  });
-
-  it('handles 304 not-modified gracefully', async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, status: 304 });
-    await expect(refreshPricingTable()).resolves.toBeUndefined();
-  });
-
-  it('updates active table when valid JSON returned', async () => {
-    const newTable = {
-      version: '2099-01-01',
-      anthropic: { 'claude-test': { inputPerMtok: 99, outputPerMtok: 99 } },
-      cursor: {},
-      codex: {},
-    };
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: { get: () => '"test-etag"' },
-      json: async () => newTable,
-    });
-    // force stale by resetting the timer via a fresh import cycle is not feasible in unit tests,
-    // but we can verify the function resolves without throwing.
-    await expect(refreshPricingTable()).resolves.toBeUndefined();
+  // CDN refresh is currently a no-op (placeholder URL `kay-am.dev` was never
+  // provisioned). Kept as a stable resolved-undefined contract so callers
+  // (e.g. App.tsx boot) don't break.
+  it('resolves to undefined without making any network call', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    try {
+      await expect(refreshPricingTable()).resolves.toBeUndefined();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

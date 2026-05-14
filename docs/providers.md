@@ -44,16 +44,20 @@ Requires **Claude Max** (or Claude Pro). kAY.am uses your subscription cap — n
 
 ### Install
 
-Install the Cursor editor from <https://www.cursor.com>, then enable the `cursor` CLI from **Cursor → Settings → General → Command Line**.
+```bash
+curl https://cursor.com/install -fsS | bash
+```
 
-Docs: <https://docs.cursor.com>
+Installs `cursor-agent` to `~/.local/bin/`. kAY.am invokes the CLI as `cursor-agent` (not `cursor`, which is the IDE binary).
 
-Verify: `cursor --version`
+Docs: <https://docs.cursor.com/en/cli/installation>
+
+Verify: `cursor-agent --version`
 
 ### Connect
 
 ```bash
-cursor /login
+cursor-agent login
 ```
 
 kAY.am opens an external terminal for the OAuth flow.
@@ -61,16 +65,19 @@ kAY.am opens an external terminal for the OAuth flow.
 ### Disconnect
 
 ```bash
-cursor /logout
+cursor-agent logout
 ```
 
 ### Subscription tier
 
 Requires **Cursor Pro**. kAY.am routes turns through Cursor's subscription-based model cap.
 
-### Summarizer model
+### Default models
 
-`cursor-small` — Cursor's documented cheap-tier alias. The underlying model may change; the alias is stable per Cursor docs.
+Cursor surfaces 50+ aliases via `cursor-agent models`. kAY.am exposes a curated subset:
+
+- **Turn**: `composer-2`, `gpt-5.5-high`, `gpt-5.5-medium`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium`, `gpt-5.3-codex`.
+- **Cheap**: `composer-2-fast` (default), `auto`.
 
 ---
 
@@ -82,7 +89,7 @@ Requires **Cursor Pro**. kAY.am routes turns through Cursor's subscription-based
 npm install -g @openai/codex
 ```
 
-Docs: <https://github.com/openai/codex>
+Docs: <https://developers.openai.com/codex/cli>
 
 Verify: `codex --version`
 
@@ -102,11 +109,46 @@ codex logout
 
 ### Subscription tier
 
-Requires **ChatGPT Pro**. kAY.am uses your subscription cap, not an OpenAI API key.
+Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_API_KEY` env var. kAY.am uses whichever auth the local `codex` CLI is configured with.
 
-### Summarizer model
+### Default models
 
-`codex-mini-latest` — OpenAI's cheap-tier alias for Codex. Subject to change as OpenAI publishes a stable mini model id.
+Per <https://developers.openai.com/codex/models> (May 2026):
+
+- **Turn**: `gpt-5.5` (default), `gpt-5.4`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2`.
+- **Cheap**: `gpt-5.4-mini`.
+
+### Turn spawn args
+
+kAY.am spawns codex non-interactively:
+
+```
+codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
+```
+
+In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode — kAY.am uses `exec` for headless JSONL streaming.
+
+### Non-TTY auth quirk
+
+codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so kAY.am explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix — rebuild from `feat/providers-overhaul`.
+
+### Debugging
+
+```bash
+KAYAM_DEBUG_CODEX=1 pnpm tauri dev
+```
+
+The terminal prints `[codex-debug] auth cmd: …`, the raw stdout/stderr from the auth subprocess, and for every codex turn it prints the full spawn args + exit code + stderr tail. Use this when the providers panel says one thing and the terminal says another.
+
+### Smoke test
+
+Confirm end-to-end auth + spawn work against the real binary:
+
+```bash
+KAYAM_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
+```
+
+Skipped by default; opt in when you want to verify a fresh install.
 
 ---
 

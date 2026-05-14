@@ -1,12 +1,6 @@
 import type { CodexModelPriceOverride } from '@kay-am/core';
 import shippedPricing from './data/pricing.json';
 
-// CDN URL for remote pricing refresh.
-// Replace with actual hosted URL before production release.
-const PRICING_CDN_URL = 'https://kay-am.dev/pricing.json';
-
-const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1_000;
-
 export interface ModelPrice {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
@@ -20,53 +14,18 @@ export interface PricingTable {
   readonly codex: Record<string, ModelPrice>;
 }
 
-function isPricingTable(value: unknown): value is PricingTable {
-  if (typeof value !== 'object' || value === null) return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v['version'] === 'string' &&
-    typeof v['anthropic'] === 'object' &&
-    typeof v['cursor'] === 'object' &&
-    typeof v['codex'] === 'object'
-  );
-}
-
-let activeTable: PricingTable = shippedPricing as PricingTable;
-let lastFetchAt = 0;
-let lastEtag: string | null = null;
+const activeTable: PricingTable = shippedPricing as PricingTable;
 
 export function getActivePricingTable(): PricingTable {
   return activeTable;
 }
 
+// Remote CDN refresh is intentionally disabled — the previous placeholder URL
+// (`kay-am.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
+// every boot and spammed DevTools with `Failed to load resource` 3×. The shipped
+// `data/pricing.json` is authoritative until a real CDN endpoint exists.
 export async function refreshPricingTable(): Promise<void> {
-  const now = Date.now();
-  if (now - lastFetchAt < REFRESH_INTERVAL_MS) return;
-
-  try {
-    const headers: Record<string, string> = {};
-    if (lastEtag !== null) headers['If-None-Match'] = lastEtag;
-
-    const res = await fetch(PRICING_CDN_URL, { headers });
-
-    if (res.status === 304) {
-      lastFetchAt = now;
-      return;
-    }
-
-    if (!res.ok) return;
-
-    const etag = res.headers.get('ETag');
-    const body: unknown = await res.json();
-
-    if (isPricingTable(body)) {
-      activeTable = body;
-      lastFetchAt = now;
-      if (etag !== null) lastEtag = etag;
-    }
-  } catch {
-    // network failure — keep current table
-  }
+  return;
 }
 
 // Dev-only override: merged on top of the active pricing table when IS_DEV is true.

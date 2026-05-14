@@ -62,11 +62,11 @@ function makeFs(files: Record<string, string>): SkillFs {
           .map((f) => f.slice(`${SKILLS_DIR}/`.length));
       }
       if (path === CLAUDE_SKILLS_DIR) {
-        // Return the immediate subdirectory names under .claude/skills/
+        // Return the immediate subdirectory names under the nested layout.
         const subdirs = new Set<string>();
         for (const f of Object.keys(files)) {
-          if (f.startsWith(`${CLAUDE_SKILLS_DIR}/`)) {
-            const rel = f.slice(`${CLAUDE_SKILLS_DIR}/`.length);
+          if (f.startsWith(`${path}/`)) {
+            const rel = f.slice(`${path}/`.length);
             const firstSegment = rel.split('/')[0];
             if (firstSegment !== undefined) subdirs.add(firstSegment);
           }

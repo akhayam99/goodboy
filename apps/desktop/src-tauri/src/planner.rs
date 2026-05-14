@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -58,7 +58,7 @@ pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerErro
     tauri::async_runtime::spawn_blocking(move || {
         let cli_args = build_cli_args(&args)?;
 
-        let output = Command::new(&args.binary)
+        let output = crate::path_env::command(&args.binary)
             .args(&cli_args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

@@ -37,7 +37,7 @@ fn detect_editors_inner() -> Vec<DetectedEditor> {
 }
 
 fn which_binary(binary: &str) -> Option<()> {
-    let status = Command::new("which").arg(binary).output().ok()?;
+    let status = crate::path_env::command("which").arg(binary).output().ok()?;
     if status.status.success() { Some(()) } else { None }
 }
 
@@ -87,7 +87,7 @@ pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), Editor
         }
     }
 
-    let mut cmd = Command::new(&binary);
+    let mut cmd = crate::path_env::command(&binary);
     if binary == "cursor" || binary == "code" {
         cmd.arg("--new-window");
     }
@@ -115,7 +115,7 @@ pub fn open_file_in_workspace(
 ) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
 
-    let mut cmd = Command::new(&binary);
+    let mut cmd = crate::path_env::command(&binary);
     if binary == "code" || binary == "cursor" {
         cmd.arg(&workspace_path);
         cmd.arg("-g");

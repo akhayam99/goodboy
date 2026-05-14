@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -234,7 +233,7 @@ fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeE
 }
 
 fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
-    let output = Command::new("git").args(args).current_dir(cwd).output()?;
+    let output = crate::path_env::command("git").args(args).current_dir(cwd).output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         return Err(WorktreeError::Git {

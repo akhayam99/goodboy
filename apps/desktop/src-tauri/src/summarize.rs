@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -58,7 +58,7 @@ pub async fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, Summ
     tauri::async_runtime::spawn_blocking(move || {
         let cli_args = build_cli_args(&args)?;
 
-        let output = Command::new(&args.binary)
+        let output = crate::path_env::command(&args.binary)
             .args(&cli_args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -99,9 +99,11 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
         "codex" => Ok(vec![
             "exec".to_string(),
             "--json".to_string(),
-            "--model".to_string(),
+            "-m".to_string(),
             args.model.clone(),
-            "--".to_string(),
+            "-s".to_string(),
+            "read-only".to_string(),
+            "--skip-git-repo-check".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
         ]),
         other => Err(SummarizeError::UnknownProvider(other.to_string())),
