@@ -74,7 +74,7 @@ import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
-  inferAgentKindFromName,
+  resolveAgentKind,
 } from '../agent-kind';
 import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
 import { openUrl } from '../editor';
@@ -1329,6 +1329,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [messages]);
 
+  // First user message per agent, kept stable so the chip's auto-label only
+  // ever derives from turn #1 even if later turns arrive.
+  const firstUserTextByAgentId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of messages) {
+      if (m.role !== 'user') continue;
+      if (map.has(m.agentId)) continue;
+      map.set(m.agentId, m.content);
+    }
+    return map;
+  }, [messages]);
+
   /**
    * Cumulative telemetry per agent across every providerRun we recorded for
    * that agent — needed so the cost/tokens row in the sidebar doesn't drop
@@ -1430,7 +1442,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
             const stepName = run.stepId
               ? (workflow?.steps.find((s) => s.id === run.stepId)?.name ?? null)
               : null;
-            const kind = inferAgentKindFromName(stepName ?? run.name);
+            const kind = resolveAgentKind(
+              stepName ?? run.name,
+              firstUserTextByAgentId.get(run.id) ?? null,
+            );
             return (
               <AgentRow
                 key={run.id}

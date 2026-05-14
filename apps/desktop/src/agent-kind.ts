@@ -1,4 +1,4 @@
-import type { WorkflowLibraryStep } from '@kay-am/core';
+import { classifyFirstTurn, type FirstTurnRole, type WorkflowLibraryStep } from '@kay-am/core';
 
 export type AgentKind =
   | 'scout'
@@ -111,4 +111,32 @@ export function inferAgentKindFromName(name: string): AgentKind {
   if (/review|verify|test|check|qa/.test(lower)) return 'reviewer';
   if (/doc|write|readme|changelog/.test(lower)) return 'docs';
   return 'generic';
+}
+
+// Bridges the core classifier's neutral role union to the desktop's AgentKind
+// enum. `tester` is folded into `reviewer` to match the existing AgentRole
+// mapping in packages/core/src/roles.ts.
+const FIRST_TURN_ROLE_TO_KIND: Readonly<Record<FirstTurnRole, AgentKind>> = {
+  scout: 'scout',
+  plan: 'planner',
+  implement: 'implementer',
+  review: 'reviewer',
+  test: 'reviewer',
+  docs: 'docs',
+  debug: 'debugger',
+};
+
+/**
+ * Resolve the chip's display kind. Prefers name-based inference; if that
+ * yields `generic`, falls back to classifying the agent's first user turn.
+ * Conservative — when the first turn cannot be confidently classified, stays
+ * `generic` (chip shows "agent").
+ */
+export function resolveAgentKind(name: string, firstUserText: string | null): AgentKind {
+  const fromName = inferAgentKindFromName(name);
+  if (fromName !== 'generic') return fromName;
+  if (!firstUserText) return 'generic';
+  const classified = classifyFirstTurn(firstUserText);
+  if (classified === 'unknown') return 'generic';
+  return FIRST_TURN_ROLE_TO_KIND[classified];
 }

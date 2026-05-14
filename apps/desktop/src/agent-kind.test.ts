@@ -6,6 +6,7 @@ import {
   type AgentKind,
   inferAgentKindFromName,
   inferAgentKindFromStep,
+  resolveAgentKind,
 } from './agent-kind';
 
 const ALL_KINDS: ReadonlyArray<AgentKind> = [
@@ -88,6 +89,30 @@ describe('inferAgentKindFromStep', () => {
 
   it('unknown role falls back to generic', () => {
     expect(inferAgentKindFromStep(makeStep('oracle'))).toBe('generic');
+  });
+});
+
+describe('resolveAgentKind', () => {
+  it('prefers name-based inference when the name is meaningful', () => {
+    expect(resolveAgentKind('Plan the migration', 'find the bug')).toBe('planner');
+    expect(resolveAgentKind('Review diff', 'implement the feature')).toBe('reviewer');
+  });
+
+  it('falls back to first-turn classification when the name is generic', () => {
+    expect(resolveAgentKind('agent 1', 'find where AgentKind is defined')).toBe('scout');
+    expect(resolveAgentKind('agent 2', 'plan the migration')).toBe('planner');
+    expect(resolveAgentKind('agent 3', 'implement the chip auto-label')).toBe('implementer');
+    expect(resolveAgentKind('agent 4', 'audit the diff')).toBe('reviewer');
+    expect(resolveAgentKind('agent 5', 'write tests for the parser')).toBe('reviewer');
+    expect(resolveAgentKind('agent 6', 'update the readme')).toBe('docs');
+    expect(resolveAgentKind('agent 7', 'debug the startup crash')).toBe('debugger');
+  });
+
+  it('stays generic when first turn is missing or unclassifiable', () => {
+    expect(resolveAgentKind('agent 1', null)).toBe('generic');
+    expect(resolveAgentKind('agent 1', '')).toBe('generic');
+    expect(resolveAgentKind('agent 1', 'hello')).toBe('generic');
+    expect(resolveAgentKind('agent 1', 'plan and implement and test it')).toBe('generic');
   });
 });
 
