@@ -178,6 +178,7 @@ export {
   detect as detectGh,
   detectRepoSlug,
   fetchLinkedIssues,
+  fetchPrDetail,
   fetchPrDiff,
   getPrForBranch,
   invalidatePrCache,

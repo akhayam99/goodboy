@@ -1,0 +1,523 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  AlertCircle,
+  Check,
+  CheckCheck,
+  CircleDashed,
+  CircleSlash,
+  Clock,
+  ExternalLink,
+  HelpCircle,
+  MessageSquare,
+  MinusCircle,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
+import { cn } from '@kay-am/ui';
+import type {
+  PrCheckConclusion,
+  PrCheckRun,
+  PrComment,
+  PrDetail,
+  PrReview,
+  PrReviewRequest,
+  PrReviewState,
+  PullRequestState,
+} from '@kay-am/types';
+
+const TAB_KEYS = ['ci', 'comments', 'review'] as const;
+export type GithubTabKey = (typeof TAB_KEYS)[number];
+
+const TAB_LABEL: Record<GithubTabKey, string> = {
+  ci: 'CI',
+  comments: 'Comments',
+  review: 'Review',
+};
+
+const TAB_ICON_BTN =
+  'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+
+interface GithubCardProps {
+  readonly pr: PullRequestState;
+  readonly detail: PrDetail | null;
+  readonly detailLoading: boolean;
+  readonly detailError: string | null;
+  readonly detailFetchedAt: string | null;
+  readonly branchLastActivity: string | null;
+  readonly onOpenUrl: (url: string) => void;
+  readonly onRefresh: () => void;
+}
+
+export function GithubCard({
+  pr,
+  detail,
+  detailLoading,
+  detailError,
+  detailFetchedAt,
+  branchLastActivity,
+  onOpenUrl,
+  onRefresh,
+}: GithubCardProps) {
+  const smartDefault = useMemo(
+    () => pickSmartTab(pr, detail, branchLastActivity),
+    [pr, detail, branchLastActivity],
+  );
+  const [active, setActive] = useState<GithubTabKey>(smartDefault);
+  const [userSelectedPr, setUserSelectedPr] = useState<number | null>(null);
+  const isUserPick = userSelectedPr === pr.number;
+
+  useEffect(() => {
+    if (!isUserPick) setActive(smartDefault);
+  }, [smartDefault, isUserPick]);
+
+  const selectTab = (k: GithubTabKey) => {
+    setUserSelectedPr(pr.number);
+    setActive(k);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        <span
+          className="inline-flex rounded border border-border-soft bg-subtle"
+          role="tablist"
+          aria-label="github card view"
+        >
+          {TAB_KEYS.map((k) => {
+            const isActive = k === active;
+            return (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => selectTab(k)}
+                className={cn(
+                  'px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
+                  isActive
+                    ? 'bg-background font-semibold text-foreground shadow-sm'
+                    : 'text-muted-foreground/70 hover:text-foreground',
+                )}
+              >
+                {TAB_LABEL[k]}
+              </button>
+            );
+          })}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          <StaleCaption fetchedAt={detailFetchedAt} />
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={detailLoading}
+            title="refresh github data"
+            aria-label="refresh github data"
+            className={cn(TAB_ICON_BTN, 'disabled:opacity-40')}
+          >
+            <RefreshCw size={10} className={cn(detailLoading && 'animate-spin')} aria-hidden />
+          </button>
+        </div>
+      </div>
+
+      <div className="max-h-44 overflow-y-auto rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+        {detailError ? (
+          <ErrorRow message={detailError} onRetry={onRefresh} />
+        ) : detailLoading && !detail ? (
+          <DetailSkeleton />
+        ) : active === 'ci' ? (
+          <CiPane checks={detail?.checks ?? []} pr={pr} onOpenUrl={onOpenUrl} />
+        ) : active === 'comments' ? (
+          <CommentsPane comments={detail?.comments ?? []} pr={pr} onOpenUrl={onOpenUrl} />
+        ) : (
+          <ReviewPane
+            reviews={detail?.reviews ?? []}
+            requests={detail?.reviewRequests ?? []}
+            pr={pr}
+            onOpenUrl={onOpenUrl}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
+  const [, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!fetchedAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, [fetchedAt]);
+  if (!fetchedAt) return null;
+  const ageMs = Date.now() - new Date(fetchedAt).getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 60_000) return null;
+  return (
+    <span
+      className="text-[9px] text-muted-foreground/60"
+      title={`fetched at ${new Date(fetchedAt).toLocaleString()}`}
+    >
+      updated {formatRelative(ageMs)}
+    </span>
+  );
+}
+
+function ErrorRow({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] text-danger">
+      <AlertCircle size={11} aria-hidden />
+      <span className="min-w-0 flex-1 truncate" title={message}>
+        {message}
+      </span>
+      <button
+        type="button"
+        onClick={onRetry}
+        title="retry"
+        aria-label="retry"
+        className={TAB_ICON_BTN}
+      >
+        <RefreshCw size={10} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="flex flex-col gap-1.5" aria-hidden>
+      <div className="h-2.5 w-3/4 animate-pulse rounded bg-muted" />
+      <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted" />
+      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted" />
+    </div>
+  );
+}
+
+function CiPane({
+  checks,
+  pr,
+  onOpenUrl,
+}: {
+  checks: ReadonlyArray<PrCheckRun>;
+  pr: PullRequestState;
+  onOpenUrl: (url: string) => void;
+}) {
+  if (checks.length === 0) {
+    return (
+      <EmptyRow
+        text="No CI runs yet"
+        actionUrl={pr.url}
+        actionLabel="view on github"
+        onOpenUrl={onOpenUrl}
+      />
+    );
+  }
+  return (
+    <ul className="flex flex-col gap-0.5">
+      {checks.map((c, idx) => (
+        <li key={`${c.name}-${idx}`}>
+          <button
+            type="button"
+            onClick={() => (c.detailsUrl ? onOpenUrl(c.detailsUrl) : onOpenUrl(pr.url))}
+            className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-[11px] text-left hover:bg-background"
+            title={c.detailsUrl ?? c.name}
+          >
+            <CheckConclusionIcon conclusion={c.conclusion} />
+            <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground/70">
+              {formatDuration(c.durationMs)}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CommentsPane({
+  comments,
+  pr,
+  onOpenUrl,
+}: {
+  comments: ReadonlyArray<PrComment>;
+  pr: PullRequestState;
+  onOpenUrl: (url: string) => void;
+}) {
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  if (comments.length === 0) {
+    return (
+      <EmptyRow
+        text="No comments yet"
+        actionUrl={pr.url}
+        actionLabel="view on github"
+        onOpenUrl={onOpenUrl}
+      />
+    );
+  }
+  const latest = [...comments].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
+  const toggle = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {latest.map((c) => (
+        <li key={c.id} className="flex gap-1.5">
+          <Avatar url={c.authorAvatarUrl} alt={c.author} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <span className="truncate font-medium text-foreground">{c.author}</span>
+              <span className="opacity-60">·</span>
+              <span>{formatRelative(Date.now() - new Date(c.createdAt).getTime())}</span>
+              <button
+                type="button"
+                onClick={() => onOpenUrl(c.url)}
+                title="open comment in browser"
+                aria-label="open comment in browser"
+                className={cn(TAB_ICON_BTN, 'ml-auto')}
+              >
+                <ExternalLink size={9} aria-hidden />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggle(c.id)}
+              className={cn(
+                'text-left text-[11px] text-foreground/90 hover:text-foreground',
+                expanded.has(c.id) ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
+              )}
+              title={expanded.has(c.id) ? 'collapse' : 'expand'}
+            >
+              {c.body.trim() || '(empty)'}
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ReviewPane({
+  reviews,
+  requests,
+  pr,
+  onOpenUrl,
+}: {
+  reviews: ReadonlyArray<PrReview>;
+  requests: ReadonlyArray<PrReviewRequest>;
+  pr: PullRequestState;
+  onOpenUrl: (url: string) => void;
+}) {
+  const summary = summarizeReview(pr, reviews, requests);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div
+        className={cn(
+          'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+          summary.tone,
+        )}
+      >
+        {summary.icon}
+        <span>{summary.label}</span>
+      </div>
+      {requests.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">requested:</span>
+          {requests.map((r) => (
+            <span
+              key={`${r.kind}-${r.login}`}
+              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-[10px] text-foreground"
+            >
+              <Avatar url={r.avatarUrl} alt={r.login} />
+              <span className="truncate">{r.login}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {reviews.length === 0 && requests.length === 0 ? (
+        <button
+          type="button"
+          onClick={() => onOpenUrl(pr.url)}
+          className="inline-flex w-fit items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+        >
+          view on github
+          <ExternalLink size={9} aria-hidden />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function EmptyRow({
+  text,
+  actionUrl,
+  actionLabel,
+  onOpenUrl,
+}: {
+  text: string;
+  actionUrl: string;
+  actionLabel: string;
+  onOpenUrl: (url: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <span>{text}</span>
+      <button
+        type="button"
+        onClick={() => onOpenUrl(actionUrl)}
+        className="inline-flex items-center gap-0.5 hover:text-foreground"
+        title={actionLabel}
+      >
+        <ExternalLink size={9} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function Avatar({ url, alt }: { url: string | null; alt: string }) {
+  if (!url) {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold text-muted-foreground"
+      >
+        {alt.slice(0, 1).toUpperCase()}
+      </span>
+    );
+  }
+  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />;
+}
+
+function CheckConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
+  const props = { size: 11, 'aria-hidden': true } as const;
+  if (conclusion === 'success') return <Check {...props} className="text-success" />;
+  if (conclusion === 'failure') return <XCircle {...props} className="text-danger" />;
+  if (conclusion === 'pending')
+    return <Clock {...props} className="text-warning motion-safe:animate-pulse" />;
+  if (conclusion === 'cancelled' || conclusion === 'timed_out')
+    return <CircleSlash {...props} className="text-muted-foreground" />;
+  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale')
+    return <MinusCircle {...props} className="text-muted-foreground" />;
+  if (conclusion === 'action_required') return <AlertCircle {...props} className="text-warning" />;
+  return <HelpCircle {...props} className="text-muted-foreground" />;
+}
+
+interface ReviewSummary {
+  readonly label: string;
+  readonly tone: string;
+  readonly icon: ReactNode;
+}
+
+function summarizeReview(
+  pr: PullRequestState,
+  reviews: ReadonlyArray<PrReview>,
+  requests: ReadonlyArray<PrReviewRequest>,
+): ReviewSummary {
+  const latestByAuthor = new Map<string, PrReview>();
+  for (const r of [...reviews].sort((a, b) =>
+    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
+  )) {
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    latestByAuthor.set(r.author, r);
+  }
+  const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved');
+  const changes = [...latestByAuthor.values()].filter((r) => r.state === 'changes_requested');
+  if (changes.length > 0) {
+    return {
+      label: `Changes requested by ${changes.map((r) => r.author).join(', ')}`,
+      tone: 'bg-danger/10 text-danger',
+      icon: <AlertCircle size={10} aria-hidden />,
+    };
+  }
+  if (pr.reviewDecision === 'approved' || approvals.length > 0) {
+    const who = approvals.length > 0 ? approvals.map((r) => r.author).join(', ') : 'reviewer';
+    return {
+      label: `Approved by ${who}`,
+      tone: 'bg-success/10 text-success',
+      icon: <CheckCheck size={10} aria-hidden />,
+    };
+  }
+  if (requests.length > 0) {
+    return {
+      label: 'Awaiting review',
+      tone: 'bg-info/10 text-info',
+      icon: <CircleDashed size={10} aria-hidden />,
+    };
+  }
+  if (reviews.some((r) => r.state === 'commented')) {
+    return {
+      label: 'Reviewer commented',
+      tone: 'bg-muted text-muted-foreground',
+      icon: <MessageSquare size={10} aria-hidden />,
+    };
+  }
+  return {
+    label: 'No reviewer assigned',
+    tone: 'bg-muted text-muted-foreground',
+    icon: <CircleSlash size={10} aria-hidden />,
+  };
+}
+
+export function pickSmartTab(
+  pr: PullRequestState,
+  detail: PrDetail | null,
+  branchLastActivity: string | null,
+): GithubTabKey {
+  const checks = detail?.checks ?? [];
+  const hasFailing = checks.some(
+    (c) =>
+      c.conclusion === 'failure' ||
+      c.conclusion === 'cancelled' ||
+      c.conclusion === 'timed_out' ||
+      c.conclusion === 'action_required',
+  );
+  const hasPending = checks.some((c) => c.conclusion === 'pending');
+  if (hasFailing || hasPending) return 'ci';
+  if (pr.checks === 'failure' || pr.checks === 'pending') return 'ci';
+
+  const reviews = detail?.reviews ?? [];
+  const latestByAuthor = new Map<string, PrReviewState>();
+  for (const r of [...reviews].sort((a, b) =>
+    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
+  )) {
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    latestByAuthor.set(r.author, r.state);
+  }
+  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) return 'review';
+  if (pr.reviewDecision === 'changes_requested') return 'review';
+
+  const comments = detail?.comments ?? [];
+  if (comments.length > 0) {
+    const last = comments.reduce(
+      (acc, c) => (c.createdAt > acc ? c.createdAt : acc),
+      comments[0]!.createdAt,
+    );
+    const activity = branchLastActivity ?? pr.updatedAt;
+    if (last > activity) return 'comments';
+  }
+  return 'ci';
+}
+
+function formatDuration(ms: number | null): string {
+  if (ms === null) return '';
+  if (ms < 1_000) return `${ms}ms`;
+  const s = Math.round(ms / 1_000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  return rs > 0 ? `${m}m ${rs}s` : `${m}m`;
+}
+
+function formatRelative(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  const s = Math.round(ms / 1_000);
+  if (s < 45) return 'just now';
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
+}

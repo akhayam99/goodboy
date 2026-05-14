@@ -73,3 +73,62 @@ export interface GithubPrCacheEntry {
   pr: PullRequestState | null;
   fetchedAt: string;
 }
+
+export type PrCheckConclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | 'stale'
+  | 'skipped'
+  | 'pending'
+  | 'unknown';
+
+export interface PrCheckRun {
+  name: string;
+  conclusion: PrCheckConclusion;
+  detailsUrl: string | null;
+  durationMs: number | null;
+}
+
+export interface PrComment {
+  id: string;
+  author: string;
+  authorAvatarUrl: string | null;
+  body: string;
+  createdAt: string;
+  url: string;
+  source: 'issue' | 'review';
+}
+
+export type PrReviewState =
+  | 'approved'
+  | 'changes_requested'
+  | 'commented'
+  | 'dismissed'
+  | 'pending';
+
+export interface PrReview {
+  id: string;
+  author: string;
+  authorAvatarUrl: string | null;
+  state: PrReviewState;
+  submittedAt: string | null;
+  body: string;
+}
+
+export interface PrReviewRequest {
+  login: string;
+  avatarUrl: string | null;
+  kind: 'user' | 'team';
+}
+
+export interface PrDetail {
+  prNumber: number;
+  comments: ReadonlyArray<PrComment>;
+  reviews: ReadonlyArray<PrReview>;
+  reviewRequests: ReadonlyArray<PrReviewRequest>;
+  checks: ReadonlyArray<PrCheckRun>;
+}
