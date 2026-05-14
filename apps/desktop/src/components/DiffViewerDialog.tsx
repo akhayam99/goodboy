@@ -47,6 +47,12 @@ interface DiffViewerDialogProps {
   jumpToFile?: string;
 }
 
+const LINE_PREFIX: Record<DiffHunkLine['kind'], string> = {
+  add: '+',
+  del: '-',
+  context: ' ',
+};
+
 const STATUS_GLYPH: Record<FileDiffStatus, string> = {
   added: 'A',
   modified: 'M',
@@ -930,6 +936,7 @@ function FileDiffPane({
                       activeAnchor !== null &&
                       activeAnchor.side === anchor.side &&
                       activeAnchor.lineNumber === anchor.lineNumber;
+                    const linePrefix = LINE_PREFIX[line.kind];
                     return (
                       <Fragment key={`hunk-${hi}-line-${li}`}>
                         <tr
@@ -968,7 +975,7 @@ function FileDiffPane({
                               line.kind === 'del' && 'text-danger',
                             )}
                           >
-                            {line.kind === 'add' ? '+' : line.kind === 'del' ? '-' : ' '}
+                            {linePrefix}
                             {line.text}
                           </td>
                         </tr>

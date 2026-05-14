@@ -104,6 +104,12 @@ export function PlannerWidget({
     }
   };
 
+  const planButtonLabel = (() => {
+    if (busy && !plan) return 'Planning…';
+    if (plan) return 'Re-plan';
+    return 'Generate plan';
+  })();
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
@@ -121,7 +127,7 @@ export function PlannerWidget({
           planner returns a structured workflow you can review before saving.
         </p>
         <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
-          {busy && !plan ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
+          {planButtonLabel}
         </Button>
       </div>
       {error ? (

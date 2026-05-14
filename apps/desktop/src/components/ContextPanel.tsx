@@ -820,12 +820,11 @@ function SummarizerBadge({
     running: 'summarizing…',
     error: 'error',
   };
-  const tooltip =
-    status === 'error' && error
-      ? `last error: ${error}`
-      : lastUpdate
-        ? `last update: ${lastUpdate}`
-        : 'summarizer running — input is not blocked';
+  const tooltip = (() => {
+    if (status === 'error' && error) return `last error: ${error}`;
+    if (lastUpdate) return `last update: ${lastUpdate}`;
+    return 'summarizer running — input is not blocked';
+  })();
   return (
     <span
       title={tooltip}

@@ -67,6 +67,13 @@ export function PermissionScopePicker({
     deny: 'deny this request',
   };
 
+  const scopeTone = (scope: PermissionScope): string => {
+    if (scope === 'task')
+      return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
+    if (scope === 'deny') return 'border-danger/40 text-danger hover:bg-danger/10';
+    return 'border-success/40 text-success hover:bg-success/10';
+  };
+
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
       {scopes.map((scope) => (
@@ -78,11 +85,7 @@ export function PermissionScopePicker({
           title={SCOPE_TITLES[scope]}
           className={cn(
             'rounded border px-2 py-0.5 text-2xs font-medium transition-colors',
-            scope === 'task'
-              ? 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90'
-              : scope === 'deny'
-                ? 'border-danger/40 text-danger hover:bg-danger/10'
-                : 'border-success/40 text-success hover:bg-success/10',
+            scopeTone(scope),
             busy && 'cursor-not-allowed opacity-50',
           )}
         >

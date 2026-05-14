@@ -14,8 +14,11 @@ export function ProviderUsagePill({ provider }: { provider: ProviderId }) {
   if (!entry || entry.capUsd === null || entry.capUsd <= 0) return null;
   const pctUsed = Math.max(0, Math.min(1, entry.pct));
   const pctRemaining = Math.round((1 - pctUsed) * 100);
-  const tone =
-    pctRemaining > 50 ? 'text-success' : pctRemaining > 20 ? 'text-warning' : 'text-danger';
+  const tone = (() => {
+    if (pctRemaining > 50) return 'text-success';
+    if (pctRemaining > 20) return 'text-warning';
+    return 'text-danger';
+  })();
   const reset = nextMonthlyResetLabel();
   const tooltip = `${provider}: $${entry.spentUsd.toFixed(2)} / $${entry.capUsd.toFixed(2)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
   return (
