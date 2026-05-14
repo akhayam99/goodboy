@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot } from '@kay-am/types';
 import type { ContextSlotDelta, SummarizeInput } from './client';
-import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
-
-const LOCKED_GOAL = 'add caching layer to the auth module';
+import { inferNextActions } from './next-actions';
 
 function buildInput(
   turnOutput: string,
@@ -16,191 +14,122 @@ function delta(upserts: Array<{ key: string; value: string }> = []): ContextSlot
   return { upserts: upserts as ContextSlotDelta['upserts'] };
 }
 
-function slots(map: Record<string, string>, opts: { withGoal?: boolean } = {}): ContextSlot[] {
-  const out: ContextSlot[] = [];
-  if (opts.withGoal !== false && map.goal === undefined) {
-    out.push({ key: 'goal', value: LOCKED_GOAL, enabled: true });
-  }
-  for (const [key, value] of Object.entries(map)) {
-    out.push({ key, value, enabled: true });
-  }
-  return out;
-}
-
-function findById<T extends NextAction['id']>(
-  actions: ReadonlyArray<NextAction>,
-  id: T,
-): Extract<NextAction, { id: T }> | undefined {
-  return actions.find((a) => a.id === id) as Extract<NextAction, { id: T }> | undefined;
+function slots(map: Record<string, string>): ContextSlot[] {
+  return Object.entries(map).map(([key, value]) => ({ key, value, enabled: true }));
 }
 
 describe('inferNextActions — trigger gating', () => {
-  it('returns [] when open_questions slot has content (still refining)', () => {
-    const actions = inferNextActions({
-      input: buildInput('here is a draft plan'),
-      delta: delta(),
-      slotsAfter: slots({ open_questions: 'which db driver?' }),
-    });
-    expect(actions).toEqual([]);
-  });
-
-  it('returns [] when goal is empty (still framing)', () => {
-    const actions = inferNextActions({
-      input: buildInput('drafted a plan'),
-      delta: delta(),
-      slotsAfter: slots({ goal: '' }, { withGoal: false }),
-    });
-    expect(actions).toEqual([]);
-  });
-
-  it('returns [] when goal is very short (still framing)', () => {
-    const actions = inferNextActions({
-      input: buildInput('drafted a plan'),
-      delta: delta(),
-      slotsAfter: slots({ goal: 'fix it' }, { withGoal: false }),
-    });
-    expect(actions).toEqual([]);
-  });
-
-  it('surfaces actions once goal is locked and no open questions remain', () => {
-    const actions = inferNextActions({
-      input: buildInput('drafted a plan for the new caching layer'),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    expect(actions.length).toBeGreaterThan(0);
-  });
-});
-
-describe('inferNextActions — option set after each phase', () => {
-  it('after scout turn → plan + refine scope', () => {
-    const actions = inferNextActions({
-      input: buildInput('explored the auth module and mapped its dependencies'),
-      delta: delta([{ key: 'last_output_summary', value: 'investigated auth code paths' }]),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'spawn_planner')).toBeDefined();
-    expect(findById(actions, 'spawn_scout')).toBeDefined();
-  });
-
-  it('after plan turn → implement + refine plan', () => {
-    const actions = inferNextActions({
-      input: buildInput('drafted a plan for the new caching layer'),
-      delta: delta([{ key: 'last_output_summary', value: 'planned caching design' }]),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'spawn_implementer')).toBeDefined();
-    expect(findById(actions, 'spawn_planner')).toBeDefined();
-  });
-
-  it('after implementation turn → review + tests + open pr', () => {
-    const actions = inferNextActions({
-      input: buildInput('implemented the new endpoint'),
-      delta: delta([{ key: 'last_output_summary', value: 'wrote handler' }]),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'spawn_reviewer')).toBeDefined();
-    expect(findById(actions, 'spawn_tester')).toBeDefined();
-    expect(findById(actions, 'open_pr')).toBeDefined();
-  });
-
-  it('after implementation that already mentions tests → review + open pr (no extra test chip)', () => {
-    const actions = inferNextActions({
-      input: buildInput('implemented endpoint and added unit tests'),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'spawn_reviewer')).toBeDefined();
-    expect(findById(actions, 'spawn_tester')).toBeUndefined();
-    expect(findById(actions, 'open_pr')).toBeDefined();
-  });
-
-  it('after implementation when PR already exists → suggests neither open_pr nor a new impl chip', () => {
-    const actions = inferNextActions({
-      input: buildInput('implemented and opened pr #42'),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'open_pr')).toBeUndefined();
-  });
-});
-
-describe('inferNextActions — bug + pr-state branches', () => {
-  it('suggests debug + tests when bug mentioned', () => {
-    const actions = inferNextActions({
-      input: buildInput('found a bug in auth/session.ts where tokens leak across requests'),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    const debug = findById(actions, 'spawn_debugger');
-    expect(debug).toBeDefined();
-    expect(debug?.payload?.topic).toMatch(/auth\/session\.ts/);
-    expect(findById(actions, 'spawn_tester')).toBeDefined();
-  });
-
-  it('returns merge_pr only when PR open + checks green', () => {
-    const prState: NextActionsPrState = { hasOpenPr: true, checksGreen: true };
-    const actions = inferNextActions({
-      input: buildInput('ci passed'),
-      delta: delta(),
-      slotsAfter: slots({}),
-      prState,
-    });
-    expect(actions).toEqual([{ id: 'merge_pr', label: 'merge pr' }]);
-  });
-
-  it('returns debug + tests when PR open + checks failing', () => {
-    const prState: NextActionsPrState = { hasOpenPr: true, checksGreen: false };
-    const actions = inferNextActions({
-      input: buildInput('ci red'),
-      delta: delta(),
-      slotsAfter: slots({}),
-      prState,
-    });
-    expect(findById(actions, 'spawn_debugger')).toBeDefined();
-    expect(findById(actions, 'spawn_tester')).toBeDefined();
-  });
-
-  it('pr-state branches override the refinement gate', () => {
-    const prState: NextActionsPrState = { hasOpenPr: true, checksGreen: true };
-    const actions = inferNextActions({
-      input: buildInput('ci passed'),
-      delta: delta(),
-      slotsAfter: slots({ open_questions: 'still unclear' }),
-      prState,
-    });
-    expect(actions).toEqual([{ id: 'merge_pr', label: 'merge pr' }]);
-  });
-});
-
-describe('inferNextActions — invariants', () => {
-  it('caps at 3 actions', () => {
-    const actions = inferNextActions({
-      input: buildInput(
-        'scouted the code, drafted a plan, implemented the change, found a regression',
-      ),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    expect(actions.length).toBeLessThanOrEqual(3);
-  });
-
-  it('returns a generic plan + refine fallback when goal locked and nothing else fires', () => {
-    const actions = inferNextActions({
-      input: buildInput('hello world'),
-      delta: delta(),
-      slotsAfter: slots({}),
-    });
-    expect(findById(actions, 'spawn_planner')).toBeDefined();
-    expect(findById(actions, 'spawn_scout')).toBeDefined();
-  });
-
-  it('reads delta upsert values to detect impl phase', () => {
+  it('returns [] when no turn output and no slots populated', () => {
     const actions = inferNextActions({
       input: buildInput(''),
-      delta: delta([{ key: 'last_output_summary', value: 'finished implementation of feature X' }]),
-      slotsAfter: slots({}),
+      delta: delta(),
+      slotsAfter: [],
     });
-    expect(findById(actions, 'open_pr')).toBeDefined();
+    expect(actions).toEqual([]);
+  });
+
+  it('emits the trio after the first turn (turnOutput present)', () => {
+    const actions = inferNextActions({
+      input: buildInput('drafted a plan for the caching layer'),
+      delta: delta(),
+      slotsAfter: [],
+    });
+    expect(actions.map((a) => a.kind)).toEqual(['scout', 'plan', 'implement']);
+  });
+
+  it('emits the trio when open_questions has content', () => {
+    const actions = inferNextActions({
+      input: buildInput(''),
+      delta: delta(),
+      slotsAfter: slots({ open_questions: 'which db driver? which cache layer?' }),
+    });
+    expect(actions).toHaveLength(3);
+    expect(actions.map((a) => a.kind)).toEqual(['scout', 'plan', 'implement']);
+  });
+
+  it('emits the trio when last_output_summary describes a decision branch', () => {
+    const actions = inferNextActions({
+      input: buildInput(''),
+      delta: delta(),
+      slotsAfter: slots({ last_output_summary: 'decide between redis and memcached' }),
+    });
+    expect(actions).toHaveLength(3);
+  });
+});
+
+describe('inferNextActions — trio shape', () => {
+  it('emits exactly 3 actions with stable ids', () => {
+    const actions = inferNextActions({
+      input: buildInput('explored the auth module'),
+      delta: delta(),
+      slotsAfter: [],
+    });
+    expect(actions.map((a) => a.id)).toEqual(['next-scout', 'next-plan', 'next-implement']);
+  });
+
+  it('uses Italian labels for the trio', () => {
+    const actions = inferNextActions({
+      input: buildInput('something'),
+      delta: delta(),
+      slotsAfter: [],
+    });
+    expect(actions.map((a) => a.label)).toEqual(['Esplora codice', 'Pianifica', 'Implementa']);
+  });
+
+  it('embeds open_questions topics into prompts (comma-joined for scout)', () => {
+    const actions = inferNextActions({
+      input: buildInput(''),
+      delta: delta(),
+      slotsAfter: slots({ open_questions: 'auth flow, session storage, token TTL' }),
+    });
+    const scout = actions.find((a) => a.kind === 'scout');
+    expect(scout?.prompt).toContain('auth flow');
+    expect(scout?.prompt).toContain('session storage');
+    expect(scout?.prompt).toContain('token TTL');
+  });
+
+  it('falls back to last_output_summary nouns when open_questions empty', () => {
+    const actions = inferNextActions({
+      input: buildInput(''),
+      delta: delta(),
+      slotsAfter: slots({ last_output_summary: 'caching layer authentication module' }),
+    });
+    const scout = actions.find((a) => a.kind === 'scout');
+    expect(scout?.prompt).toMatch(/caching/);
+  });
+
+  it('plan and implement prompts use the first topic only', () => {
+    const actions = inferNextActions({
+      input: buildInput(''),
+      delta: delta(),
+      slotsAfter: slots({ open_questions: 'topicA, topicB, topicC' }),
+    });
+    const plan = actions.find((a) => a.kind === 'plan');
+    const impl = actions.find((a) => a.kind === 'implement');
+    expect(plan?.prompt).toContain('topicA');
+    expect(plan?.prompt).not.toContain('topicB');
+    expect(impl?.prompt).toContain('topicA');
+    expect(impl?.prompt).not.toContain('topicB');
+  });
+
+  it('uses a fallback subject when no topics can be derived', () => {
+    const actions = inferNextActions({
+      input: buildInput('   '),
+      delta: delta(),
+      slotsAfter: slots({ open_questions: '   ' }),
+    });
+    expect(actions).toEqual([]);
+  });
+});
+
+describe('inferNextActions — pr-state ignored', () => {
+  it('pr-state does not change the trio output', () => {
+    const actions = inferNextActions({
+      input: buildInput('ci passed'),
+      delta: delta(),
+      slotsAfter: [],
+      prState: { hasOpenPr: true, checksGreen: true },
+    });
+    expect(actions.map((a) => a.kind)).toEqual(['scout', 'plan', 'implement']);
   });
 });

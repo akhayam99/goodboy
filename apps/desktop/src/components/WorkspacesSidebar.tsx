@@ -1619,24 +1619,24 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
 
 function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect: () => void }) {
   const kind = spawnKindForAction(action);
-  const palette = kind ? AGENT_KIND_PALETTE[kind] : null;
-  const defaults = kind ? AGENT_KIND_DEFAULTS[kind] : null;
+  const palette = AGENT_KIND_PALETTE[kind];
+  const defaults = AGENT_KIND_DEFAULTS[kind];
   return (
     <button
       type="button"
       role="menuitem"
       onClick={onSelect}
-      title={defaults ? `${defaults.model} · ${defaults.effort} effort` : action.label}
+      title={`${defaults.model} · ${defaults.effort} effort`}
       className={cn(
         'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors',
-        palette ? `${palette.bg} ${palette.fg} hover:opacity-90` : 'hover:bg-muted',
+        `${palette.bg} ${palette.fg} hover:opacity-90`,
       )}
     >
       <span className="flex items-center gap-1.5">
         <ArrowRight size={11} aria-hidden />
         <span className="font-medium">{action.label}</span>
       </span>
-      {defaults ? <span className="text-2xs opacity-70">{shortModel(defaults.model)}</span> : null}
+      <span className="text-2xs opacity-70">{shortModel(defaults.model)}</span>
     </button>
   );
 }

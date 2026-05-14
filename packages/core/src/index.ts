@@ -104,6 +104,7 @@ export {
   type ContextSlotDeltaUpsert,
   type InferNextActionsInput,
   type NextAction,
+  type NextActionKind,
   type NextActionsPrState,
   type SummarizeInput,
   type SummarizerDeps,
