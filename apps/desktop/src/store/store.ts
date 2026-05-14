@@ -2161,12 +2161,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
 
         if (event.kind === 'usage') {
-          const cost =
-            provider === 'codex'
-              ? computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model))
-              : provider === 'cursor'
-                ? computeCursorCostUsd(event.usage, model)
-                : computeCostUsd(event.usage, model);
+          const cost = (() => {
+            if (provider === 'codex') {
+              return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
+            }
+            if (provider === 'cursor') return computeCursorCostUsd(event.usage, model);
+            return computeCostUsd(event.usage, model);
+          })();
           const record: TelemetryRecord = {
             id: crypto.randomUUID() as TelemetryRecordId,
             runId,

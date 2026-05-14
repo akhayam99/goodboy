@@ -139,7 +139,11 @@ function PhaseProgressPill({ taskId }: { taskId: TaskId }) {
   // Selected agent takes priority — pill reflects the agent the user is
   // looking at, not workflow-wide running state. Falls back to running, then
   // last completed when no agent is selected (e.g. fresh task).
-  const displayIdx = selectedIdx >= 0 ? selectedIdx : activeIdx >= 0 ? activeIdx : lastCompletedIdx;
+  const displayIdx = (() => {
+    if (selectedIdx >= 0) return selectedIdx;
+    if (activeIdx >= 0) return activeIdx;
+    return lastCompletedIdx;
+  })();
   const current = displayIdx >= 0 ? sorted[displayIdx] : sorted[0];
 
   if (!current) return null;

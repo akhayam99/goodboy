@@ -785,8 +785,12 @@ function SessionRow({
   const cap = budget?.softCapUsd ?? null;
   const pct = cap !== null && cap > 0 ? spent / cap : null;
 
-  const barColor =
-    pct === null ? '' : pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : 'bg-muted-foreground';
+  const barColor = (() => {
+    if (pct === null) return '';
+    if (pct >= 1) return 'bg-danger';
+    if (pct >= 0.8) return 'bg-warning';
+    return 'bg-muted-foreground';
+  })();
 
   const onCapClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1944,16 +1948,18 @@ function ContextWindowBar({
   const cumulativeOutput = aggregate?.outputTokens ?? telemetry.outputTokens;
   const used = cumulativeInput + cumulativeOutput;
   const pct = Math.min(1, used / window);
-  const barTone =
-    pct >= 0.9 ? 'bg-danger' : pct >= 0.75 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
-  const iconTone =
-    pct >= 0.9
-      ? 'text-danger'
-      : pct >= 0.75
-        ? 'text-warning'
-        : pct >= 0.5
-          ? 'text-info'
-          : 'text-success';
+  const barTone = (() => {
+    if (pct >= 0.9) return 'bg-danger';
+    if (pct >= 0.75) return 'bg-warning';
+    if (pct >= 0.5) return 'bg-info';
+    return 'bg-success';
+  })();
+  const iconTone = (() => {
+    if (pct >= 0.9) return 'text-danger';
+    if (pct >= 0.75) return 'text-warning';
+    if (pct >= 0.5) return 'text-info';
+    return 'text-success';
+  })();
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
   const tooltip =
     `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +

@@ -36,9 +36,15 @@ export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
     window.setTimeout(() => setState('idle'), 1200);
   };
 
+  const buttonText = (() => {
+    if (state === 'copied') return `copied: ${label}`;
+    if (state === 'error') return 'copy failed';
+    return 'copy';
+  })();
+
   return (
     <Button variant="ghost" size="sm" onClick={() => void onCopy()} aria-label={`copy ${label}`}>
-      {state === 'copied' ? `copied: ${label}` : state === 'error' ? 'copy failed' : 'copy'}
+      {buttonText}
     </Button>
   );
 }

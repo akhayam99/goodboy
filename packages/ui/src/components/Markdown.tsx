@@ -535,8 +535,11 @@ function renderBlock(block: Block, idx: number): ReactNode {
         </blockquote>
       );
     case 'table': {
-      const alignClass = (a: CellAlign | undefined): string =>
-        a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left';
+      const alignClass = (a: CellAlign | undefined): string => {
+        if (a === 'right') return 'text-right';
+        if (a === 'center') return 'text-center';
+        return 'text-left';
+      };
       return (
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">

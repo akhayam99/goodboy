@@ -5,12 +5,11 @@ import type { ProviderSpendEntry } from '../store';
 import { STORAGE_KEYS } from '../storage-keys';
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
-const formatTokens = (n: number): string =>
-  n >= 1_000_000
-    ? `${(n / 1_000_000).toFixed(2)}M`
-    : n >= 1_000
-      ? `${(n / 1_000).toFixed(1)}k`
-      : `${n}`;
+const formatTokens = (n: number): string => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return `${n}`;
+};
 
 type SortKey = 'recent' | 'expensive';
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;

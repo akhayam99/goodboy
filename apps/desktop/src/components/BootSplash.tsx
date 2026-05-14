@@ -64,12 +64,11 @@ export function BootSplash({ phase, error, onRetry, onSkipProviderDetection }: B
   const displayPhase = useDisplayPhase(phase);
   const idx = PHASE_ORDER.indexOf(displayPhase);
   const total = PHASE_ORDER.length;
-  const progressPct =
-    displayPhase === 'ready'
-      ? 100
-      : displayPhase === 'pending'
-        ? 0
-        : Math.round(((idx + 1) / total) * 100);
+  const progressPct = (() => {
+    if (displayPhase === 'ready') return 100;
+    if (displayPhase === 'pending') return 0;
+    return Math.round(((idx + 1) / total) * 100);
+  })();
 
   return (
     <div className="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground">
@@ -112,24 +111,25 @@ export function BootSplash({ phase, error, onRetry, onSkipProviderDetection }: B
           {PHASE_ORDER.map((p, i) => {
             const done = displayPhase === 'ready' || i < idx;
             const active = i === idx && displayPhase !== 'ready' && displayPhase !== 'pending';
+            const iconClass = (() => {
+              if (done) return 'text-success';
+              if (active) return 'text-primary';
+              return 'text-muted-foreground/25';
+            })();
+            const iconGlyph = (() => {
+              if (done) return '✓';
+              if (active) return '›';
+              return '·';
+            })();
+            const labelClass = (() => {
+              if (done) return 'text-success/70';
+              if (active) return 'text-foreground';
+              return 'text-muted-foreground/25';
+            })();
             return (
               <li key={p} className="flex items-center gap-2.5">
-                <span
-                  className={
-                    done ? 'text-success' : active ? 'text-primary' : 'text-muted-foreground/25'
-                  }
-                >
-                  {done ? '✓' : active ? '›' : '·'}
-                </span>
-                <span
-                  className={
-                    done
-                      ? 'text-success/70'
-                      : active
-                        ? 'text-foreground'
-                        : 'text-muted-foreground/25'
-                  }
-                >
+                <span className={iconClass}>{iconGlyph}</span>
+                <span className={labelClass}>
                   {PHASE_LABEL[p]}
                   {active ? <BlinkCursor /> : null}
                 </span>

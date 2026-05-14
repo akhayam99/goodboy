@@ -16,11 +16,17 @@ interface ShortcutCombo {
   alt?: boolean;
 }
 
+const KEY_ALIAS: Record<string, string> = {
+  comma: ',',
+  period: '.',
+  slash: '/',
+};
+
 function parseCombo(combo: string): ShortcutCombo {
   const parts = combo.toLowerCase().split('+');
   const key = parts[parts.length - 1] ?? '';
   return {
-    key: key === 'comma' ? ',' : key === 'period' ? '.' : key === 'slash' ? '/' : key,
+    key: KEY_ALIAS[key] ?? key,
     meta: parts.includes('cmd') || parts.includes('meta'),
     ctrl: parts.includes('ctrl'),
     shift: parts.includes('shift'),

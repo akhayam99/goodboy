@@ -373,11 +373,13 @@ export function ChatView({ session }: ChatViewProps) {
                       lastDay = day;
                     }
                   }
+                  const itemSpacing = (() => {
+                    if (tightToTool) return 'mt-0.5';
+                    if (idx === 0) return '';
+                    return 'mt-4';
+                  })();
                   node.push(
-                    <li
-                      key={item.key}
-                      className={cn(tightToTool ? 'mt-0.5' : idx === 0 ? '' : 'mt-4')}
-                    >
+                    <li key={item.key} className={cn(itemSpacing)}>
                       <TranscriptCard
                         item={item}
                         taskId={session.id}

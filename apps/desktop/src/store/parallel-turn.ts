@@ -130,7 +130,8 @@ async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<Mul
       }
     } else if (payload.type === 'end') {
       const exit = payload.exit_code ?? 0;
-      state.onSettle(exit === 0 ? 'completed' : 'failed', exit !== 0 ? payload.stderr : undefined);
+      const succeeded = exit === 0;
+      state.onSettle(succeeded ? 'completed' : 'failed', succeeded ? undefined : payload.stderr);
     } else if (payload.type === 'error') {
       state.onSettle('failed', payload.message ?? 'unknown error');
     }

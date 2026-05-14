@@ -150,20 +150,19 @@ export function ModelPicker({
               {providers.map((id) => {
                 const isConnected = connectedProviders.includes(id);
                 const active = provider === id;
+                const chipTone = (() => {
+                  if (active) return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
+                  if (isConnected)
+                    return 'text-muted-foreground hover:bg-muted hover:text-foreground';
+                  return 'text-muted-foreground/35 hover:bg-muted/50';
+                })();
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => onSelectProvider(id)}
                     title={isConnected ? undefined : 'not connected'}
-                    className={cn(
-                      'rounded-full px-2.5 py-0.5 transition-colors',
-                      active
-                        ? cn('bg-muted font-semibold', PROVIDER_TEXT[id])
-                        : isConnected
-                          ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          : 'text-muted-foreground/35 hover:bg-muted/50',
-                    )}
+                    className={cn('rounded-full px-2.5 py-0.5 transition-colors', chipTone)}
                   >
                     {PROVIDER_LABEL[id]}
                     {!isConnected ? (

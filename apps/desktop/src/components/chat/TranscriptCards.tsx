@@ -214,11 +214,11 @@ function UserText({ text, at }: { text: string; at: string }) {
 function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' }> }) {
   const [open, setOpen] = useState(false);
   const running = !item.ended;
-  const accent = item.isError
-    ? 'text-danger'
-    : running
-      ? 'text-muted-foreground/70'
-      : 'text-muted-foreground';
+  const accent = (() => {
+    if (item.isError) return 'text-danger';
+    if (running) return 'text-muted-foreground/70';
+    return 'text-muted-foreground';
+  })();
 
   return (
     <div className="group">
