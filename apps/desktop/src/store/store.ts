@@ -314,6 +314,9 @@ export interface AppState {
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<SessionId, string>>;
   readonly agentKindOverride: Readonly<Record<SessionId, AgentKind>>;
+  // Per-agent input draft. Ephemeral, in-memory only (not persisted). Lets the
+  // user keep an unsent composition when switching agents/sessions.
+  readonly agentDraft: Readonly<Record<SessionId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
@@ -457,6 +460,8 @@ export interface AppActions {
   ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
   setAgentKind(agentId: SessionId, kind: AgentKind): void;
+  setAgentDraft(agentId: SessionId, value: string): void;
+  clearAgentDraft(agentId: SessionId): void;
   deleteAgent(taskId: TaskId, agentId: SessionId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
@@ -576,6 +581,7 @@ const initialState: AppState = {
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentKindOverride: {},
+  agentDraft: {},
   diffComments: {},
   notifications: [],
   sessionPlans: {},
@@ -3162,6 +3168,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
         agentKindOverride: { ...s.agentKindOverride, [agentId]: kind },
         agentModelOverride: nextModelOverride,
       };
+    });
+  },
+
+  setAgentDraft: (agentId, value) => {
+    set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } }));
+  },
+
+  clearAgentDraft: (agentId) => {
+    set((s) => {
+      if (!(agentId in s.agentDraft)) return s;
+      const next = { ...s.agentDraft };
+      delete next[agentId];
+      return { agentDraft: next };
     });
   },
 
