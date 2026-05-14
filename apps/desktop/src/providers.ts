@@ -58,6 +58,7 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsTools: false,
   supportsStream: false,
   supportsCheapModel: false,
+  supportsImages: false,
 };
 
 export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus> {

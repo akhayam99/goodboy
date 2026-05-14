@@ -138,6 +138,7 @@ function makeProviderInfo(overrides: Partial<ProviderInfo> = {}): ProviderInfo {
       supportsTools: true,
       supportsStream: true,
       supportsCheapModel: false,
+      supportsImages: false,
     },
     ...overrides,
   };
