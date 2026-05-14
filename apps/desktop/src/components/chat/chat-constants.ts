@@ -255,7 +255,3 @@ export function subfamilyTier(family: ModelFamily, subfamily: string): CostTier 
   if (family === 'claude' && SUBFAMILY_TIER[subfamily]) return SUBFAMILY_TIER[subfamily];
   return 'mid';
 }
-
-// Legacy aliases retained for transitional call sites; prefer SUBFAMILY_*.
-export const CLAUDE_SUBFAMILY_LABEL = SUBFAMILY_LABEL;
-export const CLAUDE_SUBFAMILY_TIER = SUBFAMILY_TIER;

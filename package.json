@@ -24,11 +24,13 @@
     "tauri:build": "pnpm --filter @kay-am/desktop tauri:build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "knip": "knip",
     "prepare": "lefthook install"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
+    "knip": "^6.13.1",
     "lefthook": "^2.1.6",
     "prettier": "^3.3.3",
     "turbo": "^2.3.3",
