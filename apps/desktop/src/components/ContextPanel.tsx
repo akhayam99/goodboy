@@ -53,7 +53,6 @@ import { formatError } from '../errors';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from './GithubCard';
-import { NextActionChips } from './NextActionChips';
 import { worktreeDiff } from '../worktree';
 
 interface ContextPanelProps {
@@ -228,7 +227,6 @@ export function ContextPanel({
               })}
             </ul>
 
-            <NextActionChips taskId={session.id} workflowBound={session.workflowId !== undefined} />
           </div>
         </ScrollArea>
 

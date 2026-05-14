@@ -77,6 +77,7 @@ import {
   resolveAgentKind,
 } from '../agent-kind';
 import { AgentKindMenu } from './AgentKindMenu';
+import { NextActionChips } from './NextActionChips';
 import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
 import { openUrl } from '../editor';
 import { formatError } from '../errors';
@@ -1481,6 +1482,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
           />
         </div>
       ) : null}
+      <NextActionChips
+        taskId={task.id}
+        workflowBound={task.workflowId !== undefined}
+        className="mt-2 px-2"
+      />
       <div className="pl-2">
         <SpawnAgentControl taskId={task.id} workflow={workflow} onSpawn={onSpawn} />
       </div>
