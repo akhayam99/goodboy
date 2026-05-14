@@ -31,6 +31,7 @@ import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
 import { fetchIssueFromUrl, type IssueData } from '../integrations';
 import { useToast } from './Toast';
 import { parseCap } from '../lib/parse-cap';
+import { listLocalBranches, type LocalBranchInfo } from '../worktree';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -213,6 +214,13 @@ export function NewSessionDialog({
   const [branchSlug, setBranchSlug] = useState('');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [slugGenerating, setSlugGenerating] = useState(false);
+  const [branchMode, setBranchMode] = useState<'new' | 'existing'>('new');
+  const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
+  const [existingBranch, setExistingBranch] = useState<string>('');
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const workspace = useAppStore((s) =>
+    s.workspaces.find((w) => w.id === workspaceId),
+  );
 
   const [softCapRaw, setSoftCapRaw] = useState('');
   const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
@@ -245,6 +253,8 @@ export function NewSessionDialog({
     setIssueError(null);
     setBranchSlug('');
     setSlugGenerating(false);
+    setBranchMode('new');
+    setExistingBranch('');
     setSoftCapRaw('');
     setSelectedPhaseTemplateId('');
     setWorkflowMode('one-off');
@@ -257,7 +267,14 @@ export function NewSessionDialog({
     const provider = pickDefaultProvider(ids);
     setSelectedProvider(provider);
     setSelectedModel(getDefaultTurnModel(provider));
-  }, [open, settingKey, loadSetting, providers, workspaceId]);
+    if (workspace?.rootPath) {
+      setBranchesLoading(true);
+      listLocalBranches(workspace.rootPath)
+        .then(setExistingBranches)
+        .catch(() => setExistingBranches([]))
+        .finally(() => setBranchesLoading(false));
+    }
+  }, [open, settingKey, loadSetting, providers, workspaceId, workspace?.rootPath]);
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
@@ -330,11 +347,13 @@ export function NewSessionDialog({
         allowTurnOverride: true,
       };
       const hasWorkflow = selectedPhaseTemplateId !== '';
+      const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0;
       const { session } = await createSession({
         workspaceId,
         goal,
         branchPrefix: branchPrefix.trim() || DEFAULT_BRANCH_PREFIX,
         branchSlug: branchSlug.trim() || undefined,
+        ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
         providerPreference,
         ...(hasWorkflow ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
         ...(hasWorkflow && autoRun ? { autoRun: true } : {}),
@@ -412,12 +431,11 @@ export function NewSessionDialog({
     }
   };
 
-  const branchReady = isValidBranchSlug(branchSlug);
+  const branchReady =
+    branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
 
   const missingRequired = sections.filter((s) => s.required && !s.ready);
   const canCreate = missingRequired.length === 0 && branchReady && !busy;
-
-  const branchDisplay = `${branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/${branchSlug.trim() || '…'}`;
 
   return (
     <Dialog
@@ -432,45 +450,75 @@ export function NewSessionDialog({
           <div className="flex items-center gap-2">
             <div className="flex shrink-0 items-center gap-1">
               <GitBranch size={13} className="shrink-0 text-muted-foreground" aria-hidden />
-              <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
-              </span>
-              {slugGenerating ? (
-                <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
-                  <span className="h-2 w-full rounded bg-muted-foreground/20" />
-                </span>
+              <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
+              {branchMode === 'new' ? (
+                <>
+                  <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                    {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/
+                  </span>
+                  {slugGenerating ? (
+                    <span className="flex h-6 w-24 animate-pulse items-center rounded bg-muted px-2">
+                      <span className="h-2 w-full rounded bg-muted-foreground/20" />
+                    </span>
+                  ) : (
+                    <Input
+                      value={branchSlug}
+                      onChange={(e) => setBranchSlug(e.target.value)}
+                      placeholder="branch-slug"
+                      className="h-6 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
+                      style={{ width: `${Math.max(branchSlug.length || 11, 11)}ch` }}
+                      disabled={busy}
+                      aria-label="branch slug"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleGenerateSlug}
+                    disabled={!goal.trim() || slugGenerating || busy}
+                    title="generate branch name"
+                    aria-label="generate branch name"
+                    className={cn(
+                      'shrink-0 rounded p-0.5 transition-colors',
+                      goal.trim() && !slugGenerating && !busy
+                        ? 'text-muted-foreground hover:text-foreground'
+                        : 'cursor-not-allowed text-muted-foreground/30',
+                    )}
+                  >
+                    <Wand2 size={13} aria-hidden />
+                  </button>
+                </>
               ) : (
-                <Input
-                  value={branchSlug}
-                  onChange={(e) => setBranchSlug(e.target.value)}
-                  placeholder="branch-slug"
-                  className="h-6 border-0 bg-transparent px-1 py-0 text-xs font-mono focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{ width: `${Math.max(branchSlug.length || 11, 11)}ch` }}
-                  disabled={busy}
-                  aria-label="branch slug"
-                />
+                <select
+                  value={existingBranch}
+                  onChange={(e) => setExistingBranch(e.target.value)}
+                  disabled={busy || branchesLoading || existingBranches.length === 0}
+                  aria-label="existing branch"
+                  className="h-6 max-w-[16rem] truncate rounded border border-border bg-background px-2 text-xs font-mono motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">
+                    {branchesLoading
+                      ? 'loading…'
+                      : existingBranches.length === 0
+                        ? 'no local branches'
+                        : 'select branch…'}
+                  </option>
+                  {existingBranches.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.name}
+                      {b.inUse ? ' · in use' : ''}
+                      {b.hasUncommitted ? ' · dirty' : ''}
+                    </option>
+                  ))}
+                </select>
               )}
-              <button
-                type="button"
-                onClick={handleGenerateSlug}
-                disabled={!goal.trim() || slugGenerating || busy}
-                title="generate branch name"
-                aria-label="generate branch name"
-                className={cn(
-                  'shrink-0 rounded p-0.5 transition-colors',
-                  goal.trim() && !slugGenerating && !busy
-                    ? 'text-muted-foreground hover:text-foreground'
-                    : 'cursor-not-allowed text-muted-foreground/30',
-                )}
-              >
-                <Wand2 size={13} aria-hidden />
-              </button>
               {branchReady ? (
                 <Check size={11} className="shrink-0 text-success" aria-label="valid" />
               ) : (
                 <span className="inline-flex items-center gap-1">
                   <AlertTriangle size={11} className="shrink-0 text-warning" aria-hidden />
-                  <span className="text-2xs text-muted-foreground/60">fill or generate</span>
+                  <span className="text-2xs text-muted-foreground/60">
+                    {branchMode === 'new' ? 'fill or generate' : 'pick branch'}
+                  </span>
                 </span>
               )}
             </div>
@@ -941,4 +989,49 @@ function WorkflowModeSegmented({
 
 function workflowModeHint(mode: WorkflowMode): string {
   return WORKFLOW_MODES.find((m) => m.id === mode)?.hint ?? '';
+}
+
+function BranchModeToggle({
+  mode,
+  onChange,
+  disabled,
+}: {
+  mode: 'new' | 'existing';
+  onChange: (next: 'new' | 'existing') => void;
+  disabled: boolean;
+}) {
+  const modes: ReadonlyArray<{ id: 'new' | 'existing'; label: string }> = [
+    { id: 'new', label: 'new' },
+    { id: 'existing', label: 'existing' },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="branch source"
+      className="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
+    >
+      {modes.map((m) => {
+        const active = mode === m.id;
+        return (
+          <button
+            key={m.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(m.id)}
+            className={cn(
+              'rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors',
+              active
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+          >
+            {m.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

@@ -60,3 +60,20 @@ export async function listWorktreesForTask(
 export async function deleteWorktreesForTask(db: Database, taskId: TaskId): Promise<void> {
   await db.execute('DELETE FROM task_worktrees WHERE task_id = ?', [taskId]);
 }
+
+export async function updateTaskWorktreeBranch(
+  db: Database,
+  taskId: TaskId,
+  parallelIndex: number,
+  branch: string,
+): Promise<void> {
+  await db.execute(
+    'UPDATE task_worktrees SET branch = ? WHERE task_id = ? AND parallel_index = ?',
+    [branch, taskId, parallelIndex],
+  );
+}
+
+export async function listAllTaskWorktrees(db: Database): Promise<ReadonlyArray<TaskWorktree>> {
+  const rows = await db.select<TaskWorktreeRow>('SELECT * FROM task_worktrees', []);
+  return rows.map(toDomain);
+}

@@ -329,6 +329,28 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
                 r="3"
               />
             </svg>
+            <div
+              aria-label="branch source"
+              class="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
+              role="tablist"
+            >
+              <button
+                aria-selected="true"
+                class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
+                role="tab"
+                type="button"
+              >
+                new
+              </button>
+              <button
+                aria-selected="false"
+                class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                role="tab"
+                type="button"
+              >
+                existing
+              </button>
+            </div>
             <span
               class="shrink-0 text-xs text-muted-foreground font-mono"
             >
@@ -2533,6 +2555,28 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
                 r="3"
               />
             </svg>
+            <div
+              aria-label="branch source"
+              class="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
+              role="tablist"
+            >
+              <button
+                aria-selected="true"
+                class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
+                role="tab"
+                type="button"
+              >
+                new
+              </button>
+              <button
+                aria-selected="false"
+                class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                role="tab"
+                type="button"
+              >
+                existing
+              </button>
+            </div>
             <span
               class="shrink-0 text-xs text-muted-foreground font-mono"
             >

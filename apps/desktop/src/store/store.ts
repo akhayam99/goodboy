@@ -42,6 +42,8 @@ import {
   listWorkspaces,
   listWorktreesForTask,
   deleteWorktreesForTask,
+  updateTaskWorktreeBranch,
+  listAllTaskWorktrees,
   renameTask as renameSessionInDb,
   deleteTask as deleteSessionFromDb,
   setSetting as dbSetSetting,
@@ -166,7 +168,12 @@ import {
 import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
-import { createWorktree, removeWorktree, type CreatedWorktree } from '../worktree';
+import {
+  createWorktree,
+  removeWorktree,
+  changeWorktreeBranch,
+  type CreatedWorktree,
+} from '../worktree';
 import {
   invokeBudgetRuleList,
   invokeBudgetRuleUpsert,
@@ -310,7 +317,41 @@ export interface AppState {
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
+  /**
+   * Per-session loading flags. Each block (agents, transcript, telemetry,
+   * slots, plans, summary) starts true on session switch and is flipped off
+   * as that block's async load resolves. UI uses these to render skeletons
+   * without blocking the whole app on a single Promise.all.
+   */
+  readonly sessionLoading: Readonly<Record<TaskId, SessionLoadingFlags>>;
 }
+
+export interface SessionLoadingFlags {
+  readonly agents: boolean;
+  readonly transcript: boolean;
+  readonly telemetry: boolean;
+  readonly slots: boolean;
+  readonly plans: boolean;
+  readonly summary: boolean;
+}
+
+const EMPTY_LOADING: SessionLoadingFlags = {
+  agents: false,
+  transcript: false,
+  telemetry: false,
+  slots: false,
+  plans: false,
+  summary: false,
+};
+
+const ALL_LOADING: SessionLoadingFlags = {
+  agents: true,
+  transcript: true,
+  telemetry: true,
+  slots: true,
+  plans: true,
+  summary: true,
+};
 
 export interface SessionGithubState {
   readonly pr: PullRequestState | null;
@@ -359,10 +400,15 @@ export interface AppActions {
     goal: string;
     branchPrefix?: string;
     branchSlug?: string;
+    existingBranch?: string;
     providerPreference?: TaskProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
+  changeSessionBranch(
+    taskId: TaskId,
+    args: { branch: string; createNew: boolean },
+  ): Promise<void>;
   setSessionAutoRun(taskId: TaskId, autoRun: boolean): Promise<void>;
   maybeAutoAdvanceWorkflow(taskId: TaskId): Promise<void>;
   loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
@@ -533,6 +579,7 @@ const initialState: AppState = {
   diffComments: {},
   notifications: [],
   sessionPlans: {},
+  sessionLoading: {},
 };
 
 function buildProviderSpendBreakdown(
@@ -1148,6 +1195,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sidebarSessionSearch: '',
       sidebarStateFilter: [],
       sidebarProviderFilter: [],
+      sessionLoading: {},
     });
     if (id) {
       const [
@@ -1209,91 +1257,152 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setCurrentSession: async (id) => {
-    set({ currentSessionId: id, sessionSummary: null });
-    if (id) {
-      const safePlans = (): Promise<ReadonlyArray<Plan>> => {
-        try {
-          return invokeListPlansForSession(id).catch(() => [] as ReadonlyArray<Plan>);
-        } catch {
-          return Promise.resolve([] as ReadonlyArray<Plan>);
+    // Immediately swap the visible session so the UI doesn't freeze while
+    // heavy per-session data loads. Each block (agents/transcript/telemetry/
+    // slots/plans/summary) loads independently and flips its own loading flag
+    // off when done — see SessionLoadingFlags. We intentionally do NOT await
+    // these loaders here; the chat view and context panel render skeletons in
+    // the meantime.
+    set((state) => ({
+      currentSessionId: id,
+      sessionSummary: null,
+      sessionLoading: id ? { ...state.sessionLoading, [id]: ALL_LOADING } : state.sessionLoading,
+    }));
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
+    if (!id) return;
+
+    const markDone = (key: keyof SessionLoadingFlags): void => {
+      set((state) => {
+        if (state.currentSessionId !== id) return {};
+        const current = state.sessionLoading[id] ?? EMPTY_LOADING;
+        return {
+          sessionLoading: { ...state.sessionLoading, [id]: { ...current, [key]: false } },
+        };
+      });
+    };
+
+    // Summary
+    void summarizeTaskTelemetry(tauriDatabase, id)
+      .then((summary) => {
+        set((state) => (state.currentSessionId === id ? { sessionSummary: summary } : {}));
+      })
+      .catch(() => {})
+      .finally(() => markDone('summary'));
+
+    // Telemetry
+    void listTelemetryForTask(tauriDatabase, id)
+      .then((telemetry) => {
+        set((state) => ({
+          sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
+        }));
+      })
+      .catch(() => {})
+      .finally(() => markDone('telemetry'));
+
+    // Context slots
+    void listContextSlotsForTask(tauriDatabase, id)
+      .then((slots) => {
+        set((state) => ({
+          sessionSlots: { ...state.sessionSlots, [id]: slots },
+        }));
+      })
+      .catch(() => {})
+      .finally(() => markDone('slots'));
+
+    // Plans
+    void (async (): Promise<ReadonlyArray<Plan>> => {
+      try {
+        return await invokeListPlansForSession(id);
+      } catch {
+        return [];
+      }
+    })()
+      .then((plans) => {
+        set((state) => ({
+          sessionPlans: { ...state.sessionPlans, [id]: plans },
+        }));
+      })
+      .catch(() => {})
+      .finally(() => markDone('plans'));
+
+    // Agents + transcript: transcript depends on which agent is selected, so
+    // we chain them here. Once the agents list resolves we kick the transcript
+    // loader off in parallel with the rest.
+    void Promise.all([invokePhaseRunList(id), listAgentRunIdsForTask(tauriDatabase, id)])
+      .then(async ([agents, agentRunIds]) => {
+        const previouslySelected = get().selectedAgentId[id] ?? null;
+        const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
+        const fallbackAgent = sortedAgents[0] ?? null;
+        const selectedAgent =
+          (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
+
+        // Seed agentRunHistory with EVERY provider run an agent ever spawned,
+        // not just its latest. Recovered from turn_events (single source of
+        // truth post restart) so aggregate token/cost counters in the sidebar
+        // reflect the full agent lifetime — birth to death — instead of the
+        // last turn.
+        const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+        const seededTurnState: Record<string, TurnState> = {};
+        const task = get().sessions.find((s) => s.id === id);
+        const taskState =
+          task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
+        for (const agent of agents) {
+          const historical = agentRunIds.get(agent.id) ?? [];
+          const merged: ProviderRunId[] = [...historical];
+          if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+          if (merged.length > 0) {
+            seededHistory[agent.id] = merged;
+          }
+          if (agent.status === 'running' && agent.runId) {
+            seededTurnState[agent.id] = {
+              kind: 'running',
+              runId: agent.runId,
+              startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+            };
+          } else if (agent.status === 'failed') {
+            seededTurnState[agent.id] = {
+              kind: 'error',
+              message: 'agent failed',
+              failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+            };
+          } else {
+            seededTurnState[agent.id] =
+              taskState.kind === 'ended'
+                ? taskState
+                : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
+          }
         }
-      };
-      const [summary, telemetry, slots, agents, agentRunIds, plans] = await Promise.all([
-        summarizeTaskTelemetry(tauriDatabase, id),
-        listTelemetryForTask(tauriDatabase, id),
-        listContextSlotsForTask(tauriDatabase, id),
-        invokePhaseRunList(id),
-        listAgentRunIdsForTask(tauriDatabase, id),
-        safePlans(),
-      ]);
-      // Pick the previously-selected agent if it still exists, else the
-      // lowest-ordinal one (= default "agent 1" or first workflow step).
-      const previouslySelected = get().selectedAgentId[id] ?? null;
-      const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-      const fallbackAgent = sortedAgents[0] ?? null;
-      const selectedAgent =
-        (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
-      const [messages, events] = selectedAgent
-        ? await Promise.all([
+
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+          selectedAgentId: {
+            ...state.selectedAgentId,
+            [id]: selectedAgent?.id ?? null,
+          },
+          agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+          agentTurnState: { ...state.agentTurnState, ...seededTurnState },
+        }));
+        markDone('agents');
+
+        if (selectedAgent) {
+          const [messages, events] = await Promise.all([
             listMessagesForAgent(tauriDatabase, selectedAgent.id),
             listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
-          ])
-        : [[] as ReadonlyArray<Message>, [] as ReadonlyArray<TurnEvent>];
-      // Seed agentRunHistory with EVERY provider run an agent ever spawned, not
-      // just its latest. Recovered from turn_events (single source of truth post
-      // restart) so aggregate token/cost counters in the sidebar reflect the
-      // full agent lifetime — birth to death — instead of the last turn.
-      const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      const seededTurnState: Record<string, TurnState> = {};
-      const task = get().sessions.find((s) => s.id === id);
-      const taskState =
-        task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
-      for (const agent of agents) {
-        const historical = agentRunIds.get(agent.id) ?? [];
-        const merged: ProviderRunId[] = [...historical];
-        if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
-        if (merged.length > 0) {
-          seededHistory[agent.id] = merged;
-        }
-        if (agent.status === 'running' && agent.runId) {
-          seededTurnState[agent.id] = {
-            kind: 'running',
-            runId: agent.runId,
-            startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
-          };
-        } else if (agent.status === 'failed') {
-          seededTurnState[agent.id] = {
-            kind: 'error',
-            message: 'agent failed',
-            failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
-          };
+          ]);
+          set((state) => ({
+            messages: { ...state.messages, [id]: messages },
+            transcripts: { ...state.transcripts, [selectedAgent.id]: events },
+          }));
         } else {
-          seededTurnState[agent.id] =
-            taskState.kind === 'ended'
-              ? taskState
-              : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
+          set((state) => ({
+            messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+          }));
         }
-      }
-      set((state) => ({
-        sessionSummary: summary,
-        sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-        selectedAgentId: {
-          ...state.selectedAgentId,
-          [id]: selectedAgent?.id ?? null,
-        },
-        messages: { ...state.messages, [id]: messages },
-        transcripts: {
-          ...state.transcripts,
-          ...(selectedAgent ? { [selectedAgent.id]: events } : {}),
-        },
-        sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
-        sessionSlots: { ...state.sessionSlots, [id]: slots },
-        sessionPlans: { ...state.sessionPlans, [id]: plans },
-        agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
-        agentTurnState: { ...state.agentTurnState, ...seededTurnState },
-      }));
-    }
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
+      })
+      .catch(() => {
+        markDone('agents');
+      })
+      .finally(() => markDone('transcript'));
   },
 
   refreshSessions: async (workspaceId) => {
@@ -1368,6 +1477,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     goal,
     branchPrefix,
     branchSlug,
+    existingBranch,
     providerPreference,
     workflowId,
     autoRun,
@@ -1378,10 +1488,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const prefix = branchPrefix?.trim() || 'kay';
     const slugSeed =
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
+    const trimmedExisting = existingBranch?.trim();
     const worktree = await createWorktree({
       repoPath: workspace.rootPath,
       branchPrefix: prefix,
       slug: slugSeed,
+      ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
     });
 
     const now = new Date().toISOString() as IsoDateTime;
@@ -1508,6 +1620,29 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
 
     return { session, worktree };
+  },
+
+  changeSessionBranch: async (taskId, { branch, createNew }) => {
+    const target = branch.trim();
+    if (!target) throw new Error('branch name cannot be empty');
+    const worktrees = await listWorktreesForTask(tauriDatabase, taskId);
+    const primary = worktrees[0];
+    if (!primary) throw new Error(`no worktree found for session ${taskId}`);
+    const task = get().sessions.find((s) => s.id === taskId);
+    const workspace = task
+      ? get().workspaces.find((w) => w.id === task.workspaceId)
+      : null;
+    if (!workspace) throw new Error('workspace not found for session');
+    await changeWorktreeBranch({
+      repoPath: workspace.rootPath,
+      worktreePath: primary.worktreePath,
+      branch: target,
+      createNew,
+    });
+    await updateTaskWorktreeBranch(tauriDatabase, taskId, primary.parallelIndex, target);
+    set((state) => ({
+      sessionBranches: { ...state.sessionBranches, [taskId]: target },
+    }));
   },
 
   loadTranscript: async (agentId, taskId) => {

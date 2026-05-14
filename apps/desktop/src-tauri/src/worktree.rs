@@ -73,6 +73,35 @@ pub struct CreateArgs {
     pub slug: String,
     #[serde(rename = "parentDir")]
     pub parent_dir: Option<String>,
+    /// When set, the worktree is created from this existing local branch
+    /// instead of cutting a new one. `branch_prefix` and `slug` are still used
+    /// to derive the worktree directory name.
+    #[serde(rename = "existingBranch", default)]
+    pub existing_branch: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BranchInfo {
+    pub name: String,
+    /// True when this branch is currently checked out in some worktree.
+    #[serde(rename = "inUse")]
+    pub in_use: bool,
+    /// True when the branch has uncommitted changes in its checkout.
+    #[serde(rename = "hasUncommitted")]
+    pub has_uncommitted: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChangeBranchArgs {
+    #[serde(rename = "repoPath")]
+    pub repo_path: String,
+    #[serde(rename = "worktreePath")]
+    pub worktree_path: String,
+    pub branch: String,
+    /// When true, create the branch with `git switch -c`. When false, switch to
+    /// an existing branch with `git switch`.
+    #[serde(rename = "createNew")]
+    pub create_new: bool,
 }
 
 pub fn sanitize_slug(input: &str) -> String {
@@ -104,7 +133,16 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     }
 
     let slug = sanitize_slug(&args.slug);
-    let branch_name = format!("{}/{}", args.branch_prefix, slug);
+    let new_branch_name = format!("{}/{}", args.branch_prefix, slug);
+    let existing_branch = args
+        .existing_branch
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let branch_name = existing_branch
+        .map(|b| b.to_string())
+        .unwrap_or_else(|| new_branch_name.clone());
+
     // Default location: <repo>/.kay-am/worktrees/<prefix>-<slug>. Keeps every
     // session-scoped checkout inside the workspace folder so the user only has
     // one project root to track. The .kay-am dir should be in the repo's
@@ -113,7 +151,13 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         .parent_dir
         .map(PathBuf::from)
         .unwrap_or_else(|| repo_path.join(".kay-am").join("worktrees"));
-    let worktree_path = parent.join(format!("{}-{slug}", args.branch_prefix));
+    // For existing branches we still derive a unique directory from the
+    // sanitized branch (with slashes replaced) so two sessions adopting the
+    // same branch don't collide on disk.
+    let dir_slug = existing_branch
+        .map(sanitize_slug)
+        .unwrap_or_else(|| slug.clone());
+    let worktree_path = parent.join(format!("{}-{dir_slug}", args.branch_prefix));
 
     ensure_gitignore_entry(&repo_path, ".kay-am/")?;
 
@@ -127,16 +171,32 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     }
 
     std::fs::create_dir_all(&parent)?;
-    git(
-        &repo_path,
-        &[
-            "worktree",
-            "add",
-            "-b",
-            &branch_name,
-            worktree_path.to_string_lossy().as_ref(),
-        ],
-    )?;
+
+    if let Some(name) = existing_branch {
+        // Adopt the existing local branch as-is. Fails if the branch is
+        // already checked out elsewhere — caller is expected to surface that
+        // to the user.
+        git(
+            &repo_path,
+            &[
+                "worktree",
+                "add",
+                worktree_path.to_string_lossy().as_ref(),
+                name,
+            ],
+        )?;
+    } else {
+        git(
+            &repo_path,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                &branch_name,
+                worktree_path.to_string_lossy().as_ref(),
+            ],
+        )?;
+    }
 
     Ok(CreatedWorktree {
         worktree_path: worktree_path.to_string_lossy().to_string(),
@@ -144,6 +204,68 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         slug,
         reused: false,
     })
+}
+
+#[tauri::command]
+pub fn worktree_list_local_branches(repo_path: String) -> Result<Vec<BranchInfo>, WorktreeError> {
+    let p = Path::new(&repo_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    let raw = git(
+        p,
+        &["for-each-ref", "--format=%(refname:short)", "refs/heads"],
+    )?;
+    let worktrees = parse_porcelain(&git(p, &["worktree", "list", "--porcelain"])?);
+    let in_use_branches: std::collections::HashSet<String> = worktrees
+        .iter()
+        .filter_map(|w| w.branch.clone())
+        .collect();
+    let mut branches = Vec::new();
+    for line in raw.lines() {
+        let name = line.trim();
+        if name.is_empty() {
+            continue;
+        }
+        let in_use = in_use_branches.contains(name);
+        let has_uncommitted = if in_use {
+            branch_worktree_has_uncommitted(&worktrees, name).unwrap_or(false)
+        } else {
+            false
+        };
+        branches.push(BranchInfo {
+            name: name.to_string(),
+            in_use,
+            has_uncommitted,
+        });
+    }
+    Ok(branches)
+}
+
+fn branch_worktree_has_uncommitted(worktrees: &[WorktreeInfo], branch: &str) -> Option<bool> {
+    let wt = worktrees.iter().find(|w| w.branch.as_deref() == Some(branch))?;
+    let stdout = git(Path::new(&wt.path), &["status", "--porcelain"]).ok()?;
+    Some(!stdout.trim().is_empty())
+}
+
+#[tauri::command]
+pub fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+    let wt = Path::new(&args.worktree_path);
+    if !wt.exists() {
+        return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
+    }
+    let trimmed = args.branch.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "branch name is empty".to_string(),
+        });
+    }
+    if args.create_new {
+        git(wt, &["switch", "-c", trimmed])?;
+    } else {
+        git(wt, &["switch", trimmed])?;
+    }
+    Ok(())
 }
 
 #[tauri::command]

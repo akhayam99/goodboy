@@ -6,6 +6,7 @@ export {
   useDiffComments,
   useFilesTouched,
   useMostRecentPlan,
+  useSessionLoading,
   useSessionPlans,
   useSessionSlots,
   useSessionNextActions,

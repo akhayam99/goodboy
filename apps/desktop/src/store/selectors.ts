@@ -9,7 +9,24 @@ import type {
 } from '@kay-am/types';
 import type { Workspace } from '@kay-am/types';
 import type { NextAction } from '@kay-am/core';
-import { useAppStore, type AppState, type SummarizerSessionStatus } from './store';
+import {
+  useAppStore,
+  type AppState,
+  type SessionLoadingFlags,
+  type SummarizerSessionStatus,
+} from './store';
+
+const NO_LOADING: SessionLoadingFlags = {
+  agents: false,
+  transcript: false,
+  telemetry: false,
+  slots: false,
+  plans: false,
+  summary: false,
+};
+
+export const useSessionLoading = (taskId: TaskId | null): SessionLoadingFlags =>
+  useAppStore((s) => (taskId ? (s.sessionLoading[taskId] ?? NO_LOADING) : NO_LOADING));
 
 function toRelPath(absPath: string, workingDir: string | null): string {
   if (!workingDir) return absPath;

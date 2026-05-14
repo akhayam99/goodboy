@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
-import { cn } from '@kay-am/ui';
-import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../store';
+import { cn, Skeleton } from '@kay-am/ui';
+import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
 import { TranscriptCard } from './TranscriptCards';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
@@ -130,6 +130,25 @@ function formatDayLabel(iso: string): string {
     .toLowerCase();
 }
 
+function TranscriptSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="loading transcript"
+      className="mx-auto flex w-full max-w-[880px] flex-col gap-6"
+    >
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex flex-col gap-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ThinkingIndicator() {
   return (
     <div
@@ -153,6 +172,7 @@ export function ChatView({ session }: ChatViewProps) {
   ) as SessionId | null;
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
+  const loading = useSessionLoading(session.id);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -324,7 +344,9 @@ export function ChatView({ session }: ChatViewProps) {
           style={{ scrollbarGutter: 'stable' }}
         >
           {items.length === 0 ? (
-            isProviderDisconnected ? (
+            loading.transcript ? (
+              <TranscriptSkeleton />
+            ) : isProviderDisconnected ? (
               <div className="mx-auto w-full max-w-[880px]">
                 <AuthRequiredCallout
                   providerId={provider}
