@@ -222,7 +222,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             ))}
             <li>
               <AddRow
-                label="add workspace"
+                label="Add workspace"
                 icon={<FolderPlus size={13} aria-hidden />}
                 onClick={() => setAddWorkspaceOpen(true)}
               />
@@ -362,8 +362,8 @@ function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
             setWsSettingsOpen(true);
           }}
           className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
-          title="Workspace settings (incl. disconnect)"
-          aria-label={`Settings for workspace ${workspace.name}`}
+          title="workspace settings (incl. disconnect)"
+          aria-label={`settings for workspace ${workspace.name}`}
         >
           <Settings2 size={12} aria-hidden />
         </button>
@@ -489,7 +489,7 @@ function SessionList({
         ))}
         <li>
           <AddRow
-            label="add session"
+            label="Add session"
             icon={<Plus size={13} aria-hidden />}
             onClick={onNewSession}
           />
@@ -565,8 +565,8 @@ function SortIconButton({
         className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
-        title={`Sort: ${current.label}`}
-        aria-label="Sort sessions"
+        title={`sort: ${current.label}`}
+        aria-label="sort sessions"
       >
         <ArrowUpDown size={12} aria-hidden />
       </button>
@@ -1014,16 +1014,16 @@ function DeleteConfirmDialog({ sessionGoal, onConfirm, onCancel }: DeleteConfirm
     <Dialog
       open
       onClose={onCancel}
-      title="delete session?"
+      title="Delete session?"
       description={`"${sessionGoal}" will be permanently removed. worktree, transcripts, and audit logs will be deleted. this cannot be undone.`}
       size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={onCancel}>
-            cancel
+            Cancel
           </Button>
           <Button variant="danger" onClick={onConfirm}>
-            delete
+            Delete
           </Button>
         </>
       }
@@ -1101,17 +1101,17 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="add workspace"
+      title="Add workspace"
       description="point at a git repository on disk. each task creates its own worktree."
       size="lg"
       footer={
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            cancel
+            Cancel
           </Button>
           <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy}>
-            {busy ? 'adding…' : 'add workspace'}
+            {busy ? 'Adding…' : 'Add workspace'}
           </Button>
         </>
       }
@@ -1151,7 +1151,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
                   className="flex-1"
                 />
                 <Button variant="secondary" onClick={() => void onPick()} disabled={busy}>
-                  browse
+                  Browse
                 </Button>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
@@ -1512,7 +1512,7 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        spawn agent
+        Spawn agent
       </button>
       {open ? (
         <div
@@ -1672,7 +1672,7 @@ function AgentRow({
 }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `Agent ${run.ordinal + 1}`,
+    `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
     isSelected ? 'selected — chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
@@ -1771,7 +1771,7 @@ function AgentRow({
                 className="rounded px-1 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 title="cancel"
               >
-                cancel
+                Cancel
               </button>
               <button
                 type="button"
@@ -1782,7 +1782,7 @@ function AgentRow({
                 className="rounded px-1 py-0.5 text-2xs font-medium text-danger transition-colors hover:bg-danger/10"
                 title="confirm delete"
               >
-                delete
+                Delete
               </button>
             </div>
           ) : (
@@ -2026,17 +2026,17 @@ export function BulkSessionDeleteDialog({
     <Dialog
       open={open}
       onClose={handleClose}
-      title="delete all sessions?"
+      title="Delete all sessions?"
       description={`disconnecting "${workspaceName}" will permanently remove all ${workspaceSessions.length} session${workspaceSessions.length === 1 ? '' : 's'} listed below. worktrees, transcripts, and audit logs will be deleted. this cannot be undone.`}
       size="sm"
       footer={
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={handleClose} disabled={busy}>
-            cancel
+            Cancel
           </Button>
           <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-            {busy ? 'deleting…' : 'delete all & disconnect'}
+            {busy ? 'Deleting…' : 'Delete all & disconnect'}
           </Button>
         </>
       }

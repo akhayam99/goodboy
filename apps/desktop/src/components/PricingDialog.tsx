@@ -132,7 +132,7 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
 
   return (
-    <Dialog open={open} onClose={onClose} size="lg" title="pricing">
+    <Dialog open={open} onClose={onClose} size="lg" title="Pricing">
       <div className="flex flex-col gap-4 text-sm">
         <div className="grid grid-cols-2 gap-3">
           <CostStat label="current session" value={formatCost(sessionCost)} />

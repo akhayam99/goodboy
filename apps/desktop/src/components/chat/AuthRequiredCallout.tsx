@@ -31,10 +31,10 @@ export function AuthRequiredCallout({ providerId, identity, onRefresh }: AuthReq
           ) : null}
           <div className="mt-2 flex gap-2">
             <Button size="sm" onClick={onConnect}>
-              connect now ↗
+              Connect now ↗
             </Button>
             <Button size="sm" variant="ghost" onClick={onRefresh}>
-              refresh status
+              Refresh status
             </Button>
           </div>
         </div>

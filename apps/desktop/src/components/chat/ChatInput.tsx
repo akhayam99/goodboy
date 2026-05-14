@@ -405,8 +405,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             <button
               type="button"
               onClick={() => void cancelCurrentTurn(session.id)}
-              title="Cancel turn"
-              aria-label="Cancel turn"
+              title="cancel turn"
+              aria-label="cancel turn"
               className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/10"
             >
               <Square size={16} aria-hidden fill="currentColor" />
@@ -416,8 +416,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               type="button"
               onClick={() => void onSend()}
               disabled={!canSend}
-              title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
-              aria-label={isRunning ? 'Queue message' : 'Send message'}
+              title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
+              aria-label={isRunning ? 'queue message' : 'send message'}
               className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:hover:bg-transparent"
             >
               <Send size={16} aria-hidden className="-translate-x-px" />

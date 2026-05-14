@@ -45,14 +45,14 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
     <Dialog
       open={open}
       onClose={handleCancel}
-      title="resolve merge conflicts"
+      title="Resolve merge conflicts"
       description="pick the winning version for each file, or skip to leave it unresolved."
       size="lg"
       closeOnBackdrop={false}
       footer={
         <>
           <Button variant="ghost" onClick={handleCancel}>
-            cancel
+            Cancel
           </Button>
           <Button
             variant="primary"
@@ -60,7 +60,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
             disabled={!allResolved}
             aria-disabled={!allResolved}
           >
-            confirm
+            Confirm
           </Button>
         </>
       }

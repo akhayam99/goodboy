@@ -10,10 +10,10 @@ interface ImportConfigDialogProps {
 
 export function ImportConfigDialog({ open, result, error, onClose }: ImportConfigDialogProps) {
   const title = error
-    ? 'import failed'
+    ? 'Import failed'
     : result?.ok
-      ? 'import complete'
-      : 'import validation errors';
+      ? 'Import complete'
+      : 'Import validation errors';
 
   return (
     <Dialog
@@ -21,10 +21,10 @@ export function ImportConfigDialog({ open, result, error, onClose }: ImportConfi
       onClose={onClose}
       title={title}
       description={
-        result?.ok ? 'config imported successfully.' : 'review the issues below before retrying.'
+        result?.ok ? 'Config imported successfully.' : 'Review the issues below before retrying.'
       }
       size="sm"
-      footer={<Button onClick={onClose}>close</Button>}
+      footer={<Button onClick={onClose}>Close</Button>}
     >
       {error ? (
         <p className="text-xs text-danger">{error}</p>

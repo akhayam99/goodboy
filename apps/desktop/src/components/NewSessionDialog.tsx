@@ -482,7 +482,7 @@ export function NewSessionDialog({
               </span>
             ) : null}
             <Button variant="ghost" onClick={onClose} disabled={busy}>
-              cancel
+              Cancel
             </Button>
             <Button
               onClick={() => void onCreate()}
@@ -496,10 +496,10 @@ export function NewSessionDialog({
               {busy ? (
                 <>
                   <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
-                  creating…
+                  Creating…
                 </>
               ) : (
-                'create session'
+                'Create session'
               )}
             </Button>
           </div>
@@ -745,7 +745,7 @@ export function NewSessionDialog({
                                 );
                               }}
                             >
-                              connect in settings
+                              Connect in settings
                             </button>
                           )}
                         </label>

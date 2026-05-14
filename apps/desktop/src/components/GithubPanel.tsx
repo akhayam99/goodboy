@@ -130,7 +130,7 @@ function Absent({
           {save === 'saving' ? (
             <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
           ) : null}
-          connect
+          Connect
         </Button>
       </div>
       {error ? (
@@ -180,7 +180,7 @@ function Connected({
           disabled={save === 'saving'}
           className={cn(save === 'saving' && 'opacity-60')}
         >
-          disconnect
+          Disconnect
         </Button>
       </div>
     </div>
