@@ -2648,65 +2648,82 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
     </button>
   </div>
   <div
-    class="flex flex-col gap-2"
+    class="grid grid-cols-3 gap-3"
   >
     <div
-      class="flex flex-col gap-2 overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm"
+      class="relative flex min-h-[200px] flex-col items-center gap-2.5 overflow-hidden rounded-lg border bg-subtle p-4 shadow-sm transition-colors"
     >
-      <div
-        class="flex items-center gap-3 border-b border-border-soft px-3 py-2"
+      <span
+        class="relative inline-flex"
       >
         <span
           aria-hidden="true"
-          class="inline-block h-2 w-2 shrink-0 rounded-full bg-danger"
+          class="absolute left-3 top-3 inline-block h-2 w-2 shrink-0 rounded-full bg-danger"
         />
-        <div
-          class="flex min-w-0 flex-1 flex-col gap-0.5"
+      </span>
+      <div
+        aria-hidden="true"
+        class="mt-2 flex h-14 w-14 items-center justify-center rounded-full transition-opacity"
+        style="color: var(--color-provider-anthropic);"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-sparkles"
+          fill="none"
+          height="26"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="26"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <div
-            class="flex items-center gap-2"
-          >
-            <span
-              class="text-xs font-semibold"
-            >
-              claude
-            </span>
-            <code
-              class="text-2xs text-muted-foreground"
-            >
-              claude
-            </code>
-            <span
-              class="rounded bg-muted px-1 text-2xs text-muted-foreground"
-            >
-              1.0.0
-            </span>
-          </div>
-          <span
-            class="text-2xs text-muted-foreground"
-          >
-            anthropic claude code cli
-          </span>
-        </div>
+          <path
+            d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+          />
+          <path
+            d="M20 2v4"
+          />
+          <path
+            d="M22 4h-4"
+          />
+          <circle
+            cx="4"
+            cy="20"
+            r="2"
+          />
+        </svg>
+      </div>
+      <div
+        class="flex flex-col items-center gap-0.5"
+      >
+        <span
+          class="text-sm font-semibold lowercase"
+        >
+          claude
+        </span>
+        <span
+          class="text-2xs text-muted-foreground"
+        >
+          1.0.0
+        </span>
+      </div>
+      <div
+        class="line-clamp-2 text-center text-2xs text-danger"
+        title="unknown error"
+      >
+        unknown error
+      </div>
+      <div
+        class="mt-auto w-full"
+      >
         <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs shrink-0"
+          class="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs hover:bg-muted"
           type="button"
         >
           retry
         </button>
-      </div>
-      <div
-        class="flex flex-col gap-1.5 px-3 pb-2.5"
-      >
-        <div
-          class="text-xs"
-        >
-          <span
-            class="text-danger"
-          >
-            unknown error
-          </span>
-        </div>
       </div>
     </div>
   </div>
