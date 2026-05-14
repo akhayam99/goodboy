@@ -2563,6 +2563,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!lastError && assistantText.length > 0) {
       enqueueSummarizer(set, get, taskId, resolvedPrompt, assistantText);
       void capturePlanFromTurn(set, taskId, activeAgentId, assistantText);
+      if (
+        !get().sessionGithub[taskId]?.pr &&
+        /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(assistantText)
+      ) {
+        void get()
+          .refreshSessionPr(taskId, { force: true })
+          .then(() => void get().refreshSessionPrDetail(taskId, { force: true }));
+      }
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === taskId);
         const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
