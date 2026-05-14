@@ -3,6 +3,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  Plan,
   Task,
   TaskId,
 } from '@kay-am/types';
@@ -61,6 +62,16 @@ const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 
 export const useDiffComments = (taskId: TaskId | null): ReadonlyArray<DiffComment> =>
   useAppStore((s) => (taskId ? (s.diffComments[taskId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));
+
+const EMPTY_PLANS: ReadonlyArray<Plan> = [];
+
+export const useSessionPlans = (taskId: TaskId | null): ReadonlyArray<Plan> =>
+  useAppStore((s) => (taskId ? (s.sessionPlans[taskId] ?? EMPTY_PLANS) : EMPTY_PLANS));
+
+export const useMostRecentPlan = (taskId: TaskId | null): Plan | null => {
+  const plans = useSessionPlans(taskId);
+  return plans[0] ?? null;
+};
 
 interface FilesTouched {
   readonly paths: ReadonlyArray<string>;

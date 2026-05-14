@@ -30,6 +30,12 @@ vi.mock('../store', () => ({
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),
       loadDiffComments: vi.fn(),
+      sessionPlans: {},
+      sessionPhaseRuns: {},
+      loadSessionPlans: vi.fn(),
+      setPlanStatus: vi.fn(),
+      updatePlanBody: vi.fn(),
+      deletePlan: vi.fn(),
     };
     return selector(state);
   }),
@@ -41,6 +47,8 @@ vi.mock('../store', () => ({
   useSessionNextActions: vi.fn().mockReturnValue([]),
   useDiffComments: vi.fn().mockReturnValue([]),
   useFilesTouched: vi.fn().mockReturnValue({ paths: [], count: 0 }),
+  useSessionPlans: vi.fn().mockReturnValue([]),
+  useMostRecentPlan: vi.fn().mockReturnValue(null),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

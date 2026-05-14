@@ -23,6 +23,7 @@ export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyA
 const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
 const QUESTION_RE = /<<ctx-question>>([\s\S]*?)<<\/ctx-question>>/g;
 const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
+const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
 
 /**
  * Pull agent-emitted markers out of an assistant turn's full text. Agents
@@ -46,6 +47,47 @@ export function extractMarkers(assistantText: string): {
   const questions = extractAll(assistantText, QUESTION_RE);
   const resolved = extractAll(assistantText, RESOLVED_RE);
   return { decisions, questions, resolved };
+}
+
+/**
+ * Pull the most recent `<<plan>>...<</plan>>` block from an assistant turn.
+ * Planning agents wrap a Markdown body inside the marker — title is the first
+ * non-empty line (with leading `#` stripped); body is the rest. Returns null
+ * when no marker is present or its content is empty.
+ *
+ * If multiple plans appear in one turn (rare), the last one wins — agents are
+ * expected to emit one final plan per turn.
+ */
+export interface ExtractedPlan {
+  readonly title: string;
+  readonly bodyMd: string;
+}
+
+export function extractPlanFromMarker(assistantText: string): ExtractedPlan | null {
+  const matches = extractAll(assistantText, PLAN_RE);
+  if (matches.length === 0) return null;
+  const raw = matches[matches.length - 1]!;
+  return parsePlanBody(raw);
+}
+
+function parsePlanBody(raw: string): ExtractedPlan | null {
+  const lines = raw.split('\n');
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const ln = (lines[i] ?? '').trim();
+    if (ln.length > 0) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return null;
+  const titleLine = (lines[firstIdx] ?? '').trim();
+  const title = titleLine.replace(/^#+\s*/, '').trim();
+  if (title.length === 0) return null;
+  const restLines = lines.slice(firstIdx + 1);
+  let bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  if (bodyMd.length === 0) bodyMd = title;
+  return { title, bodyMd };
 }
 
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {

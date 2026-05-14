@@ -25,6 +25,7 @@ export {
   autoPopulateContext,
   extractFilesTouched,
   extractMarkers,
+  extractPlanFromMarker,
   isSlotKey,
   mergeIntoSlot,
   removeFromSlot,
@@ -32,6 +33,7 @@ export {
   type AutoPopulateInput,
   type AutoPopulateResult,
   type ContextEngineDeps,
+  type ExtractedPlan,
   type SlotKey,
 } from './context';
 
