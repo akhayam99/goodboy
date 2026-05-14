@@ -14,12 +14,20 @@ export type SpawnAgentFn = (
 
 export function spawnKindForAction(action: NextAction): AgentKind | null {
   switch (action.id) {
+    case 'spawn_scout':
+      return 'scout';
     case 'spawn_planner':
       return 'planner';
     case 'spawn_implementer':
       return 'implementer';
     case 'spawn_debugger':
       return 'debugger';
+    case 'spawn_reviewer':
+      return 'reviewer';
+    case 'spawn_tester':
+      return 'reviewer';
+    case 'spawn_docs':
+      return 'docs';
     default:
       return null;
   }
@@ -27,6 +35,8 @@ export function spawnKindForAction(action: NextAction): AgentKind | null {
 
 function kickoffPromptFor(action: NextAction): string {
   switch (action.id) {
+    case 'spawn_scout':
+      return 'explore the current scope and surface what is still unclear before planning.';
     case 'spawn_planner':
       return 'plan the next steps based on the current context.';
     case 'spawn_implementer':
@@ -35,6 +45,12 @@ function kickoffPromptFor(action: NextAction): string {
       const topic = action.payload?.topic?.trim();
       return topic ? `debug ${topic}.` : 'debug the current failure.';
     }
+    case 'spawn_reviewer':
+      return 'review the latest changes for correctness, style, and edge cases.';
+    case 'spawn_tester':
+      return 'write tests covering the latest changes. include unit and edge cases.';
+    case 'spawn_docs':
+      return 'document the latest changes. update relevant readme or guides.';
     default:
       return '';
   }

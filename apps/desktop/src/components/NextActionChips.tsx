@@ -15,11 +15,7 @@ export interface NextActionChipsProps {
 }
 
 function isSpawnAction(action: NextAction): boolean {
-  return (
-    action.id === 'spawn_planner' ||
-    action.id === 'spawn_implementer' ||
-    action.id === 'spawn_debugger'
-  );
+  return spawnKindForAction(action) !== null;
 }
 
 export function NextActionChips({ taskId, workflowBound, className }: NextActionChipsProps) {
@@ -42,24 +38,16 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
     setError(null);
     setPendingAction(null);
     try {
-      switch (action.id) {
-        case 'spawn_planner':
-        case 'spawn_implementer':
-        case 'spawn_debugger': {
-          const defaults = AGENT_KIND_DEFAULTS[action.kind];
-          await spawnAgent(taskId, {
-            name: action.label,
-            model: defaults.model,
-            effort: defaults.effort,
-          });
-          break;
-        }
-        case 'open_pr':
-          await createPrForSession(taskId);
-          break;
-        case 'merge_pr':
-          // No-op until #415 lands the merge action on the store.
-          break;
+      const kind = spawnKindForAction(action);
+      if (kind) {
+        const defaults = AGENT_KIND_DEFAULTS[kind];
+        await spawnAgent(taskId, {
+          name: action.label,
+          model: defaults.model,
+          effort: defaults.effort,
+        });
+      } else if (action.id === 'open_pr') {
+        await createPrForSession(taskId);
       }
       clearSessionNextActions(taskId);
     } catch (err) {
