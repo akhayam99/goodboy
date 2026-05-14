@@ -1,4 +1,5 @@
-import type { IsoDateTime, ProviderRunId, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@kay-am/types';
+import { devWarn } from '../../dev-log';
 
 export interface ParseContext {
   readonly runId: ProviderRunId;
@@ -6,76 +7,145 @@ export interface ParseContext {
   readonly onUnknown?: (type: string, payload: unknown) => void;
 }
 
-// Codex CLI emits NDJSON when run with --json flag.
-// Documented event types from openai/codex CLI source:
-//   message        — assistant/user turn with content blocks
-//   function_call  — tool invocation
-//   function_call_output — tool result
-//   reasoning      — internal chain-of-thought (skipped, not surfaced)
-//   error          — terminal error payload
-// The CLI does NOT expose token counts; usage event emits zeros.
-
+// Codex CLI v0.130.0 emits NDJSON when run with `--json`. Schema captured from
+// `codex exec --json -m gpt-5.2 -s read-only -C /tmp "..."`:
+//   thread.started   { thread_id }
+//   turn.started
+//   item.started     { item: { id, type, ... } }
+//   item.completed   { item: { id, type, ... } }   // type = agent_message | command_execution | apply_patch | ...
+//   turn.completed   { usage: { input_tokens, cached_input_tokens, output_tokens, reasoning_output_tokens } }
+//   error            { message }                   // terminal error
 const KNOWN_TYPES = new Set([
-  'message',
-  'function_call',
-  'function_call_output',
-  'reasoning',
+  'thread.started',
+  'turn.started',
+  'item.started',
+  'item.completed',
+  'turn.completed',
   'error',
 ]);
 
-interface MessageBlock {
-  readonly type: string;
+interface UsagePayload {
+  readonly input_tokens?: number;
+  readonly cached_input_tokens?: number;
+  readonly output_tokens?: number;
+  readonly reasoning_output_tokens?: number;
+}
+
+interface CommandItem {
+  readonly id: string;
+  readonly type: 'command_execution';
+  readonly command?: string;
+  readonly aggregated_output?: string;
+  readonly exit_code?: number | null;
+  readonly status?: string;
+}
+
+interface AgentMessageItem {
+  readonly id: string;
+  readonly type: 'agent_message';
   readonly text?: string;
 }
 
-interface MessagePayload {
-  readonly role?: string;
-  readonly content?: ReadonlyArray<MessageBlock>;
+interface ApplyPatchItem {
+  readonly id: string;
+  readonly type: 'apply_patch' | 'file_change';
+  readonly changes?: ReadonlyArray<{
+    readonly path?: string;
+    readonly kind?: 'create' | 'modify' | 'delete' | string;
+  }>;
 }
 
-interface FunctionCallPayload {
-  readonly call_id?: string;
-  readonly name?: string;
-  readonly arguments?: string;
+type CodexItem =
+  | CommandItem
+  | AgentMessageItem
+  | ApplyPatchItem
+  | { readonly id: string; readonly type: string; readonly [k: string]: unknown };
+
+function isCommandItem(item: CodexItem): item is CommandItem {
+  return item.type === 'command_execution';
+}
+function isAgentMessageItem(item: CodexItem): item is AgentMessageItem {
+  return item.type === 'agent_message';
+}
+function isApplyPatchItem(item: CodexItem): item is ApplyPatchItem {
+  return item.type === 'apply_patch' || item.type === 'file_change';
 }
 
-interface FunctionCallOutputPayload {
-  readonly call_id?: string;
-  readonly output?: unknown;
-  readonly is_error?: boolean;
-}
-
-const FILE_WRITE_FNS: ReadonlySet<string> = new Set([
-  'write_file',
-  'create_file',
-  'overwrite_file',
-]);
-const FILE_EDIT_FNS: ReadonlySet<string> = new Set([
-  'str_replace_editor',
-  'edit_file',
-  'patch_file',
-]);
-
-function detectFileEdit(
-  name: string,
-  rawArgs: string,
-): { path: string; editType: 'create' | 'modify' } | null {
-  let args: Record<string, unknown>;
-  try {
-    args = JSON.parse(rawArgs) as Record<string, unknown>;
-  } catch {
-    return null;
+function commandToTurnEvents(
+  item: CommandItem,
+  phase: 'start' | 'end',
+  ctx: ParseContext,
+  at: IsoDateTime,
+): ReadonlyArray<TurnEvent> {
+  if (!item.id) return [];
+  if (phase === 'start') {
+    return [
+      {
+        kind: 'tool_call_start',
+        runId: ctx.runId,
+        toolUseId: item.id,
+        toolName: 'shell',
+        input: { command: item.command ?? '' },
+        at,
+      },
+    ];
   }
-  const path =
-    typeof args.path === 'string'
-      ? args.path
-      : typeof args.file_path === 'string'
-        ? args.file_path
-        : null;
-  if (!path) return null;
-  if (FILE_WRITE_FNS.has(name)) return { path, editType: 'create' };
-  if (FILE_EDIT_FNS.has(name)) return { path, editType: 'modify' };
-  return null;
+  return [
+    {
+      kind: 'tool_call_end',
+      runId: ctx.runId,
+      toolUseId: item.id,
+      output: {
+        aggregated_output: item.aggregated_output ?? '',
+        exit_code: item.exit_code ?? null,
+      },
+      isError: typeof item.exit_code === 'number' && item.exit_code !== 0,
+      at,
+    },
+  ];
+}
+
+function applyPatchToTurnEvents(
+  item: ApplyPatchItem,
+  ctx: ParseContext,
+  at: IsoDateTime,
+): ReadonlyArray<TurnEvent> {
+  if (!item.id) return [];
+  const events: TurnEvent[] = [
+    {
+      kind: 'tool_call_end',
+      runId: ctx.runId,
+      toolUseId: item.id,
+      output: item.changes ?? null,
+      isError: false,
+      at,
+    },
+  ];
+  for (const change of item.changes ?? []) {
+    if (typeof change.path !== 'string') continue;
+    const editType: 'create' | 'modify' | 'delete' =
+      change.kind === 'create' || change.kind === 'delete' ? change.kind : 'modify';
+    events.push({
+      kind: 'file_edit',
+      runId: ctx.runId,
+      path: change.path,
+      editType,
+      at,
+    });
+  }
+  return events;
+}
+
+function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
+  const inputTokens = raw?.input_tokens ?? 0;
+  const cachedInputTokens = raw?.cached_input_tokens ?? 0;
+  const outputTokens = (raw?.output_tokens ?? 0) + (raw?.reasoning_output_tokens ?? 0);
+  return {
+    inputTokens,
+    outputTokens,
+    cachedInputTokens,
+    estimatedCostUsd: 0,
+  };
 }
 
 export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
@@ -93,83 +163,56 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
   const type = payload.type;
 
   switch (type) {
-    case 'message': {
-      const msg = payload as MessagePayload & { type: string };
-      if (msg.role !== 'assistant') return [];
-      const blocks = msg.content ?? [];
-      const events: TurnEvent[] = [];
-      for (const block of blocks) {
-        if (
-          (block.type === 'output_text' || block.type === 'text') &&
-          typeof block.text === 'string' &&
-          block.text.length > 0
-        ) {
-          events.push({ kind: 'assistant_text', runId: ctx.runId, delta: block.text, at });
-        }
-      }
-      return events;
-    }
-
-    case 'function_call': {
-      const fc = payload as FunctionCallPayload & { type: string };
-      if (!fc.call_id || !fc.name) return [];
-      const rawArgs = typeof fc.arguments === 'string' ? fc.arguments : '{}';
-      let parsedInput: unknown;
-      try {
-        parsedInput = JSON.parse(rawArgs);
-      } catch {
-        parsedInput = rawArgs;
-      }
-      const events: TurnEvent[] = [];
-      events.push({
-        kind: 'tool_call_start',
-        runId: ctx.runId,
-        toolUseId: fc.call_id,
-        toolName: fc.name,
-        input: parsedInput,
-        at,
-      });
-      const edit = detectFileEdit(fc.name, rawArgs);
-      if (edit) {
-        events.push({
-          kind: 'file_edit',
-          runId: ctx.runId,
-          path: edit.path,
-          editType: edit.editType,
-          at,
-        });
-      }
-      return events;
-    }
-
-    case 'function_call_output': {
-      const fco = payload as FunctionCallOutputPayload & { type: string };
-      if (!fco.call_id) return [];
+    case 'thread.started': {
+      const threadId = payload['thread_id'];
+      if (typeof threadId !== 'string' || threadId.length === 0) return [];
       return [
         {
-          kind: 'tool_call_end',
+          kind: 'provider_session_init',
           runId: ctx.runId,
-          toolUseId: fco.call_id,
-          output: fco.output ?? null,
-          isError: fco.is_error === true,
+          providerSessionId: threadId,
           at,
         },
       ];
     }
 
-    case 'reasoning':
+    case 'turn.started':
       return [];
 
+    case 'item.started': {
+      const item = payload['item'] as CodexItem | undefined;
+      if (!item || typeof item.id !== 'string') return [];
+      if (isCommandItem(item)) return commandToTurnEvents(item, 'start', ctx, at);
+      return [];
+    }
+
+    case 'item.completed': {
+      const item = payload['item'] as CodexItem | undefined;
+      if (!item || typeof item.id !== 'string') return [];
+      if (isCommandItem(item)) return commandToTurnEvents(item, 'end', ctx, at);
+      if (isAgentMessageItem(item) && typeof item.text === 'string' && item.text.length > 0) {
+        return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }];
+      }
+      if (isApplyPatchItem(item)) return applyPatchToTurnEvents(item, ctx, at);
+      return [];
+    }
+
+    case 'turn.completed': {
+      const usage = buildUsage(payload['usage'] as UsagePayload | undefined);
+      return [{ kind: 'usage', runId: ctx.runId, usage, at }];
+    }
+
     case 'error': {
-      const msg = typeof payload.message === 'string' ? payload.message : JSON.stringify(payload);
+      const msg =
+        typeof payload['message'] === 'string'
+          ? (payload['message'] as string)
+          : JSON.stringify(payload);
       return [{ kind: 'error', runId: ctx.runId, message: msg, at }];
     }
 
     default:
       if (typeof type === 'string' && !KNOWN_TYPES.has(type)) {
-        if (process.env['NODE_ENV'] !== 'production') {
-          console.warn(`[codex-adapter] unknown json payload type: ${type}`);
-        }
+        devWarn(`[codex-adapter] unknown json payload type: ${type}`);
         ctx.onUnknown?.(type, payload);
         return [
           {

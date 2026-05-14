@@ -151,7 +151,16 @@ function buildCliArgs(
         '--force',
       ];
     case 'codex':
-      return ['exec', '--json', '--model', model, '--', `${systemPrompt}\n\n${userMessage}`];
+      return [
+        'exec',
+        '--json',
+        '-m',
+        model,
+        '-s',
+        'read-only',
+        '--skip-git-repo-check',
+        `${systemPrompt}\n\n${userMessage}`,
+      ];
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
