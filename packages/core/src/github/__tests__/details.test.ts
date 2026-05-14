@@ -26,7 +26,7 @@ describe('fetchPrDetail', () => {
   it('merges issue + review comments sorted by createdAt', async () => {
     const runner = makeMultiRunner([
       {
-        match: (a) => a.includes('issues/1/comments'),
+        match: (a) => a.some((s) => s.includes('issues/1/comments')),
         result: jsonOk([
           {
             id: 100,
@@ -38,7 +38,7 @@ describe('fetchPrDetail', () => {
         ]),
       },
       {
-        match: (a) => a.includes('pulls/1/comments'),
+        match: (a) => a.some((s) => s.includes('pulls/1/comments')),
         result: jsonOk([
           {
             id: 200,
@@ -66,8 +66,8 @@ describe('fetchPrDetail', () => {
 
   it('maps review states + review requests', async () => {
     const runner = makeMultiRunner([
-      { match: (a) => a.includes('issues/1/comments'), result: jsonOk([]) },
-      { match: (a) => a.includes('pulls/1/comments'), result: jsonOk([]) },
+      { match: (a) => a.some((s) => s.includes('issues/1/comments')), result: jsonOk([]) },
+      { match: (a) => a.some((s) => s.includes('pulls/1/comments')), result: jsonOk([]) },
       {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
         result: jsonOk({
@@ -96,8 +96,8 @@ describe('fetchPrDetail', () => {
 
   it('derives check conclusions including pending and failure', async () => {
     const runner = makeMultiRunner([
-      { match: (a) => a.includes('issues/1/comments'), result: jsonOk([]) },
-      { match: (a) => a.includes('pulls/1/comments'), result: jsonOk([]) },
+      { match: (a) => a.some((s) => s.includes('issues/1/comments')), result: jsonOk([]) },
+      { match: (a) => a.some((s) => s.includes('pulls/1/comments')), result: jsonOk([]) },
       {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
         result: jsonOk({
