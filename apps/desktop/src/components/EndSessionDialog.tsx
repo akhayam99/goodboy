@@ -51,10 +51,10 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            cancel
+            Cancel
           </Button>
           <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-            {busy ? 'ending…' : 'end session'}
+            {busy ? 'Ending…' : 'End session'}
           </Button>
         </>
       }

@@ -23,7 +23,7 @@ export function ShortcutHelpDialog({ open, onClose }: ShortcutHelpDialogProps) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="keyboard shortcuts"
+      title="Keyboard shortcuts"
       description="global shortcuts active anywhere in kAY.am."
       size="sm"
     >

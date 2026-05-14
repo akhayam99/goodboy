@@ -279,7 +279,7 @@ export function ChatView({ session }: ChatViewProps) {
               className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
               onClick={() => setMergeDialogOpen(true)}
             >
-              merge
+              Merge
             </button>
           </div>
         ) : null}

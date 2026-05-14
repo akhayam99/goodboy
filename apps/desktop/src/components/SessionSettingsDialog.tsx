@@ -146,7 +146,7 @@ export function SessionSettingsDialog({
                   onClick={() => void onSaveGoal()}
                   disabled={busy || goalDraft.trim() === session.goal.trim()}
                 >
-                  save
+                  Save
                 </Button>
               </div>
             </Field>
@@ -188,7 +188,7 @@ export function SessionSettingsDialog({
                   className="flex-1"
                 />
                 <Button variant="secondary" onClick={() => void onSaveCap()} disabled={busy}>
-                  save
+                  Save
                 </Button>
               </div>
             </Field>
@@ -238,12 +238,12 @@ export function SessionSettingsDialog({
                 {archived ? (
                   <>
                     <ArchiveRestore size={13} aria-hidden className="mr-1.5" />
-                    unarchive
+                    Unarchive
                   </>
                 ) : (
                   <>
                     <Archive size={13} aria-hidden className="mr-1.5" />
-                    archive
+                    Archive
                   </>
                 )}
               </Button>
@@ -266,7 +266,7 @@ export function SessionSettingsDialog({
                 {!confirmDelete ? (
                   <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
                     <Trash2 size={13} aria-hidden className="mr-1.5" />
-                    delete
+                    Delete
                   </Button>
                 ) : null}
               </div>
@@ -279,7 +279,7 @@ export function SessionSettingsDialog({
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busy}>
-                      cancel
+                      Cancel
                     </Button>
                     {!archived ? (
                       <Button
@@ -292,11 +292,11 @@ export function SessionSettingsDialog({
                         disabled={busy}
                       >
                         <Archive size={13} aria-hidden className="mr-1.5" />
-                        archive instead
+                        Archive instead
                       </Button>
                     ) : null}
                     <Button variant="danger" onClick={() => void onDelete()} disabled={busy}>
-                      {busy ? 'deleting…' : 'confirm delete'}
+                      {busy ? 'Deleting…' : 'Confirm delete'}
                     </Button>
                   </div>
                 </>
@@ -320,7 +320,7 @@ export function SessionSettingsDialog({
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose}>
-            close
+            Close
           </Button>
         </>
       }

@@ -490,7 +490,7 @@ function GitHubSection({ session }: { session: Task }) {
               className="h-5 gap-0.5 px-1.5 text-[10px]"
             >
               <Plus size={10} aria-hidden />
-              open pr
+              Open PR
             </Button>
           </div>
         )}
@@ -825,7 +825,7 @@ function SummarizerBadge({
       ? `last error: ${error}`
       : lastUpdate
         ? `last update: ${lastUpdate}`
-        : 'summarizer running — keep typing, the app is not blocked';
+        : 'summarizer running — input is not blocked';
   return (
     <span
       title={tooltip}

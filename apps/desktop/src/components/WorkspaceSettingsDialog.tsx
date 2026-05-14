@@ -183,7 +183,7 @@ export function WorkspaceSettingsDialog({
                     disabled={disconnecting}
                   >
                     <Unplug size={13} aria-hidden className="mr-1.5" />
-                    disconnect
+                    Disconnect
                   </Button>
                 ) : null}
               </div>
@@ -195,14 +195,14 @@ export function WorkspaceSettingsDialog({
                     onClick={() => setConfirmDisconnect(false)}
                     disabled={disconnecting}
                   >
-                    cancel
+                    Cancel
                   </Button>
                   <Button
                     variant="danger"
                     onClick={() => void onDisconnect()}
                     disabled={disconnecting}
                   >
-                    {disconnecting ? 'disconnecting…' : 'confirm disconnect'}
+                    {disconnecting ? 'Disconnecting…' : 'Confirm disconnect'}
                   </Button>
                 </div>
               ) : null}

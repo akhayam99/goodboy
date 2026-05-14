@@ -121,7 +121,7 @@ export function PlannerWidget({
           planner returns a structured workflow you can review before saving.
         </p>
         <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
-          {busy && !plan ? 'planning…' : plan ? 're-plan' : 'generate plan'}
+          {busy && !plan ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
         </Button>
       </div>
       {error ? (
@@ -168,7 +168,7 @@ export function PlannerWidget({
             })}
           </ol>
           <Button size="sm" onClick={onSave} disabled={busy}>
-            {busy ? 'saving…' : 'use this workflow'}
+            {busy ? 'Saving…' : 'Use this workflow'}
           </Button>
         </div>
       ) : null}

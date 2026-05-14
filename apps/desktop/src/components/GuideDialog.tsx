@@ -32,7 +32,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={14} aria-hidden /> },
   { id: 'agents', label: 'Agents', icon: <Bot size={14} aria-hidden /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={14} aria-hidden /> },
-  { id: 'legenda', label: 'Legenda', icon: <Palette size={14} aria-hidden /> },
+  { id: 'legenda', label: 'Legend', icon: <Palette size={14} aria-hidden /> },
 ];
 
 export function GuideDialog({ open, onClose }: GuideDialogProps) {
@@ -49,7 +49,7 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
       fullScreenOnSmall
       footer={
         <Button variant="ghost" onClick={onClose}>
-          close
+          Close
         </Button>
       }
     >
@@ -244,7 +244,7 @@ function Content({ section }: { section: Section }) {
           <P>
             each model has a hard ceiling on how many tokens fit in one call (Opus 4.7 1M, Sonnet
             4.6 / Haiku 4.5 200k, gpt-4o 128k). the bar under each agent shows how full the current
-            context is. above 75% → the agent starts forgetting; consider summarising or starting a
+            context is. above 75% → the agent starts forgetting; consider summarizing or starting a
             new session.
           </P>
           <H3>Cost colors</H3>
@@ -295,7 +295,7 @@ function Content({ section }: { section: Section }) {
           <P>
             the second line on each agent shows:{' '}
             <Code>model · ↓ input · ↑ output · cost · ⏱ age</Code>. below it, a thin bar = context
-            window utilisation. tooltip on the bar gives exact numbers.
+            window utilization. tooltip on the bar gives exact numbers.
           </P>
         </Article>
       );
@@ -315,7 +315,7 @@ function Content({ section }: { section: Section }) {
               ],
               [
                 'use cheap models for navigation',
-                'haiku / cursor-small can grep, list, summarise in seconds at 1/15th the price. swap up only when reasoning gets hard.',
+                'haiku / cursor-small can grep, list, summarize in seconds at 1/15th the price. swap up only when reasoning gets hard.',
               ],
               [
                 "queue, don't cancel",
@@ -336,7 +336,7 @@ function Content({ section }: { section: Section }) {
 
     case 'legenda':
       return (
-        <Article heading="Legenda" intro="color meanings used throughout the interface.">
+        <Article heading="Legend" intro="color meanings used throughout the interface.">
           <H3>Status dots — sessions & agents</H3>
           <LegendaGrid
             rows={[
@@ -368,7 +368,7 @@ function Content({ section }: { section: Section }) {
                 desc: 'comfortable — plenty of context remaining',
               },
               { dot: 'bg-info', label: '50–75%', desc: 'moderate — monitor closely' },
-              { dot: 'bg-warning', label: '75–90%', desc: 'high — consider summarising soon' },
+              { dot: 'bg-warning', label: '75–90%', desc: 'high — consider summarizing soon' },
               { dot: 'bg-danger', label: '≥ 90%', desc: 'critical — start a new session' },
             ]}
           />

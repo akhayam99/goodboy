@@ -69,7 +69,7 @@ export function OpenInEditorButton({
         onClick={() => void open(resolvedDefault)}
       >
         <FolderOpen size={12} aria-hidden />
-        open in {resolvedDefault}
+        Open in {resolvedDefault}
       </Button>
     );
   }

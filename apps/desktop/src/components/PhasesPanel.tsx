@@ -395,7 +395,7 @@ function DefinitionEditor({
         <Textarea
           value={def.promptPrefix}
           onChange={(e) => onUpdate({ promptPrefix: e.target.value })}
-          placeholder="You are in the planning step. Your goal is to…"
+          placeholder="you are in the planning step. your goal is to…"
           rows={3}
           className="font-mono text-xs"
         />

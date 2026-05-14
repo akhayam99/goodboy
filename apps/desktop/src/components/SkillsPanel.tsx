@@ -262,7 +262,7 @@ function SkillEditor({
           <Input
             value={form.description}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
-            placeholder="What this skill does"
+            placeholder="what this skill does"
           />
         </div>
 
@@ -292,7 +292,7 @@ function SkillEditor({
           <Textarea
             value={form.body}
             onChange={(e) => onChange({ ...form, body: e.target.value })}
-            placeholder="Skill prompt body…"
+            placeholder="skill prompt body…"
             rows={6}
             className="font-mono text-xs"
           />

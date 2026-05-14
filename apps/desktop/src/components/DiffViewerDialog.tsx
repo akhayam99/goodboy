@@ -468,7 +468,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
         ) : (
           <Sparkles size={11} aria-hidden />
         )}
-        propose fixes
+        Propose fixes
       </button>
     </div>
   );
@@ -899,7 +899,7 @@ function FileDiffPane({
               className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <MessageSquarePlus size={10} aria-hidden />
-              add file note
+              Add file note
             </button>
           </div>
         ) : null}
@@ -1049,7 +1049,7 @@ function InlineComposer({
             onClick={onCancel}
             className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            cancel
+            Cancel
           </button>
           <button
             type="button"
@@ -1057,7 +1057,7 @@ function InlineComposer({
             disabled={trimmed.length === 0}
             className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
           >
-            send
+            Send
           </button>
         </div>
       </div>

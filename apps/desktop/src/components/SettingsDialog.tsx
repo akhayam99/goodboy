@@ -249,7 +249,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
             <p className="text-xs leading-relaxed text-muted-foreground">
               Wipe the local sqlite database — drops every workspace, session, agent, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
-              Api keys in the os keychain are NOT touched. Fresh schema is recreated on next boot.
+              API keys in the OS keychain are not touched. Fresh schema is recreated on next boot.
             </p>
             {wipeError ? (
               <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
@@ -312,7 +312,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Export saves workspaces, skills, workflows, permission rules, budget rules, and
-              settings to a json file. Api keys are never included.
+              settings to a JSON file. API keys are never included.
             </p>
           </div>
         );
