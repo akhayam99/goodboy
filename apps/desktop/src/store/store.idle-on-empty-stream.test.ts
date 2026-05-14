@@ -9,6 +9,7 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
+import type { NextAction } from '@kay-am/core';
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
@@ -284,5 +285,25 @@ describe('sendTurn — terminal state guarantees', () => {
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvents = transcript.filter((e) => e.kind === 'error');
     expect(errorEvents).toHaveLength(0);
+  });
+
+  it('clears sessionNextActions when the user sends a new turn (stale suggestion drop)', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => doneOnlyStream(args.runId));
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    const planAction: NextAction = { id: 'spawn_planner', label: 'start plan', kind: 'planner' };
+    useAppStore.setState((state) => ({
+      sessionNextActions: {
+        ...state.sessionNextActions,
+        [SESSION_ID]: [planAction],
+      },
+    }));
+
+    await useAppStore
+      .getState()
+      .sendTurn({ taskId: SESSION_ID, content: 'keep going on the same path' });
+
+    expect(useAppStore.getState().sessionNextActions[SESSION_ID]).toBeUndefined();
   });
 });

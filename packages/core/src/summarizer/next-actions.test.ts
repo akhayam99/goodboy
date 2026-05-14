@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot } from '@kay-am/types';
 import type { ContextSlotDelta, SummarizeInput } from './client';
-import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
+import {
+  evaluateSpawnReadiness,
+  inferNextActions,
+  type NextAction,
+  type NextActionsPrState,
+} from './next-actions';
 
 const LOCKED_GOAL = 'add caching layer to the auth module';
 
@@ -202,5 +207,34 @@ describe('inferNextActions — invariants', () => {
       slotsAfter: slots({}),
     });
     expect(findById(actions, 'open_pr')).toBeDefined();
+  });
+});
+
+describe('evaluateSpawnReadiness', () => {
+  it('returns ready when nothing is in flight', () => {
+    expect(evaluateSpawnReadiness({ streaming: false, summarizing: false })).toEqual({
+      kind: 'ready',
+    });
+  });
+
+  it('returns confirm/streaming when only the assistant turn is streaming', () => {
+    expect(evaluateSpawnReadiness({ streaming: true, summarizing: false })).toEqual({
+      kind: 'confirm',
+      reason: 'streaming',
+    });
+  });
+
+  it('returns confirm/summarizing when only the summarizer is running', () => {
+    expect(evaluateSpawnReadiness({ streaming: false, summarizing: true })).toEqual({
+      kind: 'confirm',
+      reason: 'summarizing',
+    });
+  });
+
+  it('prefers summarizing reason when both are in flight (stale slots are the concrete risk)', () => {
+    expect(evaluateSpawnReadiness({ streaming: true, summarizing: true })).toEqual({
+      kind: 'confirm',
+      reason: 'summarizing',
+    });
   });
 });

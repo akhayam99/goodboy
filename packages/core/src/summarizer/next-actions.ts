@@ -188,3 +188,22 @@ function dedupeById(actions: ReadonlyArray<NextAction>): NextAction[] {
   }
   return out;
 }
+
+export interface SpawnReadinessInput {
+  readonly streaming: boolean;
+  readonly summarizing: boolean;
+}
+
+export type SpawnReadiness =
+  | { readonly kind: 'ready' }
+  | { readonly kind: 'confirm'; readonly reason: 'streaming' | 'summarizing' };
+
+// Spawning a new agent while the current turn streams or the summarizer is
+// running would seed it with stale context (last summary + slots not yet
+// updated). Summarizer takes precedence: if both fire, the slot/context
+// freshness is the more concrete risk to surface.
+export function evaluateSpawnReadiness(input: SpawnReadinessInput): SpawnReadiness {
+  if (input.summarizing) return { kind: 'confirm', reason: 'summarizing' };
+  if (input.streaming) return { kind: 'confirm', reason: 'streaming' };
+  return { kind: 'ready' };
+}

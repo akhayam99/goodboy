@@ -1506,6 +1506,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       throw new Error('no agent selected — spawn one before sending a turn');
     }
 
+    // User chose to keep talking → previously surfaced next-action chips become
+    // stale (they propose handing off, but the user just steered the current
+    // session). Drop them so the card disappears immediately.
+    if (before.sessionNextActions[taskId] !== undefined) {
+      get().clearSessionNextActions(taskId);
+    }
+
     const userTurnText = content;
     let resolvedPrompt = content;
 

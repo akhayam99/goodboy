@@ -12,8 +12,11 @@ export {
   type SummarizerUsage,
 } from './client';
 export {
+  evaluateSpawnReadiness,
   inferNextActions,
   type InferNextActionsInput,
   type NextAction,
   type NextActionsPrState,
+  type SpawnReadiness,
+  type SpawnReadinessInput,
 } from './next-actions';
