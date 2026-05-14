@@ -881,7 +881,7 @@ async function generateAutoTitle(
     if (!session) return;
     const providerId = session.providerPreference.defaultProvider;
     const systemPrompt =
-      'You generate a short title for an AI coding session. Return ONLY the title, 3-5 words, no quotes, no trailing punctuation, no explanation. The title should be a concise micro-summary of what the agent is doing (e.g. "refactor auth module", "debug startup crash"). It will be used as both the session title and the agent name.';
+      'You generate a short title for an AI coding session. Return ONLY the title, 2-4 words, all lowercase, no quotes, no trailing punctuation, no explanation. The title should be a concise micro-summary of what the agent is doing (e.g. "refactor auth module", "debug startup crash", "fix login bug"). It will be used as both the session title and the agent display name.';
     const userMessage = [
       'User request (excerpt):',
       turnInput.slice(0, 600),
@@ -909,7 +909,8 @@ async function generateAutoTitle(
     title = title
       .replace(/^["']|["']$/g, '')
       .replace(/[.!?]+$/, '')
-      .trim();
+      .trim()
+      .toLowerCase();
     if (!title) return;
     const titleNow = new Date().toISOString() as IsoDateTime;
     if (!session.titleUserEdited) {
