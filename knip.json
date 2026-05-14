@@ -6,7 +6,8 @@
     },
     "apps/desktop": {
       "entry": ["src/**/*.test.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["tailwindcss"]
     },
     "packages/core": {
       "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.test.ts"],

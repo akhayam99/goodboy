@@ -16,11 +16,11 @@ function toRelPath(absPath: string, workingDir: string | null): string {
   return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
 }
 
-export const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
-export const selectCurrentWorkspace = (state: AppState): Workspace | null =>
+const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
+const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
-export const selectSessions = (state: AppState): ReadonlyArray<Task> => state.sessions;
-export const selectCurrentSession = (state: AppState): Task | null =>
+const selectSessions = (state: AppState): ReadonlyArray<Task> => state.sessions;
+const selectCurrentSession = (state: AppState): Task | null =>
   state.sessions.find((s) => s.id === state.currentSessionId) ?? null;
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
 export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
@@ -62,7 +62,7 @@ const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 export const useDiffComments = (taskId: TaskId | null): ReadonlyArray<DiffComment> =>
   useAppStore((s) => (taskId ? (s.diffComments[taskId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));
 
-export interface FilesTouched {
+interface FilesTouched {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
 }

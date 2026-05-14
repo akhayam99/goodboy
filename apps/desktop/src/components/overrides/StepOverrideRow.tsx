@@ -1,22 +1,14 @@
 import { cn } from '@kay-am/ui';
 import type { AgentEffort } from '@kay-am/types';
-import { VERBOSITY_LEVELS, VERBOSITY_LABEL, type VerbosityLevel } from '../../verbosity';
-import {
-  EFFORT_LEVELS,
-  EFFORT_LABEL,
-  EFFORT_TEXT,
-  VERBOSITY_TEXT,
-  modelLabel,
-} from '../chat/chat-constants';
+import { VERBOSITY_LEVELS, type VerbosityLevel } from '../../verbosity';
+import { EFFORT_TEXT, VERBOSITY_TEXT, modelLabel } from '../chat/chat-constants';
 
-export const STEP_SELECTABLE_MODELS = [
+const STEP_SELECTABLE_MODELS = [
   'claude-haiku-4-5',
   'claude-sonnet-4-5',
   'claude-sonnet-4-6',
   'claude-opus-4-7',
 ] as const;
-
-export type StepSelectableModel = (typeof STEP_SELECTABLE_MODELS)[number];
 
 export interface StepOverrideValues {
   readonly model: string;
@@ -134,6 +126,3 @@ function SegmentedControl<T extends string>({
     </span>
   );
 }
-
-export const EFFORT_LEVELS_PLANNER = EFFORT_LEVELS;
-export { EFFORT_LABEL, VERBOSITY_LABEL };

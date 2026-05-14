@@ -1,14 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { save, open } from '@tauri-apps/plugin-dialog';
-import type { ConfigBundle, ConfigBundleImportResult } from '@kay-am/types';
-
-export async function invokeExportConfig(): Promise<ConfigBundle> {
-  return invoke<ConfigBundle>('export_config');
-}
-
-export async function invokeImportConfig(bundle: ConfigBundle): Promise<ConfigBundleImportResult> {
-  return invoke<ConfigBundleImportResult>('import_config', { bundle });
-}
+import type { ConfigBundleImportResult } from '@kay-am/types';
 
 export async function exportConfigToFile(): Promise<string | null> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);

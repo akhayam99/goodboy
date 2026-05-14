@@ -9,14 +9,14 @@ export interface IssueData {
 
 // ─── Linear ────────────────────────────────────────────────────────────────────
 
-export function parseLinearIssueUrl(input: string): string | null {
+function parseLinearIssueUrl(input: string): string | null {
   const trimmed = input.trim();
   const urlMatch = trimmed.match(/linear\.app\/[^/]+\/issue\/([A-Z]+-\d+)/i);
   if (urlMatch) return urlMatch[1]!.toUpperCase();
   return null;
 }
 
-export async function fetchLinearIssue(issueId: string): Promise<IssueData> {
+async function fetchLinearIssue(issueId: string): Promise<IssueData> {
   const token = await getSecret('integration.linear.token');
   if (!token)
     throw new Error('Linear not connected — add your API key in Settings → Integrations.');
@@ -52,14 +52,14 @@ export async function fetchLinearIssue(issueId: string): Promise<IssueData> {
 
 // ─── GitLab ────────────────────────────────────────────────────────────────────
 
-export function parseGitLabIssueUrl(input: string): { projectPath: string; iid: number } | null {
+function parseGitLabIssueUrl(input: string): { projectPath: string; iid: number } | null {
   const trimmed = input.trim();
   const match = trimmed.match(/gitlab\.com\/(.+?)\/-\/issues\/(\d+)/);
   if (match) return { projectPath: match[1]!, iid: parseInt(match[2]!, 10) };
   return null;
 }
 
-export async function fetchGitLabIssue(projectPath: string, iid: number): Promise<IssueData> {
+async function fetchGitLabIssue(projectPath: string, iid: number): Promise<IssueData> {
   const token = await getSecret('integration.gitlab.token');
   if (!token) throw new Error('GitLab not connected — add your token in Settings → Integrations.');
 
@@ -86,14 +86,14 @@ export async function fetchGitLabIssue(projectPath: string, iid: number): Promis
 
 // ─── Jira ──────────────────────────────────────────────────────────────────────
 
-export function parseJiraIssueUrl(input: string): string | null {
+function parseJiraIssueUrl(input: string): string | null {
   const trimmed = input.trim();
   const urlMatch = trimmed.match(/atlassian\.net\/browse\/([A-Z]+-\d+)/i);
   if (urlMatch) return urlMatch[1]!.toUpperCase();
   return null;
 }
 
-export async function fetchJiraIssue(issueKey: string): Promise<IssueData> {
+async function fetchJiraIssue(issueKey: string): Promise<IssueData> {
   const [token, email, domain] = await Promise.all([
     getSecret('integration.jira.token'),
     getSecret('integration.jira.email'),

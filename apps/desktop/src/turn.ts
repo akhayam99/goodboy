@@ -30,7 +30,7 @@ function parseForProvider(
   }
 }
 
-export const AUTH_REQUIRED_PREFIX = '__auth_required__:';
+const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
 export interface AuthRequiredPayload {
   readonly providerId: ProviderId;
@@ -70,12 +70,7 @@ export function isAuthErrorMessage(text: string): boolean {
 
 const EVENT_NAME = 'turn_event';
 
-export type ClaudePermissionMode =
-  | 'default'
-  | 'acceptEdits'
-  | 'bypassPermissions'
-  | 'dontAsk'
-  | 'plan';
+type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
 interface SpawnArgs {
   readonly runId: ProviderRunId;
@@ -95,11 +90,6 @@ type RawTurnEnvelope =
   | { runId: string; type: 'line'; line: string }
   | { runId: string; type: 'end'; exit_code: number | null; stderr: string }
   | { runId: string; type: 'error'; message: string };
-
-export interface TurnTermination {
-  readonly exitCode: number | null;
-  readonly stderr: string;
-}
 
 export async function* runTurn(
   args: SpawnArgs,
@@ -213,7 +203,7 @@ export async function cancelTurn(runId: ProviderRunId): Promise<void> {
 // Parallel phase run spawn
 // ---------------------------------------------------------------------------
 
-export interface ParallelRunSpec {
+interface ParallelRunSpec {
   readonly runId: ProviderRunId;
   /** Worktree path from C3 worktree helper. */
   readonly workingDir: string;

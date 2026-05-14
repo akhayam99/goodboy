@@ -5,7 +5,7 @@ import type {
   ProviderId,
 } from '@kay-am/types';
 
-export type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
+type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
 export interface AuthState {
   readonly state: AuthStateKind;
@@ -53,12 +53,6 @@ const TAURI_GET_CMD: Record<ProviderId, string> = {
   codex: 'get_codex_status',
 };
 
-const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
-  anthropic: 'refresh_provider_status',
-  cursor: 'refresh_cursor_status',
-  codex: 'refresh_codex_status',
-};
-
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   models: [],
   supportsTools: false,
@@ -70,14 +64,8 @@ export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus>
   return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
 }
 
-export async function refreshProviderStatus(id: ProviderId): Promise<ProviderStatus> {
-  return invoke<ProviderStatus>(TAURI_REFRESH_CMD[id]);
-}
-
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
-export const refreshCursorStatus = (): Promise<ProviderStatus> => refreshProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
-export const refreshCodexStatus = (): Promise<ProviderStatus> => refreshProviderStatus('codex');
 
 export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
   return invoke<AuthState>('check_provider_auth', { providerId });

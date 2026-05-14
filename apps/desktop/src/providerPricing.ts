@@ -1,7 +1,7 @@
 import type { CodexModelPriceOverride } from '@kay-am/core';
 import shippedPricing from './data/pricing.json';
 
-export interface ModelPrice {
+interface ModelPrice {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
@@ -38,7 +38,7 @@ declare global {
 
 const IS_DEV = import.meta.env.DEV === true;
 
-export function priceForModel(
+function priceForModel(
   provider: 'anthropic' | 'cursor' | 'codex',
   model: string,
 ): ModelPrice | null {
@@ -65,11 +65,3 @@ export function getCodexPriceOverride(
       : {}),
   };
 }
-
-// Legacy compat: kept for existing callers that used to pass raw JSON string.
-export function parseProviderPricingConfig(_raw: string | null): unknown {
-  return {};
-}
-
-// Kept for ProviderPricingConfig shape compatibility in tests.
-export type ProviderPricingConfig = Record<string, never>;

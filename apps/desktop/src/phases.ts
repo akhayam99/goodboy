@@ -108,11 +108,6 @@ export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise
   return rows.map(rowToTemplate);
 }
 
-export async function invokePhaseTemplateGet(id: WorkflowId): Promise<Workflow | null> {
-  const row = await invoke<RawPhaseTemplateRow | null>('workflow_get', { id });
-  return row ? rowToTemplate(row) : null;
-}
-
 export interface PhaseDefinitionUpsertArgs {
   readonly id?: StepId;
   readonly ordinal: number;
@@ -274,24 +269,6 @@ export async function invokeParallelPhaseGroupCreate(
     },
   });
   return rowToParallelPhaseGroup(row);
-}
-
-export async function invokeParallelPhaseGroupList(taskId: TaskId): Promise<ParallelGroup[]> {
-  const rows = await invoke<RawParallelPhaseGroupRow[]>('parallel_group_list', {
-    taskId,
-  });
-  return rows.map(rowToParallelPhaseGroup);
-}
-
-export async function invokeParallelPhaseGroupGet(
-  id: ParallelGroupId,
-): Promise<ParallelGroup | null> {
-  const row = await invoke<RawParallelPhaseGroupRow | null>('parallel_group_get', { id });
-  return row != null ? rowToParallelPhaseGroup(row) : null;
-}
-
-export async function invokeParallelPhaseGroupDelete(id: ParallelGroupId): Promise<void> {
-  return invoke<void>('parallel_group_delete', { id });
 }
 
 export async function invokeParallelPhaseGroupUpdateCompletedAt(

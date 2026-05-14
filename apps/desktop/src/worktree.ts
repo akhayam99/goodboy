@@ -7,13 +7,6 @@ export interface CreatedWorktree {
   readonly reused: boolean;
 }
 
-export interface WorktreeInfo {
-  readonly path: string;
-  readonly branch: string | null;
-  readonly head: string;
-  readonly isMain: boolean;
-}
-
 export interface CreateWorktreeArgs {
   readonly repoPath: string;
   readonly branchPrefix: string;
@@ -27,18 +20,6 @@ export async function createWorktree(args: CreateWorktreeArgs): Promise<CreatedW
 
 export async function removeWorktree(repoPath: string, worktreePath: string): Promise<void> {
   await invoke('worktree_remove', { repoPath, worktreePath });
-}
-
-export async function listWorktrees(repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> {
-  return invoke<ReadonlyArray<WorktreeInfo>>('worktree_list', { repoPath });
-}
-
-export async function worktreeExists(
-  repoPath: string,
-  branchPrefix: string,
-  slug: string,
-): Promise<boolean> {
-  return invoke<boolean>('worktree_exists', { repoPath, branchPrefix, slug });
 }
 
 export async function worktreeDiff(worktreePath: string, base?: string): Promise<string> {

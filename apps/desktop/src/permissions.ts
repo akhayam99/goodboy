@@ -115,19 +115,6 @@ export interface PermissionAuditInsertPayload {
   readonly decidedAt: IsoDateTime;
 }
 
-export interface PermissionAuditQueryPayload {
-  readonly taskId?: TaskId;
-  readonly workspaceId?: WorkspaceId;
-  readonly fromAt?: IsoDateTime;
-  readonly toAt?: IsoDateTime;
-  readonly limit?: number;
-}
-
-export interface PermissionAuditClearScope {
-  readonly taskId?: TaskId;
-  readonly workspaceId?: WorkspaceId;
-}
-
 // ---------------------------------------------------------------------------
 // Permission rule commands (#176)
 // ---------------------------------------------------------------------------
@@ -143,13 +130,6 @@ export async function invokePermissionRuleList(args: {
     taskId: args.taskId ?? null,
   });
   return rows.map(rowToPermissionRule);
-}
-
-export async function invokePermissionRuleGet(
-  id: PermissionRuleId,
-): Promise<PermissionRule | null> {
-  const row = await invoke<RawPermissionRuleRow | null>('permission_rule_get', { id });
-  return row ? rowToPermissionRule(row) : null;
 }
 
 export async function invokePermissionRuleUpsert(
@@ -168,10 +148,6 @@ export async function invokePermissionRuleUpsert(
     },
   });
   return rowToPermissionRule(row);
-}
-
-export async function invokePermissionRuleDelete(id: PermissionRuleId): Promise<void> {
-  return invoke<void>('permission_rule_delete', { id });
 }
 
 // ---------------------------------------------------------------------------
@@ -197,30 +173,6 @@ export async function invokePermissionAuditInsert(
     },
   });
   return rowToAuditEntry(row);
-}
-
-export async function invokePermissionAuditList(
-  query: PermissionAuditQueryPayload,
-): Promise<ReadonlyArray<PermissionAuditEntry>> {
-  const rows = await invoke<RawPermissionAuditRow[]>('permission_audit_list', {
-    input: {
-      taskId: query.taskId ?? null,
-      workspaceId: query.workspaceId ?? null,
-      fromAt: query.fromAt ?? null,
-      toAt: query.toAt ?? null,
-      limit: query.limit ?? null,
-    },
-  });
-  return rows.map(rowToAuditEntry);
-}
-
-export async function invokePermissionAuditClear(scope: PermissionAuditClearScope): Promise<void> {
-  return invoke<void>('permission_audit_clear', {
-    input: {
-      taskId: scope.taskId ?? null,
-      workspaceId: scope.workspaceId ?? null,
-    },
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -277,51 +229,4 @@ export async function invokeAuditRetryUpdate(
 
 export async function invokeAuditRetryDelete(id: string): Promise<void> {
   return invoke<void>('permission_audit_retry_delete', { id });
-}
-
-// ---------------------------------------------------------------------------
-// Effective rules hook — for preflight banner
-// ---------------------------------------------------------------------------
-
-import { useEffect, useRef, useState } from 'react';
-
-export function useEffectivePermissionRules(args: {
-  taskId: TaskId | null;
-  workspaceId: WorkspaceId | null;
-  refreshKey?: number;
-}): ReadonlyArray<PermissionRule> {
-  const { taskId, workspaceId, refreshKey = 0 } = args;
-  const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!taskId || !workspaceId) {
-      setRules([]);
-      return;
-    }
-
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [global, workspace, session] = await Promise.all([
-          invokePermissionRuleList({ scope: 'global' }),
-          invokePermissionRuleList({ scope: 'workspace', workspaceId }),
-          invokePermissionRuleList({ scope: 'task', taskId }),
-        ]);
-        if (!cancelled) setRules([...global, ...workspace, ...session]);
-      } catch {
-        // silent
-      }
-    };
-
-    void load();
-    timerRef.current = setInterval(() => void load(), 30000);
-
-    return () => {
-      cancelled = true;
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [taskId, workspaceId, refreshKey]);
-
-  return rules;
 }

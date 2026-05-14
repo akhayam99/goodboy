@@ -4,8 +4,6 @@ import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
-export type { SlotKey };
-
 function getCheapModel(providerId: ProviderId): string {
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;

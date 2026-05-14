@@ -9,11 +9,9 @@ import type {
   TurnEvent,
   TurnRequest,
 } from '@kay-am/types';
-import { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
+import { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
 import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
 import { parseJsonLine } from './parser';
-
-export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL };
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,

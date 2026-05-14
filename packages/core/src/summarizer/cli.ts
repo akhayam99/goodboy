@@ -5,9 +5,9 @@ import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
-export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
+type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 
-export type ContextSlotDelta = Readonly<{
+type ContextSlotDelta = Readonly<{
   upserts: ReadonlyArray<ContextSlotDeltaUpsert>;
 }>;
 
