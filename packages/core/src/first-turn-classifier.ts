@@ -35,11 +35,8 @@ const PATTERNS: ReadonlyArray<readonly [FirstTurnRole, RegExp]> = [
 export function classifyFirstTurn(text: string): FirstTurnClassification {
   const trimmed = text.trim();
   if (trimmed.length === 0) return 'unknown';
-  const matches = new Set<FirstTurnRole>();
   for (const [role, regex] of PATTERNS) {
-    if (regex.test(trimmed)) matches.add(role);
+    if (regex.test(trimmed)) return role;
   }
-  if (matches.size !== 1) return 'unknown';
-  const [only] = matches;
-  return only ?? 'unknown';
+  return 'unknown';
 }
