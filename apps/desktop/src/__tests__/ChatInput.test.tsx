@@ -84,6 +84,7 @@ vi.mock('@kay-am/core', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
+  assessTurnWeight: () => 'small',
 }));
 
 // Import component AFTER mocks are in place.
