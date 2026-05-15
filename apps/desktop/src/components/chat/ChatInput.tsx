@@ -205,7 +205,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   );
 
   const { showToast } = useToast();
-  const [value, setValue] = useState('');
+
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  const value = useAppStore((s) =>
+    selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : '',
+  );
+  const setAgentDraft = useAppStore((s) => s.setAgentDraft);
+  const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
+  const setValue = useCallback(
+    (next: string) => {
+      if (!selectedAgentId) return;
+      if (next.length === 0) clearAgentDraft(selectedAgentId);
+      else setAgentDraft(selectedAgentId, next);
+    },
+    [selectedAgentId, setAgentDraft, clearAgentDraft],
+  );
+
   const [error, setError] = useState<string | null>(null);
   interface FailedTurn {
     readonly content: string;
@@ -222,8 +237,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
 
   const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
   const isSlashMode = slashQuery !== null;
@@ -285,11 +298,14 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setShowPopover(SLASH_MODE_RE.test(next));
   };
 
-  const onSkillSelect = useCallback((name: string) => {
-    setValue(`/${name} `);
-    setShowPopover(false);
-    wrapperRef.current?.querySelector('textarea')?.focus();
-  }, []);
+  const onSkillSelect = useCallback(
+    (name: string) => {
+      setValue(`/${name} `);
+      setShowPopover(false);
+      wrapperRef.current?.querySelector('textarea')?.focus();
+    },
+    [setValue],
+  );
 
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);

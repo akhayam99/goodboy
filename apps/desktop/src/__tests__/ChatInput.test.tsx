@@ -5,25 +5,59 @@ import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
 
 // Module mocks — hoisted before imports that transitively pull the mocked modules.
-const sendTurnMock = vi.fn(async () => undefined);
-const cancelCurrentTurnMock = vi.fn();
+// vi.hoisted keeps shared refs alive across the hoisting reorder.
+const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
+  const { create } = await import('zustand');
+  const send = vi.fn(async () => undefined);
+  const cancel = vi.fn();
+  interface S {
+    sendTurn: typeof send;
+    cancelCurrentTurn: typeof cancel;
+    providers: ReadonlyArray<{ id: string; connection: string }>;
+    skills: Record<string, never>;
+    providerSpendBreakdown: ReadonlyArray<never>;
+    selectedAgentId: Record<string, string>;
+    agentTurnState: Record<string, never>;
+    agentModelOverride: Record<string, never>;
+    agentRunHistory: Record<string, never>;
+    agentDraft: Record<string, string>;
+    setAgentDraft: (agentId: string, value: string) => void;
+    clearAgentDraft: (agentId: string) => void;
+  }
+  const store = create<S>((set) => ({
+    sendTurn: send,
+    cancelCurrentTurn: cancel,
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
+    skills: {},
+    providerSpendBreakdown: [],
+    selectedAgentId: { 'session-1': 'agent-1' },
+    agentTurnState: {},
+    agentModelOverride: {},
+    agentRunHistory: {},
+    agentDraft: {},
+    setAgentDraft: (agentId, value) =>
+      set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
+    clearAgentDraft: (agentId) =>
+      set((s) => {
+        if (!(agentId in s.agentDraft)) return s;
+        const next = { ...s.agentDraft };
+        delete next[agentId];
+        return { agentDraft: next };
+      }),
+  }));
+  return { sendTurnMock: send, cancelCurrentTurnMock: cancel, mockStore: store };
+});
+
+function resetMockStore() {
+  mockStore.setState({ agentDraft: {} });
+}
 
 vi.mock('../store', () => ({
-  useAppStore: (selector: (s: unknown) => unknown) =>
-    selector({
-      sendTurn: sendTurnMock,
-      cancelCurrentTurn: cancelCurrentTurnMock,
-      providers: [
-        { id: 'anthropic', connection: 'connected' },
-        { id: 'cursor', connection: 'connected' },
-        { id: 'codex', connection: 'connected' },
-      ],
-      skills: {},
-      providerSpendBreakdown: [],
-      selectedAgentId: {},
-      agentTurnState: {},
-      agentModelOverride: {},
-    }),
+  useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
 }));
 
@@ -50,6 +84,7 @@ vi.mock('@kay-am/core', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
+  assessTurnWeight: () => 'small',
 }));
 
 // Import component AFTER mocks are in place.
@@ -78,6 +113,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  resetMockStore();
 });
 
 describe('ChatInput — input wiring', () => {
