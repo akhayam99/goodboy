@@ -1,4 +1,4 @@
-import type { TaskId } from '@kay-am/types';
+import type { SessionId, TaskId } from '@kay-am/types';
 import { STORAGE_PREFIXES } from './storage-keys';
 
 export const VERBOSITY_LEVELS = ['brief', 'normal', 'verbose'] as const;
@@ -34,6 +34,28 @@ export function readVerbosity(taskId: TaskId): VerbosityLevel {
 export function writeVerbosity(taskId: TaskId, level: VerbosityLevel): void {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}${taskId}`, level);
+  } catch {
+    // ignore
+  }
+}
+
+const AGENT_STORAGE_PREFIX = STORAGE_PREFIXES.agentVerbosity;
+
+export function readAgentVerbosity(agentId: SessionId): VerbosityLevel | null {
+  try {
+    const raw = localStorage.getItem(`${AGENT_STORAGE_PREFIX}${agentId}`);
+    if (!raw) return null;
+    if ((VERBOSITY_LEVELS as ReadonlyArray<string>).includes(raw)) return raw as VerbosityLevel;
+    if (raw in LEGACY_MAP) return LEGACY_MAP[raw]!;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+export function writeAgentVerbosity(agentId: SessionId, level: VerbosityLevel): void {
+  try {
+    localStorage.setItem(`${AGENT_STORAGE_PREFIX}${agentId}`, level);
   } catch {
     // ignore
   }

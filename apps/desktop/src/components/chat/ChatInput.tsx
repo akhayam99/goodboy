@@ -12,6 +12,7 @@ import type {
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
+  SessionId,
   Task,
   TaskId,
   TurnProviderOverride,
@@ -23,7 +24,13 @@ import { formatError } from '../../errors';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
-import { type VerbosityLevel, readVerbosity, writeVerbosity } from '../../verbosity';
+import {
+  type VerbosityLevel,
+  readVerbosity,
+  writeVerbosity,
+  readAgentVerbosity,
+  writeAgentVerbosity,
+} from '../../verbosity';
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';
@@ -38,6 +45,9 @@ const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
 const EFFORT_STORAGE_PREFIX = STORAGE_PREFIXES.effort;
 const MODEL_STORAGE_PREFIX = STORAGE_PREFIXES.model;
 const PROVIDER_STORAGE_PREFIX = STORAGE_PREFIXES.provider;
+const AGENT_EFFORT_PREFIX = STORAGE_PREFIXES.agentEffort;
+const AGENT_MODEL_PREFIX = STORAGE_PREFIXES.agentModel;
+const AGENT_PROVIDER_PREFIX = STORAGE_PREFIXES.agentProvider;
 
 function readEffort(taskId: TaskId): EffortLevel {
   try {
@@ -94,6 +104,67 @@ function writeProvider(taskId: TaskId, provider: ProviderId | null): void {
       localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
     } else {
       localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`, provider);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function readAgentEffort(agentId: SessionId): EffortLevel | null {
+  try {
+    const raw = localStorage.getItem(`${AGENT_EFFORT_PREFIX}${agentId}`);
+    if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function writeAgentEffort(agentId: SessionId, level: EffortLevel): void {
+  try {
+    localStorage.setItem(`${AGENT_EFFORT_PREFIX}${agentId}`, level);
+  } catch {
+    // ignore
+  }
+}
+
+function readAgentModel(agentId: SessionId): string | null {
+  try {
+    return localStorage.getItem(`${AGENT_MODEL_PREFIX}${agentId}`);
+  } catch {
+    return null;
+  }
+}
+
+function writeAgentModel(agentId: SessionId, model: string | null): void {
+  try {
+    if (model === null) {
+      localStorage.removeItem(`${AGENT_MODEL_PREFIX}${agentId}`);
+    } else {
+      localStorage.setItem(`${AGENT_MODEL_PREFIX}${agentId}`, model);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function readAgentProvider(agentId: SessionId): ProviderId | null {
+  try {
+    const raw = localStorage.getItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
+    const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+    if (raw && valid.includes(raw as ProviderId)) return raw as ProviderId;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function writeAgentProvider(agentId: SessionId, provider: ProviderId | null): void {
+  try {
+    if (provider === null) {
+      localStorage.removeItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
+    } else {
+      localStorage.setItem(`${AGENT_PROVIDER_PREFIX}${agentId}`, provider);
     }
   } catch {
     // ignore
@@ -168,6 +239,15 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   );
   const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
   const wasRunning = useRef(isRunning);
+
+  const currentProviderRef = useRef(selectedProvider);
+  currentProviderRef.current = selectedProvider;
+  const currentModelRef = useRef(selectedModel);
+  currentModelRef.current = selectedModel;
+  const currentEffortRef = useRef(effort);
+  currentEffortRef.current = effort;
+  const currentVerbosityRef = useRef(verbosity);
+  currentVerbosityRef.current = verbosity;
   interface QueuedTurn {
     readonly content: string;
     readonly override: TurnProviderOverride | undefined;
@@ -214,21 +294,25 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
     writeEffort(session.id, level);
+    if (selectedAgentId) writeAgentEffort(selectedAgentId, level);
   };
 
   const setVerbosity = (level: VerbosityLevel) => {
     setVerbosityState(level);
     writeVerbosity(session.id, level);
+    if (selectedAgentId) writeAgentVerbosity(selectedAgentId, level);
   };
 
   const setSelectedProvider = (id: ProviderId | null) => {
     setSelectedProviderState(id);
     writeProvider(session.id, id);
+    if (selectedAgentId) writeAgentProvider(selectedAgentId, id);
   };
 
   const setSelectedModel = (id: string | null) => {
     setSelectedModelState(id);
     writeModel(session.id, id);
+    if (selectedAgentId) writeAgentModel(selectedAgentId, id);
   };
 
   const onSelectProvider = (id: ProviderId) => {
@@ -341,9 +425,26 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
     if (lastAgentIdRef.current === selectedAgentId) return;
+    const outgoingAgentId = lastAgentIdRef.current;
     lastAgentIdRef.current = selectedAgentId;
-    setSelectedProvider(null);
-    setSelectedModel(null);
+
+    if (outgoingAgentId !== null) {
+      writeAgentProvider(outgoingAgentId, currentProviderRef.current);
+      writeAgentModel(outgoingAgentId, currentModelRef.current);
+      writeAgentEffort(outgoingAgentId, currentEffortRef.current);
+      writeAgentVerbosity(outgoingAgentId, currentVerbosityRef.current);
+    }
+
+    const restoredProvider = selectedAgentId !== null ? readAgentProvider(selectedAgentId) : null;
+    const restoredModel = selectedAgentId !== null ? readAgentModel(selectedAgentId) : null;
+    const restoredEffort = selectedAgentId !== null ? readAgentEffort(selectedAgentId) : null;
+    const restoredVerbosity = selectedAgentId !== null ? readAgentVerbosity(selectedAgentId) : null;
+
+    setSelectedProviderState(restoredProvider);
+    setSelectedModelState(restoredModel);
+    if (restoredEffort !== null) setEffortState(restoredEffort);
+    if (restoredVerbosity !== null) setVerbosityState(restoredVerbosity);
+
     setRightSizePending(null);
     setRightSizeDismissed(false);
   }, [selectedAgentId]);
