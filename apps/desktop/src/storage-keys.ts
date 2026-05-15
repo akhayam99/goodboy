@@ -13,6 +13,10 @@ export const STORAGE_PREFIXES = {
   model: `${PREFIX}model:`,
   provider: `${PREFIX}provider:`,
   contextPanelOpen: `${PREFIX}context-panel-open:`,
+  agentVerbosity: `${PREFIX}agent-verbosity:`,
+  agentEffort: `${PREFIX}agent-effort:`,
+  agentModel: `${PREFIX}agent-model:`,
+  agentProvider: `${PREFIX}agent-provider:`,
 } as const;
 
 const LEGACY_KEY_MAP: Record<string, string> = {
