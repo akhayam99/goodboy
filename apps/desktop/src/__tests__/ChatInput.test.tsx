@@ -1,54 +1,56 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { create } from 'zustand';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
 
 // Module mocks — hoisted before imports that transitively pull the mocked modules.
-const sendTurnMock = vi.fn(async () => undefined);
-const cancelCurrentTurnMock = vi.fn();
-
-interface MockStoreState {
-  sendTurn: typeof sendTurnMock;
-  cancelCurrentTurn: typeof cancelCurrentTurnMock;
-  providers: ReadonlyArray<{ id: string; connection: string }>;
-  skills: Record<string, never>;
-  providerSpendBreakdown: ReadonlyArray<never>;
-  selectedAgentId: Record<string, string>;
-  agentTurnState: Record<string, never>;
-  agentModelOverride: Record<string, never>;
-  agentRunHistory: Record<string, never>;
-  agentDraft: Record<string, string>;
-  setAgentDraft: (agentId: string, value: string) => void;
-  clearAgentDraft: (agentId: string) => void;
-}
-
-const mockStore = create<MockStoreState>((set) => ({
-  sendTurn: sendTurnMock,
-  cancelCurrentTurn: cancelCurrentTurnMock,
-  providers: [
-    { id: 'anthropic', connection: 'connected' },
-    { id: 'cursor', connection: 'connected' },
-    { id: 'codex', connection: 'connected' },
-  ],
-  skills: {},
-  providerSpendBreakdown: [],
-  selectedAgentId: { 'session-1': 'agent-1' },
-  agentTurnState: {},
-  agentModelOverride: {},
-  agentRunHistory: {},
-  agentDraft: {},
-  setAgentDraft: (agentId, value) =>
-    set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
-  clearAgentDraft: (agentId) =>
-    set((s) => {
-      if (!(agentId in s.agentDraft)) return s;
-      const next = { ...s.agentDraft };
-      delete next[agentId];
-      return { agentDraft: next };
-    }),
-}));
+// vi.hoisted keeps shared refs alive across the hoisting reorder.
+const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
+  const { create } = await import('zustand');
+  const send = vi.fn(async () => undefined);
+  const cancel = vi.fn();
+  interface S {
+    sendTurn: typeof send;
+    cancelCurrentTurn: typeof cancel;
+    providers: ReadonlyArray<{ id: string; connection: string }>;
+    skills: Record<string, never>;
+    providerSpendBreakdown: ReadonlyArray<never>;
+    selectedAgentId: Record<string, string>;
+    agentTurnState: Record<string, never>;
+    agentModelOverride: Record<string, never>;
+    agentRunHistory: Record<string, never>;
+    agentDraft: Record<string, string>;
+    setAgentDraft: (agentId: string, value: string) => void;
+    clearAgentDraft: (agentId: string) => void;
+  }
+  const store = create<S>((set) => ({
+    sendTurn: send,
+    cancelCurrentTurn: cancel,
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
+    skills: {},
+    providerSpendBreakdown: [],
+    selectedAgentId: { 'session-1': 'agent-1' },
+    agentTurnState: {},
+    agentModelOverride: {},
+    agentRunHistory: {},
+    agentDraft: {},
+    setAgentDraft: (agentId, value) =>
+      set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
+    clearAgentDraft: (agentId) =>
+      set((s) => {
+        if (!(agentId in s.agentDraft)) return s;
+        const next = { ...s.agentDraft };
+        delete next[agentId];
+        return { agentDraft: next };
+      }),
+  }));
+  return { sendTurnMock: send, cancelCurrentTurnMock: cancel, mockStore: store };
+});
 
 function resetMockStore() {
   mockStore.setState({ agentDraft: {} });
