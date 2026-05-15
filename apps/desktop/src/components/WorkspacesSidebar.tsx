@@ -1685,7 +1685,7 @@ function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect
 
 const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
   pending: 'bg-muted-foreground/40',
-  running: 'bg-info animate-pulse',
+  running: 'bg-info',
   completed: 'bg-success',
   failed: 'bg-danger',
   skipped: 'bg-muted-foreground/20',
@@ -1771,13 +1771,17 @@ function AgentRow({
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
-        <span
-          aria-hidden
-          className={cn(
-            'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-            AGENT_STATUS_TONE[run.status],
+        <span aria-hidden className="relative inline-flex h-1.5 w-1.5 shrink-0">
+          {run.status === 'running' && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
           )}
-        />
+          <span
+            className={cn(
+              'relative inline-block h-1.5 w-1.5 rounded-full',
+              AGENT_STATUS_TONE[run.status],
+            )}
+          />
+        </span>
         <AgentKindMenu kind={kind} agentLabel={`agent ${run.ordinal + 1}`} onPick={onPickKind} />
         {isEditing ? (
           <input
