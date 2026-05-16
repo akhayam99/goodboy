@@ -189,12 +189,23 @@ export function App() {
         }
         rightSidebar={
           currentSession ? (
-            <ContextPanel
-              session={currentSession}
-              collapsed={contextCollapsed}
-              onCollapse={onToggleContext}
-              onExpand={onToggleContext}
-            />
+            // Same keep-alive pattern as the chat panel: the LRU window of
+            // recently-visited sessions stays mounted, only visibility flips
+            // on switch. ContextPanel gates its own session-change effects
+            // (loadDiffComments, refreshSessionPr*) on isActive so hidden
+            // panels don't fire background work.
+            <div className="relative h-full w-full">
+              {renderedSessionIds.map((id) => (
+                <KeepAliveContextPanel
+                  key={id}
+                  sessionId={id}
+                  isActive={id === currentSession.id}
+                  collapsed={contextCollapsed}
+                  onCollapse={onToggleContext}
+                  onExpand={onToggleContext}
+                />
+              ))}
+            </div>
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
@@ -245,6 +256,36 @@ function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChat
   return (
     <div hidden={!isActive} className="absolute inset-0">
       <ChatView session={session} isActive={isActive} onRequestEnd={onRequestEnd} />
+    </div>
+  );
+}
+
+interface KeepAliveContextPanelProps {
+  readonly sessionId: TaskId;
+  readonly isActive: boolean;
+  readonly collapsed: boolean;
+  readonly onCollapse: () => void;
+  readonly onExpand: () => void;
+}
+
+function KeepAliveContextPanel({
+  sessionId,
+  isActive,
+  collapsed,
+  onCollapse,
+  onExpand,
+}: KeepAliveContextPanelProps) {
+  const session = useSessionById(sessionId);
+  if (!session) return null;
+  return (
+    <div hidden={!isActive} className="absolute inset-0">
+      <ContextPanel
+        session={session}
+        isActive={isActive}
+        collapsed={collapsed}
+        onCollapse={onCollapse}
+        onExpand={onExpand}
+      />
     </div>
   );
 }

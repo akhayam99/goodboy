@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -122,6 +122,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const currentSession = useCurrentSession();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  // Adapter with the (id: TaskId) => void signature SessionList expects.
+  // useCallback gives a stable ref so memoized SessionRow rows downstream
+  // skip re-render on every parent paint.
+  const onSelectSession = useCallback(
+    (id: TaskId) => {
+      void setCurrentSession(id);
+    },
+    [setCurrentSession],
+  );
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
 
@@ -274,15 +283,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 providerFilterOptions={PROVIDER_FILTER_OPTIONS}
                 onToggleState={toggleStateFilter}
                 onToggleProvider={toggleProviderFilter}
-                onSelectSession={(id) => {
-                  if (id === currentSession?.id) return;
-                  // Mark the swap as a transition so React can interrupt the
-                  // heavy chat-view re-render and paint the sidebar selection
-                  // first. Pairs with useDeferredValue inside ChatView.
-                  startTransition(() => {
-                    void setCurrentSession(id);
-                  });
-                }}
+                // Stable ref: setCurrentSession action is itself stable, but
+                // we need the matching (id: TaskId) => void signature. The
+                // action no-ops on same id internally.
+                onSelectSession={onSelectSession}
                 onNewSession={() => setNewSessionOpen(true)}
                 onArchive={archive}
                 onUnarchive={unarchive}
@@ -437,6 +441,25 @@ function SessionList({
     () => sortSessions(archivedSessions, sort),
     [archivedSessions, sort],
   );
+
+  // Stable per-id closures so memoized SessionRow props don't get a fresh
+  // function ref on every parent render. These maps only rebuild when the
+  // session list itself or one of the upstream callbacks actually changes.
+  const rowHandlers = useMemo(() => {
+    const click = new Map<TaskId, () => void>();
+    const arch = new Map<TaskId, () => void>();
+    const unarch = new Map<TaskId, () => void>();
+    const ids = new Set<TaskId>();
+    for (const s of sortedActive) ids.add(s.id);
+    for (const s of sortedArchived) ids.add(s.id);
+    for (const id of ids) {
+      click.set(id, () => onSelectSession(id));
+      arch.set(id, () => onArchive(id));
+      unarch.set(id, () => onUnarchive(id));
+    }
+    return { click, arch, unarch };
+  }, [sortedActive, sortedArchived, onSelectSession, onArchive, onUnarchive]);
+
   return (
     <div className="flex flex-col gap-1">
       {stateFilter.length > 0 || providerFilter.length > 0 ? (
@@ -500,10 +523,10 @@ function SessionList({
             key={session.id}
             session={session}
             isActive={session.id === currentSessionId}
-            onClick={() => onSelectSession(session.id)}
+            onClick={rowHandlers.click.get(session.id)!}
             archived={false}
-            onArchive={() => onArchive(session.id)}
-            onUnarchive={() => onUnarchive(session.id)}
+            onArchive={rowHandlers.arch.get(session.id)!}
+            onUnarchive={rowHandlers.unarch.get(session.id)!}
           />
         ))}
         <li>
@@ -537,10 +560,10 @@ function SessionList({
                   key={session.id}
                   session={session}
                   isActive={session.id === currentSessionId}
-                  onClick={() => onSelectSession(session.id)}
+                  onClick={rowHandlers.click.get(session.id)!}
                   archived
-                  onArchive={() => onArchive(session.id)}
-                  onUnarchive={() => onUnarchive(session.id)}
+                  onArchive={rowHandlers.arch.get(session.id)!}
+                  onUnarchive={rowHandlers.unarch.get(session.id)!}
                 />
               ))}
             </ul>
@@ -653,21 +676,22 @@ function writeArchivedSet(map: Record<string, true>): void {
 
 function useArchivedTasks(): [Record<string, true>, (id: TaskId) => void, (id: TaskId) => void] {
   const [map, setMap] = useState<Record<string, true>>(() => readArchivedSet());
-  const archive = (id: TaskId) => {
+  // Stable refs so memoized SessionRow downstream doesn't invalidate.
+  const archive = useCallback((id: TaskId) => {
     setMap((prev) => {
       const next = { ...prev, [id]: true as const };
       writeArchivedSet(next);
       return next;
     });
-  };
-  const unarchive = (id: TaskId) => {
+  }, []);
+  const unarchive = useCallback((id: TaskId) => {
     setMap((prev) => {
       const next = { ...prev };
       delete next[id];
       writeArchivedSet(next);
       return next;
     });
-  };
+  }, []);
   return [map, archive, unarchive];
 }
 
@@ -761,7 +785,11 @@ interface SessionRowProps {
   onUnarchive: () => void;
 }
 
-function SessionRow({
+// Memoized so a session-switch click only re-renders the two rows whose
+// `isActive` flips, not every row in the workspace. Handler refs come from
+// SessionList via stable closures keyed by session.id, so default shallow
+// compare is enough.
+const SessionRow = memo(function SessionRow({
   session,
   isActive,
   onClick,
@@ -1024,7 +1052,7 @@ function SessionRow({
       />
     </li>
   );
-}
+});
 
 interface DeleteConfirmDialogProps {
   sessionGoal: string;

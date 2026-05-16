@@ -1263,6 +1263,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setCurrentSession: async (id) => {
+    // No-op when the click lands on the already-current session. Pulled into
+    // the action so callers can pass the action ref directly (stable ref
+    // helps memoized rows skip re-renders on session-switch clicks).
+    if (get().currentSessionId === id) return;
     // Immediately swap the visible session so the UI doesn't freeze while
     // heavy per-session data loads. Each block (agents/transcript/telemetry/
     // slots/plans/summary) loads independently and flips its own loading flag
