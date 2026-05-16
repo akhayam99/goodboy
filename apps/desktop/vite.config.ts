@@ -3,12 +3,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const host = process.env.TAURI_DEV_HOST;
+const port = process.env.VITE_PORT ? Number(process.env.VITE_PORT) : 1420;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   server: {
-    port: 1420,
+    port,
     strictPort: true,
     host: host ?? false,
   },
