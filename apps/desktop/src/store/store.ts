@@ -347,6 +347,11 @@ const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
+// In-flight dedup for actions whose store slice has no native loading flag.
+// Prevents the second fetch when ContextPanel's effect fires twice (StrictMode
+// remount, or rapid keep-alive activation) before the first round-trip lands.
+const diffCommentsInFlight = new Set<TaskId>();
+
 const ALL_LOADING: SessionLoadingFlags = {
   agents: true,
   transcript: true,
@@ -2772,10 +2777,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // even when the data is already in store. Mutations (add/resolve/delete)
     // refresh the slice directly, so the cache stays accurate.
     if (get().diffComments[taskId] !== undefined) return;
-    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [taskId]: comments },
-    }));
+    // In-flight dedup: a second mount before the first DB query lands would
+    // also pass the cache check above and double the work. The Set blocks it.
+    if (diffCommentsInFlight.has(taskId)) return;
+    diffCommentsInFlight.add(taskId);
+    try {
+      const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+      set((state) => ({
+        diffComments: { ...state.diffComments, [taskId]: comments },
+      }));
+    } finally {
+      diffCommentsInFlight.delete(taskId);
+    }
   },
 
   addDiffComment: async (taskId, filePath, body, anchor) => {
@@ -3567,6 +3580,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshSessionPr: async (taskId, opts) => {
+    // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
+    // re-activation) before the first ~1s GitHub round-trip resolves. The
+    // existing `loading` flag is the right signal, since this action sets it
+    // to true synchronously below.
+    if (!opts?.force && get().sessionGithub[taskId]?.loading) return;
     const branch = get().sessionBranches[taskId];
     if (!branch) return;
     const session = get().sessions.find((s) => s.id === taskId);
@@ -3658,6 +3676,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const existing = get().sessionGithub[taskId];
     const pr = existing?.pr ?? null;
     if (!pr) return;
+    // In-flight dedup: the ~3-5s GitHub detail call was firing twice on cold
+    // session switches because two effect runs both saw existing.detail still
+    // null. Block the second call by checking the loading flag the first one
+    // sets synchronously below.
+    if (!opts?.force && existing?.detailLoading) return;
     const session = get().sessions.find((s) => s.id === taskId);
     if (!session) return;
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);

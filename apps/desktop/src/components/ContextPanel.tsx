@@ -735,10 +735,6 @@ function SlotRow({
   isSummarizing = false,
   onCommit,
 }: SlotRowProps) {
-  // Per-slot skeleton: while the slots fetch is still in flight and this
-  // particular slot hasn't materialized yet, show a placeholder. Sibling
-  // slots that already arrived render their content independently.
-  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
   const value = slot?.value ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -746,6 +742,12 @@ function SlotRow({
 
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const history = useSlotHistory(taskId, slotKey);
+
+  // Per-slot skeleton: while the slots fetch is still in flight and this
+  // particular slot hasn't materialized yet, show a placeholder. Sibling
+  // slots that already arrived render their content independently. Placed
+  // after all hook calls so the hook count stays stable across renders.
+  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
 
   const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
   const Icon = meta?.icon;
