@@ -232,6 +232,46 @@ function CiPane({
   );
 }
 
+interface CommentThread {
+  readonly head: PrComment;
+  readonly replies: ReadonlyArray<PrComment>;
+}
+
+function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
+  const byId = new Map<string, PrComment>();
+  for (const c of comments) byId.set(c.id, c);
+  const heads: Array<PrComment> = [];
+  const repliesByHead = new Map<string, Array<PrComment>>();
+  for (const c of comments) {
+    if (c.source === 'review' && c.inReplyToId && byId.has(c.inReplyToId)) {
+      const arr = repliesByHead.get(c.inReplyToId) ?? [];
+      arr.push(c);
+      repliesByHead.set(c.inReplyToId, arr);
+    } else {
+      heads.push(c);
+    }
+  }
+  return heads.map((head) => ({
+    head,
+    replies: (repliesByHead.get(head.id) ?? []).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    ),
+  }));
+}
+
+function threadPriority(t: CommentThread): number {
+  // open review > issue > resolved review. Smaller = higher priority.
+  if (t.head.source === 'review' && t.head.resolved === false) return 0;
+  if (t.head.source === 'issue') return 1;
+  return 2;
+}
+
+function isBot(author: string): boolean {
+  return author.endsWith('[bot]') || author.endsWith('-bot');
+}
+
+const COMMENT_DISPLAY_LIMIT = 5;
+
 function CommentsPane({
   comments,
   pr,
@@ -242,7 +282,18 @@ function CommentsPane({
   onOpenUrl: (url: string) => void;
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  if (comments.length === 0) {
+  const [showAll, setShowAll] = useState(false);
+
+  const threads = useMemo(() => {
+    const all = groupThreads(comments);
+    return [...all].sort((a, b) => {
+      const p = threadPriority(a) - threadPriority(b);
+      if (p !== 0) return p;
+      return b.head.createdAt.localeCompare(a.head.createdAt);
+    });
+  }, [comments]);
+
+  if (threads.length === 0) {
     return (
       <EmptyRow
         text="No comments yet"
@@ -252,7 +303,10 @@ function CommentsPane({
       />
     );
   }
-  const latest = [...comments].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
+
+  const visible = showAll ? threads : threads.slice(0, COMMENT_DISPLAY_LIMIT);
+  const hidden = threads.length - visible.length;
+
   const toggle = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -261,41 +315,131 @@ function CommentsPane({
       return next;
     });
   };
+
   return (
     <ul className="flex flex-col gap-1.5">
-      {latest.map((c) => (
-        <li key={c.id} className="flex gap-1.5">
-          <Avatar url={c.authorAvatarUrl} alt={c.author} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="truncate font-medium text-foreground">{c.author}</span>
-              <span className="opacity-60">·</span>
-              <span>{formatRelative(Date.now() - new Date(c.createdAt).getTime())}</span>
-              <button
-                type="button"
-                onClick={() => onOpenUrl(c.url)}
-                title="open comment in browser"
-                aria-label="open comment in browser"
-                className={cn(TAB_ICON_BTN, 'ml-auto')}
-              >
-                <ExternalLink size={9} aria-hidden />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => toggle(c.id)}
-              className={cn(
-                'text-left text-[11px] text-foreground/90 hover:text-foreground',
-                expanded.has(c.id) ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
-              )}
-              title={expanded.has(c.id) ? 'collapse' : 'expand'}
-            >
-              {c.body.trim() || '(empty)'}
-            </button>
-          </div>
+      {visible.map((t) => (
+        <li key={t.head.id}>
+          <CommentThreadRow
+            thread={t}
+            expanded={expanded.has(t.head.id)}
+            onToggle={() => toggle(t.head.id)}
+            onOpenUrl={onOpenUrl}
+          />
         </li>
       ))}
+      {hidden > 0 ? (
+        <li>
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            +{hidden} more
+          </button>
+        </li>
+      ) : null}
     </ul>
+  );
+}
+
+function CommentThreadRow({
+  thread,
+  expanded,
+  onToggle,
+  onOpenUrl,
+}: {
+  thread: CommentThread;
+  expanded: boolean;
+  onToggle: () => void;
+  onOpenUrl: (url: string) => void;
+}) {
+  const { head, replies } = thread;
+  const isReview = head.source === 'review';
+  const status: 'open' | 'resolved' | 'issue' = !isReview
+    ? 'issue'
+    : head.resolved
+      ? 'resolved'
+      : 'open';
+  const statusTone =
+    status === 'open' ? 'bg-warning' : status === 'resolved' ? 'bg-success' : 'bg-muted-foreground';
+  const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment';
+  const bot = isBot(head.author);
+
+  return (
+    <div className="flex gap-1.5">
+      <span
+        aria-hidden
+        className={cn('mt-1 h-1.5 w-1.5 shrink-0 rounded-full', statusTone)}
+        title={statusLabel}
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Avatar url={head.authorAvatarUrl} alt={head.author} />
+          <span className="truncate font-medium text-foreground">{head.author}</span>
+          {bot ? (
+            <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+              bot
+            </span>
+          ) : null}
+          <span className="opacity-50">·</span>
+          <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
+          {replies.length > 0 ? (
+            <span className="opacity-50">
+              · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onOpenUrl(head.url)}
+            title="open comment in browser"
+            aria-label="open comment in browser"
+            className={cn(TAB_ICON_BTN, 'ml-auto')}
+          >
+            <ExternalLink size={9} aria-hidden />
+          </button>
+        </div>
+        {head.path ? (
+          <button
+            type="button"
+            onClick={() => onOpenUrl(head.url)}
+            title={`${head.path}${head.line ? ':' + head.line : ''}`}
+            className="self-start truncate rounded bg-background/60 px-1 py-px font-mono text-[9px] text-muted-foreground hover:text-foreground"
+          >
+            {head.path}
+            {head.line ? `:${head.line}` : ''}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            'text-left text-[11px] text-foreground/90 hover:text-foreground',
+            expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
+          )}
+          title={expanded ? 'collapse' : 'expand'}
+        >
+          {head.body.trim() || '(empty)'}
+        </button>
+        {expanded && replies.length > 0 ? (
+          <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
+            {replies.map((r) => (
+              <li key={r.id} className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Avatar url={r.authorAvatarUrl} alt={r.author} />
+                  <span className="truncate font-medium text-foreground">{r.author}</span>
+                  <span className="opacity-50">·</span>
+                  <span>{formatRelative(Date.now() - new Date(r.createdAt).getTime())}</span>
+                </div>
+                <p className="whitespace-pre-wrap break-words text-[11px] text-foreground/90">
+                  {r.body.trim() || '(empty)'}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

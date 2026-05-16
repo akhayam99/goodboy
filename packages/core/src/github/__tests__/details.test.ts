@@ -153,7 +153,7 @@ describe('fetchPrDetail', () => {
     const detail = await fetchPrDetail(runner, 'org/repo', 1);
     expect(detail.comments).toHaveLength(2);
     expect(detail.comments.every((c) => c.resolved === true)).toBe(true);
-    expect(detail.comments[1]!.inReplyToId).toBe('PRRC_A');
+    expect(detail.comments[1]!.inReplyToId).toBe('review-1');
   });
 
   it('maps review states + review requests', async () => {
