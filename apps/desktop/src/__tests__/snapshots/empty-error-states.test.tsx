@@ -96,7 +96,7 @@ function mockStore(partial: Partial<AppStore>): void {
   );
 }
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
-import { BootSplash } from '../../components/BootSplash';
+import { BootSplash } from '../../app/components/BootSplash';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
@@ -105,7 +105,7 @@ import { WorkspacesSidebar } from '../../features/workspace/components/Workspace
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
-import { ToastProvider } from '../../components/Toast';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

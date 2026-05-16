@@ -87,13 +87,13 @@ import { cleanup, render } from '@testing-library/react';
 import type { WorkspaceId } from '@kay-am/types';
 import { runA11yCheck } from './utils';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
-import { BootSplash } from '../../components/BootSplash';
+import { BootSplash } from '../../app/components/BootSplash';
 import { SettingsDialog } from '../../features/settings/components/SettingsDialog';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
-import { StatusBar } from '../../components/StatusBar';
+import { StatusBar } from '../../app/components/StatusBar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
-import { ToastProvider } from '../../components/Toast';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

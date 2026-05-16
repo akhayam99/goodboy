@@ -22,7 +22,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast, type ToastKind } from '../../../../components/Toast';
+import { useToast, type ToastKind } from '../../../../app/components/Toast';
 import { SlashCommandPopover } from '../SlashCommandPopover';
 import {
   type VerbosityLevel,

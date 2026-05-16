@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { Dialog, ScrollArea, Textarea, cn } from '@kay-am/ui';
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../app/components/Toast';
 import { parseUnifiedDiff } from '@kay-am/core';
 import type {
   BranchCommit,

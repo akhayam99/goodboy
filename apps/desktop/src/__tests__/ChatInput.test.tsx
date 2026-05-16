@@ -65,7 +65,7 @@ vi.mock('../permissions', () => ({
   useEffectivePermissionRules: () => [],
 }));
 
-vi.mock('../components/Toast', () => ({
+vi.mock('../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 

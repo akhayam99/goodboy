@@ -14,7 +14,7 @@ vi.mock('../../shared/lib/editor', () => ({
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
-import { BootSplash } from '../../components/BootSplash';
+import { BootSplash } from '../../app/components/BootSplash';
 
 afterEach(cleanup);
 

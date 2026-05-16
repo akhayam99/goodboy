@@ -16,7 +16,7 @@ import { useAppStore } from '../../../../store';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../app/components/Toast';
 
 interface SessionSettingsDialogProps {
   sessionId: SessionId;

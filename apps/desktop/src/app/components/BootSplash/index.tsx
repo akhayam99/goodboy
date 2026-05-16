@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BootPhase } from '../store';
-import { openUrl } from '../shared/lib/editor';
+import type { BootPhase } from '../../../store';
+import { openUrl } from '../../../shared/lib/editor';
 
 const PHASE_LABEL: Record<BootPhase, string> = {
   pending: 'starting…',

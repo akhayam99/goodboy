@@ -2,13 +2,13 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'rea
 import { AppShell } from '@kay-am/ui';
 import type { SessionId } from '@kay-am/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
-import { BootSplash } from './components/BootSplash';
+import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
-import { ToastProvider } from './components/Toast';
+import { ToastProvider } from './app/components/Toast';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {

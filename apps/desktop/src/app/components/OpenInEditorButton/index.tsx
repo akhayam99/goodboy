@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderOpen } from 'lucide-react';
 import { Button, Tooltip, cn, type ButtonSize, type ButtonVariant } from '@kay-am/ui';
-import { openInEditor } from '../shared/lib/editor';
-import { formatError } from '../shared/lib/errors';
+import { openInEditor } from '../../../shared/lib/editor';
+import { formatError } from '../../../shared/lib/errors';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_DEFAULT_EDITOR,
   SETTING_EDITOR_BINARY,
-} from '../features/settings/settings';
-import { useAppStore } from '../store';
+} from '../../../features/settings/settings';
+import { useAppStore } from '../../../store';
 
 interface OpenInEditorButtonProps {
   worktreePath: string | null;

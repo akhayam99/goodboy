@@ -1,6 +1,6 @@
 import { CircleHelp } from 'lucide-react';
-import { useCurrentSession, useCurrentWorkspace } from '../store';
-import { TelemetryPill } from '../features/providers/components/TelemetryPill';
+import { useCurrentSession, useCurrentWorkspace } from '../../../store';
+import { TelemetryPill } from '../../../features/providers/components/TelemetryPill';
 
 interface StatusBarProps {
   onFocusWorkspaces?: () => void;

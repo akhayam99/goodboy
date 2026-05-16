@@ -34,7 +34,7 @@ interface IssueData {
   readonly title: string;
   readonly body: string;
 }
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../app/components/Toast';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 

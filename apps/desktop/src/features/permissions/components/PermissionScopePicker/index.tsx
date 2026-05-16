@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cn } from '@kay-am/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@kay-am/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../app/components/Toast';
 
 export type PermissionScope = 'global' | 'workspace' | 'session' | 'once' | 'deny';
 

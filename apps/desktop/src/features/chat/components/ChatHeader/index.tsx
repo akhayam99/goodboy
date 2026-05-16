@@ -7,7 +7,7 @@ import {
   useCurrentWorkspace,
   useSessionLoading,
 } from '../../../../store';
-import { OpenInEditorButton } from '../../../../components/OpenInEditorButton';
+import { OpenInEditorButton } from '../../../../app/components/OpenInEditorButton';
 import { ParallelProgressPill } from '../ParallelProgressPill';
 
 interface ChatHeaderProps {

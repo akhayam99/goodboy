@@ -77,7 +77,7 @@ import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
 import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
-import { ToastProvider } from '../../components/Toast';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

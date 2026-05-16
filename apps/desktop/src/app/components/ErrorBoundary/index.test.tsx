@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from './index';
 
 afterEach(cleanup);
 
