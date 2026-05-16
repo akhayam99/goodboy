@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Code2, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, cn } from '@kay-am/ui';
-import type { ProviderConnectionState, ProviderInfo } from '../providers';
-import { providerAction } from '../providers';
-import type { ProviderId } from '../providers';
+import type { ProviderConnectionState, ProviderInfo } from '../features/providers/providers';
+import { providerAction } from '../features/providers/providers';
+import type { ProviderId } from '../features/providers/providers';
 import { useAppStore } from '../store';
 import { openUrl } from '../shared/lib/editor';
 

@@ -81,7 +81,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [
     { id: 'anthropic', binary: 'claude', connection: 'connected' },
     { id: 'cursor', binary: 'cursor-agent', connection: 'connected' },
@@ -92,7 +92,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async (_pref, _override, _connected) => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
@@ -188,7 +188,7 @@ describe('sendTurn — permission proxy integration', () => {
     permissionAuditInsertSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
     permissionRuleListSpy.mockResolvedValue([]);
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockReset();
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -302,7 +302,7 @@ describe('sendTurn — permission proxy integration', () => {
   });
 
   it('does NOT forward permission flags when provider is cursor', async () => {
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       selectedProvider: 'cursor',
       selectedModel: 'cursor-default',

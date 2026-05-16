@@ -93,7 +93,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -101,7 +101,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',

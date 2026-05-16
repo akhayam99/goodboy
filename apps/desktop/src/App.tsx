@@ -18,7 +18,7 @@ import {
   useSessionById,
   useSessionSlots,
 } from './store';
-import { refreshPricingTable } from './provider-pricing';
+import { refreshPricingTable } from './features/providers/provider-pricing';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;

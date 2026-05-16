@@ -71,7 +71,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -79,7 +79,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-opus-4-5',
@@ -336,7 +336,7 @@ describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent 
     wirePhaseSpies();
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-opus-4-5',

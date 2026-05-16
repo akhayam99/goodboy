@@ -156,10 +156,10 @@ import {
   type ProviderInfo,
   type ProviderStatus,
   type ProviderStatuses,
-} from '../providers';
+} from '../features/providers/providers';
 import { detectEditors, type DetectedEditor } from '../shared/lib/editor';
 import { validateGitRepo } from '../shared/lib/repo';
-import { resolveProviderForTurn } from '../routing';
+import { resolveProviderForTurn } from '../features/providers/routing';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
@@ -167,7 +167,7 @@ import {
   DEFAULT_BRANCH_PREFIX,
 } from '../settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
-import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
+import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
 import {
@@ -231,7 +231,7 @@ import {
   setPlanStatus as invokeSetPlanStatus,
   upsertPlan as invokeUpsertPlan,
 } from '../plans';
-import { slotsForKind } from '../slot-routing';
+import { slotsForKind } from '../features/providers/slot-routing';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 export type BootPhase =
