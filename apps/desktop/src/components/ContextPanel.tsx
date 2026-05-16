@@ -216,7 +216,7 @@ export function ContextPanel({
             {loading.slots && slots.length === 0 ? (
               <ContextSlotsSkeleton />
             ) : (
-              <ul className="flex flex-col gap-6">
+              <ul className="flex flex-col gap-4">
                 {visibleSlotKeys.map((key) => {
                   const slot = slotsByKey.get(key);
                   return (
@@ -621,6 +621,9 @@ interface SlotMeta {
   readonly emphasis?: boolean;
   readonly tintedWhenNonEmpty?: string;
   readonly emptyLabel: string;
+  readonly collapsible?: boolean;
+  readonly defaultCollapsed?: boolean;
+  readonly singleLine?: boolean;
 }
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
@@ -634,11 +637,14 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: Target,
     iconClass: 'text-primary',
     emphasis: true,
+    singleLine: true,
     emptyLabel: 'no goal set',
   },
   decisions: {
     icon: CheckCheck,
     iconClass: 'text-success',
+    collapsible: true,
+    defaultCollapsed: true,
     emptyLabel: 'no decisions yet',
   },
   open_questions: {
@@ -650,9 +656,29 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   last_output_summary: {
     icon: Activity,
     iconClass: 'text-info',
+    collapsible: true,
+    defaultCollapsed: true,
     emptyLabel: 'no output yet',
   },
 };
+
+function countMarkdownItems(value: string): number {
+  return value.split('\n').filter((l) => /^\s*([-*+]|\d+\.)\s+/.test(l)).length;
+}
+
+function firstMeaningfulLine(value: string): string {
+  for (const raw of value.split('\n')) {
+    const t = raw
+      .trim()
+      .replace(/^[-*+]\s+/, '')
+      .replace(/^\d+\.\s+/, '')
+      .replace(/^#+\s+/, '')
+      .replace(/\*\*/g, '')
+      .replace(/`/g, '');
+    if (t) return t;
+  }
+  return '';
+}
 
 function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
   if (!workingDir || slot.value.length === 0) return slot;
@@ -685,6 +711,12 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
   const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
+  const collapsible = meta?.collapsible ?? false;
+  const singleLine = meta?.singleLine ?? false;
+  const [collapsed, setCollapsed] = useState(meta?.defaultCollapsed ?? false);
+  const itemCount = collapsible && hasValue ? countMarkdownItems(value) : 0;
+  const preview = collapsible && hasValue ? firstMeaningfulLine(value) : '';
+  const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -708,19 +740,40 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
     [onCommit],
   );
 
+  const headerLabel = collapsible ? (
+    <button
+      type="button"
+      onClick={() => setCollapsed((v) => !v)}
+      className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      title={collapsed ? 'expand' : 'collapse'}
+      aria-expanded={!collapsed}
+    >
+      <CollapseIcon size={11} aria-hidden className="shrink-0" />
+      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
+      <span>{SLOT_LABELS[slotKey]}</span>
+      {hasValue && collapsed ? (
+        <span className="ml-1 normal-case tracking-normal text-2xs text-muted-foreground/70">
+          {itemCount > 0 ? `· ${itemCount} item${itemCount === 1 ? '' : 's'}` : '· …'}
+        </span>
+      ) : null}
+    </button>
+  ) : (
+    <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
+      {SLOT_LABELS[slotKey]}
+    </label>
+  );
+
   return (
     <li className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-          {SLOT_LABELS[slotKey]}
-        </label>
+      <div className="flex items-center justify-between gap-2">
+        {headerLabel}
         <button
           type="button"
           onClick={openHistory}
           title="view history"
           aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className={ICON_BTN}
+          className={cn(ICON_BTN, 'shrink-0')}
         >
           <History size={11} aria-hidden />
         </button>
@@ -756,6 +809,29 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
           className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
         >
           {meta?.emptyLabel ?? 'empty — click to edit'}
+        </button>
+      ) : singleLine ? (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title={value}
+          className={cn(
+            'truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-sm font-medium hover:border-border-soft hover:bg-muted/40',
+            meta?.tintedWhenNonEmpty,
+          )}
+        >
+          {value}
+        </button>
+      ) : collapsible && collapsed ? (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          title="expand"
+          className={cn(
+            'flex w-full items-center gap-1.5 truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-border-soft hover:bg-muted/40 hover:text-foreground',
+          )}
+        >
+          <span className="truncate">{preview}</span>
         </button>
       ) : renderAsMarkdown ? (
         <div
