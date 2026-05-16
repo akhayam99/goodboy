@@ -9,11 +9,8 @@ import {
   GitPullRequestDraft,
   GitMerge,
   RefreshCw,
-  ExternalLink,
   Plus,
   Loader2,
-  Copy,
-  X,
   ChevronRight,
   ChevronDown,
   FileEdit,
@@ -332,18 +329,19 @@ const PR_STATE_LABEL: Record<PullRequestStateKind, string> = {
   closed: 'closed',
 };
 
-const PR_STATE_STYLE: Record<PullRequestStateKind, string> = {
-  draft: 'bg-muted text-muted-foreground',
-  open: 'bg-success/10 text-success',
-  approved: 'bg-success/20 text-success',
-  merged: 'bg-accent/10 text-accent',
-  closed: 'bg-danger/10 text-danger',
+const PR_STATE_ICON_CLASS: Record<PullRequestStateKind, string> = {
+  draft: 'text-muted-foreground',
+  open: 'text-success',
+  approved: 'text-success',
+  merged: 'text-accent',
+  closed: 'text-danger',
 };
 
-function PrStateIcon({ state }: { state: PullRequestStateKind }) {
-  if (state === 'draft') return <GitPullRequestDraft size={11} aria-hidden />;
-  if (state === 'merged') return <GitMerge size={11} aria-hidden />;
-  return <GitPullRequest size={11} aria-hidden />;
+function PrStateIcon({ state, size = 12 }: { state: PullRequestStateKind; size?: number }) {
+  const cls = PR_STATE_ICON_CLASS[state];
+  if (state === 'draft') return <GitPullRequestDraft size={size} aria-hidden className={cls} />;
+  if (state === 'merged') return <GitMerge size={size} aria-hidden className={cls} />;
+  return <GitPullRequest size={size} aria-hidden className={cls} />;
 }
 
 function openInBrowser(url: string) {
@@ -519,72 +517,88 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
       </div>
 
       <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
-        <div className="flex items-center justify-between gap-1.5">
-          <span className="truncate font-mono text-xs text-foreground" title={branch}>
-            {branch}
-          </span>
-          <button
-            type="button"
-            onClick={copyBranch}
-            title="copy branch name"
-            aria-label="copy branch name"
-            className={cn('shrink-0', ICON_BTN)}
-          >
-            {copied ? <X size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
-          </button>
-        </div>
-
         {isFirstLoad ? (
           <PrSkeleton />
         ) : pr ? (
-          <div className="flex items-start gap-1.5">
+          <div
+            className="flex items-center gap-1.5"
+            title={`#${pr.number} ${pr.title} — ${PR_STATE_LABEL[pr.state]}`}
+          >
+            <PrStateIcon state={pr.state} />
             <button
               type="button"
               onClick={() => openInBrowser(pr.url)}
-              className="flex min-w-0 flex-1 items-center gap-1 text-left text-xs text-foreground hover:underline"
-              title={pr.title}
+              className="shrink-0 font-mono text-xs text-foreground hover:underline focus:underline focus:outline-none"
+              title={`open #${pr.number} on github — ${pr.title}`}
+              aria-label={`open pull request #${pr.number} on github`}
             >
-              <PrStateIcon state={pr.state} />
-              <span className="truncate">
-                #{pr.number} {pr.title}
-              </span>
+              #{pr.number}
             </button>
-            <div className="flex shrink-0 items-center gap-1">
-              <span
-                className={cn(
-                  'rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-                  PR_STATE_STYLE[pr.state],
-                )}
+            <button
+              type="button"
+              onClick={copyBranch}
+              className={cn(
+                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
+                copied
+                  ? 'text-success'
+                  : 'text-muted-foreground hover:text-foreground focus:text-foreground',
+              )}
+              title={copied ? 'copied!' : `copy branch: ${branch}`}
+              aria-label={`copy branch name ${branch}`}
+            >
+              {branch}
+            </button>
+            {repoSlug ? (
+              <button
+                type="button"
+                onClick={() => setDiffOpen(true)}
+                title="view diff"
+                aria-label="view pr diff"
+                className={cn('shrink-0', ICON_BTN)}
               >
-                {PR_STATE_LABEL[pr.state]}
-              </span>
-              {repoSlug ? (
-                <button
-                  type="button"
-                  onClick={() => setDiffOpen(true)}
-                  title="view diff"
-                  aria-label="view pr diff"
-                  className={ICON_BTN}
-                >
-                  <ExternalLink size={10} aria-hidden />
-                </button>
-              ) : null}
-            </div>
+                <FileEdit size={11} aria-hidden />
+              </button>
+            ) : null}
           </div>
         ) : loading ? (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Loader2 size={10} className="animate-spin" aria-hidden />
-            checking…
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 size={11} className="shrink-0 animate-spin" aria-hidden />
+            <button
+              type="button"
+              onClick={copyBranch}
+              className={cn(
+                'min-w-0 flex-1 truncate text-left font-mono focus:outline-none',
+                copied ? 'text-success' : 'hover:text-foreground',
+              )}
+              title={copied ? 'copied!' : `copy branch: ${branch}`}
+              aria-label={`copy branch name ${branch}`}
+            >
+              {branch}
+            </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-1.5">
-            <span className="text-xs italic text-muted-foreground">no pr yet</span>
+          <div className="flex items-center gap-1.5">
+            <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+            <button
+              type="button"
+              onClick={copyBranch}
+              className={cn(
+                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
+                copied
+                  ? 'text-success'
+                  : 'text-foreground hover:text-muted-foreground focus:text-muted-foreground',
+              )}
+              title={copied ? 'copied!' : `copy branch: ${branch}`}
+              aria-label={`copy branch name ${branch}`}
+            >
+              {branch}
+            </button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => void handleCreatePr()}
               disabled={loading}
-              className="h-5 gap-0.5 px-1.5 text-[10px]"
+              className="h-5 shrink-0 gap-0.5 px-1.5 text-[10px]"
             >
               <Plus size={10} aria-hidden />
               Open PR
