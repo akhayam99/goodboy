@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   Check,
@@ -129,10 +129,7 @@ export function GithubCard({
         </div>
       </div>
 
-      <div
-        className="max-h-44 overflow-y-auto rounded-md border border-border-soft bg-subtle px-2.5 py-2 transition-opacity duration-150"
-        key={active}
-      >
+      <AnimatedTabBody activeKey={active}>
         {detailError ? (
           <ErrorRow message={detailError} onRetry={onRefresh} />
         ) : detailLoading && !detail ? (
@@ -155,6 +152,34 @@ export function GithubCard({
             onSpawnFromReviewChanges={onSpawnFromReviewChanges}
           />
         )}
+      </AnimatedTabBody>
+    </div>
+  );
+}
+
+function AnimatedTabBody({ activeKey, children }: { activeKey: string; children: ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    setHeight(el.getBoundingClientRect().height);
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h != null) setHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeKey]);
+
+  return (
+    <div
+      className="overflow-hidden rounded-md border border-border-soft bg-subtle transition-[height] duration-200 ease-out motion-reduce:transition-none"
+      style={height != null ? { height } : undefined}
+    >
+      <div ref={innerRef} key={activeKey} className="max-h-44 overflow-y-auto px-2.5 py-2">
+        {children}
       </div>
     </div>
   );
