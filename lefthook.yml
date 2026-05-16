@@ -3,7 +3,7 @@ pre-commit:
   commands:
     format:
       glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
-      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec prettier --write {staged_files} && git add {staged_files}
+      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec prettier --write --no-error-on-unmatched-pattern {staged_files} && git add {staged_files}
 
 commit-msg:
   commands:
