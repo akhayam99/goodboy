@@ -35,9 +35,9 @@ import {
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from './SessionSettingsDialog';
 import { GuideDialog } from './GuideDialog';
-import { ProvidersChip } from './ProvidersChip';
+import { ProvidersChip } from '../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../features/notifications/components/NotificationCenter';
-import { TelemetryPill } from './TelemetryPill';
+import { TelemetryPill } from '../features/providers/components/TelemetryPill';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import type {
   Agent,
@@ -71,8 +71,8 @@ import {
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
 import { StatusBadge } from './StatusBadge';
-import { WorkflowNextStepCta } from './WorkflowNextStepCta';
-import { CostBadge } from './CostBadge';
+import { WorkflowNextStepCta } from '../features/workflow/components/WorkflowNextStepCta';
+import { CostBadge } from '../features/providers/components/CostBadge';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
@@ -89,7 +89,7 @@ import {
 } from '../features/session/agent-kind';
 import { AgentKindMenu } from './AgentKindMenu';
 import { SessionStatusMenu } from './SessionStatusMenu';
-import { NextActionChips } from './NextActionChips';
+import { NextActionChips } from '../features/workflow/components/NextActionChips';
 import {
   spawnFromNextAction,
   spawnKindForAction,

@@ -1,5 +1,5 @@
 import { cn } from '@kay-am/ui';
-import { useAppStore } from '../store';
+import { useAppStore } from '../../../../store';
 
 const PROVIDER_DOT: Record<string, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',

@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Agent, Step, Workflow } from '@kay-am/types';
-import type { VerbosityLevel } from '../features/settings/verbosity';
+import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
-} from '../features/session/agent-kind';
+} from '../../../../features/session/agent-kind';
 
 export interface WorkflowNextStepCtaProps {
   readonly workflow: Workflow;

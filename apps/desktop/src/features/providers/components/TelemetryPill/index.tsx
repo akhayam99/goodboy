@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAppStore } from '../store';
-import { PricingDialog } from './PricingDialog';
+import { useAppStore } from '../../../../store';
+import { PricingDialog } from '../PricingDialog';
 
 const EMPTY_SPEND: ReadonlyArray<never> = [];
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
-import { ProvidersPanel } from './ProvidersPanel';
+import { ProvidersPanel } from '../features/providers/components/ProvidersPanel';
 import { BudgetRulesPanel } from '../features/budget/components/BudgetRulesPanel';
 import { GithubPanel } from '../features/github/components/Panel';
 import { ImportConfigDialog } from './ImportConfigDialog';

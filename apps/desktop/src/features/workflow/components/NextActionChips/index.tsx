@@ -3,10 +3,10 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
 import type { SessionId } from '@kay-am/types';
-import { formatError } from '../shared/lib/errors';
-import { useAppStore, useSessionNextActions } from '../store';
-import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../features/session/agent-kind';
-import { spawnKindForAction } from '../features/session/spawn-from-next-action';
+import { formatError } from '../../../../shared/lib/errors';
+import { useAppStore, useSessionNextActions } from '../../../../store';
+import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../../../../features/session/agent-kind';
+import { spawnKindForAction } from '../../../../features/session/spawn-from-next-action';
 
 export interface NextActionChipsProps {
   readonly sessionId: SessionId;

@@ -1,7 +1,11 @@
 import { cn } from '@kay-am/ui';
 import type { AgentEffort } from '@kay-am/types';
-import { VERBOSITY_LEVELS, type VerbosityLevel } from '../../features/settings/verbosity';
-import { EFFORT_TEXT, VERBOSITY_TEXT, modelLabel } from '../chat/chat-constants';
+import { VERBOSITY_LEVELS, type VerbosityLevel } from '../../../../../features/settings/verbosity';
+import {
+  EFFORT_TEXT,
+  VERBOSITY_TEXT,
+  modelLabel,
+} from '../../../../../components/chat/chat-constants';
 
 const STEP_SELECTABLE_MODELS = [
   'claude-haiku-4-5',

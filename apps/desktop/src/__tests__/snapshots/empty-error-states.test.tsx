@@ -103,7 +103,7 @@ import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
 import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
-import { ProvidersPanel } from '../../components/ProvidersPanel';
+import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
 import { TranscriptCard } from '../../components/chat/TranscriptCards';
 import { ToastProvider } from '../../components/Toast';
 

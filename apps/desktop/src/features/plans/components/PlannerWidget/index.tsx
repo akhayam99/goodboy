@@ -17,7 +17,7 @@ import { useAppStore } from '../../../../store';
 import {
   StepOverrideRow,
   type StepOverrideValues,
-} from '../../../../components/overrides/StepOverrideRow';
+} from '../../../workflow/components/overrides/StepOverrideRow';
 
 interface PlannerWidgetProps {
   workspaceId: WorkspaceId;

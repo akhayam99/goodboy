@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Dialog, cn } from '@kay-am/ui';
-import { EMPTY_ARRAY, useAppStore } from '../store';
-import type { ProviderSpendEntry } from '../store';
-import { STORAGE_KEYS } from '../shared/lib/storage-keys';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { ProviderSpendEntry } from '../../../../store';
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
 const formatTokens = (n: number): string => {

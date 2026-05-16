@@ -9,7 +9,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@kay-am/types';
-import { pickNextWorkflowStep } from './WorkflowNextStepCta';
+import { pickNextWorkflowStep } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 't-1' as SessionId;
