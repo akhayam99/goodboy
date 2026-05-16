@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { checkProviderBudget, checkTaskBudget, getPeriodWindow } from '../checker';
+import { checkProviderBudget, checkSessionBudget, getPeriodWindow } from '../checker';
 import type { Database } from '@kay-am/db';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 
 function makeDb(overrides: Partial<Database> = {}): Database {
   return {
@@ -145,10 +145,10 @@ describe('checkProviderBudget', () => {
   });
 });
 
-describe('checkTaskBudget', () => {
+describe('checkSessionBudget', () => {
   it('no session budget row → Infinity remaining, pct 0, not exceeded', async () => {
     const db = makeDb({ select: vi.fn().mockResolvedValue([]) });
-    const result = await checkTaskBudget(db, 'sess-1' as TaskId);
+    const result = await checkSessionBudget(db, 'sess-1' as SessionId);
     expect(result).toEqual({ remainingUsd: Infinity, pct: 0, exceeded: false });
   });
 
@@ -159,7 +159,7 @@ describe('checkTaskBudget', () => {
       .mockResolvedValueOnce([{ total: 20 }]);
 
     const db = makeDb({ select: selectMock });
-    const result = await checkTaskBudget(db, 'sess-1' as TaskId);
+    const result = await checkSessionBudget(db, 'sess-1' as SessionId);
 
     expect(result.remainingUsd).toBe(30);
     expect(result.pct).toBe(40);
@@ -173,7 +173,7 @@ describe('checkTaskBudget', () => {
       .mockResolvedValueOnce([{ total: 60 }]);
 
     const db = makeDb({ select: selectMock });
-    const result = await checkTaskBudget(db, 'sess-1' as TaskId);
+    const result = await checkSessionBudget(db, 'sess-1' as SessionId);
 
     expect(result.remainingUsd).toBe(-10);
     expect(result.exceeded).toBe(true);

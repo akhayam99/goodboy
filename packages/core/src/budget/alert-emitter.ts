@@ -1,13 +1,13 @@
 import type { BudgetAlert, BudgetAlertKind, BudgetCheckResult, BudgetPeriod } from '@kay-am/types';
-import type { IsoDateTime, TaskId } from '@kay-am/types';
+import type { IsoDateTime, SessionId } from '@kay-am/types';
 import type { ProviderName } from '@kay-am/types';
 import type { Database } from '@kay-am/db';
-import { getTaskBudget, insertBudgetAlert, listBudgetAlerts, listBudgetRules } from '@kay-am/db';
+import { getSessionBudget, insertBudgetAlert, listBudgetAlerts, listBudgetRules } from '@kay-am/db';
 
 export type AlertEmitterDeps = {
   db: Database;
   checkProviderBudget: (provider: ProviderName, period: BudgetPeriod) => Promise<BudgetCheckResult>;
-  checkTaskBudget: (taskId: TaskId) => Promise<BudgetCheckResult>;
+  checkSessionBudget: (sessionId: SessionId) => Promise<BudgetCheckResult>;
 };
 
 export function getCurrentPeriodKey(period: BudgetPeriod): string {
@@ -37,17 +37,17 @@ function sessionAlertKind(result: BudgetCheckResult, thresholdPct: number): Budg
 
 export async function emitBudgetAlerts(
   deps: AlertEmitterDeps,
-  context: { provider: ProviderName; taskId: TaskId },
+  context: { provider: ProviderName; sessionId: SessionId },
 ): Promise<BudgetAlert[]> {
-  const { db, checkProviderBudget, checkTaskBudget } = deps;
-  const { provider, taskId } = context;
+  const { db, checkProviderBudget, checkSessionBudget } = deps;
+  const { provider, sessionId } = context;
 
   const period: BudgetPeriod = 'monthly';
   const [rules, providerResult, sessionResult, sessionBudget] = await Promise.all([
     listBudgetRules(db),
     checkProviderBudget(provider, period),
-    checkTaskBudget(taskId),
-    getTaskBudget(db, taskId),
+    checkSessionBudget(sessionId),
+    getSessionBudget(db, sessionId),
   ]);
 
   const created: BudgetAlert[] = [];
@@ -77,14 +77,14 @@ export async function emitBudgetAlerts(
   if (sessionBudget !== null) {
     const sKind = sessionAlertKind(sessionResult, 80);
     if (sKind !== null) {
-      const existing = await listBudgetAlerts(db, { taskId, undismissedOnly: true });
+      const existing = await listBudgetAlerts(db, { sessionId, undismissedOnly: true });
       const alreadyExists = existing.some((a) => a.kind === sKind);
       if (!alreadyExists) {
         const spentUsd = sessionBudget.softCapUsd - sessionResult.remainingUsd;
         const alert: BudgetAlert = {
           id: crypto.randomUUID(),
           kind: sKind,
-          taskId,
+          sessionId,
           currentUsd: spentUsd,
           capUsd: sessionBudget.softCapUsd,
           createdAt: now,

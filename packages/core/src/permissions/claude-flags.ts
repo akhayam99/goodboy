@@ -1,4 +1,10 @@
-import type { ClaudePermissionMode, PermissionRule, PermissionRuleScope, TaskId, WorkspaceId } from '@kay-am/types';
+import type {
+  ClaudePermissionMode,
+  PermissionRule,
+  PermissionRuleScope,
+  SessionId,
+  WorkspaceId,
+} from '@kay-am/types';
 import { formatToolPattern } from './matcher';
 
 export interface ClaudeFlagSet {
@@ -8,24 +14,24 @@ export interface ClaudeFlagSet {
 }
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
-  task: 2,
+  session: 2,
   workspace: 1,
   global: 0,
 };
 
 function isApplicable(
   rule: PermissionRule,
-  scope: { workspaceId: WorkspaceId; taskId: TaskId },
+  scope: { workspaceId: WorkspaceId; sessionId: SessionId },
 ): boolean {
   if (rule.scope === 'global') return true;
-  if (rule.scope === 'task') return rule.taskId === scope.taskId;
+  if (rule.scope === 'session') return rule.sessionId === scope.sessionId;
   if (rule.scope === 'workspace') return rule.workspaceId === scope.workspaceId;
   return false;
 }
 
 export function buildClaudeFlags(input: {
   readonly rules: ReadonlyArray<PermissionRule>;
-  readonly scope: { workspaceId: WorkspaceId; taskId: TaskId };
+  readonly scope: { workspaceId: WorkspaceId; sessionId: SessionId };
   readonly permissionMode?: ClaudeFlagSet['permissionMode'];
 }): ClaudeFlagSet {
   const applicable = input.rules.filter((r) => isApplicable(r, input.scope));

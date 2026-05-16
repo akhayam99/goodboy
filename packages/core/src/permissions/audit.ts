@@ -1,7 +1,7 @@
-import type { IsoDateTime, PermissionAuditEntry, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, PermissionAuditEntry, SessionId, WorkspaceId } from '@kay-am/types';
 
 export interface AuditQuery {
-  readonly taskId?: TaskId;
+  readonly sessionId?: SessionId;
   readonly workspaceId?: WorkspaceId;
   readonly fromAt?: IsoDateTime;
   readonly toAt?: IsoDateTime;
@@ -11,7 +11,7 @@ export interface AuditQuery {
 export interface AuditRecorderDeps {
   readonly insert: (entry: PermissionAuditEntry) => Promise<void>;
   readonly list: (q: AuditQuery) => Promise<ReadonlyArray<PermissionAuditEntry>>;
-  readonly clear: (scope: { taskId?: TaskId; workspaceId?: WorkspaceId }) => Promise<void>;
+  readonly clear: (scope: { sessionId?: SessionId; workspaceId?: WorkspaceId }) => Promise<void>;
 }
 
 export class PermissionAuditRecorder {
@@ -25,9 +25,9 @@ export class PermissionAuditRecorder {
     return this.deps.list(q);
   }
 
-  clear(scope: { taskId?: TaskId; workspaceId?: WorkspaceId }): Promise<void> {
-    if (!scope.taskId && !scope.workspaceId) {
-      throw new Error('clear scope required: taskId or workspaceId');
+  clear(scope: { sessionId?: SessionId; workspaceId?: WorkspaceId }): Promise<void> {
+    if (!scope.sessionId && !scope.workspaceId) {
+      throw new Error('clear scope required: sessionId or workspaceId');
     }
     return this.deps.clear(scope);
   }

@@ -3,10 +3,10 @@ import type {
   IsoDateTime,
   ParallelGroup,
   ParallelGroupId,
-  ParallelSession,
-  ParallelSessionId,
+  ParallelAgent,
+  ParallelAgentId,
   StepId,
-  SessionStatus,
+  AgentStatus,
   ProviderRunId,
   TurnEvent,
 } from '@kay-am/types';
@@ -25,7 +25,7 @@ const NOW = '2025-01-01T00:00:00.000Z' as IsoDateTime;
 function makeGroup(overrides?: Partial<ParallelGroup>): ParallelGroup {
   return {
     id: 'g1' as ParallelGroupId,
-    taskId: 's1' as ParallelGroup['taskId'],
+    sessionId: 's1' as ParallelGroup['sessionId'],
     ordinal: 1,
     mergeStrategy: 'last_write_wins',
     createdAt: NOW,
@@ -34,14 +34,14 @@ function makeGroup(overrides?: Partial<ParallelGroup>): ParallelGroup {
   };
 }
 
-function makeRun(index: number, runId: string = `run-${index}`): ParallelSession {
+function makeRun(index: number, runId: string = `run-${index}`): ParallelAgent {
   return {
-    id: `pr-${index}` as ParallelSessionId,
+    id: `pr-${index}` as ParallelAgentId,
     groupId: 'g1' as ParallelGroupId,
     stepId: `pd-${index}` as StepId,
     parallelIndex: index,
     runId: runId as ProviderRunId,
-    status: 'pending' as SessionStatus,
+    status: 'pending' as AgentStatus,
     worktreePath: `/tmp/wt-${index}`,
     outputSummary: null,
     startedAt: NOW,
@@ -58,8 +58,8 @@ describe('fanOut + awaitMerge — 3-run happy path', () => {
     const runs = [makeRun(0), makeRun(1), makeRun(2)];
     const group = makeGroup();
 
-    const spawnRun = vi.fn(async (run: ParallelSession) => ({
-      status: 'completed' as SessionStatus,
+    const spawnRun = vi.fn(async (run: ParallelAgent) => ({
+      status: 'completed' as AgentStatus,
       outputSummary: `summary-${run.parallelIndex}`,
     }));
 
@@ -86,11 +86,11 @@ describe('fanOut + awaitMerge — partial failure', () => {
     const runs = [makeRun(0, 'run-0'), makeRun(1, 'run-1'), makeRun(2, 'run-2')];
     const group = makeGroup();
 
-    const spawnRun = vi.fn(async (run: ParallelSession) => {
+    const spawnRun = vi.fn(async (run: ParallelAgent) => {
       if (run.parallelIndex === 1) {
-        return { status: 'failed' as SessionStatus, outputSummary: null, error: 'timeout' };
+        return { status: 'failed' as AgentStatus, outputSummary: null, error: 'timeout' };
       }
-      return { status: 'completed' as SessionStatus, outputSummary: `ok-${run.parallelIndex}` };
+      return { status: 'completed' as AgentStatus, outputSummary: `ok-${run.parallelIndex}` };
     });
 
     const deps: SchedulerDeps = { spawnRun, cancelRun: vi.fn() };
@@ -119,7 +119,7 @@ describe('fanOut + awaitMerge — all fail', () => {
     const group = makeGroup({ mergeStrategy: 'manual' });
 
     const spawnRun = vi.fn(async () => ({
-      status: 'failed' as SessionStatus,
+      status: 'failed' as AgentStatus,
       outputSummary: null,
       error: 'provider down',
     }));
@@ -178,11 +178,11 @@ describe('onProgress', () => {
     const runs = [makeRun(0, 'run-0'), makeRun(1, 'run-1')];
     const group = makeGroup();
 
-    const spawnRun = vi.fn((run: ParallelSession, onEvent: (e: TurnEvent) => void) => {
+    const spawnRun = vi.fn((run: ParallelAgent, onEvent: (e: TurnEvent) => void) => {
       // defer via Promise so subscriber registered before events fire
       return Promise.resolve().then(() => {
         onEvent(makeDoneTurnEvent(run.runId));
-        return { status: 'completed' as SessionStatus, outputSummary: null };
+        return { status: 'completed' as AgentStatus, outputSummary: null };
       });
     });
 
@@ -206,9 +206,9 @@ describe('onProgress', () => {
     const runs = [makeRun(0, 'run-0')];
     const group = makeGroup();
 
-    let resolveSpawn!: (v: { status: SessionStatus; outputSummary: null }) => void;
-    const spawnRun = vi.fn((_run: ParallelSession, onEvent: (e: TurnEvent) => void) => {
-      return new Promise<{ status: SessionStatus; outputSummary: null }>((res) => {
+    let resolveSpawn!: (v: { status: AgentStatus; outputSummary: null }) => void;
+    const spawnRun = vi.fn((_run: ParallelAgent, onEvent: (e: TurnEvent) => void) => {
+      return new Promise<{ status: AgentStatus; outputSummary: null }>((res) => {
         resolveSpawn = res;
         onEvent(makeDoneTurnEvent('run-0'));
       });

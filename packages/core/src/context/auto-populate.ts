@@ -1,4 +1,4 @@
-import type { ContextSlot, TaskId } from '@kay-am/types';
+import type { ContextSlot, SessionId } from '@kay-am/types';
 import type { Database } from '@kay-am/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
@@ -11,7 +11,7 @@ import type { SlotKey } from './slots';
 
 export interface AutoPopulateInput {
   readonly db: Database;
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly filesEdited: ReadonlyArray<string>;
   readonly assistantText: string;
 }
@@ -22,7 +22,7 @@ export interface AutoPopulateResult {
 
 export async function autoPopulateContext(input: AutoPopulateInput): Promise<AutoPopulateResult> {
   const engine = new ContextEngine({ db: input.db });
-  const slots = await engine.load(input.taskId);
+  const slots = await engine.load(input.sessionId);
 
   const { decisions, questions, resolved } = extractMarkers(input.assistantText);
 
@@ -42,7 +42,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   }
 
   for (const upd of updates) {
-    await engine.upsert(input.taskId, upd.key, upd.value);
+    await engine.upsert(input.sessionId, upd.key, upd.value);
   }
 
   return { updatedSlots: updates.map((u) => u.key) };

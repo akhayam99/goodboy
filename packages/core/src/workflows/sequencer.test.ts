@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Step, Session, Workflow } from '@kay-am/types';
+import type { Step, Agent, Workflow } from '@kay-am/types';
 import {
   buildStepPrompt,
   currentStep,
-  findReusableSession,
+  findReusableAgent,
   isWorkflowComplete,
   nextStep,
 } from './sequencer';
@@ -44,18 +44,18 @@ const TEMPLATE: Workflow = {
 
 function makeRun(
   defId: string,
-  status: Session['status'],
+  status: Agent['status'],
   ordinal: number,
   startedAt?: string,
-): Session {
+): Agent {
   return {
-    id: `run-${defId}-${startedAt ?? '0'}` as Session['id'],
-    taskId: 's1' as Session['taskId'],
-    stepId: defId as Session['stepId'],
+    id: `run-${defId}-${startedAt ?? '0'}` as Agent['id'],
+    sessionId: 's1' as Agent['sessionId'],
+    stepId: defId as Agent['stepId'],
     ordinal,
     name: `run for ${defId}`,
     status,
-    ...(startedAt && { startedAt: startedAt as Session['startedAt'] }),
+    ...(startedAt && { startedAt: startedAt as Agent['startedAt'] }),
   };
 }
 
@@ -112,7 +112,7 @@ describe('nextStep', () => {
   it('treats unrecognized status as non-terminal (safe default)', () => {
     // Simulate malformed DB row with unknown status
     const badRun = {
-      ...makeRun('d1', 'unknown' as Session['status'], 1),
+      ...makeRun('d1', 'unknown' as Agent['status'], 1),
     };
     expect(nextStep(TEMPLATE, [badRun])).toBe(D1);
   });
@@ -208,26 +208,26 @@ describe('currentStep', () => {
   });
 });
 
-describe('findReusableSession', () => {
+describe('findReusableAgent', () => {
   it('returns null when no run exists for the step', () => {
-    expect(findReusableSession([], 'd1' as Step['id'])).toBeNull();
+    expect(findReusableAgent([], 'd1' as Step['id'])).toBeNull();
   });
 
   it('returns the only matching run', () => {
-    const run = makeRun('d1', 'idle' as Session['status'], 1, '2026-01-01T00:00:00Z');
-    expect(findReusableSession([run], 'd1' as Step['id'])).toBe(run);
+    const run = makeRun('d1', 'idle' as Agent['status'], 1, '2026-01-01T00:00:00Z');
+    expect(findReusableAgent([run], 'd1' as Step['id'])).toBe(run);
   });
 
   it('returns the most recently started run for the step', () => {
     const older = makeRun('d1', 'completed', 1, '2026-01-01T00:00:00Z');
     const newer = makeRun('d1', 'running', 1, '2026-01-02T00:00:00Z');
-    expect(findReusableSession([older, newer], 'd1' as Step['id'])).toBe(newer);
+    expect(findReusableAgent([older, newer], 'd1' as Step['id'])).toBe(newer);
   });
 
   it('ignores runs for other steps', () => {
     const a = makeRun('d1', 'completed', 1, '2026-01-02T00:00:00Z');
     const b = makeRun('d2', 'running', 2, '2026-01-01T00:00:00Z');
-    expect(findReusableSession([a, b], 'd2' as Step['id'])).toBe(b);
+    expect(findReusableAgent([a, b], 'd2' as Step['id'])).toBe(b);
   });
 });
 

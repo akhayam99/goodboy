@@ -2,7 +2,7 @@ export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from
 
 export {
   checkProviderBudget,
-  checkTaskBudget,
+  checkSessionBudget,
   emitBudgetAlerts,
   getCurrentPeriodKey,
   getPeriodWindow,
@@ -117,7 +117,7 @@ export {
 export {
   buildStepPrompt,
   currentStep,
-  findReusableSession,
+  findReusableAgent,
   isWorkflowComplete,
   nextStep,
   WorkflowPropagator,

@@ -5,17 +5,17 @@ import type {
   PermissionRule,
   PermissionRuleId,
   PermissionRequestId,
-  TaskId,
+  SessionId,
   WorkspaceId,
 } from '@kay-am/types';
 import { PermissionEngine } from './engine';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
-const SESSION_A = 'session-a' as TaskId;
-const SESSION_B = 'session-b' as TaskId;
+const SESSION_A = 'session-a' as SessionId;
+const SESSION_B = 'session-b' as SessionId;
 const WS_A = 'ws-a' as WorkspaceId;
 const WS_B = 'ws-b' as WorkspaceId;
-const CTX = { taskId: SESSION_A, workspaceId: WS_A };
+const CTX = { sessionId: SESSION_A, workspaceId: WS_A };
 
 function makeRequest(toolName: string, input: unknown = {}): PermissionRequest {
   return {
@@ -81,8 +81,8 @@ describe('PermissionEngine.decide', () => {
     });
     const sessionDeny = makeRule({
       id: 'session-deny' as PermissionRuleId,
-      scope: 'task',
-      taskId: SESSION_A,
+      scope: 'session',
+      sessionId: SESSION_A,
       decision: 'deny',
       priority: 5,
       pattern: { tool: 'Edit' },
@@ -124,8 +124,8 @@ describe('PermissionEngine.decide', () => {
     });
     const sessionDeny = makeRule({
       id: 'session-deny' as PermissionRuleId,
-      scope: 'task',
-      taskId: SESSION_A,
+      scope: 'session',
+      sessionId: SESSION_A,
       decision: 'deny',
       priority: 5,
       pattern: { tool: 'Edit' },
@@ -138,8 +138,8 @@ describe('PermissionEngine.decide', () => {
   it('higher priority wins regardless of scope', () => {
     const sessionDeny = makeRule({
       id: 'session-deny' as PermissionRuleId,
-      scope: 'task',
-      taskId: SESSION_A,
+      scope: 'session',
+      sessionId: SESSION_A,
       decision: 'deny',
       priority: 1,
       pattern: { tool: 'Edit' },
@@ -190,8 +190,8 @@ describe('PermissionEngine.decide', () => {
   it('rules for other sessions/workspaces are excluded', () => {
     const otherSession = makeRule({
       id: 'other-session' as PermissionRuleId,
-      scope: 'task',
-      taskId: SESSION_B,
+      scope: 'session',
+      sessionId: SESSION_B,
       decision: 'allow',
       priority: 100,
       pattern: { tool: 'Edit' },
