@@ -69,12 +69,7 @@ export type {
   Workflow,
 } from './workflow';
 export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
-export type {
-  BranchCommit,
-  DiffView,
-  WorktreeDiffScope,
-  WorktreeStatus,
-} from './worktree';
+export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';
 export type {
   ConfigBundle,
   ConfigBundleBudgetRule,
@@ -106,7 +101,14 @@ export type {
   DiffCommentSide,
   DiffCommentStatus,
 } from './diff-comment';
-export type { Plan, PlanId, PlanStatus } from './plan';
+export type {
+  Plan,
+  PlanConsumption,
+  PlanConsumptionId,
+  PlanId,
+  PlanStatus,
+  PlanWithCount,
+} from './plan';
 export type {
   DiffHunk,
   DiffHunkLine,

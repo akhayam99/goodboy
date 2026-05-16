@@ -23,6 +23,14 @@ export function shortModel(model: string): string {
   return model;
 }
 
+export function shortModelWithVersion(model: string): string {
+  // claude-sonnet-4-6 → sonnet 4.6 ; claude-opus-4-7 → opus 4.7 ; claude-haiku-4-5 → haiku 4.5.
+  // Falls back to shortModel for unversioned matches, raw string otherwise.
+  const m = model.match(/claude-(haiku|sonnet|opus)-(\d+)-(\d+)/i);
+  if (m && m[1] && m[2] && m[3]) return `${m[1].toLowerCase()} ${m[2]}.${m[3]}`;
+  return shortModel(model);
+}
+
 /**
  * For each agent (keyed by Session.id), returns the telemetry record from the
  * most recent run in agentRunHistory. Walks the history newest-first so the

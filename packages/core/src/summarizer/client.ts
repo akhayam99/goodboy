@@ -90,18 +90,37 @@ const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding 
 There are exactly five slots, each with a stable key:
 ${SLOT_KEYS.map((k) => `- ${k} (${SLOT_LABELS[k]})`).join('\n')}
 
-You will receive the previous slot values plus the most recent user turn and assistant turn.
-Decide which slots, if any, should change. Keep values terse: a sentence or short bullet list per slot. Prefer decisions, constraints, and unresolved items over verbose narration of what happened. Exclude raw tool output.
+INPUT
+You receive the previous slot values plus the most recent user turn and assistant turn.
 
-Goal refinement: the "goal" slot is not write-once. As the conversation clarifies what the user actually wants, sharpen the goal — make it more specific, surface implicit constraints, drop vague phrasing. Update goal whenever the latest turn changed or clarified the target. Don't rewrite when nothing new emerged.
+CONTEXT PRESERVATION (critical)
+Previous slot content is canonical memory. There is no "append" operation — every upsert REPLACES the slot — so when you change a slot you MUST emit the full merged value (previous content + new additions, with only items the latest turn invalidated removed).
+Never silently drop facts that are still valid. Per slot:
+- goal: refine over time as intent clarifies — sharpen wording, surface implicit constraints, drop vague phrasing. Do not erase prior framing if still valid.
+- decisions: append new decisions to the existing list. Never remove accepted ones.
+- open_questions: drop only items the latest user turn explicitly resolves. Add new ones only when the assistant is blocked on the user.
+- files_touched: one path per line; append unique paths; never duplicate or drop prior paths unless a file was deleted.
+- last_output_summary: this slot is REPLACE, not merge — it summarizes only the latest assistant turn.
 
-Open questions: when the latest user turn answers a previously-listed open question, drop the resolved item from the open_questions slot value. Add new questions only when the assistant explicitly needs the user before continuing.
+FORMATTING (critical — values render as markdown in the UI)
+Each value MUST be compact, well-structured markdown. Never write a wall of prose on one line.
+Rules:
+- Prefer short bullet lists ("- " prefix). One fact per bullet, under ~100 chars; split long bullets in two.
+- Insert a blank line between logically distinct groups of bullets so the UI does not render them squashed.
+- Use two-space indent + "- " for sub-bullets when nesting context.
+- Use \`backticks\` for identifiers, paths, commands. Use **bold** sparingly for keys/file names that aid scanning.
+- Do NOT use markdown headings (#) — the slot label is already the heading.
+- Do NOT wrap the value in code fences unless quoting actual code.
+- Exclude raw tool output and chat-style narration.
+- The "goal" slot stays as one tight sentence or two — no bullets needed unless multiple sub-goals exist.
 
-You MUST respond with a single JSON object and nothing else. No prose, no markdown, no code fences.
-The schema is:
-{ "upserts": [ { "key": "<one of the five keys>", "value": "<new slot value>" } ] }
+OUTPUT
+You MUST respond with a single JSON object and nothing else. No prose, no markdown wrapper, no code fences around the JSON.
+The value field is a JSON string; encode newlines inside it as the escape sequence \\n so the rendered markdown breaks across lines.
+Schema:
+{ "upserts": [ { "key": "<one of the five keys>", "value": "<full merged slot value, as compact markdown>" } ] }
 
-Only include slots that should change. Omit slots that stay the same. Never invent new keys.
+Only include slots that actually change. Omit slots that stay the same. Never invent new keys.
 If nothing should change, return { "upserts": [] }.`;
 
 export class Summarizer {

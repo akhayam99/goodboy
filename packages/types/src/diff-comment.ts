@@ -1,6 +1,6 @@
-import type { IsoDateTime, TaskId } from './ids';
+import type { IsoDateTime, SessionId, TaskId } from './ids';
 
-export type DiffCommentStatus = 'open' | 'resolved';
+export type DiffCommentStatus = 'open' | 'resolved' | 'consumed';
 
 export type DiffCommentSide = 'old' | 'new';
 
@@ -17,5 +17,7 @@ export type DiffComment = Readonly<{
   status: DiffCommentStatus;
   createdAt: IsoDateTime;
   resolvedAt?: IsoDateTime;
+  consumedAt?: IsoDateTime;
+  consumedByAgentId?: SessionId;
   anchor?: DiffCommentAnchor;
 }>;

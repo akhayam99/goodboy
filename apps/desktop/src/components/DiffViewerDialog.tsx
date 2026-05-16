@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
+  ArrowUpRight,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCw,
+  RotateCcw,
   Sparkles,
   Trash2,
   X,
@@ -26,6 +28,7 @@ import type {
   DiffView,
   FileDiff,
   FileDiffStatus,
+  SessionId,
   TaskId,
   WorktreeStatus,
 } from '@kay-am/types';
@@ -267,9 +270,7 @@ export function DiffViewerDialog({
   const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
   const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
 
-  const [view, setViewState] = useState<DiffView>(
-    () => readPersistedView(taskId) ?? DEFAULT_VIEW,
-  );
+  const [view, setViewState] = useState<DiffView>(() => readPersistedView(taskId) ?? DEFAULT_VIEW);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -288,6 +289,8 @@ export function DiffViewerDialog({
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
   const addDiffComment = useAppStore((s) => s.addDiffComment);
   const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
+  const consumeDiffComments = useAppStore((s) => s.consumeDiffComments);
+  const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
   const summarizer = useSummarizerStatus(taskId ?? null);
   const prevSummarizerStatus = useRef(summarizer.status);
@@ -303,6 +306,14 @@ export function DiffViewerDialog({
     }
     prevSummarizerStatus.current = summarizer.status;
   }, [summarizer.status, open, isGitAware]);
+
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const phaseRuns = useAppStore((s) => (taskId ? (s.sessionPhaseRuns[taskId] ?? null) : null));
+  const agentNameById = useMemo(() => {
+    const m = new Map<SessionId, string>();
+    if (phaseRuns) for (const r of phaseRuns) m.set(r.id, r.name);
+    return m;
+  }, [phaseRuns]);
 
   const openCommentsByFile = useMemo(() => {
     const m = new Map<string, number>();
@@ -335,9 +346,9 @@ export function DiffViewerDialog({
     const fetcher = isGitAware
       ? () => loadDiffForView(worktreePath as string, view)
       : (loader ??
-          (repoSlug !== undefined && prNumber !== undefined
-            ? () => ghPrDiff(repoSlug, prNumber, cwd)
-            : null));
+        (repoSlug !== undefined && prNumber !== undefined
+          ? () => ghPrDiff(repoSlug, prNumber, cwd)
+          : null));
     if (!fetcher) {
       setError('no diff source configured');
       setLoading(false);
@@ -354,9 +365,7 @@ export function DiffViewerDialog({
         setFiles(parsed);
         setLoading(false);
         if (jumpToFile) {
-          const idx = parsed.findIndex(
-            (f) => f.path === jumpToFile || jumpToFile.endsWith(f.path),
-          );
+          const idx = parsed.findIndex((f) => f.path === jumpToFile || jumpToFile.endsWith(f.path));
           setSelectedIdx(idx >= 0 ? idx : 0);
         } else if (jumpToFirstCommented && openCommentsByFile.size > 0) {
           const idx = parsed.findIndex((f) => openCommentsByFile.has(f.path));
@@ -453,16 +462,28 @@ export function DiffViewerDialog({
       const defaults = AGENT_KIND_DEFAULTS.reviewer;
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
       const name = `review notes (${fileCount}F/${openComments.length}N)`;
-      await spawnAgent(taskId, {
+      const idsToConsume = openComments.map((c) => c.id);
+      const agentId = await spawnAgent(taskId, {
         name,
         model: defaults.model,
         effort: defaults.effort,
       });
+      try {
+        await consumeDiffComments(taskId, idsToConsume, agentId);
+      } catch (err) {
+        console.error('failed to mark comments consumed', err);
+      }
       void sendTurn({ taskId, content: prompt });
       onClose();
     } finally {
       setSpawning(false);
     }
+  };
+
+  const handleViewAgent = async (agentId: SessionId) => {
+    if (!taskId) return;
+    await selectAgent(taskId, agentId);
+    onClose();
   };
 
   const handleOpenInEditor = async () => {
@@ -592,7 +613,10 @@ export function DiffViewerDialog({
                     onCancelFileLevelComment={() => setFileLevelComposerOpen(false)}
                     onSubmitFileLevelComment={(body) => void handleAddFileLevelComment(body)}
                     onResolve={(id) => taskId && void resolveDiffComment(taskId, id)}
+                    onReopen={(id) => taskId && void reopenDiffComment(taskId, id)}
                     onDelete={(id) => taskId && void deleteDiffComment(taskId, id)}
+                    onViewAgent={(id) => void handleViewAgent(id)}
+                    getAgentName={(id) => agentNameById.get(id)}
                   />
                 ) : null}
               </div>
@@ -645,18 +669,13 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
             <span className="shrink-0 italic text-muted-foreground/60">no commit</span>
           )}
           {subject ? (
-            <span
-              className="min-w-0 truncate text-muted-foreground"
-              title={subject}
-            >
+            <span className="min-w-0 truncate text-muted-foreground" title={subject}>
               {subject}
             </span>
           ) : null}
         </div>
         <div className="text-[11px] text-muted-foreground/70">
-          {status?.branch ? (
-            <span className="mr-2 font-mono">{status.branch}</span>
-          ) : null}
+          {status?.branch ? <span className="mr-2 font-mono">{status.branch}</span> : null}
           {counts.length > 0 ? counts.join(' · ') : 'clean'}
         </div>
       </div>
@@ -668,11 +687,7 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
         aria-label="refresh git state"
         className={cn(TOOLBAR_ICON_BTN, 'mt-0.5 disabled:opacity-50')}
       >
-        <RefreshCw
-          size={12}
-          className={refreshing ? 'animate-spin' : undefined}
-          aria-hidden
-        />
+        <RefreshCw size={12} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
       </button>
     </div>
   );
@@ -1022,48 +1037,90 @@ function TreeNodeView({
 function CommentItem({
   comment,
   onResolve,
+  onReopen,
   onDelete,
+  onViewAgent,
+  getAgentName,
 }: {
   comment: DiffComment;
   onResolve: (id: string) => void;
+  onReopen: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewAgent: (agentId: SessionId) => void;
+  getAgentName: (agentId: SessionId) => string | undefined;
 }) {
+  const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
+  const containerClass =
+    comment.status === 'resolved'
+      ? 'border-success/40 bg-success/5 opacity-60'
+      : comment.status === 'consumed'
+        ? 'border-info/40 bg-info/5'
+        : 'border-warning bg-warning/5';
   return (
     <div
-      className={cn(
-        'group flex items-start gap-2 rounded-md border-l-2 border-warning bg-warning/5 px-3 py-1.5',
-        comment.status === 'resolved' && 'border-success/40 bg-success/5 opacity-60',
-      )}
+      className={cn('group flex flex-col gap-1 rounded-md border-l-2 px-3 py-1.5', containerClass)}
     >
-      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">
-        {comment.status === 'resolved' ? (
-          <span className="line-through">{comment.body}</span>
-        ) : (
-          comment.body
-        )}
-      </p>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-        {comment.status === 'open' ? (
+      <div className="flex items-start gap-2">
+        <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">
+          {comment.status === 'resolved' ? (
+            <span className="line-through">{comment.body}</span>
+          ) : (
+            comment.body
+          )}
+        </p>
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          {comment.status === 'open' ? (
+            <button
+              type="button"
+              onClick={() => onResolve(comment.id)}
+              title="mark resolved"
+              aria-label="resolve"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+            >
+              <Check size={11} />
+            </button>
+          ) : null}
+          {comment.status === 'consumed' ? (
+            <button
+              type="button"
+              onClick={() => onReopen(comment.id)}
+              title="reopen note"
+              aria-label="reopen"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
+            >
+              <RotateCcw size={11} />
+            </button>
+          ) : null}
           <button
             type="button"
-            onClick={() => onResolve(comment.id)}
-            title="mark resolved"
-            aria-label="resolve"
-            className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+            onClick={() => onDelete(comment.id)}
+            title="delete"
+            aria-label="delete"
+            className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
           >
-            <Check size={11} />
+            <Trash2 size={11} />
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => onDelete(comment.id)}
-          title="delete"
-          aria-label="delete"
-          className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
-        >
-          <Trash2 size={11} />
-        </button>
+        </div>
       </div>
+      {comment.status === 'consumed' ? (
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          {agentName && comment.consumedByAgentId ? (
+            <>
+              <span>consumed by</span>
+              <button
+                type="button"
+                onClick={() => onViewAgent(comment.consumedByAgentId as SessionId)}
+                className="inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info hover:bg-info/10 hover:text-info"
+              >
+                <span className="font-medium">{agentName}</span>
+                <ArrowUpRight size={9} aria-hidden />
+              </button>
+            </>
+          ) : (
+            <span className="italic">consumed by removed agent</span>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1093,7 +1150,10 @@ interface FileDiffPaneProps {
   onCancelFileLevelComment: () => void;
   onSubmitFileLevelComment: (body: string) => void;
   onResolve: (id: string) => void;
+  onReopen: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewAgent: (agentId: SessionId) => void;
+  getAgentName: (agentId: SessionId) => string | undefined;
 }
 
 function FileDiffPane({
@@ -1110,7 +1170,10 @@ function FileDiffPane({
   onCancelFileLevelComment,
   onSubmitFileLevelComment,
   onResolve,
+  onReopen,
   onDelete,
+  onViewAgent,
+  getAgentName,
 }: FileDiffPaneProps) {
   const commentsByAnchor = useMemo(() => {
     const m = new Map<string, DiffComment[]>();
@@ -1146,7 +1209,15 @@ function FileDiffPane({
               ) : null}
             </div>
             {fileLevelComments.map((c) => (
-              <CommentItem key={c.id} comment={c} onResolve={onResolve} onDelete={onDelete} />
+              <CommentItem
+                key={c.id}
+                comment={c}
+                onResolve={onResolve}
+                onReopen={onReopen}
+                onDelete={onDelete}
+                onViewAgent={onViewAgent}
+                getAgentName={getAgentName}
+              />
             ))}
             {fileLevelComposerOpen ? (
               <InlineComposer
@@ -1247,7 +1318,10 @@ function FileDiffPane({
                                     key={c.id}
                                     comment={c}
                                     onResolve={onResolve}
+                                    onReopen={onReopen}
                                     onDelete={onDelete}
+                                    onViewAgent={onViewAgent}
+                                    getAgentName={getAgentName}
                                   />
                                 ))}
                               </div>

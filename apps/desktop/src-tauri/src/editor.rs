@@ -68,30 +68,18 @@ impl serde::Serialize for EditorError {
 pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
 
-    // On macOS, cursor's CLI shim opens paths inside the current window which can
-    // resolve to a single file rather than the workspace folder. Use `open -a Cursor`
-    // when targeting a directory so the folder loads as a workspace.
-    #[cfg(target_os = "macos")]
-    {
-        if binary == "cursor" && std::path::Path::new(&path).is_dir() {
-            return match Command::new("open")
-                .args(["-a", "Cursor", "-n", &path])
-                .spawn()
-            {
-                Ok(_) => Ok(()),
-                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                    Err(EditorError::NotFound(binary))
-                }
-                Err(source) => Err(EditorError::Spawn { binary, source }),
-            };
-        }
-    }
+    // Resolve to absolute canonical path so editors load it as a workspace folder
+    // rather than treating it as a relative-to-cwd file. Falls back to the input
+    // string when canonicalize fails (e.g. path does not exist yet).
+    let abs_path = std::fs::canonicalize(&path)
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|_| path.clone());
 
     let mut cmd = crate::path_env::command(&binary);
     if binary == "cursor" || binary == "code" {
         cmd.arg("--new-window");
     }
-    cmd.arg(&path);
+    cmd.arg(&abs_path);
 
     match cmd.spawn() {
         Ok(_) => Ok(()),

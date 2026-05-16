@@ -46,7 +46,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'first plan',
       bodyMd: 'body',
-      status: 'active',
     });
     const plans = await listPlansForSession(db, taskId);
     expect(plans).toHaveLength(1);
@@ -64,7 +63,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'v1',
       bodyMd: 'b1',
-      status: 'active',
     });
     await upsertPlan(db, {
       id: 'p2' as PlanId,
@@ -72,7 +70,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'v2',
       bodyMd: 'b2',
-      status: 'active',
     });
     const plans = await listPlansForSession(db, taskId);
     expect(plans).toHaveLength(1);
@@ -80,7 +77,7 @@ describe('session_plans queries', () => {
     expect(plans[0]!.bodyMd).toBe('b2');
   });
 
-  it('different agents create separate rows (session has many plans, one per agent)', async () => {
+  it('upsert from a different agent overwrites the single active plan slot', async () => {
     const db = await seedFixture();
     await upsertPlan(db, {
       id: 'p1' as PlanId,
@@ -88,7 +85,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'a1 plan',
       bodyMd: 'body1',
-      status: 'active',
     });
     await upsertPlan(db, {
       id: 'p2' as PlanId,
@@ -96,22 +92,23 @@ describe('session_plans queries', () => {
       agentId: agentA2,
       title: 'a2 plan',
       bodyMd: 'body2',
-      status: 'completed',
     });
     const plans = await listPlansForSession(db, taskId);
-    expect(plans).toHaveLength(2);
+    expect(plans).toHaveLength(1);
+    expect(plans[0]!.title).toBe('a2 plan');
+    expect(plans[0]!.status).toBe('active');
   });
 
-  it('list returns most-recent first', async () => {
+  it('after consume a new plan starts a fresh row; list is creation-order (oldest first)', async () => {
     const db = await seedFixture();
-    await upsertPlan(db, {
+    const older = await upsertPlan(db, {
       id: 'p1' as PlanId,
       sessionId: taskId,
       agentId: agentA1,
       title: 'older',
       bodyMd: '',
-      status: 'active',
     });
+    await updatePlanStatus(db, older.id, 'consumed');
     await new Promise((r) => setTimeout(r, 5));
     await upsertPlan(db, {
       id: 'p2' as PlanId,
@@ -119,10 +116,11 @@ describe('session_plans queries', () => {
       agentId: agentA2,
       title: 'newer',
       bodyMd: '',
-      status: 'active',
     });
     const plans = await listPlansForSession(db, taskId);
-    expect(plans[0]!.title).toBe('newer');
+    expect(plans).toHaveLength(2);
+    expect(plans[0]!.title).toBe('older');
+    expect(plans[plans.length - 1]!.title).toBe('newer');
   });
 
   it('updatePlanStatus changes the status', async () => {
@@ -133,11 +131,10 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'x',
       bodyMd: 'b',
-      status: 'active',
     });
-    await updatePlanStatus(db, plan.id, 'completed');
+    await updatePlanStatus(db, plan.id, 'consumed');
     const refreshed = await listPlansForSession(db, taskId);
-    expect(refreshed[0]!.status).toBe('completed');
+    expect(refreshed[0]!.status).toBe('consumed');
   });
 
   it('updatePlanBody changes title and body', async () => {
@@ -148,7 +145,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 'old',
       bodyMd: 'b',
-      status: 'active',
     });
     await updatePlanBody(db, plan.id, 'new title', 'new body');
     const refreshed = await listPlansForSession(db, taskId);
@@ -164,7 +160,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 't',
       bodyMd: 'b',
-      status: 'active',
     });
     await deletePlan(db, plan.id);
     const refreshed = await listPlansForSession(db, taskId);
@@ -179,7 +174,6 @@ describe('session_plans queries', () => {
       agentId: agentA1,
       title: 't',
       bodyMd: 'b',
-      status: 'active',
     });
     await db.execute(`DELETE FROM tasks WHERE id = ?`, ['t1']);
     const refreshed = await listPlansForSession(db, taskId);
