@@ -195,7 +195,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
     }
 }
 
-/// Per-run spawn parameters used by both `turn_spawn` and `parallel_session_spawn`.
+/// Per-run spawn parameters used by both `turn_spawn` and `parallel_agent_spawn`.
 pub struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
     pub binary: &'a str,
@@ -212,7 +212,7 @@ pub struct SpawnOneArgs<'a> {
 /// Spawns one child process, registers it in the registry, and starts the
 /// forwarding thread. Returns `run_id` on success.
 ///
-/// Extracted so that `turn_spawn` (single run) and `parallel_session_spawn`
+/// Extracted so that `turn_spawn` (single run) and `parallel_agent_spawn`
 /// (N runs) share the same logic without copy-paste.
 pub(crate) fn spawn_one(
     app: &AppHandle,

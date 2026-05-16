@@ -13,8 +13,8 @@ pub struct PermissionRuleRow {
     pub scope: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "patternTool")]
     pub pattern_tool: String,
     #[serde(rename = "patternArgsMatcher")]
@@ -33,8 +33,8 @@ pub struct PermissionRuleUpsertInput {
     pub scope: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "patternTool")]
     pub pattern_tool: String,
     #[serde(rename = "patternArgsMatcher")]
@@ -48,8 +48,8 @@ pub struct PermissionAuditRow {
     pub id: String,
     #[serde(rename = "runId")]
     pub run_id: String,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     #[serde(rename = "toolUseId")]
     pub tool_use_id: String,
     #[serde(rename = "toolName")]
@@ -72,8 +72,8 @@ pub struct PermissionAuditInsertInput {
     pub id: Option<String>,
     #[serde(rename = "runId")]
     pub run_id: String,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     #[serde(rename = "toolUseId")]
     pub tool_use_id: String,
     #[serde(rename = "toolName")]
@@ -93,8 +93,8 @@ pub struct PermissionAuditInsertInput {
 
 #[derive(Debug, Deserialize)]
 pub struct PermissionAuditQueryInput {
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
     #[serde(rename = "fromAt")]
@@ -106,8 +106,8 @@ pub struct PermissionAuditQueryInput {
 
 #[derive(Debug, Deserialize)]
 pub struct PermissionAuditClearInput {
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
 }
@@ -176,13 +176,13 @@ pub fn permission_rule_list(
     state: State<'_, Db>,
     scope: String,
     workspace_id: Option<String>,
-    task_id: Option<String>,
+    session_id: Option<String>,
 ) -> Result<Vec<PermissionRuleRow>, PermissionError> {
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
 
     let (sql, params): (&str, Vec<Option<String>>) = match scope.as_str() {
         "global" => (
-            "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+            "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
              WHERE scope = 'global'
@@ -190,7 +190,7 @@ pub fn permission_rule_list(
             vec![],
         ),
         "workspace" => (
-            "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+            "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
              WHERE scope = 'workspace' AND workspace_id = ?1
@@ -198,12 +198,12 @@ pub fn permission_rule_list(
             vec![workspace_id],
         ),
         "session" => (
-            "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+            "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
-             WHERE scope = 'session' AND task_id = ?1
+             WHERE scope = 'session' AND session_id = ?1
              ORDER BY priority DESC, updated_at DESC",
-            vec![task_id],
+            vec![session_id],
         ),
         _ => {
             return Err(PermissionError::InvalidScope(format!(
@@ -218,7 +218,7 @@ pub fn permission_rule_list(
             id: row.get(0)?,
             scope: row.get(1)?,
             workspace_id: row.get(2)?,
-            task_id: row.get(3)?,
+            session_id: row.get(3)?,
             pattern_tool: row.get(4)?,
             pattern_args_matcher: row.get(5)?,
             decision: row.get(6)?,
@@ -237,7 +237,7 @@ pub fn permission_rule_get(
 ) -> Result<Option<PermissionRuleRow>, PermissionError> {
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+        "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                 decision, priority, created_at, updated_at
          FROM permission_rules
          WHERE id = ?1
@@ -248,7 +248,7 @@ pub fn permission_rule_get(
             id: row.get(0)?,
             scope: row.get(1)?,
             workspace_id: row.get(2)?,
-            task_id: row.get(3)?,
+            session_id: row.get(3)?,
             pattern_tool: row.get(4)?,
             pattern_args_matcher: row.get(5)?,
             decision: row.get(6)?,
@@ -271,7 +271,7 @@ pub fn permission_rule_upsert(
     // Validate scope/ids combinations.
     match input.scope.as_str() {
         "global" => {
-            if input.workspace_id.is_some() || input.task_id.is_some() {
+            if input.workspace_id.is_some() || input.session_id.is_some() {
                 return Err(PermissionError::InvalidScope(
                     "scope=global must not have workspaceId or sessionId".to_string(),
                 ));
@@ -283,14 +283,14 @@ pub fn permission_rule_upsert(
                     "scope=workspace requires workspaceId".to_string(),
                 ));
             }
-            if input.task_id.is_some() {
+            if input.session_id.is_some() {
                 return Err(PermissionError::InvalidScope(
                     "scope=workspace must not have sessionId".to_string(),
                 ));
             }
         }
         "session" => {
-            if input.task_id.is_none() {
+            if input.session_id.is_none() {
                 return Err(PermissionError::InvalidScope(
                     "scope=session requires sessionId".to_string(),
                 ));
@@ -319,13 +319,13 @@ pub fn permission_rule_upsert(
 
     conn.execute(
         "INSERT INTO permission_rules
-           (id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+           (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
             decision, priority, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
          ON CONFLICT(id) DO UPDATE SET
            scope               = excluded.scope,
            workspace_id        = excluded.workspace_id,
-           task_id          = excluded.task_id,
+           session_id          = excluded.session_id,
            pattern_tool        = excluded.pattern_tool,
            pattern_args_matcher = excluded.pattern_args_matcher,
            decision            = excluded.decision,
@@ -335,7 +335,7 @@ pub fn permission_rule_upsert(
             id,
             input.scope,
             input.workspace_id,
-            input.task_id,
+            input.session_id,
             input.pattern_tool,
             input.pattern_args_matcher,
             input.decision,
@@ -349,7 +349,7 @@ pub fn permission_rule_upsert(
         id,
         scope: input.scope,
         workspace_id: input.workspace_id,
-        task_id: input.task_id,
+        session_id: input.session_id,
         pattern_tool: input.pattern_tool,
         pattern_args_matcher: input.pattern_args_matcher,
         decision: input.decision,
@@ -398,13 +398,13 @@ pub fn permission_audit_insert(
 
     conn.execute(
         "INSERT INTO permission_audit_log
-           (id, run_id, task_id, tool_use_id, tool_name, input_json,
+           (id, run_id, session_id, tool_use_id, tool_name, input_json,
             decision, rule_id, decided_by, requested_at, decided_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         rusqlite::params![
             id,
             input.run_id,
-            input.task_id,
+            input.session_id,
             input.tool_use_id,
             input.tool_name,
             input.input_json,
@@ -419,7 +419,7 @@ pub fn permission_audit_insert(
     Ok(PermissionAuditRow {
         id,
         run_id: input.run_id,
-        task_id: input.task_id,
+        session_id: input.session_id,
         tool_use_id: input.tool_use_id,
         tool_name: input.tool_name,
         input_json: input.input_json,
@@ -449,8 +449,8 @@ pub fn permission_audit_list(
     let mut param_idx: usize = 1;
     let mut params: Vec<Option<String>> = Vec::new();
 
-    if input.task_id.is_some() {
-        params.push(input.task_id.clone());
+    if input.session_id.is_some() {
+        params.push(input.session_id.clone());
         param_idx += 1;
     }
     if input.workspace_id.is_some() {
@@ -479,7 +479,7 @@ pub fn permission_audit_list(
             Ok(PermissionAuditRow {
                 id: row.get(0)?,
                 run_id: row.get(1)?,
-                task_id: row.get(2)?,
+                session_id: row.get(2)?,
                 tool_use_id: row.get(3)?,
                 tool_name: row.get(4)?,
                 input_json: row.get(5)?,
@@ -498,13 +498,13 @@ fn build_audit_list_sql(input: &PermissionAuditQueryInput) -> String {
     let mut conditions: Vec<String> = Vec::new();
     let mut idx: usize = 1;
 
-    if input.task_id.is_some() {
-        conditions.push(format!("pal.task_id = ?{idx}"));
+    if input.session_id.is_some() {
+        conditions.push(format!("pal.session_id = ?{idx}"));
         idx += 1;
     }
     if input.workspace_id.is_some() {
         conditions.push(format!(
-            "pal.task_id IN (SELECT id FROM tasks WHERE workspace_id = ?{idx})"
+            "pal.session_id IN (SELECT id FROM agents WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?{idx}))"
         ));
         idx += 1;
     }
@@ -524,7 +524,7 @@ fn build_audit_list_sql(input: &PermissionAuditQueryInput) -> String {
     };
 
     format!(
-        "SELECT pal.id, pal.run_id, pal.task_id, pal.tool_use_id, pal.tool_name,
+        "SELECT pal.id, pal.run_id, pal.session_id, pal.tool_use_id, pal.tool_name,
                 pal.input_json, pal.decision, pal.rule_id, pal.decided_by,
                 pal.requested_at, pal.decided_at
          FROM permission_audit_log pal
@@ -539,21 +539,21 @@ pub fn permission_audit_clear(
     state: State<'_, Db>,
     input: PermissionAuditClearInput,
 ) -> Result<(), PermissionError> {
-    if input.task_id.is_none() && input.workspace_id.is_none() {
+    if input.session_id.is_none() && input.workspace_id.is_none() {
         return Err(PermissionError::ClearScopeRequired);
     }
 
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
 
-    if let Some(sid) = input.task_id {
+    if let Some(sid) = input.session_id {
         conn.execute(
-            "DELETE FROM permission_audit_log WHERE task_id = ?1",
+            "DELETE FROM permission_audit_log WHERE session_id = ?1",
             rusqlite::params![sid],
         )?;
     } else if let Some(wid) = input.workspace_id {
         conn.execute(
             "DELETE FROM permission_audit_log
-             WHERE task_id IN (SELECT id FROM tasks WHERE workspace_id = ?1)",
+             WHERE session_id IN (SELECT id FROM agents WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?1))",
             rusqlite::params![wid],
         )?;
     }

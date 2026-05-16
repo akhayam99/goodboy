@@ -20,8 +20,8 @@ pub struct BudgetRule {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionBudget {
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     #[serde(rename = "softCapUsd")]
     pub soft_cap_usd: f64,
 }
@@ -31,8 +31,8 @@ pub struct BudgetAlert {
     pub id: String,
     pub kind: String,
     pub provider: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "currentUsd")]
     pub current_usd: f64,
     #[serde(rename = "capUsd")]
@@ -96,32 +96,32 @@ pub fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), DbErro
 }
 
 #[tauri::command]
-pub fn task_budget_set(
+pub fn session_budget_set(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
     soft_cap_usd: f64,
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     conn.execute(
-        "INSERT INTO task_budgets (task_id, soft_cap_usd)
+        "INSERT INTO session_budgets (session_id, soft_cap_usd)
          VALUES (?1, ?2)
-         ON CONFLICT(task_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd",
-        rusqlite::params![task_id, soft_cap_usd],
+         ON CONFLICT(session_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd",
+        rusqlite::params![session_id, soft_cap_usd],
     )?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn task_budget_get(
+pub fn session_budget_get(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
 ) -> Result<Option<SessionBudget>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt =
-        conn.prepare("SELECT task_id, soft_cap_usd FROM task_budgets WHERE task_id = ?1")?;
-    let mut rows = stmt.query_map(rusqlite::params![task_id], |row| {
+        conn.prepare("SELECT session_id, soft_cap_usd FROM session_budgets WHERE session_id = ?1")?;
+    let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
         Ok(SessionBudget {
-            task_id: row.get(0)?,
+            session_id: row.get(0)?,
             soft_cap_usd: row.get(1)?,
         })
     })?;
@@ -135,7 +135,7 @@ pub fn task_budget_get(
 pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, kind, provider, task_id, current_usd, cap_usd, created_at, dismissed_at
+        "SELECT id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at
          FROM budget_alerts
          WHERE dismissed_at IS NULL",
     )?;
@@ -144,7 +144,7 @@ pub fn budget_alerts_list(state: State<'_, Db>) -> Result<Vec<BudgetAlert>, DbEr
             id: row.get(0)?,
             kind: row.get(1)?,
             provider: row.get(2)?,
-            task_id: row.get(3)?,
+            session_id: row.get(3)?,
             current_usd: row.get(4)?,
             cap_usd: row.get(5)?,
             created_at: row.get(6)?,
@@ -244,8 +244,8 @@ fn ymd_to_epoch_ms(year: i64, month: u32, day: u32) -> i64 {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmitAlertsInput {
     pub provider: String,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
 }
 
 #[tauri::command]
@@ -257,7 +257,7 @@ pub fn budget_emit_alerts(
     let now = iso_now();
     let period = "monthly";
     let provider = &input.provider;
-    let task_id = &input.task_id;
+    let session_id = &input.session_id;
 
     // --- provider budget check ---
     let provider_rule: Option<(String, f64, f64)> = {
@@ -304,7 +304,7 @@ pub fn budget_emit_alerts(
             if already == 0 {
                 let id = uuid_v4();
                 conn.execute(
-                    "INSERT INTO budget_alerts (id, kind, provider, task_id, current_usd, cap_usd, created_at, dismissed_at)
+                    "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
                      VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, NULL)",
                     rusqlite::params![id, kind, provider, spent, cap_usd, now],
                 )?;
@@ -312,7 +312,7 @@ pub fn budget_emit_alerts(
                     id,
                     kind: kind.to_string(),
                     provider: Some(provider.clone()),
-                    task_id: None,
+                    session_id: None,
                     current_usd: spent,
                     cap_usd,
                     created_at: now.clone(),
@@ -324,8 +324,8 @@ pub fn budget_emit_alerts(
 
     // --- session budget check ---
     let session_cap: Option<f64> = {
-        let mut stmt = conn.prepare("SELECT soft_cap_usd FROM task_budgets WHERE task_id = ?1 LIMIT 1")?;
-        let mut rows = stmt.query_map(rusqlite::params![task_id], |row| row.get(0))?;
+        let mut stmt = conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
             None => None,
@@ -334,8 +334,8 @@ pub fn budget_emit_alerts(
 
     if let Some(cap_usd) = session_cap {
         let spent: f64 = conn.query_row(
-            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE task_id = ?1",
-            rusqlite::params![task_id],
+            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE session_id = ?1",
+            rusqlite::params![session_id],
             |row| row.get(0),
         )?;
 
@@ -351,22 +351,22 @@ pub fn budget_emit_alerts(
 
         if let Some(kind) = alert_kind {
             let already: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM budget_alerts WHERE kind = ?1 AND task_id = ?2 AND dismissed_at IS NULL",
-                rusqlite::params![kind, task_id],
+                "SELECT COUNT(*) FROM budget_alerts WHERE kind = ?1 AND session_id = ?2 AND dismissed_at IS NULL",
+                rusqlite::params![kind, session_id],
                 |row| row.get(0),
             )?;
             if already == 0 {
                 let id = uuid_v4();
                 conn.execute(
-                    "INSERT INTO budget_alerts (id, kind, provider, task_id, current_usd, cap_usd, created_at, dismissed_at)
+                    "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
                      VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, NULL)",
-                    rusqlite::params![id, kind, task_id, spent, cap_usd, now],
+                    rusqlite::params![id, kind, session_id, spent, cap_usd, now],
                 )?;
                 created.push(BudgetAlert {
                     id,
                     kind: kind.to_string(),
                     provider: None,
-                    task_id: Some(task_id.clone()),
+                    session_id: Some(session_id.clone()),
                     current_usd: spent,
                     cap_usd,
                     created_at: now.clone(),
@@ -482,16 +482,16 @@ pub fn check_provider_budget(
 }
 
 #[tauri::command]
-pub fn check_task_budget(
+pub fn check_session_budget(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
 ) -> Result<BudgetCheckResult, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
 
     let cap: Option<f64> = {
         let mut stmt = conn
-            .prepare("SELECT soft_cap_usd FROM task_budgets WHERE task_id = ?1 LIMIT 1")?;
-        let mut rows = stmt.query_map(rusqlite::params![task_id], |row| row.get(0))?;
+            .prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
             None => None,
@@ -507,8 +507,8 @@ pub fn check_task_budget(
     };
 
     let spent: f64 = conn.query_row(
-        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE task_id = ?1",
-        rusqlite::params![task_id],
+        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records WHERE session_id = ?1",
+        rusqlite::params![session_id],
         |row| row.get(0),
     )?;
 

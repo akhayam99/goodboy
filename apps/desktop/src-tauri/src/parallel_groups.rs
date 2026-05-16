@@ -11,8 +11,8 @@ use crate::turn::{spawn_one, SpawnOneArgs, TurnError, TurnRegistry};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ParallelGroupRow {
     pub id: String,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     pub ordinal: i64,
     #[serde(rename = "mergeStrategy")]
     pub merge_strategy: String,
@@ -25,8 +25,8 @@ pub struct ParallelGroupRow {
 #[derive(Debug, Deserialize)]
 pub struct ParallelPhaseGroupCreateInput {
     pub id: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     pub ordinal: i64,
     #[serde(rename = "mergeStrategy")]
     pub merge_strategy: String,
@@ -225,14 +225,14 @@ fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
 
 fn row_to_group(row: &rusqlite::Row<'_>) -> Result<ParallelGroupRow, rusqlite::Error> {
     let id: String = row.get(0)?;
-    let task_id: String = row.get(1)?;
+    let session_id: String = row.get(1)?;
     let ordinal: i64 = row.get(2)?;
     let merge_strategy: String = row.get(3)?;
     let created_at_ms: i64 = row.get(4)?;
     let completed_at_ms: Option<i64> = row.get(5)?;
     Ok(ParallelGroupRow {
         id,
-        task_id,
+        session_id,
         ordinal,
         merge_strategy,
         created_at: epoch_ms_to_iso(created_at_ms),
@@ -259,11 +259,11 @@ pub fn parallel_group_create(
 
     conn.execute(
         "INSERT INTO parallel_groups
-           (id, task_id, ordinal, merge_strategy, created_at, completed_at)
+           (id, session_id, ordinal, merge_strategy, created_at, completed_at)
          VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
         rusqlite::params![
             id,
-            input.task_id,
+            input.session_id,
             input.ordinal,
             input.merge_strategy,
             created_at_ms,
@@ -272,7 +272,7 @@ pub fn parallel_group_create(
 
     Ok(ParallelGroupRow {
         id,
-        task_id: input.task_id,
+        session_id: input.session_id,
         ordinal: input.ordinal,
         merge_strategy: input.merge_strategy,
         created_at: epoch_ms_to_iso(created_at_ms),
@@ -283,16 +283,16 @@ pub fn parallel_group_create(
 #[tauri::command]
 pub fn parallel_group_list(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
 ) -> Result<Vec<ParallelGroupRow>, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
          FROM parallel_groups
-         WHERE task_id = ?1
+         WHERE session_id = ?1
          ORDER BY ordinal ASC",
     )?;
-    let rows = stmt.query_map(rusqlite::params![task_id], row_to_group)?;
+    let rows = stmt.query_map(rusqlite::params![session_id], row_to_group)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(ParallelPhaseError::Db)
 }
@@ -304,7 +304,7 @@ pub fn parallel_group_get(
 ) -> Result<Option<ParallelGroupRow>, ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
          FROM parallel_groups
          WHERE id = ?1
          LIMIT 1",
@@ -360,7 +360,7 @@ pub fn parallel_group_update_completed_at(
     }
 
     let mut stmt = conn.prepare(
-        "SELECT id, task_id, ordinal, merge_strategy, created_at, completed_at
+        "SELECT id, session_id, ordinal, merge_strategy, created_at, completed_at
          FROM parallel_groups
          WHERE id = ?1
          LIMIT 1",
@@ -415,7 +415,7 @@ pub struct ParallelSpawnArgs {
 /// `run_id`s once every child has been spawned (threads run independently).
 /// Cancelling a single `run_id` via `turn_cancel` does not affect siblings.
 #[tauri::command]
-pub fn parallel_session_spawn(
+pub fn parallel_agent_spawn(
     app: AppHandle,
     state: State<'_, TurnRegistry>,
     args: ParallelSpawnArgs,

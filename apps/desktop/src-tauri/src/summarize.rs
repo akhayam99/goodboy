@@ -54,7 +54,7 @@ pub struct SummarizeResult {
 }
 
 #[tauri::command]
-pub async fn summarize_task(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
+pub async fn summarize_session(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
     tauri::async_runtime::spawn_blocking(move || {
         let cli_args = build_cli_args(&args)?;
 

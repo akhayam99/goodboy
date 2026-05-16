@@ -62,8 +62,8 @@ pub struct PhaseTemplateUpsertInput {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionRow {
     pub id: String,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
@@ -88,8 +88,8 @@ pub struct SessionRow {
 #[derive(Debug, Deserialize)]
 pub struct PhaseRunInsertInput {
     pub id: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
     #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
@@ -423,23 +423,23 @@ pub fn workflow_delete(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn session_list_for_task(
+pub fn agent_list_for_session(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
 ) -> Result<Vec<SessionRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, task_id, step_id, ordinal, name, status,
+        "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at
-         FROM sessions
-         WHERE task_id = ?1
+         FROM agents
+         WHERE session_id = ?1
          ORDER BY ordinal ASC",
     )?;
-    let rows = stmt.query_map(rusqlite::params![task_id], |row| {
+    let rows = stmt.query_map(rusqlite::params![session_id], |row| {
         Ok(SessionRow {
             id: row.get(0)?,
-            task_id: row.get(1)?,
+            session_id: row.get(1)?,
             step_id: row.get(2)?,
             ordinal: row.get(3)?,
             name: row.get(4)?,
@@ -457,7 +457,7 @@ pub fn session_list_for_task(
 }
 
 #[tauri::command]
-pub fn session_insert(
+pub fn agent_insert(
     state: State<'_, Db>,
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
@@ -465,13 +465,13 @@ pub fn session_insert(
     let id = input.id.clone().unwrap_or_else(uuid_v4);
 
     conn.execute(
-        "INSERT INTO sessions
-           (id, task_id, step_id, ordinal, name, status,
+        "INSERT INTO agents
+           (id, session_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         rusqlite::params![
             id,
-            input.task_id,
+            input.session_id,
             input.step_id,
             input.ordinal,
             input.name,
@@ -485,7 +485,7 @@ pub fn session_insert(
 
     Ok(SessionRow {
         id,
-        task_id: input.task_id,
+        session_id: input.session_id,
         step_id: input.step_id,
         ordinal: input.ordinal,
         name: input.name,
@@ -501,7 +501,7 @@ pub fn session_insert(
 }
 
 #[tauri::command]
-pub fn session_update_status(
+pub fn agent_update_status(
     state: State<'_, Db>,
     input: PhaseRunUpdateInput,
 ) -> Result<SessionRow, PhaseError> {
@@ -509,10 +509,10 @@ pub fn session_update_status(
 
     // When status transitions to a terminal state, also stamp `last_finished_at`
     // so the sidebar can show an unread indicator until the user views the
-    // agent (which stamps `last_viewed_at` via `session_mark_viewed`).
+    // agent (which stamps `last_viewed_at` via `agent_mark_viewed`).
     let is_terminal = matches!(input.status.as_str(), "completed" | "failed" | "skipped");
     conn.execute(
-        "UPDATE sessions SET
+        "UPDATE agents SET
            status         = ?2,
            provider_run_id = COALESCE(?3, provider_run_id),
            output_summary  = COALESCE(?4, output_summary),
@@ -535,17 +535,17 @@ pub fn session_update_status(
 
     // Fetch updated row.
     let mut stmt = conn.prepare(
-        "SELECT id, task_id, step_id, ordinal, name, status,
+        "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at
-         FROM sessions
+         FROM agents
          WHERE id = ?1
          LIMIT 1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![input.id], |row| {
         Ok(SessionRow {
             id: row.get(0)?,
-            task_id: row.get(1)?,
+            session_id: row.get(1)?,
             step_id: row.get(2)?,
             ordinal: row.get(3)?,
             name: row.get(4)?,
@@ -569,14 +569,14 @@ pub fn session_update_status(
 // event (claude). Threaded back via `--resume <id>` on subsequent turns so the
 // provider retains full prior-turn context across one-shot invocations.
 #[tauri::command]
-pub fn session_set_provider_session_id(
+pub fn agent_set_provider_session_id(
     state: State<'_, Db>,
     id: String,
     provider_session_id: String,
 ) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
-        "UPDATE sessions SET provider_session_id = ?2 WHERE id = ?1",
+        "UPDATE agents SET provider_session_id = ?2 WHERE id = ?1",
         rusqlite::params![id, provider_session_id],
     )?;
     if affected == 0 {
@@ -588,14 +588,14 @@ pub fn session_set_provider_session_id(
 // Stamps `last_viewed_at` when the user selects/views an agent in the sidebar.
 // Compared against `last_finished_at` to derive the unread indicator.
 #[tauri::command]
-pub fn session_mark_viewed(
+pub fn agent_mark_viewed(
     state: State<'_, Db>,
     id: String,
     at: String,
 ) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
-        "UPDATE sessions SET last_viewed_at = ?2 WHERE id = ?1",
+        "UPDATE agents SET last_viewed_at = ?2 WHERE id = ?1",
         rusqlite::params![id, at],
     )?;
     if affected == 0 {
@@ -613,10 +613,10 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT DISTINCT t.workspace_id
-         FROM sessions s
-         JOIN tasks t ON s.task_id = t.id
-         WHERE s.last_finished_at IS NOT NULL
-           AND (s.last_viewed_at IS NULL OR s.last_finished_at > s.last_viewed_at)",
+         FROM agents a
+         JOIN sessions t ON a.session_id = t.id
+         WHERE a.last_finished_at IS NOT NULL
+           AND (a.last_viewed_at IS NULL OR a.last_finished_at > a.last_viewed_at)",
     )?;
     let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)

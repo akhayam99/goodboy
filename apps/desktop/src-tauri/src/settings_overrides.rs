@@ -70,16 +70,16 @@ pub fn set_workspace_overrides(
 }
 
 #[tauri::command]
-pub fn get_task_overrides(
+pub fn get_session_overrides(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
-         FROM tasks WHERE id = ?1",
+         FROM sessions WHERE id = ?1",
     )?;
-    let mut rows = stmt.query_map(rusqlite::params![task_id], |row| {
+    let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
@@ -95,16 +95,16 @@ pub fn get_task_overrides(
 }
 
 #[tauri::command]
-pub fn set_task_overrides(
+pub fn set_session_overrides(
     state: State<'_, Db>,
-    task_id: String,
+    session_id: String,
     overrides: SettingsOverrides,
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
     let now = now_ms();
     conn.execute(
-        "UPDATE tasks
+        "UPDATE sessions
          SET default_provider_id = ?1,
              default_workflow_id = ?2,
              default_branch_prefix = ?3,
@@ -117,7 +117,7 @@ pub fn set_task_overrides(
             overrides.default_branch_prefix,
             parallel_val,
             now,
-            task_id,
+            session_id,
         ],
     )?;
     Ok(())

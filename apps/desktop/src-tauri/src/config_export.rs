@@ -91,8 +91,8 @@ pub struct PermissionRuleBundle {
     pub scope: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "taskId")]
-    pub task_id: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
     #[serde(rename = "patternTool")]
     pub pattern_tool: String,
     #[serde(rename = "patternArgsMatcher")]
@@ -316,7 +316,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     // permission rules — global + workspace scope only (no session-scoped rules; sessions are ephemeral)
     let permission_rules = {
         let mut stmt = conn.prepare(
-            "SELECT id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+            "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
              WHERE scope IN ('global', 'workspace')
@@ -327,7 +327,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 id: row.get(0)?,
                 scope: row.get(1)?,
                 workspace_id: row.get(2)?,
-                task_id: row.get(3)?,
+                session_id: row.get(3)?,
                 pattern_tool: row.get(4)?,
                 pattern_args_matcher: row.get(5)?,
                 decision: row.get(6)?,
@@ -585,7 +585,7 @@ pub fn import_config(
         for r in &bundle.permission_rules {
             conn.execute(
                 "INSERT INTO permission_rules
-                   (id, scope, workspace_id, task_id, pattern_tool, pattern_args_matcher,
+                   (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
                  ON CONFLICT(id) DO UPDATE SET
@@ -597,7 +597,7 @@ pub fn import_config(
                    priority             = excluded.priority,
                    updated_at           = excluded.updated_at",
                 rusqlite::params![
-                    r.id, r.scope, r.workspace_id, r.task_id,
+                    r.id, r.scope, r.workspace_id, r.session_id,
                     r.pattern_tool, r.pattern_args_matcher,
                     r.decision, r.priority,
                     r.created_at, r.updated_at,
@@ -886,7 +886,7 @@ mod tests {
             id: "r1".to_string(),
             scope: "session".to_string(), // not allowed in export
             workspace_id: None,
-            task_id: Some("s1".to_string()),
+            session_id: Some("s1".to_string()),
             pattern_tool: "Bash".to_string(),
             pattern_args_matcher: None,
             decision: "allow".to_string(),
