@@ -11,7 +11,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@kay-am/types';
-import type { VerbosityLevel } from '../verbosity';
+import type { VerbosityLevel } from '../features/settings/verbosity';
 import { formatError } from '../shared/lib/errors';
 import { useAppStore } from '../store';
 import { StepOverrideRow, type StepOverrideValues } from './overrides/StepOverrideRow';

@@ -30,7 +30,7 @@ import {
   writeVerbosity,
   readAgentVerbosity,
   writeAgentVerbosity,
-} from '../../verbosity';
+} from '../../features/settings/verbosity';
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';

@@ -165,7 +165,7 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
-} from '../settings';
+} from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
@@ -174,7 +174,7 @@ import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
 } from '../features/chat/turn';
-import { readVerbosity, verbosityDirective } from '../verbosity';
+import { readVerbosity, verbosityDirective } from '../features/settings/verbosity';
 import {
   createWorktree,
   removeWorktree,
@@ -224,7 +224,7 @@ import {
   runParallelBranch,
   type ParallelBranchEffects,
 } from './parallel-turn';
-import { exportConfigToFile, importConfigFromFile } from '../config-export';
+import { exportConfigToFile, importConfigFromFile } from '../features/settings/config-export';
 import { formatError } from '../shared/lib/errors';
 import {
   AGENT_KIND_DEFAULTS,

@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@kay-am/ui';
 import type { ProviderId } from '@kay-am/types';
-import { VERBOSITY_LEVELS, VERBOSITY_LABEL, type VerbosityLevel } from '../../verbosity';
+import {
+  VERBOSITY_LEVELS,
+  VERBOSITY_LABEL,
+  type VerbosityLevel,
+} from '../../features/settings/verbosity';
 import {
   PROVIDER_LABEL,
   PROVIDER_TEXT,

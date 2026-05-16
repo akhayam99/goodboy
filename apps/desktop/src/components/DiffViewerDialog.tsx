@@ -35,7 +35,11 @@ import type {
 import { ghPrDiff } from '../features/github/github';
 import { openFileInWorkspace } from '../shared/lib/editor';
 import { formatError } from '../shared/lib/errors';
-import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
+import {
+  DEFAULT_EDITOR_BINARY,
+  SETTING_DEFAULT_EDITOR,
+  SETTING_EDITOR_BINARY,
+} from '../features/settings/settings';
 import { useAppStore, useDiffComments, useSummarizerStatus } from '../store';
 import { AGENT_KIND_DEFAULTS } from '../features/session/agent-kind';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../shared/lib/storage-keys';

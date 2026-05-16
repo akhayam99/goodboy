@@ -1,5 +1,5 @@
 import type { ProviderId } from '@kay-am/types';
-import type { VerbosityLevel } from '../../verbosity';
+import type { VerbosityLevel } from '../../features/settings/verbosity';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',

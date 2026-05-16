@@ -1,6 +1,6 @@
 import { cn } from '@kay-am/ui';
 import type { AgentEffort } from '@kay-am/types';
-import { VERBOSITY_LEVELS, type VerbosityLevel } from '../../verbosity';
+import { VERBOSITY_LEVELS, type VerbosityLevel } from '../../features/settings/verbosity';
 import { EFFORT_TEXT, VERBOSITY_TEXT, modelLabel } from '../chat/chat-constants';
 
 const STEP_SELECTABLE_MODELS = [
