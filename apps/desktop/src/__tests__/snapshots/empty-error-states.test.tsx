@@ -101,7 +101,7 @@ import { NewSessionDialog } from '../../components/NewSessionDialog';
 import { EndSessionDialog } from '../../components/EndSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
-import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
+import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
 import { TranscriptCard } from '../../components/chat/TranscriptCards';

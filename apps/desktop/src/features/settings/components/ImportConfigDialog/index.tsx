@@ -1,6 +1,6 @@
 import { Button, Dialog } from '@kay-am/ui';
 import type { ConfigBundleImportResult } from '@kay-am/types';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
 interface ImportConfigDialogProps {
   open: boolean;

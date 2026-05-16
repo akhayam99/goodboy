@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@kay-am/types';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
 import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
-import { SkillsPanel } from '../features/skills/components/SkillsPanel';
-import { PhasesPanel } from '../features/phases/components/PhasesPanel';
-import { BulkSessionDeleteDialog } from './WorkspacesSidebar';
-import { formatError } from '../shared/lib/errors';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../features/settings/settings';
-import { WORKSPACE_FEATURES } from '../shared/lib/features';
-import { useAppStore, useSessions } from '../store';
+import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
+import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
+import { BulkSessionDeleteDialog } from '../WorkspacesSidebar';
+import { formatError } from '../../../../shared/lib/errors';
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { useAppStore, useSessions } from '../../../../store';
 
 interface WorkspaceSettingsDialogProps {
   workspaceId: WorkspaceId;

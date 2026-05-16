@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
-import { ProvidersPanel } from '../features/providers/components/ProvidersPanel';
-import { BudgetRulesPanel } from '../features/budget/components/BudgetRulesPanel';
-import { GithubPanel } from '../features/github/components/Panel';
-import { ImportConfigDialog } from './ImportConfigDialog';
+import { ProvidersPanel } from '../../../../features/providers/components/ProvidersPanel';
+import { BudgetRulesPanel } from '../../../../features/budget/components/BudgetRulesPanel';
+import { GithubPanel } from '../../../../features/github/components/Panel';
+import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
-import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../features/settings/settings';
-import { SESSION_FEATURES } from '../shared/lib/features';
-import { formatError } from '../shared/lib/errors';
-import { useAppStore } from '../store';
+import {
+  DEFAULT_EDITOR_BINARY,
+  SETTING_EDITOR_BINARY,
+} from '../../../../features/settings/settings';
+import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { formatError } from '../../../../shared/lib/errors';
+import { useAppStore } from '../../../../store';
 
 interface SettingsDialogProps {
   open: boolean;

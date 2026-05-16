@@ -32,13 +32,13 @@ import {
   Zap,
   ZapOff,
 } from 'lucide-react';
-import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
-import { SessionSettingsDialog } from './SessionSettingsDialog';
-import { GuideDialog } from './GuideDialog';
-import { ProvidersChip } from '../features/providers/components/ProvidersChip';
-import { NotificationCenter } from '../features/notifications/components/NotificationCenter';
-import { TelemetryPill } from '../features/providers/components/TelemetryPill';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
+import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
+import { SessionSettingsDialog } from '../../../../components/SessionSettingsDialog';
+import { GuideDialog } from '../../../settings/components/GuideDialog';
+import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
+import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
+import { TelemetryPill } from '../../../../features/providers/components/TelemetryPill';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import type {
   Agent,
   AgentId,
@@ -68,37 +68,37 @@ import {
   useSessionHasUnread,
   useWorkspaceHasUnread,
   useWorkspaces,
-} from '../store';
-import { NewSessionDialog } from './NewSessionDialog';
-import { StatusBadge } from './StatusBadge';
-import { WorkflowNextStepCta } from '../features/workflow/components/WorkflowNextStepCta';
-import { CostBadge } from '../features/providers/components/CostBadge';
+} from '../../../../store';
+import { NewSessionDialog } from '../../../../components/NewSessionDialog';
+import { StatusBadge } from '../../../../components/StatusBadge';
+import { WorkflowNextStepCta } from '../../../../features/workflow/components/WorkflowNextStepCta';
+import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
   formatTokens,
   shortModel,
   shortModelWithVersion,
-} from '../features/session/agent-row-format';
+} from '../../../../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
   resolveAgentKind,
-} from '../features/session/agent-kind';
-import { AgentKindMenu } from './AgentKindMenu';
-import { SessionStatusMenu } from './SessionStatusMenu';
-import { NextActionChips } from '../features/workflow/components/NextActionChips';
+} from '../../../../features/session/agent-kind';
+import { AgentKindMenu } from '../../../../components/AgentKindMenu';
+import { SessionStatusMenu } from '../../../../components/SessionStatusMenu';
+import { NextActionChips } from '../../../../features/workflow/components/NextActionChips';
 import {
   spawnFromNextAction,
   spawnKindForAction,
-} from '../features/session/spawn-from-next-action';
-import { openUrl } from '../shared/lib/editor';
-import { formatError } from '../shared/lib/errors';
-import { useThemeStore } from '../shared/lib/theme';
-import { STORAGE_KEYS } from '../shared/lib/storage-keys';
-import { parseCap } from '../shared/lib/parse-cap';
+} from '../../../../features/session/spawn-from-next-action';
+import { openUrl } from '../../../../shared/lib/editor';
+import { formatError } from '../../../../shared/lib/errors';
+import { useThemeStore } from '../../../../shared/lib/theme';
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { parseCap } from '../../../../shared/lib/parse-cap';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
