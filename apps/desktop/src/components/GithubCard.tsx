@@ -486,6 +486,7 @@ function ReviewPane({
   onSpawnFromReviewChanges?: () => void;
 }) {
   const summary = summarizeReview(pr, reviews, requests);
+  const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
   return (
     <div className="flex flex-col gap-1.5">
       <div
@@ -497,20 +498,6 @@ function ReviewPane({
         {summary.icon}
         <span>{summary.label}</span>
       </div>
-      {requests.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">requested:</span>
-          {requests.map((r) => (
-            <span
-              key={`${r.kind}-${r.login}`}
-              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-[10px] text-foreground"
-            >
-              <Avatar url={r.avatarUrl} alt={r.login} />
-              <span className="truncate">{r.login}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
       {pr.reviewDecision === 'changes_requested' && onSpawnFromReviewChanges ? (
         <button
           type="button"
@@ -521,6 +508,45 @@ function ReviewPane({
           <Sparkles size={10} aria-hidden />
           fix all requested changes
         </button>
+      ) : null}
+      {perReviewer.length > 0 ? (
+        <ul className="flex flex-col gap-0.5">
+          {perReviewer.map((r) => (
+            <li
+              key={r.author}
+              className="flex items-center gap-1.5 rounded px-1 py-0.5 text-[10px] text-foreground hover:bg-background"
+            >
+              <ReviewStateIcon state={r.state} />
+              <Avatar url={r.authorAvatarUrl} alt={r.author} />
+              <span className="truncate font-medium">{r.author}</span>
+              {isBot(r.author) ? (
+                <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+                  bot
+                </span>
+              ) : null}
+              <span className="ml-auto shrink-0 text-[9px] text-muted-foreground/70">
+                {r.submittedAt
+                  ? formatRelative(Date.now() - new Date(r.submittedAt).getTime())
+                  : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {requests.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">awaiting:</span>
+          {requests.map((r) => (
+            <span
+              key={`${r.kind}-${r.login}`}
+              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-[10px] text-foreground"
+            >
+              <CircleDashed size={9} aria-hidden className="text-info" />
+              <Avatar url={r.avatarUrl} alt={r.login} />
+              <span className="truncate">{r.login}</span>
+            </span>
+          ))}
+        </div>
       ) : null}
       {reviews.length === 0 && requests.length === 0 ? (
         <button
@@ -534,6 +560,26 @@ function ReviewPane({
       ) : null}
     </div>
   );
+}
+
+function ReviewStateIcon({ state }: { state: PrReviewState }) {
+  const props = { size: 10, 'aria-hidden': true } as const;
+  if (state === 'approved') return <CheckCheck {...props} className="text-success" />;
+  if (state === 'changes_requested') return <AlertCircle {...props} className="text-danger" />;
+  if (state === 'commented') return <MessageSquare {...props} className="text-muted-foreground" />;
+  if (state === 'dismissed') return <MinusCircle {...props} className="text-muted-foreground" />;
+  return <CircleDashed {...props} className="text-muted-foreground" />;
+}
+
+function latestTerminalReviewsByAuthor(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview> {
+  const map = new Map<string, PrReview>();
+  for (const r of [...reviews].sort((a, b) =>
+    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
+  )) {
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    map.set(r.author, r);
+  }
+  return [...map.values()];
 }
 
 function EmptyRow({
