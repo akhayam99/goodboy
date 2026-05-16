@@ -52,7 +52,7 @@ export type ConfigBundlePermissionRule = Readonly<{
   id: string;
   scope: string;
   workspaceId: string | null;
-  taskId: string | null;
+  sessionId: string | null;
   patternTool: string;
   patternArgsMatcher: string | null;
   decision: string;

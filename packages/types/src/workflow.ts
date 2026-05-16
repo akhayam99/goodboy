@@ -1,11 +1,11 @@
 import type {
+  AgentId,
   IsoDateTime,
+  ParallelAgentId,
   ParallelGroupId,
-  ParallelSessionId,
   ProviderRunId,
   SessionId,
   StepId,
-  TaskId,
   WorkflowId,
   WorkspaceId,
 } from './ids';
@@ -25,7 +25,7 @@ export type AgentRole =
   | 'explorer'
   | 'custom';
 
-export type SessionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
 
@@ -52,13 +52,13 @@ export type Workflow = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type Session = Readonly<{
-  id: SessionId;
-  taskId: TaskId;
+export type Agent = Readonly<{
+  id: AgentId;
+  sessionId: SessionId;
   stepId?: StepId;
   ordinal: number;
   name: string;
-  status: SessionStatus;
+  status: AgentStatus;
   runId?: ProviderRunId;
   outputSummary?: string;
   startedAt?: IsoDateTime;
@@ -84,20 +84,20 @@ export type StepTransition = Readonly<{
 
 export interface ParallelGroup {
   readonly id: ParallelGroupId;
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt: IsoDateTime;
   readonly completedAt: IsoDateTime | null;
 }
 
-export interface ParallelSession {
-  readonly id: ParallelSessionId;
+export interface ParallelAgent {
+  readonly id: ParallelAgentId;
   readonly groupId: ParallelGroupId;
   readonly stepId: StepId;
   readonly parallelIndex: number;
   readonly runId: ProviderRunId;
-  readonly status: SessionStatus;
+  readonly status: AgentStatus;
   readonly worktreePath: string;
   readonly outputSummary: string | null;
   readonly startedAt: IsoDateTime;

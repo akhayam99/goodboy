@@ -1,5 +1,5 @@
-import type { IsoDateTime, ProviderRunId, TaskId, WorkflowId, WorkspaceId } from './ids';
-import type { TaskProviderPreference } from './provider-preference';
+import type { IsoDateTime, ProviderRunId, SessionId, WorkflowId, WorkspaceId } from './ids';
+import type { SessionProviderPreference } from './provider-preference';
 import type { ClaudePermissionMode } from './permission';
 
 export type Workspace = Readonly<{
@@ -34,18 +34,24 @@ export type TurnState =
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 
-export type Task = Readonly<{
-  id: TaskId;
+export type Session = Readonly<{
+  id: SessionId;
   workspaceId: WorkspaceId;
   goal: string;
   state: TurnState;
   contextSlots: ReadonlyArray<ContextSlot>;
-  providerPreference: TaskProviderPreference;
+  providerPreference: SessionProviderPreference;
   permissionMode: ClaudePermissionMode;
   workflowId?: WorkflowId;
   currentStepOrdinal?: number;
   autoRun: boolean;
   titleUserEdited: boolean;
+  archivedAt?: IsoDateTime;
+  deletedAt?: IsoDateTime;
+  verbosity?: 'brief' | 'normal' | 'verbose';
+  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+  modelOverride?: string;
+  providerOverride?: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

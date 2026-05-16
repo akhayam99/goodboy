@@ -1,15 +1,15 @@
 export type {
+  AgentId,
   IsoDateTime,
   MessageId,
+  ParallelAgentId,
   ParallelGroupId,
-  ParallelSessionId,
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
   SessionId,
   SkillId,
   StepId,
-  TaskId,
   TelemetryRecordId,
   WorkflowId,
   WorkspaceId,
@@ -18,7 +18,7 @@ export type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
-  Task,
+  Session,
   TurnState,
   Workspace,
 } from './workspace';
@@ -42,14 +42,14 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
-export type { TaskProviderPreference, TurnProviderOverride } from './provider-preference';
-export { DEFAULT_TASK_PROVIDER_PREFERENCE } from './provider-preference';
+export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
+export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
   BudgetPeriod,
   BudgetCheckResult,
-  TaskBudget,
+  SessionBudget,
   RoutingReason,
   RoutingDecision,
   BudgetAlertKind,
@@ -57,13 +57,13 @@ export type {
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
+  Agent,
   AgentEffort,
   AgentRole,
+  AgentStatus,
+  ParallelAgent,
   ParallelMergeStrategy,
   ParallelGroup,
-  ParallelSession,
-  Session,
-  SessionStatus,
   Step,
   StepTransition,
   Workflow,

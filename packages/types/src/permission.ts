@@ -3,13 +3,18 @@ import type {
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
-  TaskId,
+  SessionId,
   WorkspaceId,
 } from './ids';
 
-export type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
+export type ClaudePermissionMode =
+  | 'default'
+  | 'acceptEdits'
+  | 'bypassPermissions'
+  | 'dontAsk'
+  | 'plan';
 
-export type PermissionRuleScope = 'workspace' | 'task' | 'global';
+export type PermissionRuleScope = 'workspace' | 'session' | 'global';
 
 export type PermissionDecisionKind = 'allow' | 'deny' | 'ask';
 
@@ -22,7 +27,7 @@ export interface PermissionRule {
   readonly id: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
-  readonly taskId?: TaskId;
+  readonly sessionId?: SessionId;
   readonly pattern: PermissionRulePattern;
   readonly decision: PermissionDecisionKind;
   readonly priority: number;

@@ -1,7 +1,7 @@
-import type { TaskId, WorkflowId, WorkspaceId } from './ids';
+import type { SessionId, WorkflowId, WorkspaceId } from './ids';
 import type { ProviderId } from './provider-registry';
 
-/** Fields that can be overridden at workspace or task scope. Null = inherit from parent. */
+/** Fields that can be overridden at workspace or session scope. Null = inherit from parent. */
 export type OverrideSettings = Readonly<{
   defaultProviderId: ProviderId | null;
   defaultWorkflowId: WorkflowId | null;
@@ -9,7 +9,7 @@ export type OverrideSettings = Readonly<{
   parallelEnabled: boolean | null;
 }>;
 
-/** Fully-resolved settings after applying global → workspace → task cascade. */
+/** Fully-resolved settings after applying global → workspace → session cascade. */
 export type ResolvedSettings = Readonly<{
   defaultProviderId: ProviderId;
   defaultWorkflowId: WorkflowId | null;
@@ -28,4 +28,4 @@ export type GlobalSettings = Readonly<{
 export type SettingsScope =
   | { kind: 'global' }
   | { kind: 'workspace'; workspaceId: WorkspaceId }
-  | { kind: 'task'; taskId: TaskId };
+  | { kind: 'session'; sessionId: SessionId };

@@ -1,4 +1,4 @@
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, TaskId } from './ids';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { ProviderName } from './provider';
 
 export interface ProviderCapabilities {
@@ -31,7 +31,7 @@ export interface TurnPermissionFlags {
 
 export interface TurnRequest {
   readonly runId: ProviderRunId;
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly model: string;
   readonly workingDir: string;
   readonly systemPrompt: string;
