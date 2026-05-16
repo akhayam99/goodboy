@@ -88,6 +88,7 @@ import {
   resolveAgentKind,
 } from '../agent-kind';
 import { AgentKindMenu } from './AgentKindMenu';
+import { SessionStatusMenu } from './SessionStatusMenu';
 import { NextActionChips } from './NextActionChips';
 import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
 import { openUrl } from '../editor';
@@ -861,6 +862,7 @@ const SessionRow = memo(function SessionRow({
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
+  const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
   const deleteTask = useAppStore((s) => s.deleteTask);
   const budgetLoaded = useRef(false);
@@ -964,7 +966,7 @@ const SessionRow = memo(function SessionRow({
           isActive ? 'bg-muted' : 'hover:bg-muted/60',
         )}
       >
-        <div className="flex min-w-0 w-full items-center gap-2 text-sm">
+        <div className="flex min-w-0 w-full items-center gap-2 text-xs">
           <span
             aria-hidden
             title={showUnreadDot ? 'unread agent response' : undefined}
@@ -980,6 +982,11 @@ const SessionRow = memo(function SessionRow({
               )}
             />
           </span>
+          <SessionStatusMenu
+            status={session.userStatus}
+            sessionLabel={session.goal}
+            onPick={(next) => void setSessionUserStatus(session.id as SessionId, next)}
+          />
           {renaming ? (
             <div
               className="flex min-w-0 flex-1 flex-col gap-0.5"

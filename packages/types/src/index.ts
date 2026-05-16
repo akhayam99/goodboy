@@ -19,6 +19,7 @@ export type {
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
   Session,
+  SessionUserStatus,
   TurnState,
   Workspace,
 } from './workspace';

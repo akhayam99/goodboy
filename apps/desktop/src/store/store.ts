@@ -54,6 +54,7 @@ import {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
+  updateSessionUserStatus,
   updateSessionState,
   upsertContextSlot,
   insertDiffComment,
@@ -102,6 +103,7 @@ import type {
   StepId,
   Session,
   SessionId,
+  SessionUserStatus,
   SessionBudget,
   SessionProviderPreference,
   Workflow,
@@ -427,6 +429,7 @@ export interface AppActions {
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
+  setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;
@@ -1644,6 +1647,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(workflowId !== undefined ? { workflowId } : {}),
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
     };
@@ -3979,6 +3983,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }));
     if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+  },
+
+  setSessionUserStatus: async (sessionId, status) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateSessionUserStatus(tauriDatabase, sessionId, status, now);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, userStatus: status, updatedAt: now } : s,
+      ),
+    }));
   },
 
   maybeAutoAdvanceWorkflow: async (sessionId) => {

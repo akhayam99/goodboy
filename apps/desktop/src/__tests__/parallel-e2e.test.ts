@@ -105,6 +105,7 @@ function makeSession() {
     workflowId: TEMPLATE_ID,
     autoRun: false,
     titleUserEdited: false,
+    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };

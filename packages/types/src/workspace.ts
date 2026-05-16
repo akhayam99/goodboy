@@ -34,6 +34,8 @@ export type TurnState =
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 
+export type SessionUserStatus = 'wip' | 'waiting' | 'blocked' | 'done';
+
 export type Session = Readonly<{
   id: SessionId;
   workspaceId: WorkspaceId;
@@ -46,6 +48,7 @@ export type Session = Readonly<{
   currentStepOrdinal?: number;
   autoRun: boolean;
   titleUserEdited: boolean;
+  userStatus: SessionUserStatus;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';

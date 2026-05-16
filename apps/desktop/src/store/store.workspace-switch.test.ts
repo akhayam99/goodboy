@@ -126,6 +126,7 @@ function buildIdleSession(id: SessionId, wsId: WorkspaceId): Session {
     permissionMode: 'bypassPermissions',
     autoRun: false,
     titleUserEdited: false,
+    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };
@@ -142,6 +143,7 @@ function buildRunningSession(id: SessionId, wsId: WorkspaceId, runId: ProviderRu
     permissionMode: 'bypassPermissions',
     autoRun: false,
     titleUserEdited: false,
+    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };

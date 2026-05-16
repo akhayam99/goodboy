@@ -96,6 +96,7 @@ describe('migrate', () => {
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -130,6 +131,7 @@ describe('migrate', () => {
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -163,6 +165,7 @@ describe('migrate', () => {
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -263,6 +266,7 @@ describe('migrate', () => {
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now(),
       updatedAt: now(),
     };
@@ -320,6 +324,7 @@ describe('migrate', () => {
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
+      userStatus: 'wip',
       createdAt: now(),
       updatedAt: now(),
     };

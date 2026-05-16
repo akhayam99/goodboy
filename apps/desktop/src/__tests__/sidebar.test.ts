@@ -21,6 +21,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    userStatus: 'wip',
     createdAt: DT,
     updatedAt: DT,
     ...overrides,
