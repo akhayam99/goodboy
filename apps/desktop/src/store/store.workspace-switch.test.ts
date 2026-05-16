@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, Task, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, Session, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
@@ -34,20 +34,20 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
+  insertSession: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: vi.fn(),
+  updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -110,12 +110,12 @@ vi.mock('../repo', () => ({
 
 const WS_A = 'workspace-a' as WorkspaceId;
 const WS_B = 'workspace-b' as WorkspaceId;
-const SESSION_IDLE = 'session-idle' as TaskId;
-const SESSION_RUNNING = 'session-running' as TaskId;
+const SESSION_IDLE = 'session-idle' as SessionId;
+const SESSION_RUNNING = 'session-running' as SessionId;
 const RUN_ID = 'run-xyz' as ProviderRunId;
 const NOW = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
-function buildIdleSession(id: TaskId, wsId: WorkspaceId): Task {
+function buildIdleSession(id: SessionId, wsId: WorkspaceId): Session {
   return {
     id,
     workspaceId: wsId,
@@ -131,7 +131,7 @@ function buildIdleSession(id: TaskId, wsId: WorkspaceId): Task {
   };
 }
 
-function buildRunningSession(id: TaskId, wsId: WorkspaceId, runId: ProviderRunId): Task {
+function buildRunningSession(id: SessionId, wsId: WorkspaceId, runId: ProviderRunId): Session {
   return {
     id,
     workspaceId: wsId,

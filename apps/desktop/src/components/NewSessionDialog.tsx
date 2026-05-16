@@ -17,8 +17,8 @@ import type {
   Workflow,
   WorkflowId,
   ProviderId,
-  TaskId,
-  TaskProviderPreference,
+  SessionId,
+  SessionProviderPreference,
   WorkspaceId,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
@@ -141,7 +141,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
   const systemPrompt =
     'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
   const userMessage = `Goal: ${goal}`;
-  const result = await invoke<SummarizeTaskResult>('summarize_task', {
+  const result = await invoke<SummarizeTaskResult>('summarize_session', {
     args: {
       providerId,
       model: getCheapModel(providerId),
@@ -175,7 +175,7 @@ async function generateGoalFromIssue(issue: IssueData, providerId: ProviderId): 
   const systemPrompt =
     'You are a goal extractor for AI coding sessions. Given a task or issue, write a concise goal in 2-4 sentences, imperative form (e.g. "Refactor the auth middleware to..."). Output ONLY the goal text, nothing else.';
   const userMessage = `Title: ${issue.title}\n\nDescription:\n${issue.body}`.slice(0, 4000);
-  const result = await invoke<SummarizeTaskResult>('summarize_task', {
+  const result = await invoke<SummarizeTaskResult>('summarize_session', {
     args: {
       providerId,
       model: getCheapModel(providerId),
@@ -223,9 +223,7 @@ export function NewSessionDialog({
   const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
   const [existingBranch, setExistingBranch] = useState<string>('');
   const [branchesLoading, setBranchesLoading] = useState(false);
-  const workspace = useAppStore((s) =>
-    s.workspaces.find((w) => w.id === workspaceId),
-  );
+  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
 
   const [softCapRaw, setSoftCapRaw] = useState('');
   const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
@@ -334,7 +332,7 @@ export function NewSessionDialog({
     setError(null);
     setBusy(true);
     try {
-      const providerPreference: TaskProviderPreference = {
+      const providerPreference: SessionProviderPreference = {
         defaultProvider: selectedProvider,
         defaultModel: selectedModel,
         allowTurnOverride: true,
@@ -353,7 +351,7 @@ export function NewSessionDialog({
       });
       const parsedCap = parseCap(softCapRaw);
       if (parsedCap !== null) {
-        await setSessionBudget(session.id as TaskId, parsedCap);
+        await setSessionBudget(session.id as SessionId, parsedCap);
       }
       showToast('success', `session created: ${session.goal}`);
       reset();

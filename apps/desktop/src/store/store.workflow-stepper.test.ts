@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  Agent,
+  AgentId,
   IsoDateTime,
-  Session,
   SessionId,
   StepId,
-  TaskId,
   TurnEvent,
   Workflow,
   WorkflowId,
@@ -43,23 +43,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
-  insertTaskWorktree: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => [
     { id: 'ws-1', name: 'ws', rootPath: '/tmp', createdAt: '', updatedAt: '' },
   ]),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: vi.fn(),
+  updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -114,7 +114,7 @@ vi.mock('../phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: (sid: TaskId) => phaseRunListSpy(sid),
+  invokePhaseRunList: (sid: SessionId) => phaseRunListSpy(sid),
   invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
   invokePhaseRunUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
 }));
@@ -216,18 +216,18 @@ function makeRefactorWorkflowWithPrefixes(): Workflow {
   };
 }
 
-let inserted: Session[] = [];
+let inserted: Agent[] = [];
 
 function wirePhaseSpies() {
   inserted = [];
   phaseRunInsertSpy.mockReset();
   phaseRunInsertSpy.mockImplementation(async (args: Record<string, unknown>) => {
-    const row: Session = {
-      id: `ses-${inserted.length + 1}` as SessionId,
-      taskId: args['taskId'] as TaskId,
+    const row: Agent = {
+      id: `ses-${inserted.length + 1}` as AgentId,
+      sessionId: args['sessionId'] as SessionId,
       ordinal: args['ordinal'] as number,
       name: args['name'] as string,
-      status: (args['status'] as Session['status']) ?? 'pending',
+      status: (args['status'] as Agent['status']) ?? 'pending',
       ...((args['stepId'] as StepId | undefined) !== undefined && {
         stepId: args['stepId'] as StepId,
       }),
@@ -239,11 +239,11 @@ function wirePhaseSpies() {
   phaseRunListSpy.mockImplementation(async () => inserted);
   phaseRunUpdateStatusSpy.mockReset();
   phaseRunUpdateStatusSpy.mockImplementation(
-    async (id: SessionId, fields: Record<string, unknown>) => {
+    async (id: AgentId, fields: Record<string, unknown>) => {
       const existing = inserted.find((r) => r.id === id);
-      const updated: Session = {
-        ...(existing ?? { id, taskId: 'unknown' as TaskId, ordinal: 0, name: '' }),
-        status: (fields['status'] as Session['status']) ?? 'running',
+      const updated: Agent = {
+        ...(existing ?? { id, sessionId: 'unknown' as SessionId, ordinal: 0, name: '' }),
+        status: (fields['status'] as Agent['status']) ?? 'running',
       };
       inserted = inserted.map((r) => (r.id === id ? updated : r));
       return updated;
@@ -281,7 +281,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
     expect(args['ordinal']).toBe(0);
 
     const state = useAppStore.getState();
-    const sid = state.currentSessionId as TaskId;
+    const sid = state.currentSessionId as SessionId;
     expect(state.sessionPhaseRuns[sid]?.length).toBe(1);
   });
 
@@ -387,7 +387,7 @@ describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent 
     expect(agentId).toBeDefined();
 
     await useAppStore.getState().sendTurn({
-      taskId: session.id,
+      sessionId: session.id,
       content:
         'Survey the area of code in scope. List relevant files, key abstractions, callers, and any tests. Do not propose changes yet.',
     });
@@ -525,8 +525,8 @@ describe('spawnAgent — CTA auto-run next step (#442)', () => {
     runTurnSpy.mockClear();
 
     const state = useAppStore.getState();
-    const taskId = state.currentSessionId as TaskId;
-    await useAppStore.getState().spawnAgent(taskId, {});
+    const sessionId = state.currentSessionId as SessionId;
+    await useAppStore.getState().spawnAgent(sessionId, {});
 
     await new Promise<void>((r) => setTimeout(r, 50));
 

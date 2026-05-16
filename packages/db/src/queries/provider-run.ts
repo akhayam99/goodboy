@@ -5,13 +5,13 @@ import type {
   ProviderRunId,
   ProviderRunStatus,
   RoutingDecision,
-  TaskId,
+  SessionId,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface ProviderRunRow {
   id: string;
-  task_id: string;
+  session_id: string;
   provider: ProviderName;
   model: string;
   status_kind: ProviderRunStatus['kind'];
@@ -51,7 +51,7 @@ function toDomain(row: ProviderRunRow): ProviderRun {
   const routingDecision = extractRoutingDecision(row.status_payload);
   return {
     id: row.id as ProviderRunId,
-    taskId: row.task_id as TaskId,
+    sessionId: row.session_id as SessionId,
     provider: row.provider,
     model: row.model,
     status: toStatus(row.status_kind, row.status_payload),
@@ -64,9 +64,9 @@ export async function insertProviderRun(db: Database, run: ProviderRun): Promise
   const { kind, payload } = splitStatus(run.status, run.routingDecision);
   await db.execute(
     `INSERT INTO provider_runs
-      (id, task_id, provider, model, status_kind, status_payload, created_at)
+      (id, session_id, provider, model, status_kind, status_payload, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [run.id, run.taskId, run.provider, run.model, kind, payload, Date.parse(run.createdAt)],
+    [run.id, run.sessionId, run.provider, run.model, kind, payload, Date.parse(run.createdAt)],
   );
 }
 

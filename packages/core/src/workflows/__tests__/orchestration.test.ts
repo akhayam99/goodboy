@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, Step, Session, Workflow } from '@kay-am/types';
+import type { IsoDateTime, Step, Agent, Workflow } from '@kay-am/types';
 import { nextStep, isWorkflowComplete } from '../sequencer';
 import { WorkflowPropagator } from '../propagator';
 
@@ -37,10 +37,10 @@ const TEMPLATE: Workflow = {
   updatedAt: AT,
 };
 
-function completedRun(def: Step, summary: string): Session {
+function completedRun(def: Step, summary: string): Agent {
   return {
-    id: `run-${def.id}` as Session['id'],
-    taskId: 's1' as Session['taskId'],
+    id: `run-${def.id}` as Agent['id'],
+    sessionId: 's1' as Agent['sessionId'],
     stepId: def.id,
     ordinal: def.ordinal,
     name: def.name,
@@ -58,7 +58,7 @@ describe('phase orchestration end-to-end', () => {
     };
     const propagator = new WorkflowPropagator({ summarizer });
 
-    const runs: Session[] = [];
+    const runs: Agent[] = [];
 
     const first = nextStep(TEMPLATE, runs);
     expect(first).toBe(PLANNER);

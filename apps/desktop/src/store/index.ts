@@ -15,7 +15,7 @@ export {
   useSlotHistory,
   useSessions,
   useSummarizerStatus,
-  useTaskHasUnread,
+  useSessionHasUnread,
   useWorkspaceHasUnread,
   useWorkspaces,
 } from './selectors';

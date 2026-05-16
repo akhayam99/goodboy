@@ -6,13 +6,13 @@ import type {
   ParallelGroupId,
   Step,
   StepId,
-  Session,
-  SessionId,
-  SessionStatus,
+  Agent,
+  AgentId,
+  AgentStatus,
   Workflow,
   WorkflowId,
   ProviderRunId,
-  TaskId,
+  SessionId,
   WorkspaceId,
 } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
@@ -39,7 +39,7 @@ interface RawPhaseTemplateRow {
 
 interface RawPhaseRunRow {
   readonly id: string;
-  readonly taskId: string;
+  readonly sessionId: string;
   readonly stepId: string | null;
   readonly ordinal: number;
   readonly name: string;
@@ -77,14 +77,14 @@ function rowToTemplate(row: RawPhaseTemplateRow): Workflow {
   };
 }
 
-function rowToPhaseRun(row: RawPhaseRunRow): Session {
+function rowToPhaseRun(row: RawPhaseRunRow): Agent {
   return {
-    id: row.id as SessionId,
-    taskId: row.taskId as TaskId,
+    id: row.id as AgentId,
+    sessionId: row.sessionId as SessionId,
     ...(row.stepId != null && { stepId: row.stepId as StepId }),
     ordinal: row.ordinal,
     name: row.name,
-    status: row.status as SessionStatus,
+    status: row.status as AgentStatus,
     ...(row.providerRunId != null && { runId: row.providerRunId as ProviderRunId }),
     ...(row.outputSummary != null && { outputSummary: row.outputSummary }),
     ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
@@ -143,29 +143,29 @@ export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
 }
 
 // Phase run commands (#156).
-export async function invokePhaseRunList(taskId: TaskId): Promise<Session[]> {
-  const rows = await invoke<RawPhaseRunRow[]>('session_list_for_task', { taskId });
+export async function invokePhaseRunList(sessionId: SessionId): Promise<Agent[]> {
+  const rows = await invoke<RawPhaseRunRow[]>('agent_list_for_session', { sessionId });
   return rows.map(rowToPhaseRun);
 }
 
 export interface PhaseRunInsertArgs {
-  readonly id?: SessionId;
-  readonly taskId: TaskId;
+  readonly id?: AgentId;
+  readonly sessionId: SessionId;
   readonly stepId?: StepId;
   readonly ordinal: number;
   readonly name: string;
-  readonly status: SessionStatus;
+  readonly status: AgentStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
 }
 
-export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Session> {
-  const row = await invoke<RawPhaseRunRow>('session_insert', {
+export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Agent> {
+  const row = await invoke<RawPhaseRunRow>('agent_insert', {
     input: {
       id: run.id ?? null,
-      taskId: run.taskId,
+      sessionId: run.sessionId,
       stepId: run.stepId ?? null,
       ordinal: run.ordinal,
       name: run.name,
@@ -180,7 +180,7 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Ses
 }
 
 export interface PhaseRunUpdateFields {
-  readonly status: SessionStatus;
+  readonly status: AgentStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
@@ -188,10 +188,10 @@ export interface PhaseRunUpdateFields {
 }
 
 export async function invokePhaseRunUpdateStatus(
-  id: SessionId,
+  id: AgentId,
   fields: PhaseRunUpdateFields,
-): Promise<Session> {
-  const row = await invoke<RawPhaseRunRow>('session_update_status', {
+): Promise<Agent> {
+  const row = await invoke<RawPhaseRunRow>('agent_update_status', {
     input: {
       id,
       status: fields.status,
@@ -205,17 +205,17 @@ export async function invokePhaseRunUpdateStatus(
 }
 
 export async function invokeSessionSetProviderSessionId(
-  id: SessionId,
+  id: AgentId,
   providerSessionId: string,
 ): Promise<void> {
-  await invoke<void>('session_set_provider_session_id', {
+  await invoke<void>('agent_set_provider_session_id', {
     id,
     providerSessionId,
   });
 }
 
-export async function invokeSessionMarkViewed(id: SessionId, at: IsoDateTime): Promise<void> {
-  await invoke<void>('session_mark_viewed', { id, at });
+export async function invokeSessionMarkViewed(id: AgentId, at: IsoDateTime): Promise<void> {
+  await invoke<void>('agent_mark_viewed', { id, at });
 }
 
 export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<WorkspaceId>> {
@@ -226,7 +226,7 @@ export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<Worksp
 // Parallel phase group commands (#207).
 interface RawParallelPhaseGroupRow {
   readonly id: string;
-  readonly taskId: string;
+  readonly sessionId: string;
   readonly ordinal: number;
   readonly mergeStrategy: string;
   readonly createdAt: string;
@@ -236,7 +236,7 @@ interface RawParallelPhaseGroupRow {
 function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelGroup {
   return {
     id: row.id as ParallelGroupId,
-    taskId: row.taskId as TaskId,
+    sessionId: row.sessionId as SessionId,
     ordinal: row.ordinal,
     mergeStrategy: row.mergeStrategy as ParallelMergeStrategy,
     createdAt: row.createdAt as IsoDateTime,
@@ -246,7 +246,7 @@ function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelGroup {
 
 export interface ParallelPhaseGroupCreateArgs {
   readonly id?: ParallelGroupId;
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt?: IsoDateTime;
@@ -258,7 +258,7 @@ export async function invokeParallelPhaseGroupCreate(
   const row = await invoke<RawParallelPhaseGroupRow>('parallel_group_create', {
     input: {
       id: args.id ?? null,
-      taskId: args.taskId,
+      sessionId: args.sessionId,
       ordinal: args.ordinal,
       mergeStrategy: args.mergeStrategy,
       createdAt: args.createdAt ?? null,

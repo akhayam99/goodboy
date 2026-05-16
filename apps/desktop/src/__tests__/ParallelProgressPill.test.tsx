@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionStatus, ProviderRunId } from '@kay-am/types';
+import type { AgentStatus, ProviderRunId } from '@kay-am/types';
 import { ParallelProgressPill } from '../components/chat/ParallelProgressPill';
 
 function rid(s: string): ProviderRunId {
@@ -10,10 +10,10 @@ function rid(s: string): ProviderRunId {
 
 const runIds: ReadonlyArray<ProviderRunId> = [rid('r1'), rid('r2'), rid('r3'), rid('r4')];
 
-const statusList: ReadonlyArray<SessionStatus> = ['running', 'completed', 'failed', 'skipped'];
+const statusList: ReadonlyArray<AgentStatus> = ['running', 'completed', 'failed', 'skipped'];
 
 const statuses = Object.fromEntries(runIds.map((r, i) => [r, statusList[i]])) as Readonly<
-  Record<ProviderRunId, SessionStatus>
+  Record<ProviderRunId, AgentStatus>
 >;
 
 afterEach(cleanup);
@@ -82,7 +82,7 @@ describe('ParallelProgressPill', () => {
     const { container } = render(
       <ParallelProgressPill
         parallelRunIds={[]}
-        runStatuses={{} as Readonly<Record<ProviderRunId, SessionStatus>>}
+        runStatuses={{} as Readonly<Record<ProviderRunId, AgentStatus>>}
         onSelectRun={onSelectRun}
       />,
     );
@@ -94,7 +94,7 @@ describe('ParallelProgressPill', () => {
     render(
       <ParallelProgressPill
         parallelRunIds={[rid('unknown')]}
-        runStatuses={{} as Readonly<Record<ProviderRunId, SessionStatus>>}
+        runStatuses={{} as Readonly<Record<ProviderRunId, AgentStatus>>}
         onSelectRun={onSelectRun}
       />,
     );

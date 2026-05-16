@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@kay-am/ui';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 import { CommandPalette } from './components/CommandPalette';
 import { BootSplash } from './components/BootSplash';
 import { ChatView } from './components/chat/ChatView';
@@ -21,14 +21,14 @@ import {
 import { refreshPricingTable } from './provider-pricing';
 import { STORAGE_PREFIXES } from './storage-keys';
 
-const CONTEXT_PANEL_KEY = (id: TaskId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
+const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
 
 // Cap on retained ChatView instances. Five covers nearly all real navigation
 // patterns (recent N tabs) without unbounded memory growth from long sessions
 // kept alive in the background.
 const KEEP_ALIVE_CAP = 5;
 
-function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
+function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(CONTEXT_PANEL_KEY(id));
     if (raw === null) return fallback;
@@ -38,7 +38,7 @@ function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
   }
 }
 
-function writePersistedContextOpen(id: TaskId, open: boolean): void {
+function writePersistedContextOpen(id: SessionId, open: boolean): void {
   try {
     localStorage.setItem(CONTEXT_PANEL_KEY(id), open ? '1' : '0');
   } catch {
@@ -62,8 +62,8 @@ export function App() {
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
-  const [contextHydratedFor, setContextHydratedFor] = useState<TaskId | null>(null);
-  const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<TaskId>>([]);
+  const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
+  const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
   useEffect(() => {
     void hydrate();
@@ -144,7 +144,7 @@ export function App() {
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
   // Must stay above the early-return for hydrated to keep hook order stable.
-  const renderedSessionIds = useMemo<ReadonlyArray<TaskId>>(() => {
+  const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
     if (!cid) return keepAliveIds;
     if (keepAliveIds.includes(cid)) return keepAliveIds;
@@ -250,7 +250,7 @@ export function App() {
 }
 
 interface KeepAliveChatPanelProps {
-  readonly sessionId: TaskId;
+  readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly onRequestEnd: () => void;
 }
@@ -266,7 +266,7 @@ function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChat
 }
 
 interface KeepAliveContextPanelProps {
-  readonly sessionId: TaskId;
+  readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly collapsed: boolean;
   readonly onCollapse: () => void;

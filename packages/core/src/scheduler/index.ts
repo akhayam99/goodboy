@@ -1,9 +1,9 @@
 import type {
   ParallelGroup,
   ParallelGroupId,
-  ParallelSession,
+  ParallelAgent,
   ParallelMergeStrategy,
-  SessionStatus,
+  AgentStatus,
   ProviderRunId,
   TurnEvent,
 } from '@kay-am/types';
@@ -22,9 +22,9 @@ export type UnsubscribeFn = () => void;
 
 export interface SchedulerDeps {
   spawnRun: (
-    run: ParallelSession,
+    run: ParallelAgent,
     onEvent: (e: TurnEvent) => void,
-  ) => Promise<{ status: SessionStatus; outputSummary: string | null; error?: string }>;
+  ) => Promise<{ status: AgentStatus; outputSummary: string | null; error?: string }>;
   cancelRun: (runId: ProviderRunId) => Promise<void>;
 }
 
@@ -37,7 +37,7 @@ export interface MergeResult {
   groupId: ParallelGroupId;
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
-    status: SessionStatus;
+    status: AgentStatus;
     outputSummary: string | null;
     error?: string;
   }>;
@@ -45,7 +45,7 @@ export interface MergeResult {
 }
 
 interface RunEntry {
-  run: ParallelSession;
+  run: ParallelAgent;
   runId: ProviderRunId;
 }
 
@@ -63,7 +63,7 @@ export interface SchedulerHandle {
 export function fanOut(
   deps: SchedulerDeps,
   group: ParallelGroup,
-  runs: ReadonlyArray<ParallelSession>,
+  runs: ReadonlyArray<ParallelAgent>,
 ): SchedulerHandle {
   const progressListeners: Set<(p: SchedulerProgress) => void> = new Set();
 
@@ -81,7 +81,7 @@ export function fanOut(
         // spawnRun should not reject — but if it does, treat as failed run
         (err: unknown) => ({
           runId: run.runId,
-          status: 'failed' as SessionStatus,
+          status: 'failed' as AgentStatus,
           outputSummary: null,
           error: err instanceof Error ? err.message : String(err),
         }),

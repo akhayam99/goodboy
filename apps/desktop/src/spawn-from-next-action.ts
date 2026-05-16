@@ -1,9 +1,9 @@
 import type { NextAction, NextActionKind } from '@kay-am/core';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 import { AGENT_KIND_DEFAULTS, type AgentKind } from './agent-kind';
 
 export type SpawnAgentFn = (
-  taskId: TaskId,
+  sessionId: SessionId,
   args: {
     name?: string;
     model?: string;
@@ -24,12 +24,12 @@ export function spawnKindForAction(action: NextAction): AgentKind {
 
 export async function spawnFromNextAction(
   action: NextAction,
-  taskId: TaskId,
+  sessionId: SessionId,
   spawnAgent: SpawnAgentFn,
 ): Promise<boolean> {
   const kind = spawnKindForAction(action);
   const defaults = AGENT_KIND_DEFAULTS[kind];
-  await spawnAgent(taskId, {
+  await spawnAgent(sessionId, {
     name: action.label,
     model: defaults.model,
     effort: defaults.effort,

@@ -9,12 +9,12 @@ import {
 import { Send, Square, X } from 'lucide-react';
 import { Textarea } from '@kay-am/ui';
 import type {
+  AgentId,
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
+  Session,
   SessionId,
-  Task,
-  TaskId,
   TurnProviderOverride,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
@@ -50,9 +50,9 @@ const AGENT_EFFORT_PREFIX = STORAGE_PREFIXES.agentEffort;
 const AGENT_MODEL_PREFIX = STORAGE_PREFIXES.agentModel;
 const AGENT_PROVIDER_PREFIX = STORAGE_PREFIXES.agentProvider;
 
-function readEffort(taskId: TaskId): EffortLevel {
+function readEffort(sessionId: SessionId): EffortLevel {
   try {
-    const raw = localStorage.getItem(`${EFFORT_STORAGE_PREFIX}${taskId}`);
+    const raw = localStorage.getItem(`${EFFORT_STORAGE_PREFIX}${sessionId}`);
     if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
   } catch {
     // ignore
@@ -60,37 +60,37 @@ function readEffort(taskId: TaskId): EffortLevel {
   return 'medium';
 }
 
-function writeEffort(taskId: TaskId, level: EffortLevel): void {
+function writeEffort(sessionId: SessionId, level: EffortLevel): void {
   try {
-    localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${taskId}`, level);
+    localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${sessionId}`, level);
   } catch {
     // ignore
   }
 }
 
-function readModel(taskId: TaskId): string | null {
+function readModel(sessionId: SessionId): string | null {
   try {
-    return localStorage.getItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+    return localStorage.getItem(`${MODEL_STORAGE_PREFIX}${sessionId}`);
   } catch {
     return null;
   }
 }
 
-function writeModel(taskId: TaskId, model: string | null): void {
+function writeModel(sessionId: SessionId, model: string | null): void {
   try {
     if (model === null) {
-      localStorage.removeItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+      localStorage.removeItem(`${MODEL_STORAGE_PREFIX}${sessionId}`);
     } else {
-      localStorage.setItem(`${MODEL_STORAGE_PREFIX}${taskId}`, model);
+      localStorage.setItem(`${MODEL_STORAGE_PREFIX}${sessionId}`, model);
     }
   } catch {
     // ignore
   }
 }
 
-function readProvider(taskId: TaskId): ProviderId | null {
+function readProvider(sessionId: SessionId): ProviderId | null {
   try {
-    const raw = localStorage.getItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+    const raw = localStorage.getItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`);
     const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
     if (raw && valid.includes(raw as ProviderId)) return raw as ProviderId;
   } catch {
@@ -99,19 +99,19 @@ function readProvider(taskId: TaskId): ProviderId | null {
   return null;
 }
 
-function writeProvider(taskId: TaskId, provider: ProviderId | null): void {
+function writeProvider(sessionId: SessionId, provider: ProviderId | null): void {
   try {
     if (provider === null) {
-      localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+      localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`);
     } else {
-      localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`, provider);
+      localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`, provider);
     }
   } catch {
     // ignore
   }
 }
 
-function readAgentEffort(agentId: SessionId): EffortLevel | null {
+function readAgentEffort(agentId: AgentId): EffortLevel | null {
   try {
     const raw = localStorage.getItem(`${AGENT_EFFORT_PREFIX}${agentId}`);
     if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
@@ -121,7 +121,7 @@ function readAgentEffort(agentId: SessionId): EffortLevel | null {
   return null;
 }
 
-function writeAgentEffort(agentId: SessionId, level: EffortLevel): void {
+function writeAgentEffort(agentId: AgentId, level: EffortLevel): void {
   try {
     localStorage.setItem(`${AGENT_EFFORT_PREFIX}${agentId}`, level);
   } catch {
@@ -129,7 +129,7 @@ function writeAgentEffort(agentId: SessionId, level: EffortLevel): void {
   }
 }
 
-function readAgentModel(agentId: SessionId): string | null {
+function readAgentModel(agentId: AgentId): string | null {
   try {
     return localStorage.getItem(`${AGENT_MODEL_PREFIX}${agentId}`);
   } catch {
@@ -137,7 +137,7 @@ function readAgentModel(agentId: SessionId): string | null {
   }
 }
 
-function writeAgentModel(agentId: SessionId, model: string | null): void {
+function writeAgentModel(agentId: AgentId, model: string | null): void {
   try {
     if (model === null) {
       localStorage.removeItem(`${AGENT_MODEL_PREFIX}${agentId}`);
@@ -149,7 +149,7 @@ function writeAgentModel(agentId: SessionId, model: string | null): void {
   }
 }
 
-function readAgentProvider(agentId: SessionId): ProviderId | null {
+function readAgentProvider(agentId: AgentId): ProviderId | null {
   try {
     const raw = localStorage.getItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
     const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
@@ -160,7 +160,7 @@ function readAgentProvider(agentId: SessionId): ProviderId | null {
   return null;
 }
 
-function writeAgentProvider(agentId: SessionId, provider: ProviderId | null): void {
+function writeAgentProvider(agentId: AgentId, provider: ProviderId | null): void {
   try {
     if (provider === null) {
       localStorage.removeItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
@@ -173,12 +173,12 @@ function writeAgentProvider(agentId: SessionId, provider: ProviderId | null): vo
 }
 
 interface ChatInputProps {
-  readonly session: Task;
+  readonly session: Session;
   readonly providerDisconnected?: boolean;
 }
 
 function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
-  return kind === 'provider-exceeded' || kind === 'task-exceeded' ? 'error' : 'warning';
+  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
 }
 
 function toastMessageForAlert(alert: BudgetAlert): string {
@@ -189,7 +189,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   if (alert.kind === 'provider-exceeded') {
     return `provider ${alert.provider ?? '?'} budget exceeded`;
   }
-  if (alert.kind === 'task-threshold') {
+  if (alert.kind === 'session-threshold') {
     return `session budget at ${pct}%`;
   }
   return 'session budget exceeded';
@@ -208,9 +208,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const { showToast } = useToast();
 
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
-  const value = useAppStore((s) =>
-    selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : '',
-  );
+  const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
@@ -353,7 +351,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     async (content: string, override: TurnProviderOverride | undefined) => {
       try {
         await sendTurn({
-          taskId: session.id,
+          sessionId: session.id,
           content,
           override,
           onNewAlerts: (alerts) => {

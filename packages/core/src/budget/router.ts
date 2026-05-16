@@ -4,12 +4,12 @@ import type {
   ProviderId,
   ProviderName,
   RoutingDecision,
-  TaskProviderPreference,
+  SessionProviderPreference,
   TurnProviderOverride,
 } from '@kay-am/types';
 
 export type ResolveProviderInput = {
-  sessionPreference: TaskProviderPreference;
+  sessionPreference: SessionProviderPreference;
   turnOverride?: TurnProviderOverride;
   connectedProviders: ProviderId[];
   budgetChecker: {

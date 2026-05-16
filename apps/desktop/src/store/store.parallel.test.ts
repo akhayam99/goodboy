@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  Agent,
+  AgentId,
   IsoDateTime,
   ParallelMergeStrategy,
   ParallelGroupId,
@@ -10,8 +12,6 @@ import type {
   Workflow,
   WorkflowId,
   ProviderRunId,
-  Task,
-  TaskId,
   WorkspaceId,
 } from '@kay-am/types';
 
@@ -65,23 +65,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
-  insertTaskWorktree: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForTask: vi.fn(),
+  deleteWorktreesForSession: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: vi.fn(),
+  updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -130,7 +130,7 @@ vi.mock('../skills', () => ({
 
 const phaseRunInsertSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
-const phaseRunListSpy = vi.fn<(sid: TaskId) => Promise<ReadonlyArray<Session>>>(async () => []);
+const phaseRunListSpy = vi.fn<(sid: SessionId) => Promise<ReadonlyArray<Agent>>>(async () => []);
 const parallelPhaseGroupCreateSpy = vi.fn();
 const parallelPhaseGroupUpdateCompletedAtSpy = vi.fn();
 
@@ -138,10 +138,9 @@ vi.mock('../phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: (sid: TaskId) => phaseRunListSpy(sid),
+  invokePhaseRunList: (sid: SessionId) => phaseRunListSpy(sid),
   invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: SessionId, fields: unknown) =>
-    phaseRunUpdateStatusSpy(id, fields),
+  invokePhaseRunUpdateStatus: (id: AgentId, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
   invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
   invokeParallelPhaseGroupUpdateCompletedAt: (id: ParallelGroupId, at: IsoDateTime) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
@@ -156,11 +155,11 @@ vi.mock('../repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-const SESSION_ID = 'session-1' as TaskId;
+const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const TEMPLATE_ID = 'template-1' as WorkflowId;
 
-function buildSession(): Task {
+function buildSession(): Session {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
   return {
     id: SESSION_ID,
@@ -223,9 +222,9 @@ function setupSession(
   useAppStore: Awaited<ReturnType<typeof importStore>>,
   steps: ReadonlyArray<Step>,
 ) {
-  const defaultAgent: Session = {
-    id: 'agent-1' as SessionId,
-    taskId: SESSION_ID,
+  const defaultAgent: Agent = {
+    id: 'agent-1' as AgentId,
+    sessionId: SESSION_ID,
     ordinal: 0,
     name: 'agent 1',
     status: 'pending',
@@ -281,12 +280,12 @@ describe('sendTurn — parallel agents branch', () => {
     listenHandlers.length = 0;
 
     invokeParallelPhaseRunSpawnSpy.mockResolvedValue([]);
-    const insertedPhaseRuns: Session[] = [];
+    const insertedPhaseRuns: Agent[] = [];
     phaseRunInsertSpy.mockImplementation(
       async (args: { stepId: string; providerRunId: string; ordinal: number; name: string }) => {
-        const row: Session = {
-          id: `phase-run-${args.stepId}` as SessionId,
-          taskId: SESSION_ID,
+        const row: Agent = {
+          id: `phase-run-${args.stepId}` as AgentId,
+          sessionId: SESSION_ID,
           stepId: args.stepId as StepId,
           ordinal: args.ordinal,
           name: args.name,
@@ -299,9 +298,13 @@ describe('sendTurn — parallel agents branch', () => {
     );
     phaseRunListSpy.mockImplementation(async () => insertedPhaseRuns.slice());
     parallelPhaseGroupCreateSpy.mockImplementation(
-      async (args: { taskId: string; ordinal: number; mergeStrategy: ParallelMergeStrategy }) => ({
+      async (args: {
+        sessionId: string;
+        ordinal: number;
+        mergeStrategy: ParallelMergeStrategy;
+      }) => ({
         id: 'group-test' as ParallelGroupId,
-        taskId: args.taskId,
+        sessionId: args.sessionId,
         ordinal: args.ordinal,
         mergeStrategy: args.mergeStrategy,
         createdAt: '2026-05-07T00:00:00.000Z' as IsoDateTime,
@@ -328,7 +331,7 @@ describe('sendTurn — parallel agents branch', () => {
       settings: { 'experimental.enable_parallel_agents': 'false' },
     });
 
-    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     expect(invokeParallelPhaseRunSpawnSpy).not.toHaveBeenCalled();
@@ -347,7 +350,7 @@ describe('sendTurn — parallel agents branch', () => {
       buildDef({ id: 'd-b', ordinal: 2, parallelGroup: 7 }),
     ]);
 
-    const turnPromise = useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'plan' });
+    const turnPromise = useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'plan' });
 
     // Wait for spawn registration so listeners are wired before we emit 'end'.
     await new Promise((r) => setTimeout(r, 5));
@@ -378,7 +381,7 @@ describe('sendTurn — parallel agents branch', () => {
     const useAppStore = await importStore();
     setupSession(useAppStore, [buildDef({ id: 'solo', ordinal: 1, parallelGroup: 99 })]);
 
-    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'go' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(invokeParallelPhaseRunSpawnSpy).not.toHaveBeenCalled();
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
@@ -396,7 +399,9 @@ describe('sendTurn — parallel agents branch', () => {
       buildDef({ id: 'd-b', ordinal: 2, parallelGroup: 3 }),
     ]);
 
-    const turnPromise = useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'mixed' });
+    const turnPromise = useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, content: 'mixed' });
     await new Promise((r) => setTimeout(r, 5));
 
     const calls = invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<

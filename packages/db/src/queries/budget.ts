@@ -1,5 +1,5 @@
-import type { BudgetAlert, BudgetAlertKind, BudgetRule, TaskBudget } from '@kay-am/types';
-import type { IsoDateTime, TaskId } from '@kay-am/types';
+import type { BudgetAlert, BudgetAlertKind, BudgetRule, SessionBudget } from '@kay-am/types';
+import type { IsoDateTime, SessionId } from '@kay-am/types';
 import type { ProviderName } from '@kay-am/types';
 import type { Database } from '../client';
 
@@ -51,43 +51,47 @@ export async function deleteBudgetRule(db: Database, id: string): Promise<void> 
   await db.execute('DELETE FROM budget_rules WHERE id = ?', [id]);
 }
 
-interface TaskBudgetRow {
-  task_id: string;
+interface SessionBudgetRow {
+  session_id: string;
   soft_cap_usd: number;
 }
 
-function toTaskBudget(row: TaskBudgetRow): TaskBudget {
+function toSessionBudget(row: SessionBudgetRow): SessionBudget {
   return {
-    taskId: row.task_id as TaskId,
+    sessionId: row.session_id as SessionId,
     softCapUsd: row.soft_cap_usd,
   };
 }
 
-export async function upsertTaskBudget(
+export async function upsertSessionBudget(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
   softCapUsd: number,
 ): Promise<void> {
   await db.execute(
-    `INSERT INTO task_budgets (task_id, soft_cap_usd)
+    `INSERT INTO session_budgets (session_id, soft_cap_usd)
      VALUES (?, ?)
-     ON CONFLICT(task_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd`,
-    [taskId, softCapUsd],
+     ON CONFLICT(session_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd`,
+    [sessionId, softCapUsd],
   );
 }
 
-export async function getTaskBudget(db: Database, taskId: TaskId): Promise<TaskBudget | null> {
-  const rows = await db.select<TaskBudgetRow>('SELECT * FROM task_budgets WHERE task_id = ?', [
-    taskId,
-  ]);
-  return rows[0] ? toTaskBudget(rows[0]) : null;
+export async function getSessionBudget(
+  db: Database,
+  sessionId: SessionId,
+): Promise<SessionBudget | null> {
+  const rows = await db.select<SessionBudgetRow>(
+    'SELECT * FROM session_budgets WHERE session_id = ?',
+    [sessionId],
+  );
+  return rows[0] ? toSessionBudget(rows[0]) : null;
 }
 
 interface BudgetAlertRow {
   id: string;
   kind: BudgetAlertKind;
   provider: string | null;
-  task_id: string | null;
+  session_id: string | null;
   current_usd: number;
   cap_usd: number;
   created_at: string;
@@ -99,7 +103,7 @@ function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
     id: row.id,
     kind: row.kind,
     provider: row.provider ? (row.provider as ProviderName) : undefined,
-    taskId: row.task_id ? (row.task_id as TaskId) : undefined,
+    sessionId: row.session_id ? (row.session_id as SessionId) : undefined,
     currentUsd: row.current_usd,
     capUsd: row.cap_usd,
     createdAt: row.created_at as IsoDateTime,
@@ -110,13 +114,13 @@ function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
 export async function insertBudgetAlert(db: Database, alert: BudgetAlert): Promise<void> {
   await db.execute(
     `INSERT INTO budget_alerts
-      (id, kind, provider, task_id, current_usd, cap_usd, created_at, dismissed_at)
+      (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       alert.id,
       alert.kind,
       alert.provider ?? null,
-      alert.taskId ?? null,
+      alert.sessionId ?? null,
       alert.currentUsd,
       alert.capUsd,
       alert.createdAt,
@@ -126,7 +130,7 @@ export async function insertBudgetAlert(db: Database, alert: BudgetAlert): Promi
 }
 
 export interface ListBudgetAlertsOptions {
-  readonly taskId?: TaskId;
+  readonly sessionId?: SessionId;
   readonly provider?: ProviderName;
   readonly undismissedOnly?: boolean;
 }
@@ -138,9 +142,9 @@ export async function listBudgetAlerts(
   let query = 'SELECT * FROM budget_alerts WHERE 1 = 1';
   const params: unknown[] = [];
 
-  if (opts?.taskId) {
-    query += ' AND task_id = ?';
-    params.push(opts.taskId);
+  if (opts?.sessionId) {
+    query += ' AND session_id = ?';
+    params.push(opts.sessionId);
   }
 
   if (opts?.provider) {

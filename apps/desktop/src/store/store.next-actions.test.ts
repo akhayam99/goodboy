@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 import type { NextAction } from '@kay-am/core';
 
 vi.mock('../turn', () => ({
@@ -87,24 +87,24 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
-  insertTaskWorktree: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   insertContextSlotHistory: vi.fn(async () => undefined),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForTask: vi.fn(),
+  deleteWorktreesForSession: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: vi.fn(),
+  updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -124,7 +124,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   })),
 }));
 
-const TASK_ID = 'task-next-actions' as TaskId;
+const SESSION_ID = 'task-next-actions' as SessionId;
 
 const ACTIONS_PLAN: ReadonlyArray<NextAction> = [
   { id: 'next-plan', kind: 'plan', label: 'Pianifica', prompt: 'produci un piano per X' },
@@ -150,27 +150,27 @@ describe('sessionNextActions store slice', () => {
 
   it('latest summarize result overwrites previous nextActions for the same task', async () => {
     const { useAppStore } = await import('./store');
-    useAppStore.setState({ sessionNextActions: { [TASK_ID]: ACTIONS_PLAN } });
-    expect(useAppStore.getState().sessionNextActions[TASK_ID]).toEqual(ACTIONS_PLAN);
+    useAppStore.setState({ sessionNextActions: { [SESSION_ID]: ACTIONS_PLAN } });
+    expect(useAppStore.getState().sessionNextActions[SESSION_ID]).toEqual(ACTIONS_PLAN);
 
     // Simulate runSummarizer success branch overwriting.
     useAppStore.setState((state) => ({
-      sessionNextActions: { ...state.sessionNextActions, [TASK_ID]: ACTIONS_PR },
+      sessionNextActions: { ...state.sessionNextActions, [SESSION_ID]: ACTIONS_PR },
     }));
-    expect(useAppStore.getState().sessionNextActions[TASK_ID]).toEqual(ACTIONS_PR);
+    expect(useAppStore.getState().sessionNextActions[SESSION_ID]).toEqual(ACTIONS_PR);
   });
 
   it('clearSessionNextActions removes the entry', async () => {
     const { useAppStore } = await import('./store');
-    useAppStore.setState({ sessionNextActions: { [TASK_ID]: ACTIONS_PLAN } });
-    useAppStore.getState().clearSessionNextActions(TASK_ID);
-    expect(useAppStore.getState().sessionNextActions[TASK_ID]).toBeUndefined();
+    useAppStore.setState({ sessionNextActions: { [SESSION_ID]: ACTIONS_PLAN } });
+    useAppStore.getState().clearSessionNextActions(SESSION_ID);
+    expect(useAppStore.getState().sessionNextActions[SESSION_ID]).toBeUndefined();
   });
 
   it('clearSessionNextActions is a no-op when entry is absent', async () => {
     const { useAppStore } = await import('./store');
     useAppStore.setState({ sessionNextActions: {} });
-    expect(() => useAppStore.getState().clearSessionNextActions(TASK_ID)).not.toThrow();
+    expect(() => useAppStore.getState().clearSessionNextActions(SESSION_ID)).not.toThrow();
     expect(useAppStore.getState().sessionNextActions).toEqual({});
   });
 });

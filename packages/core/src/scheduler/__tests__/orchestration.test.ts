@@ -3,10 +3,10 @@ import type {
   IsoDateTime,
   ParallelGroup,
   ParallelGroupId,
-  ParallelSession,
-  ParallelSessionId,
+  ParallelAgent,
+  ParallelAgentId,
   StepId,
-  SessionStatus,
+  AgentStatus,
   ProviderRunId,
 } from '@kay-am/types';
 import {
@@ -26,7 +26,7 @@ const iso = (s: string) => s as IsoDateTime;
 function makeGroup(overrides?: Partial<ParallelGroup>): ParallelGroup {
   return {
     id: 'g1' as ParallelGroupId,
-    taskId: 's1' as ParallelGroup['taskId'],
+    sessionId: 's1' as ParallelGroup['sessionId'],
     ordinal: 1,
     mergeStrategy: 'last_write_wins',
     createdAt: iso('2025-01-01T00:00:00.000Z'),
@@ -35,14 +35,14 @@ function makeGroup(overrides?: Partial<ParallelGroup>): ParallelGroup {
   };
 }
 
-function makeRun(index: number, runId: string = `run-${index}`): ParallelSession {
+function makeRun(index: number, runId: string = `run-${index}`): ParallelAgent {
   return {
-    id: `pr-${index}` as ParallelSessionId,
+    id: `pr-${index}` as ParallelAgentId,
     groupId: 'g1' as ParallelGroupId,
     stepId: `pd-${index}` as StepId,
     parallelIndex: index,
     runId: rid(runId),
-    status: 'pending' as SessionStatus,
+    status: 'pending' as AgentStatus,
     worktreePath: `/tmp/wt-${index}`,
     outputSummary: null,
     startedAt: iso('2025-01-01T00:00:00.000Z'),
@@ -55,8 +55,8 @@ describe('orchestration — happy path: 3 runs, no conflict, last_write_wins', (
     const runs = [makeRun(0, 'run-a'), makeRun(1, 'run-b'), makeRun(2, 'run-c')];
     const group = makeGroup({ mergeStrategy: 'last_write_wins' });
 
-    const spawnRun = vi.fn(async (run: ParallelSession) => ({
-      status: 'completed' as SessionStatus,
+    const spawnRun = vi.fn(async (run: ParallelAgent) => ({
+      status: 'completed' as AgentStatus,
       outputSummary: `output-${run.runId}`,
     }));
 
@@ -104,11 +104,11 @@ describe('orchestration — 1 run fails, 2 complete', () => {
     const runs = [makeRun(0, 'run-a'), makeRun(1, 'run-b'), makeRun(2, 'run-c')];
     const group = makeGroup({ mergeStrategy: 'last_write_wins' });
 
-    const spawnRun = vi.fn(async (run: ParallelSession) => {
+    const spawnRun = vi.fn(async (run: ParallelAgent) => {
       if (run.runId === rid('run-b')) {
-        return { status: 'failed' as SessionStatus, outputSummary: null, error: 'oom' };
+        return { status: 'failed' as AgentStatus, outputSummary: null, error: 'oom' };
       }
-      return { status: 'completed' as SessionStatus, outputSummary: `ok-${run.runId}` };
+      return { status: 'completed' as AgentStatus, outputSummary: `ok-${run.runId}` };
     });
 
     const deps: SchedulerDeps = { spawnRun, cancelRun: vi.fn() };
@@ -158,7 +158,7 @@ describe('orchestration — all 3 runs fail', () => {
     const group = makeGroup({ mergeStrategy: 'last_write_wins' });
 
     const spawnRun = vi.fn(async () => ({
-      status: 'failed' as SessionStatus,
+      status: 'failed' as AgentStatus,
       outputSummary: null,
       error: 'crash',
     }));
@@ -187,7 +187,7 @@ describe('orchestration — conflict detected, last_write_wins', () => {
     const group = makeGroup({ mergeStrategy: 'last_write_wins' });
 
     const spawnRun = vi.fn(async () => ({
-      status: 'completed' as SessionStatus,
+      status: 'completed' as AgentStatus,
       outputSummary: null,
     }));
 
@@ -212,17 +212,17 @@ describe('orchestration — conflict detected, last_write_wins', () => {
       {
         runId: rid('run-a'),
         completedAt: iso('2025-01-01T10:00:00.000Z'),
-        status: 'completed' as SessionStatus,
+        status: 'completed' as AgentStatus,
       },
       {
         runId: rid('run-b'),
         completedAt: iso('2025-01-01T11:00:00.000Z'),
-        status: 'completed' as SessionStatus,
+        status: 'completed' as AgentStatus,
       },
       {
         runId: rid('run-c'),
         completedAt: iso('2025-01-01T09:00:00.000Z'),
-        status: 'completed' as SessionStatus,
+        status: 'completed' as AgentStatus,
       },
     ];
 
@@ -240,12 +240,12 @@ describe('orchestration — conflict detected, last_write_wins', () => {
       {
         runId: rid('run-a'),
         completedAt: iso('2025-01-01T10:00:00.000Z'),
-        status: 'completed' as SessionStatus,
+        status: 'completed' as AgentStatus,
       },
       {
         runId: rid('run-b'),
         completedAt: iso('2025-01-01T10:00:00.000Z'),
-        status: 'completed' as SessionStatus,
+        status: 'completed' as AgentStatus,
       },
     ];
     const tieResolutions = await resolveConflicts({
@@ -263,7 +263,7 @@ describe('orchestration — manual strategy, missing pick throws ManualResolutio
     const group = makeGroup({ mergeStrategy: 'manual' });
 
     const spawnRun = vi.fn(async () => ({
-      status: 'completed' as SessionStatus,
+      status: 'completed' as AgentStatus,
       outputSummary: null,
     }));
 
@@ -308,12 +308,12 @@ describe('orchestration — cancel mid-flight', () => {
     const group = makeGroup();
 
     // latches: spawnRun resolves only after we release each latch
-    type Latch = { resolve: (v: { status: SessionStatus; outputSummary: null }) => void };
+    type Latch = { resolve: (v: { status: AgentStatus; outputSummary: null }) => void };
     const latches: Latch[] = [];
 
     const spawnRun = vi.fn(
       () =>
-        new Promise<{ status: SessionStatus; outputSummary: null }>((resolve) => {
+        new Promise<{ status: AgentStatus; outputSummary: null }>((resolve) => {
           latches.push({ resolve });
         }),
     );
@@ -335,7 +335,7 @@ describe('orchestration — cancel mid-flight', () => {
 
     // release latches so awaitMerge can settle (simulating cancelled runs resolving as failed)
     for (const latch of latches) {
-      latch.resolve({ status: 'failed' as SessionStatus, outputSummary: null });
+      latch.resolve({ status: 'failed' as AgentStatus, outputSummary: null });
     }
 
     const result = await awaitMerge(handle);

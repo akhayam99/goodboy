@@ -1,7 +1,7 @@
 export {
   buildStepPrompt,
   currentStep,
-  findReusableSession,
+  findReusableAgent,
   isWorkflowComplete,
   nextStep,
 } from './sequencer';

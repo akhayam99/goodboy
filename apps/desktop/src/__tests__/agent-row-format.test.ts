@@ -3,8 +3,8 @@ import type {
   IsoDateTime,
   ProviderName,
   ProviderRunId,
+  SessionId,
   TelemetryRecordId,
-  TaskId,
   TelemetryRecord,
 } from '@kay-am/types';
 import {
@@ -75,7 +75,7 @@ function makeTelemetry(runId: string, inputTokens: number, recordedAt: string): 
   return {
     id: `tel-${runId}` as TelemetryRecordId,
     runId: runId as ProviderRunId,
-    taskId: 'task-1' as TaskId,
+    sessionId: 'task-1' as SessionId,
     kind: 'turn',
     provider: 'anthropic' as ProviderName,
     model: 'claude-sonnet-4-6',

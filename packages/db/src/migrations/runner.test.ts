@@ -3,33 +3,33 @@ import type {
   IsoDateTime,
   ParallelGroup,
   ParallelGroupId,
+  Agent,
+  AgentId,
   Session,
   SessionId,
   Step,
   StepId,
-  Task,
-  TaskId,
   Workflow,
   WorkflowId,
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
-import { DEFAULT_TASK_PROVIDER_PREFERENCE } from '@kay-am/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
-import { getTaskById, insertTask } from '../queries/task';
+import { getSessionById, insertSession } from '../queries/session';
 import { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from '../queries/workflow';
-import { listSessionsForTask, insertSession, updateSessionStatus } from '../queries/session';
+import { listAgentsForSession, insertAgent, updateAgentStatus } from '../queries/agent';
 import {
-  insertTaskWorktree,
-  listWorktreesForTask,
-  deleteWorktreesForTask,
-} from '../queries/task-worktree';
+  insertSessionWorktree,
+  listWorktreesForSession,
+  deleteWorktreesForSession,
+} from '../queries/session-worktree';
 import {
   insertGroup,
-  listGroupsForTask,
+  listGroupsForSession,
   getGroupById,
   deleteGroup,
   updateGroupCompletedAt,
@@ -73,7 +73,7 @@ describe('migrate', () => {
     expect(fetched?.rootPath).toBe('/tmp/demo');
   });
 
-  it('round-trips a task with discriminated turn state', async () => {
+  it('round-trips a session with discriminated turn state', async () => {
     const db = makeTestDatabase();
     await migrate(db);
 
@@ -86,28 +86,28 @@ describe('migrate', () => {
     };
     await insertWorkspace(db, workspace);
 
-    const task: Task = {
-      id: 'task_1' as TaskId,
+    const session: Session = {
+      id: 'session_1' as SessionId,
       workspaceId: workspace.id,
       goal: 'refactor auth',
       state: { kind: 'idle', lastActivityAt: now() },
       contextSlots: [],
-      providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertTask(db, task);
-    const fetched = await getTaskById(db, task.id);
+    await insertSession(db, session);
+    const fetched = await getSessionById(db, session.id);
 
     expect(fetched).not.toBeNull();
     expect(fetched?.goal).toBe('refactor auth');
     expect(fetched?.state.kind).toBe('idle');
   });
 
-  it('round-trips task providerPreference columns', async () => {
+  it('round-trips session providerPreference columns', async () => {
     const db = makeTestDatabase();
     await migrate(db);
 
@@ -120,8 +120,8 @@ describe('migrate', () => {
     };
     await insertWorkspace(db, workspace);
 
-    const task: Task = {
-      id: 'task_2' as TaskId,
+    const session: Session = {
+      id: 'session_2' as SessionId,
       workspaceId: workspace.id,
       goal: 'test provider pref',
       state: { kind: 'draft' },
@@ -133,14 +133,14 @@ describe('migrate', () => {
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertTask(db, task);
-    const fetched = await getTaskById(db, task.id);
+    await insertSession(db, session);
+    const fetched = await getSessionById(db, session.id);
 
     expect(fetched?.providerPreference.defaultProvider).toBe('cursor');
     expect(fetched?.providerPreference.allowTurnOverride).toBe(false);
   });
 
-  it('round-trips workflows with steps and sessions', async () => {
+  it('round-trips workflows with steps and agents', async () => {
     const db = makeTestDatabase();
     await migrate(db);
 
@@ -153,20 +153,20 @@ describe('migrate', () => {
     };
     await insertWorkspace(db, workspace);
 
-    const task: Task = {
-      id: 'task_3' as TaskId,
+    const session: Session = {
+      id: 'session_3' as SessionId,
       workspaceId: workspace.id,
       goal: 'test workflow',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertTask(db, task);
+    await insertSession(db, session);
 
     const step1: Step = {
       id: 'step_1' as StepId,
@@ -209,27 +209,27 @@ describe('migrate', () => {
     expect(list).toHaveLength(1);
     expect(list[0]!.steps).toHaveLength(2);
 
-    const session: Session = {
-      id: 'sess_1' as SessionId,
-      taskId: task.id,
+    const agent: Agent = {
+      id: 'agent_1' as AgentId,
+      sessionId: session.id,
       stepId: step1.id,
       ordinal: 0,
       name: 'Discovery',
       status: 'pending',
     };
 
-    await insertSession(db, session);
-    const sessions = await listSessionsForTask(db, task.id);
+    await insertAgent(db, agent);
+    const agents = await listAgentsForSession(db, session.id);
 
-    expect(sessions).toHaveLength(1);
-    if (!sessions[0]) throw new Error('sessions[0] should exist');
-    expect(sessions[0].status).toBe('pending');
+    expect(agents).toHaveLength(1);
+    if (!agents[0]) throw new Error('agents[0] should exist');
+    expect(agents[0].status).toBe('pending');
 
-    await updateSessionStatus(db, session.id, {
+    await updateAgentStatus(db, agent.id, {
       status: 'completed',
       outputSummary: 'Found issues',
     });
-    const updated = await listSessionsForTask(db, task.id);
+    const updated = await listAgentsForSession(db, session.id);
 
     if (!updated[0]) throw new Error('updated[0] should exist');
     expect(updated[0].status).toBe('completed');
@@ -240,7 +240,7 @@ describe('migrate', () => {
     expect(deleted).toBeNull();
   });
 
-  it('round-trips task_worktrees: insert, list, delete', async () => {
+  it('round-trips session_worktrees: insert, list, delete', async () => {
     const db = makeTestDatabase();
     await migrate(db);
 
@@ -253,47 +253,47 @@ describe('migrate', () => {
     };
     await insertWorkspace(db, workspace);
 
-    const task: Task = {
-      id: 'task_wt' as TaskId,
+    const session: Session = {
+      id: 'session_wt' as SessionId,
       workspaceId: workspace.id,
       goal: 'worktree test',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertTask(db, task);
+    await insertSession(db, session);
 
-    await insertTaskWorktree(db, {
+    await insertSessionWorktree(db, {
       id: 'wt_1',
-      taskId: task.id,
+      sessionId: session.id,
       worktreePath: '/tmp/worktrees/wt_1',
       branch: 'kay/feat-1',
       parallelIndex: 0,
       createdAt: Date.now(),
     });
-    await insertTaskWorktree(db, {
+    await insertSessionWorktree(db, {
       id: 'wt_2',
-      taskId: task.id,
+      sessionId: session.id,
       worktreePath: '/tmp/worktrees/wt_2',
       branch: 'kay/feat-2',
       parallelIndex: 1,
       createdAt: Date.now(),
     });
 
-    const rows = await listWorktreesForTask(db, task.id);
+    const rows = await listWorktreesForSession(db, session.id);
     expect(rows).toHaveLength(2);
     expect(rows[0]!.worktreePath).toBe('/tmp/worktrees/wt_1');
     expect(rows[0]!.parallelIndex).toBe(0);
     expect(rows[1]!.worktreePath).toBe('/tmp/worktrees/wt_2');
     expect(rows[1]!.parallelIndex).toBe(1);
 
-    await deleteWorktreesForTask(db, task.id);
-    const afterDelete = await listWorktreesForTask(db, task.id);
+    await deleteWorktreesForSession(db, session.id);
+    const afterDelete = await listWorktreesForSession(db, session.id);
     expect(afterDelete).toHaveLength(0);
   });
 
@@ -310,24 +310,24 @@ describe('migrate', () => {
     };
     await insertWorkspace(db, workspace);
 
-    const task: Task = {
-      id: 'task_pg' as TaskId,
+    const session: Session = {
+      id: 'session_pg' as SessionId,
       workspaceId: workspace.id,
       goal: 'parallel group test',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_TASK_PROVIDER_PREFERENCE,
+      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
       createdAt: now(),
       updatedAt: now(),
     };
-    await insertTask(db, task);
+    await insertSession(db, session);
 
     const group1: ParallelGroup = {
       id: 'pg_1' as ParallelGroupId,
-      taskId: task.id,
+      sessionId: session.id,
       ordinal: 0,
       mergeStrategy: 'last_write_wins',
       createdAt: now(),
@@ -336,7 +336,7 @@ describe('migrate', () => {
 
     const group2: ParallelGroup = {
       id: 'pg_2' as ParallelGroupId,
-      taskId: task.id,
+      sessionId: session.id,
       ordinal: 1,
       mergeStrategy: 'manual',
       createdAt: now(),
@@ -346,7 +346,7 @@ describe('migrate', () => {
     await insertGroup(db, group1);
     await insertGroup(db, group2);
 
-    const groups = await listGroupsForTask(db, task.id);
+    const groups = await listGroupsForSession(db, session.id);
     expect(groups).toHaveLength(2);
     expect(groups[0]!.ordinal).toBe(0);
     expect(groups[0]!.mergeStrategy).toBe('last_write_wins');
@@ -368,7 +368,7 @@ describe('migrate', () => {
     expect(updated.completedAt).toBe(completedAt);
 
     await deleteGroup(db, group1.id);
-    const afterDelete = await listGroupsForTask(db, task.id);
+    const afterDelete = await listGroupsForSession(db, session.id);
     expect(afterDelete).toHaveLength(1);
     expect(afterDelete[0]!.id).toBe(group2.id);
   });

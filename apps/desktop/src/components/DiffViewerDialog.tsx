@@ -28,8 +28,8 @@ import type {
   DiffView,
   FileDiff,
   FileDiffStatus,
+  AgentId,
   SessionId,
-  TaskId,
   WorktreeStatus,
 } from '@kay-am/types';
 import { ghPrDiff } from '../github';
@@ -51,7 +51,7 @@ import { DiffViewSelector } from './DiffViewSelector';
 interface DiffViewerDialogProps {
   open: boolean;
   onClose: () => void;
-  taskId?: TaskId;
+  sessionId?: SessionId;
   title?: string;
   loader?: () => Promise<string>;
   repoSlug?: string;
@@ -73,12 +73,12 @@ interface DiffViewerDialogProps {
 
 const DEFAULT_VIEW: DiffView = { kind: 'working', scope: 'all' };
 
-function viewStorageKey(taskId: TaskId | undefined): string | null {
-  return taskId ? `${STORAGE_PREFIXES.diffView}${taskId}` : null;
+function viewStorageKey(sessionId: SessionId | undefined): string | null {
+  return sessionId ? `${STORAGE_PREFIXES.diffView}${sessionId}` : null;
 }
 
-function readPersistedView(taskId: TaskId | undefined): DiffView | null {
-  const key = viewStorageKey(taskId);
+function readPersistedView(sessionId: SessionId | undefined): DiffView | null {
+  const key = viewStorageKey(sessionId);
   if (!key || typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(key);
@@ -91,8 +91,8 @@ function readPersistedView(taskId: TaskId | undefined): DiffView | null {
   return null;
 }
 
-function writePersistedView(taskId: TaskId | undefined, view: DiffView): void {
-  const key = viewStorageKey(taskId);
+function writePersistedView(sessionId: SessionId | undefined, view: DiffView): void {
+  const key = viewStorageKey(sessionId);
   if (!key || typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(key, JSON.stringify(view));
@@ -251,7 +251,7 @@ function writeSidebarPref(collapsed: boolean): void {
 export function DiffViewerDialog({
   open,
   onClose,
-  taskId,
+  sessionId,
   title,
   loader,
   repoSlug,
@@ -270,7 +270,9 @@ export function DiffViewerDialog({
   const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
   const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
 
-  const [view, setViewState] = useState<DiffView>(() => readPersistedView(taskId) ?? DEFAULT_VIEW);
+  const [view, setViewState] = useState<DiffView>(
+    () => readPersistedView(sessionId) ?? DEFAULT_VIEW,
+  );
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -280,19 +282,19 @@ export function DiffViewerDialog({
   const setView = useCallback(
     (next: DiffView) => {
       setViewState(next);
-      writePersistedView(taskId, next);
+      writePersistedView(sessionId, next);
     },
-    [taskId],
+    [sessionId],
   );
 
-  const comments = useDiffComments(taskId ?? null);
+  const comments = useDiffComments(sessionId ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
   const addDiffComment = useAppStore((s) => s.addDiffComment);
   const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
   const consumeDiffComments = useAppStore((s) => s.consumeDiffComments);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
-  const summarizer = useSummarizerStatus(taskId ?? null);
+  const summarizer = useSummarizerStatus(sessionId ?? null);
   const prevSummarizerStatus = useRef(summarizer.status);
 
   useEffect(() => {
@@ -308,9 +310,11 @@ export function DiffViewerDialog({
   }, [summarizer.status, open, isGitAware]);
 
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const phaseRuns = useAppStore((s) => (taskId ? (s.sessionPhaseRuns[taskId] ?? null) : null));
+  const phaseRuns = useAppStore((s) =>
+    sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
+  );
   const agentNameById = useMemo(() => {
-    const m = new Map<SessionId, string>();
+    const m = new Map<AgentId, string>();
     if (phaseRuns) for (const r of phaseRuns) m.set(r.id, r.name);
     return m;
   }, [phaseRuns]);
@@ -398,8 +402,8 @@ export function DiffViewerDialog({
   ]);
 
   useEffect(() => {
-    if (open && taskId) void loadDiffComments(taskId);
-  }, [open, taskId, loadDiffComments]);
+    if (open && sessionId) void loadDiffComments(sessionId);
+  }, [open, sessionId, loadDiffComments]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((v) => {
@@ -455,7 +459,7 @@ export function DiffViewerDialog({
   const openComments = useMemo(() => comments.filter((c) => c.status === 'open'), [comments]);
 
   const handleProposeFixes = async () => {
-    if (!taskId || openComments.length === 0 || spawning) return;
+    if (!sessionId || openComments.length === 0 || spawning) return;
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
@@ -463,26 +467,26 @@ export function DiffViewerDialog({
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
       const name = `review notes (${fileCount}F/${openComments.length}N)`;
       const idsToConsume = openComments.map((c) => c.id);
-      const agentId = await spawnAgent(taskId, {
+      const agentId = await spawnAgent(sessionId, {
         name,
         model: defaults.model,
         effort: defaults.effort,
       });
       try {
-        await consumeDiffComments(taskId, idsToConsume, agentId);
+        await consumeDiffComments(sessionId, idsToConsume, agentId);
       } catch (err) {
         console.error('failed to mark comments consumed', err);
       }
-      void sendTurn({ taskId, content: prompt });
+      void sendTurn({ sessionId, content: prompt });
       onClose();
     } finally {
       setSpawning(false);
     }
   };
 
-  const handleViewAgent = async (agentId: SessionId) => {
-    if (!taskId) return;
-    await selectAgent(taskId, agentId);
+  const handleViewAgent = async (agentId: AgentId) => {
+    if (!sessionId) return;
+    await selectAgent(sessionId, agentId);
     onClose();
   };
 
@@ -498,14 +502,14 @@ export function DiffViewerDialog({
   };
 
   const handleAddComment = async (anchor: DiffCommentAnchor, body: string) => {
-    if (!selected || !taskId) return;
-    await addDiffComment(taskId, selected.path, body, anchor);
+    if (!selected || !sessionId) return;
+    await addDiffComment(sessionId, selected.path, body, anchor);
     setActiveAnchor(null);
   };
 
   const handleAddFileLevelComment = async (body: string) => {
-    if (!selected || !taskId) return;
-    await addDiffComment(taskId, selected.path, body);
+    if (!selected || !sessionId) return;
+    await addDiffComment(sessionId, selected.path, body);
     setFileLevelComposerOpen(false);
   };
 
@@ -593,7 +597,7 @@ export function DiffViewerDialog({
                   files={files}
                   selectedIdx={selectedIdx}
                   onSelect={handleSelectFile}
-                  onStartFileComment={taskId ? handleRailFileComment : undefined}
+                  onStartFileComment={sessionId ? handleRailFileComment : undefined}
                   commentCounts={openCommentsByFile}
                 />
               ) : null}
@@ -605,16 +609,16 @@ export function DiffViewerDialog({
                     fileLevelComments={fileLevelComments}
                     activeAnchor={activeAnchor}
                     fileLevelComposerOpen={fileLevelComposerOpen}
-                    canComment={Boolean(taskId)}
+                    canComment={Boolean(sessionId)}
                     onStartComment={(anchor) => setActiveAnchor(anchor)}
                     onCancelComment={() => setActiveAnchor(null)}
                     onSubmitComment={(anchor, body) => void handleAddComment(anchor, body)}
                     onStartFileLevelComment={() => setFileLevelComposerOpen(true)}
                     onCancelFileLevelComment={() => setFileLevelComposerOpen(false)}
                     onSubmitFileLevelComment={(body) => void handleAddFileLevelComment(body)}
-                    onResolve={(id) => taskId && void resolveDiffComment(taskId, id)}
-                    onReopen={(id) => taskId && void reopenDiffComment(taskId, id)}
-                    onDelete={(id) => taskId && void deleteDiffComment(taskId, id)}
+                    onResolve={(id) => sessionId && void resolveDiffComment(sessionId, id)}
+                    onReopen={(id) => sessionId && void reopenDiffComment(sessionId, id)}
+                    onDelete={(id) => sessionId && void deleteDiffComment(sessionId, id)}
                     onViewAgent={(id) => void handleViewAgent(id)}
                     getAgentName={(id) => agentNameById.get(id)}
                   />
@@ -624,7 +628,7 @@ export function DiffViewerDialog({
           )}
         </div>
 
-        {taskId && openComments.length > 0 ? (
+        {sessionId && openComments.length > 0 ? (
           <NotesFooter
             openCount={openComments.length}
             spawning={spawning}
@@ -1046,8 +1050,8 @@ function CommentItem({
   onResolve: (id: string) => void;
   onReopen: (id: string) => void;
   onDelete: (id: string) => void;
-  onViewAgent: (agentId: SessionId) => void;
-  getAgentName: (agentId: SessionId) => string | undefined;
+  onViewAgent: (agentId: AgentId) => void;
+  getAgentName: (agentId: AgentId) => string | undefined;
 }) {
   const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
   const containerClass =
@@ -1109,7 +1113,7 @@ function CommentItem({
               <span>consumed by</span>
               <button
                 type="button"
-                onClick={() => onViewAgent(comment.consumedByAgentId as SessionId)}
+                onClick={() => onViewAgent(comment.consumedByAgentId as AgentId)}
                 className="inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info hover:bg-info/10 hover:text-info"
               >
                 <span className="font-medium">{agentName}</span>
@@ -1152,8 +1156,8 @@ interface FileDiffPaneProps {
   onResolve: (id: string) => void;
   onReopen: (id: string) => void;
   onDelete: (id: string) => void;
-  onViewAgent: (agentId: SessionId) => void;
-  getAgentName: (agentId: SessionId) => string | undefined;
+  onViewAgent: (agentId: AgentId) => void;
+  getAgentName: (agentId: AgentId) => string | undefined;
 }
 
 function FileDiffPane({

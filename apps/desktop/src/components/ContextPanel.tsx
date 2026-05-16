@@ -32,8 +32,8 @@ import type {
   ContextSlotHistoryEntry,
   PlanStatus,
   PlanWithCount,
-  Task,
-  TaskId,
+  Session,
+  SessionId,
   TelemetryRecord,
   PullRequestStateKind,
 } from '@kay-am/types';
@@ -58,7 +58,7 @@ import { worktreeStatus } from '../worktree';
 import type { WorktreeStatus } from '@kay-am/types';
 
 interface ContextPanelProps {
-  session: Task;
+  session: Session;
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
@@ -231,7 +231,7 @@ export function ContextPanel({
               </div>
             </header>
 
-            <PlansSection taskId={session.id} />
+            <PlansSection sessionId={session.id} />
 
             {/* Per-slot independence: <ul> is always rendered. Each SlotRow
                 shows its own skeleton when its data slice is missing AND the
@@ -243,7 +243,7 @@ export function ContextPanel({
                 return (
                   <SlotRow
                     key={key}
-                    taskId={session.id}
+                    sessionId={session.id}
                     slotKey={key}
                     slot={slot}
                     loading={loading.slots}
@@ -314,7 +314,7 @@ export function ContextPanel({
       <DiffViewerDialog
         open={filesDiffOpen}
         onClose={() => setFilesDiffOpen(false)}
-        taskId={session.id}
+        sessionId={session.id}
         title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
         workingDir={workingDir ?? undefined}
         worktreePath={workingDir ?? undefined}
@@ -424,7 +424,7 @@ function PrSkeleton() {
   );
 }
 
-function GitHubSection({ session, isActive = true }: { session: Task; isActive?: boolean }) {
+function GitHubSection({ session, isActive = true }: { session: Session; isActive?: boolean }) {
   const githubStatus = useAppStore((s) => s.githubStatus);
   const branch = useAppStore((s) => s.sessionBranches[session.id]);
   const ghState = useAppStore((s) => s.sessionGithub[session.id]);
@@ -661,7 +661,7 @@ function GitHubSection({ session, isActive = true }: { session: Task; isActive?:
         <DiffViewerDialog
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
-          taskId={session.id}
+          sessionId={session.id}
           repoSlug={repoSlug}
           prNumber={pr.number}
           cwd={workspace?.rootPath}
@@ -748,7 +748,7 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
 }
 
 interface SlotRowProps {
-  taskId: TaskId;
+  sessionId: SessionId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   loading?: boolean;
@@ -757,7 +757,7 @@ interface SlotRowProps {
 }
 
 function SlotRow({
-  taskId,
+  sessionId,
   slotKey,
   slot,
   loading = false,
@@ -770,7 +770,7 @@ function SlotRow({
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
-  const history = useSlotHistory(taskId, slotKey);
+  const history = useSlotHistory(sessionId, slotKey);
 
   // Per-slot skeleton: while the slots fetch is still in flight and this
   // particular slot hasn't materialized yet, show a placeholder. Sibling
@@ -799,9 +799,9 @@ function SlotRow({
   };
 
   const openHistory = useCallback(() => {
-    void loadSlotHistory(taskId, slotKey);
+    void loadSlotHistory(sessionId, slotKey);
     setHistoryOpen(true);
-  }, [loadSlotHistory, taskId, slotKey]);
+  }, [loadSlotHistory, sessionId, slotKey]);
 
   const restore = useCallback(
     (entry: ContextSlotHistoryEntry) => {
@@ -1094,15 +1094,15 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   superseded: 'bg-muted text-muted-foreground',
 };
 
-function PlansSection({ taskId }: { taskId: TaskId }) {
-  const plans = useSessionPlans(taskId);
-  const loading = useSessionLoading(taskId);
+function PlansSection({ sessionId }: { sessionId: SessionId }) {
+  const plans = useSessionPlans(sessionId);
+  const loading = useSessionLoading(sessionId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    void loadSessionPlans(taskId);
-  }, [taskId, loadSessionPlans]);
+    void loadSessionPlans(sessionId);
+  }, [sessionId, loadSessionPlans]);
 
   if (plans.length === 0 && loading.plans) return <PlansSkeleton />;
   if (plans.length === 0) return null;
@@ -1131,7 +1131,7 @@ function PlansSection({ taskId }: { taskId: TaskId }) {
       </div>
       <LatestPlanCard plan={latest} index={latestIndex} />
       <PlansModal
-        taskId={taskId}
+        sessionId={sessionId}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         initialPlanId={latest.id}

@@ -1,17 +1,17 @@
 import type {
+  AgentId,
   DiffComment,
   DiffCommentAnchor,
   DiffCommentSide,
   DiffCommentStatus,
   IsoDateTime,
   SessionId,
-  TaskId,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface DiffCommentRow {
   id: string;
-  task_id: string;
+  session_id: string;
   file_path: string;
   body: string;
   status: string;
@@ -30,7 +30,7 @@ function toDomain(row: DiffCommentRow): DiffComment {
       : undefined;
   return {
     id: row.id,
-    taskId: row.task_id as TaskId,
+    sessionId: row.session_id as SessionId,
     filePath: row.file_path,
     body: row.body,
     status: row.status as DiffCommentStatus,
@@ -44,39 +44,39 @@ function toDomain(row: DiffCommentRow): DiffComment {
         ? (new Date(row.consumed_at).toISOString() as IsoDateTime)
         : undefined,
     consumedByAgentId:
-      row.consumed_by_agent_id !== null ? (row.consumed_by_agent_id as SessionId) : undefined,
+      row.consumed_by_agent_id !== null ? (row.consumed_by_agent_id as AgentId) : undefined,
     anchor,
   };
 }
 
-const SELECT_COLUMNS = `id, task_id, file_path, body, status, created_at, resolved_at,
+const SELECT_COLUMNS = `id, session_id, file_path, body, status, created_at, resolved_at,
     consumed_at, consumed_by_agent_id, line_number, line_side`;
 
 export async function insertDiffComment(
   db: Database,
   id: string,
-  taskId: TaskId,
+  sessionId: SessionId,
   filePath: string,
   body: string,
   anchor?: DiffCommentAnchor,
 ): Promise<void> {
   await db.execute(
-    `INSERT INTO diff_comments (id, task_id, file_path, body, status, created_at, line_number, line_side)
+    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side)
      VALUES (?, ?, ?, ?, 'open', ?, ?, ?)`,
-    [id, taskId, filePath, body, Date.now(), anchor?.lineNumber ?? null, anchor?.side ?? null],
+    [id, sessionId, filePath, body, Date.now(), anchor?.lineNumber ?? null, anchor?.side ?? null],
   );
 }
 
-export async function listDiffCommentsForTask(
+export async function listDiffCommentsForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<DiffComment>> {
   const rows = await db.select<DiffCommentRow>(
     `SELECT ${SELECT_COLUMNS}
      FROM diff_comments
-     WHERE task_id = ?
+     WHERE session_id = ?
      ORDER BY created_at ASC`,
-    [taskId],
+    [sessionId],
   );
   return rows.map(toDomain);
 }
@@ -91,7 +91,7 @@ export async function resolveDiffComment(db: Database, id: string): Promise<void
 export async function consumeDiffComments(
   db: Database,
   ids: ReadonlyArray<string>,
-  agentId: SessionId,
+  agentId: AgentId,
 ): Promise<void> {
   if (ids.length === 0) return;
   const placeholders = ids.map(() => '?').join(', ');

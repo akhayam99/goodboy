@@ -1,9 +1,9 @@
-import type { ProviderRunId, SessionId, TaskId, TurnEvent } from '@kay-am/types';
+import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface TurnEventRow {
   id: string;
-  task_id: string;
+  session_id: string;
   agent_id: string;
   payload: string;
   created_at: number;
@@ -29,21 +29,21 @@ export async function insertTurnEvent(
   db: Database,
   args: {
     readonly id: string;
-    readonly taskId: TaskId;
-    readonly agentId: SessionId;
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
     readonly event: TurnEvent;
   },
 ): Promise<void> {
   await db.execute(
-    `INSERT INTO turn_events (id, task_id, agent_id, payload, created_at)
+    `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
      VALUES (?, ?, ?, ?, ?)`,
-    [args.id, args.taskId, args.agentId, JSON.stringify(args.event), eventTimestamp(args.event)],
+    [args.id, args.sessionId, args.agentId, JSON.stringify(args.event), eventTimestamp(args.event)],
   );
 }
 
 export async function listTurnEventsForAgent(
   db: Database,
-  agentId: SessionId,
+  agentId: AgentId,
   opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<TurnEvent>> {
   // When a limit is set we return the *last* N events in ASC order — DESC +
@@ -66,33 +66,33 @@ export async function listTurnEventsForAgent(
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
 }
 
-export async function listTurnEventsForTask(
+export async function listTurnEventsForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<TurnEvent>> {
   const rows = await db.select<TurnEventRow>(
-    'SELECT * FROM turn_events WHERE task_id = ? ORDER BY created_at ASC, rowid ASC',
-    [taskId],
+    'SELECT * FROM turn_events WHERE session_id = ? ORDER BY created_at ASC, rowid ASC',
+    [sessionId],
   );
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
 }
 
-export async function listAgentRunIdsForTask(
+export async function listAgentRunIdsForSession(
   db: Database,
-  taskId: TaskId,
-): Promise<Map<SessionId, ReadonlyArray<ProviderRunId>>> {
+  sessionId: SessionId,
+): Promise<Map<AgentId, ReadonlyArray<ProviderRunId>>> {
   const rows = await db.select<TurnEventRow>(
-    'SELECT * FROM turn_events WHERE task_id = ? ORDER BY created_at ASC, rowid ASC',
-    [taskId],
+    'SELECT * FROM turn_events WHERE session_id = ? ORDER BY created_at ASC, rowid ASC',
+    [sessionId],
   );
-  const result = new Map<SessionId, ProviderRunId[]>();
-  const seen = new Map<SessionId, Set<string>>();
+  const result = new Map<AgentId, ProviderRunId[]>();
+  const seen = new Map<AgentId, Set<string>>();
   for (const row of rows) {
     const event = rowToEvent(row);
     if (!event) continue;
     const runId = event.runId;
     if (!runId || runId === ('history' as ProviderRunId)) continue;
-    const agentId = row.agent_id as SessionId;
+    const agentId = row.agent_id as AgentId;
     let bucket = seen.get(agentId);
     if (!bucket) {
       bucket = new Set();

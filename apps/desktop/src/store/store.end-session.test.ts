@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Task, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
@@ -48,23 +48,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
-  insertTaskWorktree: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForTask: (db: unknown, id: string) => deleteWorktreesForSessionSpy(db, id),
+  deleteWorktreesForSession: (db: unknown, id: string) => deleteWorktreesForSessionSpy(db, id),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: (...args: unknown[]) => updateSessionStateSpy(...args),
+  updateSessionState: (...args: unknown[]) => updateSessionStateSpy(...args),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -129,13 +129,13 @@ vi.mock('../provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-const SESSION_ID = 'session-end-1' as TaskId;
+const SESSION_ID = 'session-end-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-08T00:00:00.000Z' as IsoDateTime;
 const WORKTREE_PATH = '/tmp/wt-end';
 const REPO_PATH = '/tmp/repo';
 
-function buildSession(stateKind: 'idle' | 'running' = 'idle'): Task {
+function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
   const state =
     stateKind === 'running'
       ? {
@@ -305,7 +305,7 @@ describe('endSession — Tauri error propagation (#242)', () => {
     expect(session?.state.kind).toBe('ended');
   });
 
-  it('propagates error from updateTaskState as structured message', async () => {
+  it('propagates error from updateSessionState as structured message', async () => {
     // Simulate a Tauri-style JSON error object (not instanceof Error)
     const tauriErr = { kind: 'db', message: 'database is locked' };
     updateSessionStateSpy.mockRejectedValue(tauriErr);

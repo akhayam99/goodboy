@@ -3,15 +3,15 @@ import type {
   IsoDateTime,
   PermissionRule,
   PermissionRuleId,
-  TaskId,
+  SessionId,
   WorkspaceId,
 } from '@kay-am/types';
 import { buildClaudeFlags } from './claude-flags';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
-const SESSION = 'session-1' as TaskId;
+const SESSION = 'session-1' as SessionId;
 const WS = 'ws-1' as WorkspaceId;
-const SCOPE = { taskId: SESSION, workspaceId: WS };
+const SCOPE = { sessionId: SESSION, workspaceId: WS };
 
 function makeRule(
   overrides: Partial<PermissionRule> & Pick<PermissionRule, 'id' | 'decision'>,
@@ -82,8 +82,8 @@ describe('buildClaudeFlags', () => {
       }),
       makeRule({
         id: 'session-deny' as PermissionRuleId,
-        scope: 'task',
-        taskId: SESSION,
+        scope: 'session',
+        sessionId: SESSION,
         decision: 'deny',
         pattern: { tool: 'Edit' },
         priority: 5,
@@ -108,7 +108,11 @@ describe('buildClaudeFlags', () => {
   });
 
   it('propagates provided permissionMode', () => {
-    const result = buildClaudeFlags({ rules: [], scope: SCOPE, permissionMode: 'bypassPermissions' });
+    const result = buildClaudeFlags({
+      rules: [],
+      scope: SCOPE,
+      permissionMode: 'bypassPermissions',
+    });
     expect(result.permissionMode).toBe('bypassPermissions');
   });
 
@@ -144,8 +148,8 @@ describe('buildClaudeFlags', () => {
     const rules: PermissionRule[] = [
       makeRule({
         id: 'r1' as PermissionRuleId,
-        scope: 'task',
-        taskId: 'other-session' as TaskId,
+        scope: 'session',
+        sessionId: 'other-session' as SessionId,
         decision: 'allow',
         pattern: { tool: 'Edit' },
       }),

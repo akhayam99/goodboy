@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
-import type { SessionId, TaskId } from '@kay-am/types';
+import type { AgentId, SessionId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
@@ -18,8 +18,8 @@ const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
 
 interface TranscriptCardProps {
   readonly item: TranscriptItem;
-  readonly taskId?: TaskId | null;
-  readonly agentId?: SessionId | null;
+  readonly sessionId?: SessionId | null;
+  readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
@@ -27,7 +27,7 @@ interface TranscriptCardProps {
 
 function TranscriptCardImpl({
   item,
-  taskId = null,
+  sessionId = null,
   agentId = null,
   workingDir = null,
   onRefreshAuth,
@@ -82,9 +82,9 @@ function TranscriptCardImpl({
     case 'done':
       return <hr className="border-border" />;
     case 'permission_request':
-      return <PermissionRequestCard item={item} taskId={taskId} agentId={agentId} />;
+      return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
-      return <PermissionDecisionCard item={item} taskId={taskId} agentId={agentId} />;
+      return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />;
   }
 }
 
@@ -108,7 +108,7 @@ export const TranscriptCard = memo(
   TranscriptCardImpl,
   (prev, next) =>
     itemEqual(prev.item, next.item) &&
-    prev.taskId === next.taskId &&
+    prev.sessionId === next.sessionId &&
     prev.agentId === next.agentId &&
     prev.workingDir === next.workingDir &&
     prev.onRefreshAuth === next.onRefreshAuth &&

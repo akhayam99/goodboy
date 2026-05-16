@@ -1,12 +1,12 @@
 import { FolderOpen, MessagesSquare } from 'lucide-react';
 import { cn } from '@kay-am/ui';
-import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
+import type { Agent, AgentStatus, ProviderRunId, Session, SessionId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionLoading } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
 interface ChatHeaderProps {
-  session: Task;
+  session: Session;
   worktreePath: string | null;
   parallelRunIds?: ReadonlyArray<ProviderRunId>;
   onSelectRun?: (runId: ProviderRunId) => void;
@@ -32,9 +32,9 @@ export function ChatHeader({
   const runStatuses = Object.fromEntries(
     (parallelRunIds ?? []).map((rid) => {
       const run = phaseRuns.find((r) => r.runId === rid);
-      return [rid, run?.status ?? ('pending' as SessionStatus)];
+      return [rid, run?.status ?? ('pending' as AgentStatus)];
     }),
-  ) as Readonly<Record<ProviderRunId, SessionStatus>>;
+  ) as Readonly<Record<ProviderRunId, AgentStatus>>;
 
   const isParallel = (parallelRunIds?.length ?? 0) > 1;
 
@@ -90,7 +90,7 @@ export function ChatHeader({
                 </>
               )}
             </span>
-            {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
+            {session.workflowId ? <PhaseProgressPill sessionId={session.id} /> : null}
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export function ChatHeader({
   );
 }
 
-const STATUS_DOT: Record<SessionStatus, string> = {
+const STATUS_DOT: Record<AgentStatus, string> = {
   pending: 'bg-muted-foreground/40',
   running: 'bg-blue-500',
   completed: 'bg-green-500',
@@ -110,9 +110,9 @@ const STATUS_DOT: Record<SessionStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-function PhaseProgressPill({ taskId }: { taskId: TaskId }) {
-  const runs = useAppStore((s) => s.sessionPhaseRuns[taskId] ?? EMPTY_ARRAY);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[taskId] ?? null);
+function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
+  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
 
   if (runs.length === 0) return null;
 
@@ -120,7 +120,7 @@ function PhaseProgressPill({ taskId }: { taskId: TaskId }) {
   const selectedIdx = selectedAgentId ? sorted.findIndex((r) => r.id === selectedAgentId) : -1;
   const activeIdx = sorted.findIndex((r) => r.status === 'running');
   const lastCompletedIdx = sorted.reduce(
-    (acc: number, r: Session, i: number) => (r.status === 'completed' ? i : acc),
+    (acc: number, r: Agent, i: number) => (r.status === 'completed' ? i : acc),
     -1,
   );
   // Selected agent takes priority — pill reflects the agent the user is

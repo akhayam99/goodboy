@@ -40,14 +40,14 @@ import { NotificationCenter } from './NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
 import type {
+  Agent,
+  AgentId,
+  AgentStatus,
   ProviderId,
   PullRequestStateKind,
   Session,
   SessionId,
-  SessionStatus,
   Step,
-  Task,
-  TaskId,
   TelemetryRecord,
   TurnState,
   Workflow,
@@ -65,7 +65,7 @@ import {
   useSessionPlans,
   useSessionSlots,
   useSessions,
-  useTaskHasUnread,
+  useSessionHasUnread,
   useWorkspaceHasUnread,
   useWorkspaces,
 } from '../store';
@@ -132,11 +132,11 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const currentSession = useCurrentSession();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  // Adapter with the (id: TaskId) => void signature SessionList expects.
+  // Adapter with the (id: SessionId) => void signature SessionList expects.
   // useCallback gives a stable ref so memoized SessionRow rows downstream
   // skip re-render on every parent paint.
   const onSelectSession = useCallback(
-    (id: TaskId) => {
+    (id: SessionId) => {
       void setCurrentSession(id);
     },
     [setCurrentSession],
@@ -157,7 +157,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     warmedRef.current = true;
     for (const s of sessions) {
       if (sessionBranches[s.id]) {
-        void refreshSessionPr(s.id as TaskId);
+        void refreshSessionPr(s.id as SessionId);
       }
     }
   }, [sessions, sessionBranches, refreshSessionPr]);
@@ -182,7 +182,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  const [archivedMap, archive, unarchive] = useArchivedTasks();
+  const [archivedMap, archive, unarchive] = useArchivedSessions();
   const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
 
@@ -294,7 +294,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 onToggleState={toggleStateFilter}
                 onToggleProvider={toggleProviderFilter}
                 // Stable ref: setCurrentSession action is itself stable, but
-                // we need the matching (id: TaskId) => void signature. The
+                // we need the matching (id: SessionId) => void signature. The
                 // action no-ops on same id internally.
                 onSelectSession={onSelectSession}
                 onNewSession={() => setNewSessionOpen(true)}
@@ -422,9 +422,9 @@ function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
 }
 
 interface SessionListProps {
-  activeSessions: ReadonlyArray<Task>;
-  archivedSessions: ReadonlyArray<Task>;
-  currentSessionId: TaskId | null;
+  activeSessions: ReadonlyArray<Session>;
+  archivedSessions: ReadonlyArray<Session>;
+  currentSessionId: SessionId | null;
   sort: SessionSort;
   stateFilter: ReadonlyArray<TurnState['kind']>;
   providerFilter: ReadonlyArray<ProviderId>;
@@ -432,10 +432,10 @@ interface SessionListProps {
   providerFilterOptions: ReadonlyArray<ProviderId>;
   onToggleState: (kind: TurnState['kind']) => void;
   onToggleProvider: (provider: ProviderId) => void;
-  onSelectSession: (id: TaskId) => void;
+  onSelectSession: (id: SessionId) => void;
   onNewSession: () => void;
-  onArchive: (id: TaskId) => void;
-  onUnarchive: (id: TaskId) => void;
+  onArchive: (id: SessionId) => void;
+  onUnarchive: (id: SessionId) => void;
 }
 
 function SessionList({
@@ -466,10 +466,10 @@ function SessionList({
   // function ref on every parent render. These maps only rebuild when the
   // session list itself or one of the upstream callbacks actually changes.
   const rowHandlers = useMemo(() => {
-    const click = new Map<TaskId, () => void>();
-    const arch = new Map<TaskId, () => void>();
-    const unarch = new Map<TaskId, () => void>();
-    const ids = new Set<TaskId>();
+    const click = new Map<SessionId, () => void>();
+    const arch = new Map<SessionId, () => void>();
+    const unarch = new Map<SessionId, () => void>();
+    const ids = new Set<SessionId>();
     for (const s of sortedActive) ids.add(s.id);
     for (const s of sortedArchived) ids.add(s.id);
     for (const id of ids) {
@@ -661,7 +661,7 @@ function SortIconButton({
   );
 }
 
-function sortSessions(list: ReadonlyArray<Task>, sort: SessionSort): ReadonlyArray<Task> {
+function sortSessions(list: ReadonlyArray<Session>, sort: SessionSort): ReadonlyArray<Session> {
   const copy = [...list];
   if (sort === 'alpha') copy.sort((a, b) => a.goal.localeCompare(b.goal));
   else copy.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -694,17 +694,21 @@ function writeArchivedSet(map: Record<string, true>): void {
   }
 }
 
-function useArchivedTasks(): [Record<string, true>, (id: TaskId) => void, (id: TaskId) => void] {
+function useArchivedSessions(): [
+  Record<string, true>,
+  (id: SessionId) => void,
+  (id: SessionId) => void,
+] {
   const [map, setMap] = useState<Record<string, true>>(() => readArchivedSet());
   // Stable refs so memoized SessionRow downstream doesn't invalidate.
-  const archive = useCallback((id: TaskId) => {
+  const archive = useCallback((id: SessionId) => {
     setMap((prev) => {
       const next = { ...prev, [id]: true as const };
       writeArchivedSet(next);
       return next;
     });
   }, []);
-  const unarchive = useCallback((id: TaskId) => {
+  const unarchive = useCallback((id: SessionId) => {
     setMap((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -768,12 +772,12 @@ const PR_ICON_MAP: Record<
 };
 
 interface PrStatusIconProps {
-  taskId: TaskId;
+  sessionId: SessionId;
 }
 
-function PrStatusIcon({ taskId }: PrStatusIconProps) {
-  const github = useAppStore((s) => s.sessionGithub[taskId]);
-  const branch = useAppStore((s) => s.sessionBranches[taskId]);
+function PrStatusIcon({ sessionId }: PrStatusIconProps) {
+  const github = useAppStore((s) => s.sessionGithub[sessionId]);
+  const branch = useAppStore((s) => s.sessionBranches[sessionId]);
 
   const isLoading = !github || github.loading || (github.fetchedAt === null && !github.error);
 
@@ -826,7 +830,7 @@ function PrStatusIcon({ taskId }: PrStatusIconProps) {
 }
 
 interface SessionRowProps {
-  session: Task;
+  session: Session;
   isActive: boolean;
   onClick: () => void;
   archived: boolean;
@@ -846,9 +850,9 @@ const SessionRow = memo(function SessionRow({
   onArchive,
   onUnarchive,
 }: SessionRowProps) {
-  const budget = useAppStore((s) => s.sessionBudgets[session.id as TaskId] ?? null);
+  const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
-  const agentCount = useAppStore((s) => s.sessionPhaseRuns[session.id as TaskId]?.length ?? 0);
+  const agentCount = useAppStore((s) => s.sessionPhaseRuns[session.id as SessionId]?.length ?? 0);
   const workflowName = useAppStore((s) => {
     if (!session.workflowId) return null;
     const templates = s.phaseTemplates[session.workspaceId] ?? [];
@@ -873,7 +877,7 @@ const SessionRow = memo(function SessionRow({
     if (!SESSION_FEATURES.budget) return;
     if (!budgetLoaded.current) {
       budgetLoaded.current = true;
-      void loadSessionBudget(session.id as TaskId);
+      void loadSessionBudget(session.id as SessionId);
     }
   }, [session.id, loadSessionBudget]);
 
@@ -897,7 +901,7 @@ const SessionRow = memo(function SessionRow({
   const onCapSave = async () => {
     const parsed = parseCap(capDraft);
     if (parsed !== null) {
-      await setSessionBudget(session.id as TaskId, parsed);
+      await setSessionBudget(session.id as SessionId, parsed);
     }
     setEditingCap(false);
   };
@@ -920,7 +924,7 @@ const SessionRow = memo(function SessionRow({
       return;
     }
     try {
-      await renameTask(session.id as TaskId, renameDraft.trim());
+      await renameTask(session.id as SessionId, renameDraft.trim());
       setRenaming(false);
       setRenameError(null);
     } catch (err) {
@@ -938,12 +942,12 @@ const SessionRow = memo(function SessionRow({
 
   const onDeleteConfirm = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await deleteTask(session.id as TaskId);
+    await deleteTask(session.id as SessionId);
     setConfirmDelete(false);
   };
 
-  const taskHasUnread = useTaskHasUnread(session.id as TaskId);
-  const showUnreadDot = taskHasUnread && !isActive;
+  const sessionHasUnread = useSessionHasUnread(session.id as SessionId);
+  const showUnreadDot = sessionHasUnread && !isActive;
 
   return (
     <li>
@@ -995,7 +999,7 @@ const SessionRow = memo(function SessionRow({
             <span className="line-clamp-1 min-w-0 flex-1 truncate">{session.goal}</span>
           )}
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <PrStatusIcon taskId={session.id as TaskId} />
+            <PrStatusIcon sessionId={session.id as SessionId} />
             <StatusBadge state={session.state} />
             {(() => {
               const hasWorkflow = !!session.workflowId;
@@ -1021,7 +1025,7 @@ const SessionRow = memo(function SessionRow({
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!hasWorkflow) return;
-                    void setSessionAutoRun(session.id as TaskId, !session.autoRun);
+                    void setSessionAutoRun(session.id as SessionId, !session.autoRun);
                   }}
                   title={tooltip}
                   aria-label={ariaLabel}
@@ -1125,7 +1129,7 @@ const SessionRow = memo(function SessionRow({
         />
       )}
       <SessionSettingsDialog
-        taskId={session.id as TaskId}
+        sessionId={session.id as SessionId}
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         archived={archived}
@@ -1398,7 +1402,7 @@ function AddWsWorkflowsPreview() {
 }
 
 interface AgentsSectionProps {
-  task: Task;
+  task: Session;
 }
 
 function AgentsSection({ task }: AgentsSectionProps) {
@@ -1407,7 +1411,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const latestPlan = plansForTask[plansForTask.length - 1];
   const hasActivePlan = !!latestPlan && latestPlan.status === 'active';
   const phaseRuns = useAppStore(
-    (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
+    (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
@@ -1432,7 +1436,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const hasOpenQuestions =
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const [spawnError, setSpawnError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<SessionId | null>(null);
+  const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
 
@@ -1515,7 +1519,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     [telemetryByRunId, phaseRuns, agentRunHistory],
   );
 
-  const onPickAgent = (sid: SessionId) => {
+  const onPickAgent = (sid: AgentId) => {
     if (sid === selectedAgentId) return;
     void selectAgent(task.id, sid);
   };
@@ -1529,7 +1533,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
   };
 
-  const onRenameCommit = async (id: SessionId, name: string) => {
+  const onRenameCommit = async (id: AgentId, name: string) => {
     setEditingId(null);
     try {
       await renameAgent(task.id, id, name);
@@ -1538,7 +1542,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
   };
 
-  const onDeleteAgent = async (id: SessionId) => {
+  const onDeleteAgent = async (id: AgentId) => {
     try {
       await deleteAgent(task.id, id);
     } catch (err) {
@@ -1619,14 +1623,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
           />
         </div>
       ) : null}
-      {workflow && hasActivePlan ? null : <ActivePlanCta taskId={task.id} />}
+      {workflow && hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
       <NextActionChips
-        taskId={task.id}
+        sessionId={task.id}
         workflowBound={task.workflowId !== undefined}
         className="mt-2 px-2"
       />
       <div className="pl-2">
-        <SpawnAgentControl taskId={task.id} workflow={workflow} onSpawn={onSpawn} />
+        <SpawnAgentControl sessionId={task.id} workflow={workflow} onSpawn={onSpawn} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
     </section>
@@ -1634,17 +1638,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
 }
 
 interface SpawnAgentControlProps {
-  taskId: TaskId;
+  sessionId: SessionId;
   workflow: Workflow | null;
   onSpawn: (stepId: Step['id'] | null, model?: string) => void | Promise<void>;
 }
 
-function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps) {
+function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
   const [pendingSuggestion, setPendingSuggestion] = useState<NextAction | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const nextActions = useSessionNextActions(taskId);
-  const slots = useSessionSlots(taskId);
+  const nextActions = useSessionNextActions(sessionId);
+  const slots = useSessionSlots(sessionId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
   const hasOpenQuestions =
@@ -1668,8 +1672,8 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
 
   const executeSuggestion = async (action: NextAction) => {
     setPendingSuggestion(null);
-    const did = await spawnFromNextAction(action, taskId, spawnAgent);
-    if (did) clearSessionNextActions(taskId);
+    const did = await spawnFromNextAction(action, sessionId, spawnAgent);
+    if (did) clearSessionNextActions(sessionId);
   };
 
   const onPickSuggestion = (action: NextAction) => {
@@ -1781,8 +1785,8 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
   );
 }
 
-function ActivePlanCta({ taskId }: { taskId: TaskId }) {
-  const plans = useSessionPlans(taskId);
+function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
+  const plans = useSessionPlans(sessionId);
   const runPlan = useAppStore((s) => s.runPlan);
   const abandonPlan = useAppStore((s) => s.abandonPlan);
   const [spawning, setSpawning] = useState(false);
@@ -1793,7 +1797,7 @@ function ActivePlanCta({ taskId }: { taskId: TaskId }) {
     if (spawning) return;
     setSpawning(true);
     try {
-      await runPlan(taskId, latest.id);
+      await runPlan(sessionId, latest.id);
     } finally {
       setSpawning(false);
     }
@@ -1828,7 +1832,7 @@ function ActivePlanCta({ taskId }: { taskId: TaskId }) {
         </button>
         <button
           type="button"
-          onClick={() => void abandonPlan(taskId, latest.id)}
+          onClick={() => void abandonPlan(sessionId, latest.id)}
           className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
           title="mark plan as superseded; next plan emitted starts a new logical plan"
         >
@@ -1863,7 +1867,7 @@ function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect
   );
 }
 
-const AGENT_STATUS_TONE: Record<SessionStatus, string> = {
+const AGENT_STATUS_TONE: Record<AgentStatus, string> = {
   pending: 'bg-muted-foreground/40',
   running: 'bg-info',
   completed: 'bg-success',
@@ -1879,7 +1883,7 @@ interface AgentAggregate {
 }
 
 interface AgentRowProps {
-  readonly run: Session;
+  readonly run: Agent;
   readonly kind: AgentKind;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
@@ -2146,7 +2150,7 @@ function formatRelativeDuration(fromIso: string, toIso?: string): string {
   return `${d}d`;
 }
 
-function AgentLifetime({ run }: { run: Session }) {
+function AgentLifetime({ run }: { run: Agent }) {
   const [now, setNow] = useState(() => Date.now());
   const isLive = !!run.startedAt && !run.completedAt;
   useEffect(() => {
@@ -2265,7 +2269,7 @@ export function BulkSessionDeleteDialog({
     try {
       await bulkDelete(
         workspaceId,
-        workspaceSessions.map((s) => s.id as TaskId),
+        workspaceSessions.map((s) => s.id as SessionId),
       );
       onDeleted();
     } catch (err) {

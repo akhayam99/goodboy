@@ -1,12 +1,12 @@
 import { cn } from '@kay-am/ui';
-import type { SessionId, TaskId } from '@kay-am/types';
+import type { AgentId, SessionId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
 import { formatCardTime } from './format-card-time';
 
 interface PermissionDecisionCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
-  readonly taskId: TaskId | null;
-  readonly agentId: SessionId | null;
+  readonly sessionId: SessionId | null;
+  readonly agentId: AgentId | null;
 }
 
 const DECISION_TONE: Record<'allow' | 'deny', string> = {
@@ -16,7 +16,7 @@ const DECISION_TONE: Record<'allow' | 'deny', string> = {
 
 export function PermissionDecisionCard({
   item,
-  taskId: _taskId,
+  sessionId: _sessionId,
   agentId: _agentId,
 }: PermissionDecisionCardProps) {
   const timestamp = formatCardTime(item.at);

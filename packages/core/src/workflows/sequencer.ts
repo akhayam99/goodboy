@@ -1,6 +1,6 @@
-import type { Step, Session, Workflow } from '@kay-am/types';
+import type { Step, Agent, Workflow } from '@kay-am/types';
 
-export function nextStep(template: Workflow, runs: ReadonlyArray<Session>): Step | null {
+export function nextStep(template: Workflow, runs: ReadonlyArray<Agent>): Step | null {
   const doneIds = new Set(
     runs
       .filter((r) => r.status === 'completed' || r.status === 'skipped')
@@ -27,7 +27,7 @@ export function nextStep(template: Workflow, runs: ReadonlyArray<Session>): Step
  *     keep accepting follow-up turns until the user acts).
  *  3. First step in the template (cold start, no runs yet).
  */
-export function currentStep(template: Workflow, runs: ReadonlyArray<Session>): Step | null {
+export function currentStep(template: Workflow, runs: ReadonlyArray<Agent>): Step | null {
   const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
   if (sorted.length === 0) return null;
 
@@ -36,7 +36,7 @@ export function currentStep(template: Workflow, runs: ReadonlyArray<Session>): S
   }
 
   const stepById = new Map(sorted.map((s) => [s.id, s] as const));
-  const isStartedAt = (r: Session) => r.startedAt ?? '';
+  const isStartedAt = (r: Agent) => r.startedAt ?? '';
 
   const live = runs
     .filter((r) => r.status === 'running' || r.status === 'failed' || r.status === 'pending')
@@ -56,17 +56,14 @@ export function currentStep(template: Workflow, runs: ReadonlyArray<Session>): S
 }
 
 /**
- * Find the existing Session row for a step that the next turn should reuse.
+ * Find the existing Agent row for a step that the next turn should reuse.
  *
- * A Session is now a long-lived agent: multiple ProviderRuns get attached to
- * the same Session row instead of inserting a new row per user message.
+ * An Agent is now a long-lived agent: multiple ProviderRuns get attached to
+ * the same Agent row instead of inserting a new row per user message.
  * Returns the most recent run for the given step, or null if none exists yet
- * (caller should insert a fresh Session row in that case).
+ * (caller should insert a fresh Agent row in that case).
  */
-export function findReusableSession(
-  runs: ReadonlyArray<Session>,
-  stepId: Step['id'],
-): Session | null {
+export function findReusableAgent(runs: ReadonlyArray<Agent>, stepId: Step['id']): Agent | null {
   const matches = runs.filter((r) => r.stepId === stepId);
   if (matches.length === 0) return null;
   const sorted = [...matches].sort((a, b) => (b.startedAt ?? '').localeCompare(a.startedAt ?? ''));
@@ -84,7 +81,7 @@ export function buildStepPrompt(input: {
   return parts.join('\n\n');
 }
 
-export function isWorkflowComplete(template: Workflow, runs: ReadonlyArray<Session>): boolean {
+export function isWorkflowComplete(template: Workflow, runs: ReadonlyArray<Agent>): boolean {
   const doneIds = new Set(
     runs
       .filter((r) => r.status === 'completed' || r.status === 'skipped')

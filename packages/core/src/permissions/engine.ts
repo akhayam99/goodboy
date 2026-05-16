@@ -4,7 +4,7 @@ import type {
   PermissionRequest,
   PermissionRule,
   PermissionRuleScope,
-  TaskId,
+  SessionId,
   WorkspaceId,
 } from '@kay-am/types';
 import { formatToolPattern, parseToolPattern } from './matcher';
@@ -14,17 +14,17 @@ export interface PermissionEngineDeps {
 }
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
-  task: 2,
+  session: 2,
   workspace: 1,
   global: 0,
 };
 
 function isApplicable(
   rule: PermissionRule,
-  context: { taskId: TaskId; workspaceId: WorkspaceId },
+  context: { sessionId: SessionId; workspaceId: WorkspaceId },
 ): boolean {
   if (rule.scope === 'global') return true;
-  if (rule.scope === 'task') return rule.taskId === context.taskId;
+  if (rule.scope === 'session') return rule.sessionId === context.sessionId;
   if (rule.scope === 'workspace') return rule.workspaceId === context.workspaceId;
   return false;
 }
@@ -44,7 +44,7 @@ export class PermissionEngine {
   decide(
     request: PermissionRequest,
     rules: ReadonlyArray<PermissionRule>,
-    context: { taskId: TaskId; workspaceId: WorkspaceId },
+    context: { sessionId: SessionId; workspaceId: WorkspaceId },
   ): PermissionDecision {
     const applicable = rules.filter((r) => isApplicable(r, context));
 

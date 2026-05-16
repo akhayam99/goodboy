@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId, TaskId, TurnEvent, TurnRequest } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@kay-am/types';
 import { CodexAdapter } from './adapter';
 import { CODEX_DEFAULT_MODEL } from './constants';
 
@@ -57,7 +57,7 @@ class OpenChild extends EventEmitter {
 function makeRequest(): TurnRequest {
   return {
     runId: 'run_codex' as ProviderRunId,
-    taskId: 'sess_1' as TaskId,
+    sessionId: 'sess_1' as SessionId,
     model: CODEX_DEFAULT_MODEL,
     workingDir: '/tmp/demo',
     systemPrompt: 'sys',

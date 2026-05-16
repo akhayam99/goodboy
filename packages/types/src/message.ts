@@ -1,12 +1,12 @@
-import type { IsoDateTime, MessageId, SessionId, TaskId } from './ids';
+import type { AgentId, IsoDateTime, MessageId, SessionId } from './ids';
 import type { TurnProviderOverride } from './provider-preference';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export type Message = Readonly<{
   id: MessageId;
-  taskId: TaskId;
-  agentId: SessionId;
+  sessionId: SessionId;
+  agentId: AgentId;
   role: MessageRole;
   content: string;
   createdAt: IsoDateTime;

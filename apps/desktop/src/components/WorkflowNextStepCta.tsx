@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@kay-am/ui';
-import type { Session, Step, Workflow } from '@kay-am/types';
+import type { Agent, Step, Workflow } from '@kay-am/types';
 import type { VerbosityLevel } from '../verbosity';
 import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE, inferAgentKindFromName } from '../agent-kind';
 
 export interface WorkflowNextStepCtaProps {
   readonly workflow: Workflow;
-  readonly runs: ReadonlyArray<Session>;
+  readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (
     step: Step,
     model: string,
@@ -25,10 +25,7 @@ export interface WorkflowNextStepCtaProps {
  * remains. Issue #424 wires this into the agents bar; future issues
  * (#425/#426/#428) reuse the same hook point for additional surfaces.
  */
-export function pickNextWorkflowStep(
-  workflow: Workflow,
-  runs: ReadonlyArray<Session>,
-): Step | null {
+export function pickNextWorkflowStep(workflow: Workflow, runs: ReadonlyArray<Agent>): Step | null {
   const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
   const spawnedIds = new Set(
     runs.map((r) => r.stepId).filter((id): id is Step['id'] => id !== undefined),

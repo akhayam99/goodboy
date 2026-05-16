@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Dialog } from '@kay-am/ui';
-import type { Task } from '@kay-am/types';
+import type { Session } from '@kay-am/types';
 import { useAppStore } from '../store';
 
 // Tauri errors serialize as `{kind: string; message: string}` plain objects.
@@ -15,7 +15,7 @@ function unwrapError(err: unknown): string {
 }
 
 interface EndSessionDialogProps {
-  session: Task;
+  session: Session;
   open: boolean;
   onClose: () => void;
 }

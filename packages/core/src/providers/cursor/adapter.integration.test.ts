@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderRunId, TaskId, TurnRequest } from '@kay-am/types';
+import type { ProviderRunId, SessionId, TurnRequest } from '@kay-am/types';
 import { CursorAdapter } from './adapter';
 
 // Gated behind CURSOR_INTEGRATION=1. Not run on CI by default.
@@ -18,7 +18,7 @@ describe.skipIf(!enabled)('CursorAdapter — integration (requires cursor-agent 
     const adapter = new CursorAdapter();
     const request: TurnRequest = {
       runId: 'run_integration' as ProviderRunId,
-      taskId: 'sess_integration' as TaskId,
+      sessionId: 'sess_integration' as SessionId,
       model: 'cursor-small',
       workingDir: '/tmp',
       systemPrompt: 'You are a test assistant. Be brief.',
