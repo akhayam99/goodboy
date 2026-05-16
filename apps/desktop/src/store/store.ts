@@ -221,7 +221,11 @@ import {
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../shared/lib/errors';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  inferAgentKindFromName,
+  type AgentKind,
+} from '../features/session/agent-kind';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   deletePlan as invokeDeletePlan,

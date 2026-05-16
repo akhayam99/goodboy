@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@kay-am/ui';
 import type { SessionUserStatus } from '@kay-am/types';
-import { SESSION_STATUS_ORDER, SESSION_STATUS_PALETTE } from '../session-status';
+import { SESSION_STATUS_ORDER, SESSION_STATUS_PALETTE } from '../features/session/session-status';
 
 interface SessionStatusMenuProps {
   readonly status: SessionUserStatus;

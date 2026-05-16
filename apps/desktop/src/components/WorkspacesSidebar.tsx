@@ -79,18 +79,21 @@ import {
   formatTokens,
   shortModel,
   shortModelWithVersion,
-} from '../agent-row-format';
+} from '../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   type AgentKind,
   resolveAgentKind,
-} from '../agent-kind';
+} from '../features/session/agent-kind';
 import { AgentKindMenu } from './AgentKindMenu';
 import { SessionStatusMenu } from './SessionStatusMenu';
 import { NextActionChips } from './NextActionChips';
-import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
+import {
+  spawnFromNextAction,
+  spawnKindForAction,
+} from '../features/session/spawn-from-next-action';
 import { openUrl } from '../shared/lib/editor';
 import { formatError } from '../shared/lib/errors';
 import { useThemeStore } from '../shared/lib/theme';

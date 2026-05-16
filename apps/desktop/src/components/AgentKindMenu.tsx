@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@kay-am/ui';
-import { AGENT_KIND_ORDER, AGENT_KIND_PALETTE, type AgentKind } from '../agent-kind';
+import {
+  AGENT_KIND_ORDER,
+  AGENT_KIND_PALETTE,
+  type AgentKind,
+} from '../features/session/agent-kind';
 
 interface AgentKindMenuProps {
   readonly kind: AgentKind;

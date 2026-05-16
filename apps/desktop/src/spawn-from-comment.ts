@@ -1,6 +1,6 @@
 import type { PrComment, PullRequestState } from '@kay-am/types';
-import type { AgentKind } from './agent-kind';
-import { AGENT_KIND_DEFAULTS } from './agent-kind';
+import type { AgentKind } from './features/session/agent-kind';
+import { AGENT_KIND_DEFAULTS } from './features/session/agent-kind';
 
 const TITLE_MAX = 60;
 

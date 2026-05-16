@@ -1,5 +1,5 @@
 import { cn } from '@kay-am/ui';
-import { formatCost } from '../agent-row-format';
+import { formatCost } from '../features/session/agent-row-format';
 
 export interface CostBadgeProps {
   readonly value: number;
