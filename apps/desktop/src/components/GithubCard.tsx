@@ -440,8 +440,6 @@ function CommentThreadRow({
     : head.resolved
       ? 'resolved'
       : 'open';
-  const statusTone =
-    status === 'open' ? 'bg-warning' : status === 'resolved' ? 'bg-success' : 'bg-muted-foreground';
   const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment';
   const bot = isBot(head.author);
 
@@ -449,9 +447,17 @@ function CommentThreadRow({
     <div className="flex gap-1.5">
       <span
         aria-hidden
-        className={cn('mt-1 h-1.5 w-1.5 shrink-0 rounded-full', statusTone)}
         title={statusLabel}
-      />
+        className="mt-0.5 inline-flex h-3 w-3 shrink-0 items-center justify-center"
+      >
+        {status === 'resolved' ? (
+          <CheckCheck size={11} className="text-success" aria-hidden />
+        ) : status === 'open' ? (
+          <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+        ) : (
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+        )}
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <Avatar url={head.authorAvatarUrl} alt={head.author} />
