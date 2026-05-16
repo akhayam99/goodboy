@@ -49,9 +49,9 @@ import {
 } from '../store';
 import { openUrl } from '../editor';
 import { formatError } from '../errors';
-import { tauriGhRunner } from '../github';
+import { tauriGhRunner } from '../features/github/github';
 import { DiffViewerDialog } from './DiffViewerDialog';
-import { GithubCard } from './GithubCard';
+import { GithubCard } from '../features/github/components/Card';
 import { worktreeStatus } from '../worktree';
 import type { WorktreeStatus } from '@kay-am/types';
 import { buildCommentAgentArgs, buildReviewChangesAgentArgs } from '../spawn-from-comment';

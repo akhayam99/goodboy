@@ -145,7 +145,7 @@ import {
   ghClearToken,
   tauriGhRunner,
   createTauriPrCacheStore,
-} from '../github';
+} from '../features/github/github';
 import {
   buildProviderList,
   checkProviderAuth,

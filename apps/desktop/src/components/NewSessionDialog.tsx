@@ -28,7 +28,7 @@ import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
 import { SESSION_FEATURES } from '../features';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
-import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
+import { fetchGithubIssue, parseGithubIssueUrl } from '../features/github/github';
 
 interface IssueData {
   readonly title: string;
@@ -305,7 +305,10 @@ export function NewSessionDialog({
     setIssueFetching(true);
     try {
       const gh = await fetchGithubIssue(githubParsed.repoSlug, githubParsed.number);
-      const goal = await generateGoalFromIssue({ title: gh.title, body: gh.body }, selectedProvider);
+      const goal = await generateGoalFromIssue(
+        { title: gh.title, body: gh.body },
+        selectedProvider,
+      );
       setGoal(goal);
     } catch (err) {
       setIssueError(formatError(err));

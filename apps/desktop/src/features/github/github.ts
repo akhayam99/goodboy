@@ -7,7 +7,7 @@ import {
   deleteGithubPrCache,
   type Database,
 } from '@kay-am/db';
-import { formatError } from './errors';
+import { formatError } from '../../errors';
 
 interface RawGhRunResult {
   stdout: string;

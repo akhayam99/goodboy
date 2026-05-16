@@ -3,7 +3,7 @@ import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-rea
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
-import { GithubPanel } from './GithubPanel';
+import { GithubPanel } from '../features/github/components/Panel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
@@ -19,13 +19,7 @@ interface SettingsDialogProps {
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-type NavSection =
-  | 'app'
-  | 'providers'
-  | 'budget'
-  | 'integrations'
-  | 'initialization'
-  | 'advanced';
+type NavSection = 'app' | 'providers' | 'budget' | 'integrations' | 'initialization' | 'advanced';
 
 interface NavItem {
   id: NavSection;

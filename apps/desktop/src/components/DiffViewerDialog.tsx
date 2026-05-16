@@ -32,7 +32,7 @@ import type {
   SessionId,
   WorktreeStatus,
 } from '@kay-am/types';
-import { ghPrDiff } from '../github';
+import { ghPrDiff } from '../features/github/github';
 import { openFileInWorkspace } from '../editor';
 import { formatError } from '../errors';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
