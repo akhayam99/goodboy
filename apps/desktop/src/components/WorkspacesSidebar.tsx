@@ -10,11 +10,13 @@ import {
   FolderOpen,
   FolderPlus,
   Gauge,
-  GitFork,
+  GitMerge,
   GitPullRequest,
   GitPullRequestArrow,
+  GitPullRequestClosed,
   GitPullRequestDraft,
   HelpCircle,
+  Loader2,
   MessagesSquare,
   Moon,
   Plus,
@@ -688,7 +690,7 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
 }
 
 const PR_ICON_MAP: Record<
-  Exclude<PullRequestStateKind, 'closed'>,
+  PullRequestStateKind,
   { icon: React.ElementType; label: string; className: string }
 > = {
   draft: {
@@ -698,8 +700,8 @@ const PR_ICON_MAP: Record<
   },
   open: {
     icon: GitPullRequest,
-    label: 'open',
-    className: 'text-muted-foreground',
+    label: 'in review',
+    className: 'text-success',
   },
   approved: {
     icon: GitPullRequestArrow,
@@ -707,9 +709,14 @@ const PR_ICON_MAP: Record<
     className: 'text-success',
   },
   merged: {
-    icon: GitFork,
+    icon: GitMerge,
     label: 'merged',
-    className: 'text-muted-foreground',
+    className: 'text-merged',
+  },
+  closed: {
+    icon: GitPullRequestClosed,
+    label: 'closed',
+    className: 'text-danger',
   },
 };
 
@@ -721,10 +728,35 @@ function PrStatusIcon({ taskId }: PrStatusIconProps) {
   const github = useAppStore((s) => s.sessionGithub[taskId]);
   const branch = useAppStore((s) => s.sessionBranches[taskId]);
 
-  if (!branch || !github?.pr || github.pr.state === 'closed') return null;
+  const isLoading =
+    !github || github.loading || (github.fetchedAt === null && !github.error);
+
+  if (isLoading) {
+    return (
+      <span
+        title="loading PR status…"
+        aria-label="loading PR status"
+        className="shrink-0 rounded p-0.5 text-muted-foreground/50"
+      >
+        <Loader2 size={12} aria-hidden className="animate-spin" />
+      </span>
+    );
+  }
+
+  if (!branch || !github.pr) {
+    return (
+      <span
+        title="no PR open"
+        aria-label="no PR open"
+        className="shrink-0 rounded p-0.5 text-danger/70"
+      >
+        <GitPullRequest size={12} aria-hidden />
+      </span>
+    );
+  }
 
   const { pr } = github;
-  const entry = PR_ICON_MAP[pr.state as Exclude<PullRequestStateKind, 'closed'>];
+  const entry = PR_ICON_MAP[pr.state];
   if (!entry) return null;
 
   const Icon = entry.icon;
@@ -903,27 +935,44 @@ function SessionRow({
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <PrStatusIcon taskId={session.id as TaskId} />
             <StatusBadge state={session.state} />
-            {session.workflowId ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void setSessionAutoRun(session.id as TaskId, !session.autoRun);
-                }}
-                title={
-                  session.autoRun ? 'autorun on — click to pause' : 'autorun off — click to enable'
-                }
-                aria-label={session.autoRun ? 'autorun on' : 'autorun off'}
-                className={cn(
-                  'rounded p-0.5 transition-colors',
-                  session.autoRun
-                    ? 'text-primary hover:bg-primary/10'
-                    : 'text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground',
-                )}
-              >
-                {session.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
-              </button>
-            ) : null}
+            {(() => {
+              const hasWorkflow = !!session.workflowId;
+              const tooltip = !hasWorkflow
+                ? 'no workflow configured — auto-run unavailable'
+                : session.autoRun
+                  ? 'autorun on — click to pause'
+                  : 'autorun off — click to enable';
+              const ariaLabel = !hasWorkflow
+                ? 'autorun unavailable'
+                : session.autoRun
+                  ? 'autorun on'
+                  : 'autorun off';
+              const cls = !hasWorkflow
+                ? 'text-muted-foreground/25 cursor-not-allowed'
+                : session.autoRun
+                  ? 'text-primary hover:bg-primary/10'
+                  : 'text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground';
+              return (
+                <button
+                  type="button"
+                  disabled={!hasWorkflow}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!hasWorkflow) return;
+                    void setSessionAutoRun(session.id as TaskId, !session.autoRun);
+                  }}
+                  title={tooltip}
+                  aria-label={ariaLabel}
+                  className={cn('rounded p-0.5 transition-colors', cls)}
+                >
+                  {hasWorkflow && session.autoRun ? (
+                    <Zap size={11} aria-hidden />
+                  ) : (
+                    <ZapOff size={11} aria-hidden />
+                  )}
+                </button>
+              );
+            })()}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -1442,10 +1491,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         loading.agents ? (
           <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
-              <li
-                key={i}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5"
-              >
+              <li key={i} className="flex items-center gap-2 rounded-md px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
                 <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
               </li>
