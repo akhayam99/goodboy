@@ -10,7 +10,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { ShortcutHelpDialog } from './components/ShortcutHelpDialog';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
-import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
   useAppStore,
   useCurrentSession,

@@ -95,7 +95,7 @@ import { openUrl } from '../shared/lib/editor';
 import { formatError } from '../shared/lib/errors';
 import { useThemeStore } from '../shared/lib/theme';
 import { STORAGE_KEYS } from '../shared/lib/storage-keys';
-import { parseCap } from '../lib/parse-cap';
+import { parseCap } from '../shared/lib/parse-cap';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;

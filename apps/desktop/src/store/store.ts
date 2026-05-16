@@ -232,7 +232,7 @@ import {
   upsertPlan as invokeUpsertPlan,
 } from '../plans';
 import { slotsForKind } from '../slot-routing';
-import { estimateTokens } from '../utils/estimate-tokens';
+import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 export type BootPhase =
   | 'pending'
