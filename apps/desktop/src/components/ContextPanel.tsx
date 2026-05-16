@@ -797,38 +797,19 @@ function SlotRow({
   onCommit,
 }: SlotRowProps) {
   const value = slot?.value ?? '';
+  const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
+
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(meta?.defaultCollapsed ?? false);
 
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const history = useSlotHistory(sessionId, slotKey);
 
-  // Per-slot skeleton: while the slots fetch is still in flight and this
-  // particular slot hasn't materialized yet, show a placeholder. Sibling
-  // slots that already arrived render their content independently. Placed
-  // after all hook calls so the hook count stays stable across renders.
-  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
-
-  const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
-  const Icon = meta?.icon;
-  const hasValue = value.length > 0;
-  const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
-  const collapsible = meta?.collapsible ?? false;
-  const singleLine = meta?.singleLine ?? false;
-  const [collapsed, setCollapsed] = useState(meta?.defaultCollapsed ?? false);
-  const itemCount = collapsible && hasValue ? countMarkdownItems(value) : 0;
-  const preview = collapsible && hasValue ? firstMeaningfulLine(value) : '';
-  const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
-
   useEffect(() => {
     if (!editing) setDraft(value);
   }, [value, editing]);
-
-  const commit = () => {
-    setEditing(false);
-    if (draft !== value) onCommit(draft);
-  };
 
   const openHistory = useCallback(() => {
     void loadSlotHistory(sessionId, slotKey);
@@ -842,6 +823,27 @@ function SlotRow({
     },
     [onCommit],
   );
+
+  // Per-slot skeleton: while the slots fetch is still in flight and this
+  // particular slot hasn't materialized yet, show a placeholder. Sibling
+  // slots that already arrived render their content independently. Must
+  // come after all hook calls — React requires a stable hook order across
+  // renders, and slot can flip between undefined/defined on workspace switch.
+  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
+
+  const Icon = meta?.icon;
+  const hasValue = value.length > 0;
+  const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
+  const collapsible = meta?.collapsible ?? false;
+  const singleLine = meta?.singleLine ?? false;
+  const itemCount = collapsible && hasValue ? countMarkdownItems(value) : 0;
+  const preview = collapsible && hasValue ? firstMeaningfulLine(value) : '';
+  const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
+
+  const commit = () => {
+    setEditing(false);
+    if (draft !== value) onCommit(draft);
+  };
 
   const headerLabel = collapsible ? (
     <button
