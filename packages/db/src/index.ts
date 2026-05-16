@@ -108,6 +108,8 @@ export {
   insertDiffComment,
   listDiffCommentsForTask,
   resolveDiffComment,
+  consumeDiffComments,
+  reopenDiffComment,
   deleteDiffComment,
 } from './queries/diff-comment';
 export {
