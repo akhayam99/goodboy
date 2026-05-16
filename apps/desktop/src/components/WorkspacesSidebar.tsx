@@ -34,7 +34,7 @@ import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
 import { NotificationCenter } from './NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
-import { WORKSPACE_FEATURES } from '../features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
 import type {
   ProviderId,
   PullRequestStateKind,
@@ -789,6 +789,7 @@ function SessionRow({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
+    if (!SESSION_FEATURES.budget) return;
     if (!budgetLoaded.current) {
       budgetLoaded.current = true;
       void loadSessionBudget(session.id as TaskId);
@@ -929,7 +930,11 @@ function SessionRow({
               type="button"
               onClick={() => setSettingsOpen(true)}
               className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-              title="session settings (rename · budget · archive · delete)"
+              title={
+                SESSION_FEATURES.budget
+                  ? 'session settings (rename · budget · archive · delete)'
+                  : 'session settings (rename · archive · delete)'
+              }
               aria-label="session settings"
             >
               <Settings2 size={12} aria-hidden />
@@ -962,7 +967,7 @@ function SessionRow({
           </div>
         )}
 
-        {cap !== null && (
+        {SESSION_FEATURES.budget && cap !== null && (
           <div className="flex flex-col gap-0.5 pl-3.5">
             <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
               <div

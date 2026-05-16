@@ -6,6 +6,7 @@ import type {
   TurnProviderOverride,
 } from '@kay-am/types';
 import { resolveProviderForTurn } from '../../routing';
+import { SESSION_FEATURES } from '../../features';
 
 interface RoutingIndicatorProps {
   readonly sessionPreference: TaskProviderPreference;
@@ -33,6 +34,7 @@ export function RoutingIndicator({
   }, [sessionPreference, turnOverride, connectedProviders]);
 
   if (!decision) return null;
+  if (!SESSION_FEATURES.budget) return null;
 
   if (decision.reason === 'all-exceeded') {
     return (
