@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -276,7 +276,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 onToggleProvider={toggleProviderFilter}
                 onSelectSession={(id) => {
                   if (id === currentSession?.id) return;
-                  void setCurrentSession(id);
+                  // Mark the swap as a transition so React can interrupt the
+                  // heavy chat-view re-render and paint the sidebar selection
+                  // first. Pairs with useDeferredValue inside ChatView.
+                  startTransition(() => {
+                    void setCurrentSession(id);
+                  });
                 }}
                 onNewSession={() => setNewSessionOpen(true)}
                 onArchive={archive}
@@ -1475,6 +1480,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                 telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
                 aggregate={aggregatesByAgentId.get(run.id) ?? null}
                 turns={turnsByAgentId.get(run.id) ?? 0}
+                turnsLoading={run.id === selectedAgentId && loading.transcript}
                 isSelected={run.id === selectedAgentId}
                 isEditing={editingId === run.id}
                 onClick={() => onPickAgent(run.id)}
@@ -1704,6 +1710,7 @@ interface AgentRowProps {
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
+  readonly turnsLoading: boolean;
   readonly isSelected: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
@@ -1720,6 +1727,7 @@ function AgentRow({
   telemetry,
   aggregate,
   turns,
+  turnsLoading,
   isSelected,
   isEditing,
   onClick,
@@ -1907,9 +1915,16 @@ function AgentRow({
                   <span aria-hidden>·</span>
                 </>
               ) : null}
-              <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                {turns}t
-              </span>
+              {turnsLoading ? (
+                <span
+                  aria-label="loading turn count"
+                  className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
+                />
+              ) : (
+                <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
+                  {turns}t
+                </span>
+              )}
               <span aria-hidden>·</span>
               <AgentLifetime run={run} />
             </div>

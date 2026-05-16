@@ -1331,11 +1331,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .catch(() => {})
       .finally(() => markDone('plans'));
 
-    // Agents + transcript: transcript depends on which agent is selected, so
-    // we chain them here. Once the agents list resolves we kick the transcript
-    // loader off in parallel with the rest.
+    // Agents only: transcript is loaded lazily by ChatView when an agent is
+    // selected (via selectAgent). Keeps session switch fast — no per-agent
+    // history fetch blocks the UI.
     void Promise.all([invokePhaseRunList(id), listAgentRunIdsForTask(tauriDatabase, id)])
-      .then(async ([agents, agentRunIds]) => {
+      .then(([agents, agentRunIds]) => {
         const previouslySelected = get().selectedAgentId[id] ?? null;
         const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
         const fallbackAgent = sortedAgents[0] ?? null;
@@ -1390,25 +1390,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }));
         markDone('agents');
 
-        if (selectedAgent) {
-          const [messages, events] = await Promise.all([
-            listMessagesForAgent(tauriDatabase, selectedAgent.id),
-            listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
-          ]);
-          set((state) => ({
-            messages: { ...state.messages, [id]: messages },
-            transcripts: { ...state.transcripts, [selectedAgent.id]: events },
-          }));
-        } else {
+        // No selected agent → no chat to render → drop transcript flag now.
+        // With a selected agent, ChatView's effect calls selectAgent which
+        // owns the flag lifecycle from there.
+        if (!selectedAgent) {
           set((state) => ({
             messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
           }));
+          markDone('transcript');
         }
       })
       .catch(() => {
         markDone('agents');
-      })
-      .finally(() => markDone('transcript'));
+        markDone('transcript');
+      });
   },
 
   refreshSessions: async (workspaceId) => {
@@ -3086,20 +3081,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectAgent: async (taskId, agentId) => {
     const cached = get().transcripts[agentId];
     if (cached) {
-      set((state) => ({
-        selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
-      }));
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+        };
+      });
       return;
     }
-    const [messages, events] = await Promise.all([
-      listMessagesForAgent(tauriDatabase, agentId),
-      listTurnEventsForAgent(tauriDatabase, agentId),
-    ]);
-    set((state) => ({
-      selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
-      transcripts: { ...state.transcripts, [agentId]: events },
-      messages: { ...state.messages, [taskId]: messages },
-    }));
+    set((state) => {
+      const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+      return {
+        selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+        sessionLoading: {
+          ...state.sessionLoading,
+          [taskId]: { ...current, transcript: true },
+        },
+      };
+    });
+    try {
+      const [messages, events] = await Promise.all([
+        listMessagesForAgent(tauriDatabase, agentId),
+        listTurnEventsForAgent(tauriDatabase, agentId),
+      ]);
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          transcripts: { ...state.transcripts, [agentId]: events },
+          messages: { ...state.messages, [taskId]: messages },
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+        };
+      });
+    } catch (err) {
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+        };
+      });
+      throw err;
+    }
   },
 
   spawnAgent: async (taskId, args) => {
