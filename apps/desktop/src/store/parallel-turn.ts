@@ -37,7 +37,7 @@ import {
   invokePhaseRunList,
   invokePhaseRunUpdateStatus,
 } from '../phases';
-import { invokeParallelPhaseRunSpawn, cancelTurn } from '../turn';
+import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 
 export interface ParallelBranchInputs {
   readonly session: Session;

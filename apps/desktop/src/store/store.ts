@@ -168,7 +168,12 @@ import {
 } from '../settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
-import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
+import {
+  runTurn,
+  cancelTurn,
+  encodeAuthRequiredMessage,
+  isAuthErrorMessage,
+} from '../features/chat/turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
 import {
   createWorktree,

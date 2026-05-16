@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 // Imported after mocks are registered.
 import { invoke } from '@tauri-apps/api/core';
-import { invokeParallelPhaseRunSpawn, type ParallelSpawnArgs } from '../turn';
+import { invokeParallelPhaseRunSpawn, type ParallelSpawnArgs } from '../features/chat/turn';
 
 const invokeMock = vi.mocked(invoke);
 

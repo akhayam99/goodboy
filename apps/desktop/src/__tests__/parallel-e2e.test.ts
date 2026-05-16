@@ -61,7 +61,7 @@ vi.mock('../phases', () => ({
 const invokeParallelPhaseRunSpawnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   invokeParallelPhaseRunSpawn: (args: unknown) => invokeParallelPhaseRunSpawnSpy(args),
   cancelTurn: (runId: string) => cancelTurnSpy(runId),
   runTurn: vi.fn(async function* () {}),

@@ -4,7 +4,7 @@ import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(async function* () {}),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',

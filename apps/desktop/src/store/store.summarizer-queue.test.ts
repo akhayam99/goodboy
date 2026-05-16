@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — must be hoisted before store import.
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',

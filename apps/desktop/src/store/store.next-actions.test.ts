@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@kay-am/types';
 import type { NextAction } from '@kay-am/core';
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',

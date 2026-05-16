@@ -14,7 +14,7 @@ import type {
 // Module mocks — hoisted before subject import.
 const runTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',

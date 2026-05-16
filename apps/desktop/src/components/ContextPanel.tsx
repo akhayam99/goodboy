@@ -54,7 +54,10 @@ import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from '../features/github/components/Card';
 import { worktreeStatus } from '../worktree';
 import type { WorktreeStatus } from '@kay-am/types';
-import { buildCommentAgentArgs, buildReviewChangesAgentArgs } from '../spawn-from-comment';
+import {
+  buildCommentAgentArgs,
+  buildReviewChangesAgentArgs,
+} from '../features/chat/spawn-from-comment';
 
 interface ContextPanelProps {
   session: Session;

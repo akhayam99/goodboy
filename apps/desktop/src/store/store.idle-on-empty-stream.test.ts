@@ -13,7 +13,7 @@ import type {
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
