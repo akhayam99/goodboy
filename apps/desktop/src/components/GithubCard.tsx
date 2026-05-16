@@ -303,46 +303,67 @@ function CommentsPane({
 
   const allThreads = useMemo(() => groupThreads(comments), [comments]);
 
-  const resolvedCount = useMemo(
-    () => allThreads.filter((t) => t.head.source === 'review' && t.head.resolved === true).length,
+  // Only review threads are resolvable / actionable. General issue-comments
+  // (no path, no resolved state) are filtered out — they live "view on github".
+  const reviewThreads = useMemo(
+    () => allThreads.filter((t) => t.head.source === 'review'),
     [allThreads],
+  );
+  const generalCount = allThreads.length - reviewThreads.length;
+  const resolvedCount = useMemo(
+    () => reviewThreads.filter((t) => t.head.resolved === true).length,
+    [reviewThreads],
   );
 
   const threads = useMemo(() => {
     const filtered = showResolved
-      ? allThreads
-      : allThreads.filter((t) => t.head.source !== 'review' || t.head.resolved !== true);
+      ? reviewThreads
+      : reviewThreads.filter((t) => t.head.resolved !== true);
     return [...filtered].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
       if (p !== 0) return p;
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
-  }, [allThreads, showResolved]);
+  }, [reviewThreads, showResolved]);
 
-  if (allThreads.length === 0) {
+  const generalFooter =
+    generalCount > 0 ? (
+      <button
+        type="button"
+        onClick={() => onOpenUrl(pr.url)}
+        className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70 hover:text-foreground"
+        title="open general comments on github"
+      >
+        {generalCount} general comment{generalCount === 1 ? '' : 's'}
+        <ExternalLink size={9} aria-hidden />
+      </button>
+    ) : null;
+
+  if (reviewThreads.length === 0) {
     return (
-      <EmptyRow
-        text="No comments yet"
-        actionUrl={pr.url}
-        actionLabel="view on github"
-        onOpenUrl={onOpenUrl}
-      />
+      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+        <span>No review comments yet</span>
+        {generalFooter}
+      </div>
     );
   }
 
   if (threads.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span>All comments resolved 🎉</span>
-        {resolvedCount > 0 ? (
-          <button
-            type="button"
-            onClick={() => setShowResolved(true)}
-            className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
-          >
-            show {resolvedCount}
-          </button>
-        ) : null}
+      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <span>All review comments resolved 🎉</span>
+          {resolvedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowResolved(true)}
+              className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
+            >
+              show {resolvedCount}
+            </button>
+          ) : null}
+        </div>
+        {generalFooter}
       </div>
     );
   }
@@ -394,6 +415,7 @@ function CommentsPane({
           </button>
         </li>
       ) : null}
+      {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
   );
 }
