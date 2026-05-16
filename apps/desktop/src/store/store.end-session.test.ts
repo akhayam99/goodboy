@@ -48,23 +48,23 @@ vi.mock('@kay-am/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
-  insertTask: vi.fn(),
-  insertTaskWorktree: vi.fn(),
+  insertSession: vi.fn(),
+  insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   listContextSlotsForSession: vi.fn(async () => []),
   listMessagesForSession: vi.fn(async () => []),
-  listTasksForWorkspace: vi.fn(async () => []),
+  listSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForTask: (db: unknown, id: string) => deleteWorktreesForSessionSpy(db, id),
+  deleteWorktreesForSession: (db: unknown, id: string) => deleteWorktreesForSessionSpy(db, id),
   setSetting: vi.fn(),
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
-  updateTaskState: (...args: unknown[]) => updateSessionStateSpy(...args),
+  updateSessionState: (...args: unknown[]) => updateSessionStateSpy(...args),
   upsertContextSlot: vi.fn(),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -305,7 +305,7 @@ describe('endSession — Tauri error propagation (#242)', () => {
     expect(session?.state.kind).toBe('ended');
   });
 
-  it('propagates error from updateTaskState as structured message', async () => {
+  it('propagates error from updateSessionState as structured message', async () => {
     // Simulate a Tauri-style JSON error object (not instanceof Error)
     const tauriErr = { kind: 'db', message: 'database is locked' };
     updateSessionStateSpy.mockRejectedValue(tauriErr);
