@@ -28,7 +28,11 @@ import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
-import { fetchIssueFromUrl, type IssueData } from '../integrations';
+
+interface IssueData {
+  readonly title: string;
+  readonly body: string;
+}
 import { useToast } from './Toast';
 import { parseCap } from '../lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../worktree';
@@ -297,24 +301,12 @@ export function NewSessionDialog({
     setIssueError(null);
 
     const githubParsed = parseGithubIssueUrl(value);
-    const hasMatch =
-      githubParsed !== null ||
-      value.includes('linear.app') ||
-      value.includes('gitlab.com') ||
-      value.includes('atlassian.net');
-    if (!hasMatch) return;
+    if (!githubParsed) return;
 
     setIssueFetching(true);
     try {
-      let issueData: IssueData | null = null;
-      if (githubParsed) {
-        const gh = await fetchGithubIssue(githubParsed.repoSlug, githubParsed.number);
-        issueData = { service: 'github', title: gh.title, body: gh.body, url: gh.url };
-      } else {
-        issueData = await fetchIssueFromUrl(value);
-      }
-      if (!issueData) return;
-      const goal = await generateGoalFromIssue(issueData, selectedProvider);
+      const gh = await fetchGithubIssue(githubParsed.repoSlug, githubParsed.number);
+      const goal = await generateGoalFromIssue({ title: gh.title, body: gh.body }, selectedProvider);
       setGoal(goal);
     } catch (err) {
       setIssueError(formatError(err));

@@ -3,7 +3,7 @@ import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-rea
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
-import { IntegrationsPanel } from './IntegrationsPanel';
+import { GithubPanel } from './GithubPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
@@ -172,7 +172,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       case 'budget':
         return <BudgetRulesPanel />;
       case 'integrations':
-        return <IntegrationsPanel />;
+        return <GithubPanel />;
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">
