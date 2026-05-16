@@ -54,7 +54,8 @@ import { formatError } from '../errors';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from './GithubCard';
-import { worktreeDiff } from '../worktree';
+import { worktreeStatus } from '../worktree';
+import type { WorktreeStatus } from '@kay-am/types';
 
 interface ContextPanelProps {
   session: Task;
@@ -118,36 +119,45 @@ export function ContextPanel({
   );
 
   const filesTouched = useFilesTouched(session.id);
-  const [diffFilesCount, setDiffFilesCount] = useState<number | null>(null);
+  const [gitStatus, setGitStatus] = useState<WorktreeStatus | null>(null);
 
   useEffect(() => {
     if (!workingDir) {
-      setDiffFilesCount(null);
+      setGitStatus(null);
       return;
     }
     let cancelled = false;
-    worktreeDiff(workingDir)
-      .then((diff) => {
-        if (cancelled) return;
-        const matches = diff.match(/^diff --git /gm);
-        setDiffFilesCount(matches?.length ?? 0);
+    worktreeStatus(workingDir)
+      .then((s) => {
+        if (!cancelled) setGitStatus(s);
       })
       .catch(() => {
-        if (!cancelled) setDiffFilesCount(null);
+        if (!cancelled) setGitStatus(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [workingDir, filesTouched.count]);
+  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
 
-  const filesTouchedCount = diffFilesCount ?? filesTouched.count;
+  const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
+  const filesTooltip = useMemo(() => {
+    if (!gitStatus) {
+      return filesTouchedCount === 0
+        ? 'no files touched yet'
+        : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`;
+    }
+    const parts: string[] = [];
+    if (gitStatus.unstaged > 0) parts.push(`${gitStatus.unstaged} unstaged`);
+    if (gitStatus.staged > 0) parts.push(`${gitStatus.staged} staged`);
+    if (gitStatus.untracked > 0) parts.push(`${gitStatus.untracked} untracked`);
+    if (gitStatus.hasUpstream && (gitStatus.ahead > 0 || gitStatus.behind > 0)) {
+      parts.push(`ahead ${gitStatus.ahead} / behind ${gitStatus.behind}`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
+  }, [gitStatus, filesTouchedCount]);
 
   const [filesDiffOpen, setFilesDiffOpen] = useState(false);
   const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);
-  const filesDiffLoader = useCallback(
-    () => (workingDir ? worktreeDiff(workingDir) : Promise.resolve('')),
-    [workingDir],
-  );
   const diffComments = useDiffComments(session.id);
   const openNotesCount = useMemo(
     () => diffComments.filter((c) => c.status === 'open').length,
@@ -243,18 +253,16 @@ export function ContextPanel({
               setFilesDiffJumpToNotes(false);
               setFilesDiffOpen(true);
             }}
-            disabled={filesTouchedCount === 0 || !workingDir}
+            disabled={!workingDir}
             className={cn(
               'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-              filesTouchedCount === 0 || !workingDir
+              !workingDir
                 ? 'cursor-not-allowed text-muted-foreground/50'
-                : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+                : filesTouchedCount === 0
+                  ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                  : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
             )}
-            title={
-              filesTouchedCount === 0
-                ? 'no files touched yet'
-                : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`
-            }
+            title={filesTooltip}
           >
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <FileEdit size={11} aria-hidden />
@@ -293,8 +301,8 @@ export function ContextPanel({
         onClose={() => setFilesDiffOpen(false)}
         taskId={session.id}
         title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
-        loader={filesDiffLoader}
         workingDir={workingDir ?? undefined}
+        worktreePath={workingDir ?? undefined}
         jumpToFirstCommented={filesDiffJumpToNotes}
       />
     </>

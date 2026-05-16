@@ -17,6 +17,7 @@ export const STORAGE_PREFIXES = {
   agentEffort: `${PREFIX}agent-effort:`,
   agentModel: `${PREFIX}agent-model:`,
   agentProvider: `${PREFIX}agent-provider:`,
+  diffView: `${PREFIX}diff-view:`,
 } as const;
 
 const LEGACY_KEY_MAP: Record<string, string> = {
