@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   Check,
@@ -11,6 +11,7 @@ import {
   MessageSquare,
   MinusCircle,
   RefreshCw,
+  Sparkles,
   XCircle,
 } from 'lucide-react';
 import { cn } from '@kay-am/ui';
@@ -46,6 +47,8 @@ interface GithubCardProps {
   readonly branchLastActivity: string | null;
   readonly onOpenUrl: (url: string) => void;
   readonly onRefresh: () => void;
+  readonly onSpawnFromComment?: (comment: PrComment) => void;
+  readonly onSpawnFromReviewChanges?: () => void;
 }
 
 export function GithubCard({
@@ -57,6 +60,8 @@ export function GithubCard({
   branchLastActivity,
   onOpenUrl,
   onRefresh,
+  onSpawnFromComment,
+  onSpawnFromReviewChanges,
 }: GithubCardProps) {
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
@@ -75,6 +80,8 @@ export function GithubCard({
     setActive(k);
   };
 
+  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1">
@@ -85,6 +92,7 @@ export function GithubCard({
         >
           {TAB_KEYS.map((k) => {
             const isActive = k === active;
+            const status = tabStatus[k];
             return (
               <button
                 key={k}
@@ -92,14 +100,16 @@ export function GithubCard({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => selectTab(k)}
+                title={status?.label}
                 className={cn(
-                  'px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
+                  'inline-flex items-center gap-1 px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
                   isActive
                     ? 'bg-background font-semibold text-foreground shadow-sm'
                     : 'text-muted-foreground/70 hover:text-foreground',
                 )}
               >
-                {TAB_LABEL[k]}
+                <span>{TAB_LABEL[k]}</span>
+                {status ? <TabBadge status={status} dim={!isActive} /> : null}
               </button>
             );
           })}
@@ -119,7 +129,7 @@ export function GithubCard({
         </div>
       </div>
 
-      <div className="max-h-44 overflow-y-auto rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+      <AnimatedTabBody activeKey={active}>
         {detailError ? (
           <ErrorRow message={detailError} onRetry={onRefresh} />
         ) : detailLoading && !detail ? (
@@ -127,18 +137,199 @@ export function GithubCard({
         ) : active === 'ci' ? (
           <CiPane checks={detail?.checks ?? []} pr={pr} onOpenUrl={onOpenUrl} />
         ) : active === 'comments' ? (
-          <CommentsPane comments={detail?.comments ?? []} pr={pr} onOpenUrl={onOpenUrl} />
+          <CommentsPane
+            comments={detail?.comments ?? []}
+            pr={pr}
+            onOpenUrl={onOpenUrl}
+            onSpawnFromComment={onSpawnFromComment}
+          />
         ) : (
           <ReviewPane
             reviews={detail?.reviews ?? []}
             requests={detail?.reviewRequests ?? []}
             pr={pr}
             onOpenUrl={onOpenUrl}
+            onSpawnFromReviewChanges={onSpawnFromReviewChanges}
           />
         )}
+      </AnimatedTabBody>
+    </div>
+  );
+}
+
+function AnimatedTabBody({ activeKey, children }: { activeKey: string; children: ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    setHeight(el.offsetHeight);
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+      if (h != null) setHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeKey]);
+
+  return (
+    <div
+      className="overflow-hidden rounded-md border border-border-soft bg-subtle transition-[height] duration-200 ease-out motion-reduce:transition-none"
+      style={height != null ? { height } : undefined}
+    >
+      <div ref={innerRef} key={activeKey} className="min-h-16 max-h-48 overflow-y-auto px-2.5 py-2">
+        {children}
       </div>
     </div>
   );
+}
+
+interface TabStatus {
+  readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
+  readonly icon: ReactNode;
+  readonly count?: number;
+  readonly label: string;
+}
+
+const TONE_PILL: Record<TabStatus['tone'], string> = {
+  success: 'bg-success/10 text-success',
+  danger: 'bg-danger/15 text-danger',
+  warning: 'bg-warning/15 text-warning',
+  info: 'bg-info/10 text-info',
+  muted: 'bg-muted text-muted-foreground',
+};
+
+function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+  const hasCount = status.count != null && status.count > 0;
+  return (
+    <span
+      aria-label={status.label}
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-full px-1 leading-none transition-opacity',
+        TONE_PILL[status.tone],
+        dim && 'opacity-80',
+      )}
+    >
+      {status.icon}
+      {hasCount ? (
+        <span className="text-[9px] font-semibold tabular-nums">{status.count}</span>
+      ) : null}
+    </span>
+  );
+}
+
+function computeTabStatus(
+  pr: PullRequestState,
+  detail: PrDetail | null,
+): Record<GithubTabKey, TabStatus | null> {
+  return {
+    ci: computeCiStatus(pr, detail?.checks ?? []),
+    comments: computeCommentsStatus(detail?.comments ?? []),
+    review: computeReviewStatus(pr, detail?.reviews ?? [], detail?.reviewRequests ?? []),
+  };
+}
+
+function computeCiStatus(
+  pr: PullRequestState,
+  checks: ReadonlyArray<PrCheckRun>,
+): TabStatus | null {
+  if (checks.length === 0) {
+    if (pr.checks === 'failure')
+      return { tone: 'danger', icon: <XCircle size={9} aria-hidden />, label: 'ci failing' };
+    if (pr.checks === 'pending')
+      return {
+        tone: 'warning',
+        icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+        label: 'ci running',
+      };
+    if (pr.checks === 'success')
+      return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'ci passing' };
+    return null;
+  }
+  const fail = checks.filter(
+    (c) =>
+      c.conclusion === 'failure' ||
+      c.conclusion === 'cancelled' ||
+      c.conclusion === 'timed_out' ||
+      c.conclusion === 'action_required',
+  ).length;
+  const pending = checks.filter((c) => c.conclusion === 'pending').length;
+  if (fail > 0)
+    return {
+      tone: 'danger',
+      icon: <XCircle size={9} aria-hidden />,
+      count: fail,
+      label: `${fail} failing check${fail === 1 ? '' : 's'}`,
+    };
+  if (pending > 0)
+    return {
+      tone: 'warning',
+      icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+      count: pending,
+      label: `${pending} check${pending === 1 ? '' : 's'} running`,
+    };
+  return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'all checks passing' };
+}
+
+function computeCommentsStatus(comments: ReadonlyArray<PrComment>): TabStatus | null {
+  const heads = comments.filter((c) => c.source === 'review' && !c.inReplyToId);
+  if (heads.length === 0) return null;
+  const open = heads.filter((c) => c.resolved === false).length;
+  if (open > 0)
+    return {
+      tone: 'warning',
+      icon: <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />,
+      count: open,
+      label: `${open} unresolved comment${open === 1 ? '' : 's'}`,
+    };
+  return {
+    tone: 'success',
+    icon: <CheckCheck size={9} aria-hidden />,
+    label: 'all comments resolved',
+  };
+}
+
+function computeReviewStatus(
+  pr: PullRequestState,
+  reviews: ReadonlyArray<PrReview>,
+  requests: ReadonlyArray<PrReviewRequest>,
+): TabStatus | null {
+  const latest = latestTerminalReviewsByAuthor(reviews);
+  const changes = latest.filter((r) => r.state === 'changes_requested');
+  if (changes.length > 0)
+    return {
+      tone: 'danger',
+      icon: <AlertCircle size={9} aria-hidden />,
+      count: changes.length,
+      label: `changes requested by ${changes.map((r) => r.author).join(', ')}`,
+    };
+  const approvals = latest.filter((r) => r.state === 'approved');
+  if (pr.reviewDecision === 'approved' || approvals.length > 0)
+    return {
+      tone: 'success',
+      icon: <CheckCheck size={9} aria-hidden />,
+      label:
+        approvals.length > 0
+          ? `approved by ${approvals.map((r) => r.author).join(', ')}`
+          : 'approved',
+    };
+  if (requests.length > 0)
+    return {
+      tone: 'info',
+      icon: <CircleDashed size={9} aria-hidden />,
+      count: requests.length,
+      label: `awaiting ${requests.length} reviewer${requests.length === 1 ? '' : 's'}`,
+    };
+  if (reviews.some((r) => r.state === 'commented'))
+    return {
+      tone: 'muted',
+      icon: <MessageSquare size={9} aria-hidden />,
+      label: 'reviewer commented',
+    };
+  return null;
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
@@ -183,10 +374,10 @@ function ErrorRow({ message, onRetry }: { message: string; onRetry: () => void }
 
 function DetailSkeleton() {
   return (
-    <div className="flex flex-col gap-1.5" aria-hidden>
-      <div className="h-2.5 w-3/4 animate-pulse rounded bg-muted" />
-      <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted" />
-      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted" />
+    <div className="flex flex-col gap-1.5" role="status" aria-label="loading pr data">
+      <div className="h-2.5 w-3/4 animate-pulse rounded bg-muted [animation-delay:0ms]" />
+      <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted [animation-delay:120ms]" />
+      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted [animation-delay:240ms]" />
     </div>
   );
 }
@@ -232,27 +423,131 @@ function CiPane({
   );
 }
 
+interface CommentThread {
+  readonly head: PrComment;
+  readonly replies: ReadonlyArray<PrComment>;
+}
+
+function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
+  const byId = new Map<string, PrComment>();
+  for (const c of comments) byId.set(c.id, c);
+  const heads: Array<PrComment> = [];
+  const repliesByHead = new Map<string, Array<PrComment>>();
+  for (const c of comments) {
+    if (c.source === 'review' && c.inReplyToId && byId.has(c.inReplyToId)) {
+      const arr = repliesByHead.get(c.inReplyToId) ?? [];
+      arr.push(c);
+      repliesByHead.set(c.inReplyToId, arr);
+    } else {
+      heads.push(c);
+    }
+  }
+  return heads.map((head) => ({
+    head,
+    replies: (repliesByHead.get(head.id) ?? []).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    ),
+  }));
+}
+
+function threadPriority(t: CommentThread): number {
+  // open review > issue > resolved review. Smaller = higher priority.
+  if (t.head.source === 'review' && t.head.resolved === false) return 0;
+  if (t.head.source === 'issue') return 1;
+  return 2;
+}
+
+function isBot(author: string): boolean {
+  return author.endsWith('[bot]') || author.endsWith('-bot');
+}
+
+const COMMENT_DISPLAY_LIMIT = 5;
+
 function CommentsPane({
   comments,
   pr,
   onOpenUrl,
+  onSpawnFromComment,
 }: {
   comments: ReadonlyArray<PrComment>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
+  onSpawnFromComment?: (c: PrComment) => void;
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  if (comments.length === 0) {
+  const [showAll, setShowAll] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
+
+  const allThreads = useMemo(() => groupThreads(comments), [comments]);
+
+  // Only review threads are resolvable / actionable. General issue-comments
+  // (no path, no resolved state) are filtered out — they live "view on github".
+  const reviewThreads = useMemo(
+    () => allThreads.filter((t) => t.head.source === 'review'),
+    [allThreads],
+  );
+  const generalCount = allThreads.length - reviewThreads.length;
+  const resolvedCount = useMemo(
+    () => reviewThreads.filter((t) => t.head.resolved === true).length,
+    [reviewThreads],
+  );
+
+  const threads = useMemo(() => {
+    const filtered = showResolved
+      ? reviewThreads
+      : reviewThreads.filter((t) => t.head.resolved !== true);
+    return [...filtered].sort((a, b) => {
+      const p = threadPriority(a) - threadPriority(b);
+      if (p !== 0) return p;
+      return b.head.createdAt.localeCompare(a.head.createdAt);
+    });
+  }, [reviewThreads, showResolved]);
+
+  const generalFooter =
+    generalCount > 0 ? (
+      <button
+        type="button"
+        onClick={() => onOpenUrl(pr.url)}
+        className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70 hover:text-foreground"
+        title="open general comments on github"
+      >
+        {generalCount} general comment{generalCount === 1 ? '' : 's'}
+        <ExternalLink size={9} aria-hidden />
+      </button>
+    ) : null;
+
+  if (reviewThreads.length === 0) {
     return (
-      <EmptyRow
-        text="No comments yet"
-        actionUrl={pr.url}
-        actionLabel="view on github"
-        onOpenUrl={onOpenUrl}
-      />
+      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+        <span>No review comments yet</span>
+        {generalFooter}
+      </div>
     );
   }
-  const latest = [...comments].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
+
+  if (threads.length === 0) {
+    return (
+      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <span>All review comments resolved 🎉</span>
+          {resolvedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowResolved(true)}
+              className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
+            >
+              show {resolvedCount}
+            </button>
+          ) : null}
+        </div>
+        {generalFooter}
+      </div>
+    );
+  }
+
+  const visible = showAll ? threads : threads.slice(0, COMMENT_DISPLAY_LIMIT);
+  const hidden = threads.length - visible.length;
+
   const toggle = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -261,41 +556,166 @@ function CommentsPane({
       return next;
     });
   };
+
   return (
     <ul className="flex flex-col gap-1.5">
-      {latest.map((c) => (
-        <li key={c.id} className="flex gap-1.5">
-          <Avatar url={c.authorAvatarUrl} alt={c.author} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="truncate font-medium text-foreground">{c.author}</span>
-              <span className="opacity-60">·</span>
-              <span>{formatRelative(Date.now() - new Date(c.createdAt).getTime())}</span>
-              <button
-                type="button"
-                onClick={() => onOpenUrl(c.url)}
-                title="open comment in browser"
-                aria-label="open comment in browser"
-                className={cn(TAB_ICON_BTN, 'ml-auto')}
-              >
-                <ExternalLink size={9} aria-hidden />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => toggle(c.id)}
-              className={cn(
-                'text-left text-[11px] text-foreground/90 hover:text-foreground',
-                expanded.has(c.id) ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
-              )}
-              title={expanded.has(c.id) ? 'collapse' : 'expand'}
-            >
-              {c.body.trim() || '(empty)'}
-            </button>
-          </div>
+      {visible.map((t) => (
+        <li key={t.head.id}>
+          <CommentThreadRow
+            thread={t}
+            expanded={expanded.has(t.head.id)}
+            onToggle={() => toggle(t.head.id)}
+            onOpenUrl={onOpenUrl}
+            onSpawn={onSpawnFromComment ? () => onSpawnFromComment(t.head) : undefined}
+          />
         </li>
       ))}
+      {hidden > 0 ? (
+        <li>
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            +{hidden} more
+          </button>
+        </li>
+      ) : null}
+      {resolvedCount > 0 ? (
+        <li>
+          <button
+            type="button"
+            onClick={() => setShowResolved((v) => !v)}
+            className="text-[10px] text-muted-foreground/70 hover:text-foreground"
+          >
+            {showResolved ? `hide ${resolvedCount} resolved` : `show ${resolvedCount} resolved`}
+          </button>
+        </li>
+      ) : null}
+      {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
+  );
+}
+
+function CommentThreadRow({
+  thread,
+  expanded,
+  onToggle,
+  onOpenUrl,
+  onSpawn,
+}: {
+  thread: CommentThread;
+  expanded: boolean;
+  onToggle: () => void;
+  onOpenUrl: (url: string) => void;
+  onSpawn?: () => void;
+}) {
+  const { head, replies } = thread;
+  const isReview = head.source === 'review';
+  const status: 'open' | 'resolved' | 'issue' = !isReview
+    ? 'issue'
+    : head.resolved
+      ? 'resolved'
+      : 'open';
+  const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment';
+  const bot = isBot(head.author);
+
+  return (
+    <div className="flex gap-1.5">
+      <span
+        aria-hidden
+        title={statusLabel}
+        className="mt-0.5 inline-flex h-3 w-3 shrink-0 items-center justify-center"
+      >
+        {status === 'resolved' ? (
+          <CheckCheck size={11} className="text-success" aria-hidden />
+        ) : status === 'open' ? (
+          <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+        ) : (
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+        )}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Avatar url={head.authorAvatarUrl} alt={head.author} />
+          <span className="truncate font-medium text-foreground">{head.author}</span>
+          {bot ? (
+            <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+              bot
+            </span>
+          ) : null}
+          <span className="opacity-50">·</span>
+          <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
+          {replies.length > 0 ? (
+            <span className="opacity-50">
+              · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
+            </span>
+          ) : null}
+          <div className="ml-auto flex items-center gap-1">
+            {onSpawn && status !== 'resolved' ? (
+              <button
+                type="button"
+                onClick={onSpawn}
+                title="spawn agent to resolve this comment"
+                aria-label="spawn agent to resolve this comment"
+                className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-[10px] font-medium text-accent transition-colors hover:bg-accent/15"
+              >
+                <Sparkles size={9} aria-hidden />
+                resolve
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onOpenUrl(head.url)}
+              title="open comment in browser"
+              aria-label="open comment in browser"
+              className={TAB_ICON_BTN}
+            >
+              <ExternalLink size={9} aria-hidden />
+            </button>
+          </div>
+        </div>
+        {head.path ? (
+          <button
+            type="button"
+            onClick={() => onOpenUrl(head.url)}
+            title={`${head.path}${head.line ? ':' + head.line : ''}`}
+            className="self-start truncate rounded bg-background/60 px-1 py-px font-mono text-[9px] text-muted-foreground hover:text-foreground"
+          >
+            {head.path}
+            {head.line ? `:${head.line}` : ''}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            'text-left text-[11px] text-foreground/90 hover:text-foreground',
+            expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
+          )}
+          title={expanded ? 'collapse' : 'expand'}
+        >
+          {head.body.trim() || '(empty)'}
+        </button>
+        {expanded && replies.length > 0 ? (
+          <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
+            {replies.map((r) => (
+              <li key={r.id} className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Avatar url={r.authorAvatarUrl} alt={r.author} />
+                  <span className="truncate font-medium text-foreground">{r.author}</span>
+                  <span className="opacity-50">·</span>
+                  <span>{formatRelative(Date.now() - new Date(r.createdAt).getTime())}</span>
+                </div>
+                <p className="whitespace-pre-wrap break-words text-[11px] text-foreground/90">
+                  {r.body.trim() || '(empty)'}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -304,13 +724,16 @@ function ReviewPane({
   requests,
   pr,
   onOpenUrl,
+  onSpawnFromReviewChanges,
 }: {
   reviews: ReadonlyArray<PrReview>;
   requests: ReadonlyArray<PrReviewRequest>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
+  onSpawnFromReviewChanges?: () => void;
 }) {
   const summary = summarizeReview(pr, reviews, requests);
+  const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
   return (
     <div className="flex flex-col gap-1.5">
       <div
@@ -322,14 +745,50 @@ function ReviewPane({
         {summary.icon}
         <span>{summary.label}</span>
       </div>
+      {pr.reviewDecision === 'changes_requested' && onSpawnFromReviewChanges ? (
+        <button
+          type="button"
+          onClick={onSpawnFromReviewChanges}
+          className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/10"
+          title="spawn agent to resolve all requested changes"
+        >
+          <Sparkles size={10} aria-hidden />
+          resolve all requested changes
+        </button>
+      ) : null}
+      {perReviewer.length > 0 ? (
+        <ul className="flex flex-col gap-0.5">
+          {perReviewer.map((r) => (
+            <li
+              key={r.author}
+              className="flex items-center gap-1.5 rounded px-1 py-0.5 text-[10px] text-foreground hover:bg-background"
+            >
+              <ReviewStateIcon state={r.state} />
+              <Avatar url={r.authorAvatarUrl} alt={r.author} />
+              <span className="truncate font-medium">{r.author}</span>
+              {isBot(r.author) ? (
+                <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+                  bot
+                </span>
+              ) : null}
+              <span className="ml-auto shrink-0 text-[9px] text-muted-foreground/70">
+                {r.submittedAt
+                  ? formatRelative(Date.now() - new Date(r.submittedAt).getTime())
+                  : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {requests.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">requested:</span>
+          <span className="text-[10px] text-muted-foreground">awaiting:</span>
           {requests.map((r) => (
             <span
               key={`${r.kind}-${r.login}`}
               className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-[10px] text-foreground"
             >
+              <CircleDashed size={9} aria-hidden className="text-info" />
               <Avatar url={r.avatarUrl} alt={r.login} />
               <span className="truncate">{r.login}</span>
             </span>
@@ -348,6 +807,26 @@ function ReviewPane({
       ) : null}
     </div>
   );
+}
+
+function ReviewStateIcon({ state }: { state: PrReviewState }) {
+  const props = { size: 10, 'aria-hidden': true } as const;
+  if (state === 'approved') return <CheckCheck {...props} className="text-success" />;
+  if (state === 'changes_requested') return <AlertCircle {...props} className="text-danger" />;
+  if (state === 'commented') return <MessageSquare {...props} className="text-muted-foreground" />;
+  if (state === 'dismissed') return <MinusCircle {...props} className="text-muted-foreground" />;
+  return <CircleDashed {...props} className="text-muted-foreground" />;
+}
+
+function latestTerminalReviewsByAuthor(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview> {
+  const map = new Map<string, PrReview>();
+  for (const r of [...reviews].sort((a, b) =>
+    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
+  )) {
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    map.set(r.author, r);
+  }
+  return [...map.values()];
 }
 
 function EmptyRow({

@@ -22,11 +22,19 @@ function jsonOk(data: unknown): GhResult {
   return { stdout: JSON.stringify(data), stderr: '', exitCode: 0 };
 }
 
+const matchIssueComments = (a: ReadonlyArray<string>) =>
+  a.some((s) => s.includes('issues/1/comments'));
+const matchReviewThreads = (a: ReadonlyArray<string>) => a[0] === 'api' && a[1] === 'graphql';
+
+const emptyReviewThreads = jsonOk({
+  data: { repository: { pullRequest: { reviewThreads: { nodes: [] } } } },
+});
+
 describe('fetchPrDetail', () => {
   it('merges issue + review comments sorted by createdAt', async () => {
     const runner = makeMultiRunner([
       {
-        match: (a) => a.some((s) => s.includes('issues/1/comments')),
+        match: matchIssueComments,
         result: jsonOk([
           {
             id: 100,
@@ -38,16 +46,39 @@ describe('fetchPrDetail', () => {
         ]),
       },
       {
-        match: (a) => a.some((s) => s.includes('pulls/1/comments')),
-        result: jsonOk([
-          {
-            id: 200,
-            user: { login: 'bob', avatar_url: null },
-            body: 'review note',
-            created_at: '2026-01-02T10:00:00Z',
-            html_url: 'https://github.com/org/repo/pull/1#discussion_r200',
+        match: matchReviewThreads,
+        result: jsonOk({
+          data: {
+            repository: {
+              pullRequest: {
+                reviewThreads: {
+                  nodes: [
+                    {
+                      id: 'PRT_1',
+                      isResolved: false,
+                      isOutdated: false,
+                      path: 'src/foo.ts',
+                      line: 42,
+                      comments: {
+                        nodes: [
+                          {
+                            id: 'PRRC_1',
+                            databaseId: 200,
+                            author: { login: 'bob', avatarUrl: null },
+                            body: 'review note',
+                            createdAt: '2026-01-02T10:00:00Z',
+                            url: 'https://github.com/org/repo/pull/1#discussion_r200',
+                            replyTo: null,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
           },
-        ]),
+        }),
       },
       {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
@@ -62,12 +93,73 @@ describe('fetchPrDetail', () => {
     expect(detail.comments.map((c) => c.author)).toEqual(['alice', 'bob']);
     expect(detail.comments[0]!.source).toBe('issue');
     expect(detail.comments[1]!.source).toBe('review');
+    expect(detail.comments[1]!.path).toBe('src/foo.ts');
+    expect(detail.comments[1]!.line).toBe(42);
+    expect(detail.comments[1]!.resolved).toBe(false);
+  });
+
+  it('propagates resolved status and reply threading from review threads', async () => {
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: matchReviewThreads,
+        result: jsonOk({
+          data: {
+            repository: {
+              pullRequest: {
+                reviewThreads: {
+                  nodes: [
+                    {
+                      id: 'PRT_X',
+                      isResolved: true,
+                      isOutdated: false,
+                      path: 'pkg/a.ts',
+                      line: 10,
+                      comments: {
+                        nodes: [
+                          {
+                            id: 'PRRC_A',
+                            databaseId: 1,
+                            author: { login: 'alice', avatarUrl: null },
+                            body: 'parent',
+                            createdAt: '2026-01-01T10:00:00Z',
+                            url: 'https://x/1',
+                            replyTo: null,
+                          },
+                          {
+                            id: 'PRRC_B',
+                            databaseId: 2,
+                            author: { login: 'bob', avatarUrl: null },
+                            body: 'reply',
+                            createdAt: '2026-01-01T11:00:00Z',
+                            url: 'https://x/2',
+                            replyTo: { id: 'PRRC_A' },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        }),
+      },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] }),
+      },
+    ]);
+    const detail = await fetchPrDetail(runner, 'org/repo', 1);
+    expect(detail.comments).toHaveLength(2);
+    expect(detail.comments.every((c) => c.resolved === true)).toBe(true);
+    expect(detail.comments[1]!.inReplyToId).toBe('review-1');
   });
 
   it('maps review states + review requests', async () => {
     const runner = makeMultiRunner([
-      { match: (a) => a.some((s) => s.includes('issues/1/comments')), result: jsonOk([]) },
-      { match: (a) => a.some((s) => s.includes('pulls/1/comments')), result: jsonOk([]) },
+      { match: matchIssueComments, result: jsonOk([]) },
+      { match: matchReviewThreads, result: emptyReviewThreads },
       {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
         result: jsonOk({
@@ -96,8 +188,8 @@ describe('fetchPrDetail', () => {
 
   it('derives check conclusions including pending and failure', async () => {
     const runner = makeMultiRunner([
-      { match: (a) => a.some((s) => s.includes('issues/1/comments')), result: jsonOk([]) },
-      { match: (a) => a.some((s) => s.includes('pulls/1/comments')), result: jsonOk([]) },
+      { match: matchIssueComments, result: jsonOk([]) },
+      { match: matchReviewThreads, result: emptyReviewThreads },
       {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
         result: jsonOk({
