@@ -95,7 +95,7 @@ describe('emitBudgetAlerts', () => {
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
     expect(alerts).toHaveLength(1);
-    expect(alerts[0]?.kind).toBe('task-exceeded');
+    expect(alerts[0]?.kind).toBe('session-exceeded');
   });
 
   it('dedup: undismissed alert of same kind already exists → no duplicate', async () => {
