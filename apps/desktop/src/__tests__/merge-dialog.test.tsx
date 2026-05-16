@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import type { ProviderRunId } from '@kay-am/types';
-import { MergeDialog, SKIP_SENTINEL } from '../components/chat/MergeDialog';
+import { MergeDialog, SKIP_SENTINEL } from '../features/permissions/components/MergeDialog';
 
 afterEach(cleanup);
 

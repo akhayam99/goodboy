@@ -1,7 +1,7 @@
 import { cn } from '@kay-am/ui';
 import type { AgentId, SessionId } from '@kay-am/types';
-import type { TranscriptItem } from './transcript-items';
-import { formatCardTime } from './format-card-time';
+import type { TranscriptItem } from '../../../../components/chat/transcript-items';
+import { formatCardTime } from '../../../../components/chat/format-card-time';
 
 interface PermissionDecisionCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;

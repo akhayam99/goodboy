@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Dialog, Markdown, Textarea, cn } from '@kay-am/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@kay-am/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../store';
+import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   active: 'bg-warning/10 text-warning',

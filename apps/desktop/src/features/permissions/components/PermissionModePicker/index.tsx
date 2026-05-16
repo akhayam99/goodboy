@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { ClaudePermissionMode, Session } from '@kay-am/types';
-import { useAppStore } from '../../store';
+import { useAppStore } from '../../../../store';
 
 interface ModeMeta {
   readonly value: ClaudePermissionMode;

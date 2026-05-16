@@ -36,7 +36,7 @@ import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from './SessionSettingsDialog';
 import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
-import { NotificationCenter } from './NotificationCenter';
+import { NotificationCenter } from '../features/notifications/components/NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import type {

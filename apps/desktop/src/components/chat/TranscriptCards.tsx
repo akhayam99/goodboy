@@ -6,8 +6,8 @@ import type { TranscriptItem } from './transcript-items';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { SkillInvocationCard } from './SkillInvocationCard';
 import { PhaseTransitionCard } from './PhaseTransitionCard';
-import { PermissionRequestCard } from './PermissionRequestCard';
-import { PermissionDecisionCard } from './PermissionDecisionCard';
+import { PermissionRequestCard } from '../../features/permissions/components/PermissionRequestCard';
+import { PermissionDecisionCard } from '../../features/permissions/components/PermissionDecisionCard';
 import { displayPath } from '../../shared/utils/display-path';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {

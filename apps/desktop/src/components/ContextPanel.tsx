@@ -35,7 +35,7 @@ import type {
   TelemetryRecord,
   PullRequestStateKind,
 } from '@kay-am/types';
-import { PlansModal } from './PlansModal';
+import { PlansModal } from '../features/plans/components/PlansModal';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -50,7 +50,7 @@ import {
 import { openUrl } from '../shared/lib/editor';
 import { formatError } from '../shared/lib/errors';
 import { tauriGhRunner } from '../features/github/github';
-import { DiffViewerDialog } from './DiffViewerDialog';
+import { DiffViewerDialog } from '../features/permissions/components/DiffViewerDialog';
 import { GithubCard } from '../features/github/components/Card';
 import { worktreeStatus } from '../features/worktree/worktree';
 import type { WorktreeStatus } from '@kay-am/types';

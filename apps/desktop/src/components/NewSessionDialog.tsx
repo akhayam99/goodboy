@@ -27,7 +27,7 @@ import { PROVIDER_LABEL_LOWER } from '../features/providers/providers';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { SESSION_FEATURES } from '../shared/lib/features';
 import { EMPTY_ARRAY, useAppStore } from '../store';
-import { PlannerWidget } from './PlannerWidget';
+import { PlannerWidget } from '../features/plans/components/PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../features/github/github';
 
 interface IssueData {

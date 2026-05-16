@@ -34,7 +34,7 @@ import {
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from './chat-constants';
 import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';
-import { PermissionModePicker } from './PermissionModePicker';
+import { PermissionModePicker } from '../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from './RightSizeCard';
 import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../shared/lib/features';

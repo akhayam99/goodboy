@@ -8,8 +8,12 @@ import { TranscriptCard } from './TranscriptCards';
 import { AuthRequiredCallout } from './AuthRequiredCallout';
 import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
-import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDialog';
-import { DiffViewerDialog } from '../DiffViewerDialog';
+import {
+  MergeDialog,
+  type MergeConflict,
+  type MergeResolution,
+} from '../../features/permissions/components/MergeDialog';
+import { DiffViewerDialog } from '../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../features/worktree/worktree';
 
 interface ChatViewProps {

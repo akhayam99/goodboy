@@ -11,10 +11,13 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@kay-am/types';
-import type { VerbosityLevel } from '../features/settings/verbosity';
-import { formatError } from '../shared/lib/errors';
-import { useAppStore } from '../store';
-import { StepOverrideRow, type StepOverrideValues } from './overrides/StepOverrideRow';
+import type { VerbosityLevel } from '../../../../features/settings/verbosity';
+import { formatError } from '../../../../shared/lib/errors';
+import { useAppStore } from '../../../../store';
+import {
+  StepOverrideRow,
+  type StepOverrideValues,
+} from '../../../../components/overrides/StepOverrideRow';
 
 interface PlannerWidgetProps {
   workspaceId: WorkspaceId;

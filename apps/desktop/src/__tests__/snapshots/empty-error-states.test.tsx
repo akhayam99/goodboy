@@ -95,14 +95,14 @@ function mockStore(partial: Partial<AppStore>): void {
     selector(partial as AppStore),
   );
 }
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../components/BootSplash';
 import { NewSessionDialog } from '../../components/NewSessionDialog';
 import { EndSessionDialog } from '../../components/EndSessionDialog';
-import { SkillsPanel } from '../../components/SkillsPanel';
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
 import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
-import { BudgetRulesPanel } from '../../components/BudgetRulesPanel';
+import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { ProvidersPanel } from '../../components/ProvidersPanel';
 import { TranscriptCard } from '../../components/chat/TranscriptCards';
 import { ToastProvider } from '../../components/Toast';

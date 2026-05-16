@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { AgentId, SessionId } from '@kay-am/types';
-import type { TranscriptItem } from './transcript-items';
-import { PermissionScopePicker } from './PermissionScopePicker';
-import { formatCardTime } from './format-card-time';
+import type { TranscriptItem } from '../../../../components/chat/transcript-items';
+import { PermissionScopePicker } from '../PermissionScopePicker';
+import { formatCardTime } from '../../../../components/chat/format-card-time';
 
 interface PermissionRequestCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;

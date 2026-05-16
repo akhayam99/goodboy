@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { Dialog, ScrollArea, Textarea, cn } from '@kay-am/ui';
-import { useToast } from './Toast';
+import { useToast } from '../../../../components/Toast';
 import { parseUnifiedDiff } from '@kay-am/core';
 import type {
   BranchCommit,
@@ -32,25 +32,25 @@ import type {
   SessionId,
   WorktreeStatus,
 } from '@kay-am/types';
-import { ghPrDiff } from '../features/github/github';
-import { openFileInWorkspace } from '../shared/lib/editor';
-import { formatError } from '../shared/lib/errors';
+import { ghPrDiff } from '../../../../features/github/github';
+import { openFileInWorkspace } from '../../../../shared/lib/editor';
+import { formatError } from '../../../../shared/lib/errors';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_DEFAULT_EDITOR,
   SETTING_EDITOR_BINARY,
-} from '../features/settings/settings';
-import { useAppStore, useDiffComments, useSummarizerStatus } from '../store';
-import { AGENT_KIND_DEFAULTS } from '../features/session/agent-kind';
-import { STORAGE_KEYS, STORAGE_PREFIXES } from '../shared/lib/storage-keys';
+} from '../../../../features/settings/settings';
+import { useAppStore, useDiffComments, useSummarizerStatus } from '../../../../store';
+import { AGENT_KIND_DEFAULTS } from '../../../../features/session/agent-kind';
+import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import {
   listBranchCommits,
   worktreeDiff,
   worktreeDiffCommit,
   worktreeDiffWorking,
   worktreeStatus,
-} from '../features/worktree/worktree';
-import { DiffViewSelector } from './DiffViewSelector';
+} from '../../../../features/worktree/worktree';
+import { DiffViewSelector } from '../DiffViewSelector';
 
 interface DiffViewerDialogProps {
   open: boolean;

@@ -86,12 +86,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { WorkspaceId } from '@kay-am/types';
 import { runA11yCheck } from './utils';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../components/BootSplash';
 import { SettingsDialog } from '../../components/SettingsDialog';
 import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
 import { StatusBar } from '../../components/StatusBar';
-import { SkillsPanel } from '../../components/SkillsPanel';
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
 import { ToastProvider } from '../../components/Toast';
 
