@@ -156,7 +156,11 @@ export function ContextPanel({
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
-    void loadDiffComments(session.id);
+    const t0 = performance.now();
+    void loadDiffComments(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`);
+    });
   }, [session.id, loadDiffComments]);
 
   return (
@@ -408,14 +412,27 @@ function GitHubSection({ session }: { session: Task }) {
   useEffect(() => {
     if (!branch || githubStatus?.mode === 'absent') return;
     if (ghState?.fetchedAt != null) return;
-    void refreshSessionPr(session.id);
+    const t0 = performance.now();
+    void refreshSessionPr(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`);
+    });
   }, [branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
 
   const prNumber = ghState?.pr?.number ?? null;
+  const prDetailFetchedAt = ghState?.detailFetchedAt ?? null;
   useEffect(() => {
     if (prNumber === null) return;
-    void refreshSessionPrDetail(session.id);
-  }, [prNumber, session.id, refreshSessionPrDetail]);
+    // Skip when detail was already fetched. Without this guard the GitHub
+    // network call (~3s) re-fired on every session switch, leaving a pending
+    // PR-card spinner visible for the entire wait.
+    if (prDetailFetchedAt !== null) return;
+    const t0 = performance.now();
+    void refreshSessionPrDetail(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`);
+    });
+  }, [prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
 
   if (!branch || githubStatus?.mode === 'absent') return null;
 

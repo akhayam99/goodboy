@@ -15,6 +15,9 @@ import { worktreeDiff } from '../../worktree';
 interface ChatViewProps {
   session: Task;
   onRequestEnd?: () => void;
+  // Keep-alive aware. False when this instance is mounted but hidden behind
+  // another session's view — used to skip background DB fetches.
+  isActive?: boolean;
 }
 
 const PIN_TOLERANCE_PX = 32;
@@ -166,7 +169,7 @@ function ThinkingIndicator() {
   );
 }
 
-export function ChatView({ session }: ChatViewProps) {
+export function ChatView({ session, isActive = true }: ChatViewProps) {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as SessionId | null;
@@ -183,13 +186,13 @@ export function ChatView({ session }: ChatViewProps) {
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
 
-  // Lazy transcript load: triggered when chat view becomes visible for an
-  // agent whose history isn't in cache. Session switch no longer fetches
-  // transcripts eagerly — see store.setCurrentSession.
+  // Lazy transcript load: only fires when this view is the active one. With
+  // keep-alive, hidden ChatView instances stay mounted but must not preload
+  // transcripts in the background — that would defeat the lazy DB savings.
   useEffect(() => {
-    if (!selectedAgentId || transcriptCached) return;
+    if (!isActive || !selectedAgentId || transcriptCached) return;
     void selectAgent(session.id, selectedAgentId);
-  }, [selectedAgentId, transcriptCached, selectAgent, session.id]);
+  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
