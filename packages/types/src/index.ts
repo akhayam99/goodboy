@@ -100,7 +100,14 @@ export type {
   DiffCommentSide,
   DiffCommentStatus,
 } from './diff-comment';
-export type { Plan, PlanId, PlanStatus } from './plan';
+export type {
+  Plan,
+  PlanConsumption,
+  PlanConsumptionId,
+  PlanId,
+  PlanStatus,
+  PlanWithCount,
+} from './plan';
 export type {
   DiffHunk,
   DiffHunkLine,

@@ -89,9 +89,10 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
-  Plan,
+  PlanConsumption,
   PlanId,
   PlanStatus,
+  PlanWithCount,
   Step,
   StepId,
   Session,
@@ -223,7 +224,9 @@ import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../errors';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
 import {
+  addPlanConsumption as invokeAddPlanConsumption,
   deletePlan as invokeDeletePlan,
+  listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
@@ -327,7 +330,8 @@ export interface AppState {
   readonly agentDraft: Readonly<Record<SessionId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
-  readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
+  readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<PlanWithCount>>>;
+  readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   /**
    * Per-session loading flags. Each block (agents, transcript, telemetry,
    * slots, plans, summary) starts true on session switch and is flipped off
@@ -461,6 +465,7 @@ export interface AppActions {
       model?: string;
       effort?: string;
       initialPrompt?: string;
+      triggeredPlanId?: PlanId;
     },
   ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
@@ -539,6 +544,9 @@ export interface AppActions {
   setPlanStatus(taskId: TaskId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(taskId: TaskId, planId: PlanId, title: string, bodyMd: string): Promise<void>;
   deletePlan(taskId: TaskId, planId: PlanId): Promise<void>;
+  abandonPlan(taskId: TaskId, planId: PlanId): Promise<void>;
+  loadConsumptionsForPlan(planId: PlanId): Promise<void>;
+  runPlan(taskId: TaskId, planId: PlanId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -598,6 +606,7 @@ const initialState: AppState = {
   diffComments: {},
   notifications: [],
   sessionPlans: {},
+  planConsumptions: {},
   sessionLoading: {},
 };
 
@@ -876,22 +885,19 @@ async function runSummarizer(
   }
 }
 
-async function buildPlanKickoffSection(taskId: TaskId): Promise<string> {
+async function buildPlanKickoffSection(
+  taskId: TaskId,
+): Promise<{ section: string; plan: PlanWithCount | null }> {
   try {
     const plans = await invokeListPlansForSession(taskId);
-    const plan = plans[0];
-    if (!plan) return '';
-    if (plan.status === 'completed') {
-      return [
-        'The most recent plan in this session was completed and should NOT be re-executed. Provided for context only:',
-        '',
-        plan.bodyMd,
-      ].join('\n');
-    }
-    if (plan.status === 'superseded') return '';
-    return ['Active plan to execute:', '', plan.bodyMd].join('\n');
+    const latest = plans[plans.length - 1] ?? null;
+    if (!latest || latest.status !== 'active') return { section: '', plan: latest };
+    return {
+      section: ['Active plan to execute:', '', latest.bodyMd].join('\n'),
+      plan: latest,
+    };
   } catch {
-    return '';
+    return { section: '', plan: null };
   }
 }
 
@@ -915,7 +921,6 @@ async function capturePlanFromTurn(
       agentId,
       title: extracted.title,
       bodyMd: extracted.bodyMd,
-      status: 'active',
     });
     const refreshed = await invokeListPlansForSession(taskId);
     set((state) => ({
@@ -1340,7 +1345,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .finally(() => markDone('slots'));
 
     // Plans
-    void (async (): Promise<ReadonlyArray<Plan>> => {
+    void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
       try {
         return await invokeListPlansForSession(id);
       } catch {
@@ -2820,6 +2825,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  abandonPlan: async (taskId, planId) => {
+    await invokeSetPlanStatus(planId, 'superseded');
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
+  },
+
+  loadConsumptionsForPlan: async (planId) => {
+    const items = await invokeListConsumptionsForPlan(planId);
+    set((state) => ({
+      planConsumptions: { ...state.planConsumptions, [planId]: items },
+    }));
+  },
+
+  runPlan: async (taskId, planId) => {
+    await get().spawnAgent(taskId, { triggeredPlanId: planId });
+  },
+
   toggleSessionSlot: async (taskId, key, enabled) => {
     const existing = get().sessionSlots[taskId] ?? [];
     const prev = existing.find((s) => s.key === key);
@@ -3214,11 +3238,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }),
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
-    const planSection = await buildPlanKickoffSection(taskId);
+    const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(taskId);
+    const explicitTrigger = args.triggeredPlanId !== undefined;
+    const explicitPlan = explicitTrigger
+      ? (get().sessionPlans[taskId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
+      : null;
+    const planSection = explicitPlan
+      ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+      : latestSection;
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
       void get().sendTurn({ taskId, content: kickoff });
     }
+
+    const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
+    const planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
+    if (planToConsume) {
+      await invokeAddPlanConsumption(planToConsume.id, inserted.id);
+      const refreshed = await invokeListPlansForSession(taskId);
+      const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
+      set((state) => ({
+        sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+        planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
+      }));
+    }
+
     return inserted.id;
   },
 

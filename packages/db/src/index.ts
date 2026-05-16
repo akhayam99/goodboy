@@ -127,5 +127,8 @@ export {
   updatePlanStatus,
   updatePlanBody,
   deletePlan,
+  addPlanConsumption,
+  listConsumptionsForPlan,
   type UpsertPlanInput,
+  type AddPlanConsumptionInput,
 } from './queries/plan';

@@ -1,6 +1,17 @@
-import type { Plan, PlanId, PlanStatus, SessionId, TaskId } from '@kay-am/types';
+import type {
+  Plan,
+  PlanConsumption,
+  PlanConsumptionId,
+  PlanId,
+  PlanStatus,
+  PlanWithCount,
+  SessionId,
+  TaskId,
+} from '@kay-am/types';
 import {
+  addPlanConsumption as dbAddPlanConsumption,
   deletePlan as dbDeletePlan,
+  listConsumptionsForPlan as dbListConsumptionsForPlan,
   listPlansForSession as dbListPlansForSession,
   updatePlanBody as dbUpdatePlanBody,
   updatePlanStatus as dbUpdatePlanStatus,
@@ -8,7 +19,9 @@ import {
 } from '@kay-am/db';
 import { tauriDatabase } from './db';
 
-export async function listPlansForSession(sessionId: TaskId): Promise<ReadonlyArray<Plan>> {
+export async function listPlansForSession(
+  sessionId: TaskId,
+): Promise<ReadonlyArray<PlanWithCount>> {
   return dbListPlansForSession(tauriDatabase, sessionId);
 }
 
@@ -17,7 +30,6 @@ export interface UpsertPlanArgs {
   readonly agentId: SessionId;
   readonly title: string;
   readonly bodyMd: string;
-  readonly status?: PlanStatus;
 }
 
 export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
@@ -28,7 +40,6 @@ export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
     agentId: args.agentId,
     title: args.title,
     bodyMd: args.bodyMd,
-    status: args.status ?? 'active',
   });
 }
 
@@ -42,4 +53,18 @@ export async function setPlanBody(id: PlanId, title: string, bodyMd: string): Pr
 
 export async function deletePlan(id: PlanId): Promise<void> {
   await dbDeletePlan(tauriDatabase, id);
+}
+
+export async function addPlanConsumption(
+  planId: PlanId,
+  agentId: SessionId,
+): Promise<PlanConsumption> {
+  const id = crypto.randomUUID() as PlanConsumptionId;
+  return dbAddPlanConsumption(tauriDatabase, { id, planId, agentId });
+}
+
+export async function listConsumptionsForPlan(
+  planId: PlanId,
+): Promise<ReadonlyArray<PlanConsumption>> {
+  return dbListConsumptionsForPlan(tauriDatabase, planId);
 }
