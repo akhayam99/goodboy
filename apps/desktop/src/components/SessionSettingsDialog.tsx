@@ -13,6 +13,7 @@ import {
 import type { TaskId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
+import { SESSION_FEATURES } from '../features';
 import { parseCap } from '../lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../worktree';
 import { useToast } from './Toast';
@@ -36,7 +37,9 @@ interface NavItem {
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'general', label: 'General', icon: <Bot size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden /> },
+  ...(SESSION_FEATURES.budget
+    ? [{ id: 'budget' as const, label: 'Budget', icon: <DollarSign size={14} aria-hidden /> }]
+    : []),
 ];
 
 const DANGER_NAV: NavItem = {

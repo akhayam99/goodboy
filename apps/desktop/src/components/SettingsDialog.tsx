@@ -1,21 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Bot, Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
+import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input } from '@kay-am/ui';
 import { ProvidersPanel } from './ProvidersPanel';
 import { BudgetRulesPanel } from './BudgetRulesPanel';
-import { IntegrationsPanel } from './IntegrationsPanel';
+import { GithubPanel } from './GithubPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
-import {
-  DEFAULT_EDITOR_BINARY,
-  DEFAULT_ENABLE_PARALLEL_AGENTS,
-  DEFAULT_MAX_PARALLELISM,
-  MAX_PARALLELISM,
-  MIN_PARALLELISM,
-  SETTING_EDITOR_BINARY,
-  SETTING_ENABLE_PARALLEL_AGENTS,
-  SETTING_MAX_PARALLELISM,
-} from '../settings';
+import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
+import { SESSION_FEATURES } from '../features';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
@@ -31,7 +23,6 @@ type NavSection =
   | 'app'
   | 'providers'
   | 'budget'
-  | 'agent'
   | 'integrations'
   | 'initialization'
   | 'advanced';
@@ -48,8 +39,16 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
-  { id: 'agent', label: 'Agent', icon: <Bot size={14} aria-hidden />, beta: true },
+  ...(SESSION_FEATURES.budget
+    ? [
+        {
+          id: 'budget' as const,
+          label: 'Budget',
+          icon: <DollarSign size={14} aria-hidden />,
+          beta: true,
+        },
+      ]
+    : []),
   { id: 'integrations', label: 'Integrations', icon: <Link2 size={14} aria-hidden /> },
   { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
   { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
@@ -60,7 +59,6 @@ function isNavSection(value: string | undefined): value is NavSection {
     value === 'app' ||
     value === 'providers' ||
     value === 'budget' ||
-    value === 'agent' ||
     value === 'integrations' ||
     value === 'initialization' ||
     value === 'advanced'
@@ -84,8 +82,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
 
   const [activeSection, setActiveSection] = useState<NavSection>('providers');
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
-  const [enableParallelAgents, setEnableParallelAgents] = useState(DEFAULT_ENABLE_PARALLEL_AGENTS);
-  const [maxParallelism, setMaxParallelism] = useState(DEFAULT_MAX_PARALLELISM);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [exportState, setExportState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
@@ -107,17 +103,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
       setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
     );
-    void loadSetting(SETTING_ENABLE_PARALLEL_AGENTS).then((v) =>
-      setEnableParallelAgents(v === 'true'),
-    );
-    void loadSetting(SETTING_MAX_PARALLELISM).then((v) => {
-      const parsed = v !== null ? parseInt(v, 10) : NaN;
-      setMaxParallelism(
-        !isNaN(parsed) && parsed >= MIN_PARALLELISM && parsed <= MAX_PARALLELISM
-          ? parsed
-          : DEFAULT_MAX_PARALLELISM,
-      );
-    });
     setWipeState('idle');
     setWipeError(null);
   }, [open, loadSetting, initialSection]);
@@ -152,12 +137,6 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     setError(null);
     try {
       await saveSetting(SETTING_EDITOR_BINARY, editorBinary.trim() || DEFAULT_EDITOR_BINARY);
-      await saveSetting(SETTING_ENABLE_PARALLEL_AGENTS, enableParallelAgents ? 'true' : 'false');
-      const clampedParallelism = Math.max(
-        MIN_PARALLELISM,
-        Math.min(MAX_PARALLELISM, maxParallelism),
-      );
-      await saveSetting(SETTING_MAX_PARALLELISM, String(clampedParallelism));
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
@@ -177,7 +156,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
     }
   };
 
-  const needsSave = activeSection === 'app' || activeSection === 'agent';
+  const needsSave = activeSection === 'app';
 
   const renderContent = () => {
     switch (activeSection) {
@@ -202,47 +181,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
         return <ProvidersPanel />;
       case 'budget':
         return <BudgetRulesPanel />;
-      case 'agent':
-        return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>Agent settings</SectionHeading>
-            <Field
-              label="Enable parallel agents"
-              help="Not yet correctly implemented, coming soon."
-            >
-              <label className="flex cursor-not-allowed items-center gap-2 opacity-40">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border border-border accent-primary"
-                  checked={enableParallelAgents}
-                  disabled
-                  onChange={() => undefined}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {enableParallelAgents ? 'On' : 'Off'}
-                </span>
-              </label>
-            </Field>
-            <Field
-              label="Max parallelism"
-              help={`Number of concurrent agent columns (${MIN_PARALLELISM}–${MAX_PARALLELISM}).`}
-            >
-              <Input
-                type="number"
-                value={maxParallelism}
-                min={MIN_PARALLELISM}
-                max={MAX_PARALLELISM}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10);
-                  if (!isNaN(v)) setMaxParallelism(v);
-                }}
-                disabled
-              />
-            </Field>
-          </div>
-        );
       case 'integrations':
-        return <IntegrationsPanel />;
+        return <GithubPanel />;
       case 'initialization':
         return (
           <div className="flex flex-col gap-4">

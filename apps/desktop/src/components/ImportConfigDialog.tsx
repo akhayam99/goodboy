@@ -1,5 +1,6 @@
 import { Button, Dialog } from '@kay-am/ui';
 import type { ConfigBundleImportResult } from '@kay-am/types';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
 
 interface ImportConfigDialogProps {
   open: boolean;
@@ -33,10 +34,10 @@ export function ImportConfigDialog({ open, result, error, onClose }: ImportConfi
           {result.ok ? (
             <ul className="space-y-1 text-xs text-muted-foreground">
               <li>workspaces: {result.stats.workspaces}</li>
-              <li>skills: {result.stats.skills}</li>
+              {WORKSPACE_FEATURES.skills ? <li>skills: {result.stats.skills}</li> : null}
               <li>workflows: {result.stats.workflows}</li>
               <li>permission rules: {result.stats.permissionRules}</li>
-              <li>budget rules: {result.stats.budgetRules}</li>
+              {SESSION_FEATURES.budget ? <li>budget rules: {result.stats.budgetRules}</li> : null}
             </ul>
           ) : (
             <ul className="space-y-1 text-xs text-danger">

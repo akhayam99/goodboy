@@ -37,6 +37,7 @@ import { ModelPicker } from './ModelPicker';
 import { PermissionModePicker } from './PermissionModePicker';
 import { RightSizeCard } from './RightSizeCard';
 import { STORAGE_PREFIXES } from '../../storage-keys';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../features';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -356,6 +357,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           content,
           override,
           onNewAlerts: (alerts) => {
+            if (!SESSION_FEATURES.budget) return;
             for (const alert of alerts) {
               showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
             }
@@ -566,7 +568,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           />
         ) : null}
         <div className="relative" ref={wrapperRef}>
-          {showPopover && isSlashMode ? (
+          {WORKSPACE_FEATURES.skills && showPopover && isSlashMode ? (
             <SlashCommandPopover
               items={workspaceSkills}
               query={slashQuery}

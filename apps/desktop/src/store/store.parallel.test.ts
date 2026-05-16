@@ -16,6 +16,11 @@ import type {
 } from '@kay-am/types';
 
 // Module mocks — hoisted before importing the store.
+const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
+vi.mock('../features', () => ({
+  AGENT_FEATURES: agentFeaturesMock,
+}));
+
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 const invokeParallelPhaseRunSpawnSpy = vi.fn();
@@ -263,6 +268,8 @@ function setupSession(
 
 describe('sendTurn — parallel agents branch', () => {
   beforeEach(() => {
+    agentFeaturesMock.parallelAgents = false;
+    agentFeaturesMock.maxParallelism = 4;
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
     invokeParallelPhaseRunSpawnSpy.mockReset();
@@ -329,6 +336,7 @@ describe('sendTurn — parallel agents branch', () => {
   });
 
   it('flag ON + parallelGroup with 2 siblings → spawns N runs and awaits merge', async () => {
+    agentFeaturesMock.parallelAgents = true;
     invokeParallelPhaseRunSpawnSpy.mockImplementation(
       async (args: { runs: ReadonlyArray<{ runId: string }> }) => args.runs.map((r) => r.runId),
     );
@@ -363,6 +371,7 @@ describe('sendTurn — parallel agents branch', () => {
   });
 
   it('flag ON but only 1 sibling → falls back to single-run path', async () => {
+    agentFeaturesMock.parallelAgents = true;
     async function* emptyStream() {}
     runTurnSpy.mockImplementation(() => emptyStream());
 
@@ -376,6 +385,7 @@ describe('sendTurn — parallel agents branch', () => {
   });
 
   it('one run fails (non-zero exit) → group still completes; group not marked as failed when at least one succeeds', async () => {
+    agentFeaturesMock.parallelAgents = true;
     invokeParallelPhaseRunSpawnSpy.mockImplementation(
       async (args: { runs: ReadonlyArray<{ runId: string }> }) => args.runs.map((r) => r.runId),
     );

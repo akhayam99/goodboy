@@ -160,14 +160,9 @@ import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
-  SETTING_ENABLE_PARALLEL_AGENTS,
-  SETTING_MAX_PARALLELISM,
   DEFAULT_BRANCH_PREFIX,
-  DEFAULT_ENABLE_PARALLEL_AGENTS,
-  DEFAULT_MAX_PARALLELISM,
-  MAX_PARALLELISM,
-  MIN_PARALLELISM,
 } from '../settings';
+import { AGENT_FEATURES } from '../features';
 import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
@@ -1985,13 +1980,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
           phaseDefinition = nextDef;
 
-          // Detect parallel group — only when experimental flag is on AND nextDef
+          // Detect parallel group — only when feature flag is on AND nextDef
           // belongs to a group with >= 2 siblings. Defer prompt rebuild for parallel
           // path: per-def prompts are built inside runParallelBranch using
           // userPromptForPhase + phasePromptCarryForward.
-          const enableParallelRaw = get().settings[SETTING_ENABLE_PARALLEL_AGENTS];
-          const enableParallel = enableParallelRaw === 'true';
-          if (enableParallel) {
+          if (AGENT_FEATURES.parallelAgents) {
             const detection = detectParallelGroup(template, nextDef);
             if (detection !== null) {
               parallelDispatch = {
@@ -2229,12 +2222,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         return;
       }
 
-      const maxParallelismRaw = get().settings[SETTING_MAX_PARALLELISM];
-      const parsedMax = Number.parseInt(maxParallelismRaw ?? '', 10);
-      const maxParallelism = Number.isFinite(parsedMax)
-        ? Math.min(MAX_PARALLELISM, Math.max(MIN_PARALLELISM, parsedMax))
-        : DEFAULT_MAX_PARALLELISM;
-      const N = Math.min(parallelDispatch.groupDefs.length, maxParallelism);
+      const N = Math.min(parallelDispatch.groupDefs.length, AGENT_FEATURES.maxParallelism);
 
       const sessBudget = get().sessionBudgets[taskId];
       if (sessBudget) {
@@ -2308,7 +2296,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             resolvedPromptBase: userPromptForPhase,
             carryForwardContext: phasePromptCarryForward,
             mergeStrategy: 'last_write_wins',
-            maxParallelism,
+            maxParallelism: AGENT_FEATURES.maxParallelism,
           },
           {
             now,
@@ -4060,8 +4048,7 @@ export function useResolvedSettings(taskId: TaskId | null): ResolvedSettings {
       defaultProviderId: DEFAULT_TASK_PROVIDER_PREFERENCE.defaultProvider,
       defaultWorkflowId: null,
       defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
-      parallelEnabled:
-        state.settings[SETTING_ENABLE_PARALLEL_AGENTS] === 'true' || DEFAULT_ENABLE_PARALLEL_AGENTS,
+      parallelEnabled: AGENT_FEATURES.parallelAgents,
     };
 
     const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
 import {
   BookOpen,
   Bot,
@@ -86,7 +87,11 @@ function Content({ section }: { section: Section }) {
       return (
         <Article
           heading="What is kAY.am?"
-          intro="kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows."
+          intro={
+            SESSION_FEATURES.budget
+              ? 'kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
+              : 'kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
+          }
         >
           <P>
             kAY.am does <Strong>not</Strong> talk to AI providers directly. It spawns the provider's
@@ -126,10 +131,14 @@ function Content({ section }: { section: Section }) {
               ['worktree', 'a separate working directory cut from your repo root.'],
               ['branch', '<prefix>/<slug> derived from the goal. configurable per workspace.'],
               ['transcript', 'every user message, assistant reply, tool call, and edit is stored.'],
-              [
-                'budget (optional)',
-                'soft cap in usd. warning at 80%, error at 100%. session keeps running.',
-              ],
+              ...(SESSION_FEATURES.budget
+                ? ([
+                    [
+                      'budget (optional)',
+                      'soft cap in usd. warning at 80%, error at 100%. session keeps running.',
+                    ],
+                  ] as const)
+                : []),
             ]}
           />
           <H3>When to start a new session</H3>
@@ -208,12 +217,16 @@ function Content({ section }: { section: Section }) {
             <Code>permissions: X allow / Y deny</Code> — that's the rule set the next turn will run
             under. click it to manage rules in settings.
           </P>
-          <H3>Skills</H3>
-          <P>
-            type <Code>/</Code> in the input to invoke a workspace skill (a pre-defined prompt
-            template stored in <Code>.kay/skills/</Code> or <Code>.claude/skills/</Code>). useful
-            for repeatable flows — release notes, security review, migration plan.
-          </P>
+          {WORKSPACE_FEATURES.skills ? (
+            <>
+              <H3>Skills</H3>
+              <P>
+                type <Code>/</Code> in the input to invoke a workspace skill (a pre-defined prompt
+                template stored in <Code>.kay/skills/</Code> or <Code>.claude/skills/</Code>).
+                useful for repeatable flows — release notes, security review, migration plan.
+              </P>
+            </>
+          ) : null}
         </Article>
       );
 

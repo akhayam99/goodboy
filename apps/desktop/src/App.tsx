@@ -149,9 +149,7 @@ export function App() {
     if (!cid) return keepAliveIds;
     if (keepAliveIds.includes(cid)) return keepAliveIds;
     const merged = [...keepAliveIds, cid];
-    return merged.length > KEEP_ALIVE_CAP
-      ? merged.slice(merged.length - KEEP_ALIVE_CAP)
-      : merged;
+    return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
   }, [keepAliveIds, currentSession?.id]);
 
   // Defer the heavy panel mount so sidebar selection + AppShell swap paint
