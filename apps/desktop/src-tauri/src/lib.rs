@@ -103,6 +103,8 @@ pub fn run() {
       workflows::session_insert,
       workflows::session_update_status,
       workflows::session_set_provider_session_id,
+      workflows::session_mark_viewed,
+      workflows::workspaces_with_unread,
       parallel_groups::parallel_group_create,
       parallel_groups::parallel_group_list,
       parallel_groups::parallel_group_get,
