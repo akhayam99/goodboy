@@ -228,5 +228,5 @@ export interface ParallelSpawnArgs {
 export async function invokeParallelPhaseRunSpawn(
   args: ParallelSpawnArgs,
 ): Promise<ReadonlyArray<ProviderRunId>> {
-  return invoke<string[]>('parallel_session_spawn', { args }).then((ids) => ids as ProviderRunId[]);
+  return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[]);
 }

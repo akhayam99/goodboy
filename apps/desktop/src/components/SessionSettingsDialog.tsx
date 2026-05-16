@@ -10,7 +10,7 @@ import {
   Loader2,
   Trash2,
 } from 'lucide-react';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
 import { SESSION_FEATURES } from '../features';
@@ -19,7 +19,7 @@ import { listLocalBranches, type LocalBranchInfo } from '../worktree';
 import { useToast } from './Toast';
 
 interface SessionSettingsDialogProps {
-  taskId: TaskId;
+  sessionId: SessionId;
   open: boolean;
   onClose: () => void;
   archived: boolean;
@@ -49,17 +49,17 @@ const DANGER_NAV: NavItem = {
 };
 
 export function SessionSettingsDialog({
-  taskId,
+  sessionId,
   open,
   onClose,
   archived,
   onArchive,
   onUnarchive,
 }: SessionSettingsDialogProps) {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === taskId) ?? null);
-  const branch = useAppStore((s) => s.sessionBranches[taskId] ?? null);
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
-  const budget = useAppStore((s) => s.sessionBudgets[taskId] ?? null);
+  const budget = useAppStore((s) => s.sessionBudgets[sessionId] ?? null);
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
@@ -67,7 +67,7 @@ export function SessionSettingsDialog({
   const deleteTask = useAppStore((s) => s.deleteTask);
   const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
   const workspace = useAppStore((s) =>
-    session ? s.workspaces.find((w) => w.id === session.workspaceId) ?? null : null,
+    session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
   );
   const { showToast } = useToast();
 
@@ -92,8 +92,8 @@ export function SessionSettingsDialog({
     setBusy(false);
     setConfirmDelete(false);
     setBranchEditOpen(false);
-    void loadSessionBudget(taskId);
-  }, [open, taskId, loadSessionBudget]);
+    void loadSessionBudget(sessionId);
+  }, [open, sessionId, loadSessionBudget]);
 
   useEffect(() => {
     if (!branchEditOpen || !workspace?.rootPath) return;
@@ -128,7 +128,7 @@ export function SessionSettingsDialog({
     setBusy(true);
     setError(null);
     try {
-      await renameTask(taskId, trimmed);
+      await renameTask(sessionId, trimmed);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -145,7 +145,7 @@ export function SessionSettingsDialog({
     setBusy(true);
     setError(null);
     try {
-      await setSessionBudget(taskId, parsed);
+      await setSessionBudget(sessionId, parsed);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -158,13 +158,12 @@ export function SessionSettingsDialog({
   // Friction sources: branch already owned by another session, branch in use
   // in another worktree, branch has uncommitted work in its current worktree.
   const targetOwnedByOtherSession = Object.entries(sessionBranches).some(
-    ([otherTaskId, b]) => otherTaskId !== taskId && b === targetTrimmed,
+    ([otherSessionId, b]) => otherSessionId !== sessionId && b === targetTrimmed,
   );
   const targetInUseElsewhere = targetInfo?.inUse === true;
   const targetDirty = targetInfo?.hasUncommitted === true;
   const targetNeedsConfirm =
-    branchMode === 'existing' &&
-    (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty);
+    branchMode === 'existing' && (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty);
 
   const onChangeBranch = async () => {
     if (!targetTrimmed) {
@@ -182,7 +181,7 @@ export function SessionSettingsDialog({
     setBusy(true);
     setError(null);
     try {
-      await changeSessionBranch(taskId, {
+      await changeSessionBranch(sessionId, {
         branch: targetTrimmed,
         createNew: branchMode === 'new',
       });
@@ -199,7 +198,7 @@ export function SessionSettingsDialog({
     setBusy(true);
     setError(null);
     try {
-      await deleteTask(taskId);
+      await deleteTask(sessionId);
       onClose();
     } catch (err) {
       setError(formatError(err));
@@ -401,185 +400,188 @@ export function SessionSettingsDialog({
 
   return (
     <>
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={session.goal}
-      description="rename, edit budget, or delete this session."
-      size="xl"
-      fixedHeightClass="h-[520px]"
-      fullScreenOnSmall
-      footer={
-        <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
-        </>
-      }
-    >
-      <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActive(item.id)}
-              className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
-                active === item.id
-                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
-          <div className="mt-auto pt-3">
-            <button
-              type="button"
-              onClick={() => setActive('danger')}
-              className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
-                active === 'danger'
-                  ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
-                  : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
-              }`}
-            >
-              {DANGER_NAV.icon}
-              <span>{DANGER_NAV.label}</span>
-            </button>
-          </div>
-        </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
-      </div>
-    </Dialog>
-    <Dialog
-      open={branchEditOpen}
-      onClose={() => setBranchEditOpen(false)}
-      title="Change session branch"
-      description="point this session's worktree at a different branch."
-      size="md"
-      footer={
-        <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={() => setBranchEditOpen(false)} disabled={busy}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => void onChangeBranch()}
-            disabled={busy || branchesLoading || targetTrimmed.length === 0}
-            variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
-          >
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
-                Switching…
-              </>
-            ) : targetNeedsConfirm && confirmReuse ? (
-              'Confirm switch'
-            ) : (
-              'Switch branch'
-            )}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <div
-          role="tablist"
-          aria-label="branch source"
-          className="inline-flex rounded-md border border-border bg-subtle p-0.5"
-        >
-          {(['existing', 'new'] as const).map((m) => {
-            const active = branchMode === m;
-            return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title={session.goal}
+        description="rename, edit budget, or delete this session."
+        size="xl"
+        fixedHeightClass="h-[520px]"
+        fullScreenOnSmall
+        footer={
+          <>
+            {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+            <Button variant="ghost" onClick={onClose}>
+              Close
+            </Button>
+          </>
+        }
+      >
+        <div className="flex h-full min-h-0 gap-0">
+          <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
+            {NAV_ITEMS.map((item) => (
               <button
-                key={m}
+                key={item.id}
                 type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => {
-                  setBranchMode(m);
-                  setBranchTarget('');
+                onClick={() => setActive(item.id)}
+                className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                  active === item.id
+                    ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+            <div className="mt-auto pt-3">
+              <button
+                type="button"
+                onClick={() => setActive('danger')}
+                className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                  active === 'danger'
+                    ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
+                    : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
+                }`}
+              >
+                {DANGER_NAV.icon}
+                <span>{DANGER_NAV.label}</span>
+              </button>
+            </div>
+          </nav>
+          <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={branchEditOpen}
+        onClose={() => setBranchEditOpen(false)}
+        title="Change session branch"
+        description="point this session's worktree at a different branch."
+        size="md"
+        footer={
+          <>
+            {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+            <Button variant="ghost" onClick={() => setBranchEditOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void onChangeBranch()}
+              disabled={busy || branchesLoading || targetTrimmed.length === 0}
+              variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
+            >
+              {busy ? (
+                <>
+                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                  Switching…
+                </>
+              ) : targetNeedsConfirm && confirmReuse ? (
+                'Confirm switch'
+              ) : (
+                'Switch branch'
+              )}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div
+            role="tablist"
+            aria-label="branch source"
+            className="inline-flex rounded-md border border-border bg-subtle p-0.5"
+          >
+            {(['existing', 'new'] as const).map((m) => {
+              const active = branchMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setBranchMode(m);
+                    setBranchTarget('');
+                    setConfirmReuse(false);
+                  }}
+                  disabled={busy}
+                  className={cn(
+                    'rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {m === 'existing' ? 'existing branch' : 'new branch'}
+                </button>
+              );
+            })}
+          </div>
+
+          {branchMode === 'existing' ? (
+            <Field label="branch" hint="pick from local branches in this workspace.">
+              <select
+                value={branchTarget}
+                onChange={(e) => {
+                  setBranchTarget(e.target.value);
                   setConfirmReuse(false);
                 }}
-                disabled={busy}
-                className={cn(
-                  'rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors',
-                  active
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
+                disabled={busy || branchesLoading}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                {m === 'existing' ? 'existing branch' : 'new branch'}
-              </button>
-            );
-          })}
-        </div>
-
-        {branchMode === 'existing' ? (
-          <Field label="branch" hint="pick from local branches in this workspace.">
-            <select
-              value={branchTarget}
-              onChange={(e) => {
-                setBranchTarget(e.target.value);
-                setConfirmReuse(false);
-              }}
-              disabled={busy || branchesLoading}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
+                <option value="">
+                  {branchesLoading
+                    ? 'loading…'
+                    : branches.length === 0
+                      ? 'no local branches'
+                      : 'select branch…'}
+                </option>
+                {branches
+                  .filter((b) => b.name !== branch)
+                  .map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.name}
+                      {b.inUse ? ' · in use' : ''}
+                      {b.hasUncommitted ? ' · dirty' : ''}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+          ) : (
+            <Field
+              label="new branch name"
+              hint="creates and switches to a new branch from current HEAD."
             >
-              <option value="">
-                {branchesLoading
-                  ? 'loading…'
-                  : branches.length === 0
-                    ? 'no local branches'
-                    : 'select branch…'}
-              </option>
-              {branches
-                .filter((b) => b.name !== branch)
-                .map((b) => (
-                  <option key={b.name} value={b.name}>
-                    {b.name}
-                    {b.inUse ? ' · in use' : ''}
-                    {b.hasUncommitted ? ' · dirty' : ''}
-                  </option>
-                ))}
-            </select>
-          </Field>
-        ) : (
-          <Field label="new branch name" hint="creates and switches to a new branch from current HEAD.">
-            <Input
-              value={branchTarget}
-              onChange={(e) => {
-                setBranchTarget(e.target.value);
-                setConfirmReuse(false);
-              }}
-              placeholder="feat/something"
-              disabled={busy}
-            />
-          </Field>
-        )}
+              <Input
+                value={branchTarget}
+                onChange={(e) => {
+                  setBranchTarget(e.target.value);
+                  setConfirmReuse(false);
+                }}
+                placeholder="feat/something"
+                disabled={busy}
+              />
+            </Field>
+          )}
 
-        {targetNeedsConfirm ? (
-          <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs text-warning">
-            <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0" />
-            <div className="flex flex-col gap-1">
-              <span className="font-semibold">heads up</span>
-              <ul className="list-disc pl-4">
-                {targetOwnedByOtherSession ? (
-                  <li>this branch is already attached to another kay-am session.</li>
-                ) : null}
-                {targetInUseElsewhere ? (
-                  <li>this branch is checked out in another git worktree.</li>
-                ) : null}
-                {targetDirty ? <li>that worktree has uncommitted changes.</li> : null}
-              </ul>
-              <span className="text-2xs text-warning/80">click again to confirm.</span>
+          {targetNeedsConfirm ? (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs text-warning">
+              <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold">heads up</span>
+                <ul className="list-disc pl-4">
+                  {targetOwnedByOtherSession ? (
+                    <li>this branch is already attached to another kay-am session.</li>
+                  ) : null}
+                  {targetInUseElsewhere ? (
+                    <li>this branch is checked out in another git worktree.</li>
+                  ) : null}
+                  {targetDirty ? <li>that worktree has uncommitted changes.</li> : null}
+                </ul>
+                <span className="text-2xs text-warning/80">click again to confirm.</span>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
-    </Dialog>
+          ) : null}
+        </div>
+      </Dialog>
     </>
   );
 }

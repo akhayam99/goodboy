@@ -19,7 +19,7 @@ interface PaletteItem {
 
 export interface CommandPaletteProps {
   onClose: () => void;
-  onNavigateToSession?: (taskId: string, workspaceId: string) => void;
+  onNavigateToSession?: (sessionId: string, workspaceId: string) => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;

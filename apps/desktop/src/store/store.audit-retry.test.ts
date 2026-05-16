@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  Agent,
+  AgentId,
   IsoDateTime,
   Session,
   SessionId,
-  Task,
-  TaskId,
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
@@ -59,15 +59,15 @@ vi.mock('@kay-am/db', () => ({
   insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
   listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
@@ -142,11 +142,11 @@ vi.mock('../provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-const SESSION_ID = 'session-1' as TaskId;
+const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
-function buildSession(): Task {
+function buildSession(): Session {
   return {
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
@@ -170,7 +170,7 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
       JSON.stringify({
         id: 'req-1',
         runId: 'run-1',
-        taskId: SESSION_ID,
+        sessionId: SESSION_ID,
         toolUseId: 'tu-1',
         toolName: 'Edit',
         inputJson: '{}',
@@ -216,9 +216,9 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
-    const defaultAgent: Session = {
-      id: 'agent-1' as SessionId,
-      taskId: SESSION_ID,
+    const defaultAgent: Agent = {
+      id: 'agent-1' as AgentId,
+      sessionId: SESSION_ID,
       ordinal: 0,
       name: 'agent 1',
       status: 'pending',
@@ -270,7 +270,7 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'go' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
     expect(auditRetryEnqueueSpy).toHaveBeenCalledTimes(1);
@@ -298,7 +298,7 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ taskId: SESSION_ID, content: 'go' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(auditRetryEnqueueSpy).not.toHaveBeenCalled();
   });

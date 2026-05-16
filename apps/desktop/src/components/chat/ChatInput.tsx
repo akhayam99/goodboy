@@ -12,9 +12,8 @@ import type {
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
+  Session,
   SessionId,
-  Task,
-  TaskId,
   TurnProviderOverride,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
@@ -50,9 +49,9 @@ const AGENT_EFFORT_PREFIX = STORAGE_PREFIXES.agentEffort;
 const AGENT_MODEL_PREFIX = STORAGE_PREFIXES.agentModel;
 const AGENT_PROVIDER_PREFIX = STORAGE_PREFIXES.agentProvider;
 
-function readEffort(taskId: TaskId): EffortLevel {
+function readEffort(sessionId: SessionId): EffortLevel {
   try {
-    const raw = localStorage.getItem(`${EFFORT_STORAGE_PREFIX}${taskId}`);
+    const raw = localStorage.getItem(`${EFFORT_STORAGE_PREFIX}${sessionId}`);
     if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
   } catch {
     // ignore
@@ -60,37 +59,37 @@ function readEffort(taskId: TaskId): EffortLevel {
   return 'medium';
 }
 
-function writeEffort(taskId: TaskId, level: EffortLevel): void {
+function writeEffort(sessionId: SessionId, level: EffortLevel): void {
   try {
-    localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${taskId}`, level);
+    localStorage.setItem(`${EFFORT_STORAGE_PREFIX}${sessionId}`, level);
   } catch {
     // ignore
   }
 }
 
-function readModel(taskId: TaskId): string | null {
+function readModel(sessionId: SessionId): string | null {
   try {
-    return localStorage.getItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+    return localStorage.getItem(`${MODEL_STORAGE_PREFIX}${sessionId}`);
   } catch {
     return null;
   }
 }
 
-function writeModel(taskId: TaskId, model: string | null): void {
+function writeModel(sessionId: SessionId, model: string | null): void {
   try {
     if (model === null) {
-      localStorage.removeItem(`${MODEL_STORAGE_PREFIX}${taskId}`);
+      localStorage.removeItem(`${MODEL_STORAGE_PREFIX}${sessionId}`);
     } else {
-      localStorage.setItem(`${MODEL_STORAGE_PREFIX}${taskId}`, model);
+      localStorage.setItem(`${MODEL_STORAGE_PREFIX}${sessionId}`, model);
     }
   } catch {
     // ignore
   }
 }
 
-function readProvider(taskId: TaskId): ProviderId | null {
+function readProvider(sessionId: SessionId): ProviderId | null {
   try {
-    const raw = localStorage.getItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+    const raw = localStorage.getItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`);
     const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
     if (raw && valid.includes(raw as ProviderId)) return raw as ProviderId;
   } catch {
@@ -99,12 +98,12 @@ function readProvider(taskId: TaskId): ProviderId | null {
   return null;
 }
 
-function writeProvider(taskId: TaskId, provider: ProviderId | null): void {
+function writeProvider(sessionId: SessionId, provider: ProviderId | null): void {
   try {
     if (provider === null) {
-      localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`);
+      localStorage.removeItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`);
     } else {
-      localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${taskId}`, provider);
+      localStorage.setItem(`${PROVIDER_STORAGE_PREFIX}${sessionId}`, provider);
     }
   } catch {
     // ignore
@@ -173,7 +172,7 @@ function writeAgentProvider(agentId: SessionId, provider: ProviderId | null): vo
 }
 
 interface ChatInputProps {
-  readonly session: Task;
+  readonly session: Session;
   readonly providerDisconnected?: boolean;
 }
 
@@ -208,9 +207,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const { showToast } = useToast();
 
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
-  const value = useAppStore((s) =>
-    selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : '',
-  );
+  const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
@@ -353,7 +350,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     async (content: string, override: TurnProviderOverride | undefined) => {
       try {
         await sendTurn({
-          taskId: session.id,
+          sessionId: session.id,
           content,
           override,
           onNewAlerts: (alerts) => {

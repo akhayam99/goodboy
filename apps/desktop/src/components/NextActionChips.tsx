@@ -2,20 +2,20 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { NextAction } from '@kay-am/core';
-import type { TaskId } from '@kay-am/types';
+import type { SessionId } from '@kay-am/types';
 import { formatError } from '../errors';
 import { useAppStore, useSessionNextActions } from '../store';
 import { AGENT_KIND_DEFAULTS, AGENT_KIND_PALETTE } from '../agent-kind';
 import { spawnKindForAction } from '../spawn-from-next-action';
 
 export interface NextActionChipsProps {
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly workflowBound: boolean;
   readonly className?: string;
 }
 
-export function NextActionChips({ taskId, workflowBound, className }: NextActionChipsProps) {
-  const actions = useSessionNextActions(taskId);
+export function NextActionChips({ sessionId, workflowBound, className }: NextActionChipsProps) {
+  const actions = useSessionNextActions(sessionId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
   const [busyId, setBusyId] = useState<NextAction['id'] | null>(null);
@@ -29,13 +29,13 @@ export function NextActionChips({ taskId, workflowBound, className }: NextAction
     try {
       const kind = spawnKindForAction(action);
       const defaults = AGENT_KIND_DEFAULTS[kind];
-      await spawnAgent(taskId, {
+      await spawnAgent(sessionId, {
         name: action.label,
         model: defaults.model,
         effort: defaults.effort,
         initialPrompt: action.prompt,
       });
-      clearSessionNextActions(taskId);
+      clearSessionNextActions(sessionId);
     } catch (err) {
       setError(formatError(err));
     } finally {

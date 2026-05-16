@@ -1,13 +1,13 @@
 import { cn } from '@kay-am/ui';
-import type { SessionStatus, ProviderRunId } from '@kay-am/types';
+import type { AgentStatus, ProviderRunId } from '@kay-am/types';
 
 interface ParallelProgressPillProps {
   parallelRunIds: ReadonlyArray<ProviderRunId>;
-  runStatuses: Readonly<Record<ProviderRunId, SessionStatus>>;
+  runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>;
   onSelectRun: (runId: ProviderRunId) => void;
 }
 
-const BADGE_CLASSES: Record<SessionStatus, string> = {
+const BADGE_CLASSES: Record<AgentStatus, string> = {
   running: 'bg-blue-500 motion-safe:animate-pulse',
   completed: 'bg-green-500',
   failed: 'bg-red-500',
@@ -25,7 +25,7 @@ export function ParallelProgressPill({
   return (
     <div className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-subtle px-2 py-0.5">
       {parallelRunIds.map((runId, i) => {
-        const status: SessionStatus = runStatuses[runId] ?? 'pending';
+        const status: AgentStatus = runStatuses[runId] ?? 'pending';
         return (
           <button
             key={runId}

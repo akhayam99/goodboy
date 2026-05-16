@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { IsoDateTime, ProviderRunId, Task } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, Session } from '@kay-am/types';
 
 // Module mocks — hoisted before imports that transitively pull the mocked modules.
 // vi.hoisted keeps shared refs alive across the hoisting reorder.
@@ -90,22 +90,22 @@ vi.mock('@kay-am/core', () => ({
 // Import component AFTER mocks are in place.
 import { ChatInput } from '../components/chat/ChatInput';
 
-function makeSession(overrides: Partial<Task> = {}): Task {
+function makeSession(overrides: Partial<Session> = {}): Session {
   return {
-    id: 'session-1' as Task['id'],
-    workspaceId: 'ws-1' as Task['workspaceId'],
+    id: 'session-1' as Session['id'],
+    workspaceId: 'ws-1' as Session['workspaceId'],
     goal: 'test goal',
     state: { kind: 'idle', lastActivityAt: '2026-01-01T00:00:00.000Z' as IsoDateTime },
     contextSlots: [],
     providerPreference: {
-      defaultProvider: 'anthropic' as Task['providerPreference']['defaultProvider'],
+      defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
       allowTurnOverride: false,
     },
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
-    createdAt: '2026-01-01T00:00:00.000Z' as Task['createdAt'],
-    updatedAt: '2026-01-01T00:00:00.000Z' as Task['updatedAt'],
+    createdAt: '2026-01-01T00:00:00.000Z' as Session['createdAt'],
+    updatedAt: '2026-01-01T00:00:00.000Z' as Session['updatedAt'],
     ...overrides,
   };
 }
@@ -159,7 +159,7 @@ describe('ChatInput — input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
     expect(sendTurnMock).toHaveBeenCalledWith(
-      expect.objectContaining({ taskId: 'session-1', content: 'hello' }),
+      expect.objectContaining({ sessionId: 'session-1', content: 'hello' }),
     );
     expect((textarea as HTMLTextAreaElement).value).toBe('');
   });
@@ -199,7 +199,7 @@ describe('ChatInput — input wiring', () => {
       <ChatInput
         session={makeSession({
           providerPreference: {
-            defaultProvider: 'anthropic' as Task['providerPreference']['defaultProvider'],
+            defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
             allowTurnOverride: true,
           },
         })}

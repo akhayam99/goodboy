@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  Agent,
+  AgentId,
   IsoDateTime,
-  Session,
   SessionId,
   StepId,
-  TaskId,
   Workflow,
   WorkflowId,
   WorkspaceId,
@@ -12,7 +12,7 @@ import type {
 import { pickNextWorkflowStep } from './WorkflowNextStepCta';
 
 const WS_ID = 'ws-1' as WorkspaceId;
-const TASK_ID = 't-1' as TaskId;
+const SESSION_ID = 't-1' as SessionId;
 const WF_ID = 'wf' as WorkflowId;
 const NOW = '2026-05-10T00:00:00.000Z' as IsoDateTime;
 
@@ -32,10 +32,10 @@ function wf(): Workflow {
   };
 }
 
-function run(stepId: StepId, status: Session['status'], idx = 0): Session {
+function run(stepId: StepId, status: Agent['status'], idx = 0): Agent {
   return {
-    id: `r-${idx}` as SessionId,
-    taskId: TASK_ID,
+    id: `r-${idx}` as AgentId,
+    sessionId: SESSION_ID,
     stepId,
     ordinal: idx,
     name: stepId,

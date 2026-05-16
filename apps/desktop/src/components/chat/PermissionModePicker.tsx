@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@kay-am/ui';
-import type { ClaudePermissionMode, Task } from '@kay-am/types';
+import type { ClaudePermissionMode, Session } from '@kay-am/types';
 import { useAppStore } from '../../store';
 
 interface ModeMeta {
@@ -48,7 +48,7 @@ export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
 }
 
 interface PermissionModePickerProps {
-  readonly session: Task;
+  readonly session: Session;
 }
 
 export function PermissionModePicker({ session }: PermissionModePickerProps) {

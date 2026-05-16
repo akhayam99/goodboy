@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
-import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
+import type { ProviderRunId, Session, SessionId } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
@@ -13,7 +13,7 @@ import { DiffViewerDialog } from '../DiffViewerDialog';
 import { worktreeDiff } from '../../worktree';
 
 interface ChatViewProps {
-  session: Task;
+  session: Session;
   onRequestEnd?: () => void;
   // Keep-alive aware. False when this instance is mounted but hidden behind
   // another session's view — used to skip background DB fetches.
@@ -346,7 +346,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         <DiffViewerDialog
           open={diffJumpFile !== null}
           onClose={() => setDiffJumpFile(null)}
-          taskId={session.id}
+          sessionId={session.id}
           title="worktree diff"
           loader={diffLoader}
           workingDir={worktreePath ?? undefined}
@@ -438,7 +438,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     >
                       <TranscriptCard
                         item={item}
-                        taskId={session.id}
+                        sessionId={session.id}
                         agentId={selectedAgentId}
                         workingDir={worktreePath}
                         onRefreshAuth={handleRefreshAuth}
@@ -487,7 +487,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
       <DiffViewerDialog
         open={diffJumpFile !== null}
         onClose={() => setDiffJumpFile(null)}
-        taskId={session.id}
+        sessionId={session.id}
         title="worktree diff"
         loader={diffLoader}
         workingDir={worktreePath ?? undefined}

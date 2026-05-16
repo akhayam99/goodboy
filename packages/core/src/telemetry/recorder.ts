@@ -1,7 +1,7 @@
 import {
   insertTelemetry,
   summarizeProviderTelemetry,
-  summarizeTaskTelemetry,
+  summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   type Database,
   type TelemetrySummary,
@@ -70,7 +70,7 @@ export class TelemetryRecorder {
   }
 
   sessionSummary(sessionId: SessionId): Promise<TelemetrySummary> {
-    return summarizeTaskTelemetry(this.deps.db, sessionId);
+    return summarizeSessionTelemetry(this.deps.db, sessionId);
   }
 
   workspaceSummary(workspaceId: WorkspaceId): Promise<TelemetrySummary> {

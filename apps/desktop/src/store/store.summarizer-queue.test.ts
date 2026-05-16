@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Task, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — must be hoisted before store import.
 vi.mock('../turn', () => ({
@@ -122,15 +122,15 @@ vi.mock('@kay-am/db', () => ({
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   insertContextSlotHistory: vi.fn(async () => undefined),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
   listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
@@ -154,13 +154,13 @@ vi.mock('@tauri-apps/api/core', () => ({
   })),
 }));
 
-const TASK_ID = 'task-queue-test' as TaskId;
+const SESSION_ID = 'task-queue-test' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-10T00:00:00.000Z' as IsoDateTime;
 
-function buildTask(): Task {
+function buildSession(): Session {
   return {
-    id: TASK_ID,
+    id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
     goal: 'test queue',
     state: { kind: 'idle', lastActivityAt: NOW },
@@ -207,7 +207,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     summarizerQueues.clear();
 
     useAppStore.setState({
-      sessions: [buildTask()],
+      sessions: [buildSession()],
       sessionSlots: {},
       summarizerStatus: {},
       workspaces: [
@@ -224,7 +224,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       inFlight: true,
       queued: null as null | { turnInput: string; turnOutput: string },
     };
-    summarizerQueues.set(TASK_ID, queue);
+    summarizerQueues.set(SESSION_ID, queue);
 
     for (let i = 1; i <= 4; i++) {
       if (queue.inFlight) {
@@ -243,7 +243,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     expect(callsBefore).toBeLessThanOrEqual(2);
     expect(state).toBeDefined(); // store is live
 
-    summarizerQueues.delete(TASK_ID);
+    summarizerQueues.delete(SESSION_ID);
   });
 
   it('single trigger with nothing in-flight fires immediately and clears queue', async () => {
@@ -259,7 +259,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       inFlight: false,
       queued: null as null | { turnInput: string; turnOutput: string },
     };
-    sq.set(TASK_ID, queue);
+    sq.set(SESSION_ID, queue);
 
     // Simulate enqueueSummarizer logic for the "nothing in flight" path.
     queue.inFlight = true;
@@ -270,7 +270,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     expect(queue.queued).toBeNull();
     expect(queue.inFlight).toBe(false);
 
-    sq.delete(TASK_ID);
+    sq.delete(SESSION_ID);
   });
 
   it('in-flight + multiple queued coalesces to one pending entry', async () => {
@@ -281,7 +281,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       inFlight: true,
       queued: null as null | { turnInput: string; turnOutput: string },
     };
-    sq.set(TASK_ID, queue);
+    sq.set(SESSION_ID, queue);
 
     for (let i = 0; i < 10; i++) {
       if (queue.inFlight) {
@@ -291,7 +291,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
 
     expect(queue.queued).toEqual({ turnInput: 't9', turnOutput: 'o9' });
 
-    sq.delete(TASK_ID);
+    sq.delete(SESSION_ID);
   });
 
   it('waitForSummarizerSettled is not exported — summarizer never blocks user actions (#461)', async () => {
@@ -309,7 +309,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       inFlight: true,
       queued: null as null | { turnInput: string; turnOutput: string },
     };
-    sq.set(TASK_ID, queue);
+    sq.set(SESSION_ID, queue);
 
     // A second "sendTurn" arriving while summarizer is in-flight must coalesce and return
     // immediately — not await. We verify this by ensuring the queue mutation is synchronous.
@@ -321,6 +321,6 @@ describe('summarizer queue — coalescing and no-stack', () => {
     expect(queue.queued?.turnInput).toBe('next-input');
     expect(queue.inFlight).toBe(true);
 
-    sq.delete(TASK_ID);
+    sq.delete(SESSION_ID);
   });
 });

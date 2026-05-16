@@ -73,7 +73,7 @@ vi.mock('../../routing', () => ({
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Task, TaskId, WorkspaceId } from '@kay-am/types';
+import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
 import { EndSessionDialog } from '../../components/EndSessionDialog';
 import { NewSessionDialog } from '../../components/NewSessionDialog';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
@@ -83,9 +83,9 @@ afterEach(cleanup);
 
 const WS_ID = 'ws-test' as WorkspaceId;
 
-function makeSession(overrides: Partial<Task> = {}): Task {
+function makeSession(overrides: Partial<Session> = {}): Session {
   return {
-    id: 'sess-1' as TaskId,
+    id: 'sess-1' as SessionId,
     workspaceId: WS_ID,
     goal: 'test goal',
     branchPrefix: 'test',
@@ -93,7 +93,7 @@ function makeSession(overrides: Partial<Task> = {}): Task {
     state: { kind: 'idle' },
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
     ...overrides,
-  } as Task;
+  } as Session;
 }
 
 describe('keyboard — EndSessionDialog', () => {

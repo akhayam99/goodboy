@@ -5,8 +5,8 @@ import type {
   PlanId,
   PlanStatus,
   PlanWithCount,
+  AgentId,
   SessionId,
-  TaskId,
 } from '@kay-am/types';
 import {
   addPlanConsumption as dbAddPlanConsumption,
@@ -20,14 +20,14 @@ import {
 import { tauriDatabase } from './db';
 
 export async function listPlansForSession(
-  sessionId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<PlanWithCount>> {
   return dbListPlansForSession(tauriDatabase, sessionId);
 }
 
 export interface UpsertPlanArgs {
-  readonly sessionId: TaskId;
-  readonly agentId: SessionId;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
   readonly title: string;
   readonly bodyMd: string;
 }
@@ -57,7 +57,7 @@ export async function deletePlan(id: PlanId): Promise<void> {
 
 export async function addPlanConsumption(
   planId: PlanId,
-  agentId: SessionId,
+  agentId: AgentId,
 ): Promise<PlanConsumption> {
   const id = crypto.randomUUID() as PlanConsumptionId;
   return dbAddPlanConsumption(tauriDatabase, { id, planId, agentId });

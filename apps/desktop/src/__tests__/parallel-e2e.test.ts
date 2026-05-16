@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  AgentId,
+  AgentStatus,
   IsoDateTime,
   ParallelGroupId,
   StepId,
   SessionId,
-  SessionStatus,
   WorkflowId,
   ProviderId,
   ProviderRunId,
-  TaskId,
   TurnEvent,
   WorkspaceId,
 } from '@kay-am/types';
@@ -77,7 +77,7 @@ import { runParallelBranch } from '../store/parallel-turn';
 import type { ParallelBranchInputs, ParallelBranchEffects } from '../store/parallel-turn';
 
 const NOW = '2026-05-07T00:00:00.000Z' as IsoDateTime;
-const SESSION_ID = 'ses-1' as TaskId;
+const SESSION_ID = 'ses-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const TEMPLATE_ID = 'tpl-1' as WorkflowId;
 const GROUP_ID = 'grp-1' as ParallelGroupId;
@@ -145,7 +145,7 @@ function makeInputs(
 ): ParallelBranchInputs {
   return {
     session: makeSession(),
-    orchestratingAgentId: 'orchestrator-agent' as SessionId,
+    orchestratingAgentId: 'orchestrator-agent' as AgentId,
     workspace: makeWorkspace(),
     currentDef: groupDefs[0]!,
     groupDefs,
@@ -162,7 +162,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
   const events: TurnEvent[] = [];
   return {
     effects: {
-      appendTurnEvent: (_agentId: SessionId, _sid: TaskId, e: TurnEvent) => events.push(e),
+      appendTurnEvent: (_agentId: AgentId, _sid: SessionId, e: TurnEvent) => events.push(e),
       refreshPhaseRuns: vi.fn(async () => undefined),
       setMergeConflicts: vi.fn(),
     },
@@ -183,24 +183,24 @@ function makeDeps(effects: ParallelBranchEffects) {
 // Stable insertedPhaseRuns list shared between phaseRunInsert + phaseRunList spies.
 function wirePhaseRunSpies(
   insertedPhaseRuns: Array<{
-    id: SessionId;
-    taskId: TaskId;
+    id: AgentId;
+    sessionId: SessionId;
     stepId: StepId;
     ordinal: number;
     name: string;
-    status: SessionStatus;
+    status: AgentStatus;
     runId: ProviderRunId;
   }>,
 ): void {
   phaseRunInsertSpy.mockImplementation(
     async (args: { stepId: string; ordinal: number; name: string; providerRunId: string }) => {
       const row = {
-        id: `pr-${args.stepId}` as SessionId,
-        taskId: SESSION_ID,
+        id: `pr-${args.stepId}` as AgentId,
+        sessionId: SESSION_ID,
         stepId: args.stepId as StepId,
         ordinal: args.ordinal,
         name: args.name,
-        status: 'running' as SessionStatus,
+        status: 'running' as AgentStatus,
         runId: args.providerRunId as ProviderRunId,
       };
       insertedPhaseRuns.push(row);
@@ -223,7 +223,7 @@ describe('parallel e2e — fan-out/fan-in', () => {
 
     parallelPhaseGroupCreateSpy.mockResolvedValue({
       id: GROUP_ID,
-      taskId: SESSION_ID,
+      sessionId: SESSION_ID,
       ordinal: 1,
       mergeStrategy: 'last_write_wins',
       createdAt: NOW,

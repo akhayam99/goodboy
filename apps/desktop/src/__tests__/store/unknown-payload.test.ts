@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TaskId } from '@kay-am/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@kay-am/types';
 
 // Module mocks — hoisted before store import.
 vi.mock('../../turn', () => ({
@@ -35,15 +35,15 @@ vi.mock('@kay-am/db', () => ({
   insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
   listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
@@ -112,8 +112,8 @@ vi.mock('../../provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-const TASK_ID = 'sess-1' as TaskId;
-const AGENT_ID = 'agent-1' as SessionId;
+const SESSION_ID = 'sess-1' as SessionId;
+const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
@@ -137,7 +137,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('increments counter keyed by adapter:payloadType on first unknown_payload', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(AGENT_ID, TASK_ID, {
+    appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'anthropic',
@@ -151,7 +151,7 @@ describe('store unknownPayloadCounts', () => {
   it('accumulates multiple events of the same key', () => {
     const { appendTurnEvent } = useAppStore.getState();
     for (let i = 0; i < 3; i++) {
-      appendTurnEvent(AGENT_ID, TASK_ID, {
+      appendTurnEvent(AGENT_ID, SESSION_ID, {
         kind: 'unknown_payload',
         runId: RUN_ID,
         adapter: 'cursor',
@@ -165,7 +165,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('tracks different adapter/payloadType keys independently', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(AGENT_ID, TASK_ID, {
+    appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'anthropic',
@@ -173,7 +173,7 @@ describe('store unknownPayloadCounts', () => {
       raw: {},
       at: AT,
     });
-    appendTurnEvent(AGENT_ID, TASK_ID, {
+    appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
       adapter: 'codex',
@@ -188,7 +188,7 @@ describe('store unknownPayloadCounts', () => {
 
   it('does not increment counter for non-unknown_payload events', () => {
     const { appendTurnEvent } = useAppStore.getState();
-    appendTurnEvent(AGENT_ID, TASK_ID, {
+    appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'assistant_text',
       runId: RUN_ID,
       delta: 'hello',

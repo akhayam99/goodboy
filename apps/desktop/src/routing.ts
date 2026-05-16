@@ -2,13 +2,13 @@ import { getDefaultTurnModel, resolveProvider } from '@kay-am/core';
 import type {
   ProviderId,
   RoutingDecision,
-  TaskProviderPreference,
+  SessionProviderPreference,
   TurnProviderOverride,
 } from '@kay-am/types';
 import { invokeCheckProviderBudget } from './budget';
 
 export async function resolveProviderForTurn(
-  sessionPreference: TaskProviderPreference,
+  sessionPreference: SessionProviderPreference,
   turnOverride: TurnProviderOverride | undefined,
   connectedProviders: ProviderId[],
 ): Promise<RoutingDecision> {

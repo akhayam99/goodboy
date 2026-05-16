@@ -10,7 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Dialog, Markdown, Textarea, cn } from '@kay-am/ui';
-import type { PlanId, PlanStatus, PlanWithCount, Session, TaskId } from '@kay-am/types';
+import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../store';
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
@@ -20,16 +20,16 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
 };
 
 interface PlansModalProps {
-  readonly taskId: TaskId;
+  readonly sessionId: SessionId;
   readonly open: boolean;
   readonly onClose: () => void;
   readonly initialPlanId?: PlanId;
 }
 
-export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalProps) {
-  const plans = useSessionPlans(taskId);
+export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansModalProps) {
+  const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
-    (s) => s.sessionPhaseRuns[taskId] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
+    (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const planConsumptions = useAppStore((s) => s.planConsumptions);
   const loadConsumptionsForPlan = useAppStore((s) => s.loadConsumptionsForPlan);
@@ -87,8 +87,8 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
     const next = parsePlanSource(draft);
     if (next.title.length === 0) return;
     if (next.title === selected.title && next.bodyMd === selected.bodyMd) return;
-    void updatePlanBody(taskId, selected.id, next.title, next.bodyMd);
-  }, [selected, draft, taskId, updatePlanBody]);
+    void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd);
+  }, [selected, draft, sessionId, updatePlanBody]);
 
   const handleClose = useCallback(() => {
     if (mode === 'edit') commitEdit();
@@ -120,7 +120,7 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
     setRetriggerArmed(false);
     setSpawning(true);
     try {
-      await runPlan(taskId, selected.id);
+      await runPlan(sessionId, selected.id);
       handleClose();
     } finally {
       setSpawning(false);
@@ -130,7 +130,7 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
   const handleDelete = (plan: PlanWithCount) => {
     if (!window.confirm(`delete plan "${plan.title}"? this cannot be undone.`)) return;
     const remaining = plans.filter((p) => p.id !== plan.id);
-    void deletePlan(taskId, plan.id);
+    void deletePlan(sessionId, plan.id);
     if (selectedId === plan.id) {
       setSelectedId(remaining[remaining.length - 1]?.id ?? null);
     }
@@ -207,7 +207,7 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
                           );
                           return;
                         }
-                        void selectAgent(taskId, selected.agentId);
+                        void selectAgent(sessionId, selected.agentId);
                         handleClose();
                       }}
                       className={cn(
@@ -247,7 +247,7 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
                               );
                               return;
                             }
-                            void selectAgent(taskId, c.agentId);
+                            void selectAgent(sessionId, c.agentId);
                             handleClose();
                           }}
                           className={cn(
@@ -307,7 +307,7 @@ export function PlansModal({ taskId, open, onClose, initialPlanId }: PlansModalP
                   {selected.status === 'active' ? (
                     <button
                       type="button"
-                      onClick={() => void abandonPlan(taskId, selected.id)}
+                      onClick={() => void abandonPlan(sessionId, selected.id)}
                       className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
                     >
                       abandon

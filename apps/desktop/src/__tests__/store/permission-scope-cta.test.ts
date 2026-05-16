@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TaskId, WorkspaceId } from '@kay-am/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — hoisted before store import.
 vi.mock('../../turn', () => ({
@@ -38,15 +38,15 @@ vi.mock('@kay-am/db', () => ({
   insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
   listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForTask: vi.fn(),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
@@ -115,9 +115,9 @@ vi.mock('../../provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-const TASK_ID = 'sess-1' as TaskId;
+const SESSION_ID = 'sess-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
-const AGENT_ID = 'agent-1' as SessionId;
+const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 const TOOL_USE_ID = 'tu-abc';
@@ -125,7 +125,7 @@ const TOOL_NAME = 'Bash';
 
 function buildSession() {
   return {
-    id: TASK_ID,
+    id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
     goal: 'test',
     state: { kind: 'idle' as const, lastActivityAt: AT },
@@ -167,7 +167,7 @@ describe('resolvePermissionRequest', () => {
     scope: 'global' | 'workspace' | 'task' | 'once' | 'deny',
   ) =>
     store.resolvePermissionRequest({
-      taskId: TASK_ID,
+      sessionId: SESSION_ID,
       agentId: AGENT_ID,
       toolUseId: TOOL_USE_ID,
       toolName: TOOL_NAME,
@@ -186,7 +186,7 @@ describe('resolvePermissionRequest', () => {
     expect(arg.decision).toBe('allow');
     expect(arg.patternTool).toBe(TOOL_NAME);
     expect(arg.workspaceId).toBeUndefined();
-    expect(arg.taskId).toBeUndefined();
+    expect(arg.sessionId).toBeUndefined();
   });
 
   it('approve workspace — upserts rule with scope workspace + workspaceId', async () => {
@@ -199,10 +199,10 @@ describe('resolvePermissionRequest', () => {
     expect(arg.scope).toBe('workspace');
     expect(arg.decision).toBe('allow');
     expect(arg.workspaceId).toBe(WORKSPACE_ID);
-    expect(arg.taskId).toBeUndefined();
+    expect(arg.sessionId).toBeUndefined();
   });
 
-  it('approve session — upserts rule with scope task + taskId', async () => {
+  it('approve session — upserts rule with scope task + sessionId', async () => {
     await call(useAppStore.getState(), 'task');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
@@ -211,7 +211,7 @@ describe('resolvePermissionRequest', () => {
     >;
     expect(arg.scope).toBe('task');
     expect(arg.decision).toBe('allow');
-    expect(arg.taskId).toBe(TASK_ID);
+    expect(arg.sessionId).toBe(SESSION_ID);
     expect(arg.workspaceId).toBeUndefined();
   });
 
@@ -222,7 +222,7 @@ describe('resolvePermissionRequest', () => {
     expect(volatile.has(TOOL_USE_ID)).toBe(true);
   });
 
-  it('deny — upserts deny rule with scope task + taskId', async () => {
+  it('deny — upserts deny rule with scope task + sessionId', async () => {
     await call(useAppStore.getState(), 'deny');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
@@ -231,7 +231,7 @@ describe('resolvePermissionRequest', () => {
     >;
     expect(arg.scope).toBe('task');
     expect(arg.decision).toBe('deny');
-    expect(arg.taskId).toBe(TASK_ID);
+    expect(arg.sessionId).toBe(SESSION_ID);
   });
 
   it('each scope appends a permission_decision TurnEvent', async () => {

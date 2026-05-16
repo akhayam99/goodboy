@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Task, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
 
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
@@ -52,15 +52,15 @@ vi.mock('@kay-am/db', () => ({
   insertTaskWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
-  listContextSlotsForTask: vi.fn(async () => []),
-  listMessagesForTask: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => []),
+  listMessagesForSession: vi.fn(async () => []),
   listTasksForWorkspace: vi.fn(async () => []),
-  listTelemetryForTask: vi.fn(async () => []),
+  listTelemetryForSession: vi.fn(async () => []),
   listWorkspaces: vi.fn(async () => []),
   listWorktreesForTask: vi.fn(async () => []),
   deleteWorktreesForTask: (db: unknown, id: string) => deleteWorktreesForSessionSpy(db, id),
   setSetting: vi.fn(),
-  summarizeTaskTelemetry: vi.fn(async () => null),
+  summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
@@ -129,13 +129,13 @@ vi.mock('../provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-const SESSION_ID = 'session-end-1' as TaskId;
+const SESSION_ID = 'session-end-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW: IsoDateTime = '2026-05-08T00:00:00.000Z' as IsoDateTime;
 const WORKTREE_PATH = '/tmp/wt-end';
 const REPO_PATH = '/tmp/repo';
 
-function buildSession(stateKind: 'idle' | 'running' = 'idle'): Task {
+function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
   const state =
     stateKind === 'running'
       ? {

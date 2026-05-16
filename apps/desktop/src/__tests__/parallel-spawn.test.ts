@@ -38,7 +38,7 @@ describe('invokeParallelPhaseRunSpawn', () => {
     const result = await invokeParallelPhaseRunSpawn(args);
 
     expect(invokeMock).toHaveBeenCalledOnce();
-    expect(invokeMock).toHaveBeenCalledWith('parallel_session_spawn', { args });
+    expect(invokeMock).toHaveBeenCalledWith('parallel_agent_spawn', { args });
     expect(result).toEqual(['run-a', 'run-b']);
   });
 
@@ -58,7 +58,7 @@ describe('invokeParallelPhaseRunSpawn', () => {
 
     const result = await invokeParallelPhaseRunSpawn(args);
 
-    expect(invokeMock).toHaveBeenCalledWith('parallel_session_spawn', { args });
+    expect(invokeMock).toHaveBeenCalledWith('parallel_agent_spawn', { args });
     expect(result).toEqual(['run-c']);
   });
 

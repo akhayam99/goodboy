@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import type { SessionId, TaskId } from '@kay-am/types';
+import type { AgentId, SessionId } from '@kay-am/types';
 import type { TranscriptItem } from './transcript-items';
 import { PermissionScopePicker } from './PermissionScopePicker';
 import { formatCardTime } from './format-card-time';
 
 interface PermissionRequestCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
-  readonly taskId: TaskId | null;
-  readonly agentId: SessionId | null;
+  readonly sessionId: SessionId | null;
+  readonly agentId: AgentId | null;
 }
 
-export function PermissionRequestCard({ item, taskId, agentId }: PermissionRequestCardProps) {
+export function PermissionRequestCard({ item, sessionId, agentId }: PermissionRequestCardProps) {
   const [resolved, setResolved] = useState(false);
 
   const timestamp = formatCardTime(item.at);
 
-  const showPicker = !resolved && taskId !== null && agentId !== null;
+  const showPicker = !resolved && sessionId !== null && agentId !== null;
 
   return (
     <div className="rounded-md border border-border bg-muted px-2 py-1.5 text-xs">
@@ -32,7 +32,7 @@ export function PermissionRequestCard({ item, taskId, agentId }: PermissionReque
       </div>
       {showPicker ? (
         <PermissionScopePicker
-          taskId={taskId}
+          sessionId={sessionId}
           agentId={agentId}
           toolUseId={item.toolUseId}
           toolName={item.toolName}

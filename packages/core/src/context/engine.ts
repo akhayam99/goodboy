@@ -1,4 +1,4 @@
-import { listContextSlotsForTask, upsertContextSlot, type Database } from '@kay-am/db';
+import { listContextSlotsForSession, upsertContextSlot, type Database } from '@kay-am/db';
 import type { ContextSlot, SessionId } from '@kay-am/types';
 import { assertSlotKey, serializeSlots, SLOT_KEYS, type SlotKey } from './slots';
 
@@ -10,7 +10,7 @@ export class ContextEngine {
   constructor(private readonly deps: ContextEngineDeps) {}
 
   load(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>> {
-    return listContextSlotsForTask(this.deps.db, sessionId);
+    return listContextSlotsForSession(this.deps.db, sessionId);
   }
 
   async upsert(sessionId: SessionId, key: string, value: string): Promise<void> {

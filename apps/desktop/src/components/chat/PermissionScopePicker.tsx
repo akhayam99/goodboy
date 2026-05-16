@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@kay-am/ui';
-import type { ProviderRunId, SessionId, TaskId } from '@kay-am/types';
+import type { AgentId, ProviderRunId, SessionId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 import { useToast } from '../Toast';
 
@@ -23,8 +23,8 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
 };
 
 interface PermissionScopePickerProps {
-  readonly taskId: TaskId;
-  readonly agentId: SessionId;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly runId: ProviderRunId;
@@ -32,7 +32,7 @@ interface PermissionScopePickerProps {
 }
 
 export function PermissionScopePicker({
-  taskId,
+  sessionId,
   agentId,
   toolUseId,
   toolName,
@@ -47,7 +47,7 @@ export function PermissionScopePicker({
     if (busy) return;
     setBusy(true);
     try {
-      await resolvePermissionRequest({ taskId, agentId, toolUseId, toolName, runId, scope });
+      await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
       showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope]);
       onResolved();
     } catch (err) {

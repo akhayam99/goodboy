@@ -18,15 +18,15 @@ import type {
   IsoDateTime,
   ParallelMergeStrategy,
   ParallelGroupId,
-  ParallelSession,
-  ParallelSessionId,
+  ParallelAgent,
+  ParallelAgentId,
   Step,
-  SessionId,
-  SessionStatus,
+  AgentId,
+  AgentStatus,
   Workflow,
   ProviderRunId,
-  Task,
-  TaskId,
+  Session,
+  SessionId,
   TurnEvent,
   Workspace,
 } from '@kay-am/types';
@@ -40,8 +40,8 @@ import {
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../turn';
 
 export interface ParallelBranchInputs {
-  readonly session: Task;
-  readonly orchestratingAgentId: SessionId;
+  readonly session: Session;
+  readonly orchestratingAgentId: AgentId;
   readonly workspace: Workspace;
   readonly currentDef: Step;
   readonly groupDefs: ReadonlyArray<Step>;
@@ -53,9 +53,9 @@ export interface ParallelBranchInputs {
 }
 
 export interface ParallelBranchEffects {
-  appendTurnEvent: (agentId: SessionId, taskId: TaskId, event: TurnEvent) => void;
-  refreshPhaseRuns: (taskId: TaskId) => Promise<void>;
-  setMergeConflicts: (taskId: TaskId, conflicts: ReadonlyArray<FileConflict>) => void;
+  appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
+  refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
+  setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
 }
 
 export interface ParallelBranchResult {
@@ -104,7 +104,7 @@ interface RawTurnEnvelope {
 
 interface RunListenerState {
   readonly onEvent: (e: TurnEvent) => void;
-  readonly onSettle: (status: SessionStatus, error?: string) => void;
+  readonly onSettle: (status: AgentStatus, error?: string) => void;
   collectedFiles: Set<string>;
 }
 
@@ -154,7 +154,7 @@ interface BuildSchedulerDepsArgs {
   readonly settleHandlers: Map<
     ProviderRunId,
     {
-      promise: Promise<{ status: SessionStatus; error?: string }>;
+      promise: Promise<{ status: AgentStatus; error?: string }>;
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >;
@@ -214,7 +214,7 @@ export async function runParallelBranch(
 
   // Persist parallel group up front so the audit trail captures it even if spawn fails.
   const groupRow = await invokeParallelPhaseGroupCreate({
-    taskId: session.id,
+    sessionId: session.id,
     ordinal: currentDef.ordinal,
     mergeStrategy,
     createdAt: now(),
@@ -236,7 +236,7 @@ export async function runParallelBranch(
 
   const settleResolvers = new Map<
     ProviderRunId,
-    (v: { status: SessionStatus; error?: string }) => void
+    (v: { status: AgentStatus; error?: string }) => void
   >();
 
   // Per-run scheduler progress callbacks — set by scheduler.spawnRun, invoked by
@@ -253,14 +253,14 @@ export async function runParallelBranch(
   const settleHandlers = new Map<
     ProviderRunId,
     {
-      promise: Promise<{ status: SessionStatus; error?: string }>;
+      promise: Promise<{ status: AgentStatus; error?: string }>;
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >();
 
   for (const runId of runIds) {
     progressCallbacks.set(runId, null);
-    const promise = new Promise<{ status: SessionStatus; error?: string }>((resolve) => {
+    const promise = new Promise<{ status: AgentStatus; error?: string }>((resolve) => {
       settleResolvers.set(runId, resolve);
     });
     settleHandlers.set(runId, {
@@ -290,7 +290,7 @@ export async function runParallelBranch(
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
     await invokePhaseRunInsert({
-      taskId: session.id,
+      sessionId: session.id,
       stepId: def.id,
       ordinal: def.ordinal,
       name: def.name,
@@ -301,15 +301,15 @@ export async function runParallelBranch(
   }
   await effects.refreshPhaseRuns(session.id);
 
-  // Build ParallelSession records the scheduler operates on. parallelIndex
+  // Build ParallelAgent records the scheduler operates on. parallelIndex
   // matches the spec's order. We DO NOT wire createParallelWorktrees here — the
   // issue scope keeps worktree-per-run out of v1: every run executes in the
   // session's primary worktree (existing single-run invariant). Workdir
   // collisions are still surfaced by detectConflicts via emitted file_edit events.
   // TODO (@ak, #414): wire createParallelWorktrees + per-run workingDir
   // once Rust phase_run_insert accepts (group_id, parallel_index).
-  const parallelRuns: ParallelSession[] = cappedDefs.map((def, i) => ({
-    id: crypto.randomUUID() as ParallelSessionId,
+  const parallelRuns: ParallelAgent[] = cappedDefs.map((def, i) => ({
+    id: crypto.randomUUID() as ParallelAgentId,
     groupId,
     stepId: def.id,
     parallelIndex: i,
@@ -348,7 +348,7 @@ export async function runParallelBranch(
       schedDeps,
       {
         id: groupId,
-        taskId: session.id,
+        sessionId: session.id,
         ordinal: currentDef.ordinal,
         mergeStrategy,
         createdAt: groupRow.createdAt,
@@ -367,7 +367,7 @@ export async function runParallelBranch(
       const row = phaseRunsAfter.find((r) => r.runId === runId && r.stepId === def.id);
       if (row) {
         await invokePhaseRunUpdateStatus(row.id, {
-          status: (status?.status ?? 'failed') as SessionStatus,
+          status: (status?.status ?? 'failed') as AgentStatus,
           completedAt: now(),
         });
       }
