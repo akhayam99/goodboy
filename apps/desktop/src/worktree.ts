@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import type { BranchCommit, WorktreeDiffScope, WorktreeStatus } from '@kay-am/types';
 
 export interface CreatedWorktree {
   readonly worktreePath: string;
@@ -25,6 +26,27 @@ export async function removeWorktree(repoPath: string, worktreePath: string): Pr
 
 export async function worktreeDiff(worktreePath: string, base?: string): Promise<string> {
   return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
+}
+
+export async function listBranchCommits(
+  worktreePath: string,
+): Promise<ReadonlyArray<BranchCommit>> {
+  return invoke<ReadonlyArray<BranchCommit>>('worktree_commits', { worktreePath });
+}
+
+export async function worktreeDiffCommit(worktreePath: string, sha: string): Promise<string> {
+  return invoke<string>('worktree_diff_commit', { worktreePath, sha });
+}
+
+export async function worktreeDiffWorking(
+  worktreePath: string,
+  scope: WorktreeDiffScope,
+): Promise<string> {
+  return invoke<string>('worktree_diff_working', { worktreePath, scope });
+}
+
+export async function worktreeStatus(worktreePath: string): Promise<WorktreeStatus> {
+  return invoke<WorktreeStatus>('worktree_status', { worktreePath });
 }
 
 export interface LocalBranchInfo {

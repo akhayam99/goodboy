@@ -304,6 +304,243 @@ pub fn worktree_diff(
     git(p, &["diff", &resolved])
 }
 
+#[derive(Debug, Serialize)]
+pub struct BranchCommit {
+    pub sha: String,
+    #[serde(rename = "shortSha")]
+    pub short_sha: String,
+    pub subject: String,
+    pub author: String,
+    pub timestamp: i64,
+    pub pushed: bool,
+    #[serde(rename = "parentSha")]
+    pub parent_sha: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WorktreeStatus {
+    pub branch: Option<String>,
+    pub head: Option<String>,
+    #[serde(rename = "headSubject")]
+    pub head_subject: Option<String>,
+    pub ahead: u32,
+    pub behind: u32,
+    pub staged: u32,
+    pub unstaged: u32,
+    pub untracked: u32,
+    /// Distinct file count from `git status --porcelain`. Use for chip counters;
+    /// avoids double-counting files that appear both staged and unstaged.
+    pub changed: u32,
+    #[serde(rename = "hasUpstream")]
+    pub has_upstream: bool,
+}
+
+const COMMIT_LIMIT: usize = 100;
+const COMMIT_FORMAT: &str = "%H%x1f%h%x1f%s%x1f%an%x1f%at%x1f%P";
+
+#[tauri::command]
+pub fn worktree_commits(worktree_path: String) -> Result<Vec<BranchCommit>, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let upstream_ref = resolve_upstream(p);
+    let unpushed = if let Some(ref upstream) = upstream_ref {
+        rev_list_set(p, &format!("{upstream}..HEAD"))
+    } else {
+        rev_list_set(p, "HEAD")
+            .into_iter()
+            .take(COMMIT_LIMIT)
+            .collect()
+    };
+
+    let branch_range = resolve_branch_range(p);
+    let log_args: Vec<String> = vec![
+        "log".to_string(),
+        format!("-n{COMMIT_LIMIT}"),
+        format!("--format={COMMIT_FORMAT}"),
+        branch_range,
+    ];
+    let raw = git_strs(p, &log_args)?;
+    let mut commits = Vec::new();
+    for line in raw.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('\u{1f}').collect();
+        if parts.len() < 6 {
+            continue;
+        }
+        let sha = parts[0].to_string();
+        let parents: Vec<&str> = parts[5].split_whitespace().collect();
+        let parent_sha = parents.first().map(|s| s.to_string());
+        let pushed = !unpushed.contains(&sha);
+        let timestamp = parts[4].parse::<i64>().unwrap_or(0);
+        commits.push(BranchCommit {
+            sha,
+            short_sha: parts[1].to_string(),
+            subject: parts[2].to_string(),
+            author: parts[3].to_string(),
+            timestamp,
+            pushed,
+            parent_sha,
+        });
+    }
+    Ok(commits)
+}
+
+#[tauri::command]
+pub fn worktree_diff_commit(
+    worktree_path: String,
+    sha: String,
+) -> Result<String, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let trimmed = sha.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "commit sha is empty".to_string(),
+        });
+    }
+    git(p, &["show", "--format=", trimmed])
+}
+
+#[tauri::command]
+pub fn worktree_diff_working(
+    worktree_path: String,
+    scope: String,
+) -> Result<String, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    match scope.as_str() {
+        "unstaged" => git(p, &["diff"]),
+        "staged" => git(p, &["diff", "--cached"]),
+        "all" => git(p, &["diff", "HEAD"]),
+        other => Err(WorktreeError::Git {
+            message: format!("unknown scope: {other} (expected unstaged|staged|all)"),
+        }),
+    }
+}
+
+#[tauri::command]
+pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let branch = git(p, &["symbolic-ref", "--quiet", "--short", "HEAD"])
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let head = git(p, &["rev-parse", "HEAD"])
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let head_subject = git(p, &["log", "-1", "--format=%s"])
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let upstream = resolve_upstream(p);
+    let (ahead, behind) = if let Some(ref u) = upstream {
+        rev_list_left_right(p, u, "HEAD").unwrap_or((0, 0))
+    } else {
+        (0, 0)
+    };
+    let (staged, unstaged, untracked, changed) = parse_status_counts(p);
+    Ok(WorktreeStatus {
+        branch,
+        head,
+        head_subject,
+        ahead,
+        behind,
+        staged,
+        unstaged,
+        untracked,
+        changed,
+        has_upstream: upstream.is_some(),
+    })
+}
+
+/// Range argument for `git log` that lists only commits unique to the current
+/// branch (i.e. since divergence from `main`). Falls back to `HEAD` when no
+/// merge-base can be resolved — typical for a brand-new repo without `main`.
+fn resolve_branch_range(cwd: &Path) -> String {
+    for base in ["main", "origin/main"] {
+        if let Ok(out) = git(cwd, &["merge-base", "HEAD", base]) {
+            let sha = out.trim();
+            if !sha.is_empty() {
+                return format!("{sha}..HEAD");
+            }
+        }
+    }
+    "HEAD".to_string()
+}
+
+fn resolve_upstream(cwd: &Path) -> Option<String> {
+    git(cwd, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+fn rev_list_set(cwd: &Path, range: &str) -> std::collections::HashSet<String> {
+    git(cwd, &["rev-list", range])
+        .ok()
+        .map(|s| s.lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect())
+        .unwrap_or_default()
+}
+
+fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)> {
+    let out = git(cwd, &["rev-list", "--left-right", "--count", &format!("{left}...{right}")]).ok()?;
+    let parts: Vec<&str> = out.split_whitespace().collect();
+    if parts.len() < 2 {
+        return None;
+    }
+    let behind = parts[0].parse::<u32>().ok()?;
+    let ahead = parts[1].parse::<u32>().ok()?;
+    Some((ahead, behind))
+}
+
+fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
+    let raw = match git(cwd, &["status", "--porcelain=v1"]) {
+        Ok(s) => s,
+        Err(_) => return (0, 0, 0, 0),
+    };
+    let mut staged = 0u32;
+    let mut unstaged = 0u32;
+    let mut untracked = 0u32;
+    let mut changed = 0u32;
+    for line in raw.lines() {
+        let bytes = line.as_bytes();
+        if bytes.len() < 2 {
+            continue;
+        }
+        changed += 1;
+        let x = bytes[0] as char;
+        let y = bytes[1] as char;
+        if x == '?' && y == '?' {
+            untracked += 1;
+            continue;
+        }
+        if x != ' ' && x != '?' {
+            staged += 1;
+        }
+        if y != ' ' && y != '?' {
+            unstaged += 1;
+        }
+    }
+    (staged, unstaged, untracked, changed)
+}
+
+fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeError> {
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    git(cwd, &refs)
+}
+
 #[tauri::command]
 pub fn worktree_exists(
     repo_path: String,
