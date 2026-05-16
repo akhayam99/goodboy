@@ -45,7 +45,8 @@ export function inferAgentKindFromComment(c: PrComment): AgentKind {
   if (c.source === 'review' && c.path) return 'implementer';
   // heuristic for issue comments: bug/error/fail keywords → debugger.
   const lower = c.body.toLowerCase();
-  if (/\b(bug|crash|fails?|broken|regression|exception|error)\b/.test(lower)) return 'debugger';
+  if (/\b(bugs?|crash(?:es)?|fails?|broken|regressions?|exceptions?|errors?)\b/.test(lower))
+    return 'debugger';
   return 'implementer';
 }
 
