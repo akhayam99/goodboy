@@ -69,6 +69,7 @@ import {
   formatCost,
   formatTokens,
   shortModel,
+  shortModelWithVersion,
 } from '../agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
@@ -1771,17 +1772,6 @@ function AgentRow({
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
-        <span aria-hidden className="relative inline-flex h-1.5 w-1.5 shrink-0">
-          {run.status === 'running' && (
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
-          )}
-          <span
-            className={cn(
-              'relative inline-block h-1.5 w-1.5 rounded-full',
-              AGENT_STATUS_TONE[run.status],
-            )}
-          />
-        </span>
         <AgentKindMenu kind={kind} agentLabel={`agent ${run.ordinal + 1}`} onPick={onPickKind} />
         {isEditing ? (
           <input
@@ -1838,18 +1828,38 @@ function AgentRow({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmingDelete(true);
-              }}
-              className="invisible shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:visible hover:text-danger"
-              title="delete agent (double-click row to rename)"
-              aria-label="delete agent"
-            >
-              <Trash2 size={11} aria-hidden />
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
+                <AgentLifetime run={run} />
+              </span>
+              <span
+                aria-hidden
+                className="relative inline-flex h-1.5 w-1.5 shrink-0 group-hover:hidden"
+                title={`status: ${run.status}`}
+              >
+                {run.status === 'running' && (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
+                )}
+                <span
+                  className={cn(
+                    'relative inline-block h-1.5 w-1.5 rounded-full',
+                    AGENT_STATUS_TONE[run.status],
+                  )}
+                />
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingDelete(true);
+                }}
+                className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
+                title="delete agent (double-click row to rename)"
+                aria-label="delete agent"
+              >
+                <Trash2 size={11} aria-hidden />
+              </button>
+            </div>
           )
         ) : null}
       </div>
@@ -1860,58 +1870,59 @@ function AgentRow({
         )}
       >
         <div className="overflow-hidden">
-          <div className="flex flex-col gap-1 px-2 pb-1.5 pl-3.5">
-            <div className="flex items-center gap-2 whitespace-nowrap text-2xs text-foreground/85">
+          <div className="flex flex-col gap-1 px-2 pb-1.5">
+            <div className="flex items-center justify-between gap-2 whitespace-nowrap text-2xs text-muted-foreground/85">
               <span
-                className="inline-flex items-baseline gap-1 tabular-nums"
-                title={
-                  aggregate
-                    ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
-                    : 'no input tokens yet'
-                }
+                className="min-w-0 truncate text-muted-foreground/70"
+                title={telemetry?.model ?? undefined}
               >
-                <span aria-hidden className="text-muted-foreground/60">
-                  ↓
+                {telemetry ? shortModelWithVersion(telemetry.model) : '—'}
+              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span
+                  className="inline-flex items-baseline gap-0.5 tabular-nums"
+                  title={
+                    aggregate
+                      ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
+                      : 'no input tokens yet'
+                  }
+                >
+                  <span aria-hidden className="text-muted-foreground/60">
+                    ↓
+                  </span>
+                  {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
                 </span>
-                {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
-              </span>
-              <span
-                className="inline-flex items-baseline gap-1 tabular-nums"
-                title={
-                  aggregate
-                    ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
-                    : 'no output tokens yet'
-                }
-              >
-                <span aria-hidden className="text-muted-foreground/60">
-                  ↑
+                <span
+                  className="inline-flex items-baseline gap-0.5 tabular-nums"
+                  title={
+                    aggregate
+                      ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
+                      : 'no output tokens yet'
+                  }
+                >
+                  <span aria-hidden className="text-muted-foreground/60">
+                    ↑
+                  </span>
+                  {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
                 </span>
-                {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-              </span>
-              <span aria-hidden className="text-muted-foreground/40">
-                ·
-              </span>
-              <CostBadge
-                value={aggregate?.estimatedCostUsd ?? 0}
-                title={
-                  aggregate
-                    ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
-                    : 'no cost yet'
-                }
-              />
-            </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
-              {telemetry ? (
-                <>
-                  <span className="truncate">{shortModel(telemetry.model)}</span>
-                  <span aria-hidden>·</span>
-                </>
-              ) : null}
-              <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                {turns}t
-              </span>
-              <span aria-hidden>·</span>
-              <AgentLifetime run={run} />
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
+                  {turns}t
+                </span>
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                <CostBadge
+                  value={aggregate?.estimatedCostUsd ?? 0}
+                  title={
+                    aggregate
+                      ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
+                      : 'no cost yet'
+                  }
+                />
+              </div>
             </div>
             <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
           </div>
@@ -1937,11 +1948,11 @@ function formatRelativeDuration(fromIso: string, toIso?: string): string {
   const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
   if (diff < 60) return `${diff}s`;
   const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m ${diff % 60}s`;
+  if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ${m % 60}m`;
+  if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
-  return `${d}d ${h % 24}h`;
+  return `${d}d`;
 }
 
 function AgentLifetime({ run }: { run: Session }) {
@@ -1955,8 +1966,11 @@ function AgentLifetime({ run }: { run: Session }) {
 
   if (!run.startedAt) {
     return (
-      <span className="text-muted-foreground/60" title="agent spawned but has not run yet">
-        not started
+      <span
+        className="font-mono text-muted-foreground/60"
+        title="agent spawned but has not run yet"
+      >
+        0
       </span>
     );
   }
@@ -1970,7 +1984,7 @@ function AgentLifetime({ run }: { run: Session }) {
 
   return (
     <span className="font-mono text-muted-foreground/80" title={tooltip}>
-      {run.completedAt ? `⏱ ${ageStr}` : `⏱ ${ageStr} (live)`}
+      {ageStr}
     </span>
   );
 }
