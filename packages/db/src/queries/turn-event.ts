@@ -44,7 +44,21 @@ export async function insertTurnEvent(
 export async function listTurnEventsForAgent(
   db: Database,
   agentId: SessionId,
+  opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<TurnEvent>> {
+  // When a limit is set we return the *last* N events in ASC order — DESC +
+  // reverse keeps SQLite using the agent_id+created_at index efficiently.
+  // Used for fast initial paint of long sessions; background full fetch
+  // follows to fill in older history without blocking the first frame.
+  if (opts?.limit !== undefined) {
+    const rows = await db.select<TurnEventRow>(
+      'SELECT * FROM turn_events WHERE agent_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?',
+      [agentId, opts.limit],
+    );
+    const events = rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
+    events.reverse();
+    return events;
+  }
   const rows = await db.select<TurnEventRow>(
     'SELECT * FROM turn_events WHERE agent_id = ? ORDER BY created_at ASC, rowid ASC',
     [agentId],

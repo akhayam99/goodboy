@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { ProviderRunId, SessionId, Task } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
@@ -15,6 +15,9 @@ import { worktreeDiff } from '../../worktree';
 interface ChatViewProps {
   session: Task;
   onRequestEnd?: () => void;
+  // Keep-alive aware. False when this instance is mounted but hidden behind
+  // another session's view — used to skip background DB fetches.
+  isActive?: boolean;
 }
 
 const PIN_TOLERANCE_PX = 32;
@@ -166,13 +169,30 @@ function ThinkingIndicator() {
   );
 }
 
-export function ChatView({ session }: ChatViewProps) {
+export function ChatView({ session, isActive = true }: ChatViewProps) {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as SessionId | null;
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
+  // Defer the heavy transcript list so React 18 can paint header / input /
+  // empty shell first on session switch and treat the card list as low-priority.
+  // Pairs with React.memo on TranscriptCard — together they make session swaps
+  // feel instant even with hundreds of turns in history.
+  const deferredItems = useDeferredValue(items);
   const loading = useSessionLoading(session.id);
+  const transcriptCached = useAppStore((s) =>
+    selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
+  );
+  const selectAgent = useAppStore((s) => s.selectAgent);
+
+  // Lazy transcript load: only fires when this view is the active one. With
+  // keep-alive, hidden ChatView instances stay mounted but must not preload
+  // transcripts in the background — that would defeat the lazy DB savings.
+  useEffect(() => {
+    if (!isActive || !selectedAgentId || transcriptCached) return;
+    void selectAgent(session.id, selectedAgentId);
+  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -227,9 +247,13 @@ export function ChatView({ session }: ChatViewProps) {
     [worktreePath],
   );
 
-  const handleOpenDiff = (filePath: string) => {
+  // Stable refs so React.memo on TranscriptCard short-circuits identity checks.
+  const handleOpenDiff = useCallback((filePath: string) => {
     setDiffJumpFile(filePath);
-  };
+  }, []);
+  const handleRefreshAuth = useCallback(() => {
+    void refreshProviders();
+  }, [refreshProviders]);
 
   // Derive MergeConflict[] from store — populated by parallel-turn scheduler
   // when manual resolution is required. Cast FileConflict to MergeConflict:
@@ -375,8 +399,8 @@ export function ChatView({ session }: ChatViewProps) {
                   'usage',
                 ]);
                 let lastDay: string | null = null;
-                return items.map((item, idx) => {
-                  const prev = idx > 0 ? (items[idx - 1] ?? null) : null;
+                return deferredItems.map((item, idx) => {
+                  const prev = idx > 0 ? (deferredItems[idx - 1] ?? null) : null;
                   const tightToTool =
                     prev !== null &&
                     toolishKinds.has(item.kind) &&
@@ -401,13 +425,23 @@ export function ChatView({ session }: ChatViewProps) {
                     return 'mt-4';
                   })();
                   node.push(
-                    <li key={item.key} className={cn(itemSpacing)}>
+                    <li
+                      key={item.key}
+                      className={cn(
+                        itemSpacing,
+                        // Browser-native virtualization: skip layout/paint of
+                        // off-screen cards. Intrinsic size keeps the scroll bar
+                        // accurate (avg card ~80px). With 100+ turns, scroll
+                        // and switch stay smooth without a virtualizer dep.
+                        '[content-visibility:auto] [contain-intrinsic-size:80px]',
+                      )}
+                    >
                       <TranscriptCard
                         item={item}
                         taskId={session.id}
                         agentId={selectedAgentId}
                         workingDir={worktreePath}
-                        onRefreshAuth={() => void refreshProviders()}
+                        onRefreshAuth={handleRefreshAuth}
                         onOpenDiff={handleOpenDiff}
                       />
                     </li>,

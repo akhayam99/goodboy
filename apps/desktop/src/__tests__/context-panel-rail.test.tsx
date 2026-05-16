@@ -29,7 +29,7 @@ vi.mock('../store', () => ({
       createPrForSession: vi.fn(),
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),
-      loadDiffComments: vi.fn(),
+      loadDiffComments: vi.fn().mockResolvedValue(undefined),
       sessionPlans: {},
       sessionPhaseRuns: {},
       loadSessionPlans: vi.fn(),

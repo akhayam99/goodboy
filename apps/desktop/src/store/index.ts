@@ -7,6 +7,7 @@ export {
   useDiffComments,
   useFilesTouched,
   useMostRecentPlan,
+  useSessionById,
   useSessionLoading,
   useSessionPlans,
   useSessionSlots,

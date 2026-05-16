@@ -47,6 +47,16 @@ export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCur
 export const useSessions = (): ReadonlyArray<Task> => useAppStore(selectSessions);
 export const useCurrentSession = (): Task | null => useAppStore(selectCurrentSession);
 
+export const useSessionById = (id: TaskId | null): Task | null => {
+  const selector = useMemo(
+    () =>
+      (state: AppState): Task | null =>
+        id ? (state.sessions.find((s) => s.id === id) ?? null) : null,
+    [id],
+  );
+  return useAppStore(selector);
+};
+
 const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 
 export const useSessionSlots = (taskId: TaskId | null): ReadonlyArray<ContextSlot> =>

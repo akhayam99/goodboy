@@ -62,6 +62,10 @@ interface ContextPanelProps {
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
+  // Keep-alive aware: false when this panel is mounted but hidden behind
+  // another session. Effects that touch DB or network gate on this so
+  // background panels don't churn.
+  isActive?: boolean;
 }
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
@@ -74,6 +78,7 @@ export function ContextPanel({
   collapsed = false,
   onCollapse,
   onExpand,
+  isActive = true,
 }: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
@@ -166,8 +171,13 @@ export function ContextPanel({
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
-    void loadDiffComments(session.id);
-  }, [session.id, loadDiffComments]);
+    if (!isActive) return;
+    const t0 = performance.now();
+    void loadDiffComments(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`);
+    });
+  }, [isActive, session.id, loadDiffComments]);
 
   return (
     <>
@@ -223,76 +233,81 @@ export function ContextPanel({
 
             <PlansSection taskId={session.id} />
 
-            {loading.slots && slots.length === 0 ? (
-              <ContextSlotsSkeleton />
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {visibleSlotKeys.map((key) => {
-                  const slot = slotsByKey.get(key);
-                  return (
-                    <SlotRow
-                      key={key}
-                      taskId={session.id}
-                      slotKey={key}
-                      slot={slot}
-                      isSummarizing={summarizer.status === 'running'}
-                      onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                    />
-                  );
-                })}
-              </ul>
-            )}
+            {/* Per-slot independence: <ul> is always rendered. Each SlotRow
+                shows its own skeleton when its data slice is missing AND the
+                slots fetch is in flight. One slot finishing first paints
+                without waiting for siblings. */}
+            <ul className="flex flex-col gap-6">
+              {visibleSlotKeys.map((key) => {
+                const slot = slotsByKey.get(key);
+                return (
+                  <SlotRow
+                    key={key}
+                    taskId={session.id}
+                    slotKey={key}
+                    slot={slot}
+                    loading={loading.slots}
+                    isSummarizing={summarizer.status === 'running'}
+                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                  />
+                );
+              })}
+            </ul>
           </div>
         </ScrollArea>
 
         <div className="flex shrink-0 flex-col gap-3 border-t border-border-soft px-3 py-3">
-          <GitHubSection session={session} />
-          <button
-            type="button"
-            onClick={() => {
-              setFilesDiffJumpToNotes(false);
-              setFilesDiffOpen(true);
-            }}
-            disabled={!workingDir}
-            className={cn(
-              'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-              !workingDir
-                ? 'cursor-not-allowed text-muted-foreground/50'
-                : filesTouchedCount === 0
-                  ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                  : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
-            )}
-            title={filesTooltip}
-          >
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <FileEdit size={11} aria-hidden />
-              <span className="truncate">
-                {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+          <GitHubSection session={session} isActive={isActive} />
+          {filesTouchedCount === 0 && (loading.transcript || loading.agents) ? (
+            <FilesTouchedSkeleton />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setFilesDiffJumpToNotes(false);
+                setFilesDiffOpen(true);
+              }}
+              disabled={!workingDir}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                !workingDir
+                  ? 'cursor-not-allowed text-muted-foreground/50'
+                  : filesTouchedCount === 0
+                    ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+              )}
+              title={filesTooltip}
+            >
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <FileEdit size={11} aria-hidden />
+                <span className="truncate">
+                  {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+                </span>
+                {openNotesCount > 0 ? (
+                  <>
+                    <span aria-hidden className="opacity-40">
+                      ·
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFilesDiffJumpToNotes(true);
+                        setFilesDiffOpen(true);
+                      }}
+                      className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
+                      title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
+                    >
+                      {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
+                    </button>
+                  </>
+                ) : null}
               </span>
-              {openNotesCount > 0 ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFilesDiffJumpToNotes(true);
-                      setFilesDiffOpen(true);
-                    }}
-                    className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                    title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                  >
-                    {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                  </button>
-                </>
-              ) : null}
-            </span>
-            <span aria-hidden className="opacity-60">
-              ↗
-            </span>
-          </button>
+              <span aria-hidden className="opacity-60">
+                ↗
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -366,17 +381,36 @@ function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
   );
 }
 
-function ContextSlotsSkeleton() {
+function SlotRowSkeleton({ slotKey }: { slotKey: SlotKey }) {
   return (
-    <ul role="status" aria-label="loading context" className="flex flex-col gap-6">
-      {[0, 1, 2, 3].map((i) => (
-        <li key={i} className="flex flex-col gap-2">
-          <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
-          <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
-          <div className="h-3 w-3/4 animate-pulse rounded bg-muted/70" />
-        </li>
-      ))}
-    </ul>
+    <li role="status" aria-label={`loading ${slotKey}`} className="flex flex-col gap-2">
+      <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
+      <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
+      <div className="h-3 w-3/4 animate-pulse rounded bg-muted/70" />
+    </li>
+  );
+}
+
+function PlansSkeleton() {
+  return (
+    <div role="status" aria-label="loading plans" className="flex flex-col gap-2 pb-2">
+      <div className="h-2.5 w-16 animate-pulse rounded bg-muted/70" />
+      <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
+      <div className="h-3 w-2/3 animate-pulse rounded bg-muted/70" />
+    </div>
+  );
+}
+
+function FilesTouchedSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="loading files touched"
+      className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
+    >
+      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
+      <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
+    </div>
   );
 }
 
@@ -390,7 +424,7 @@ function PrSkeleton() {
   );
 }
 
-function GitHubSection({ session }: { session: Task }) {
+function GitHubSection({ session, isActive = true }: { session: Task; isActive?: boolean }) {
   const githubStatus = useAppStore((s) => s.githubStatus);
   const branch = useAppStore((s) => s.sessionBranches[session.id]);
   const ghState = useAppStore((s) => s.sessionGithub[session.id]);
@@ -413,16 +447,31 @@ function GitHubSection({ session }: { session: Task }) {
   }, [branch, workspace?.rootPath]);
 
   useEffect(() => {
+    if (!isActive) return;
     if (!branch || githubStatus?.mode === 'absent') return;
     if (ghState?.fetchedAt != null) return;
-    void refreshSessionPr(session.id);
-  }, [branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
+    const t0 = performance.now();
+    void refreshSessionPr(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`);
+    });
+  }, [isActive, branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
 
   const prNumber = ghState?.pr?.number ?? null;
+  const prDetailFetchedAt = ghState?.detailFetchedAt ?? null;
   useEffect(() => {
+    if (!isActive) return;
     if (prNumber === null) return;
-    void refreshSessionPrDetail(session.id);
-  }, [prNumber, session.id, refreshSessionPrDetail]);
+    // Skip when detail was already fetched. Without this guard the GitHub
+    // network call (~3s) re-fired on every session switch, leaving a pending
+    // PR-card spinner visible for the entire wait.
+    if (prDetailFetchedAt !== null) return;
+    const t0 = performance.now();
+    void refreshSessionPrDetail(session.id).finally(() => {
+      // eslint-disable-next-line no-console
+      console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`);
+    });
+  }, [isActive, prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
 
   if (!branch || githubStatus?.mode === 'absent') return null;
 
@@ -702,11 +751,19 @@ interface SlotRowProps {
   taskId: TaskId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
+  loading?: boolean;
   isSummarizing?: boolean;
   onCommit: (value: string) => void;
 }
 
-function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: SlotRowProps) {
+function SlotRow({
+  taskId,
+  slotKey,
+  slot,
+  loading = false,
+  isSummarizing = false,
+  onCommit,
+}: SlotRowProps) {
   const value = slot?.value ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -714,6 +771,12 @@ function SlotRow({ taskId, slotKey, slot, isSummarizing = false, onCommit }: Slo
 
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const history = useSlotHistory(taskId, slotKey);
+
+  // Per-slot skeleton: while the slots fetch is still in flight and this
+  // particular slot hasn't materialized yet, show a placeholder. Sibling
+  // slots that already arrived render their content independently. Placed
+  // after all hook calls so the hook count stays stable across renders.
+  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
 
   const meta = slotKey === 'files_touched' ? null : SLOT_META[slotKey];
   const Icon = meta?.icon;
@@ -1033,6 +1096,7 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
 
 function PlansSection({ taskId }: { taskId: TaskId }) {
   const plans = useSessionPlans(taskId);
+  const loading = useSessionLoading(taskId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -1040,6 +1104,7 @@ function PlansSection({ taskId }: { taskId: TaskId }) {
     void loadSessionPlans(taskId);
   }, [taskId, loadSessionPlans]);
 
+  if (plans.length === 0 && loading.plans) return <PlansSkeleton />;
   if (plans.length === 0) return null;
 
   const latest = plans[plans.length - 1];

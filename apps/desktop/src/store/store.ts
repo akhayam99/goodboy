@@ -359,6 +359,11 @@ const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
+// In-flight dedup for actions whose store slice has no native loading flag.
+// Prevents the second fetch when ContextPanel's effect fires twice (StrictMode
+// remount, or rapid keep-alive activation) before the first round-trip lands.
+const diffCommentsInFlight = new Set<TaskId>();
+
 const ALL_LOADING: SessionLoadingFlags = {
   agents: true,
   transcript: true,
@@ -1292,19 +1297,72 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setCurrentSession: async (id) => {
+    // No-op when the click lands on the already-current session. Pulled into
+    // the action so callers can pass the action ref directly (stable ref
+    // helps memoized rows skip re-renders on session-switch clicks).
+    if (get().currentSessionId === id) return;
     // Immediately swap the visible session so the UI doesn't freeze while
     // heavy per-session data loads. Each block (agents/transcript/telemetry/
     // slots/plans/summary) loads independently and flips its own loading flag
     // off when done — see SessionLoadingFlags. We intentionally do NOT await
     // these loaders here; the chat view and context panel render skeletons in
     // the meantime.
+    const tSwitch = performance.now();
+    // Cache check up-front: any slice already loaded for this task skips its
+    // refetch. With the LRU keep-alive five sessions stay hot in the store,
+    // so revisiting them is a near-zero-cost flag flip instead of 5 round
+    // trips through Tauri IPC. Mutations refresh slices directly, so the
+    // in-memory cache stays consistent until a process outside the app
+    // touches the SQLite file.
+    const stateNow = get();
+    const cached = id
+      ? {
+          telemetry: stateNow.sessionTelemetry[id] !== undefined,
+          slots: stateNow.sessionSlots[id] !== undefined,
+          plans: stateNow.sessionPlans[id] !== undefined,
+          agents: stateNow.sessionPhaseRuns[id] !== undefined,
+        }
+      : null;
+    // Transcript flag is tricky on revisit: if agents are cached but the
+    // session has no agents we never get a selectAgent call to clear it; if
+    // the selected agent's transcript is already cached we shouldn't show a
+    // skeleton at all.
+    const cachedSelectedAgentId =
+      id && cached?.agents ? (stateNow.selectedAgentId[id] ?? null) : null;
+    const transcriptReady =
+      id && cached?.agents
+        ? cachedSelectedAgentId === null
+          ? true // empty session
+          : stateNow.transcripts[cachedSelectedAgentId] !== undefined
+        : false;
+    const initialLoading: SessionLoadingFlags = id
+      ? {
+          agents: cached ? !cached.agents : true,
+          transcript: !transcriptReady,
+          telemetry: cached ? !cached.telemetry : true,
+          slots: cached ? !cached.slots : true,
+          plans: cached ? !cached.plans : true,
+          summary: true,
+        }
+      : EMPTY_LOADING;
     set((state) => ({
       currentSessionId: id,
       sessionSummary: null,
-      sessionLoading: id ? { ...state.sessionLoading, [id]: ALL_LOADING } : state.sessionLoading,
+      sessionLoading: id ? { ...state.sessionLoading, [id]: initialLoading } : state.sessionLoading,
     }));
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
+    // Fire-and-forget the persisted setting. Awaiting it here delayed every
+    // downstream parallel fetch by the IPC round-trip (~5-50ms of dead time).
+    void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
     if (!id) return;
+    const perf = (op: string) => {
+      const t0 = performance.now();
+      return () => {
+        // eslint-disable-next-line no-console
+        console.log(`[perf] session:${op} ${(performance.now() - t0).toFixed(0)}ms`);
+      };
+    };
+    // eslint-disable-next-line no-console
+    console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`);
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {
@@ -1317,127 +1375,162 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
 
     // Summary
+    const endSummary = perf('summary');
     void summarizeTaskTelemetry(tauriDatabase, id)
       .then((summary) => {
         set((state) => (state.currentSessionId === id ? { sessionSummary: summary } : {}));
       })
       .catch(() => {})
-      .finally(() => markDone('summary'));
+      .finally(() => {
+        endSummary();
+        markDone('summary');
+      });
 
     // Telemetry
-    void listTelemetryForTask(tauriDatabase, id)
-      .then((telemetry) => {
-        set((state) => ({
-          sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
-        }));
-      })
-      .catch(() => {})
-      .finally(() => markDone('telemetry'));
+    if (!cached?.telemetry) {
+      const endTelemetry = perf('telemetry');
+      void listTelemetryForTask(tauriDatabase, id)
+        .then((telemetry) => {
+          set((state) => ({
+            sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
+          }));
+        })
+        .catch(() => {})
+        .finally(() => {
+          endTelemetry();
+          markDone('telemetry');
+        });
+    }
 
     // Context slots
-    void listContextSlotsForTask(tauriDatabase, id)
-      .then((slots) => {
-        set((state) => ({
-          sessionSlots: { ...state.sessionSlots, [id]: slots },
-        }));
-      })
-      .catch(() => {})
-      .finally(() => markDone('slots'));
+    if (!cached?.slots) {
+      const endSlots = perf('slots');
+      void listContextSlotsForTask(tauriDatabase, id)
+        .then((slots) => {
+          set((state) => ({
+            sessionSlots: { ...state.sessionSlots, [id]: slots },
+          }));
+        })
+        .catch(() => {})
+        .finally(() => {
+          endSlots();
+          markDone('slots');
+        });
+    }
 
     // Plans
-    void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
-      try {
-        return await invokeListPlansForSession(id);
-      } catch {
-        return [];
-      }
-    })()
-      .then((plans) => {
-        set((state) => ({
-          sessionPlans: { ...state.sessionPlans, [id]: plans },
-        }));
-      })
-      .catch(() => {})
-      .finally(() => markDone('plans'));
-
-    // Agents + transcript: transcript depends on which agent is selected, so
-    // we chain them here. Once the agents list resolves we kick the transcript
-    // loader off in parallel with the rest.
-    void Promise.all([invokePhaseRunList(id), listAgentRunIdsForTask(tauriDatabase, id)])
-      .then(async ([agents, agentRunIds]) => {
-        const previouslySelected = get().selectedAgentId[id] ?? null;
-        const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-        const fallbackAgent = sortedAgents[0] ?? null;
-        const selectedAgent =
-          (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
-
-        // Seed agentRunHistory with EVERY provider run an agent ever spawned,
-        // not just its latest. Recovered from turn_events (single source of
-        // truth post restart) so aggregate token/cost counters in the sidebar
-        // reflect the full agent lifetime — birth to death — instead of the
-        // last turn.
-        const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
-        const seededTurnState: Record<string, TurnState> = {};
-        const task = get().sessions.find((s) => s.id === id);
-        const taskState =
-          task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
-        for (const agent of agents) {
-          const historical = agentRunIds.get(agent.id) ?? [];
-          const merged: ProviderRunId[] = [...historical];
-          if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
-          if (merged.length > 0) {
-            seededHistory[agent.id] = merged;
-          }
-          if (agent.status === 'running' && agent.runId) {
-            seededTurnState[agent.id] = {
-              kind: 'running',
-              runId: agent.runId,
-              startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
-            };
-          } else if (agent.status === 'failed') {
-            seededTurnState[agent.id] = {
-              kind: 'error',
-              message: 'agent failed',
-              failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
-            };
-          } else {
-            seededTurnState[agent.id] =
-              taskState.kind === 'ended'
-                ? taskState
-                : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
-          }
+    if (!cached?.plans) {
+      const endPlans = perf('plans');
+      void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
+        try {
+          return await invokeListPlansForSession(id);
+        } catch {
+          return [];
         }
-
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-          selectedAgentId: {
-            ...state.selectedAgentId,
-            [id]: selectedAgent?.id ?? null,
-          },
-          agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
-          agentTurnState: { ...state.agentTurnState, ...seededTurnState },
-        }));
-        markDone('agents');
-
-        if (selectedAgent) {
-          const [messages, events] = await Promise.all([
-            listMessagesForAgent(tauriDatabase, selectedAgent.id),
-            listTurnEventsForAgent(tauriDatabase, selectedAgent.id),
-          ]);
+      })()
+        .then((plans) => {
           set((state) => ({
-            messages: { ...state.messages, [id]: messages },
-            transcripts: { ...state.transcripts, [selectedAgent.id]: events },
+            sessionPlans: { ...state.sessionPlans, [id]: plans },
           }));
-        } else {
+        })
+        .catch(() => {})
+        .finally(() => {
+          endPlans();
+          markDone('plans');
+        });
+    }
+
+    // Agents only: transcript is loaded lazily by ChatView when an agent is
+    // selected (via selectAgent). Keeps session switch fast — no per-agent
+    // history fetch blocks the UI.
+    if (cached?.agents) {
+      // Cached: phase runs + selected agent are already in store. transcript
+      // flag still gets cleared by ChatView's selectAgent effect (cached or
+      // fresh). Nothing else to do.
+    } else {
+      const endAgents = perf('agents+runIds');
+      const endPhaseRunList = perf('agents:phaseRunList');
+      const endRunIds = perf('agents:runIds');
+      void Promise.all([
+        invokePhaseRunList(id).finally(() => endPhaseRunList()),
+        listAgentRunIdsForTask(tauriDatabase, id).finally(() => endRunIds()),
+      ])
+        .then(([agents, agentRunIds]) => {
+          const previouslySelected = get().selectedAgentId[id] ?? null;
+          const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
+          // Fresh entry defaults to the most recently created agent (highest
+          // ordinal). Chronologically the latest is the one the user is most
+          // likely returning to. Previous selection still wins on revisit.
+          const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
+          const selectedAgent =
+            (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
+            fallbackAgent;
+
+          // Seed agentRunHistory with EVERY provider run an agent ever spawned,
+          // not just its latest. Recovered from turn_events (single source of
+          // truth post restart) so aggregate token/cost counters in the sidebar
+          // reflect the full agent lifetime — birth to death — instead of the
+          // last turn.
+          const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+          const seededTurnState: Record<string, TurnState> = {};
+          const task = get().sessions.find((s) => s.id === id);
+          const taskState =
+            task?.state ??
+            ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
+          for (const agent of agents) {
+            const historical = agentRunIds.get(agent.id) ?? [];
+            const merged: ProviderRunId[] = [...historical];
+            if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+            if (merged.length > 0) {
+              seededHistory[agent.id] = merged;
+            }
+            if (agent.status === 'running' && agent.runId) {
+              seededTurnState[agent.id] = {
+                kind: 'running',
+                runId: agent.runId,
+                startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+              };
+            } else if (agent.status === 'failed') {
+              seededTurnState[agent.id] = {
+                kind: 'error',
+                message: 'agent failed',
+                failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+              };
+            } else {
+              seededTurnState[agent.id] =
+                taskState.kind === 'ended'
+                  ? taskState
+                  : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
+            }
+          }
+
           set((state) => ({
-            messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+            selectedAgentId: {
+              ...state.selectedAgentId,
+              [id]: selectedAgent?.id ?? null,
+            },
+            agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+            agentTurnState: { ...state.agentTurnState, ...seededTurnState },
           }));
-        }
-      })
-      .catch(() => {
-        markDone('agents');
-      })
-      .finally(() => markDone('transcript'));
+          markDone('agents');
+
+          // No selected agent → no chat to render → drop transcript flag now.
+          // With a selected agent, ChatView's effect calls selectAgent which
+          // owns the flag lifecycle from there.
+          if (!selectedAgent) {
+            set((state) => ({
+              messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+            }));
+            markDone('transcript');
+          }
+        })
+        .catch(() => {
+          markDone('agents');
+          markDone('transcript');
+        })
+        .finally(() => endAgents());
+    }
   },
 
   refreshSessions: async (workspaceId) => {
@@ -2713,10 +2806,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadDiffComments: async (taskId) => {
-    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [taskId]: comments },
-    }));
+    // Cache hit short-circuit: ContextPanel mounts on every session switch
+    // and fires this effect; without the guard the ~1s DB query repeats
+    // even when the data is already in store. Mutations (add/resolve/delete)
+    // refresh the slice directly, so the cache stays accurate.
+    if (get().diffComments[taskId] !== undefined) return;
+    // In-flight dedup: a second mount before the first DB query lands would
+    // also pass the cache check above and double the work. The Set blocks it.
+    if (diffCommentsInFlight.has(taskId)) return;
+    diffCommentsInFlight.add(taskId);
+    try {
+      const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+      set((state) => ({
+        diffComments: { ...state.diffComments, [taskId]: comments },
+      }));
+    } finally {
+      diffCommentsInFlight.delete(taskId);
+    }
   },
 
   addDiffComment: async (taskId, filePath, body, anchor) => {
@@ -3167,30 +3273,103 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const cached = get().transcripts[agentId];
     if (cached) {
-      set((state) => ({
-        selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
-        sessionPhaseRuns: {
-          ...state.sessionPhaseRuns,
-          [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
-        },
-      }));
+      // eslint-disable-next-line no-console
+      console.log(`[perf] selectAgent:${agentId} cached`);
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+          },
+        };
+      });
       void get().refreshUnreadWorkspaces();
       return;
     }
-    const [messages, events] = await Promise.all([
-      listMessagesForAgent(tauriDatabase, agentId),
-      listTurnEventsForAgent(tauriDatabase, agentId),
-    ]);
-    set((state) => ({
-      selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
-      transcripts: { ...state.transcripts, [agentId]: events },
-      messages: { ...state.messages, [taskId]: messages },
-      sessionPhaseRuns: {
-        ...state.sessionPhaseRuns,
-        [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
-      },
-    }));
-    void get().refreshUnreadWorkspaces();
+    set((state) => {
+      const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+      return {
+        selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+        sessionLoading: {
+          ...state.sessionLoading,
+          [taskId]: { ...current, transcript: true },
+        },
+      };
+    });
+    // Two-phase load: phase 1 fetches the recent slice fast (~50-150ms),
+    // unblocks the chat skeleton, then phase 2 fills in older history in the
+    // background. Sessions with <= INITIAL_LIMIT events get only phase 1.
+    const INITIAL_LIMIT = 50;
+    const tInitial = performance.now();
+    try {
+      const [messages, events] = await Promise.all([
+        listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+        listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+      ]);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
+      );
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          transcripts: { ...state.transcripts, [agentId]: events },
+          messages: { ...state.messages, [taskId]: messages },
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+          },
+        };
+      });
+      void get().refreshUnreadWorkspaces();
+      // Phase 2: only when the recent slice was at the limit (more older
+      // history likely exists). Fired non-awaited so the click flow returns.
+      if (events.length === INITIAL_LIMIT) {
+        const tFull = performance.now();
+        void Promise.all([
+          listMessagesForAgent(tauriDatabase, agentId),
+          listTurnEventsForAgent(tauriDatabase, agentId),
+        ])
+          .then(([fullMessages, fullEvents]) => {
+            // eslint-disable-next-line no-console
+            console.log(
+              `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
+            );
+            // Replace only if the agent is still selected and the in-store
+            // slice hasn't grown past the full snapshot via streaming.
+            set((state) => {
+              const current = state.transcripts[agentId];
+              if (current && current.length > fullEvents.length) return {};
+              return {
+                transcripts: { ...state.transcripts, [agentId]: fullEvents },
+                messages: { ...state.messages, [taskId]: fullMessages },
+              };
+            });
+          })
+          .catch(() => {});
+      }
+    } catch (err) {
+      set((state) => {
+        const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
+        return {
+          sessionLoading: {
+            ...state.sessionLoading,
+            [taskId]: { ...current, transcript: false },
+          },
+        };
+      });
+      throw err;
+    }
   },
 
   spawnAgent: async (taskId, args) => {
@@ -3551,6 +3730,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshSessionPr: async (taskId, opts) => {
+    // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
+    // re-activation) before the first ~1s GitHub round-trip resolves. The
+    // existing `loading` flag is the right signal, since this action sets it
+    // to true synchronously below.
+    if (!opts?.force && get().sessionGithub[taskId]?.loading) return;
     const branch = get().sessionBranches[taskId];
     if (!branch) return;
     const session = get().sessions.find((s) => s.id === taskId);
@@ -3642,6 +3826,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const existing = get().sessionGithub[taskId];
     const pr = existing?.pr ?? null;
     if (!pr) return;
+    // In-flight dedup: the ~3-5s GitHub detail call was firing twice on cold
+    // session switches because two effect runs both saw existing.detail still
+    // null. Block the second call by checking the loading flag the first one
+    // sets synchronously below.
+    if (!opts?.force && existing?.detailLoading) return;
     const session = get().sessions.find((s) => s.id === taskId);
     if (!session) return;
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { SessionId, TaskId } from '@kay-am/types';
@@ -25,7 +25,7 @@ interface TranscriptCardProps {
   readonly onOpenDiff?: (filePath: string) => void;
 }
 
-export function TranscriptCard({
+function TranscriptCardImpl({
   item,
   taskId = null,
   agentId = null,
@@ -87,6 +87,33 @@ export function TranscriptCard({
       return <PermissionDecisionCard item={item} taskId={taskId} agentId={agentId} />;
   }
 }
+
+// Content-aware comparator: reduceTranscript allocates fresh items every call,
+// so reference equality on `item` is always false. Skipping re-render when the
+// rendered output would be identical avoids costly Markdown/CopyButton work for
+// 100+ static cards on session switch and during streaming updates.
+function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
+  if (a === b) return true;
+  if (a.kind !== b.kind || a.key !== b.key) return false;
+  if (a.kind === 'tool_call' && b.kind === 'tool_call') {
+    return a.ended === b.ended && a.isError === b.isError && a.output === b.output;
+  }
+  if (a.kind === 'assistant_text' && b.kind === 'assistant_text') {
+    return a.text === b.text;
+  }
+  return true;
+}
+
+export const TranscriptCard = memo(
+  TranscriptCardImpl,
+  (prev, next) =>
+    itemEqual(prev.item, next.item) &&
+    prev.taskId === next.taskId &&
+    prev.agentId === next.agentId &&
+    prev.workingDir === next.workingDir &&
+    prev.onRefreshAuth === next.onRefreshAuth &&
+    prev.onOpenDiff === next.onOpenDiff,
+);
 
 interface FileEditBlockProps {
   path: string;
