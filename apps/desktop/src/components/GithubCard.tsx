@@ -80,6 +80,8 @@ export function GithubCard({
     setActive(k);
   };
 
+  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1">
@@ -90,6 +92,7 @@ export function GithubCard({
         >
           {TAB_KEYS.map((k) => {
             const isActive = k === active;
+            const status = tabStatus[k];
             return (
               <button
                 key={k}
@@ -97,14 +100,16 @@ export function GithubCard({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => selectTab(k)}
+                title={status?.label}
                 className={cn(
-                  'px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
+                  'inline-flex items-center gap-1 px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
                   isActive
                     ? 'bg-background font-semibold text-foreground shadow-sm'
                     : 'text-muted-foreground/70 hover:text-foreground',
                 )}
               >
-                {TAB_LABEL[k]}
+                <span>{TAB_LABEL[k]}</span>
+                {status ? <TabBadge status={status} dim={!isActive} /> : null}
               </button>
             );
           })}
@@ -153,6 +158,151 @@ export function GithubCard({
       </div>
     </div>
   );
+}
+
+interface TabStatus {
+  readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
+  readonly icon: ReactNode;
+  readonly count?: number;
+  readonly label: string;
+}
+
+const TONE_PILL: Record<TabStatus['tone'], string> = {
+  success: 'bg-success/10 text-success',
+  danger: 'bg-danger/15 text-danger',
+  warning: 'bg-warning/15 text-warning',
+  info: 'bg-info/10 text-info',
+  muted: 'bg-muted text-muted-foreground',
+};
+
+function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+  const hasCount = status.count != null && status.count > 0;
+  return (
+    <span
+      aria-label={status.label}
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-full px-1 leading-none transition-opacity',
+        TONE_PILL[status.tone],
+        dim && 'opacity-80',
+      )}
+    >
+      {status.icon}
+      {hasCount ? (
+        <span className="text-[9px] font-semibold tabular-nums">{status.count}</span>
+      ) : null}
+    </span>
+  );
+}
+
+function computeTabStatus(
+  pr: PullRequestState,
+  detail: PrDetail | null,
+): Record<GithubTabKey, TabStatus | null> {
+  return {
+    ci: computeCiStatus(pr, detail?.checks ?? []),
+    comments: computeCommentsStatus(detail?.comments ?? []),
+    review: computeReviewStatus(pr, detail?.reviews ?? [], detail?.reviewRequests ?? []),
+  };
+}
+
+function computeCiStatus(
+  pr: PullRequestState,
+  checks: ReadonlyArray<PrCheckRun>,
+): TabStatus | null {
+  if (checks.length === 0) {
+    if (pr.checks === 'failure')
+      return { tone: 'danger', icon: <XCircle size={9} aria-hidden />, label: 'ci failing' };
+    if (pr.checks === 'pending')
+      return {
+        tone: 'warning',
+        icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+        label: 'ci running',
+      };
+    if (pr.checks === 'success')
+      return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'ci passing' };
+    return null;
+  }
+  const fail = checks.filter(
+    (c) =>
+      c.conclusion === 'failure' ||
+      c.conclusion === 'cancelled' ||
+      c.conclusion === 'timed_out' ||
+      c.conclusion === 'action_required',
+  ).length;
+  const pending = checks.filter((c) => c.conclusion === 'pending').length;
+  if (fail > 0)
+    return {
+      tone: 'danger',
+      icon: <XCircle size={9} aria-hidden />,
+      count: fail,
+      label: `${fail} failing check${fail === 1 ? '' : 's'}`,
+    };
+  if (pending > 0)
+    return {
+      tone: 'warning',
+      icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+      count: pending,
+      label: `${pending} check${pending === 1 ? '' : 's'} running`,
+    };
+  return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'all checks passing' };
+}
+
+function computeCommentsStatus(comments: ReadonlyArray<PrComment>): TabStatus | null {
+  const heads = comments.filter((c) => c.source === 'review' && !c.inReplyToId);
+  if (heads.length === 0) return null;
+  const open = heads.filter((c) => c.resolved === false).length;
+  if (open > 0)
+    return {
+      tone: 'warning',
+      icon: <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />,
+      count: open,
+      label: `${open} unresolved comment${open === 1 ? '' : 's'}`,
+    };
+  return {
+    tone: 'success',
+    icon: <CheckCheck size={9} aria-hidden />,
+    label: 'all comments resolved',
+  };
+}
+
+function computeReviewStatus(
+  pr: PullRequestState,
+  reviews: ReadonlyArray<PrReview>,
+  requests: ReadonlyArray<PrReviewRequest>,
+): TabStatus | null {
+  const latest = latestTerminalReviewsByAuthor(reviews);
+  const changes = latest.filter((r) => r.state === 'changes_requested');
+  if (changes.length > 0)
+    return {
+      tone: 'danger',
+      icon: <AlertCircle size={9} aria-hidden />,
+      count: changes.length,
+      label: `changes requested by ${changes.map((r) => r.author).join(', ')}`,
+    };
+  const approvals = latest.filter((r) => r.state === 'approved');
+  if (pr.reviewDecision === 'approved' || approvals.length > 0)
+    return {
+      tone: 'success',
+      icon: <CheckCheck size={9} aria-hidden />,
+      label:
+        approvals.length > 0
+          ? `approved by ${approvals.map((r) => r.author).join(', ')}`
+          : 'approved',
+    };
+  if (requests.length > 0)
+    return {
+      tone: 'info',
+      icon: <CircleDashed size={9} aria-hidden />,
+      count: requests.length,
+      label: `awaiting ${requests.length} reviewer${requests.length === 1 ? '' : 's'}`,
+    };
+  if (reviews.some((r) => r.state === 'commented'))
+    return {
+      tone: 'muted',
+      icon: <MessageSquare size={9} aria-hidden />,
+      label: 'reviewer commented',
+    };
+  return null;
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
