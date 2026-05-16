@@ -416,10 +416,10 @@ function FilesTouchedSkeleton() {
 
 function PrSkeleton() {
   return (
-    <div className="flex items-center gap-1.5" aria-hidden>
-      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
-      <div className="h-2.5 flex-1 animate-pulse rounded bg-muted" />
-      <div className="h-4 w-10 animate-pulse rounded-full bg-muted" />
+    <div className="flex items-center gap-1.5" role="status" aria-label="loading pr">
+      <div className="h-3 w-3 animate-pulse rounded-sm bg-muted [animation-delay:0ms]" />
+      <div className="h-3 w-10 animate-pulse rounded bg-muted [animation-delay:80ms]" />
+      <div className="h-3 flex-1 animate-pulse rounded bg-muted [animation-delay:160ms]" />
     </div>
   );
 }
@@ -519,7 +519,10 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
         </button>
       </div>
 
-      <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+      <div
+        className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2"
+        aria-live="polite"
+      >
         {isFirstLoad ? (
           <PrSkeleton />
         ) : pr ? (

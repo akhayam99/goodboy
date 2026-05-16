@@ -124,7 +124,10 @@ export function GithubCard({
         </div>
       </div>
 
-      <div className="max-h-44 overflow-y-auto rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+      <div
+        className="max-h-44 overflow-y-auto rounded-md border border-border-soft bg-subtle px-2.5 py-2 transition-opacity duration-150"
+        key={active}
+      >
         {detailError ? (
           <ErrorRow message={detailError} onRetry={onRefresh} />
         ) : detailLoading && !detail ? (
@@ -194,10 +197,10 @@ function ErrorRow({ message, onRetry }: { message: string; onRetry: () => void }
 
 function DetailSkeleton() {
   return (
-    <div className="flex flex-col gap-1.5" aria-hidden>
-      <div className="h-2.5 w-3/4 animate-pulse rounded bg-muted" />
-      <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted" />
-      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted" />
+    <div className="flex flex-col gap-1.5" role="status" aria-label="loading pr data">
+      <div className="h-2.5 w-3/4 animate-pulse rounded bg-muted [animation-delay:0ms]" />
+      <div className="h-2.5 w-1/2 animate-pulse rounded bg-muted [animation-delay:120ms]" />
+      <div className="h-2.5 w-2/3 animate-pulse rounded bg-muted [animation-delay:240ms]" />
     </div>
   );
 }
