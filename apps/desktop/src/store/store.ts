@@ -1429,7 +1429,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .then(([agents, agentRunIds]) => {
         const previouslySelected = get().selectedAgentId[id] ?? null;
         const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-        const fallbackAgent = sortedAgents[0] ?? null;
+        // Fresh entry defaults to the most recently created agent (highest
+        // ordinal). Chronologically the latest is the one the user is most
+        // likely returning to. Previous selection still wins on revisit.
+        const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
         const selectedAgent =
           (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
 
