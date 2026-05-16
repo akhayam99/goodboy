@@ -220,7 +220,7 @@ export async function invokeSessionMarkViewed(id: SessionId, at: IsoDateTime): P
 
 export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<WorkspaceId>> {
   const ids = await invoke<string[]>('workspaces_with_unread');
-  return ids as ReadonlyArray<WorkspaceId>;
+  return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
 }
 
 // Parallel phase group commands (#207).
