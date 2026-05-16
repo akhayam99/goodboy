@@ -24,6 +24,12 @@ interface SessionRow {
   current_step_ordinal: number | null;
   auto_run: number;
   title_user_edited: number;
+  archived_at: number | null;
+  deleted_at: number | null;
+  verbosity: string | null;
+  effort: string | null;
+  model_override: string | null;
+  provider_override: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -71,9 +77,56 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
+    ...(row.archived_at != null && {
+      archivedAt: new Date(row.archived_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.deleted_at != null && {
+      deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
+    ...(row.effort && {
+      effort: row.effort as 'low' | 'medium' | 'high' | 'extra-high' | 'max',
+    }),
+    ...(row.model_override && { modelOverride: row.model_override }),
+    ...(row.provider_override && { providerOverride: row.provider_override }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
+}
+
+export interface SessionConfigUpdate {
+  verbosity?: 'brief' | 'normal' | 'verbose' | null;
+  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max' | null;
+  modelOverride?: string | null;
+  providerOverride?: string | null;
+}
+
+export async function updateSessionConfig(
+  db: Database,
+  id: SessionId,
+  fields: SessionConfigUpdate,
+): Promise<void> {
+  const updates: string[] = [];
+  const values: unknown[] = [];
+  if (fields.verbosity !== undefined) {
+    updates.push('verbosity = ?');
+    values.push(fields.verbosity);
+  }
+  if (fields.effort !== undefined) {
+    updates.push('effort = ?');
+    values.push(fields.effort);
+  }
+  if (fields.modelOverride !== undefined) {
+    updates.push('model_override = ?');
+    values.push(fields.modelOverride);
+  }
+  if (fields.providerOverride !== undefined) {
+    updates.push('provider_override = ?');
+    values.push(fields.providerOverride);
+  }
+  if (updates.length === 0) return;
+  values.push(id);
+  await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
 }
 
 function splitState(state: TurnState): { kind: TurnState['kind']; payload: string } {

@@ -73,6 +73,16 @@ export type Agent = Readonly<{
   // Timestamp of when the user last selected this agent in the sidebar. Unread
   // = `lastFinishedAt > lastViewedAt`.
   lastViewedAt?: IsoDateTime;
+  // Soft-delete: non-null means agent was deleted by the user; hidden from
+  // normal lists but row preserved for audit / restore.
+  deletedAt?: IsoDateTime;
+  // Per-agent runtime config (overrides workspace/session defaults). Moved
+  // from localStorage into the DB so it survives reload and cross-device sync.
+  verbosity?: 'brief' | 'normal' | 'verbose';
+  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+  modelOverride?: string;
+  providerOverride?: string;
+  kind?: string;
 }>;
 
 export type StepTransition = Readonly<{

@@ -22,6 +22,12 @@ interface AgentRow {
   completed_at: string | null;
   last_finished_at: string | null;
   last_viewed_at: string | null;
+  deleted_at: number | null;
+  verbosity: string | null;
+  effort: string | null;
+  model_override: string | null;
+  provider_override: string | null;
+  kind: string | null;
 }
 
 function toAgent(row: AgentRow): Agent {
@@ -38,6 +44,16 @@ function toAgent(row: AgentRow): Agent {
     ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
     ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
     ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
+    ...(row.deleted_at != null && {
+      deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
+    ...(row.effort && {
+      effort: row.effort as 'low' | 'medium' | 'high' | 'extra-high' | 'max',
+    }),
+    ...(row.model_override && { modelOverride: row.model_override }),
+    ...(row.provider_override && { providerOverride: row.provider_override }),
+    ...(row.kind && { kind: row.kind }),
   };
 }
 
@@ -119,4 +135,44 @@ export async function softDeleteAgent(db: Database, id: AgentId): Promise<void> 
 
 export async function restoreAgent(db: Database, id: AgentId): Promise<void> {
   await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
+}
+
+export interface AgentConfigUpdate {
+  verbosity?: 'brief' | 'normal' | 'verbose' | null;
+  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max' | null;
+  modelOverride?: string | null;
+  providerOverride?: string | null;
+  kind?: string | null;
+}
+
+export async function updateAgentConfig(
+  db: Database,
+  id: AgentId,
+  fields: AgentConfigUpdate,
+): Promise<void> {
+  const updates: string[] = [];
+  const values: unknown[] = [];
+  if (fields.verbosity !== undefined) {
+    updates.push('verbosity = ?');
+    values.push(fields.verbosity);
+  }
+  if (fields.effort !== undefined) {
+    updates.push('effort = ?');
+    values.push(fields.effort);
+  }
+  if (fields.modelOverride !== undefined) {
+    updates.push('model_override = ?');
+    values.push(fields.modelOverride);
+  }
+  if (fields.providerOverride !== undefined) {
+    updates.push('provider_override = ?');
+    values.push(fields.providerOverride);
+  }
+  if (fields.kind !== undefined) {
+    updates.push('kind = ?');
+    values.push(fields.kind);
+  }
+  if (updates.length === 0) return;
+  values.push(id);
+  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 }
