@@ -1,7 +1,7 @@
 import { FolderOpen, MessagesSquare } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Session, SessionStatus, ProviderRunId, Task, TaskId } from '@kay-am/types';
-import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../store';
+import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionLoading } from '../../store';
 import { OpenInEditorButton } from '../OpenInEditorButton';
 import { ParallelProgressPill } from './ParallelProgressPill';
 
@@ -19,6 +19,7 @@ export function ChatHeader({
   onSelectRun,
 }: ChatHeaderProps) {
   const workspace = useCurrentWorkspace();
+  const transcriptLoading = useSessionLoading(session.id).transcript;
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => {
@@ -64,21 +65,37 @@ export function ChatHeader({
             ) : null}
             <span
               className="inline-flex items-center gap-1"
-              title={`${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`}
+              title={
+                transcriptLoading
+                  ? 'loading turn count'
+                  : `${userTurns} message${userTurns === 1 ? '' : 's'} sent · ${assistantReplies} reply${assistantReplies === 1 ? '' : 'ies'}`
+              }
             >
               <MessagesSquare size={12} aria-hidden />
-              <span className="font-mono text-foreground/85">{userTurns}</span>
-              <span>turn{userTurns === 1 ? '' : 's'}</span>
-              {assistantReplies > 0 ? (
-                <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
-              ) : null}
+              {transcriptLoading ? (
+                // Micro-skeleton so the header swaps instantly on session
+                // click while transcript fetch is still in flight; otherwise
+                // a stale "0 turns" briefly shows before the real count.
+                <span
+                  aria-label="loading turn count"
+                  className="inline-block h-2.5 w-8 animate-pulse rounded bg-muted"
+                />
+              ) : (
+                <>
+                  <span className="font-mono text-foreground/85">{userTurns}</span>
+                  <span>turn{userTurns === 1 ? '' : 's'}</span>
+                  {assistantReplies > 0 ? (
+                    <span className="text-muted-foreground/60">· {assistantReplies} replies</span>
+                  ) : null}
+                </>
+              )}
             </span>
             {session.workflowId ? <PhaseProgressPill taskId={session.id} /> : null}
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <OpenInEditorButton worktreePath={worktreePath} />
+          <OpenInEditorButton worktreePath={worktreePath ?? workspace?.rootPath ?? null} />
         </div>
       </div>
     </div>

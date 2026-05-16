@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@kay-am/ui';
 import type { TaskId } from '@kay-am/types';
 import { CommandPalette } from './components/CommandPalette';
@@ -11,11 +11,22 @@ import { ShortcutHelpDialog } from './components/ShortcutHelpDialog';
 import { ToastProvider } from './components/Toast';
 import { WorkspacesSidebar } from './components/WorkspacesSidebar';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
-import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessionSlots } from './store';
+import {
+  useAppStore,
+  useCurrentSession,
+  useCurrentWorkspace,
+  useSessionById,
+  useSessionSlots,
+} from './store';
 import { refreshPricingTable } from './provider-pricing';
 import { STORAGE_PREFIXES } from './storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: TaskId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
+
+// Cap on retained ChatView instances. Five covers nearly all real navigation
+// patterns (recent N tabs) without unbounded memory growth from long sessions
+// kept alive in the background.
+const KEEP_ALIVE_CAP = 5;
 
 function readPersistedContextOpen(id: TaskId, fallback: boolean): boolean {
   try {
@@ -52,6 +63,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<TaskId | null>(null);
+  const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<TaskId>>([]);
 
   useEffect(() => {
     void hydrate();
@@ -103,6 +115,21 @@ export function App() {
     });
   };
 
+  // Persist visited-session order across renders. Triggered by the same
+  // currentSession change that drives the synchronous derivation above; this
+  // just commits the new order to state so future switches reuse it.
+  useEffect(() => {
+    const id = currentSession?.id ?? null;
+    if (!id) return;
+    setKeepAliveIds((prev) => {
+      if (prev[prev.length - 1] === id) return prev;
+      const filtered = prev.filter((x) => x !== id);
+      const next = [...filtered, id];
+      return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
+    });
+  }, [currentSession?.id]);
+
+  const onRequestEnd = useCallback(() => setEndOpen(true), []);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
@@ -113,6 +140,24 @@ export function App() {
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
   useKeyboardShortcut('cmd+k', () => setPaletteOpen(true));
+
+  // Synchronous LRU: include the current session even before the persisting
+  // effect runs, so the active view paints on the first frame after a switch.
+  // Must stay above the early-return for hydrated to keep hook order stable.
+  const renderedSessionIds = useMemo<ReadonlyArray<TaskId>>(() => {
+    const cid = currentSession?.id ?? null;
+    if (!cid) return keepAliveIds;
+    if (keepAliveIds.includes(cid)) return keepAliveIds;
+    const merged = [...keepAliveIds, cid];
+    return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
+  }, [keepAliveIds, currentSession?.id]);
+
+  // Defer the heavy panel mount so sidebar selection + AppShell swap paint
+  // urgently while React schedules the fresh ChatView/ContextPanel at low
+  // priority. Active id is deferred too so the previous panel stays visible
+  // (and `isActive`) during the lag — otherwise we'd flash a blank frame.
+  const deferredRenderedIds = useDeferredValue(renderedSessionIds);
+  const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
   if (!hydrated) {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
@@ -129,19 +174,43 @@ export function App() {
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>
           ) : currentSession ? (
-            <ChatView session={currentSession} onRequestEnd={() => setEndOpen(true)} />
+            // Keep-alive: every visited session keeps a mounted ChatView in
+            // the LRU window. Only the active one is shown (`hidden` attr on
+            // the others). React skips unmount/mount on switches between
+            // recent sessions — no flash, scroll position preserved.
+            <div className="relative h-full w-full">
+              {deferredRenderedIds.map((id) => (
+                <KeepAliveChatPanel
+                  key={id}
+                  sessionId={id}
+                  isActive={id === deferredActiveId}
+                  onRequestEnd={onRequestEnd}
+                />
+              ))}
+            </div>
           ) : (
             <EmptyState hasWorkspace={Boolean(currentWorkspace)} />
           )
         }
         rightSidebar={
           currentSession ? (
-            <ContextPanel
-              session={currentSession}
-              collapsed={contextCollapsed}
-              onCollapse={onToggleContext}
-              onExpand={onToggleContext}
-            />
+            // Same keep-alive pattern as the chat panel: the LRU window of
+            // recently-visited sessions stays mounted, only visibility flips
+            // on switch. ContextPanel gates its own session-change effects
+            // (loadDiffComments, refreshSessionPr*) on isActive so hidden
+            // panels don't fire background work.
+            <div className="relative h-full w-full">
+              {deferredRenderedIds.map((id) => (
+                <KeepAliveContextPanel
+                  key={id}
+                  sessionId={id}
+                  isActive={id === deferredActiveId}
+                  collapsed={contextCollapsed}
+                  onCollapse={onToggleContext}
+                  onExpand={onToggleContext}
+                />
+              ))}
+            </div>
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
@@ -177,6 +246,52 @@ export function App() {
         />
       ) : null}
     </ToastProvider>
+  );
+}
+
+interface KeepAliveChatPanelProps {
+  readonly sessionId: TaskId;
+  readonly isActive: boolean;
+  readonly onRequestEnd: () => void;
+}
+
+function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChatPanelProps) {
+  const session = useSessionById(sessionId);
+  if (!session) return null;
+  return (
+    <div hidden={!isActive} className="absolute inset-0">
+      <ChatView session={session} isActive={isActive} onRequestEnd={onRequestEnd} />
+    </div>
+  );
+}
+
+interface KeepAliveContextPanelProps {
+  readonly sessionId: TaskId;
+  readonly isActive: boolean;
+  readonly collapsed: boolean;
+  readonly onCollapse: () => void;
+  readonly onExpand: () => void;
+}
+
+function KeepAliveContextPanel({
+  sessionId,
+  isActive,
+  collapsed,
+  onCollapse,
+  onExpand,
+}: KeepAliveContextPanelProps) {
+  const session = useSessionById(sessionId);
+  if (!session) return null;
+  return (
+    <div hidden={!isActive} className="absolute inset-0">
+      <ContextPanel
+        session={session}
+        isActive={isActive}
+        collapsed={collapsed}
+        onCollapse={onCollapse}
+        onExpand={onExpand}
+      />
+    </div>
   );
 }
 

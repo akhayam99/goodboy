@@ -1,11 +1,13 @@
 export { useAppStore, type BootPhase, type ProviderSpendEntry } from './store';
 
 export {
+  agentHasUnread,
   useCurrentSession,
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
   useMostRecentPlan,
+  useSessionById,
   useSessionLoading,
   useSessionPlans,
   useSessionSlots,
@@ -13,6 +15,8 @@ export {
   useSlotHistory,
   useSessions,
   useSummarizerStatus,
+  useTaskHasUnread,
+  useWorkspaceHasUnread,
   useWorkspaces,
 } from './selectors';
 export { useTranscript } from './transcript';

@@ -3,9 +3,13 @@ pre-commit:
   commands:
     format:
       glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
-      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec prettier --write --no-error-on-unmatched-pattern {staged_files} && git add {staged_files}
+      # Resolve the binary from main's node_modules (worktrees don't always
+      # `pnpm install`) but invoke it directly so the process inherits the
+      # current cwd — otherwise files that exist only in a worktree (e.g.
+      # newly added) wouldn't be found by prettier.
+      run: '"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/node_modules/.bin/prettier" --write {staged_files} && git add {staged_files}'
 
 commit-msg:
   commands:
     commitlint:
-      run: pnpm --dir "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" exec commitlint --edit {1}
+      run: '"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/node_modules/.bin/commitlint" --edit {1}'
