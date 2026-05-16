@@ -7,6 +7,7 @@ import { GithubPanel } from './GithubPanel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
+import { SESSION_FEATURES } from '../features';
 import { formatError } from '../errors';
 import { useAppStore } from '../store';
 
@@ -38,7 +39,16 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
-  { id: 'budget', label: 'Budget', icon: <DollarSign size={14} aria-hidden />, beta: true },
+  ...(SESSION_FEATURES.budget
+    ? [
+        {
+          id: 'budget' as const,
+          label: 'Budget',
+          icon: <DollarSign size={14} aria-hidden />,
+          beta: true,
+        },
+      ]
+    : []),
   { id: 'integrations', label: 'Integrations', icon: <Link2 size={14} aria-hidden /> },
   { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
   { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },

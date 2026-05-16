@@ -7,6 +7,7 @@ import { PhasesPanel } from './PhasesPanel';
 import { BulkSessionDeleteDialog } from './WorkspacesSidebar';
 import { formatError } from '../errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
+import { WORKSPACE_FEATURES } from '../features';
 import { useAppStore, useSessions } from '../store';
 
 interface WorkspaceSettingsDialogProps {
@@ -27,7 +28,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'general', label: 'General', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'skills', label: 'Skills', icon: <Zap size={14} aria-hidden /> },
+  ...(WORKSPACE_FEATURES.skills
+    ? [{ id: 'skills' as const, label: 'Skills', icon: <Zap size={14} aria-hidden /> }]
+    : []),
   { id: 'phases', label: 'Workflows', icon: <GitBranch size={14} aria-hidden />, beta: true },
 ];
 

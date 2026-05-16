@@ -34,6 +34,7 @@ import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
 import { NotificationCenter } from './NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
+import { WORKSPACE_FEATURES } from '../features';
 import type {
   ProviderId,
   PullRequestStateKind,
@@ -1142,12 +1143,14 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
             label="repository"
             ready={path.length > 0}
           />
-          <AddWsNavItem
-            active={activeSection === 'skills'}
-            onClick={() => setActiveSection('skills')}
-            label="skills"
-            ready={null}
-          />
+          {WORKSPACE_FEATURES.skills ? (
+            <AddWsNavItem
+              active={activeSection === 'skills'}
+              onClick={() => setActiveSection('skills')}
+              label="skills"
+              ready={null}
+            />
+          ) : null}
           <AddWsNavItem
             active={activeSection === 'workflows'}
             onClick={() => setActiveSection('workflows')}

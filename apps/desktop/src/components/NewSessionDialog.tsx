@@ -25,6 +25,7 @@ import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
 import { shortModel } from '../agent-row-format';
 import { PROVIDER_LABEL_LOWER } from '../providers';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
+import { SESSION_FEATURES } from '../features';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../github';
@@ -390,13 +391,17 @@ export function NewSessionDialog({
       ready: goalReady,
       required: true,
     },
-    {
-      id: 'budget',
-      label: 'Budget',
-      icon: <DollarSign size={13} aria-hidden />,
-      ready: budgetReady,
-      required: false,
-    },
+    ...(SESSION_FEATURES.budget
+      ? [
+          {
+            id: 'budget' as const,
+            label: 'Budget',
+            icon: <DollarSign size={13} aria-hidden />,
+            ready: budgetReady,
+            required: false,
+          },
+        ]
+      : []),
     {
       id: 'workflow',
       label: 'Workflow',
