@@ -147,6 +147,7 @@ function buildSession(): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    userStatus: 'wip',
     createdAt: now,
     updatedAt: now,
   };
