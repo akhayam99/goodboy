@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@kay-am/ui';
-import { modelLabel, modelTier, TIER_TEXT } from './chat-constants';
+import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 
 export interface RightSizeCardProps {
   readonly currentModel: string;

@@ -5,7 +5,7 @@ import {
   VERBOSITY_LEVELS,
   VERBOSITY_LABEL,
   type VerbosityLevel,
-} from '../../features/settings/verbosity';
+} from '../../../../features/settings/verbosity';
 import {
   PROVIDER_LABEL,
   PROVIDER_TEXT,
@@ -25,7 +25,7 @@ import {
   parseModelId,
   subfamilyLabel,
   subfamilyTier,
-} from './chat-constants';
+} from '../../utils/chat-constants';
 
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;

@@ -88,7 +88,7 @@ vi.mock('@kay-am/core', () => ({
 }));
 
 // Import component AFTER mocks are in place.
-import { ChatInput } from '../components/chat/ChatInput';
+import { ChatInput } from '../features/chat/components/ChatInput';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {

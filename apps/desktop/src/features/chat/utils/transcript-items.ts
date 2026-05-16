@@ -6,7 +6,7 @@ import type {
   ProviderUsage,
   TurnEvent,
 } from '@kay-am/types';
-import { decodeAuthRequiredMessage } from '../../features/chat/turn';
+import { decodeAuthRequiredMessage } from '../turn';
 
 export type TranscriptItem =
   | { kind: 'user_text'; key: string; text: string; at: IsoDateTime }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Target } from 'lucide-react';
 import { Collapsible } from '@kay-am/ui';
-import type { TranscriptItem } from './transcript-items';
-import { formatCardTime } from './format-card-time';
+import type { TranscriptItem } from '../../utils/transcript-items';
+import { formatCardTime } from '../../utils/format-card-time';
 
 interface PhaseTransitionCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;

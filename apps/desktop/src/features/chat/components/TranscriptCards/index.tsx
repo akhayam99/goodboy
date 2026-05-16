@@ -2,13 +2,13 @@ import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
 import { CopyButton, Markdown, cn } from '@kay-am/ui';
 import type { AgentId, SessionId } from '@kay-am/types';
-import type { TranscriptItem } from './transcript-items';
-import { AuthRequiredCallout } from './AuthRequiredCallout';
-import { SkillInvocationCard } from './SkillInvocationCard';
-import { PhaseTransitionCard } from './PhaseTransitionCard';
-import { PermissionRequestCard } from '../../features/permissions/components/PermissionRequestCard';
-import { PermissionDecisionCard } from '../../features/permissions/components/PermissionDecisionCard';
-import { displayPath } from '../../shared/utils/display-path';
+import type { TranscriptItem } from '../../utils/transcript-items';
+import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { SkillInvocationCard } from '../SkillInvocationCard';
+import { PhaseTransitionCard } from '../PhaseTransitionCard';
+import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
+import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
+import { displayPath } from '../../../../shared/utils/display-path';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',

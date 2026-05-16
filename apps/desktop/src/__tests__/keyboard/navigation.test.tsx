@@ -76,7 +76,7 @@ import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
 import { ToastProvider } from '../../components/Toast';
 
 afterEach(cleanup);

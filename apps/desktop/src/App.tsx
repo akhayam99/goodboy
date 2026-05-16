@@ -3,7 +3,7 @@ import { AppShell } from '@kay-am/ui';
 import type { SessionId } from '@kay-am/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './components/BootSplash';
-import { ChatView } from './components/chat/ChatView';
+import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';

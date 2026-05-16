@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseModelId } from '../components/chat/chat-constants';
+import { parseModelId } from '../features/chat/utils/chat-constants';
 
 describe('parseModelId', () => {
   it('canonical anthropic ids: family/subfamily/variant', () => {

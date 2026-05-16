@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@kay-am/types';
-import { reduceTranscript } from '../components/chat/transcript-items';
+import { reduceTranscript } from '../features/chat/utils/transcript-items';
 
 const RUN = 'run-1' as ProviderRunId;
 const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;

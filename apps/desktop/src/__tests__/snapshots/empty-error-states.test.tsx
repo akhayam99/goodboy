@@ -100,11 +100,11 @@ import { BootSplash } from '../../components/BootSplash';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
-import { TranscriptCard } from '../../components/chat/TranscriptCards';
+import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { ToastProvider } from '../../components/Toast';
 
 afterEach(cleanup);

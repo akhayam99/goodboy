@@ -1,9 +1,14 @@
 import { FolderOpen, MessagesSquare } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Agent, AgentStatus, ProviderRunId, Session, SessionId } from '@kay-am/types';
-import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionLoading } from '../../store';
-import { OpenInEditorButton } from '../OpenInEditorButton';
-import { ParallelProgressPill } from './ParallelProgressPill';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useCurrentWorkspace,
+  useSessionLoading,
+} from '../../../../store';
+import { OpenInEditorButton } from '../../../../components/OpenInEditorButton';
+import { ParallelProgressPill } from '../ParallelProgressPill';
 
 interface ChatHeaderProps {
   session: Session;

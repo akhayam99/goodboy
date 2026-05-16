@@ -92,7 +92,7 @@ import { SettingsDialog } from '../../features/settings/components/SettingsDialo
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { StatusBar } from '../../components/StatusBar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
 import { ToastProvider } from '../../components/Toast';
 
 afterEach(cleanup);

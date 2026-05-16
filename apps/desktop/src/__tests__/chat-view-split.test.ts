@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderRunId, TurnEvent, IsoDateTime } from '@kay-am/types';
-import { detectParallelRunIds, filterEventsByRunId } from '../components/chat/transcript-items';
+import { detectParallelRunIds, filterEventsByRunId } from '../features/chat/utils/transcript-items';
 
 const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;
 

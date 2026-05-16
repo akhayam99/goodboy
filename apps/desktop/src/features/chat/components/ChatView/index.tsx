@@ -2,19 +2,23 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
-import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../store';
-import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
-import { TranscriptCard } from './TranscriptCards';
-import { AuthRequiredCallout } from './AuthRequiredCallout';
-import { ChatHeader } from './ChatHeader';
-import { ChatInput } from './ChatInput';
+import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
+import {
+  detectParallelRunIds,
+  filterEventsByRunId,
+  reduceTranscript,
+} from '../../utils/transcript-items';
+import { TranscriptCard } from '../TranscriptCards';
+import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { ChatHeader } from '../ChatHeader';
+import { ChatInput } from '../ChatInput';
 import {
   MergeDialog,
   type MergeConflict,
   type MergeResolution,
-} from '../../features/permissions/components/MergeDialog';
-import { DiffViewerDialog } from '../../features/permissions/components/DiffViewerDialog';
-import { worktreeDiff } from '../../features/worktree/worktree';
+} from '../../../../features/permissions/components/MergeDialog';
+import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
+import { worktreeDiff } from '../../../../features/worktree/worktree';
 
 interface ChatViewProps {
   session: Session;

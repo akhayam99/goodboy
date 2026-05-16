@@ -1,7 +1,7 @@
 import { Gauge } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { ProviderId } from '@kay-am/types';
-import { useAppStore } from '../../store';
+import { useAppStore } from '../../../../store';
 
 function nextMonthlyResetLabel(now = new Date()): string {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);

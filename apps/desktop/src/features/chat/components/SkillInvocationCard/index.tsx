@@ -1,4 +1,4 @@
-import type { TranscriptItem } from './transcript-items';
+import type { TranscriptItem } from '../../utils/transcript-items';
 
 interface SkillInvocationCardProps {
   readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;

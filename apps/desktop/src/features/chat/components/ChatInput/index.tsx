@@ -19,25 +19,25 @@ import type {
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
-import { EMPTY_ARRAY, useAppStore } from '../../store';
-import { formatError } from '../../shared/lib/errors';
-import { RoutingIndicator } from './RoutingIndicator';
-import { useToast, type ToastKind } from '../Toast';
-import { SlashCommandPopover } from './SlashCommandPopover';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { formatError } from '../../../../shared/lib/errors';
+import { RoutingIndicator } from '../RoutingIndicator';
+import { useToast, type ToastKind } from '../../../../components/Toast';
+import { SlashCommandPopover } from '../SlashCommandPopover';
 import {
   type VerbosityLevel,
   readVerbosity,
   writeVerbosity,
   readAgentVerbosity,
   writeAgentVerbosity,
-} from '../../features/settings/verbosity';
-import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from './chat-constants';
-import { ProviderUsagePill } from './ProviderUsagePill';
-import { ModelPicker } from './ModelPicker';
-import { PermissionModePicker } from '../../features/permissions/components/PermissionModePicker';
-import { RightSizeCard } from './RightSizeCard';
-import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../shared/lib/features';
+} from '../../../../features/settings/verbosity';
+import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from '../../utils/chat-constants';
+import { ProviderUsagePill } from '../ProviderUsagePill';
+import { ModelPicker } from '../ModelPicker';
+import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
+import { RightSizeCard } from '../RightSizeCard';
+import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
