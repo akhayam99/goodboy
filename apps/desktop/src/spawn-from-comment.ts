@@ -14,9 +14,9 @@ export function buildCommentAgentTitle(c: PrComment): string {
   const who = c.author.replace(/\[bot\]$/, '');
   if (c.source === 'review' && c.path) {
     const loc = c.line ? `${shortPath(c.path)}:${c.line}` : shortPath(c.path);
-    return truncate(`fix: ${who} on ${loc}`, TITLE_MAX);
+    return truncate(`resolve: ${who} on ${loc}`, TITLE_MAX);
   }
-  return truncate(`fix: ${who} comment`, TITLE_MAX);
+  return truncate(`resolve: ${who} comment`, TITLE_MAX);
 }
 
 export function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): string {
@@ -90,7 +90,7 @@ export function buildReviewChangesAgentArgs(
     'Your task: address every comment with the smallest reasonable change. Read the files, apply the changes, run lint/tests, commit and push. Do not over-scope.',
   );
   return {
-    name: truncate(`fix: address review changes on #${pr.number}`, TITLE_MAX),
+    name: truncate(`resolve: address review changes on #${pr.number}`, TITLE_MAX),
     model: defaults.model,
     effort: defaults.effort,
     initialPrompt: lines.join('\n'),

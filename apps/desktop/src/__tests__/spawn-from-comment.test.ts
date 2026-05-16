@@ -9,7 +9,7 @@ import {
 
 const PR: PullRequestState = {
   number: 9108,
-  title: 'fix: foo',
+  title: 'resolve: foo',
   url: 'https://github.com/o/r/pull/9108',
   state: 'open',
   mergeable: true,
@@ -40,12 +40,12 @@ function makeComment(over: Partial<PrComment> = {}): PrComment {
 
 describe('spawn-from-comment', () => {
   it('titles review comments with short file + line', () => {
-    expect(buildCommentAgentTitle(makeComment())).toBe('fix: alice on foo.ts:42');
+    expect(buildCommentAgentTitle(makeComment())).toBe('resolve: alice on foo.ts:42');
   });
 
   it('strips [bot] suffix from authors in titles', () => {
     expect(buildCommentAgentTitle(makeComment({ author: 'cursor[bot]' }))).toBe(
-      'fix: cursor on foo.ts:42',
+      'resolve: cursor on foo.ts:42',
     );
   });
 
@@ -54,7 +54,7 @@ describe('spawn-from-comment', () => {
       buildCommentAgentTitle(
         makeComment({ source: 'issue', path: undefined, line: undefined, id: 'issue-1' }),
       ),
-    ).toBe('fix: alice comment');
+    ).toBe('resolve: alice comment');
   });
 
   it('infers implementer for review with path', () => {
@@ -76,7 +76,7 @@ describe('spawn-from-comment', () => {
 
   it('builds args with sonnet implementer for review comments', () => {
     const args = buildCommentAgentArgs(makeComment(), PR);
-    expect(args.name).toBe('fix: alice on foo.ts:42');
+    expect(args.name).toBe('resolve: alice on foo.ts:42');
     expect(args.effort).toBe('medium');
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');

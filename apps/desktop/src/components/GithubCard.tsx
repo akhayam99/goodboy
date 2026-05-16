@@ -299,17 +299,27 @@ function CommentsPane({
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
+
+  const allThreads = useMemo(() => groupThreads(comments), [comments]);
+
+  const resolvedCount = useMemo(
+    () => allThreads.filter((t) => t.head.source === 'review' && t.head.resolved === true).length,
+    [allThreads],
+  );
 
   const threads = useMemo(() => {
-    const all = groupThreads(comments);
-    return [...all].sort((a, b) => {
+    const filtered = showResolved
+      ? allThreads
+      : allThreads.filter((t) => t.head.source !== 'review' || t.head.resolved !== true);
+    return [...filtered].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
       if (p !== 0) return p;
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
-  }, [comments]);
+  }, [allThreads, showResolved]);
 
-  if (threads.length === 0) {
+  if (allThreads.length === 0) {
     return (
       <EmptyRow
         text="No comments yet"
@@ -317,6 +327,23 @@ function CommentsPane({
         actionLabel="view on github"
         onOpenUrl={onOpenUrl}
       />
+    );
+  }
+
+  if (threads.length === 0) {
+    return (
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span>All comments resolved 🎉</span>
+        {resolvedCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowResolved(true)}
+            className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
+          >
+            show {resolvedCount}
+          </button>
+        ) : null}
+      </div>
     );
   }
 
@@ -353,6 +380,17 @@ function CommentsPane({
             className="text-[10px] text-muted-foreground hover:text-foreground"
           >
             +{hidden} more
+          </button>
+        </li>
+      ) : null}
+      {resolvedCount > 0 ? (
+        <li>
+          <button
+            type="button"
+            onClick={() => setShowResolved((v) => !v)}
+            className="text-[10px] text-muted-foreground/70 hover:text-foreground"
+          >
+            {showResolved ? `hide ${resolvedCount} resolved` : `show ${resolvedCount} resolved`}
           </button>
         </li>
       ) : null}
@@ -408,16 +446,17 @@ function CommentThreadRow({
               · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
             </span>
           ) : null}
-          <div className="ml-auto flex items-center gap-0.5">
+          <div className="ml-auto flex items-center gap-1">
             {onSpawn && status !== 'resolved' ? (
               <button
                 type="button"
                 onClick={onSpawn}
-                title="spawn agent to address this comment"
-                aria-label="spawn agent to address this comment"
-                className={cn(TAB_ICON_BTN, 'hover:text-accent')}
+                title="spawn agent to resolve this comment"
+                aria-label="spawn agent to resolve this comment"
+                className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-[10px] font-medium text-accent transition-colors hover:bg-accent/15"
               >
-                <Sparkles size={10} aria-hidden />
+                <Sparkles size={9} aria-hidden />
+                resolve
               </button>
             ) : null}
             <button
@@ -506,10 +545,10 @@ function ReviewPane({
           type="button"
           onClick={onSpawnFromReviewChanges}
           className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/10"
-          title="spawn agent to address all requested changes"
+          title="spawn agent to resolve all requested changes"
         >
           <Sparkles size={10} aria-hidden />
-          fix all requested changes
+          resolve all requested changes
         </button>
       ) : null}
       {perReviewer.length > 0 ? (
