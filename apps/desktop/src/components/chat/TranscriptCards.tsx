@@ -108,7 +108,7 @@ export const TranscriptCard = memo(
   TranscriptCardImpl,
   (prev, next) =>
     itemEqual(prev.item, next.item) &&
-    prev.taskId === next.taskId &&
+    prev.sessionId === next.sessionId &&
     prev.agentId === next.agentId &&
     prev.workingDir === next.workingDir &&
     prev.onRefreshAuth === next.onRefreshAuth &&

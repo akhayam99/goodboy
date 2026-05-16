@@ -164,7 +164,7 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
   return {
     id: 'rule-1' as PermissionRuleId,
-    scope: 'task',
+    scope: 'session',
     sessionId: SESSION_ID,
     pattern: { tool: 'Edit' },
     decision: 'allow',
@@ -246,7 +246,7 @@ describe('sendTurn — permission proxy integration', () => {
 
   it('forwards disallowedTools when a deny rule is configured (claude)', async () => {
     permissionRuleListSpy.mockImplementation(async (args: { scope: string }) => {
-      if (args.scope === 'task') {
+      if (args.scope === 'session') {
         return [
           buildRule({
             decision: 'deny',
@@ -270,7 +270,7 @@ describe('sendTurn — permission proxy integration', () => {
 
   it('forwards allowedTools when an allow rule is configured (claude)', async () => {
     permissionRuleListSpy.mockImplementation(async (args: { scope: string }) => {
-      if (args.scope === 'task') {
+      if (args.scope === 'session') {
         return [buildRule({ decision: 'allow', pattern: { tool: 'Edit' } })];
       }
       return [];

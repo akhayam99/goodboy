@@ -7,7 +7,7 @@ import {
   autoPopulateContext,
   buildStepPrompt,
   currentStep,
-  findReusableSession,
+  findReusableAgent,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
@@ -517,7 +517,7 @@ export interface AppActions {
     toolUseId: string;
     toolName: string;
     runId: ProviderRunId;
-    scope: 'global' | 'workspace' | 'task' | 'once' | 'deny';
+    scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
   }): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
@@ -2127,7 +2127,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // it at the new providerRunId, instead of inserting a fresh row per
       // user message. New rows only appear when the user spawns a new agent.
       const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
-      const reusable = findReusableSession(runsForSession, phaseDefinition.id);
+      const reusable = findReusableAgent(runsForSession, phaseDefinition.id);
       let resolved: Agent;
       if (reusable) {
         resolved = await invokePhaseRunUpdateStatus(reusable.id, {
@@ -2192,7 +2192,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const [globalRules, workspaceRules, sessionRules] = await Promise.all([
           invokePermissionRuleList({ scope: 'global' }),
           invokePermissionRuleList({ scope: 'workspace', workspaceId: session.workspaceId }),
-          invokePermissionRuleList({ scope: 'task', sessionId }),
+          invokePermissionRuleList({ scope: 'session', sessionId }),
         ]);
         effectiveRules = [...globalRules, ...workspaceRules, ...sessionRules];
         const flags = buildClaudeFlags({
@@ -3113,7 +3113,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const workspace = state.workspaces.find((w) => w.id === id);
     if (!workspace) throw new Error(`workspace not found: ${id}`);
 
-    const sessions = await listTasksForWorkspace(tauriDatabase, id);
+    const sessions = await listSessionsForWorkspace(tauriDatabase, id);
     const aliveSessions = sessions.filter(
       (s) => s.state.kind === 'running' || s.state.kind === 'idle',
     );
@@ -3929,11 +3929,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }));
     } else {
       const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
-      const ruleScope = scope === 'deny' ? 'task' : scope;
+      const ruleScope = scope === 'deny' ? 'session' : scope;
       await invokePermissionRuleUpsert({
         scope: ruleScope,
         ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
-        ...(ruleScope === 'task' ? { sessionId } : {}),
+        ...(ruleScope === 'session' ? { sessionId } : {}),
         patternTool: toolName,
         decision: ruleDecision,
         priority: 100,

@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
-import type { ProviderRunId, Session, SessionId } from '@kay-am/types';
+import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../store';
 import { detectParallelRunIds, filterEventsByRunId, reduceTranscript } from './transcript-items';
@@ -172,7 +172,7 @@ function ThinkingIndicator() {
 export function ChatView({ session, isActive = true }: ChatViewProps) {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
-  ) as SessionId | null;
+  ) as AgentId | null;
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
   // Defer the heavy transcript list so React 18 can paint header / input /

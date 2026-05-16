@@ -9,6 +9,7 @@ import {
 import { Send, Square, X } from 'lucide-react';
 import { Textarea } from '@kay-am/ui';
 import type {
+  AgentId,
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
@@ -110,7 +111,7 @@ function writeProvider(sessionId: SessionId, provider: ProviderId | null): void 
   }
 }
 
-function readAgentEffort(agentId: SessionId): EffortLevel | null {
+function readAgentEffort(agentId: AgentId): EffortLevel | null {
   try {
     const raw = localStorage.getItem(`${AGENT_EFFORT_PREFIX}${agentId}`);
     if (raw && EFFORT_LEVELS.includes(raw as EffortLevel)) return raw as EffortLevel;
@@ -120,7 +121,7 @@ function readAgentEffort(agentId: SessionId): EffortLevel | null {
   return null;
 }
 
-function writeAgentEffort(agentId: SessionId, level: EffortLevel): void {
+function writeAgentEffort(agentId: AgentId, level: EffortLevel): void {
   try {
     localStorage.setItem(`${AGENT_EFFORT_PREFIX}${agentId}`, level);
   } catch {
@@ -128,7 +129,7 @@ function writeAgentEffort(agentId: SessionId, level: EffortLevel): void {
   }
 }
 
-function readAgentModel(agentId: SessionId): string | null {
+function readAgentModel(agentId: AgentId): string | null {
   try {
     return localStorage.getItem(`${AGENT_MODEL_PREFIX}${agentId}`);
   } catch {
@@ -136,7 +137,7 @@ function readAgentModel(agentId: SessionId): string | null {
   }
 }
 
-function writeAgentModel(agentId: SessionId, model: string | null): void {
+function writeAgentModel(agentId: AgentId, model: string | null): void {
   try {
     if (model === null) {
       localStorage.removeItem(`${AGENT_MODEL_PREFIX}${agentId}`);
@@ -148,7 +149,7 @@ function writeAgentModel(agentId: SessionId, model: string | null): void {
   }
 }
 
-function readAgentProvider(agentId: SessionId): ProviderId | null {
+function readAgentProvider(agentId: AgentId): ProviderId | null {
   try {
     const raw = localStorage.getItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
     const valid: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
@@ -159,7 +160,7 @@ function readAgentProvider(agentId: SessionId): ProviderId | null {
   return null;
 }
 
-function writeAgentProvider(agentId: SessionId, provider: ProviderId | null): void {
+function writeAgentProvider(agentId: AgentId, provider: ProviderId | null): void {
   try {
     if (provider === null) {
       localStorage.removeItem(`${AGENT_PROVIDER_PREFIX}${agentId}`);
@@ -177,7 +178,7 @@ interface ChatInputProps {
 }
 
 function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
-  return kind === 'provider-exceeded' || kind === 'task-exceeded' ? 'error' : 'warning';
+  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
 }
 
 function toastMessageForAlert(alert: BudgetAlert): string {
@@ -188,7 +189,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   if (alert.kind === 'provider-exceeded') {
     return `provider ${alert.provider ?? '?'} budget exceeded`;
   }
-  if (alert.kind === 'task-threshold') {
+  if (alert.kind === 'session-threshold') {
     return `session budget at ${pct}%`;
   }
   return 'session budget exceeded';

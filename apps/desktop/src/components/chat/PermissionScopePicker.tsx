@@ -4,12 +4,12 @@ import type { AgentId, ProviderRunId, SessionId } from '@kay-am/types';
 import { useAppStore } from '../../store';
 import { useToast } from '../Toast';
 
-export type PermissionScope = 'global' | 'workspace' | 'task' | 'once' | 'deny';
+export type PermissionScope = 'global' | 'workspace' | 'session' | 'once' | 'deny';
 
 const SCOPE_LABELS: Record<PermissionScope, string> = {
   global: 'approve global',
   workspace: 'approve workspace',
-  task: 'approve session',
+  session: 'approve session',
   once: 'approve once',
   deny: 'deny',
 };
@@ -17,7 +17,7 @@ const SCOPE_LABELS: Record<PermissionScope, string> = {
 const SCOPE_TOAST: Record<PermissionScope, string> = {
   global: 'rule added: allow globally',
   workspace: 'rule added: allow for this workspace',
-  task: 'rule added: allow for this session',
+  session: 'rule added: allow for this session',
   once: 'allowed once (volatile, not persisted)',
   deny: 'rule added: deny for this session',
 };
@@ -57,18 +57,18 @@ export function PermissionScopePicker({
     }
   };
 
-  const scopes: PermissionScope[] = ['global', 'workspace', 'task', 'once', 'deny'];
+  const scopes: PermissionScope[] = ['global', 'workspace', 'session', 'once', 'deny'];
 
   const SCOPE_TITLES: Record<PermissionScope, string> = {
     global: 'allow for all sessions',
     workspace: 'allow for this workspace',
-    task: 'allow for this task (recommended)',
+    session: 'allow for this task (recommended)',
     once: 'allow this time only (not saved)',
     deny: 'deny this request',
   };
 
   const scopeTone = (scope: PermissionScope): string => {
-    if (scope === 'task')
+    if (scope === 'session')
       return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
     if (scope === 'deny') return 'border-danger/40 text-danger hover:bg-danger/10';
     return 'border-success/40 text-success hover:bg-success/10';

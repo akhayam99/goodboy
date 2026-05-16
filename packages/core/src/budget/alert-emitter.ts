@@ -30,8 +30,8 @@ function providerAlertKind(
 }
 
 function sessionAlertKind(result: BudgetCheckResult, thresholdPct: number): BudgetAlertKind | null {
-  if (result.pct >= 100) return 'task-exceeded';
-  if (result.pct >= thresholdPct) return 'task-threshold';
+  if (result.pct >= 100) return 'session-exceeded';
+  if (result.pct >= thresholdPct) return 'session-threshold';
   return null;
 }
 

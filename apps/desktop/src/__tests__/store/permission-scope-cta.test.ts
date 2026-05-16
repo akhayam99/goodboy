@@ -147,7 +147,7 @@ describe('resolvePermissionRequest', () => {
     permissionRuleUpsertSpy.mockReset();
     permissionRuleUpsertSpy.mockResolvedValue({
       id: 'rule-new',
-      scope: 'task',
+      scope: 'session',
       pattern: { tool: TOOL_NAME },
       decision: 'allow',
       priority: 100,
@@ -164,7 +164,7 @@ describe('resolvePermissionRequest', () => {
 
   const call = (
     store: ReturnType<typeof useAppStore.getState>,
-    scope: 'global' | 'workspace' | 'task' | 'once' | 'deny',
+    scope: 'global' | 'workspace' | 'session' | 'once' | 'deny',
   ) =>
     store.resolvePermissionRequest({
       sessionId: SESSION_ID,
@@ -203,13 +203,13 @@ describe('resolvePermissionRequest', () => {
   });
 
   it('approve session — upserts rule with scope task + sessionId', async () => {
-    await call(useAppStore.getState(), 'task');
+    await call(useAppStore.getState(), 'session');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
       string,
       unknown
     >;
-    expect(arg.scope).toBe('task');
+    expect(arg.scope).toBe('session');
     expect(arg.decision).toBe('allow');
     expect(arg.sessionId).toBe(SESSION_ID);
     expect(arg.workspaceId).toBeUndefined();
@@ -229,18 +229,18 @@ describe('resolvePermissionRequest', () => {
       string,
       unknown
     >;
-    expect(arg.scope).toBe('task');
+    expect(arg.scope).toBe('session');
     expect(arg.decision).toBe('deny');
     expect(arg.sessionId).toBe(SESSION_ID);
   });
 
   it('each scope appends a permission_decision TurnEvent', async () => {
-    for (const scope of ['global', 'workspace', 'task', 'once', 'deny'] as const) {
+    for (const scope of ['global', 'workspace', 'session', 'once', 'deny'] as const) {
       vi.resetModules();
       permissionRuleUpsertSpy.mockReset();
       permissionRuleUpsertSpy.mockResolvedValue({
         id: 'rule-new',
-        scope: 'task',
+        scope: 'session',
         pattern: { tool: TOOL_NAME },
         decision: 'allow',
         priority: 100,
