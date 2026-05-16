@@ -49,6 +49,8 @@ interface RawPhaseRunRow {
   readonly startedAt: string | null;
   readonly completedAt: string | null;
   readonly providerSessionId: string | null;
+  readonly lastFinishedAt: string | null;
+  readonly lastViewedAt: string | null;
 }
 
 function rowToDefinition(row: RawPhaseDefinitionRow): Step {
@@ -88,6 +90,8 @@ function rowToPhaseRun(row: RawPhaseRunRow): Session {
     ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
     ...(row.completedAt != null && { completedAt: row.completedAt as IsoDateTime }),
     ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
+    ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
+    ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
   };
 }
 
@@ -208,6 +212,15 @@ export async function invokeSessionSetProviderSessionId(
     id,
     providerSessionId,
   });
+}
+
+export async function invokeSessionMarkViewed(id: SessionId, at: IsoDateTime): Promise<void> {
+  await invoke<void>('session_mark_viewed', { id, at });
+}
+
+export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<WorkspaceId>> {
+  const ids = await invoke<string[]>('workspaces_with_unread');
+  return ids as ReadonlyArray<WorkspaceId>;
 }
 
 // Parallel phase group commands (#207).

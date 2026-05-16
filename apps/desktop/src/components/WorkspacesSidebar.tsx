@@ -53,6 +53,7 @@ import type {
 } from '@kay-am/types';
 import {
   EMPTY_ARRAY,
+  agentHasUnread,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
@@ -60,6 +61,8 @@ import {
   useSessionLoading,
   useSessionSlots,
   useSessions,
+  useTaskHasUnread,
+  useWorkspaceHasUnread,
   useWorkspaces,
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
@@ -344,6 +347,8 @@ interface WorkspaceRowProps {
 
 function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
   const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
+  const workspaceHasUnread = useWorkspaceHasUnread(workspace.id);
+  const showUnreadDot = workspaceHasUnread && !isActive;
 
   return (
     <li className="group">
@@ -359,12 +364,20 @@ function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
           className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
         >
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-              isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-            )}
             aria-hidden
-          />
+            title={showUnreadDot ? 'unread agent response in this workspace' : undefined}
+            className="relative inline-flex h-1.5 w-1.5 shrink-0"
+          >
+            {showUnreadDot && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+            )}
+            <span
+              className={cn(
+                'relative inline-block h-1.5 w-1.5 rounded-full',
+                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            />
+          </span>
           <FolderOpen
             size={13}
             aria-hidden
@@ -729,8 +742,7 @@ function PrStatusIcon({ taskId }: PrStatusIconProps) {
   const github = useAppStore((s) => s.sessionGithub[taskId]);
   const branch = useAppStore((s) => s.sessionBranches[taskId]);
 
-  const isLoading =
-    !github || github.loading || (github.fetchedAt === null && !github.error);
+  const isLoading = !github || github.loading || (github.fetchedAt === null && !github.error);
 
   if (isLoading) {
     return (
@@ -892,6 +904,9 @@ function SessionRow({
     setConfirmDelete(false);
   };
 
+  const taskHasUnread = useTaskHasUnread(session.id as TaskId);
+  const showUnreadDot = taskHasUnread && !isActive;
+
   return (
     <li>
       <div
@@ -909,12 +924,20 @@ function SessionRow({
       >
         <div className="flex min-w-0 w-full items-center gap-2 text-sm">
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-              isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-            )}
             aria-hidden
-          />
+            title={showUnreadDot ? 'unread agent response' : undefined}
+            className="relative inline-flex h-1.5 w-1.5 shrink-0"
+          >
+            {showUnreadDot && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+            )}
+            <span
+              className={cn(
+                'relative inline-block h-1.5 w-1.5 rounded-full',
+                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            />
+          </span>
           {renaming ? (
             <div
               className="flex min-w-0 flex-1 flex-col gap-0.5"
@@ -1335,6 +1358,7 @@ interface AgentsSectionProps {
 }
 
 function AgentsSection({ task }: AgentsSectionProps) {
+  const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
   );
@@ -1523,6 +1547,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                 aggregate={aggregatesByAgentId.get(run.id) ?? null}
                 turns={turnsByAgentId.get(run.id) ?? 0}
                 isSelected={run.id === selectedAgentId}
+                isTaskActive={isTaskActive}
                 isEditing={editingId === run.id}
                 onClick={() => onPickAgent(run.id)}
                 onPickKind={(next) => setAgentKind(run.id, next)}
@@ -1752,6 +1777,7 @@ interface AgentRowProps {
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
   readonly isSelected: boolean;
+  readonly isTaskActive: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
   readonly onPickKind: (next: AgentKind) => void;
@@ -1768,6 +1794,7 @@ function AgentRow({
   aggregate,
   turns,
   isSelected,
+  isTaskActive,
   isEditing,
   onClick,
   onPickKind,
@@ -1815,6 +1842,7 @@ function AgentRow({
         'group rounded-md transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-muted' : 'hover:bg-muted/60',
+        agentHasUnread(run, isSelected && isTaskActive) && 'ring-1 ring-inset ring-warning/70',
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>

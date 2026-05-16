@@ -79,6 +79,10 @@ pub struct SessionRow {
     pub completed_at: Option<String>,
     #[serde(rename = "providerSessionId")]
     pub provider_session_id: Option<String>,
+    #[serde(rename = "lastFinishedAt")]
+    pub last_finished_at: Option<String>,
+    #[serde(rename = "lastViewedAt")]
+    pub last_viewed_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -427,7 +431,7 @@ pub fn session_list_for_task(
     let mut stmt = conn.prepare(
         "SELECT id, task_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id
+                provider_session_id, last_finished_at, last_viewed_at
          FROM sessions
          WHERE task_id = ?1
          ORDER BY ordinal ASC",
@@ -445,6 +449,8 @@ pub fn session_list_for_task(
             started_at: row.get(8)?,
             completed_at: row.get(9)?,
             provider_session_id: row.get(10)?,
+            last_finished_at: row.get(11)?,
+            last_viewed_at: row.get(12)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -489,6 +495,8 @@ pub fn session_insert(
         started_at: input.started_at,
         completed_at: input.completed_at,
         provider_session_id: None,
+        last_finished_at: None,
+        last_viewed_at: None,
     })
 }
 
@@ -499,13 +507,20 @@ pub fn session_update_status(
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
 
+    // When status transitions to a terminal state, also stamp `last_finished_at`
+    // so the sidebar can show an unread indicator until the user views the
+    // agent (which stamps `last_viewed_at` via `session_mark_viewed`).
+    let is_terminal = matches!(input.status.as_str(), "completed" | "failed" | "skipped");
     conn.execute(
         "UPDATE sessions SET
            status         = ?2,
            provider_run_id = COALESCE(?3, provider_run_id),
            output_summary  = COALESCE(?4, output_summary),
            started_at      = COALESCE(?5, started_at),
-           completed_at    = COALESCE(?6, completed_at)
+           completed_at    = COALESCE(?6, completed_at),
+           last_finished_at = CASE WHEN ?7 = 1
+             THEN COALESCE(?6, last_finished_at, CURRENT_TIMESTAMP)
+             ELSE last_finished_at END
          WHERE id = ?1",
         rusqlite::params![
             input.id,
@@ -514,6 +529,7 @@ pub fn session_update_status(
             input.output_summary,
             input.started_at,
             input.completed_at,
+            is_terminal as i32,
         ],
     )?;
 
@@ -521,7 +537,7 @@ pub fn session_update_status(
     let mut stmt = conn.prepare(
         "SELECT id, task_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id
+                provider_session_id, last_finished_at, last_viewed_at
          FROM sessions
          WHERE id = ?1
          LIMIT 1",
@@ -539,6 +555,8 @@ pub fn session_update_status(
             started_at: row.get(8)?,
             completed_at: row.get(9)?,
             provider_session_id: row.get(10)?,
+            last_finished_at: row.get(11)?,
+            last_viewed_at: row.get(12)?,
         })
     })?;
     match rows.next() {
@@ -565,6 +583,43 @@ pub fn session_set_provider_session_id(
         return Err(PhaseError::RunNotFound(id));
     }
     Ok(())
+}
+
+// Stamps `last_viewed_at` when the user selects/views an agent in the sidebar.
+// Compared against `last_finished_at` to derive the unread indicator.
+#[tauri::command]
+pub fn session_mark_viewed(
+    state: State<'_, Db>,
+    id: String,
+    at: String,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE sessions SET last_viewed_at = ?2 WHERE id = ?1",
+        rusqlite::params![id, at],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::RunNotFound(id));
+    }
+    Ok(())
+}
+
+// Returns the set of workspace ids that contain at least one agent whose
+// terminal turn hasn't been viewed yet. The sidebar uses this to pulse the
+// workspace dot even for workspaces the user isn't currently on (their tasks
+// are not loaded in memory there).
+#[tauri::command]
+pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT t.workspace_id
+         FROM sessions s
+         JOIN tasks t ON s.task_id = t.id
+         WHERE s.last_finished_at IS NOT NULL
+           AND (s.last_viewed_at IS NULL OR s.last_finished_at > s.last_viewed_at)",
+    )?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
 // ---------------------------------------------------------------------------

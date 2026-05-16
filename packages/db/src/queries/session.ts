@@ -20,6 +20,8 @@ interface SessionRow {
   output_summary: string | null;
   started_at: string | null;
   completed_at: string | null;
+  last_finished_at: string | null;
+  last_viewed_at: string | null;
 }
 
 function toSession(row: SessionRow): Session {
@@ -34,6 +36,8 @@ function toSession(row: SessionRow): Session {
     ...(row.output_summary && { outputSummary: row.output_summary }),
     ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
     ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
+    ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
+    ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
   };
 }
 

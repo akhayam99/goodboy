@@ -210,6 +210,8 @@ import {
   invokePhaseRunInsert,
   invokePhaseRunUpdateStatus,
   invokeSessionSetProviderSessionId,
+  invokeSessionMarkViewed,
+  invokeWorkspacesWithUnread,
   type PhaseTemplateUpsertArgs,
 } from '../phases';
 import {
@@ -309,6 +311,10 @@ export interface AppState {
   readonly sessionOverrides: Readonly<Record<TaskId, OverrideSettings>>;
   readonly sidebarWorkspaceSearch: string;
   readonly sidebarSessionSearch: string;
+  // Workspaces with at least one agent whose terminal turn hasn't been viewed.
+  // Refreshed from a DB aggregate so the workspace dot can pulse even for
+  // workspaces whose tasks aren't currently loaded in memory.
+  readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
   readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
@@ -410,10 +416,7 @@ export interface AppActions {
     workflowId?: WorkflowId;
     autoRun?: boolean;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
-  changeSessionBranch(
-    taskId: TaskId,
-    args: { branch: string; createNew: boolean },
-  ): Promise<void>;
+  changeSessionBranch(taskId: TaskId, args: { branch: string; createNew: boolean }): Promise<void>;
   setSessionAutoRun(taskId: TaskId, autoRun: boolean): Promise<void>;
   maybeAutoAdvanceWorkflow(taskId: TaskId): Promise<void>;
   loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
@@ -486,6 +489,7 @@ export interface AppActions {
   deleteTask(taskId: TaskId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
+  refreshUnreadWorkspaces(): Promise<void>;
   setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   exportConfig(): Promise<string | null>;
@@ -582,6 +586,7 @@ const initialState: AppState = {
   sessionOverrides: {},
   sidebarWorkspaceSearch: '',
   sidebarSessionSearch: '',
+  unreadWorkspaceIds: new Set<WorkspaceId>(),
   sidebarStateFilter: [],
   sidebarProviderFilter: [],
   githubStatus: null,
@@ -1240,11 +1245,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
-      const worktreeRows = await Promise.all(
-        sessions.map((s) => listWorktreesForTask(tauriDatabase, s.id)),
-      );
+      const [worktreeRows, phaseRunsPerTask] = await Promise.all([
+        Promise.all(sessions.map((s) => listWorktreesForTask(tauriDatabase, s.id))),
+        // Eager-load agents (phase runs) for every task in this workspace. The
+        // unread indicators on workspace- and session-rows derive from each
+        // agent's `lastFinishedAt` vs `lastViewedAt` columns, and those are
+        // only inspected once we have the agent rows in memory. Without this
+        // prefetch, the sidebar would only know about agents for tasks the
+        // user has explicitly opened — yellow dots vanish on workspace switch.
+        Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+      ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
+      const sessionPhaseRuns: Record<string, ReadonlyArray<Session>> = {};
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
@@ -1253,11 +1266,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const primaryRow = rows[0];
           if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
+        sessionPhaseRuns[s.id] = phaseRunsPerTask[i]!;
       }
       set((state) => ({
         sessions,
         sessionWorktrees,
         sessionBranches,
+        sessionPhaseRuns,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
@@ -1268,6 +1283,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    void get().refreshUnreadWorkspaces();
   },
 
   setCurrentSession: async (id) => {
@@ -1643,9 +1659,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const primary = worktrees[0];
     if (!primary) throw new Error(`no worktree found for session ${taskId}`);
     const task = get().sessions.find((s) => s.id === taskId);
-    const workspace = task
-      ? get().workspaces.find((w) => w.id === task.workspaceId)
-      : null;
+    const workspace = task ? get().workspaces.find((w) => w.id === task.workspaceId) : null;
     if (!workspace) throw new Error('workspace not found for session');
     await changeWorktreeBranch({
       repoPath: workspace.rootPath,
@@ -2499,6 +2513,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ),
           }),
         }));
+        void get().refreshUnreadWorkspaces();
         void get().maybeAutoAdvanceWorkflow(taskId);
       }
 
@@ -2559,6 +2574,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
         }));
+        void get().refreshUnreadWorkspaces();
       }
     }
 
@@ -3109,11 +3125,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectAgent: async (taskId, agentId) => {
+    // Stamp `lastViewedAt` on both the previously-selected agent (capturing
+    // "user was looking at it until now") and the newly-selected agent. The
+    // unread selector additionally treats the currently-selected agent as
+    // viewed, so no visible flicker while you're actually on the row.
+    const stampedAt = new Date().toISOString() as IsoDateTime;
+    const prevAgentId = get().selectedAgentId[taskId] ?? null;
+    const stampAgents = new Set<SessionId>([agentId]);
+    if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
+
+    for (const id of stampAgents) {
+      void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
+    }
+
+    const stampRuns = (runs: ReadonlyArray<Session>): ReadonlyArray<Session> =>
+      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
+
     const cached = get().transcripts[agentId];
     if (cached) {
       set((state) => ({
         selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+        },
       }));
+      void get().refreshUnreadWorkspaces();
       return;
     }
     const [messages, events] = await Promise.all([
@@ -3124,7 +3161,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedAgentId: { ...state.selectedAgentId, [taskId]: agentId },
       transcripts: { ...state.transcripts, [agentId]: events },
       messages: { ...state.messages, [taskId]: messages },
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+      },
     }));
+    void get().refreshUnreadWorkspaces();
   },
 
   spawnAgent: async (taskId, args) => {
@@ -3415,6 +3457,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setSidebarWorkspaceSearch: (query) => set({ sidebarWorkspaceSearch: query }),
   setSidebarSessionSearch: (query) => set({ sidebarSessionSearch: query }),
+  refreshUnreadWorkspaces: async () => {
+    try {
+      const ids = await invokeWorkspacesWithUnread();
+      set({ unreadWorkspaceIds: new Set(ids) });
+    } catch {
+      // Best-effort: stale unread indicators are recoverable from the next
+      // selectAgent / status update.
+    }
+  },
   setSidebarStateFilter: (states) => set({ sidebarStateFilter: states }),
   setSidebarProviderFilter: (providers) => set({ sidebarProviderFilter: providers }),
 
