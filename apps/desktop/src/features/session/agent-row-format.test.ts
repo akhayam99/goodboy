@@ -12,7 +12,7 @@ import {
   formatCost,
   formatTokens,
   shortModel,
-} from '../features/session/agent-row-format';
+} from './agent-row-format';
 
 describe('formatTokens', () => {
   it('renders raw count under 1k', () => {

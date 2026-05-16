@@ -5,7 +5,7 @@ import {
   buildCommentAgentTitle,
   buildReviewChangesAgentArgs,
   inferAgentKindFromComment,
-} from '../features/chat/spawn-from-comment';
+} from './spawn-from-comment';
 
 const PR: PullRequestState = {
   number: 9108,
