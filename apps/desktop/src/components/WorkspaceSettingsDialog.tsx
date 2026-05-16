@@ -5,9 +5,9 @@ import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from './SkillsPanel';
 import { PhasesPanel } from './PhasesPanel';
 import { BulkSessionDeleteDialog } from './WorkspacesSidebar';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../settings';
-import { WORKSPACE_FEATURES } from '../features';
+import { WORKSPACE_FEATURES } from '../shared/lib/features';
 import { useAppStore, useSessions } from '../store';
 
 interface WorkspaceSettingsDialogProps {

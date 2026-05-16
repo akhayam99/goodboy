@@ -6,7 +6,7 @@ import type { ProviderConnectionState, ProviderInfo } from '../providers';
 import { providerAction } from '../providers';
 import type { ProviderId } from '../providers';
 import { useAppStore } from '../store';
-import { openUrl } from '../editor';
+import { openUrl } from '../shared/lib/editor';
 
 const STATE_LABEL: Record<ProviderConnectionState, string> = {
   connected: 'Connected',

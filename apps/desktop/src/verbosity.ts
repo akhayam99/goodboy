@@ -1,5 +1,5 @@
 import type { AgentId, SessionId } from '@kay-am/types';
-import { STORAGE_PREFIXES } from './storage-keys';
+import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 
 export const VERBOSITY_LEVELS = ['brief', 'normal', 'verbose'] as const;
 export type VerbosityLevel = (typeof VERBOSITY_LEVELS)[number];

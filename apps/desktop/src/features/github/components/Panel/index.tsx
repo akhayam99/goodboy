@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitFork as GithubIcon, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Input, cn } from '@kay-am/ui';
-import { formatError } from '../../../../errors';
+import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';

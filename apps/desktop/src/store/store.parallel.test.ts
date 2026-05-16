@@ -17,7 +17,7 @@ import type {
 
 // Module mocks — hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
-vi.mock('../features', () => ({
+vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
 }));
 
@@ -56,7 +56,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -151,7 +151,7 @@ vi.mock('../worktree', () => ({
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 

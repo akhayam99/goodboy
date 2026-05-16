@@ -20,7 +20,7 @@ import type {
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
-import { formatError } from '../../errors';
+import { formatError } from '../../shared/lib/errors';
 import { RoutingIndicator } from './RoutingIndicator';
 import { useToast, type ToastKind } from '../Toast';
 import { SlashCommandPopover } from './SlashCommandPopover';
@@ -36,8 +36,8 @@ import { ProviderUsagePill } from './ProviderUsagePill';
 import { ModelPicker } from './ModelPicker';
 import { PermissionModePicker } from './PermissionModePicker';
 import { RightSizeCard } from './RightSizeCard';
-import { STORAGE_PREFIXES } from '../../storage-keys';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../features';
+import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../shared/lib/features';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 

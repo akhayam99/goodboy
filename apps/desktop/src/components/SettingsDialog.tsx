@@ -7,8 +7,8 @@ import { GithubPanel } from '../features/github/components/Panel';
 import { ImportConfigDialog } from './ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@kay-am/types';
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../settings';
-import { SESSION_FEATURES } from '../features';
-import { formatError } from '../errors';
+import { SESSION_FEATURES } from '../shared/lib/features';
+import { formatError } from '../shared/lib/errors';
 import { useAppStore } from '../store';
 
 interface SettingsDialogProps {

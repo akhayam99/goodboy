@@ -38,7 +38,7 @@ import { GuideDialog } from './GuideDialog';
 import { ProvidersChip } from './ProvidersChip';
 import { NotificationCenter } from './NotificationCenter';
 import { TelemetryPill } from './TelemetryPill';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import type {
   Agent,
   AgentId,
@@ -91,10 +91,10 @@ import { AgentKindMenu } from './AgentKindMenu';
 import { SessionStatusMenu } from './SessionStatusMenu';
 import { NextActionChips } from './NextActionChips';
 import { spawnFromNextAction, spawnKindForAction } from '../spawn-from-next-action';
-import { openUrl } from '../editor';
-import { formatError } from '../errors';
-import { useThemeStore } from '../theme';
-import { STORAGE_KEYS } from '../storage-keys';
+import { openUrl } from '../shared/lib/editor';
+import { formatError } from '../shared/lib/errors';
+import { useThemeStore } from '../shared/lib/theme';
+import { STORAGE_KEYS } from '../shared/lib/storage-keys';
 import { parseCap } from '../lib/parse-cap';
 
 interface WorkspacesSidebarProps {

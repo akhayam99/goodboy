@@ -25,7 +25,7 @@ import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
 import { shortModel } from '../agent-row-format';
 import { PROVIDER_LABEL_LOWER } from '../providers';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../settings';
-import { SESSION_FEATURES } from '../features';
+import { SESSION_FEATURES } from '../shared/lib/features';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import { PlannerWidget } from './PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../features/github/github';

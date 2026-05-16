@@ -46,7 +46,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -132,7 +132,7 @@ vi.mock('../worktree', () => ({
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
@@ -323,7 +323,7 @@ describe('audit retry queue — drain worker (happy path)', () => {
   });
 
   async function runHydrate() {
-    const { runDbMigrations } = await import('../db');
+    const { runDbMigrations } = await import('../shared/lib/db');
     (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const { getSetting } = await import('@kay-am/db');

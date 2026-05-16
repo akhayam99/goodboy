@@ -44,7 +44,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -133,7 +133,7 @@ vi.mock('../worktree', () => ({
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 

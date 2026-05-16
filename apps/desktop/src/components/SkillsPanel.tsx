@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Textarea } from '@kay-am/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@kay-am/types';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 
 interface SkillsPanelProps {

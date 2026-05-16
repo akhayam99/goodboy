@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Input, Select, Textarea } from '@kay-am/ui';
 import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../store';
 import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../phases';
 

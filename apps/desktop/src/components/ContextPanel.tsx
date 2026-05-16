@@ -47,8 +47,8 @@ import {
   useSlotHistory,
   useSummarizerStatus,
 } from '../store';
-import { openUrl } from '../editor';
-import { formatError } from '../errors';
+import { openUrl } from '../shared/lib/editor';
+import { formatError } from '../shared/lib/errors';
 import { tauriGhRunner } from '../features/github/github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from '../features/github/components/Card';

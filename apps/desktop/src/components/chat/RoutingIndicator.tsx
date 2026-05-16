@@ -6,7 +6,7 @@ import type {
   TurnProviderOverride,
 } from '@kay-am/types';
 import { resolveProviderForTurn } from '../../routing';
-import { SESSION_FEATURES } from '../../features';
+import { SESSION_FEATURES } from '../../shared/lib/features';
 
 interface RoutingIndicatorProps {
   readonly sessionPreference: SessionProviderPreference;

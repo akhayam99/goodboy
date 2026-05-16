@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import {
   BookOpen,
   Bot,

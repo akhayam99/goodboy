@@ -12,7 +12,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import type { VerbosityLevel } from '../verbosity';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { useAppStore } from '../store';
 import { StepOverrideRow, type StepOverrideValues } from './overrides/StepOverrideRow';
 

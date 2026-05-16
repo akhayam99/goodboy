@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
 vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
 }));
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn().mockResolvedValue(undefined),
 }));

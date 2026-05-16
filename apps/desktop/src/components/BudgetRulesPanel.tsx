@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Select } from '@kay-am/ui';
 import type { BudgetRule, ProviderName } from '@kay-am/types';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { useAppStore } from '../store';
 
 const PROVIDER_OPTIONS: ProviderName[] = ['anthropic', 'cursor', 'codex'];

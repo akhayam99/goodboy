@@ -138,7 +138,7 @@ import {
   detectRepoSlug,
 } from '@kay-am/core';
 import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
-import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
+import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
   ghStatus,
   ghSetToken,
@@ -157,8 +157,8 @@ import {
   type ProviderStatus,
   type ProviderStatuses,
 } from '../providers';
-import { detectEditors, type DetectedEditor } from '../editor';
-import { validateGitRepo } from '../repo';
+import { detectEditors, type DetectedEditor } from '../shared/lib/editor';
+import { validateGitRepo } from '../shared/lib/repo';
 import { resolveProviderForTurn } from '../routing';
 import {
   SETTING_EDITOR_BINARY,
@@ -166,7 +166,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../settings';
-import { AGENT_FEATURES } from '../features';
+import { AGENT_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
 import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
 import { readVerbosity, verbosityDirective } from '../verbosity';
@@ -220,7 +220,7 @@ import {
   type ParallelBranchEffects,
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../config-export';
-import { formatError } from '../errors';
+import { formatError } from '../shared/lib/errors';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
 import {
   addPlanConsumption as invokeAddPlanConsumption,

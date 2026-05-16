@@ -34,7 +34,7 @@ vi.mock('../permissions', () => ({
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -128,7 +128,7 @@ vi.mock('../worktree', () => ({
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({ validateGitRepo: vi.fn() }));
+vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-refactor' as WorkflowId;

@@ -72,7 +72,7 @@ vi.mock('../../permissions', () => ({
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
 }));

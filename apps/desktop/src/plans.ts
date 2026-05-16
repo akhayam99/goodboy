@@ -17,7 +17,7 @@ import {
   updatePlanStatus as dbUpdatePlanStatus,
   upsertPlan as dbUpsertPlan,
 } from '@kay-am/db';
-import { tauriDatabase } from './db';
+import { tauriDatabase } from './shared/lib/db';
 
 export async function listPlansForSession(
   sessionId: SessionId,

@@ -33,12 +33,12 @@ import type {
   WorktreeStatus,
 } from '@kay-am/types';
 import { ghPrDiff } from '../features/github/github';
-import { openFileInWorkspace } from '../editor';
-import { formatError } from '../errors';
+import { openFileInWorkspace } from '../shared/lib/editor';
+import { formatError } from '../shared/lib/errors';
 import { DEFAULT_EDITOR_BINARY, SETTING_DEFAULT_EDITOR, SETTING_EDITOR_BINARY } from '../settings';
 import { useAppStore, useDiffComments, useSummarizerStatus } from '../store';
 import { AGENT_KIND_DEFAULTS } from '../agent-kind';
-import { STORAGE_KEYS, STORAGE_PREFIXES } from '../storage-keys';
+import { STORAGE_KEYS, STORAGE_PREFIXES } from '../shared/lib/storage-keys';
 import {
   listBranchCommits,
   worktreeDiff,
