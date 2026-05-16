@@ -139,7 +139,7 @@ export class Summarizer {
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
     const userMessage = buildUserPrompt(input);
 
-    const result = await this.invokeFn<SummarizeCommandResult>('summarize_task', {
+    const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
       args: {
         providerId: this.providerId,
         model: this.model,
