@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@kay-am/ui';
 import type { TaskId } from '@kay-am/types';
 import { CommandPalette } from './components/CommandPalette';
@@ -154,6 +154,13 @@ export function App() {
       : merged;
   }, [keepAliveIds, currentSession?.id]);
 
+  // Defer the heavy panel mount so sidebar selection + AppShell swap paint
+  // urgently while React schedules the fresh ChatView/ContextPanel at low
+  // priority. Active id is deferred too so the previous panel stays visible
+  // (and `isActive`) during the lag — otherwise we'd flash a blank frame.
+  const deferredRenderedIds = useDeferredValue(renderedSessionIds);
+  const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
+
   if (!hydrated) {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
   }
@@ -174,11 +181,11 @@ export function App() {
             // the others). React skips unmount/mount on switches between
             // recent sessions — no flash, scroll position preserved.
             <div className="relative h-full w-full">
-              {renderedSessionIds.map((id) => (
+              {deferredRenderedIds.map((id) => (
                 <KeepAliveChatPanel
                   key={id}
                   sessionId={id}
-                  isActive={id === currentSession.id}
+                  isActive={id === deferredActiveId}
                   onRequestEnd={onRequestEnd}
                 />
               ))}
@@ -195,11 +202,11 @@ export function App() {
             // (loadDiffComments, refreshSessionPr*) on isActive so hidden
             // panels don't fire background work.
             <div className="relative h-full w-full">
-              {renderedSessionIds.map((id) => (
+              {deferredRenderedIds.map((id) => (
                 <KeepAliveContextPanel
                   key={id}
                   sessionId={id}
-                  isActive={id === currentSession.id}
+                  isActive={id === deferredActiveId}
                   collapsed={contextCollapsed}
                   onCollapse={onToggleContext}
                   onExpand={onToggleContext}

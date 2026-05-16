@@ -3211,21 +3211,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       };
     });
-    const tMessages = performance.now();
-    const tEvents = performance.now();
+    // Two-phase load: phase 1 fetches the recent slice fast (~50-150ms),
+    // unblocks the chat skeleton, then phase 2 fills in older history in the
+    // background. Sessions with <= INITIAL_LIMIT events get only phase 1.
+    const INITIAL_LIMIT = 50;
+    const tInitial = performance.now();
     try {
       const [messages, events] = await Promise.all([
-        listMessagesForAgent(tauriDatabase, agentId).then((r) => {
-          // eslint-disable-next-line no-console
-          console.log(`[perf] selectAgent:messages ${(performance.now() - tMessages).toFixed(0)}ms`);
-          return r;
-        }),
-        listTurnEventsForAgent(tauriDatabase, agentId).then((r) => {
-          // eslint-disable-next-line no-console
-          console.log(`[perf] selectAgent:events ${(performance.now() - tEvents).toFixed(0)}ms (${r.length} rows)`);
-          return r;
-        }),
+        listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+        listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
       ]);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
+      );
       set((state) => {
         const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
         return {
@@ -3237,6 +3236,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
           },
         };
       });
+      // Phase 2: only when the recent slice was at the limit (more older
+      // history likely exists). Fired non-awaited so the click flow returns.
+      if (events.length === INITIAL_LIMIT) {
+        const tFull = performance.now();
+        void Promise.all([
+          listMessagesForAgent(tauriDatabase, agentId),
+          listTurnEventsForAgent(tauriDatabase, agentId),
+        ])
+          .then(([fullMessages, fullEvents]) => {
+            // eslint-disable-next-line no-console
+            console.log(
+              `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
+            );
+            // Replace only if the agent is still selected and the in-store
+            // slice hasn't grown past the full snapshot via streaming.
+            set((state) => {
+              const current = state.transcripts[agentId];
+              if (current && current.length > fullEvents.length) return {};
+              return {
+                transcripts: { ...state.transcripts, [agentId]: fullEvents },
+                messages: { ...state.messages, [taskId]: fullMessages },
+              };
+            });
+          })
+          .catch(() => {});
+      }
     } catch (err) {
       set((state) => {
         const current = state.sessionLoading[taskId] ?? EMPTY_LOADING;
