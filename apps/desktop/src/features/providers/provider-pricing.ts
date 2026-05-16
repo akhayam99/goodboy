@@ -1,5 +1,5 @@
 import type { CodexModelPriceOverride } from '@kay-am/core';
-import shippedPricing from '../../data/pricing.json';
+import shippedPricing from './pricing.json';
 
 interface ModelPrice {
   readonly inputPerMtok: number;
