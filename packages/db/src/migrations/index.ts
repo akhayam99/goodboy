@@ -25,6 +25,7 @@ import { m024SessionProviderSessionId } from './m024-session-provider-session-id
 import { m025TaskTitleUserEdited } from './m025-task-title-user-edited';
 import { m026Notifications } from './m026-notifications';
 import { m027SessionPlans } from './m027-session-plans';
+import { m028DiffCommentConsumed } from './m028-diff-comment-consumed';
 
 export interface Migration {
   readonly version: number;
@@ -59,4 +60,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 25, sql: m025TaskTitleUserEdited },
   { version: 26, sql: m026Notifications },
   { version: 27, sql: m027SessionPlans },
+  { version: 28, sql: m028DiffCommentConsumed },
 ];

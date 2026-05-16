@@ -59,6 +59,8 @@ import {
   insertDiffComment,
   listDiffCommentsForTask,
   resolveDiffComment as dbResolveDiffComment,
+  consumeDiffComments as dbConsumeDiffComments,
+  reopenDiffComment as dbReopenDiffComment,
   deleteDiffComment as dbDeleteDiffComment,
   insertNotification,
   listNotifications,
@@ -512,6 +514,12 @@ export interface AppActions {
     anchor?: import('@kay-am/types').DiffCommentAnchor,
   ): Promise<void>;
   resolveDiffComment(taskId: TaskId, commentId: string): Promise<void>;
+  consumeDiffComments(
+    taskId: TaskId,
+    commentIds: ReadonlyArray<string>,
+    agentId: SessionId,
+  ): Promise<void>;
+  reopenDiffComment(taskId: TaskId, commentId: string): Promise<void>;
   deleteDiffComment(taskId: TaskId, commentId: string): Promise<void>;
   loadNotifications(): Promise<void>;
   emitNotification(
@@ -2701,6 +2709,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   resolveDiffComment: async (taskId, commentId) => {
     await dbResolveDiffComment(tauriDatabase, commentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  consumeDiffComments: async (taskId, commentIds, agentId) => {
+    if (commentIds.length === 0) return;
+    await dbConsumeDiffComments(tauriDatabase, commentIds, agentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  reopenDiffComment: async (taskId, commentId) => {
+    await dbReopenDiffComment(tauriDatabase, commentId);
     const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
     set((state) => ({
       diffComments: { ...state.diffComments, [taskId]: comments },
