@@ -11,6 +11,7 @@ import {
   MessageSquare,
   MinusCircle,
   RefreshCw,
+  Sparkles,
   XCircle,
 } from 'lucide-react';
 import { cn } from '@kay-am/ui';
@@ -46,6 +47,8 @@ interface GithubCardProps {
   readonly branchLastActivity: string | null;
   readonly onOpenUrl: (url: string) => void;
   readonly onRefresh: () => void;
+  readonly onSpawnFromComment?: (comment: PrComment) => void;
+  readonly onSpawnFromReviewChanges?: () => void;
 }
 
 export function GithubCard({
@@ -57,6 +60,8 @@ export function GithubCard({
   branchLastActivity,
   onOpenUrl,
   onRefresh,
+  onSpawnFromComment,
+  onSpawnFromReviewChanges,
 }: GithubCardProps) {
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
@@ -127,13 +132,19 @@ export function GithubCard({
         ) : active === 'ci' ? (
           <CiPane checks={detail?.checks ?? []} pr={pr} onOpenUrl={onOpenUrl} />
         ) : active === 'comments' ? (
-          <CommentsPane comments={detail?.comments ?? []} pr={pr} onOpenUrl={onOpenUrl} />
+          <CommentsPane
+            comments={detail?.comments ?? []}
+            pr={pr}
+            onOpenUrl={onOpenUrl}
+            onSpawnFromComment={onSpawnFromComment}
+          />
         ) : (
           <ReviewPane
             reviews={detail?.reviews ?? []}
             requests={detail?.reviewRequests ?? []}
             pr={pr}
             onOpenUrl={onOpenUrl}
+            onSpawnFromReviewChanges={onSpawnFromReviewChanges}
           />
         )}
       </div>
@@ -276,10 +287,12 @@ function CommentsPane({
   comments,
   pr,
   onOpenUrl,
+  onSpawnFromComment,
 }: {
   comments: ReadonlyArray<PrComment>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
+  onSpawnFromComment?: (c: PrComment) => void;
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
@@ -325,6 +338,7 @@ function CommentsPane({
             expanded={expanded.has(t.head.id)}
             onToggle={() => toggle(t.head.id)}
             onOpenUrl={onOpenUrl}
+            onSpawn={onSpawnFromComment ? () => onSpawnFromComment(t.head) : undefined}
           />
         </li>
       ))}
@@ -348,11 +362,13 @@ function CommentThreadRow({
   expanded,
   onToggle,
   onOpenUrl,
+  onSpawn,
 }: {
   thread: CommentThread;
   expanded: boolean;
   onToggle: () => void;
   onOpenUrl: (url: string) => void;
+  onSpawn?: () => void;
 }) {
   const { head, replies } = thread;
   const isReview = head.source === 'review';
@@ -389,15 +405,28 @@ function CommentThreadRow({
               · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
             </span>
           ) : null}
-          <button
-            type="button"
-            onClick={() => onOpenUrl(head.url)}
-            title="open comment in browser"
-            aria-label="open comment in browser"
-            className={cn(TAB_ICON_BTN, 'ml-auto')}
-          >
-            <ExternalLink size={9} aria-hidden />
-          </button>
+          <div className="ml-auto flex items-center gap-0.5">
+            {onSpawn && status !== 'resolved' ? (
+              <button
+                type="button"
+                onClick={onSpawn}
+                title="spawn agent to address this comment"
+                aria-label="spawn agent to address this comment"
+                className={cn(TAB_ICON_BTN, 'hover:text-accent')}
+              >
+                <Sparkles size={10} aria-hidden />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onOpenUrl(head.url)}
+              title="open comment in browser"
+              aria-label="open comment in browser"
+              className={TAB_ICON_BTN}
+            >
+              <ExternalLink size={9} aria-hidden />
+            </button>
+          </div>
         </div>
         {head.path ? (
           <button
@@ -448,11 +477,13 @@ function ReviewPane({
   requests,
   pr,
   onOpenUrl,
+  onSpawnFromReviewChanges,
 }: {
   reviews: ReadonlyArray<PrReview>;
   requests: ReadonlyArray<PrReviewRequest>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
+  onSpawnFromReviewChanges?: () => void;
 }) {
   const summary = summarizeReview(pr, reviews, requests);
   return (
@@ -479,6 +510,17 @@ function ReviewPane({
             </span>
           ))}
         </div>
+      ) : null}
+      {pr.reviewDecision === 'changes_requested' && onSpawnFromReviewChanges ? (
+        <button
+          type="button"
+          onClick={onSpawnFromReviewChanges}
+          className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/10"
+          title="spawn agent to address all requested changes"
+        >
+          <Sparkles size={10} aria-hidden />
+          fix all requested changes
+        </button>
       ) : null}
       {reviews.length === 0 && requests.length === 0 ? (
         <button

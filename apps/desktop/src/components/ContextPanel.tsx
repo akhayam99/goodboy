@@ -29,6 +29,7 @@ import type {
   ContextSlotHistoryEntry,
   PlanStatus,
   PlanWithCount,
+  PrComment,
   Session,
   SessionId,
   TelemetryRecord,
@@ -53,6 +54,7 @@ import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from './GithubCard';
 import { worktreeStatus } from '../worktree';
 import type { WorktreeStatus } from '@kay-am/types';
+import { buildCommentAgentArgs, buildReviewChangesAgentArgs } from '../spawn-from-comment';
 
 interface ContextPanelProps {
   session: Session;
@@ -430,6 +432,7 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const createPrForSession = useAppStore((s) => s.createPrForSession);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
 
   const [repoSlug, setRepoSlug] = useState<string | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -666,6 +669,18 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
               branchLastActivity={session.updatedAt}
               onOpenUrl={openInBrowser}
               onRefresh={() => void refreshSessionPrDetail(session.id, { force: true })}
+              onSpawnFromComment={(c: PrComment) => {
+                const args = buildCommentAgentArgs(c, pr);
+                void spawnAgent(session.id, args);
+              }}
+              onSpawnFromReviewChanges={() => {
+                const open = (ghState?.detail?.comments ?? []).filter(
+                  (c) => c.source !== 'review' || c.resolved === false,
+                );
+                if (open.length === 0) return;
+                const args = buildReviewChangesAgentArgs(pr, open);
+                void spawnAgent(session.id, args);
+              }}
             />
           </div>
         ) : null}
