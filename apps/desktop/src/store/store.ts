@@ -2176,7 +2176,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             resolvedPromptBase: userPromptForPhase,
             carryForwardContext: phasePromptCarryForward,
             mergeStrategy: 'last_write_wins',
-            maxParallelism,
+            maxParallelism: AGENT_FEATURES.maxParallelism,
           },
           {
             now,
