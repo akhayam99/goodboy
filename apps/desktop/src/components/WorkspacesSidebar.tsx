@@ -7,6 +7,7 @@ import {
   Bot,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
   FolderOpen,
   FolderPlus,
   Gauge,
@@ -19,6 +20,7 @@ import {
   Loader2,
   MessagesSquare,
   Moon,
+  Play,
   Plus,
   Settings,
   Settings2,
@@ -59,6 +61,7 @@ import {
   useCurrentWorkspace,
   useSessionNextActions,
   useSessionLoading,
+  useSessionPlans,
   useSessionSlots,
   useSessions,
   useTaskHasUnread,
@@ -1359,6 +1362,9 @@ interface AgentsSectionProps {
 
 function AgentsSection({ task }: AgentsSectionProps) {
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
+  const plansForTask = useSessionPlans(task.id);
+  const latestPlan = plansForTask[plansForTask.length - 1];
+  const hasActivePlan = !!latestPlan && latestPlan.status === 'active';
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
   );
@@ -1567,9 +1573,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
             runs={sorted}
             onAdvance={(step, model) => onSpawn(step.id, model)}
             hasOpenQuestions={hasOpenQuestions}
+            consumesActivePlan={hasActivePlan}
           />
         </div>
       ) : null}
+      {workflow && hasActivePlan ? null : <ActivePlanCta taskId={task.id} />}
       <NextActionChips
         taskId={task.id}
         workflowBound={task.workflowId !== undefined}
@@ -1727,6 +1735,64 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ActivePlanCta({ taskId }: { taskId: TaskId }) {
+  const plans = useSessionPlans(taskId);
+  const runPlan = useAppStore((s) => s.runPlan);
+  const abandonPlan = useAppStore((s) => s.abandonPlan);
+  const [spawning, setSpawning] = useState(false);
+  const latest = plans[plans.length - 1];
+  if (!latest || latest.status !== 'active') return null;
+
+  const handleTrigger = async () => {
+    if (spawning) return;
+    setSpawning(true);
+    try {
+      await runPlan(taskId, latest.id);
+    } finally {
+      setSpawning(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 flex flex-col gap-1 pl-2">
+      <div className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+        <ClipboardList size={11} aria-hidden className="text-primary" />
+        active plan
+      </div>
+      <span className="truncate text-xs text-foreground" title={latest.title}>
+        {latest.title}
+      </span>
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => void handleTrigger()}
+          disabled={spawning}
+          className={cn(
+            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+            spawning && 'cursor-not-allowed opacity-60',
+          )}
+          title="spawn new agent to execute this plan"
+        >
+          {spawning ? (
+            <Loader2 size={11} aria-hidden className="animate-spin" />
+          ) : (
+            <Play size={11} aria-hidden />
+          )}
+          trigger plan
+        </button>
+        <button
+          type="button"
+          onClick={() => void abandonPlan(taskId, latest.id)}
+          className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          title="mark plan as superseded; next plan emitted starts a new logical plan"
+        >
+          abandon
+        </button>
+      </div>
     </div>
   );
 }

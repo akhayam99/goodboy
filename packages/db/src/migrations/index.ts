@@ -27,6 +27,7 @@ import { m026Notifications } from './m026-notifications';
 import { m027SessionPlans } from './m027-session-plans';
 import { m028DiffCommentConsumed } from './m028-diff-comment-consumed';
 import { m029AgentUnread } from './m029-agent-unread';
+import { m030PlanConsumptions } from './m030-plan-consumptions';
 
 export interface Migration {
   readonly version: number;
@@ -63,4 +64,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 27, sql: m027SessionPlans },
   { version: 28, sql: m028DiffCommentConsumed },
   { version: 29, sql: m029AgentUnread },
+  { version: 30, sql: m030PlanConsumptions },
 ];

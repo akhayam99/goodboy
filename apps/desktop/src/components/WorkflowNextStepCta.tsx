@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Session, Step, Workflow } from '@kay-am/types';
 import type { VerbosityLevel } from '../verbosity';
@@ -14,6 +14,7 @@ export interface WorkflowNextStepCtaProps {
     verbosity: VerbosityLevel | undefined,
   ) => void | Promise<void>;
   readonly hasOpenQuestions?: boolean;
+  readonly consumesActivePlan?: boolean;
   readonly className?: string;
 }
 
@@ -47,6 +48,7 @@ export function WorkflowNextStepCta({
   runs,
   onAdvance,
   hasOpenQuestions = false,
+  consumesActivePlan = false,
   className,
 }: WorkflowNextStepCtaProps) {
   const [busy, setBusy] = useState(false);
@@ -98,6 +100,15 @@ export function WorkflowNextStepCta({
           >
             {palette.label}
           </span>
+          {consumesActivePlan ? (
+            <span
+              className="inline-flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide text-primary"
+              title="advancing will consume the active plan"
+            >
+              <ClipboardList size={9} aria-hidden />
+              <span>consume plan</span>
+            </span>
+          ) : null}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="text-[10px] font-normal opacity-60">

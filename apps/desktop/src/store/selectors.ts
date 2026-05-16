@@ -3,7 +3,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
-  Plan,
+  PlanWithCount,
   Session,
   Task,
   TaskId,
@@ -82,14 +82,14 @@ const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 export const useDiffComments = (taskId: TaskId | null): ReadonlyArray<DiffComment> =>
   useAppStore((s) => (taskId ? (s.diffComments[taskId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));
 
-const EMPTY_PLANS: ReadonlyArray<Plan> = [];
+const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = [];
 
-export const useSessionPlans = (taskId: TaskId | null): ReadonlyArray<Plan> =>
+export const useSessionPlans = (taskId: TaskId | null): ReadonlyArray<PlanWithCount> =>
   useAppStore((s) => (taskId ? (s.sessionPlans[taskId] ?? EMPTY_PLANS) : EMPTY_PLANS));
 
-export const useMostRecentPlan = (taskId: TaskId | null): Plan | null => {
+export const useMostRecentPlan = (taskId: TaskId | null): PlanWithCount | null => {
   const plans = useSessionPlans(taskId);
-  return plans[0] ?? null;
+  return plans[plans.length - 1] ?? null;
 };
 
 interface FilesTouched {
