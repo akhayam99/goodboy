@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAppStore, useWorkspaces, useSessions } from '../store';
+import { useAppStore, useWorkspaces, useSessions } from '../../../../store';
 
 function fuzzyScore(query: string, text: string): number {
   const q = query.toLowerCase();

@@ -33,7 +33,7 @@ import {
   ZapOff,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
-import { SessionSettingsDialog } from '../../../../components/SessionSettingsDialog';
+import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
@@ -69,8 +69,8 @@ import {
   useWorkspaceHasUnread,
   useWorkspaces,
 } from '../../../../store';
-import { NewSessionDialog } from '../../../../components/NewSessionDialog';
-import { StatusBadge } from '../../../../components/StatusBadge';
+import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
+import { StatusBadge } from '../../../session/components/StatusBadge';
 import { WorkflowNextStepCta } from '../../../../features/workflow/components/WorkflowNextStepCta';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
@@ -87,8 +87,8 @@ import {
   type AgentKind,
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
-import { AgentKindMenu } from '../../../../components/AgentKindMenu';
-import { SessionStatusMenu } from '../../../../components/SessionStatusMenu';
+import { AgentKindMenu } from '../../../session/components/AgentKindMenu';
+import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
 import { NextActionChips } from '../../../../features/workflow/components/NextActionChips';
 import {
   spawnFromNextAction,

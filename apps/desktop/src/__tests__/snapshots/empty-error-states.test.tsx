@@ -97,8 +97,8 @@ function mockStore(partial: Partial<AppStore>): void {
 }
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../components/BootSplash';
-import { NewSessionDialog } from '../../components/NewSessionDialog';
-import { EndSessionDialog } from '../../components/EndSessionDialog';
+import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
+import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';

@@ -22,21 +22,21 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
-import { shortModel } from '../features/session/agent-row-format';
-import { PROVIDER_LABEL_LOWER } from '../features/providers/providers';
-import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
-import { SESSION_FEATURES } from '../shared/lib/features';
-import { EMPTY_ARRAY, useAppStore } from '../store';
-import { PlannerWidget } from '../features/plans/components/PlannerWidget';
-import { fetchGithubIssue, parseGithubIssueUrl } from '../features/github/github';
+import { shortModel } from '../../../../features/session/agent-row-format';
+import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
+import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { PlannerWidget } from '../../../../features/plans/components/PlannerWidget';
+import { fetchGithubIssue, parseGithubIssueUrl } from '../../../../features/github/github';
 
 interface IssueData {
   readonly title: string;
   readonly body: string;
 }
-import { useToast } from './Toast';
-import { parseCap } from '../shared/lib/parse-cap';
-import { listLocalBranches, type LocalBranchInfo } from '../features/worktree/worktree';
+import { useToast } from '../../../../components/Toast';
+import { parseCap } from '../../../../shared/lib/parse-cap';
+import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 
 interface NewSessionDialogProps {
   open: boolean;

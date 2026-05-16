@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Dialog } from '@kay-am/ui';
 import type { Session } from '@kay-am/types';
-import { useAppStore } from '../store';
+import { useAppStore } from '../../../../store';
 
 // Tauri errors serialize as `{kind: string; message: string}` plain objects.
 // `instanceof Error` is false for them, so `String(err)` → "[object Object]".

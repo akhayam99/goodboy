@@ -4,7 +4,7 @@ import {
   AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
   type AgentKind,
-} from '../features/session/agent-kind';
+} from '../../../../features/session/agent-kind';
 
 interface AgentKindMenuProps {
   readonly kind: AgentKind;
