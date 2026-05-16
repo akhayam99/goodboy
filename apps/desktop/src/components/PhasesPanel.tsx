@@ -4,7 +4,7 @@ import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/ty
 import type { ProviderId } from '@kay-am/types';
 import { formatError } from '../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../store';
-import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../phases';
+import type { PhaseTemplateUpsertArgs, PhaseDefinitionUpsertArgs } from '../features/phases/phases';
 
 interface PhasesPanelProps {
   readonly workspaceId: WorkspaceId;

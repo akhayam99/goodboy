@@ -137,7 +137,7 @@ import {
   fetchPrDetail,
   detectRepoSlug,
 } from '@kay-am/core';
-import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
+import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../features/budget/budget';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
   ghStatus,
@@ -180,14 +180,14 @@ import {
   removeWorktree,
   changeWorktreeBranch,
   type CreatedWorktree,
-} from '../worktree';
+} from '../features/worktree/worktree';
 import {
   invokeBudgetRuleList,
   invokeBudgetRuleUpsert,
   invokeBudgetRuleDelete,
   invokeBudgetAlertsList,
   invokeBudgetAlertDismiss,
-} from '../budget';
+} from '../features/budget/budget';
 import {
   invokeSkillList,
   invokeSkillUpsert,
@@ -195,7 +195,7 @@ import {
   invokeSkillRescan,
   resolveSkillInvocation,
   type SkillUpsertArgs,
-} from '../skills';
+} from '../features/skills/skills';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -206,7 +206,7 @@ import {
   invokeAuditRetryDelete,
   type AuditRetryEntry,
   type PermissionAuditInsertPayload,
-} from '../permissions';
+} from '../features/permissions/permissions';
 import {
   invokePhaseTemplateList,
   invokePhaseTemplateUpsert,
@@ -218,7 +218,7 @@ import {
   invokeSessionMarkViewed,
   invokeWorkspacesWithUnread,
   type PhaseTemplateUpsertArgs,
-} from '../phases';
+} from '../features/phases/phases';
 import {
   detectParallelGroup,
   runParallelBranch,
@@ -239,7 +239,7 @@ import {
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
   upsertPlan as invokeUpsertPlan,
-} from '../plans';
+} from '../features/plans/plans';
 import { slotsForKind } from '../features/providers/slot-routing';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 

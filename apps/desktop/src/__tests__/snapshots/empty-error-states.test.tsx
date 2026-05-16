@@ -65,7 +65,7 @@ vi.mock('../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../../permissions', () => ({
+vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),

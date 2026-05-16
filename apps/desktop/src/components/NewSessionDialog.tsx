@@ -36,7 +36,7 @@ interface IssueData {
 }
 import { useToast } from './Toast';
 import { parseCap } from '../shared/lib/parse-cap';
-import { listLocalBranches, type LocalBranchInfo } from '../worktree';
+import { listLocalBranches, type LocalBranchInfo } from '../features/worktree/worktree';
 
 interface NewSessionDialogProps {
   open: boolean;

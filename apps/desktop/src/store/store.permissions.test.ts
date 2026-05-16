@@ -26,7 +26,7 @@ vi.mock('../features/chat/turn', () => ({
 const permissionRuleListSpy = vi.fn();
 const permissionAuditInsertSpy = vi.fn();
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
   invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
@@ -100,7 +100,7 @@ vi.mock('../features/providers/routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -111,7 +111,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('../skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -128,7 +128,7 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: vi.fn(),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
 }));

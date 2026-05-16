@@ -44,7 +44,7 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
   invokeParallelPhaseGroupUpdateCompletedAt: (id: string, at: string) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),

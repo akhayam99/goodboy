@@ -25,7 +25,7 @@ async function* emptyStream(): AsyncIterable<TurnEvent> {
   // intentionally empty
 }
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(),
   useEffectivePermissionRules: () => [],
@@ -87,7 +87,7 @@ vi.mock('../features/providers/routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -98,7 +98,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -110,7 +110,7 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(async () => ({
     worktreePath: '/tmp/wt',
     branchName: 'kay/test',

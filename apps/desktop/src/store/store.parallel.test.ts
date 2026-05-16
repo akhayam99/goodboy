@@ -33,7 +33,7 @@ vi.mock('../features/chat/turn', () => ({
   isAuthErrorMessage: () => false,
 }));
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
@@ -109,7 +109,7 @@ vi.mock('../features/providers/routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -120,7 +120,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -134,7 +134,7 @@ const phaseRunListSpy = vi.fn<(sid: SessionId) => Promise<ReadonlyArray<Agent>>>
 const parallelPhaseGroupCreateSpy = vi.fn();
 const parallelPhaseGroupUpdateCompletedAtSpy = vi.fn();
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -146,7 +146,7 @@ vi.mock('../phases', () => ({
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
 }));

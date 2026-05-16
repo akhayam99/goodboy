@@ -49,7 +49,7 @@ import {
   worktreeDiffCommit,
   worktreeDiffWorking,
   worktreeStatus,
-} from '../worktree';
+} from '../features/worktree/worktree';
 import { DiffViewSelector } from './DiffViewSelector';
 
 interface DiffViewerDialogProps {

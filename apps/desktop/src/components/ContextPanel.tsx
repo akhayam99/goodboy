@@ -52,7 +52,7 @@ import { formatError } from '../shared/lib/errors';
 import { tauriGhRunner } from '../features/github/github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from '../features/github/components/Card';
-import { worktreeStatus } from '../worktree';
+import { worktreeStatus } from '../features/worktree/worktree';
 import type { WorktreeStatus } from '@kay-am/types';
 import {
   buildCommentAgentArgs,

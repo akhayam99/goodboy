@@ -10,7 +10,7 @@ import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
 import { MergeDialog, type MergeConflict, type MergeResolution } from './MergeDialog';
 import { DiffViewerDialog } from '../DiffViewerDialog';
-import { worktreeDiff } from '../../worktree';
+import { worktreeDiff } from '../../features/worktree/worktree';
 
 interface ChatViewProps {
   session: Session;

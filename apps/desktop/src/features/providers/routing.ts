@@ -5,7 +5,7 @@ import type {
   SessionProviderPreference,
   TurnProviderOverride,
 } from '@kay-am/types';
-import { invokeCheckProviderBudget } from '../../budget';
+import { invokeCheckProviderBudget } from '../budget/budget';
 
 export async function resolveProviderForTurn(
   sessionPreference: SessionProviderPreference,

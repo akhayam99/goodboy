@@ -9,7 +9,7 @@ vi.mock('../features/chat/turn', () => ({
   isAuthErrorMessage: () => false,
 }));
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(async () => ({})),
   invokeAuditRetryEnqueue: vi.fn(),
@@ -42,7 +42,7 @@ vi.mock('../features/providers/routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -53,7 +53,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -61,7 +61,7 @@ vi.mock('../skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -70,7 +70,10 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: vi.fn(),
 }));
 
-vi.mock('../worktree', () => ({ createWorktree: vi.fn(), removeWorktree: vi.fn() }));
+vi.mock('../features/worktree/worktree', () => ({
+  createWorktree: vi.fn(),
+  removeWorktree: vi.fn(),
+}));
 vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 vi.mock('../features/providers/provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
