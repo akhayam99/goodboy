@@ -18,12 +18,33 @@ interface RawIssueComment {
   html_url: string;
 }
 
-interface RawReviewComment {
-  id: number;
-  user: { login: string; avatar_url: string | null } | null;
+interface RawReviewThreadComment {
+  id: string;
+  databaseId: number;
+  author: { login: string; avatarUrl: string | null } | null;
   body: string | null;
-  created_at: string;
-  html_url: string;
+  createdAt: string;
+  url: string;
+  replyTo: { id: string } | null;
+}
+
+interface RawReviewThreadNode {
+  id: string;
+  isResolved: boolean;
+  isOutdated: boolean;
+  path: string | null;
+  line: number | null;
+  comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
+}
+
+interface RawReviewThreadsResponse {
+  data?: {
+    repository?: {
+      pullRequest?: {
+        reviewThreads?: { nodes?: ReadonlyArray<RawReviewThreadNode> } | null;
+      } | null;
+    } | null;
+  };
 }
 
 interface RawReview {
@@ -134,27 +155,79 @@ async function fetchIssueComments(
   }
 }
 
-async function fetchReviewComments(
+const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
+  repository(owner:$owner,name:$name){
+    pullRequest(number:$pr){
+      reviewThreads(first:50){
+        nodes{
+          id
+          isResolved
+          isOutdated
+          path
+          line
+          comments(first:50){
+            nodes{
+              id
+              databaseId
+              author{login avatarUrl}
+              body
+              createdAt
+              url
+              replyTo{id}
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+async function fetchReviewThreads(
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: { cwd?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
+  const [owner, name] = repo.split('/');
+  if (!owner || !name) return [];
   try {
-    const raw = await runJson<ReadonlyArray<RawReviewComment>>(
+    const raw = await runJson<RawReviewThreadsResponse>(
       runner,
-      ['api', `repos/${repo}/pulls/${prNumber}/comments`, '--paginate'],
+      [
+        'api',
+        'graphql',
+        '-f',
+        `query=${REVIEW_THREADS_QUERY}`,
+        '-F',
+        `owner=${owner}`,
+        '-F',
+        `name=${name}`,
+        '-F',
+        `pr=${prNumber}`,
+      ],
       opts,
     );
-    return raw.map((c) => ({
-      id: `review-${c.id}`,
-      author: c.user?.login ?? 'unknown',
-      authorAvatarUrl: c.user?.avatar_url ?? null,
-      body: c.body ?? '',
-      createdAt: c.created_at,
-      url: c.html_url,
-      source: 'review' as const,
-    }));
+    const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+    const out: Array<PrComment> = [];
+    for (const t of threads) {
+      const nodes = t.comments?.nodes ?? [];
+      for (const c of nodes) {
+        out.push({
+          id: `review-${c.databaseId}`,
+          author: c.author?.login ?? 'unknown',
+          authorAvatarUrl: c.author?.avatarUrl ?? null,
+          body: c.body ?? '',
+          createdAt: c.createdAt,
+          url: c.url,
+          source: 'review',
+          path: t.path ?? undefined,
+          line: t.line ?? undefined,
+          resolved: t.isResolved,
+          inReplyToId: c.replyTo?.id ?? undefined,
+        });
+      }
+    }
+    return out;
   } catch (err) {
     if (err instanceof GhCliError) return [];
     throw err;
@@ -195,7 +268,7 @@ export async function fetchPrDetail(
 ): Promise<PrDetail> {
   const [issueComments, reviewComments, prView] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),
-    fetchReviewComments(runner, repo, prNumber, opts),
+    fetchReviewThreads(runner, repo, prNumber, opts),
     fetchPrViewDetail(runner, repo, prNumber, opts),
   ]);
 

@@ -101,6 +101,14 @@ export interface PrComment {
   createdAt: string;
   url: string;
   source: 'issue' | 'review';
+  // Review-comment metadata (only present when source === 'review').
+  path?: string;
+  line?: number;
+  // Whether the review thread containing this comment is resolved.
+  // Always undefined for issue comments.
+  resolved?: boolean;
+  // GraphQL node id of the parent comment, if this is a reply.
+  inReplyToId?: string;
 }
 
 export type PrReviewState =
