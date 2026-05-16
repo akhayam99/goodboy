@@ -59,6 +59,8 @@ import {
   insertDiffComment,
   listDiffCommentsForTask,
   resolveDiffComment as dbResolveDiffComment,
+  consumeDiffComments as dbConsumeDiffComments,
+  reopenDiffComment as dbReopenDiffComment,
   deleteDiffComment as dbDeleteDiffComment,
   insertNotification,
   listNotifications,
@@ -87,9 +89,10 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
-  Plan,
+  PlanConsumption,
   PlanId,
   PlanStatus,
+  PlanWithCount,
   Step,
   StepId,
   Session,
@@ -208,6 +211,8 @@ import {
   invokePhaseRunInsert,
   invokePhaseRunUpdateStatus,
   invokeSessionSetProviderSessionId,
+  invokeSessionMarkViewed,
+  invokeWorkspacesWithUnread,
   type PhaseTemplateUpsertArgs,
 } from '../phases';
 import {
@@ -219,7 +224,9 @@ import { exportConfigToFile, importConfigFromFile } from '../config-export';
 import { formatError } from '../errors';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
 import {
+  addPlanConsumption as invokeAddPlanConsumption,
   deletePlan as invokeDeletePlan,
+  listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
@@ -307,6 +314,10 @@ export interface AppState {
   readonly sessionOverrides: Readonly<Record<TaskId, OverrideSettings>>;
   readonly sidebarWorkspaceSearch: string;
   readonly sidebarSessionSearch: string;
+  // Workspaces with at least one agent whose terminal turn hasn't been viewed.
+  // Refreshed from a DB aggregate so the workspace dot can pulse even for
+  // workspaces whose tasks aren't currently loaded in memory.
+  readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
   readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
@@ -319,7 +330,8 @@ export interface AppState {
   readonly agentDraft: Readonly<Record<SessionId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
-  readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<Plan>>>;
+  readonly sessionPlans: Readonly<Record<TaskId, ReadonlyArray<PlanWithCount>>>;
+  readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   /**
    * Per-session loading flags. Each block (agents, transcript, telemetry,
    * slots, plans, summary) starts true on session switch and is flipped off
@@ -413,10 +425,7 @@ export interface AppActions {
     workflowId?: WorkflowId;
     autoRun?: boolean;
   }): Promise<{ session: Task; worktree: CreatedWorktree }>;
-  changeSessionBranch(
-    taskId: TaskId,
-    args: { branch: string; createNew: boolean },
-  ): Promise<void>;
+  changeSessionBranch(taskId: TaskId, args: { branch: string; createNew: boolean }): Promise<void>;
   setSessionAutoRun(taskId: TaskId, autoRun: boolean): Promise<void>;
   maybeAutoAdvanceWorkflow(taskId: TaskId): Promise<void>;
   loadTranscript(agentId: SessionId, taskId: TaskId): Promise<void>;
@@ -461,6 +470,7 @@ export interface AppActions {
       model?: string;
       effort?: string;
       initialPrompt?: string;
+      triggeredPlanId?: PlanId;
     },
   ): Promise<SessionId>;
   renameAgent(taskId: TaskId, agentId: SessionId, name: string): Promise<void>;
@@ -489,6 +499,7 @@ export interface AppActions {
   deleteTask(taskId: TaskId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
+  refreshUnreadWorkspaces(): Promise<void>;
   setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   exportConfig(): Promise<string | null>;
@@ -517,6 +528,12 @@ export interface AppActions {
     anchor?: import('@kay-am/types').DiffCommentAnchor,
   ): Promise<void>;
   resolveDiffComment(taskId: TaskId, commentId: string): Promise<void>;
+  consumeDiffComments(
+    taskId: TaskId,
+    commentIds: ReadonlyArray<string>,
+    agentId: SessionId,
+  ): Promise<void>;
+  reopenDiffComment(taskId: TaskId, commentId: string): Promise<void>;
   deleteDiffComment(taskId: TaskId, commentId: string): Promise<void>;
   loadNotifications(): Promise<void>;
   emitNotification(
@@ -532,6 +549,9 @@ export interface AppActions {
   setPlanStatus(taskId: TaskId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(taskId: TaskId, planId: PlanId, title: string, bodyMd: string): Promise<void>;
   deletePlan(taskId: TaskId, planId: PlanId): Promise<void>;
+  abandonPlan(taskId: TaskId, planId: PlanId): Promise<void>;
+  loadConsumptionsForPlan(planId: PlanId): Promise<void>;
+  runPlan(taskId: TaskId, planId: PlanId): Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -579,6 +599,7 @@ const initialState: AppState = {
   sessionOverrides: {},
   sidebarWorkspaceSearch: '',
   sidebarSessionSearch: '',
+  unreadWorkspaceIds: new Set<WorkspaceId>(),
   sidebarStateFilter: [],
   sidebarProviderFilter: [],
   githubStatus: null,
@@ -590,6 +611,7 @@ const initialState: AppState = {
   diffComments: {},
   notifications: [],
   sessionPlans: {},
+  planConsumptions: {},
   sessionLoading: {},
 };
 
@@ -868,22 +890,19 @@ async function runSummarizer(
   }
 }
 
-async function buildPlanKickoffSection(taskId: TaskId): Promise<string> {
+async function buildPlanKickoffSection(
+  taskId: TaskId,
+): Promise<{ section: string; plan: PlanWithCount | null }> {
   try {
     const plans = await invokeListPlansForSession(taskId);
-    const plan = plans[0];
-    if (!plan) return '';
-    if (plan.status === 'completed') {
-      return [
-        'The most recent plan in this session was completed and should NOT be re-executed. Provided for context only:',
-        '',
-        plan.bodyMd,
-      ].join('\n');
-    }
-    if (plan.status === 'superseded') return '';
-    return ['Active plan to execute:', '', plan.bodyMd].join('\n');
+    const latest = plans[plans.length - 1] ?? null;
+    if (!latest || latest.status !== 'active') return { section: '', plan: latest };
+    return {
+      section: ['Active plan to execute:', '', latest.bodyMd].join('\n'),
+      plan: latest,
+    };
   } catch {
-    return '';
+    return { section: '', plan: null };
   }
 }
 
@@ -907,7 +926,6 @@ async function capturePlanFromTurn(
       agentId,
       title: extracted.title,
       bodyMd: extracted.bodyMd,
-      status: 'active',
     });
     const refreshed = await invokeListPlansForSession(taskId);
     set((state) => ({
@@ -1237,11 +1255,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
-      const worktreeRows = await Promise.all(
-        sessions.map((s) => listWorktreesForTask(tauriDatabase, s.id)),
-      );
+      const [worktreeRows, phaseRunsPerTask] = await Promise.all([
+        Promise.all(sessions.map((s) => listWorktreesForTask(tauriDatabase, s.id))),
+        // Eager-load agents (phase runs) for every task in this workspace. The
+        // unread indicators on workspace- and session-rows derive from each
+        // agent's `lastFinishedAt` vs `lastViewedAt` columns, and those are
+        // only inspected once we have the agent rows in memory. Without this
+        // prefetch, the sidebar would only know about agents for tasks the
+        // user has explicitly opened — yellow dots vanish on workspace switch.
+        Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+      ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
+      const sessionPhaseRuns: Record<string, ReadonlyArray<Session>> = {};
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
@@ -1250,11 +1276,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const primaryRow = rows[0];
           if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
+        sessionPhaseRuns[s.id] = phaseRunsPerTask[i]!;
       }
       set((state) => ({
         sessions,
         sessionWorktrees,
         sessionBranches,
+        sessionPhaseRuns,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
@@ -1265,6 +1293,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    void get().refreshUnreadWorkspaces();
   },
 
   setCurrentSession: async (id) => {
@@ -1392,7 +1421,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Plans
     if (!cached?.plans) {
       const endPlans = perf('plans');
-      void (async (): Promise<ReadonlyArray<Plan>> => {
+      void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
         try {
           return await invokeListPlansForSession(id);
         } catch {
@@ -1419,86 +1448,88 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // flag still gets cleared by ChatView's selectAgent effect (cached or
       // fresh). Nothing else to do.
     } else {
-    const endAgents = perf('agents+runIds');
-    const endPhaseRunList = perf('agents:phaseRunList');
-    const endRunIds = perf('agents:runIds');
-    void Promise.all([
-      invokePhaseRunList(id).finally(() => endPhaseRunList()),
-      listAgentRunIdsForTask(tauriDatabase, id).finally(() => endRunIds()),
-    ])
-      .then(([agents, agentRunIds]) => {
-        const previouslySelected = get().selectedAgentId[id] ?? null;
-        const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-        // Fresh entry defaults to the most recently created agent (highest
-        // ordinal). Chronologically the latest is the one the user is most
-        // likely returning to. Previous selection still wins on revisit.
-        const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
-        const selectedAgent =
-          (previouslySelected && agents.find((a) => a.id === previouslySelected)) || fallbackAgent;
+      const endAgents = perf('agents+runIds');
+      const endPhaseRunList = perf('agents:phaseRunList');
+      const endRunIds = perf('agents:runIds');
+      void Promise.all([
+        invokePhaseRunList(id).finally(() => endPhaseRunList()),
+        listAgentRunIdsForTask(tauriDatabase, id).finally(() => endRunIds()),
+      ])
+        .then(([agents, agentRunIds]) => {
+          const previouslySelected = get().selectedAgentId[id] ?? null;
+          const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
+          // Fresh entry defaults to the most recently created agent (highest
+          // ordinal). Chronologically the latest is the one the user is most
+          // likely returning to. Previous selection still wins on revisit.
+          const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
+          const selectedAgent =
+            (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
+            fallbackAgent;
 
-        // Seed agentRunHistory with EVERY provider run an agent ever spawned,
-        // not just its latest. Recovered from turn_events (single source of
-        // truth post restart) so aggregate token/cost counters in the sidebar
-        // reflect the full agent lifetime — birth to death — instead of the
-        // last turn.
-        const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
-        const seededTurnState: Record<string, TurnState> = {};
-        const task = get().sessions.find((s) => s.id === id);
-        const taskState =
-          task?.state ?? ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
-        for (const agent of agents) {
-          const historical = agentRunIds.get(agent.id) ?? [];
-          const merged: ProviderRunId[] = [...historical];
-          if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
-          if (merged.length > 0) {
-            seededHistory[agent.id] = merged;
+          // Seed agentRunHistory with EVERY provider run an agent ever spawned,
+          // not just its latest. Recovered from turn_events (single source of
+          // truth post restart) so aggregate token/cost counters in the sidebar
+          // reflect the full agent lifetime — birth to death — instead of the
+          // last turn.
+          const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+          const seededTurnState: Record<string, TurnState> = {};
+          const task = get().sessions.find((s) => s.id === id);
+          const taskState =
+            task?.state ??
+            ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
+          for (const agent of agents) {
+            const historical = agentRunIds.get(agent.id) ?? [];
+            const merged: ProviderRunId[] = [...historical];
+            if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+            if (merged.length > 0) {
+              seededHistory[agent.id] = merged;
+            }
+            if (agent.status === 'running' && agent.runId) {
+              seededTurnState[agent.id] = {
+                kind: 'running',
+                runId: agent.runId,
+                startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+              };
+            } else if (agent.status === 'failed') {
+              seededTurnState[agent.id] = {
+                kind: 'error',
+                message: 'agent failed',
+                failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+              };
+            } else {
+              seededTurnState[agent.id] =
+                taskState.kind === 'ended'
+                  ? taskState
+                  : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
+            }
           }
-          if (agent.status === 'running' && agent.runId) {
-            seededTurnState[agent.id] = {
-              kind: 'running',
-              runId: agent.runId,
-              startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
-            };
-          } else if (agent.status === 'failed') {
-            seededTurnState[agent.id] = {
-              kind: 'error',
-              message: 'agent failed',
-              failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
-            };
-          } else {
-            seededTurnState[agent.id] =
-              taskState.kind === 'ended'
-                ? taskState
-                : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
-          }
-        }
 
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-          selectedAgentId: {
-            ...state.selectedAgentId,
-            [id]: selectedAgent?.id ?? null,
-          },
-          agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
-          agentTurnState: { ...state.agentTurnState, ...seededTurnState },
-        }));
-        markDone('agents');
-
-        // No selected agent → no chat to render → drop transcript flag now.
-        // With a selected agent, ChatView's effect calls selectAgent which
-        // owns the flag lifecycle from there.
-        if (!selectedAgent) {
           set((state) => ({
-            messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+            selectedAgentId: {
+              ...state.selectedAgentId,
+              [id]: selectedAgent?.id ?? null,
+            },
+            agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+            agentTurnState: { ...state.agentTurnState, ...seededTurnState },
           }));
+          markDone('agents');
+
+          // No selected agent → no chat to render → drop transcript flag now.
+          // With a selected agent, ChatView's effect calls selectAgent which
+          // owns the flag lifecycle from there.
+          if (!selectedAgent) {
+            set((state) => ({
+              messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+            }));
+            markDone('transcript');
+          }
+        })
+        .catch(() => {
+          markDone('agents');
           markDone('transcript');
-        }
-      })
-      .catch(() => {
-        markDone('agents');
-        markDone('transcript');
-      })
-      .finally(() => endAgents());
+        })
+        .finally(() => endAgents());
     }
   },
 
@@ -1726,9 +1757,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const primary = worktrees[0];
     if (!primary) throw new Error(`no worktree found for session ${taskId}`);
     const task = get().sessions.find((s) => s.id === taskId);
-    const workspace = task
-      ? get().workspaces.find((w) => w.id === task.workspaceId)
-      : null;
+    const workspace = task ? get().workspaces.find((w) => w.id === task.workspaceId) : null;
     if (!workspace) throw new Error('workspace not found for session');
     await changeWorktreeBranch({
       repoPath: workspace.rootPath,
@@ -2582,6 +2611,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ),
           }),
         }));
+        void get().refreshUnreadWorkspaces();
         void get().maybeAutoAdvanceWorkflow(taskId);
       }
 
@@ -2642,6 +2672,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [taskId]: refreshedRuns },
         }));
+        void get().refreshUnreadWorkspaces();
       }
     }
 
@@ -2811,6 +2842,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  consumeDiffComments: async (taskId, commentIds, agentId) => {
+    if (commentIds.length === 0) return;
+    await dbConsumeDiffComments(tauriDatabase, commentIds, agentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
+  reopenDiffComment: async (taskId, commentId) => {
+    await dbReopenDiffComment(tauriDatabase, commentId);
+    const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
+    set((state) => ({
+      diffComments: { ...state.diffComments, [taskId]: comments },
+    }));
+  },
+
   deleteDiffComment: async (taskId, commentId) => {
     await dbDeleteDiffComment(tauriDatabase, commentId);
     const comments = await listDiffCommentsForTask(tauriDatabase, taskId);
@@ -2881,6 +2929,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
     }));
+  },
+
+  abandonPlan: async (taskId, planId) => {
+    await invokeSetPlanStatus(planId, 'superseded');
+    const refreshed = await invokeListPlansForSession(taskId);
+    set((state) => ({
+      sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+    }));
+  },
+
+  loadConsumptionsForPlan: async (planId) => {
+    const items = await invokeListConsumptionsForPlan(planId);
+    set((state) => ({
+      planConsumptions: { ...state.planConsumptions, [planId]: items },
+    }));
+  },
+
+  runPlan: async (taskId, planId) => {
+    await get().spawnAgent(taskId, { triggeredPlanId: planId });
   },
 
   toggleSessionSlot: async (taskId, key, enabled) => {
@@ -3188,6 +3255,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectAgent: async (taskId, agentId) => {
+    // Stamp `lastViewedAt` on both the previously-selected agent (capturing
+    // "user was looking at it until now") and the newly-selected agent. The
+    // unread selector additionally treats the currently-selected agent as
+    // viewed, so no visible flicker while you're actually on the row.
+    const stampedAt = new Date().toISOString() as IsoDateTime;
+    const prevAgentId = get().selectedAgentId[taskId] ?? null;
+    const stampAgents = new Set<SessionId>([agentId]);
+    if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
+
+    for (const id of stampAgents) {
+      void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
+    }
+
+    const stampRuns = (runs: ReadonlyArray<Session>): ReadonlyArray<Session> =>
+      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
+
     const cached = get().transcripts[agentId];
     if (cached) {
       // eslint-disable-next-line no-console
@@ -3200,8 +3283,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ...state.sessionLoading,
             [taskId]: { ...current, transcript: false },
           },
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+          },
         };
       });
+      void get().refreshUnreadWorkspaces();
       return;
     }
     set((state) => {
@@ -3237,8 +3325,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ...state.sessionLoading,
             [taskId]: { ...current, transcript: false },
           },
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [taskId]: stampRuns(state.sessionPhaseRuns[taskId] ?? []),
+          },
         };
       });
+      void get().refreshUnreadWorkspaces();
       // Phase 2: only when the recent slice was at the limit (more older
       // history likely exists). Fired non-awaited so the click flow returns.
       if (events.length === INITIAL_LIMIT) {
@@ -3324,11 +3417,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }),
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
-    const planSection = await buildPlanKickoffSection(taskId);
+    const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(taskId);
+    const explicitTrigger = args.triggeredPlanId !== undefined;
+    const explicitPlan = explicitTrigger
+      ? (get().sessionPlans[taskId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
+      : null;
+    const planSection = explicitPlan
+      ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+      : latestSection;
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
       void get().sendTurn({ taskId, content: kickoff });
     }
+
+    const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
+    const planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
+    if (planToConsume) {
+      await invokeAddPlanConsumption(planToConsume.id, inserted.id);
+      const refreshed = await invokeListPlansForSession(taskId);
+      const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
+      set((state) => ({
+        sessionPlans: { ...state.sessionPlans, [taskId]: refreshed },
+        planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
+      }));
+    }
+
     return inserted.id;
   },
 
@@ -3567,6 +3680,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setSidebarWorkspaceSearch: (query) => set({ sidebarWorkspaceSearch: query }),
   setSidebarSessionSearch: (query) => set({ sidebarSessionSearch: query }),
+  refreshUnreadWorkspaces: async () => {
+    try {
+      const ids = await invokeWorkspacesWithUnread();
+      set({ unreadWorkspaceIds: new Set(ids) });
+    } catch {
+      // Best-effort: stale unread indicators are recoverable from the next
+      // selectAgent / status update.
+    }
+  },
   setSidebarStateFilter: (states) => set({ sidebarStateFilter: states }),
   setSidebarProviderFilter: (providers) => set({ sidebarProviderFilter: providers }),
 

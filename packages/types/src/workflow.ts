@@ -67,6 +67,12 @@ export type Session = Readonly<{
   // (currently only claude). Threaded back via `--resume` on subsequent turns
   // so the provider keeps full prior-turn context across one-shot invocations.
   providerSessionId?: string;
+  // Timestamp of the last terminal transition (completed/failed/skipped). Used
+  // with `lastViewedAt` to derive an "unread response" indicator in the sidebar.
+  lastFinishedAt?: IsoDateTime;
+  // Timestamp of when the user last selected this agent in the sidebar. Unread
+  // = `lastFinishedAt > lastViewedAt`.
+  lastViewedAt?: IsoDateTime;
 }>;
 
 export type StepTransition = Readonly<{

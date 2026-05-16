@@ -7,16 +7,20 @@ import {
   Bot,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
   FolderOpen,
   FolderPlus,
   Gauge,
-  GitFork,
+  GitMerge,
   GitPullRequest,
   GitPullRequestArrow,
+  GitPullRequestClosed,
   GitPullRequestDraft,
   HelpCircle,
+  Loader2,
   MessagesSquare,
   Moon,
+  Play,
   Plus,
   Settings,
   Settings2,
@@ -51,13 +55,17 @@ import type {
 } from '@kay-am/types';
 import {
   EMPTY_ARRAY,
+  agentHasUnread,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
   useSessionNextActions,
   useSessionLoading,
+  useSessionPlans,
   useSessionSlots,
   useSessions,
+  useTaskHasUnread,
+  useWorkspaceHasUnread,
   useWorkspaces,
 } from '../store';
 import { NewSessionDialog } from './NewSessionDialog';
@@ -69,6 +77,7 @@ import {
   formatCost,
   formatTokens,
   shortModel,
+  shortModelWithVersion,
 } from '../agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
@@ -350,6 +359,8 @@ interface WorkspaceRowProps {
 
 function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
   const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
+  const workspaceHasUnread = useWorkspaceHasUnread(workspace.id);
+  const showUnreadDot = workspaceHasUnread && !isActive;
 
   return (
     <li className="group">
@@ -365,12 +376,20 @@ function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
           className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
         >
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-              isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-            )}
             aria-hidden
-          />
+            title={showUnreadDot ? 'unread agent response in this workspace' : undefined}
+            className="relative inline-flex h-1.5 w-1.5 shrink-0"
+          >
+            {showUnreadDot && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+            )}
+            <span
+              className={cn(
+                'relative inline-block h-1.5 w-1.5 rounded-full',
+                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            />
+          </span>
           <FolderOpen
             size={13}
             aria-hidden
@@ -717,7 +736,7 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
 }
 
 const PR_ICON_MAP: Record<
-  Exclude<PullRequestStateKind, 'closed'>,
+  PullRequestStateKind,
   { icon: React.ElementType; label: string; className: string }
 > = {
   draft: {
@@ -727,8 +746,8 @@ const PR_ICON_MAP: Record<
   },
   open: {
     icon: GitPullRequest,
-    label: 'open',
-    className: 'text-muted-foreground',
+    label: 'in review',
+    className: 'text-success',
   },
   approved: {
     icon: GitPullRequestArrow,
@@ -736,9 +755,14 @@ const PR_ICON_MAP: Record<
     className: 'text-success',
   },
   merged: {
-    icon: GitFork,
+    icon: GitMerge,
     label: 'merged',
-    className: 'text-muted-foreground',
+    className: 'text-merged',
+  },
+  closed: {
+    icon: GitPullRequestClosed,
+    label: 'closed',
+    className: 'text-danger',
   },
 };
 
@@ -750,10 +774,34 @@ function PrStatusIcon({ taskId }: PrStatusIconProps) {
   const github = useAppStore((s) => s.sessionGithub[taskId]);
   const branch = useAppStore((s) => s.sessionBranches[taskId]);
 
-  if (!branch || !github?.pr || github.pr.state === 'closed') return null;
+  const isLoading = !github || github.loading || (github.fetchedAt === null && !github.error);
+
+  if (isLoading) {
+    return (
+      <span
+        title="loading PR status…"
+        aria-label="loading PR status"
+        className="shrink-0 rounded p-0.5 text-muted-foreground/50"
+      >
+        <Loader2 size={12} aria-hidden className="animate-spin" />
+      </span>
+    );
+  }
+
+  if (!branch || !github.pr) {
+    return (
+      <span
+        title="no PR open"
+        aria-label="no PR open"
+        className="shrink-0 rounded p-0.5 text-danger/70"
+      >
+        <GitPullRequest size={12} aria-hidden />
+      </span>
+    );
+  }
 
   const { pr } = github;
-  const entry = PR_ICON_MAP[pr.state as Exclude<PullRequestStateKind, 'closed'>];
+  const entry = PR_ICON_MAP[pr.state];
   if (!entry) return null;
 
   const Icon = entry.icon;
@@ -892,6 +940,9 @@ const SessionRow = memo(function SessionRow({
     setConfirmDelete(false);
   };
 
+  const taskHasUnread = useTaskHasUnread(session.id as TaskId);
+  const showUnreadDot = taskHasUnread && !isActive;
+
   return (
     <li>
       <div
@@ -909,12 +960,20 @@ const SessionRow = memo(function SessionRow({
       >
         <div className="flex min-w-0 w-full items-center gap-2 text-sm">
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-              isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-            )}
             aria-hidden
-          />
+            title={showUnreadDot ? 'unread agent response' : undefined}
+            className="relative inline-flex h-1.5 w-1.5 shrink-0"
+          >
+            {showUnreadDot && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+            )}
+            <span
+              className={cn(
+                'relative inline-block h-1.5 w-1.5 rounded-full',
+                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            />
+          </span>
           {renaming ? (
             <div
               className="flex min-w-0 flex-1 flex-col gap-0.5"
@@ -936,27 +995,44 @@ const SessionRow = memo(function SessionRow({
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <PrStatusIcon taskId={session.id as TaskId} />
             <StatusBadge state={session.state} />
-            {session.workflowId ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void setSessionAutoRun(session.id as TaskId, !session.autoRun);
-                }}
-                title={
-                  session.autoRun ? 'autorun on — click to pause' : 'autorun off — click to enable'
-                }
-                aria-label={session.autoRun ? 'autorun on' : 'autorun off'}
-                className={cn(
-                  'rounded p-0.5 transition-colors',
-                  session.autoRun
-                    ? 'text-primary hover:bg-primary/10'
-                    : 'text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground',
-                )}
-              >
-                {session.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
-              </button>
-            ) : null}
+            {(() => {
+              const hasWorkflow = !!session.workflowId;
+              const tooltip = !hasWorkflow
+                ? 'no workflow configured — auto-run unavailable'
+                : session.autoRun
+                  ? 'autorun on — click to pause'
+                  : 'autorun off — click to enable';
+              const ariaLabel = !hasWorkflow
+                ? 'autorun unavailable'
+                : session.autoRun
+                  ? 'autorun on'
+                  : 'autorun off';
+              const cls = !hasWorkflow
+                ? 'text-muted-foreground/25 cursor-not-allowed'
+                : session.autoRun
+                  ? 'text-primary hover:bg-primary/10'
+                  : 'text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground';
+              return (
+                <button
+                  type="button"
+                  disabled={!hasWorkflow}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!hasWorkflow) return;
+                    void setSessionAutoRun(session.id as TaskId, !session.autoRun);
+                  }}
+                  title={tooltip}
+                  aria-label={ariaLabel}
+                  className={cn('rounded p-0.5 transition-colors', cls)}
+                >
+                  {hasWorkflow && session.autoRun ? (
+                    <Zap size={11} aria-hidden />
+                  ) : (
+                    <ZapOff size={11} aria-hidden />
+                  )}
+                </button>
+              );
+            })()}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -1318,6 +1394,10 @@ interface AgentsSectionProps {
 }
 
 function AgentsSection({ task }: AgentsSectionProps) {
+  const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
+  const plansForTask = useSessionPlans(task.id);
+  const latestPlan = plansForTask[plansForTask.length - 1];
+  const hasActivePlan = !!latestPlan && latestPlan.status === 'active';
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
   );
@@ -1475,10 +1555,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         loading.agents ? (
           <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
-              <li
-                key={i}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5"
-              >
+              <li key={i} className="flex items-center gap-2 rounded-md px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
                 <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
               </li>
@@ -1510,6 +1587,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                 turns={turnsByAgentId.get(run.id) ?? 0}
                 turnsLoading={run.id === selectedAgentId && loading.transcript}
                 isSelected={run.id === selectedAgentId}
+                isTaskActive={isTaskActive}
                 isEditing={editingId === run.id}
                 onClick={() => onPickAgent(run.id)}
                 onPickKind={(next) => setAgentKind(run.id, next)}
@@ -1529,9 +1607,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
             runs={sorted}
             onAdvance={(step, model) => onSpawn(step.id, model)}
             hasOpenQuestions={hasOpenQuestions}
+            consumesActivePlan={hasActivePlan}
           />
         </div>
       ) : null}
+      {workflow && hasActivePlan ? null : <ActivePlanCta taskId={task.id} />}
       <NextActionChips
         taskId={task.id}
         workflowBound={task.workflowId !== undefined}
@@ -1693,6 +1773,64 @@ function SpawnAgentControl({ taskId, workflow, onSpawn }: SpawnAgentControlProps
   );
 }
 
+function ActivePlanCta({ taskId }: { taskId: TaskId }) {
+  const plans = useSessionPlans(taskId);
+  const runPlan = useAppStore((s) => s.runPlan);
+  const abandonPlan = useAppStore((s) => s.abandonPlan);
+  const [spawning, setSpawning] = useState(false);
+  const latest = plans[plans.length - 1];
+  if (!latest || latest.status !== 'active') return null;
+
+  const handleTrigger = async () => {
+    if (spawning) return;
+    setSpawning(true);
+    try {
+      await runPlan(taskId, latest.id);
+    } finally {
+      setSpawning(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 flex flex-col gap-1 pl-2">
+      <div className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+        <ClipboardList size={11} aria-hidden className="text-primary" />
+        active plan
+      </div>
+      <span className="truncate text-xs text-foreground" title={latest.title}>
+        {latest.title}
+      </span>
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => void handleTrigger()}
+          disabled={spawning}
+          className={cn(
+            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+            spawning && 'cursor-not-allowed opacity-60',
+          )}
+          title="spawn new agent to execute this plan"
+        >
+          {spawning ? (
+            <Loader2 size={11} aria-hidden className="animate-spin" />
+          ) : (
+            <Play size={11} aria-hidden />
+          )}
+          trigger plan
+        </button>
+        <button
+          type="button"
+          onClick={() => void abandonPlan(taskId, latest.id)}
+          className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          title="mark plan as superseded; next plan emitted starts a new logical plan"
+        >
+          abandon
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect: () => void }) {
   const kind = spawnKindForAction(action);
   const palette = AGENT_KIND_PALETTE[kind];
@@ -1740,6 +1878,7 @@ interface AgentRowProps {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly isSelected: boolean;
+  readonly isTaskActive: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
   readonly onPickKind: (next: AgentKind) => void;
@@ -1757,6 +1896,7 @@ function AgentRow({
   turns,
   turnsLoading,
   isSelected,
+  isTaskActive,
   isEditing,
   onClick,
   onPickKind,
@@ -1804,20 +1944,10 @@ function AgentRow({
         'group rounded-md transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-muted' : 'hover:bg-muted/60',
+        agentHasUnread(run, isSelected && isTaskActive) && 'ring-1 ring-inset ring-warning/70',
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
-        <span aria-hidden className="relative inline-flex h-1.5 w-1.5 shrink-0">
-          {run.status === 'running' && (
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
-          )}
-          <span
-            className={cn(
-              'relative inline-block h-1.5 w-1.5 rounded-full',
-              AGENT_STATUS_TONE[run.status],
-            )}
-          />
-        </span>
         <AgentKindMenu kind={kind} agentLabel={`agent ${run.ordinal + 1}`} onPick={onPickKind} />
         {isEditing ? (
           <input
@@ -1874,18 +2004,38 @@ function AgentRow({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmingDelete(true);
-              }}
-              className="invisible shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:visible hover:text-danger"
-              title="delete agent (double-click row to rename)"
-              aria-label="delete agent"
-            >
-              <Trash2 size={11} aria-hidden />
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
+                <AgentLifetime run={run} />
+              </span>
+              <span
+                aria-hidden
+                className="relative inline-flex h-1.5 w-1.5 shrink-0 group-hover:hidden"
+                title={`status: ${run.status}`}
+              >
+                {run.status === 'running' && (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
+                )}
+                <span
+                  className={cn(
+                    'relative inline-block h-1.5 w-1.5 rounded-full',
+                    AGENT_STATUS_TONE[run.status],
+                  )}
+                />
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingDelete(true);
+                }}
+                className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
+                title="delete agent (double-click row to rename)"
+                aria-label="delete agent"
+              >
+                <Trash2 size={11} aria-hidden />
+              </button>
+            </div>
           )
         ) : null}
       </div>
@@ -1896,65 +2046,66 @@ function AgentRow({
         )}
       >
         <div className="overflow-hidden">
-          <div className="flex flex-col gap-1 px-2 pb-1.5 pl-3.5">
-            <div className="flex items-center gap-2 whitespace-nowrap text-2xs text-foreground/85">
+          <div className="flex flex-col gap-1 px-2 pb-1.5">
+            <div className="flex items-center justify-between gap-2 whitespace-nowrap text-2xs text-muted-foreground/85">
               <span
-                className="inline-flex items-baseline gap-1 tabular-nums"
-                title={
-                  aggregate
-                    ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
-                    : 'no input tokens yet'
-                }
+                className="min-w-0 truncate text-muted-foreground/70"
+                title={telemetry?.model ?? undefined}
               >
-                <span aria-hidden className="text-muted-foreground/60">
-                  ↓
-                </span>
-                {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
+                {telemetry ? shortModelWithVersion(telemetry.model) : '—'}
               </span>
-              <span
-                className="inline-flex items-baseline gap-1 tabular-nums"
-                title={
-                  aggregate
-                    ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
-                    : 'no output tokens yet'
-                }
-              >
-                <span aria-hidden className="text-muted-foreground/60">
-                  ↑
-                </span>
-                {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-              </span>
-              <span aria-hidden className="text-muted-foreground/40">
-                ·
-              </span>
-              <CostBadge
-                value={aggregate?.estimatedCostUsd ?? 0}
-                title={
-                  aggregate
-                    ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
-                    : 'no cost yet'
-                }
-              />
-            </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/70">
-              {telemetry ? (
-                <>
-                  <span className="truncate">{shortModel(telemetry.model)}</span>
-                  <span aria-hidden>·</span>
-                </>
-              ) : null}
-              {turnsLoading ? (
+              <div className="flex shrink-0 items-center gap-1.5">
                 <span
-                  aria-label="loading turn count"
-                  className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
-                />
-              ) : (
-                <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                  {turns}t
+                  className="inline-flex items-baseline gap-0.5 tabular-nums"
+                  title={
+                    aggregate
+                      ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
+                      : 'no input tokens yet'
+                  }
+                >
+                  <span aria-hidden className="text-muted-foreground/60">
+                    ↓
+                  </span>
+                  {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
                 </span>
-              )}
-              <span aria-hidden>·</span>
-              <AgentLifetime run={run} />
+                <span
+                  className="inline-flex items-baseline gap-0.5 tabular-nums"
+                  title={
+                    aggregate
+                      ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
+                      : 'no output tokens yet'
+                  }
+                >
+                  <span aria-hidden className="text-muted-foreground/60">
+                    ↑
+                  </span>
+                  {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
+                </span>
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                {turnsLoading ? (
+                  <span
+                    aria-label="loading turn count"
+                    className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
+                  />
+                ) : (
+                  <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
+                    {turns}t
+                  </span>
+                )}
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                <CostBadge
+                  value={aggregate?.estimatedCostUsd ?? 0}
+                  title={
+                    aggregate
+                      ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
+                      : 'no cost yet'
+                  }
+                />
+              </div>
             </div>
             <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
           </div>
@@ -1980,11 +2131,11 @@ function formatRelativeDuration(fromIso: string, toIso?: string): string {
   const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
   if (diff < 60) return `${diff}s`;
   const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m ${diff % 60}s`;
+  if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ${m % 60}m`;
+  if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
-  return `${d}d ${h % 24}h`;
+  return `${d}d`;
 }
 
 function AgentLifetime({ run }: { run: Session }) {
@@ -1998,8 +2149,11 @@ function AgentLifetime({ run }: { run: Session }) {
 
   if (!run.startedAt) {
     return (
-      <span className="text-muted-foreground/60" title="agent spawned but has not run yet">
-        not started
+      <span
+        className="font-mono text-muted-foreground/60"
+        title="agent spawned but has not run yet"
+      >
+        0
       </span>
     );
   }
@@ -2013,7 +2167,7 @@ function AgentLifetime({ run }: { run: Session }) {
 
   return (
     <span className="font-mono text-muted-foreground/80" title={tooltip}>
-      {run.completedAt ? `⏱ ${ageStr}` : `⏱ ${ageStr} (live)`}
+      {ageStr}
     </span>
   );
 }

@@ -108,6 +108,8 @@ export {
   insertDiffComment,
   listDiffCommentsForTask,
   resolveDiffComment,
+  consumeDiffComments,
+  reopenDiffComment,
   deleteDiffComment,
 } from './queries/diff-comment';
 export {
@@ -125,5 +127,8 @@ export {
   updatePlanStatus,
   updatePlanBody,
   deletePlan,
+  addPlanConsumption,
+  listConsumptionsForPlan,
   type UpsertPlanInput,
+  type AddPlanConsumptionInput,
 } from './queries/plan';

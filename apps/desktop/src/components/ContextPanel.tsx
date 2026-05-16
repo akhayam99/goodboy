@@ -22,7 +22,7 @@ import {
   HelpCircle,
   Activity,
   ClipboardList,
-  Play,
+  List,
   type LucideIcon,
 } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
@@ -30,14 +30,14 @@ import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/co
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
-  Plan,
   PlanStatus,
-  Session,
+  PlanWithCount,
   Task,
   TaskId,
   TelemetryRecord,
   PullRequestStateKind,
 } from '@kay-am/types';
+import { PlansModal } from './PlansModal';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -54,7 +54,8 @@ import { formatError } from '../errors';
 import { tauriGhRunner } from '../github';
 import { DiffViewerDialog } from './DiffViewerDialog';
 import { GithubCard } from './GithubCard';
-import { worktreeDiff } from '../worktree';
+import { worktreeStatus } from '../worktree';
+import type { WorktreeStatus } from '@kay-am/types';
 
 interface ContextPanelProps {
   session: Task;
@@ -123,36 +124,45 @@ export function ContextPanel({
   );
 
   const filesTouched = useFilesTouched(session.id);
-  const [diffFilesCount, setDiffFilesCount] = useState<number | null>(null);
+  const [gitStatus, setGitStatus] = useState<WorktreeStatus | null>(null);
 
   useEffect(() => {
     if (!workingDir) {
-      setDiffFilesCount(null);
+      setGitStatus(null);
       return;
     }
     let cancelled = false;
-    worktreeDiff(workingDir)
-      .then((diff) => {
-        if (cancelled) return;
-        const matches = diff.match(/^diff --git /gm);
-        setDiffFilesCount(matches?.length ?? 0);
+    worktreeStatus(workingDir)
+      .then((s) => {
+        if (!cancelled) setGitStatus(s);
       })
       .catch(() => {
-        if (!cancelled) setDiffFilesCount(null);
+        if (!cancelled) setGitStatus(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [workingDir, filesTouched.count]);
+  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
 
-  const filesTouchedCount = diffFilesCount ?? filesTouched.count;
+  const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
+  const filesTooltip = useMemo(() => {
+    if (!gitStatus) {
+      return filesTouchedCount === 0
+        ? 'no files touched yet'
+        : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`;
+    }
+    const parts: string[] = [];
+    if (gitStatus.unstaged > 0) parts.push(`${gitStatus.unstaged} unstaged`);
+    if (gitStatus.staged > 0) parts.push(`${gitStatus.staged} staged`);
+    if (gitStatus.untracked > 0) parts.push(`${gitStatus.untracked} untracked`);
+    if (gitStatus.hasUpstream && (gitStatus.ahead > 0 || gitStatus.behind > 0)) {
+      parts.push(`ahead ${gitStatus.ahead} / behind ${gitStatus.behind}`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
+  }, [gitStatus, filesTouchedCount]);
 
   const [filesDiffOpen, setFilesDiffOpen] = useState(false);
   const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);
-  const filesDiffLoader = useCallback(
-    () => (workingDir ? worktreeDiff(workingDir) : Promise.resolve('')),
-    [workingDir],
-  );
   const diffComments = useDiffComments(session.id);
   const openNotesCount = useMemo(
     () => diffComments.filter((c) => c.status === 'open').length,
@@ -231,19 +241,18 @@ export function ContextPanel({
               {visibleSlotKeys.map((key) => {
                 const slot = slotsByKey.get(key);
                 return (
-                    <SlotRow
-                      key={key}
-                      taskId={session.id}
-                      slotKey={key}
-                      slot={slot}
-                      loading={loading.slots}
-                      isSummarizing={summarizer.status === 'running'}
-                      onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                    />
+                  <SlotRow
+                    key={key}
+                    taskId={session.id}
+                    slotKey={key}
+                    slot={slot}
+                    loading={loading.slots}
+                    isSummarizing={summarizer.status === 'running'}
+                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                  />
                 );
               })}
             </ul>
-
           </div>
         </ScrollArea>
 
@@ -252,54 +261,52 @@ export function ContextPanel({
           {filesTouchedCount === 0 && (loading.transcript || loading.agents) ? (
             <FilesTouchedSkeleton />
           ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setFilesDiffJumpToNotes(false);
-              setFilesDiffOpen(true);
-            }}
-            disabled={filesTouchedCount === 0 || !workingDir}
-            className={cn(
-              'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-              filesTouchedCount === 0 || !workingDir
-                ? 'cursor-not-allowed text-muted-foreground/50'
-                : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
-            )}
-            title={
-              filesTouchedCount === 0
-                ? 'no files touched yet'
-                : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`
-            }
-          >
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <FileEdit size={11} aria-hidden />
-              <span className="truncate">
-                {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+            <button
+              type="button"
+              onClick={() => {
+                setFilesDiffJumpToNotes(false);
+                setFilesDiffOpen(true);
+              }}
+              disabled={!workingDir}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                !workingDir
+                  ? 'cursor-not-allowed text-muted-foreground/50'
+                  : filesTouchedCount === 0
+                    ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+              )}
+              title={filesTooltip}
+            >
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <FileEdit size={11} aria-hidden />
+                <span className="truncate">
+                  {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+                </span>
+                {openNotesCount > 0 ? (
+                  <>
+                    <span aria-hidden className="opacity-40">
+                      ·
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFilesDiffJumpToNotes(true);
+                        setFilesDiffOpen(true);
+                      }}
+                      className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
+                      title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
+                    >
+                      {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
+                    </button>
+                  </>
+                ) : null}
               </span>
-              {openNotesCount > 0 ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFilesDiffJumpToNotes(true);
-                      setFilesDiffOpen(true);
-                    }}
-                    className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                    title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                  >
-                    {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                  </button>
-                </>
-              ) : null}
-            </span>
-            <span aria-hidden className="opacity-60">
-              ↗
-            </span>
-          </button>
+              <span aria-hidden className="opacity-60">
+                ↗
+              </span>
+            </button>
           )}
         </div>
       </div>
@@ -309,8 +316,8 @@ export function ContextPanel({
         onClose={() => setFilesDiffOpen(false)}
         taskId={session.id}
         title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
-        loader={filesDiffLoader}
         workingDir={workingDir ?? undefined}
+        worktreePath={workingDir ?? undefined}
         jumpToFirstCommented={filesDiffJumpToNotes}
       />
     </>
@@ -376,11 +383,7 @@ function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
 
 function SlotRowSkeleton({ slotKey }: { slotKey: SlotKey }) {
   return (
-    <li
-      role="status"
-      aria-label={`loading ${slotKey}`}
-      className="flex flex-col gap-2"
-    >
+    <li role="status" aria-label={`loading ${slotKey}`} className="flex flex-col gap-2">
       <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
       <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
       <div className="h-3 w-3/4 animate-pulse rounded bg-muted/70" />
@@ -675,6 +678,9 @@ interface SlotMeta {
   readonly emphasis?: boolean;
   readonly tintedWhenNonEmpty?: string;
   readonly emptyLabel: string;
+  readonly collapsible?: boolean;
+  readonly defaultCollapsed?: boolean;
+  readonly singleLine?: boolean;
 }
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
@@ -688,11 +694,14 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: Target,
     iconClass: 'text-primary',
     emphasis: true,
+    singleLine: true,
     emptyLabel: 'no goal set',
   },
   decisions: {
     icon: CheckCheck,
     iconClass: 'text-success',
+    collapsible: true,
+    defaultCollapsed: true,
     emptyLabel: 'no decisions yet',
   },
   open_questions: {
@@ -704,9 +713,29 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   last_output_summary: {
     icon: Activity,
     iconClass: 'text-info',
+    collapsible: true,
+    defaultCollapsed: true,
     emptyLabel: 'no output yet',
   },
 };
+
+function countMarkdownItems(value: string): number {
+  return value.split('\n').filter((l) => /^\s*([-*+]|\d+\.)\s+/.test(l)).length;
+}
+
+function firstMeaningfulLine(value: string): string {
+  for (const raw of value.split('\n')) {
+    const t = raw
+      .trim()
+      .replace(/^[-*+]\s+/, '')
+      .replace(/^\d+\.\s+/, '')
+      .replace(/^#+\s+/, '')
+      .replace(/\*\*/g, '')
+      .replace(/`/g, '');
+    if (t) return t;
+  }
+  return '';
+}
 
 function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
   if (!workingDir || slot.value.length === 0) return slot;
@@ -753,6 +782,12 @@ function SlotRow({
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
   const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
+  const collapsible = meta?.collapsible ?? false;
+  const singleLine = meta?.singleLine ?? false;
+  const [collapsed, setCollapsed] = useState(meta?.defaultCollapsed ?? false);
+  const itemCount = collapsible && hasValue ? countMarkdownItems(value) : 0;
+  const preview = collapsible && hasValue ? firstMeaningfulLine(value) : '';
+  const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
 
   useEffect(() => {
     if (!editing) setDraft(value);
@@ -776,19 +811,40 @@ function SlotRow({
     [onCommit],
   );
 
+  const headerLabel = collapsible ? (
+    <button
+      type="button"
+      onClick={() => setCollapsed((v) => !v)}
+      className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      title={collapsed ? 'expand' : 'collapse'}
+      aria-expanded={!collapsed}
+    >
+      <CollapseIcon size={11} aria-hidden className="shrink-0" />
+      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
+      <span>{SLOT_LABELS[slotKey]}</span>
+      {hasValue && collapsed ? (
+        <span className="ml-1 normal-case tracking-normal text-2xs text-muted-foreground/70">
+          {itemCount > 0 ? `· ${itemCount} item${itemCount === 1 ? '' : 's'}` : '· …'}
+        </span>
+      ) : null}
+    </button>
+  ) : (
+    <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
+      {SLOT_LABELS[slotKey]}
+    </label>
+  );
+
   return (
     <li className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-          {SLOT_LABELS[slotKey]}
-        </label>
+      <div className="flex items-center justify-between gap-2">
+        {headerLabel}
         <button
           type="button"
           onClick={openHistory}
           title="view history"
           aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className={ICON_BTN}
+          className={cn(ICON_BTN, 'shrink-0')}
         >
           <History size={11} aria-hidden />
         </button>
@@ -824,6 +880,29 @@ function SlotRow({
           className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
         >
           {meta?.emptyLabel ?? 'empty — click to edit'}
+        </button>
+      ) : singleLine ? (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title={value}
+          className={cn(
+            'truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-sm font-medium hover:border-border-soft hover:bg-muted/40',
+            meta?.tintedWhenNonEmpty,
+          )}
+        >
+          {value}
+        </button>
+      ) : collapsible && collapsed ? (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          title="expand"
+          className={cn(
+            'flex w-full items-center gap-1.5 truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-border-soft hover:bg-muted/40 hover:text-foreground',
+          )}
+        >
+          <span className="truncate">{preview}</span>
         </button>
       ) : renderAsMarkdown ? (
         <div
@@ -1010,18 +1089,16 @@ function SummarizerBadge({
 }
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
-  active: 'bg-success/10 text-success',
-  completed: 'bg-muted text-muted-foreground',
-  superseded: 'bg-warning/10 text-warning',
+  active: 'bg-warning/10 text-warning',
+  consumed: 'bg-info/10 text-info',
+  superseded: 'bg-muted text-muted-foreground',
 };
 
 function PlansSection({ taskId }: { taskId: TaskId }) {
   const plans = useSessionPlans(taskId);
   const loading = useSessionLoading(taskId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
-  const agents = useAppStore(
-    (s) => s.sessionPhaseRuns[taskId] ?? (EMPTY_ARRAY as ReadonlyArray<Session>),
-  );
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     void loadSessionPlans(taskId);
@@ -1030,72 +1107,50 @@ function PlansSection({ taskId }: { taskId: TaskId }) {
   if (plans.length === 0 && loading.plans) return <PlansSkeleton />;
   if (plans.length === 0) return null;
 
+  const latest = plans[plans.length - 1];
+  if (!latest) return null;
+  const latestIndex = plans.length;
+
   return (
     <section className="flex flex-col gap-2">
-      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <ClipboardList size={11} aria-hidden className="text-primary" />
-        plans
-      </span>
-      <ul className="flex flex-col gap-1.5">
-        {plans.map((plan) => (
-          <PlanRow
-            key={plan.id}
-            taskId={taskId}
-            plan={plan}
-            agentName={agents.find((a) => a.id === plan.agentId)?.name ?? 'unknown agent'}
-          />
-        ))}
-      </ul>
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <ClipboardList size={11} aria-hidden className="text-primary" />
+          plans
+        </span>
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          title={`view all plans (${plans.length})`}
+          aria-label={`view all plans (${plans.length})`}
+          className={cn(ICON_BTN, 'inline-flex items-center gap-1 text-2xs')}
+        >
+          <span>{plans.length}</span>
+          <List size={11} aria-hidden />
+        </button>
+      </div>
+      <LatestPlanCard plan={latest} index={latestIndex} />
+      <PlansModal
+        taskId={taskId}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialPlanId={latest.id}
+      />
     </section>
   );
 }
 
-interface PlanRowProps {
-  readonly taskId: TaskId;
-  readonly plan: Plan;
-  readonly agentName: string;
+interface LatestPlanCardProps {
+  readonly plan: PlanWithCount;
+  readonly index: number;
 }
 
-function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
+function LatestPlanCard({ plan, index }: LatestPlanCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(planToSource(plan));
-  const [spawning, setSpawning] = useState(false);
-  const setPlanStatus = useAppStore((s) => s.setPlanStatus);
-  const updatePlanBody = useAppStore((s) => s.updatePlanBody);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-
-  useEffect(() => {
-    if (!editing) setDraft(planToSource(plan));
-  }, [plan, editing]);
-
-  const toggleStatus = () => {
-    const next: PlanStatus = plan.status === 'active' ? 'completed' : 'active';
-    void setPlanStatus(taskId, plan.id, next);
-  };
-
-  const commit = () => {
-    setEditing(false);
-    const next = parsePlanSource(draft);
-    if (next.title.length === 0) return;
-    if (next.title === plan.title && next.bodyMd === plan.bodyMd) return;
-    void updatePlanBody(taskId, plan.id, next.title, next.bodyMd);
-  };
-
-  const runPlan = async () => {
-    if (spawning) return;
-    setSpawning(true);
-    try {
-      await spawnAgent(taskId, { initialPrompt: plan.bodyMd });
-    } finally {
-      setSpawning(false);
-    }
-  };
-
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
+    <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
@@ -1104,95 +1159,21 @@ function PlanRow({ taskId, plan, agentName }: PlanRowProps) {
           title={expanded ? 'collapse plan' : 'expand plan'}
         >
           <Chevron size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
+            plan {index}
+          </span>
           <span className="truncate text-xs font-medium text-foreground">{plan.title}</span>
         </button>
-        <button
-          type="button"
-          onClick={toggleStatus}
-          title={`mark as ${plan.status === 'active' ? 'completed' : 'active'}`}
+        <span
           className={cn(
             'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
             PLAN_STATUS_STYLE[plan.status],
           )}
         >
           {plan.status}
-        </button>
+        </span>
       </div>
-      <span className="text-2xs text-muted-foreground">by {agentName}</span>
-      {plan.status === 'active' ? (
-        <button
-          type="button"
-          onClick={() => void runPlan()}
-          disabled={spawning}
-          className={cn(
-            'inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
-            spawning && 'cursor-not-allowed opacity-60',
-          )}
-          title="avvia nuovo agent che esegue questo piano"
-        >
-          {spawning ? (
-            <Loader2 size={11} aria-hidden className="animate-spin" />
-          ) : (
-            <Play size={11} aria-hidden />
-          )}
-          Avvia nuovo agent che esegue questo piano
-        </button>
-      ) : null}
-      {expanded ? (
-        editing ? (
-          <Textarea
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                setDraft(planToSource(plan));
-                setEditing(false);
-              }
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                commit();
-              }
-            }}
-            className="font-mono text-xs"
-            autoGrow
-            maxRows={24}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            title="edit plan source"
-            className="rounded-md border border-transparent px-1 py-1 text-left hover:border-border-soft hover:bg-muted/40"
-          >
-            <Markdown text={plan.bodyMd} className="text-xs" />
-          </button>
-        )
-      ) : null}
-    </li>
+      {expanded ? <Markdown text={plan.bodyMd} className="text-xs" /> : null}
+    </div>
   );
-}
-
-function planToSource(plan: Plan): string {
-  const head = plan.title.startsWith('#') ? plan.title : `# ${plan.title}`;
-  return plan.bodyMd.length > 0 ? `${head}\n\n${plan.bodyMd}` : head;
-}
-
-function parsePlanSource(raw: string): { title: string; bodyMd: string } {
-  const lines = raw.split('\n');
-  let firstIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if ((lines[i] ?? '').trim().length > 0) {
-      firstIdx = i;
-      break;
-    }
-  }
-  if (firstIdx === -1) return { title: '', bodyMd: '' };
-  const titleLine = (lines[firstIdx] ?? '').trim();
-  const title = titleLine.replace(/^#+\s*/, '').trim();
-  const restLines = lines.slice(firstIdx + 1);
-  const bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
-  return { title, bodyMd };
 }

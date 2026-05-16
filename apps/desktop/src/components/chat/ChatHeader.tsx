@@ -95,7 +95,7 @@ export function ChatHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <OpenInEditorButton worktreePath={worktreePath} />
+          <OpenInEditorButton worktreePath={worktreePath ?? workspace?.rootPath ?? null} />
         </div>
       </div>
     </div>

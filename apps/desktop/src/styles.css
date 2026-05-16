@@ -29,6 +29,8 @@
   --color-info-foreground: oklch(0.15 0 0);
   --color-accent: oklch(0.74 0.11 200);
   --color-accent-foreground: oklch(0.15 0.02 200);
+  --color-merged: oklch(0.70 0.15 305);
+  --color-merged-foreground: oklch(0.15 0.02 305);
 
   /* Per-provider accent. */
   --color-provider-anthropic: oklch(0.74 0.15 55);
@@ -91,6 +93,8 @@ html[data-theme="light"] {
   --color-info-foreground: oklch(0.98 0 0);
   --color-accent: oklch(0.52 0.13 200);
   --color-accent-foreground: oklch(0.98 0.004 200);
+  --color-merged: oklch(0.52 0.18 305);
+  --color-merged-foreground: oklch(0.98 0.004 305);
   --color-provider-anthropic: oklch(0.56 0.16 55);
   --color-provider-cursor: oklch(0.52 0.17 290);
   --color-provider-codex: oklch(0.50 0.15 148);
