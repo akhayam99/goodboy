@@ -1,17 +1,17 @@
 import type {
+  AgentId,
   IsoDateTime,
   Message,
   MessageId,
   MessageRole,
   SessionId,
-  TaskId,
   TurnProviderOverride,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface MessageRow {
   id: string;
-  task_id: string;
+  session_id: string;
   agent_id: string;
   role: MessageRole;
   content: string;
@@ -31,8 +31,8 @@ function toDomain(row: MessageRow): Message {
 
   return {
     id: row.id as MessageId,
-    taskId: row.task_id as TaskId,
-    agentId: row.agent_id as SessionId,
+    sessionId: row.session_id as SessionId,
+    agentId: row.agent_id as AgentId,
     role: row.role,
     content: row.content,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -43,11 +43,11 @@ function toDomain(row: MessageRow): Message {
 export async function insertMessage(db: Database, message: Message): Promise<void> {
   await db.execute(
     `INSERT INTO messages
-      (id, task_id, agent_id, role, content, created_at, provider_override_id, provider_override_model)
+      (id, session_id, agent_id, role, content, created_at, provider_override_id, provider_override_model)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       message.id,
-      message.taskId,
+      message.sessionId,
       message.agentId,
       message.role,
       message.content,
@@ -58,20 +58,20 @@ export async function insertMessage(db: Database, message: Message): Promise<voi
   );
 }
 
-export async function listMessagesForTask(
+export async function listMessagesForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<Message>> {
   const rows = await db.select<MessageRow>(
-    'SELECT * FROM messages WHERE task_id = ? ORDER BY created_at ASC',
-    [taskId],
+    'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
+    [sessionId],
   );
   return rows.map(toDomain);
 }
 
 export async function listMessagesForAgent(
   db: Database,
-  agentId: SessionId,
+  agentId: AgentId,
   opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<Message>> {
   // Limited variant returns the last N messages in ASC order. Mirrors the

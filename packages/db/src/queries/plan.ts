@@ -1,4 +1,5 @@
 import type {
+  AgentId,
   IsoDateTime,
   Plan,
   PlanConsumption,
@@ -7,7 +8,6 @@ import type {
   PlanStatus,
   PlanWithCount,
   SessionId,
-  TaskId,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
@@ -29,8 +29,8 @@ interface PlanWithCountRow extends PlanRow {
 function toDomain(row: PlanRow): Plan {
   return {
     id: row.id as PlanId,
-    sessionId: row.session_id as TaskId,
-    agentId: row.agent_id as SessionId,
+    sessionId: row.session_id as SessionId,
+    agentId: row.agent_id as AgentId,
     title: row.title,
     bodyMd: row.body_md,
     status: row.status as PlanStatus,
@@ -45,7 +45,7 @@ function toDomainWithCount(row: PlanWithCountRow): PlanWithCount {
 
 export async function listPlansForSession(
   db: Database,
-  sessionId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<PlanWithCount>> {
   const rows = await db.select<PlanWithCountRow>(
     `SELECT p.id, p.session_id, p.agent_id, p.title, p.body_md, p.status,
@@ -63,8 +63,8 @@ export async function listPlansForSession(
 
 export interface UpsertPlanInput {
   readonly id: PlanId;
-  readonly sessionId: TaskId;
-  readonly agentId: SessionId;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
   readonly title: string;
   readonly bodyMd: string;
 }
@@ -149,7 +149,7 @@ function toConsumption(row: PlanConsumptionRow): PlanConsumption {
   return {
     id: row.id as PlanConsumptionId,
     planId: row.plan_id as PlanId,
-    agentId: row.agent_id as SessionId,
+    agentId: row.agent_id as AgentId,
     agentName: row.agent_name,
     consumedAt: new Date(row.consumed_at).toISOString() as IsoDateTime,
   };
@@ -158,7 +158,7 @@ function toConsumption(row: PlanConsumptionRow): PlanConsumption {
 export interface AddPlanConsumptionInput {
   readonly id: PlanConsumptionId;
   readonly planId: PlanId;
-  readonly agentId: SessionId;
+  readonly agentId: AgentId;
 }
 
 export async function addPlanConsumption(
@@ -174,13 +174,13 @@ export async function addPlanConsumption(
     now,
     input.planId,
   ]);
-  const rows = await db.select<{ name: string | null }>(`SELECT name FROM sessions WHERE id = ?`, [
+  const rows = await db.select<{ name: string | null }>(`SELECT name FROM agents WHERE id = ?`, [
     input.agentId,
   ]);
   return {
     id: input.id,
     planId: input.planId,
-    agentId: input.agentId,
+    agentId: input.agentId as AgentId,
     agentName: rows[0]?.name ?? null,
     consumedAt: new Date(now).toISOString() as IsoDateTime,
   };
@@ -191,9 +191,9 @@ export async function listConsumptionsForPlan(
   planId: PlanId,
 ): Promise<ReadonlyArray<PlanConsumption>> {
   const rows = await db.select<PlanConsumptionRow>(
-    `SELECT c.id, c.plan_id, c.agent_id, c.consumed_at, s.name AS agent_name
+    `SELECT c.id, c.plan_id, c.agent_id, c.consumed_at, a.name AS agent_name
      FROM plan_consumptions c
-     LEFT JOIN sessions s ON s.id = c.agent_id
+     LEFT JOIN agents a ON a.id = c.agent_id
      WHERE c.plan_id = ?
      ORDER BY c.consumed_at DESC`,
     [planId],

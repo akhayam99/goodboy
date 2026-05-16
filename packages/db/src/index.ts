@@ -12,26 +12,30 @@ export {
   deleteWorkspace,
 } from './queries/workspace';
 export {
-  insertTask,
-  updateTaskState,
-  updateTaskPermissionMode,
-  updateTaskAutoRun,
-  updateTaskTitleUserEdited,
-  getTaskById,
-  listTasksForWorkspace,
-  renameTask,
-  deleteTask,
-} from './queries/task';
-export { insertMessage, listMessagesForAgent, listMessagesForTask } from './queries/message';
+  insertSession,
+  updateSessionState,
+  updateSessionPermissionMode,
+  updateSessionAutoRun,
+  updateSessionTitleUserEdited,
+  getSessionById,
+  listSessionsForWorkspace,
+  renameSession,
+  deleteSession,
+  softDeleteSession,
+  restoreSession,
+  archiveSession,
+  unarchiveSession,
+} from './queries/session';
+export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertTurnEvent,
   listTurnEventsForAgent,
-  listTurnEventsForTask,
-  listAgentRunIdsForTask,
+  listTurnEventsForSession,
+  listAgentRunIdsForSession,
 } from './queries/turn-event';
 export {
   upsertContextSlot,
-  listContextSlotsForTask,
+  listContextSlotsForSession,
   insertContextSlotHistory,
   listContextSlotHistory,
 } from './queries/context-slot';
@@ -42,8 +46,8 @@ export {
 } from './queries/provider-run';
 export {
   insertTelemetry,
-  listTelemetryForTask,
-  summarizeTaskTelemetry,
+  listTelemetryForSession,
+  summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeProviderTelemetry,
   summarizeWorkspaceProviderTelemetry,
@@ -55,8 +59,8 @@ export {
   insertBudgetRule,
   listBudgetRules,
   deleteBudgetRule,
-  upsertTaskBudget,
-  getTaskBudget,
+  upsertSessionBudget,
+  getSessionBudget,
   insertBudgetAlert,
   listBudgetAlerts,
   dismissBudgetAlert,
@@ -70,15 +74,21 @@ export {
   deleteSkillsForWorkspace,
 } from './queries/skill';
 export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
-export { listSessionsForTask, insertSession, updateSessionStatus } from './queries/session';
 export {
-  insertTaskWorktree,
-  listWorktreesForTask,
-  deleteWorktreesForTask,
-  updateTaskWorktreeBranch,
-  listAllTaskWorktrees,
-  type TaskWorktree,
-} from './queries/task-worktree';
+  listAgentsForSession,
+  insertAgent,
+  updateAgentStatus,
+  softDeleteAgent,
+  restoreAgent,
+} from './queries/agent';
+export {
+  insertSessionWorktree,
+  listWorktreesForSession,
+  deleteWorktreesForSession,
+  updateSessionWorktreeBranch,
+  listAllSessionWorktrees,
+  type SessionWorktree,
+} from './queries/session-worktree';
 export {
   enqueueAuditRetry,
   drainOldest,
@@ -88,7 +98,7 @@ export {
 } from './queries/permission-audit-retry';
 export {
   insertGroup,
-  listGroupsForTask,
+  listGroupsForSession,
   getGroupById,
   deleteGroup,
   updateGroupCompletedAt,
@@ -96,8 +106,8 @@ export {
 export {
   getWorkspaceOverrides,
   setWorkspaceOverrides,
-  getTaskOverrides,
-  setTaskOverrides,
+  getSessionOverrides,
+  setSessionOverrides,
 } from './queries/settings-overrides';
 export {
   getGithubPrCache,
@@ -106,7 +116,7 @@ export {
 } from './queries/github-pr-cache';
 export {
   insertDiffComment,
-  listDiffCommentsForTask,
+  listDiffCommentsForSession,
   resolveDiffComment,
   consumeDiffComments,
   reopenDiffComment,

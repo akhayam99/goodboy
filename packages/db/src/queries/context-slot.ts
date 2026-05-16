@@ -2,13 +2,13 @@ import type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
-  TaskId,
+  SessionId,
 } from '@kay-am/types';
 import type { IsoDateTime } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface ContextSlotRow {
-  task_id: string;
+  session_id: string;
   key: string;
   value: string;
   enabled: number;
@@ -24,16 +24,16 @@ function toDomain(row: ContextSlotRow): ContextSlot {
 
 export async function upsertContextSlot(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
   slot: ContextSlot,
 ): Promise<void> {
   await db.execute(
-    `INSERT INTO context_slots (task_id, key, value, enabled)
+    `INSERT INTO context_slots (session_id, key, value, enabled)
      VALUES (?, ?, ?, ?)
-     ON CONFLICT(task_id, key) DO UPDATE SET
+     ON CONFLICT(session_id, key) DO UPDATE SET
        value = excluded.value,
        enabled = excluded.enabled`,
-    [taskId, slot.key, slot.value, slot.enabled ? 1 : 0],
+    [sessionId, slot.key, slot.value, slot.enabled ? 1 : 0],
   );
 }
 
@@ -59,51 +59,51 @@ function toHistoryDomain(row: ContextSlotHistoryRow): ContextSlotHistoryEntry {
 
 export async function insertContextSlotHistory(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
   id: string,
   key: string,
   value: string,
   author: ContextSlotAuthor,
 ): Promise<void> {
   await db.execute(
-    `INSERT INTO context_slot_history (id, task_id, key, value, author, created_at)
+    `INSERT INTO context_slot_history (id, session_id, key, value, author, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, taskId, key, value, author, Date.now()],
+    [id, sessionId, key, value, author, Date.now()],
   );
   await db.execute(
     `DELETE FROM context_slot_history
-     WHERE task_id = ? AND key = ? AND id NOT IN (
+     WHERE session_id = ? AND key = ? AND id NOT IN (
        SELECT id FROM context_slot_history
-       WHERE task_id = ? AND key = ?
+       WHERE session_id = ? AND key = ?
        ORDER BY created_at DESC
        LIMIT ${HISTORY_CAP}
      )`,
-    [taskId, key, taskId, key],
+    [sessionId, key, sessionId, key],
   );
 }
 
 export async function listContextSlotHistory(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
   key: string,
 ): Promise<ReadonlyArray<ContextSlotHistoryEntry>> {
   const rows = await db.select<ContextSlotHistoryRow>(
     `SELECT id, key, value, author, created_at
      FROM context_slot_history
-     WHERE task_id = ? AND key = ?
+     WHERE session_id = ? AND key = ?
      ORDER BY created_at DESC`,
-    [taskId, key],
+    [sessionId, key],
   );
   return rows.map(toHistoryDomain);
 }
 
-export async function listContextSlotsForTask(
+export async function listContextSlotsForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<ContextSlot>> {
   const rows = await db.select<ContextSlotRow>(
-    'SELECT * FROM context_slots WHERE task_id = ? ORDER BY key',
-    [taskId],
+    'SELECT * FROM context_slots WHERE session_id = ? ORDER BY key',
+    [sessionId],
   );
   return rows.map(toDomain);
 }

@@ -1,4 +1,4 @@
-import type { IsoDateTime, TaskId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, SessionId, WorkspaceId } from '@kay-am/types';
 import type { Database } from '../client';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
@@ -18,7 +18,7 @@ export interface Notification {
   readonly title: string;
   readonly body: string | null;
   readonly severity: NotificationSeverity;
-  readonly sessionId: TaskId | null;
+  readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId | null;
   readonly read: boolean;
 }
@@ -43,7 +43,7 @@ function toNotification(row: NotificationRow): Notification {
     title: row.title,
     body: row.body,
     severity: row.severity as NotificationSeverity,
-    sessionId: row.session_id ? (row.session_id as TaskId) : null,
+    sessionId: row.session_id ? (row.session_id as SessionId) : null,
     workspaceId: row.workspace_id ? (row.workspace_id as WorkspaceId) : null,
     read: row.read !== 0,
   };

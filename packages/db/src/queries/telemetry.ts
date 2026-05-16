@@ -2,7 +2,7 @@ import type {
   IsoDateTime,
   ProviderName,
   ProviderRunId,
-  TaskId,
+  SessionId,
   TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
@@ -13,7 +13,7 @@ import type { Database } from '../client';
 interface TelemetryRow {
   id: string;
   run_id: string;
-  task_id: string;
+  session_id: string;
   kind: TelemetryKind;
   provider: ProviderName;
   model: string;
@@ -27,7 +27,7 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
   return {
     id: row.id as TelemetryRecordId,
     runId: row.run_id as ProviderRunId,
-    taskId: row.task_id as TaskId,
+    sessionId: row.session_id as SessionId,
     kind: row.kind,
     provider: row.provider,
     model: row.model,
@@ -41,12 +41,12 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
 export async function insertTelemetry(db: Database, record: TelemetryRecord): Promise<void> {
   await db.execute(
     `INSERT INTO telemetry_records
-      (id, run_id, task_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at)
+      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       record.id,
       record.runId,
-      record.taskId,
+      record.sessionId,
       record.kind,
       record.provider,
       record.model,
@@ -58,13 +58,13 @@ export async function insertTelemetry(db: Database, record: TelemetryRecord): Pr
   );
 }
 
-export async function listTelemetryForTask(
+export async function listTelemetryForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<TelemetryRecord>> {
   const rows = await db.select<TelemetryRow>(
-    'SELECT * FROM telemetry_records WHERE task_id = ? ORDER BY recorded_at ASC',
-    [taskId],
+    'SELECT * FROM telemetry_records WHERE session_id = ? ORDER BY recorded_at ASC',
+    [sessionId],
   );
   return rows.map(toDomain);
 }
@@ -99,13 +99,13 @@ function toSummary(row: SummaryRow | undefined): TelemetrySummary {
   };
 }
 
-export async function summarizeTaskTelemetry(
+export async function summarizeSessionTelemetry(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<TelemetrySummary> {
   const rows = await db.select<SummaryRow>(
-    `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE task_id = ?`,
-    [taskId],
+    `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE session_id = ?`,
+    [sessionId],
   );
   return toSummary(rows[0]);
 }
@@ -117,7 +117,7 @@ export async function summarizeWorkspaceTelemetry(
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT}
        FROM telemetry_records t
-       INNER JOIN tasks s ON s.id = t.task_id
+       INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?`,
     [workspaceId],
   );
@@ -152,7 +152,7 @@ export async function summarizeWorkspaceProviderTelemetry(
   const rows = await db.select<ProviderSummaryRow>(
     `SELECT t.provider, COALESCE(SUM(t.estimated_cost_usd), 0) AS cost
        FROM telemetry_records t
-       INNER JOIN tasks s ON s.id = t.task_id
+       INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?
       GROUP BY t.provider
       ORDER BY cost DESC`,

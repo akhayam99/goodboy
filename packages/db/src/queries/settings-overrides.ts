@@ -1,4 +1,4 @@
-import type { OverrideSettings, TaskId, WorkflowId, WorkspaceId } from '@kay-am/types';
+import type { OverrideSettings, SessionId, WorkflowId, WorkspaceId } from '@kay-am/types';
 import type { ProviderId } from '@kay-am/types';
 import type { Database } from '../client';
 
@@ -55,26 +55,26 @@ export async function setWorkspaceOverrides(
   );
 }
 
-export async function getTaskOverrides(
+export async function getSessionOverrides(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<OverrideSettings | null> {
   const rows = await db.select<OverrideRow>(
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
-     FROM tasks WHERE id = ?`,
-    [taskId],
+     FROM sessions WHERE id = ?`,
+    [sessionId],
   );
   const row = rows[0];
   return row ? rowToOverride(row) : null;
 }
 
-export async function setTaskOverrides(
+export async function setSessionOverrides(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
   overrides: OverrideSettings,
 ): Promise<void> {
   await db.execute(
-    `UPDATE tasks
+    `UPDATE sessions
      SET default_provider_id = ?,
          default_workflow_id = ?,
          default_branch_prefix = ?,
@@ -87,7 +87,7 @@ export async function setTaskOverrides(
       overrides.defaultBranchPrefix,
       overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
       Date.now(),
-      taskId,
+      sessionId,
     ],
   );
 }

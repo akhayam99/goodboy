@@ -1,114 +1,210 @@
 import type {
+  ClaudePermissionMode,
   IsoDateTime,
-  ProviderRunId,
+  ProviderId,
   Session,
   SessionId,
-  SessionStatus,
-  StepId,
-  TaskId,
+  SessionProviderPreference,
+  TurnState,
+  WorkflowId,
+  WorkspaceId,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface SessionRow {
   id: string;
-  task_id: string;
-  step_id: string | null;
-  ordinal: number;
-  name: string;
-  status: string;
-  provider_run_id: string | null;
-  output_summary: string | null;
-  started_at: string | null;
-  completed_at: string | null;
-  last_finished_at: string | null;
-  last_viewed_at: string | null;
+  workspace_id: string;
+  goal: string;
+  state_kind: TurnState['kind'];
+  state_payload: string;
+  provider_default: string;
+  provider_allow_override: number;
+  permission_mode: string | null;
+  workflow_id: string | null;
+  current_step_ordinal: number | null;
+  auto_run: number;
+  title_user_edited: number;
+  created_at: number;
+  updated_at: number;
 }
 
-function toSession(row: SessionRow): Session {
+function toState(kind: TurnState['kind'], payload: string): TurnState {
+  const data = JSON.parse(payload) as Record<string, unknown>;
+  return { kind, ...data } as TurnState;
+}
+
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex']);
+
+const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
+  'default',
+  'acceptEdits',
+  'bypassPermissions',
+  'dontAsk',
+  'plan',
+]);
+
+function toPermissionMode(raw: string | null): ClaudePermissionMode {
+  if (raw !== null && VALID_PERMISSION_MODES.has(raw)) return raw as ClaudePermissionMode;
+  return 'bypassPermissions';
+}
+
+function toProviderPreference(row: SessionRow): SessionProviderPreference {
+  const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
+    ? (row.provider_default as ProviderId)
+    : 'anthropic';
   return {
-    id: row.id as SessionId,
-    taskId: row.task_id as TaskId,
-    ...(row.step_id != null && { stepId: row.step_id as StepId }),
-    ordinal: row.ordinal,
-    name: row.name,
-    status: row.status as SessionStatus,
-    ...(row.provider_run_id && { runId: row.provider_run_id as ProviderRunId }),
-    ...(row.output_summary && { outputSummary: row.output_summary }),
-    ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
-    ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
-    ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
-    ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
+    defaultProvider,
+    allowTurnOverride: row.provider_allow_override !== 0,
   };
 }
 
-export async function listSessionsForTask(
-  db: Database,
-  taskId: TaskId,
-): Promise<ReadonlyArray<Session>> {
-  const rows = await db.select<SessionRow>(
-    'SELECT * FROM sessions WHERE task_id = ? ORDER BY ordinal ASC',
-    [taskId],
-  );
-  return rows.map(toSession);
+function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Session {
+  return {
+    id: row.id as SessionId,
+    workspaceId: row.workspace_id as WorkspaceId,
+    goal: row.goal,
+    state: toState(row.state_kind, row.state_payload),
+    contextSlots,
+    providerPreference: toProviderPreference(row),
+    permissionMode: toPermissionMode(row.permission_mode),
+    ...(row.workflow_id && { workflowId: row.workflow_id as WorkflowId }),
+    ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
+    autoRun: row.auto_run !== 0,
+    titleUserEdited: row.title_user_edited !== 0,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
+  };
+}
+
+function splitState(state: TurnState): { kind: TurnState['kind']; payload: string } {
+  const { kind, ...rest } = state;
+  return { kind, payload: JSON.stringify(rest) };
 }
 
 export async function insertSession(db: Database, session: Session): Promise<void> {
+  const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, task_id, step_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, title_user_edited, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
-      session.taskId,
-      session.stepId ?? null,
-      session.ordinal,
-      session.name,
-      session.status,
-      session.runId ?? null,
-      session.outputSummary ?? null,
-      session.startedAt ?? null,
-      session.completedAt ?? null,
+      session.workspaceId,
+      session.goal,
+      kind,
+      payload,
+      session.providerPreference.defaultProvider,
+      session.providerPreference.allowTurnOverride ? 1 : 0,
+      session.permissionMode,
+      session.workflowId ?? null,
+      session.currentStepOrdinal ?? null,
+      session.autoRun ? 1 : 0,
+      session.titleUserEdited ? 1 : 0,
+      Date.parse(session.createdAt),
+      Date.parse(session.updatedAt),
     ],
   );
 }
 
-export async function updateSessionStatus(
+export async function updateSessionAutoRun(
   db: Database,
   id: SessionId,
-  fields: {
-    status?: SessionStatus;
-    runId?: ProviderRunId;
-    outputSummary?: string;
-    startedAt?: IsoDateTime;
-    completedAt?: IsoDateTime;
-  },
+  autoRun: boolean,
+  updatedAt: IsoDateTime,
 ): Promise<void> {
-  const updates: string[] = [];
-  const values: unknown[] = [];
+  await db.execute('UPDATE sessions SET auto_run = ?, updated_at = ? WHERE id = ?', [
+    autoRun ? 1 : 0,
+    Date.parse(updatedAt),
+    id,
+  ]);
+}
 
-  if (fields.status !== undefined) {
-    updates.push('status = ?');
-    values.push(fields.status);
-  }
-  if (fields.runId !== undefined) {
-    updates.push('provider_run_id = ?');
-    values.push(fields.runId);
-  }
-  if (fields.outputSummary !== undefined) {
-    updates.push('output_summary = ?');
-    values.push(fields.outputSummary);
-  }
-  if (fields.startedAt !== undefined) {
-    updates.push('started_at = ?');
-    values.push(fields.startedAt);
-  }
-  if (fields.completedAt !== undefined) {
-    updates.push('completed_at = ?');
-    values.push(fields.completedAt);
-  }
+export async function updateSessionTitleUserEdited(
+  db: Database,
+  id: SessionId,
+  titleUserEdited: boolean,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute('UPDATE sessions SET title_user_edited = ?, updated_at = ? WHERE id = ?', [
+    titleUserEdited ? 1 : 0,
+    Date.parse(updatedAt),
+    id,
+  ]);
+}
 
-  if (updates.length === 0) return;
+export async function updateSessionState(
+  db: Database,
+  id: SessionId,
+  state: TurnState,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  const { kind, payload } = splitState(state);
+  await db.execute(
+    'UPDATE sessions SET state_kind = ?, state_payload = ?, updated_at = ? WHERE id = ?',
+    [kind, payload, Date.parse(updatedAt), id],
+  );
+}
 
-  values.push(id);
-  await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
+export async function updateSessionPermissionMode(
+  db: Database,
+  id: SessionId,
+  permissionMode: ClaudePermissionMode,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute('UPDATE sessions SET permission_mode = ?, updated_at = ? WHERE id = ?', [
+    permissionMode,
+    Date.parse(updatedAt),
+    id,
+  ]);
+}
+
+export async function getSessionById(db: Database, id: SessionId): Promise<Session | null> {
+  const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
+  const row = rows[0];
+  if (!row) return null;
+  return toDomain(row, []);
+}
+
+export async function listSessionsForWorkspace(
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<Session>> {
+  const rows = await db.select<SessionRow>(
+    'SELECT * FROM sessions WHERE workspace_id = ? ORDER BY updated_at DESC',
+    [workspaceId],
+  );
+  return rows.map((row) => toDomain(row, []));
+}
+
+export async function renameSession(
+  db: Database,
+  id: SessionId,
+  goal: string,
+  updatedAt: IsoDateTime,
+  titleUserEdited = true,
+): Promise<void> {
+  await db.execute(
+    'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
+    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
+  );
+}
+
+export async function deleteSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
+}
+
+export async function softDeleteSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
+}
+
+export async function restoreSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id]);
+}
+
+export async function archiveSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [Date.now(), id]);
+}
+
+export async function unarchiveSession(db: Database, id: SessionId): Promise<void> {
+  await db.execute('UPDATE sessions SET archived_at = NULL WHERE id = ?', [id]);
 }

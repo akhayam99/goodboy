@@ -3,13 +3,13 @@ import type {
   ParallelGroup,
   ParallelGroupId,
   ParallelMergeStrategy,
-  TaskId,
+  SessionId,
 } from '@kay-am/types';
 import type { Database } from '../client';
 
 interface ParallelGroupRow {
   id: string;
-  task_id: string;
+  session_id: string;
   ordinal: number;
   merge_strategy: string;
   created_at: number;
@@ -19,7 +19,7 @@ interface ParallelGroupRow {
 function toDomain(row: ParallelGroupRow): ParallelGroup {
   return {
     id: row.id as ParallelGroupId,
-    taskId: row.task_id as TaskId,
+    sessionId: row.session_id as SessionId,
     ordinal: row.ordinal,
     mergeStrategy: row.merge_strategy as ParallelMergeStrategy,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -32,11 +32,11 @@ function toDomain(row: ParallelGroupRow): ParallelGroup {
 export async function insertGroup(db: Database, group: ParallelGroup): Promise<void> {
   await db.execute(
     `INSERT INTO parallel_groups
-      (id, task_id, ordinal, merge_strategy, created_at, completed_at)
+      (id, session_id, ordinal, merge_strategy, created_at, completed_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [
       group.id,
-      group.taskId,
+      group.sessionId,
       group.ordinal,
       group.mergeStrategy,
       new Date(group.createdAt).getTime(),
@@ -45,13 +45,13 @@ export async function insertGroup(db: Database, group: ParallelGroup): Promise<v
   );
 }
 
-export async function listGroupsForTask(
+export async function listGroupsForSession(
   db: Database,
-  taskId: TaskId,
+  sessionId: SessionId,
 ): Promise<ReadonlyArray<ParallelGroup>> {
   const rows = await db.select<ParallelGroupRow>(
-    'SELECT * FROM parallel_groups WHERE task_id = ? ORDER BY ordinal ASC',
-    [taskId],
+    'SELECT * FROM parallel_groups WHERE session_id = ? ORDER BY ordinal ASC',
+    [sessionId],
   );
   return rows.map(toDomain);
 }
