@@ -46,7 +46,7 @@ export function AgentKindMenu({ kind, agentLabel, onPick }: AgentKindMenuProps) 
         className={cn(
           'inline-flex w-[3.25rem] items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide transition-opacity hover:opacity-80',
           palette.bg,
-          palette.fg,
+          'text-zinc-950',
         )}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -84,7 +84,7 @@ export function AgentKindMenu({ kind, agentLabel, onPick }: AgentKindMenuProps) 
                   className={cn(
                     'inline-flex w-[3.25rem] items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
                     entry.bg,
-                    entry.fg,
+                    'text-zinc-950',
                   )}
                 >
                   {entry.label}

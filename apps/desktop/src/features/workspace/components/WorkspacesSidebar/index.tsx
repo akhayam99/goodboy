@@ -1878,7 +1878,7 @@ function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect
       title={`${defaults.model} · ${defaults.effort} effort`}
       className={cn(
         'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors',
-        `${palette.bg} ${palette.fg} hover:opacity-90`,
+        `${palette.bg} text-zinc-950 hover:opacity-90`,
       )}
     >
       <span className="flex items-center gap-1.5">
