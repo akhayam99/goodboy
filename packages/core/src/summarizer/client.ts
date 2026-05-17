@@ -121,7 +121,8 @@ Schema:
 { "upserts": [ { "key": "<one of the five keys>", "value": "<full merged slot value, as compact markdown>" } ] }
 
 Only include slots that actually change. Omit slots that stay the same. Never invent new keys.
-If nothing should change, return { "upserts": [] }.`;
+If nothing should change, return { "upserts": [] }.
+NEVER write 'none', 'null', 'nothing', 'no changes', or any prose. The response MUST start with '{' and end with '}'.`;
 
 export class Summarizer {
   private readonly providerId: ProviderId;
@@ -139,22 +140,32 @@ export class Summarizer {
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
     const userMessage = buildUserPrompt(input);
 
-    const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
-      args: {
-        providerId: this.providerId,
-        model: this.model,
-        binary: this.binary,
-        userMessage,
-        systemPrompt: SYSTEM_PROMPT,
-      },
-    });
+    const invokeOnce = async () => {
+      const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
+        args: {
+          providerId: this.providerId,
+          model: this.model,
+          binary: this.binary,
+          userMessage,
+          systemPrompt: SYSTEM_PROMPT,
+        },
+      });
+      if ((result.exitCode ?? 0) !== 0) {
+        throw new SummarizerSpawnError(result.exitCode, result.stderr);
+      }
+      return extractTextAndUsage(this.providerId, result.stdout, this.model);
+    };
 
-    if ((result.exitCode ?? 0) !== 0) {
-      throw new SummarizerSpawnError(result.exitCode, result.stderr);
+    let { text, usage } = await invokeOnce();
+    let delta: ContextSlotDelta;
+    try {
+      delta = parseDelta(text);
+    } catch (err) {
+      if (!(err instanceof SummarizerParseError)) throw err;
+      ({ text, usage } = await invokeOnce());
+      delta = parseDelta(text);
     }
 
-    const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model);
-    const delta = parseDelta(text);
     const slotsAfter = applyDelta(input.prevSlots, delta);
     const nextActions = inferNextActions({
       input,
@@ -254,16 +265,35 @@ function buildUserPrompt(input: SummarizeInput): string {
   ].join('\n');
 }
 
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+}
+
 function parseDelta(raw: string): ContextSlotDelta {
   const stripped = stripCodeFences(raw);
   let parsed: unknown;
   try {
     parsed = JSON.parse(stripped);
-  } catch (err) {
-    throw new SummarizerParseError(
-      `summarizer response was not valid JSON: ${err instanceof Error ? err.message : String(err)}`,
-      raw,
-    );
+  } catch (firstErr) {
+    const extracted = extractJsonObject(stripped);
+    if (extracted !== null) {
+      try {
+        parsed = JSON.parse(extracted);
+      } catch (err) {
+        throw new SummarizerParseError(
+          `summarizer response was not valid JSON: ${err instanceof Error ? err.message : String(err)}`,
+          raw,
+        );
+      }
+    } else {
+      throw new SummarizerParseError(
+        `summarizer response was not valid JSON: ${firstErr instanceof Error ? firstErr.message : String(firstErr)}`,
+        raw,
+      );
+    }
   }
 
   if (typeof parsed !== 'object' || parsed === null || !('upserts' in parsed)) {
