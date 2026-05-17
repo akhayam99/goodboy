@@ -173,7 +173,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                       </span>
                       <span
                         className={cn(
-                          'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
+                          'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] uppercase leading-none tracking-wide',
                           PLAN_STATUS_STYLE[plan.status],
                         )}
                       >

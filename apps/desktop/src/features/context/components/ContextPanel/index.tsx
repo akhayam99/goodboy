@@ -1188,7 +1188,7 @@ function LatestPlanCard({ plan, index }: LatestPlanCardProps) {
 
   return (
     <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
