@@ -600,19 +600,27 @@ function renderBlock(block: Block, idx: number): ReactNode {
         </div>
       );
     }
-    case 'paragraph':
+    case 'paragraph': {
+      const isTree = /[├└│┌┐┘┤┬┼]/.test(block.content);
       return (
-        <p key={key} className="whitespace-pre-wrap leading-relaxed">
+        <p
+          key={key}
+          className={cn(
+            'whitespace-pre-wrap leading-relaxed',
+            isTree && 'overflow-x-auto font-mono',
+          )}
+        >
           {renderInline(block.content, key)}
         </p>
       );
+    }
   }
 }
 
 export function Markdown({ text, className }: MarkdownProps) {
   const blocks = parseBlocks(text);
   return (
-    <div className={cn('flex flex-col gap-2 text-base text-foreground/85', className)}>
+    <div className={cn('space-y-2 text-base text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
   );

@@ -376,7 +376,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                   )}
                 </div>
               </div>
-              <div className="flex min-h-0 flex-1 overflow-y-auto rounded-md border border-border-soft p-2">
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border-soft p-2">
                 {mode === 'edit' ? (
                   <Textarea
                     autoFocus

@@ -333,6 +333,10 @@ export function DiffViewerDialog({
   }, [comments]);
 
   useEffect(() => {
+    if (open) setViewState(DEFAULT_VIEW);
+  }, [open]);
+
+  useEffect(() => {
     if (!open || !worktreePath) return;
     let cancelled = false;
     Promise.all([listBranchCommits(worktreePath), worktreeStatus(worktreePath)])
