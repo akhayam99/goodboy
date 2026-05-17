@@ -98,6 +98,8 @@ export {
 // SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/summarizer/cli in Node/test contexts.
 export {
+  getCheapModel,
+  getDefaultBinary,
   Summarizer,
   SummarizerParseError,
   SummarizerSpawnError,

@@ -8,6 +8,8 @@ import {
   buildStepPrompt,
   currentStep,
   findReusableAgent,
+  getCheapModel,
+  getDefaultBinary,
   parseSlashCommand,
   resolveConflicts,
   resolveSettings,
@@ -934,8 +936,10 @@ async function generateAutoTitle(
       '',
       'Write the title now.',
     ].join('\n');
+    const model = getCheapModel(providerId);
+    const binary = getDefaultBinary(providerId);
     const result = await invoke<SummarizeCommandResult>('summarize_session', {
-      args: { providerId, userMessage, systemPrompt },
+      args: { providerId, model, binary, userMessage, systemPrompt },
     });
     if ((result.exitCode ?? 0) !== 0) return;
     let title = '';
