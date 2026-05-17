@@ -28,12 +28,14 @@ export {
   extractPlanFromMarker,
   isSlotKey,
   mergeIntoSlot,
+  parseQuestionLine,
   removeFromSlot,
   serializeSlots,
   type AutoPopulateInput,
   type AutoPopulateResult,
   type ContextEngineDeps,
   type ExtractedPlan,
+  type ParsedQuestion,
   type SlotKey,
 } from './context';
 

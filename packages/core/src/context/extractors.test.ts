@@ -5,6 +5,7 @@ import {
   extractMarkers,
   extractPlanFromMarker,
   mergeIntoSlot,
+  parseQuestionLine,
 } from './extractors';
 
 function fileEdit(path: string): TurnEvent {
@@ -176,5 +177,48 @@ describe('mergeIntoSlot', () => {
 
   it('treats whitespace-only as duplicate when stripped', () => {
     expect(mergeIntoSlot('foo', ['  foo  '])).toBe('foo');
+  });
+});
+
+describe('parseQuestionLine', () => {
+  it('returns empty options when no separator', () => {
+    expect(parseQuestionLine('should we use OAuth2?')).toEqual({
+      text: 'should we use OAuth2?',
+      options: [],
+    });
+  });
+
+  it('parses 2 options', () => {
+    expect(parseQuestionLine('use strict mode? || Yes | No')).toEqual({
+      text: 'use strict mode?',
+      options: ['Yes', 'No'],
+    });
+  });
+
+  it('parses 3 options', () => {
+    expect(parseQuestionLine('deploy env? || staging | prod | both')).toEqual({
+      text: 'deploy env?',
+      options: ['staging', 'prod', 'both'],
+    });
+  });
+
+  it('trims whitespace around text and options', () => {
+    expect(parseQuestionLine('  question  ||  opt A  |  opt B  ')).toEqual({
+      text: 'question',
+      options: ['opt A', 'opt B'],
+    });
+  });
+
+  it('filters out empty options', () => {
+    expect(parseQuestionLine('q || a | | b')).toEqual({
+      text: 'q',
+      options: ['a', 'b'],
+    });
+  });
+
+  it('handles plain text with no options as backward-compatible', () => {
+    const result = parseQuestionLine('old-style question without options');
+    expect(result.options).toHaveLength(0);
+    expect(result.text).toBe('old-style question without options');
   });
 });

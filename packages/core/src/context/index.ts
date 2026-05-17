@@ -13,8 +13,10 @@ export {
   extractMarkers,
   extractPlanFromMarker,
   mergeIntoSlot,
+  parseQuestionLine,
   removeFromSlot,
   type ExtractedPlan,
+  type ParsedQuestion,
 } from './extractors';
 export {
   autoPopulateContext,

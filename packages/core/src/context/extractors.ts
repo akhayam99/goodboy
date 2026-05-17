@@ -103,6 +103,33 @@ function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
 }
 
 /**
+ * Represents a single open question, optionally with predefined answer choices.
+ * Questions without options fall back to plain-text rendering in the UI.
+ */
+export interface ParsedQuestion {
+  readonly text: string;
+  readonly options: ReadonlyArray<string>;
+}
+
+/**
+ * Parse one line from the `open_questions` slot into its question text and
+ * optional predefined options. The structured form is:
+ *   "question text || option A | option B | option C"
+ * Lines without `||` have an empty options array (backward-compatible).
+ */
+export function parseQuestionLine(line: string): ParsedQuestion {
+  const sep = line.indexOf(' || ');
+  if (sep === -1) return { text: line.trim(), options: [] };
+  const text = line.slice(0, sep).trim();
+  const options = line
+    .slice(sep + 4)
+    .split('|')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+  return { text, options };
+}
+
+/**
  * Append `additions` to an existing newline-separated slot value, dedup'ing
  * by exact-match line. Order: existing lines first, new ones after.
  *
