@@ -106,6 +106,19 @@ describe('parsePlannerOutput', () => {
     expect(() => parsePlannerOutput(bad)).toThrow(/expectedOutput/);
   });
 
+  it('extracts JSON from surrounding prose', () => {
+    const wrapped = `Here is the workflow plan:\n${validJson}\nHope this helps!`;
+    const out = parsePlannerOutput(wrapped);
+    expect(out.workflowName).toBe('Auth Refactor');
+    expect(out.steps).toHaveLength(2);
+  });
+
+  it('gives clear error when model returns plain text', () => {
+    expect(() => parsePlannerOutput('non posso generare un workflow')).toThrow(
+      /plain text instead of JSON/,
+    );
+  });
+
   it('exposes the raw input on error', () => {
     try {
       parsePlannerOutput('not json');
