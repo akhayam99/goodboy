@@ -23,7 +23,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
-import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
+import {
+  SLOT_KEYS,
+  SLOT_LABELS,
+  type SlotKey,
+  detectRepoSlug,
+  parseQuestionLine,
+} from '@kay-am/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
@@ -718,11 +724,7 @@ interface SlotMeta {
   readonly singleLine?: boolean;
 }
 
-const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
-  'open_questions',
-  'decisions',
-  'last_output_summary',
-]);
+const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);
 
 const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   goal: {
@@ -780,6 +782,119 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
     .map((p) => (p.startsWith(root) ? p.slice(root.length) : p))
     .join('\n');
   return normalized === slot.value ? slot : { ...slot, value: normalized };
+}
+
+function removeQuestionLine(value: string, line: string): string {
+  return value
+    .split('\n')
+    .filter((l) => l.trim() !== line.trim())
+    .join('\n');
+}
+
+interface OpenQuestionsChallengeProps {
+  sessionId: SessionId;
+  value: string;
+  onCommit: (value: string) => void;
+  onStartEditing: () => void;
+}
+
+function OpenQuestionsChallenge({
+  sessionId,
+  value,
+  onCommit,
+  onStartEditing,
+}: OpenQuestionsChallengeProps) {
+  const [otherOpen, setOtherOpen] = useState<Record<number, boolean>>({});
+  const [otherDraft, setOtherDraft] = useState<Record<number, string>>({});
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
+  const setAgentDraft = useAppStore((s) => s.setAgentDraft);
+
+  const lines = value.split('\n').filter((l) => l.trim().length > 0);
+
+  const handleAnswer = (originalLine: string, answer: string) => {
+    onCommit(removeQuestionLine(value, originalLine));
+    if (selectedAgentId) {
+      const { text } = parseQuestionLine(originalLine);
+      setAgentDraft(selectedAgentId, `re: "${text}" → ${answer}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      {lines.map((line, idx) => {
+        const parsed = parseQuestionLine(line);
+        if (parsed.options.length === 0) {
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={onStartEditing}
+              className="text-left text-[13px] leading-relaxed text-foreground hover:text-foreground/80"
+            >
+              {parsed.text}
+            </button>
+          );
+        }
+        return (
+          <div key={idx} className="flex flex-col gap-1.5">
+            <p className="text-[13px] leading-snug text-foreground">{parsed.text}</p>
+            <div className="flex flex-wrap gap-1">
+              {parsed.options.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => handleAnswer(line, opt)}
+                  className="rounded-full border border-warning/60 bg-warning/10 px-2.5 py-0.5 text-[11px] font-medium text-foreground hover:border-warning hover:bg-warning/20"
+                >
+                  {opt}
+                </button>
+              ))}
+              {otherOpen[idx] ? null : (
+                <button
+                  type="button"
+                  onClick={() => setOtherOpen((prev) => ({ ...prev, [idx]: true }))}
+                  className="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-muted-foreground hover:border-border-soft hover:text-foreground"
+                >
+                  other…
+                </button>
+              )}
+            </div>
+            {otherOpen[idx] ? (
+              <div className="flex gap-1.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={otherDraft[idx] ?? ''}
+                  onChange={(e) => setOtherDraft((prev) => ({ ...prev, [idx]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const text = (otherDraft[idx] ?? '').trim();
+                      if (text) handleAnswer(line, text);
+                    }
+                    if (e.key === 'Escape') {
+                      setOtherOpen((prev) => ({ ...prev, [idx]: false }));
+                    }
+                  }}
+                  placeholder="type your answer…"
+                  className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-0.5 text-[12px] text-foreground outline-none focus:border-primary/60"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = (otherDraft[idx] ?? '').trim();
+                    if (text) handleAnswer(line, text);
+                  }}
+                  className="shrink-0 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted"
+                >
+                  send
+                </button>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 interface SlotRowProps {
@@ -941,6 +1056,21 @@ function SlotRow({
         >
           <span className="truncate">{preview}</span>
         </button>
+      ) : slotKey === 'open_questions' ? (
+        <div
+          className={cn(
+            'rounded-md border border-transparent px-2.5 py-2',
+            'bg-subtle',
+            meta?.tintedWhenNonEmpty,
+          )}
+        >
+          <OpenQuestionsChallenge
+            sessionId={sessionId}
+            value={value}
+            onCommit={onCommit}
+            onStartEditing={() => setEditing(true)}
+          />
+        </div>
       ) : renderAsMarkdown ? (
         <div
           role="button"
