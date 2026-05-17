@@ -5,7 +5,7 @@ import { estimateTokens } from '../shared/utils/estimate-tokens';
 const CONTEXT_MARKER_HINT =
   '## context handoff protocol\n' +
   'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
-  'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`.\n' +
+  'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question || option A | option B | option C<</ctx-question>>` — include 2–4 short options after `||`, separated by `|`; omit `||` only when no meaningful options exist.\n' +
   'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>` — the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
   "the orchestrator parses these markers and persists them to this task's shared context panel — every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
 
