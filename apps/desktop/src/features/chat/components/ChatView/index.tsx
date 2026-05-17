@@ -207,6 +207,13 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const settings = useAppStore((s) => s.settings);
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
+  const prevAgentRef = useRef(selectedAgentId);
+  useEffect(() => {
+    if (prevAgentRef.current === selectedAgentId) return;
+    prevAgentRef.current = selectedAgentId;
+    setPinned(true);
+  }, [selectedAgentId, setPinned]);
+
   const provider = session.providerPreference.defaultProvider;
   const providerAuthState = authResults?.[provider]?.state ?? null;
   const providerIdentity = authResults?.[provider]?.identity ?? null;

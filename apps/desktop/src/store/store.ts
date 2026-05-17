@@ -31,7 +31,6 @@ import {
   listContextSlotsForSession,
   insertContextSlotHistory,
   listContextSlotHistory,
-  listMessagesForAgent,
   listMessagesForSession,
   listTurnEventsForAgent,
   listTurnEventsForSession,
@@ -1414,6 +1413,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
     }
 
+    // Session messages — keyed by sessionId, contains ALL agents' messages so
+    // sidebar turn counts and first-user-text (kind chip inference) reflect
+    // every agent, not only the currently selected one.
+    void listMessagesForSession(tauriDatabase, id)
+      .then((msgs) => {
+        set((state) => ({ messages: { ...state.messages, [id]: msgs } }));
+      })
+      .catch(() => {});
+
     // Context slots
     if (!cached?.slots) {
       const endSlots = perf('slots');
@@ -1533,9 +1541,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
           // With a selected agent, ChatView's effect calls selectAgent which
           // owns the flag lifecycle from there.
           if (!selectedAgent) {
-            set((state) => ({
-              messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
-            }));
             markDone('transcript');
           }
         })
@@ -1833,13 +1838,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  loadTranscript: async (agentId, sessionId) => {
-    const [messages, events] = await Promise.all([
-      listMessagesForAgent(tauriDatabase, agentId),
-      listTurnEventsForAgent(tauriDatabase, agentId),
-    ]);
+  loadTranscript: async (agentId, _sessionId) => {
+    const events = await listTurnEventsForAgent(tauriDatabase, agentId);
     set((state) => ({
-      messages: { ...state.messages, [sessionId]: messages },
       transcripts: { ...state.transcripts, [agentId]: events },
     }));
   },
@@ -2166,6 +2167,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
       };
       await insertMessage(tauriDatabase, userMessage);
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [sessionId]: [...(state.messages[sessionId] ?? []), userMessage],
+        },
+      }));
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'user_text',
         runId,
@@ -2327,6 +2334,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         createdAt: now(),
       };
       await insertMessage(tauriDatabase, userMessage);
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [sessionId]: [...(state.messages[sessionId] ?? []), userMessage],
+        },
+      }));
 
       const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
       get().appendTurnEvent(activeAgentId, sessionId, {
@@ -3252,10 +3265,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const INITIAL_LIMIT = 50;
     const tInitial = performance.now();
     try {
-      const [messages, events] = await Promise.all([
-        listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-        listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-      ]);
+      const events = await listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT });
       // eslint-disable-next-line no-console
       console.log(
         `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
@@ -3264,7 +3274,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
           transcripts: { ...state.transcripts, [agentId]: events },
-          messages: { ...state.messages, [sessionId]: messages },
           sessionLoading: {
             ...state.sessionLoading,
             [sessionId]: { ...current, transcript: false },
@@ -3280,11 +3289,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // history likely exists). Fired non-awaited so the click flow returns.
       if (events.length === INITIAL_LIMIT) {
         const tFull = performance.now();
-        void Promise.all([
-          listMessagesForAgent(tauriDatabase, agentId),
-          listTurnEventsForAgent(tauriDatabase, agentId),
-        ])
-          .then(([fullMessages, fullEvents]) => {
+        void listTurnEventsForAgent(tauriDatabase, agentId)
+          .then((fullEvents) => {
             // eslint-disable-next-line no-console
             console.log(
               `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
@@ -3296,7 +3302,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
               if (current && current.length > fullEvents.length) return {};
               return {
                 transcripts: { ...state.transcripts, [agentId]: fullEvents },
-                messages: { ...state.messages, [sessionId]: fullMessages },
               };
             });
           })
@@ -3351,7 +3356,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       selectedAgentId: { ...s.selectedAgentId, [sessionId]: inserted.id },
       transcripts: { ...s.transcripts, [inserted.id]: [] },
-      messages: { ...s.messages, [sessionId]: [] },
       agentTurnState: {
         ...s.agentTurnState,
         [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
