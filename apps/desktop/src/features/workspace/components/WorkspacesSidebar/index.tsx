@@ -1006,7 +1006,7 @@ const SessionRow = memo(function SessionRow({
               {renameError ? <span className="text-2xs text-danger">{renameError}</span> : null}
             </div>
           ) : (
-            <span className="line-clamp-1 min-w-0 flex-1 truncate">{session.goal}</span>
+            <span className="min-w-0 flex-1 truncate">{session.goal}</span>
           )}
           <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <PrStatusIcon sessionId={session.id as SessionId} />
