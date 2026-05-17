@@ -1470,10 +1470,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         .then(([agents, agentRunIds]) => {
           const previouslySelected = get().selectedAgentId[id] ?? null;
           const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-          // Fresh entry defaults to the most recently created agent (highest
-          // ordinal). Chronologically the latest is the one the user is most
-          // likely returning to. Previous selection still wins on revisit.
-          const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
+          // Fallback priority: running agent > last-ordinal agent. Previous
+          // selection wins on revisit. Without the running preference the
+          // highlight would always land on the highest-ordinal row (visually
+          // always the third item when a session has exactly 3 agents).
+          const runningAgent = sortedAgents.find((a) => a.status === 'running') ?? null;
+          const fallbackAgent = runningAgent ?? sortedAgents[sortedAgents.length - 1] ?? null;
           const selectedAgent =
             (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
             fallbackAgent;

@@ -1523,29 +1523,29 @@ function AgentsSection({ task }: AgentsSectionProps) {
       string,
       { inputTokens: number; outputTokens: number; estimatedCostUsd: number; turns: number }
     >();
-    const telemetryByRun = new Map<string, TelemetryRecord>();
+    // Build runId → agentId index. Prefer agentRunHistory (full lifetime) but
+    // fall back to agent.runId so agents whose turn events haven't been seeded
+    // yet (e.g. first session load, race between telemetry and runIds fetch) still
+    // count their latest run. Sum ALL turn records — multiple records per run
+    // (provider retries, cursor) are each counted, not just the latest.
+    const runIdToAgentId = new Map<string, string>();
+    for (const run of phaseRuns) {
+      map.set(run.id, { inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0, turns: 0 });
+      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
+      for (const rid of runIds) runIdToAgentId.set(rid, run.id);
+    }
     for (const rec of telemetry) {
       if (rec.kind !== 'turn') continue;
-      const existing = telemetryByRun.get(rec.runId);
-      if (!existing || existing.recordedAt < rec.recordedAt) {
-        telemetryByRun.set(rec.runId, rec);
-      }
-    }
-    for (const run of phaseRuns) {
-      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
-      let inputTokens = 0;
-      let outputTokens = 0;
-      let estimatedCostUsd = 0;
-      let turns = 0;
-      for (const rid of runIds) {
-        const rec = telemetryByRun.get(rid);
-        if (!rec) continue;
-        inputTokens += rec.inputTokens;
-        outputTokens += rec.outputTokens;
-        estimatedCostUsd += rec.estimatedCostUsd;
-        turns += 1;
-      }
-      map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns });
+      const agentId = runIdToAgentId.get(rec.runId);
+      if (!agentId) continue;
+      const agg = map.get(agentId);
+      if (!agg) continue;
+      map.set(agentId, {
+        inputTokens: agg.inputTokens + rec.inputTokens,
+        outputTokens: agg.outputTokens + rec.outputTokens,
+        estimatedCostUsd: agg.estimatedCostUsd + rec.estimatedCostUsd,
+        turns: agg.turns + 1,
+      });
     }
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
