@@ -4,7 +4,7 @@
 
 AI-assisted development today is wasteful. Every session starts from zero, context bloats fast, you pay for the same information twice, and switching between tasks means losing everything or cramming unrelated work into one giant thread.
 
-There is no layer between you and the AI agents. No orchestration. No memory across sessions. No cost awareness. No structure.
+There is no layer between you and the AI agents. No orchestration. No structured way to share learnings between agents. No cost awareness. No plans beyond chat transcripts.
 
 ## The mission
 
@@ -19,22 +19,34 @@ kAY.am is a local-first AI workspace orchestrator that sits between you and your
 Three nested layers, each doing one thing:
 
 - A **workspace** is a registered git repository. Sessions live inside it.
-- A **session** is a container for a goal — its own git worktree, branch, budget, and shared context. "Refactor authentication domain" is a session. The session holds the big picture.
-- An **agent** is an independent chat thread inside a session. You spawn as many as you want, switch between them by clicking, and rename them inline. Each agent runs its own provider/model and owns its own conversation history.
+- A **session** is a container for a goal — its own git worktree, branch, budget, shared context, and lifecycle status (wip / waiting / blocked / done). "Refactor authentication domain" is a session.
+- An **agent** is an independent chat thread inside a session. You spawn as many as you want, switch between them by clicking, and rename them inline. Each agent has its own provider, model, effort level, verbosity, and kind label.
 
-A session always has at least one agent (the default `agent 1`, auto-spawned at session creation). Spawning more is free-form — no workflow required. When a workflow preset is attached, it pre-spawns one agent per step (e.g. scout → planner → implementer → reviewer), but those agents are then independent and live alongside any free agents you add later.
+A session always has at least one agent (auto-spawned at creation). Spawning more is free-form — no workflow required. When a workflow preset is attached, it pre-spawns one agent per step (e.g. scout → planner → implementer → reviewer), but those agents are then independent and live alongside any free agents you add later.
+
+### Agent kinds
+
+Eight role labels that shape how an agent works: **scout**, **planner**, **implementer**, **debugger**, **tester**, **reviewer**, **docs**, **generic**. Each kind carries default model, effort, and optional system prompt settings. Kind is inferred automatically from the agent's name or first user message, or set manually via the kind menu.
 
 ### Shared context
 
 Agents inside the same session do **not** share their conversation history. What they share is the **context panel** on the right — synthetic slots (goal, files touched, decisions, open questions, last summary) that the LLM auto-populates after every turn. You can also edit slots by hand.
 
-Switching between agents swaps the central chat to that agent's transcript. The context panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
+Slots are collapsible, rendered as markdown, and maintain history. Switching between agents swaps the central chat to that agent's transcript. The context panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
 
 Context is a resource, not a dump.
 
+### Plans
+
+Planner agents emit structured plans wrapped in `<<plan>>...<<plan>>` markers. These become first-class session artifacts — not buried in chat transcripts. Plans have lifecycle status (active / consumed / superseded) and are consumed by other agents who act on them. Consumption is tracked, and plans are viewable in a dedicated modal with tree rendering.
+
+### Next-actions
+
+After each agent turn, the summarizer infers what should happen next: scout (explore the problem), plan (design a solution), or implement (write the code). These appear as clickable chips below the chat. One click spawns a pre-configured agent with the right kind, model, effort, and initial prompt — keeping momentum without manual setup.
+
 ### Provider routing & balance
 
-Register your AI providers (Anthropic, OpenAI, Cursor, etc.). Set priorities. Set budgets. kAY.am routes work to the right provider automatically.
+Register your AI providers (Anthropic, Cursor, Codex). Set priorities. Set budgets. kAY.am routes work to the right provider automatically.
 
 - Provider 1 hits 75% budget → fallback to provider 2.
 - Quick task → fast cheap model. Complex architecture → best available model.
@@ -46,20 +58,22 @@ Every interaction is metered. kAY.am gives you total visibility on what you're s
 
 - **Token usage**: input/output tokens per request, per session, per provider, per model.
 - **Estimated cost**: live cost estimate based on provider pricing, with running totals per session.
-- **Session lifecycle metrics**: when a session starts, when it resets, when it hits a threshold, when it switches provider, when it ends.
+- **Session lifecycle metrics**: when a session starts, resets, hits a threshold, switches provider, ends.
 - **Budgets**: per-provider monthly cap, per-session soft cap. Visual alerts before you hit limits.
-- **Historical view**: spend over time, broken down by provider, model, task type, session.
-- **Provider efficiency**: compare cost-per-task across providers to inform routing rules.
 
 All metrics are computed and stored locally. Nothing transmitted.
 
+### GitHub integration
+
+Connect via `gh` CLI or personal access token. kAY.am surfaces your PR state — draft, open, approved, merged, closed — alongside CI checks, review decisions, and comments. The diff viewer shows file-level hunks with inline annotations. Reviewer agents can consume diff comments directly. The GitHub card auto-refreshes when an agent creates or updates a PR.
+
 ### Skills & automation
 
-Your local skills, scripts, and workflows — packaged and reusable. One click to run a code review, scaffold a feature, run a migration checklist. Not locked into any single AI provider's ecosystem.
+Local skills live with the workspace: markdown files with frontmatter discovered from `<workspace>/.kay/skills/*.md` or `<workspace>/.claude/skills/<name>/SKILL.md`. Invoke from chat via `/skill-name`. Parsed by the skill registry, executable across any connected provider. Per-workspace, not global. Not locked into any single AI provider's ecosystem.
 
 ### Editor integration
 
-kAY.am is the brain. VS Code is the hands. When it's time to write code, kAY.am opens your editor on the right worktree, in the right branch, with the right context. When the code is done, control returns to kAY.am.
+kAY.am is the brain. Your editor is the hands. When it's time to write code, kAY.am opens your editor on the right worktree, in the right branch. VS Code and Cursor are detected automatically; when both are available, a dropdown lets you pick. When the code is done, control returns to kAY.am.
 
 ## What kAY.am is NOT
 
@@ -67,7 +81,7 @@ kAY.am is the brain. VS Code is the hands. When it's time to write code, kAY.am 
 - Not another chat UI. The world has enough.
 - Not a wrapper around one AI provider. It orchestrates all of them.
 - Not a cloud service. It runs on your machine, your data stays local.
-- Not a data collector. We are a third party that connects you to providers — nothing more.
+- Not a data collector. Your data flows directly between you and your providers. kAY.am is the local layer in between.
 
 ## Zero data ownership
 
@@ -77,7 +91,7 @@ kAY.am is a pure orchestration layer. We do not run servers. We do not have acco
 - No telemetry. No analytics. No tracking.
 - API keys stay on your machine, in your OS credential store.
 - Conversations, prompts, and responses flow directly between you and the provider.
-- The only local persistence is your own configuration: providers, thresholds, workspace structure, skills.
+- Local persistence is SQLite (`~/.kay-am/data.db`): workspaces, sessions, agents, messages, context slots, plans, telemetry, skills, settings. All yours, all local.
 
 If kAY.am disappeared tomorrow, your data would be untouched — because it was never ours.
 
@@ -88,3 +102,4 @@ If kAY.am disappeared tomorrow, your data would be untouched — because it was 
 3. **Automate the repeatable** — if you did it twice, make it a skill.
 4. **Provider agnostic** — no lock-in, ever.
 5. **Local first, local only** — your machine, your keys, your data, full stop.
+6. **Plans over chat** — structure intent as artifacts, not buried in transcripts.
