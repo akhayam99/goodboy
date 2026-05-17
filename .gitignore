@@ -1,5 +1,5 @@
 # dependencies
-node_modules/
+node_modules
 .pnpm-store/
 
 # build outputs
@@ -36,6 +36,7 @@ pnpm-debug.log*
 
 # test
 coverage/
+*.timestamp-*.mjs
 
 # misc
 *.tsbuildinfo

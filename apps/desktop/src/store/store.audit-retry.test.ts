@@ -13,7 +13,7 @@ import type {
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
@@ -27,7 +27,7 @@ const auditRetryDrainSpy = vi.fn();
 const auditRetryUpdateSpy = vi.fn();
 const auditRetryDeleteSpy = vi.fn();
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
   invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
   invokeAuditRetryEnqueue: (id: string, payload: string) => auditRetryEnqueueSpy(id, payload),
@@ -46,7 +46,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -83,7 +83,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -91,7 +91,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
@@ -99,7 +99,7 @@ vi.mock('../routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -110,7 +110,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -118,7 +118,7 @@ vi.mock('../skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -127,16 +127,16 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: vi.fn(),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-vi.mock('../provider-pricing', () => ({
+vi.mock('../features/providers/provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),
@@ -323,14 +323,14 @@ describe('audit retry queue — drain worker (happy path)', () => {
   });
 
   async function runHydrate() {
-    const { runDbMigrations } = await import('../db');
+    const { runDbMigrations } = await import('../shared/lib/db');
     (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const { getSetting } = await import('@kay-am/db');
     (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { getProviderStatus, getCursorStatus, getCodexStatus, checkProviderAuth } =
-      await import('../providers');
+      await import('../features/providers/providers');
     (getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',

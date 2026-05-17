@@ -7,14 +7,14 @@ vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
 vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
 }));
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
-import { BootSplash } from '../../components/BootSplash';
+import { BootSplash } from '../../app/components/BootSplash';
 
 afterEach(cleanup);
 

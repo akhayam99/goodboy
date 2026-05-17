@@ -70,14 +70,14 @@ vi.mock('../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../../permissions', () => ({
+vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
 }));
@@ -86,14 +86,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { WorkspaceId } from '@kay-am/types';
 import { runA11yCheck } from './utils';
-import { NotificationCenter } from '../../components/NotificationCenter';
-import { BootSplash } from '../../components/BootSplash';
-import { SettingsDialog } from '../../components/SettingsDialog';
-import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
-import { StatusBar } from '../../components/StatusBar';
-import { SkillsPanel } from '../../components/SkillsPanel';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
-import { ToastProvider } from '../../components/Toast';
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
+import { BootSplash } from '../../app/components/BootSplash';
+import { SettingsDialog } from '../../features/settings/components/SettingsDialog';
+import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
+import { StatusBar } from '../../app/components/StatusBar';
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

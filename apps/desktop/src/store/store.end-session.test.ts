@@ -4,7 +4,7 @@ import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(async function* () {}),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
@@ -15,13 +15,13 @@ const removeWorktreeSpy = vi.fn();
 const deleteWorktreesForSessionSpy = vi.fn();
 const updateSessionStateSpy = vi.fn();
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: (repoPath: string, worktreePath: string) =>
     removeWorktreeSpy(repoPath, worktreePath),
 }));
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(async () => ({})),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
@@ -39,7 +39,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -76,7 +76,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -84,7 +84,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
@@ -92,7 +92,7 @@ vi.mock('../routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -102,7 +102,7 @@ vi.mock('../budget', () => ({
   invokeSessionBudgetSet: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -110,7 +110,7 @@ vi.mock('../skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -119,11 +119,11 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
-vi.mock('../provider-pricing', () => ({
+vi.mock('../features/providers/provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),

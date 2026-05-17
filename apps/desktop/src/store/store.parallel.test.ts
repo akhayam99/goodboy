@@ -17,7 +17,7 @@ import type {
 
 // Module mocks — hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
-vi.mock('../features', () => ({
+vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
 }));
 
@@ -25,7 +25,7 @@ const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 const invokeParallelPhaseRunSpawnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   invokeParallelPhaseRunSpawn: (args: unknown) => invokeParallelPhaseRunSpawnSpy(args),
@@ -33,7 +33,7 @@ vi.mock('../turn', () => ({
   isAuthErrorMessage: () => false,
 }));
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
@@ -56,7 +56,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -93,7 +93,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -101,7 +101,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
@@ -109,7 +109,7 @@ vi.mock('../routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -120,7 +120,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -134,7 +134,7 @@ const phaseRunListSpy = vi.fn<(sid: SessionId) => Promise<ReadonlyArray<Agent>>>
 const parallelPhaseGroupCreateSpy = vi.fn();
 const parallelPhaseGroupUpdateCompletedAtSpy = vi.fn();
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -146,12 +146,12 @@ vi.mock('../phases', () => ({
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 

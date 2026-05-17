@@ -14,7 +14,7 @@ import type {
 // Module mocks — hoisted before subject import.
 const runTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',
@@ -25,7 +25,7 @@ async function* emptyStream(): AsyncIterable<TurnEvent> {
   // intentionally empty
 }
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(),
   useEffectivePermissionRules: () => [],
@@ -34,7 +34,7 @@ vi.mock('../permissions', () => ({
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -71,7 +71,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
   getCursorStatus: vi.fn(),
@@ -79,7 +79,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-opus-4-5',
@@ -87,7 +87,7 @@ vi.mock('../routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -98,7 +98,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -110,7 +110,7 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(async () => ({
     worktreePath: '/tmp/wt',
     branchName: 'kay/test',
@@ -128,7 +128,7 @@ vi.mock('../worktree', () => ({
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({ validateGitRepo: vi.fn() }));
+vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-refactor' as WorkflowId;
@@ -336,7 +336,7 @@ describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent 
     wirePhaseSpies();
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-opus-4-5',

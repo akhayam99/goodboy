@@ -57,21 +57,10 @@ import {
   updateSessionUserStatus,
   updateSessionState,
   upsertContextSlot,
-  insertDiffComment,
-  listDiffCommentsForSession,
-  resolveDiffComment as dbResolveDiffComment,
-  consumeDiffComments as dbConsumeDiffComments,
-  reopenDiffComment as dbReopenDiffComment,
-  deleteDiffComment as dbDeleteDiffComment,
-  insertNotification,
-  listNotifications,
-  markAllNotificationsRead,
-  clearAllNotifications,
   type Notification,
   type NotificationKind,
   type NotificationSeverity,
   type TelemetrySummary,
-  type ProviderTelemetrySummary,
 } from '@kay-am/db';
 import type {
   Agent,
@@ -132,20 +121,8 @@ import {
   computeCodexCostUsd,
   computeCursorCostUsd,
   extractPlanFromMarker,
-  getPrForBranch,
-  fetchLinkedIssues,
-  fetchPrDetail,
-  detectRepoSlug,
 } from '@kay-am/core';
-import { invokeSessionBudgetGet, invokeSessionBudgetSet } from '../budget';
-import { runDbMigrations, tauriDatabase, wipeDb } from '../db';
-import {
-  ghStatus,
-  ghSetToken,
-  ghClearToken,
-  tauriGhRunner,
-  createTauriPrCacheStore,
-} from '../github';
+import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -156,41 +133,38 @@ import {
   type ProviderInfo,
   type ProviderStatus,
   type ProviderStatuses,
-} from '../providers';
-import { detectEditors, type DetectedEditor } from '../editor';
-import { validateGitRepo } from '../repo';
-import { resolveProviderForTurn } from '../routing';
+} from '../features/providers/providers';
+import { detectEditors, type DetectedEditor } from '../shared/lib/editor';
+import { validateGitRepo } from '../shared/lib/repo';
+import { resolveProviderForTurn } from '../features/providers/routing';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
-} from '../settings';
-import { AGENT_FEATURES } from '../features';
-import { getCodexPriceOverride, refreshPricingTable } from '../provider-pricing';
-import { runTurn, cancelTurn, encodeAuthRequiredMessage, isAuthErrorMessage } from '../turn';
-import { readVerbosity, verbosityDirective } from '../verbosity';
+} from '../features/settings/settings';
+import { AGENT_FEATURES } from '../shared/lib/features';
+import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
+import {
+  runTurn,
+  cancelTurn,
+  encodeAuthRequiredMessage,
+  isAuthErrorMessage,
+} from '../features/chat/turn';
+import { readVerbosity, verbosityDirective } from '../features/settings/verbosity';
 import {
   createWorktree,
   removeWorktree,
   changeWorktreeBranch,
   type CreatedWorktree,
-} from '../worktree';
-import {
-  invokeBudgetRuleList,
-  invokeBudgetRuleUpsert,
-  invokeBudgetRuleDelete,
-  invokeBudgetAlertsList,
-  invokeBudgetAlertDismiss,
-} from '../budget';
+} from '../features/worktree/worktree';
+import { invokeBudgetRuleList, invokeBudgetAlertsList } from '../features/budget/budget';
 import {
   invokeSkillList,
-  invokeSkillUpsert,
-  invokeSkillDelete,
   invokeSkillRescan,
   resolveSkillInvocation,
   type SkillUpsertArgs,
-} from '../skills';
+} from '../features/skills/skills';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -201,7 +175,7 @@ import {
   invokeAuditRetryDelete,
   type AuditRetryEntry,
   type PermissionAuditInsertPayload,
-} from '../permissions';
+} from '../features/permissions/permissions';
 import {
   invokePhaseTemplateList,
   invokePhaseTemplateUpsert,
@@ -211,28 +185,35 @@ import {
   invokePhaseRunUpdateStatus,
   invokeSessionSetProviderSessionId,
   invokeSessionMarkViewed,
-  invokeWorkspacesWithUnread,
   type PhaseTemplateUpsertArgs,
-} from '../phases';
+} from '../features/phases/phases';
 import {
   detectParallelGroup,
   runParallelBranch,
   type ParallelBranchEffects,
 } from './parallel-turn';
-import { exportConfigToFile, importConfigFromFile } from '../config-export';
-import { formatError } from '../errors';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, type AgentKind } from '../agent-kind';
+import { exportConfigToFile, importConfigFromFile } from '../features/settings/config-export';
+import { formatError } from '../shared/lib/errors';
+import {
+  AGENT_KIND_DEFAULTS,
+  inferAgentKindFromName,
+  type AgentKind,
+} from '../features/session/agent-kind';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
-  deletePlan as invokeDeletePlan,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
-  setPlanBody as invokeSetPlanBody,
-  setPlanStatus as invokeSetPlanStatus,
   upsertPlan as invokeUpsertPlan,
-} from '../plans';
-import { slotsForKind } from '../slot-routing';
-import { estimateTokens } from '../utils/estimate-tokens';
+} from '../features/plans/plans';
+import { slotsForKind } from '../features/providers/slot-routing';
+import { estimateTokens } from '../shared/utils/estimate-tokens';
+import { createNotificationsSlice } from './slices/notifications.slice';
+import { createPlansSlice } from './slices/plans.slice';
+import { createBudgetSlice, buildProviderSpendBreakdown } from './slices/budget.slice';
+import { createSkillsSlice } from './slices/skills.slice';
+import { createDiffCommentsSlice } from './slices/diff-comments.slice';
+import { createGithubSlice } from './slices/github.slice';
+import { createSidebarSlice } from './slices/sidebar.slice';
 
 export type BootPhase =
   | 'pending'
@@ -254,6 +235,8 @@ export interface SystemAlert {
 }
 
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
+import type { ProviderSpendEntry } from './slices/budget.slice';
+export type { ProviderSpendEntry };
 
 function toRelPath(absPath: string, workingDir: string): string {
   if (!workingDir) return absPath;
@@ -358,11 +341,6 @@ const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
-// In-flight dedup for actions whose store slice has no native loading flag.
-// Prevents the second fetch when ContextPanel's effect fires twice (StrictMode
-// remount, or rapid keep-alive activation) before the first round-trip lands.
-const diffCommentsInFlight = new Set<SessionId>();
-
 const ALL_LOADING: SessionLoadingFlags = {
   agents: true,
   transcript: true,
@@ -393,13 +371,6 @@ export interface SummarizerSessionStatus {
     readonly outputTokens: number;
     readonly estimatedCostUsd: number;
   } | null;
-}
-
-export interface ProviderSpendEntry {
-  readonly provider: ProviderTelemetrySummary['provider'];
-  readonly spentUsd: number;
-  readonly capUsd: number | null;
-  readonly pct: number;
 }
 
 export interface AppActions {
@@ -562,7 +533,7 @@ export interface AppActions {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
 }
 
-type AppStore = AppState & AppActions;
+export type AppStore = AppState & AppActions;
 
 const initialState: AppState = {
   workspaces: [],
@@ -622,18 +593,6 @@ const initialState: AppState = {
   planConsumptions: {},
   sessionLoading: {},
 };
-
-function buildProviderSpendBreakdown(
-  providerSummaries: ReadonlyArray<ProviderTelemetrySummary>,
-  budgetRules: ReadonlyArray<BudgetRule>,
-): ReadonlyArray<ProviderSpendEntry> {
-  return providerSummaries.map((s) => {
-    const rule = budgetRules.find((r) => r.provider === s.provider) ?? null;
-    const capUsd = rule?.capUsd ?? null;
-    const pct = capUsd !== null && capUsd > 0 ? s.estimatedCostUsd / capUsd : 0;
-    return { provider: s.provider, spentUsd: s.estimatedCostUsd, capUsd, pct };
-  });
-}
 
 function mergeSlots(
   existing: ReadonlyArray<ContextSlot>,
@@ -1091,6 +1050,13 @@ let hydratePromise: Promise<void> | null = null;
 
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
+  ...createNotificationsSlice(set, get),
+  ...createPlansSlice(set, get),
+  ...createBudgetSlice(set, get),
+  ...createSkillsSlice(set, get),
+  ...createDiffCommentsSlice(set, get),
+  ...createGithubSlice(set, get),
+  ...createSidebarSlice(set, get),
 
   hydrate: async () => {
     if (hydratePromise) return hydratePromise;
@@ -2811,151 +2777,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  loadDiffComments: async (sessionId) => {
-    // Cache hit short-circuit: ContextPanel mounts on every session switch
-    // and fires this effect; without the guard the ~1s DB query repeats
-    // even when the data is already in store. Mutations (add/resolve/delete)
-    // refresh the slice directly, so the cache stays accurate.
-    if (get().diffComments[sessionId] !== undefined) return;
-    // In-flight dedup: a second mount before the first DB query lands would
-    // also pass the cache check above and double the work. The Set blocks it.
-    if (diffCommentsInFlight.has(sessionId)) return;
-    diffCommentsInFlight.add(sessionId);
-    try {
-      const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-      set((state) => ({
-        diffComments: { ...state.diffComments, [sessionId]: comments },
-      }));
-    } finally {
-      diffCommentsInFlight.delete(sessionId);
-    }
-  },
-
-  addDiffComment: async (sessionId, filePath, body, anchor) => {
-    const id = crypto.randomUUID();
-    await insertDiffComment(tauriDatabase, id, sessionId, filePath, body, anchor);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  },
-
-  resolveDiffComment: async (sessionId, commentId) => {
-    await dbResolveDiffComment(tauriDatabase, commentId);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  },
-
-  consumeDiffComments: async (sessionId, commentIds, agentId) => {
-    if (commentIds.length === 0) return;
-    await dbConsumeDiffComments(tauriDatabase, commentIds, agentId);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  },
-
-  reopenDiffComment: async (sessionId, commentId) => {
-    await dbReopenDiffComment(tauriDatabase, commentId);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  },
-
-  deleteDiffComment: async (sessionId, commentId) => {
-    await dbDeleteDiffComment(tauriDatabase, commentId);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  },
-
-  loadNotifications: async () => {
-    const notifications = await listNotifications(tauriDatabase);
-    set({ notifications });
-  },
-
-  emitNotification: async (kind, severity, title, body, opts) => {
-    const n: Notification = {
-      id: crypto.randomUUID(),
-      ts: new Date().toISOString() as IsoDateTime,
-      kind,
-      title,
-      body: body ?? null,
-      severity,
-      sessionId: opts?.sessionId ?? null,
-      workspaceId: opts?.workspaceId ?? null,
-      read: false,
-    };
-    await insertNotification(tauriDatabase, n);
-    set((state) => ({ notifications: [n, ...state.notifications] }));
-  },
-
-  markNotificationsRead: async () => {
-    await markAllNotificationsRead(tauriDatabase);
-    set((state) => ({
-      notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
-    }));
-  },
-
-  clearNotifications: async () => {
-    await clearAllNotifications(tauriDatabase);
-    set({ notifications: [] });
-  },
-
-  loadSessionPlans: async (sessionId) => {
-    const plans = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: plans },
-    }));
-  },
-
-  setPlanStatus: async (sessionId, planId, status) => {
-    await invokeSetPlanStatus(planId, status);
-    const refreshed = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
-  },
-
-  updatePlanBody: async (sessionId, planId, title, bodyMd) => {
-    await invokeSetPlanBody(planId, title, bodyMd);
-    const refreshed = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
-  },
-
-  deletePlan: async (sessionId, planId) => {
-    await invokeDeletePlan(planId);
-    const refreshed = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
-  },
-
-  abandonPlan: async (sessionId, planId) => {
-    await invokeSetPlanStatus(planId, 'superseded');
-    const refreshed = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
-  },
-
-  loadConsumptionsForPlan: async (planId) => {
-    const items = await invokeListConsumptionsForPlan(planId);
-    set((state) => ({
-      planConsumptions: { ...state.planConsumptions, [planId]: items },
-    }));
-  },
-
-  runPlan: async (sessionId, planId) => {
-    await get().spawnAgent(sessionId, { triggeredPlanId: planId });
-  },
-
   toggleSessionSlot: async (sessionId, key, enabled) => {
     const existing = get().sessionSlots[sessionId] ?? [];
     const prev = existing.find((s) => s.key === key);
@@ -3013,45 +2834,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       delete nextBranches[sessionId];
       return { sessionWorktrees: nextWorktrees, sessionBranches: nextBranches };
     });
-  },
-
-  loadBudgetRules: async () => {
-    const rules = await invokeBudgetRuleList();
-    set({ budgetRules: rules });
-  },
-
-  saveBudgetRule: async (partial) => {
-    const now = new Date().toISOString() as IsoDateTime;
-    const rule: BudgetRule = {
-      id: crypto.randomUUID(),
-      createdAt: now,
-      ...partial,
-    };
-    await invokeBudgetRuleUpsert(rule);
-    const rules = await invokeBudgetRuleList();
-    set({ budgetRules: rules });
-  },
-
-  deleteBudgetRule: async (id) => {
-    await invokeBudgetRuleDelete(id);
-    set((state) => ({ budgetRules: state.budgetRules.filter((r) => r.id !== id) }));
-  },
-
-  loadSessionBudget: async (sessionId) => {
-    const budget = await invokeSessionBudgetGet(sessionId);
-    if (budget !== null) {
-      set((state) => ({
-        sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
-      }));
-    }
-  },
-
-  setSessionBudget: async (sessionId, softCapUsd) => {
-    await invokeSessionBudgetSet(sessionId, softCapUsd);
-    const budget: SessionBudget = { sessionId, softCapUsd };
-    set((state) => ({
-      sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
-    }));
   },
 
   addWorkspace: async ({ rootPath, name }) => {
@@ -3188,50 +2970,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} removed`
         : undefined,
     );
-  },
-
-  refreshProviderSpendBreakdown: async (workspaceId) => {
-    const [providerSummaries, budgetRules] = await Promise.all([
-      summarizeWorkspaceProviderTelemetry(tauriDatabase, workspaceId),
-      invokeBudgetRuleList(),
-    ]);
-    set({ providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules) });
-  },
-
-  loadBudgetAlerts: async () => {
-    const alerts = await invokeBudgetAlertsList();
-    set({ budgetAlerts: alerts });
-  },
-
-  dismissBudgetAlert: async (id) => {
-    await invokeBudgetAlertDismiss(id);
-    set((state) => ({
-      budgetAlerts: state.budgetAlerts.map((a) =>
-        a.id === id ? { ...a, dismissedAt: new Date().toISOString() as IsoDateTime } : a,
-      ),
-    }));
-  },
-
-  loadSkills: async (workspaceId) => {
-    const skills = await invokeSkillList(workspaceId);
-    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
-  },
-
-  saveSkill: async (input) => {
-    await invokeSkillUpsert(input);
-    const skills = await invokeSkillList(input.workspaceId);
-    set((state) => ({ skills: { ...state.skills, [input.workspaceId]: skills } }));
-  },
-
-  deleteSkill: async (skillId, workspaceId) => {
-    await invokeSkillDelete(skillId);
-    const skills = await invokeSkillList(workspaceId);
-    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
-  },
-
-  rescanSkills: async (workspaceId) => {
-    const skills = await invokeSkillRescan(workspaceId);
-    set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
   },
 
   loadPhaseTemplates: async (workspaceId) => {
@@ -3684,242 +3422,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
   },
 
-  setSidebarWorkspaceSearch: (query) => set({ sidebarWorkspaceSearch: query }),
-  setSidebarSessionSearch: (query) => set({ sidebarSessionSearch: query }),
-  refreshUnreadWorkspaces: async () => {
-    try {
-      const ids = await invokeWorkspacesWithUnread();
-      set({ unreadWorkspaceIds: new Set(ids) });
-    } catch {
-      // Best-effort: stale unread indicators are recoverable from the next
-      // selectAgent / status update.
-    }
-  },
-  setSidebarStateFilter: (states) => set({ sidebarStateFilter: states }),
-  setSidebarProviderFilter: (providers) => set({ sidebarProviderFilter: providers }),
-
   exportConfig: async () => {
     return exportConfigToFile();
   },
 
   importConfig: async () => {
     return importConfigFromFile();
-  },
-
-  refreshGithubStatus: async () => {
-    try {
-      const status = await ghStatus();
-      set({ githubStatus: status });
-    } catch (err) {
-      set({
-        githubStatus: {
-          available: false,
-          mode: 'absent',
-          version: undefined,
-          user: undefined,
-          scopes: [],
-        },
-      });
-      console.warn('gh_status failed', err);
-    }
-  },
-
-  setGithubPat: async (token) => {
-    const status = await ghSetToken(token);
-    set({ githubStatus: status });
-    return status;
-  },
-
-  clearGithubToken: async () => {
-    await ghClearToken();
-    await get().refreshGithubStatus();
-  },
-
-  refreshSessionPr: async (sessionId, opts) => {
-    // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
-    // re-activation) before the first ~1s GitHub round-trip resolves. The
-    // existing `loading` flag is the right signal, since this action sets it
-    // to true synchronously below.
-    if (!opts?.force && get().sessionGithub[sessionId]?.loading) return;
-    const branch = get().sessionBranches[sessionId];
-    if (!branch) return;
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
-    set((state) => ({
-      sessionGithub: {
-        ...state.sessionGithub,
-        [sessionId]: {
-          pr: state.sessionGithub[sessionId]?.pr ?? null,
-          linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-          fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-          loading: true,
-          error: null,
-          detail: state.sessionGithub[sessionId]?.detail ?? null,
-          detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-          detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
-          detailError: state.sessionGithub[sessionId]?.detailError ?? null,
-        },
-      },
-    }));
-    try {
-      const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
-      if (!slug) {
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: null,
-              linkedIssues: [],
-              fetchedAt: new Date().toISOString() as IsoDateTime,
-              loading: false,
-              error: null,
-              detail: null,
-              detailFetchedAt: null,
-              detailLoading: false,
-              detailError: null,
-            },
-          },
-        }));
-        return;
-      }
-      const store = createTauriPrCacheStore(tauriDatabase);
-      const pr = await getPrForBranch(
-        { runner: tauriGhRunner, store },
-        { repoSlug: slug, branch, cwd: workspace.rootPath, force: opts?.force === true },
-      );
-      const linked = pr
-        ? await fetchLinkedIssues(tauriGhRunner, slug, pr, { cwd: workspace.rootPath })
-        : [];
-      set((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [sessionId]: {
-            pr,
-            linkedIssues: linked,
-            fetchedAt: new Date().toISOString() as IsoDateTime,
-            loading: false,
-            error: null,
-            detail: state.sessionGithub[sessionId]?.detail ?? null,
-            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-            detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
-            detailError: state.sessionGithub[sessionId]?.detailError ?? null,
-          },
-        },
-      }));
-    } catch (err) {
-      set((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [sessionId]: {
-            pr: state.sessionGithub[sessionId]?.pr ?? null,
-            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-            loading: false,
-            error: formatError(err),
-            detail: state.sessionGithub[sessionId]?.detail ?? null,
-            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-            detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
-            detailError: state.sessionGithub[sessionId]?.detailError ?? null,
-          },
-        },
-      }));
-    }
-  },
-
-  refreshSessionPrDetail: async (sessionId, opts) => {
-    const existing = get().sessionGithub[sessionId];
-    const pr = existing?.pr ?? null;
-    if (!pr) return;
-    // In-flight dedup: the ~3-5s GitHub detail call was firing twice on cold
-    // session switches because two effect runs both saw existing.detail still
-    // null. Block the second call by checking the loading flag the first one
-    // sets synchronously below.
-    if (!opts?.force && existing?.detailLoading) return;
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
-    const fresh = existing?.detailFetchedAt
-      ? Date.now() - new Date(existing.detailFetchedAt).getTime()
-      : Number.POSITIVE_INFINITY;
-    const DETAIL_TTL_MS = 30_000;
-    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) return;
-    set((state) => ({
-      sessionGithub: {
-        ...state.sessionGithub,
-        [sessionId]: {
-          pr: state.sessionGithub[sessionId]?.pr ?? pr,
-          linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-          fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-          loading: state.sessionGithub[sessionId]?.loading ?? false,
-          error: state.sessionGithub[sessionId]?.error ?? null,
-          detail: state.sessionGithub[sessionId]?.detail ?? null,
-          detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-          detailLoading: true,
-          detailError: null,
-        },
-      },
-    }));
-    try {
-      const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
-      if (!slug) {
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? pr,
-              linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-              fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-              loading: state.sessionGithub[sessionId]?.loading ?? false,
-              error: state.sessionGithub[sessionId]?.error ?? null,
-              detail: null,
-              detailFetchedAt: new Date().toISOString() as IsoDateTime,
-              detailLoading: false,
-              detailError: null,
-            },
-          },
-        }));
-        return;
-      }
-      const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
-        cwd: workspace.rootPath,
-      });
-      set((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [sessionId]: {
-            pr: state.sessionGithub[sessionId]?.pr ?? pr,
-            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-            loading: state.sessionGithub[sessionId]?.loading ?? false,
-            error: state.sessionGithub[sessionId]?.error ?? null,
-            detail,
-            detailFetchedAt: new Date().toISOString() as IsoDateTime,
-            detailLoading: false,
-            detailError: null,
-          },
-        },
-      }));
-    } catch (err) {
-      set((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [sessionId]: {
-            pr: state.sessionGithub[sessionId]?.pr ?? pr,
-            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-            loading: state.sessionGithub[sessionId]?.loading ?? false,
-            error: state.sessionGithub[sessionId]?.error ?? null,
-            detail: state.sessionGithub[sessionId]?.detail ?? null,
-            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-            detailLoading: false,
-            detailError: formatError(err),
-          },
-        },
-      }));
-    }
   },
 
   resolvePermissionRequest: async ({ sessionId, agentId, toolUseId, toolName, runId, scope }) => {
@@ -4037,33 +3545,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       `agent auto-spawned: ${next.name}`,
       undefined,
       { sessionId },
-    );
-  },
-
-  createPrForSession: async (sessionId) => {
-    const branch = get().sessionBranches[sessionId];
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!branch || !session) return;
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
-    const res = await tauriGhRunner.run(['pr', 'create', '--fill', '--draft'], {
-      cwd: workspace.rootPath,
-    });
-    if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', 'PR creation failed', errMsg, {
-        sessionId,
-        workspaceId: workspace.id,
-      });
-      throw new Error(errMsg);
-    }
-    await get().refreshSessionPr(sessionId, { force: true });
-    void get().emitNotification(
-      'pr-created',
-      'success',
-      `PR created for: ${session.goal}`,
-      undefined,
-      { sessionId, workspaceId: workspace.id },
     );
   },
 }));

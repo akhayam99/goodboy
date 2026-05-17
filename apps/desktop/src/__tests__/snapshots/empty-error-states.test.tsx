@@ -65,14 +65,14 @@ vi.mock('../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../../permissions', () => ({
+vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
 }));
@@ -83,7 +83,7 @@ vi.mock('../../routing', () => ({
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import type { ProviderInfo } from '../../providers';
+import type { ProviderInfo } from '../../features/providers/providers';
 import type { AppState, AppActions } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
 import { useAppStore } from '../../store';
@@ -95,17 +95,17 @@ function mockStore(partial: Partial<AppStore>): void {
     selector(partial as AppStore),
   );
 }
-import { NotificationCenter } from '../../components/NotificationCenter';
-import { BootSplash } from '../../components/BootSplash';
-import { NewSessionDialog } from '../../components/NewSessionDialog';
-import { EndSessionDialog } from '../../components/EndSessionDialog';
-import { SkillsPanel } from '../../components/SkillsPanel';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
-import { WorkspacesSidebar } from '../../components/WorkspacesSidebar';
-import { BudgetRulesPanel } from '../../components/BudgetRulesPanel';
-import { ProvidersPanel } from '../../components/ProvidersPanel';
-import { TranscriptCard } from '../../components/chat/TranscriptCards';
-import { ToastProvider } from '../../components/Toast';
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
+import { BootSplash } from '../../app/components/BootSplash';
+import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
+import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
+import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
+import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
+import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

@@ -16,7 +16,7 @@ import type {
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
-vi.mock('../turn', () => ({
+vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
@@ -26,7 +26,7 @@ vi.mock('../turn', () => ({
 const permissionRuleListSpy = vi.fn();
 const permissionAuditInsertSpy = vi.fn();
 
-vi.mock('../permissions', () => ({
+vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
   invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
@@ -44,7 +44,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
 }));
 
-vi.mock('../db', () => ({
+vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
@@ -81,7 +81,7 @@ vi.mock('@kay-am/db', () => ({
   clearAllNotifications: vi.fn(async () => undefined),
 }));
 
-vi.mock('../providers', () => ({
+vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [
     { id: 'anthropic', binary: 'claude', connection: 'connected' },
     { id: 'cursor', binary: 'cursor-agent', connection: 'connected' },
@@ -92,7 +92,7 @@ vi.mock('../providers', () => ({
   getProviderStatus: vi.fn(),
 }));
 
-vi.mock('../routing', () => ({
+vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async (_pref, _override, _connected) => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
@@ -100,7 +100,7 @@ vi.mock('../routing', () => ({
   })),
 }));
 
-vi.mock('../budget', () => ({
+vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
@@ -111,7 +111,7 @@ vi.mock('../budget', () => ({
   invokeCheckProviderBudget: vi.fn(),
 }));
 
-vi.mock('../skills', () => ({
+vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
   invokeSkillUpsert: vi.fn(),
   invokeSkillDelete: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('../skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../phases', () => ({
+vi.mock('../features/phases/phases', () => ({
   invokePhaseTemplateList: vi.fn(async () => []),
   invokePhaseTemplateUpsert: vi.fn(),
   invokePhaseTemplateDelete: vi.fn(),
@@ -128,12 +128,12 @@ vi.mock('../phases', () => ({
   invokePhaseRunUpdateStatus: vi.fn(),
 }));
 
-vi.mock('../worktree', () => ({
+vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
 }));
 
-vi.mock('../repo', () => ({
+vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
 }));
 
@@ -188,7 +188,7 @@ describe('sendTurn — permission proxy integration', () => {
     permissionAuditInsertSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
     permissionRuleListSpy.mockResolvedValue([]);
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockReset();
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -302,7 +302,7 @@ describe('sendTurn — permission proxy integration', () => {
   });
 
   it('does NOT forward permission flags when provider is cursor', async () => {
-    const routingMod = await import('../routing');
+    const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       selectedProvider: 'cursor',
       selectedModel: 'cursor-default',

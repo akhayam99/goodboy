@@ -65,7 +65,7 @@ vi.mock('../permissions', () => ({
   useEffectivePermissionRules: () => [],
 }));
 
-vi.mock('../components/Toast', () => ({
+vi.mock('../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
@@ -88,7 +88,7 @@ vi.mock('@kay-am/core', () => ({
 }));
 
 // Import component AFTER mocks are in place.
-import { ChatInput } from '../components/chat/ChatInput';
+import { ChatInput } from '../features/chat/components/ChatInput';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {

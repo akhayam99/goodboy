@@ -54,14 +54,14 @@ vi.mock('../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../../permissions', () => ({
+vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../editor', () => ({
+vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
 }));
@@ -74,10 +74,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
-import { EndSessionDialog } from '../../components/EndSessionDialog';
-import { NewSessionDialog } from '../../components/NewSessionDialog';
-import { SlashCommandPopover } from '../../components/chat/SlashCommandPopover';
-import { ToastProvider } from '../../components/Toast';
+import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
+import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
+import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
 

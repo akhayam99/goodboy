@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { bootstrapTheme } from './theme';
-import { migrateLegacyStorageKeys } from './storage-keys';
+import { ErrorBoundary } from './app/components/ErrorBoundary';
+import { bootstrapTheme } from './shared/lib/theme';
+import { migrateLegacyStorageKeys } from './shared/lib/storage-keys';
 import './styles.css';
 
 migrateLegacyStorageKeys();

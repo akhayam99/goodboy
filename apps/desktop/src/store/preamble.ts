@@ -1,6 +1,6 @@
 import { serializeSlots, type SlotKey, PROVIDER_CAPABILITIES } from '@kay-am/core';
 import type { ContextSlot, TurnEvent } from '@kay-am/types';
-import { estimateTokens } from '../utils/estimate-tokens';
+import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 const CONTEXT_MARKER_HINT =
   '## context handoff protocol\n' +

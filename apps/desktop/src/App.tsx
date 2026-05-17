@@ -1,16 +1,16 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@kay-am/ui';
 import type { SessionId } from '@kay-am/types';
-import { CommandPalette } from './components/CommandPalette';
-import { BootSplash } from './components/BootSplash';
-import { ChatView } from './components/chat/ChatView';
-import { ContextPanel } from './components/ContextPanel';
-import { EndSessionDialog } from './components/EndSessionDialog';
-import { SettingsDialog } from './components/SettingsDialog';
-import { ShortcutHelpDialog } from './components/ShortcutHelpDialog';
-import { ToastProvider } from './components/Toast';
-import { WorkspacesSidebar } from './components/WorkspacesSidebar';
-import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
+import { CommandPalette } from './features/session/components/CommandPalette';
+import { BootSplash } from './app/components/BootSplash';
+import { ChatView } from './features/chat/components/ChatView';
+import { ContextPanel } from './features/context/components/ContextPanel';
+import { EndSessionDialog } from './features/session/components/EndSessionDialog';
+import { SettingsDialog } from './features/settings/components/SettingsDialog';
+import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
+import { ToastProvider } from './app/components/Toast';
+import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
   useAppStore,
   useCurrentSession,
@@ -18,8 +18,8 @@ import {
   useSessionById,
   useSessionSlots,
 } from './store';
-import { refreshPricingTable } from './provider-pricing';
-import { STORAGE_PREFIXES } from './storage-keys';
+import { refreshPricingTable } from './features/providers/provider-pricing';
+import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
 
