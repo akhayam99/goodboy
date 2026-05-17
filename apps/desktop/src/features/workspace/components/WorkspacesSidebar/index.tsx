@@ -1995,7 +1995,7 @@ function AgentRow({
         ) : (
           <span
             className={cn(
-              'line-clamp-1 flex-1 text-left text-2xs font-medium',
+              'truncate flex-1 text-left text-2xs font-medium',
               isSelected ? 'text-foreground' : 'text-muted-foreground',
             )}
           >

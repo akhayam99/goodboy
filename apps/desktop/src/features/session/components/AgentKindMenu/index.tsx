@@ -44,7 +44,7 @@ export function AgentKindMenu({ kind, agentLabel, onPick }: AgentKindMenuProps) 
         }}
         onDoubleClick={(e) => e.stopPropagation()}
         className={cn(
-          'inline-flex w-[3.25rem] items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide transition-opacity hover:opacity-80',
+          'inline-flex w-[3.25rem] items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-tight tracking-wide transition-opacity hover:opacity-80',
           palette.bg,
           palette.fg,
         )}
