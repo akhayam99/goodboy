@@ -990,7 +990,8 @@ async function generateAutoTitle(
       await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false);
     }
     if (agentId) {
-      if (!get().agentKindOverride[agentId]) {
+      const lockedKind = get().agentKindOverride[agentId];
+      if (!lockedKind) {
         const runs = get().sessionPhaseRuns[sessionId] ?? [];
         const row = runs.find((r) => r.id === agentId);
         const currentKind = inferAgentKindFromName(row?.name ?? '');
@@ -999,6 +1000,15 @@ async function generateAutoTitle(
         }));
       }
       await get().renameAgent(sessionId, agentId, title);
+      // Only upgrade the chip when the agent was still generic — respect
+      // overrides set by workflow steps or user selection (#581).
+      const effectiveKind = lockedKind ?? 'generic';
+      if (effectiveKind === 'generic') {
+        const titleKind = inferAgentKindFromName(title);
+        if (titleKind !== 'generic') {
+          get().setAgentKind(agentId, titleKind);
+        }
+      }
     }
   } catch {
     // auto-title is best-effort

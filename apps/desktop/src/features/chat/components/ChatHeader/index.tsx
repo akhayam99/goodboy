@@ -9,6 +9,7 @@ import {
 } from '../../../../store';
 import { OpenInEditorButton } from '../../../../app/components/OpenInEditorButton';
 import { ParallelProgressPill } from '../ParallelProgressPill';
+import { shortModel, formatCost } from '../../../session/agent-row-format';
 
 interface ChatHeaderProps {
   session: Session;
@@ -78,9 +79,6 @@ export function ChatHeader({
             >
               <MessagesSquare size={12} aria-hidden />
               {transcriptLoading ? (
-                // Micro-skeleton so the header swaps instantly on session
-                // click while transcript fetch is still in flight; otherwise
-                // a stale "0 turns" briefly shows before the real count.
                 <span
                   aria-label="loading turn count"
                   className="inline-block h-2.5 w-8 animate-pulse rounded bg-muted"
@@ -95,7 +93,7 @@ export function ChatHeader({
                 </>
               )}
             </span>
-            {session.workflowId ? <PhaseProgressPill sessionId={session.id} /> : null}
+            <AgentInfoPill sessionId={session.id} />
           </div>
         </div>
 
@@ -115,44 +113,32 @@ const STATUS_DOT: Record<AgentStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-function PhaseProgressPill({ sessionId }: { sessionId: SessionId }) {
-  const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+function AgentInfoPill({ sessionId }: { sessionId: SessionId }) {
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const agentRunHistory = useAppStore((s) => s.agentRunHistory);
+  const telemetry = useAppStore((s) => s.sessionTelemetry[sessionId] ?? EMPTY_ARRAY);
 
-  if (runs.length === 0) return null;
+  if (!selectedAgentId) return null;
 
-  const sorted = runs.slice().sort((a, b) => a.ordinal - b.ordinal);
-  const selectedIdx = selectedAgentId ? sorted.findIndex((r) => r.id === selectedAgentId) : -1;
-  const activeIdx = sorted.findIndex((r) => r.status === 'running');
-  const lastCompletedIdx = sorted.reduce(
-    (acc: number, r: Agent, i: number) => (r.status === 'completed' ? i : acc),
-    -1,
-  );
-  // Selected agent takes priority — pill reflects the agent the user is
-  // looking at, not workflow-wide running state. Falls back to running, then
-  // last completed when no agent is selected (e.g. fresh task).
-  const displayIdx = (() => {
-    if (selectedIdx >= 0) return selectedIdx;
-    if (activeIdx >= 0) return activeIdx;
-    return lastCompletedIdx;
-  })();
-  const current = displayIdx >= 0 ? sorted[displayIdx] : sorted[0];
+  const agent = phaseRuns.find((r) => r.id === selectedAgentId) as Agent | undefined;
+  const runIds = new Set(agentRunHistory[selectedAgentId] ?? (agent?.runId ? [agent.runId] : []));
 
-  if (!current) return null;
+  const agentRecords = telemetry.filter((r) => r.kind === 'turn' && runIds.has(r.runId));
+  const totalCost = agentRecords.reduce((sum, r) => sum + r.estimatedCostUsd, 0);
+  const latestModel = agentRecords[agentRecords.length - 1]?.model ?? null;
+
+  if (!latestModel && totalCost === 0) return null;
+
+  const status = agent?.status ?? 'pending';
 
   return (
     <div className="inline-flex items-center gap-1.5 rounded-full border border-border-soft bg-subtle px-2 py-0.5 text-2xs text-muted-foreground">
-      <span className="font-mono">
-        {displayIdx + 1}/{sorted.length} · {current.name}
-      </span>
-      <span className="flex items-center gap-0.5">
-        {sorted.map((r) => (
-          <span
-            key={r.id}
-            className={cn('inline-block h-1.5 w-1.5 rounded-full', STATUS_DOT[r.status])}
-          />
-        ))}
-      </span>
+      <span className={cn('inline-block h-1.5 w-1.5 rounded-full flex-none', STATUS_DOT[status])} />
+      {latestModel ? <span className="font-mono">{shortModel(latestModel)}</span> : null}
+      {totalCost > 0 ? (
+        <span className="font-mono text-muted-foreground/70">{formatCost(totalCost)}</span>
+      ) : null}
     </div>
   );
 }
