@@ -196,9 +196,11 @@ import { exportConfigToFile, importConfigFromFile } from '../features/settings/c
 import { formatError } from '../shared/lib/errors';
 import {
   AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind,
 } from '../features/session/agent-kind';
+import { detectDrift } from '../features/session/drift-detection';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -394,6 +396,8 @@ export interface AppActions {
     providerPreference?: SessionProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
+    firstAgentKind?: AgentKind;
+    firstAgentModel?: string;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -445,6 +449,7 @@ export interface AppActions {
       effort?: string;
       initialPrompt?: string;
       triggeredPlanId?: PlanId;
+      kindOverride?: AgentKind;
     },
   ): Promise<AgentId>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
@@ -1585,6 +1590,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     providerPreference,
     workflowId,
     autoRun,
+    firstAgentKind,
+    firstAgentModel: requestedModel,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -1675,10 +1682,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
       }
     } else {
+      const agentName = firstAgentKind
+        ? AGENT_KIND_META[firstAgentKind].label.toLowerCase()
+        : 'agent 1';
+      firstAgentModel =
+        requestedModel ?? (firstAgentKind ? AGENT_KIND_DEFAULTS[firstAgentKind].model : null);
       firstAgent = await invokePhaseRunInsert({
         sessionId: session.id,
         ordinal: 0,
-        name: 'agent 1',
+        name: agentName,
         status: 'pending',
       });
     }
@@ -1709,11 +1721,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(firstAgentModel !== null && {
         agentModelOverride: { ...get().agentModelOverride, [firstAgent.id]: firstAgentModel },
       }),
+      ...(firstAgentKind !== undefined && {
+        agentKindOverride: { ...get().agentKindOverride, [firstAgent.id]: firstAgentKind },
+      }),
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
+    } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
+      void get().sendTurn({ sessionId: session.id, content: goalText });
     }
 
     void get().emitNotification(
@@ -2354,7 +2371,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // M1: read the agent row once here; used by M5 (provider-id check) and M3 below.
     const agentRowEarly =
       (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
-    const earlyAgentKind = inferAgentKindFromName(agentRowEarly?.name ?? '');
+    const earlyAgentKind =
+      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(agentRowEarly?.name ?? '');
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
@@ -2412,6 +2430,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // their role. Only claude consumes it today; other providers ignore the
     // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
+
+    if (provider !== 'anthropic' && kindSystemPrompt) {
+      resolvedPrompt = `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n${resolvedPrompt}`;
+    }
 
     try {
       for await (const event of runTurn({
@@ -2663,6 +2685,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!lastError && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
       void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText);
+      const driftViolations = detectDrift({
+        agentKind: earlyAgentKind,
+        assistantText,
+        filesEdited: Array.from(filesTouchedThisTurn),
+      });
+      if (driftViolations.length > 0) {
+        void get().emitNotification(
+          'boundary-drift',
+          'warning',
+          `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
+          driftViolations[0]!.detail,
+          { sessionId },
+        );
+      }
       if (
         !get().sessionGithub[sessionId]?.pr &&
         /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(assistantText)
@@ -3158,6 +3194,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
       ...(args.model !== undefined && {
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
+      }),
+      ...(args.kindOverride !== undefined && {
+        agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
       }),
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');

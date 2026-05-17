@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorkflowLibraryStep } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
@@ -140,5 +141,38 @@ describe('inferAgentKindFromName', () => {
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
     expect(inferAgentKindFromName(name)).toBe(expected);
+  });
+});
+
+describe('AGENT_KIND_META', () => {
+  it('has an entry for every AgentKind', () => {
+    for (const kind of ALL_KINDS) {
+      expect(AGENT_KIND_META[kind]).toBeDefined();
+      expect(typeof AGENT_KIND_META[kind].label).toBe('string');
+      expect(AGENT_KIND_META[kind].label.length).toBeGreaterThan(0);
+      expect(typeof AGENT_KIND_META[kind].hint).toBe('string');
+      expect(AGENT_KIND_META[kind].hint.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('boundary systemPrompts', () => {
+  it('all kinds have a systemPrompt', () => {
+    for (const kind of ALL_KINDS) {
+      expect(AGENT_KIND_DEFAULTS[kind].systemPrompt).toBeDefined();
+      expect(typeof AGENT_KIND_DEFAULTS[kind].systemPrompt).toBe('string');
+      expect(AGENT_KIND_DEFAULTS[kind].systemPrompt!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('non-generic prompts contain FORBIDDEN', () => {
+    for (const kind of ALL_KINDS) {
+      if (kind === 'generic') continue;
+      expect(AGENT_KIND_DEFAULTS[kind].systemPrompt).toContain('FORBIDDEN');
+    }
+  });
+
+  it('generic prompt has no restrictions', () => {
+    expect(AGENT_KIND_DEFAULTS['generic'].systemPrompt).toContain('no role restrictions');
   });
 });

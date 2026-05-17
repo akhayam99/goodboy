@@ -83,6 +83,8 @@ import {
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
+  AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
   type AgentKind,
   resolveAgentKind,
@@ -1727,18 +1729,29 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
               <div className="mt-1 border-t border-border-soft" aria-hidden />
             </>
           ) : null}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              void onSpawn(null);
-            }}
-            className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
-          >
-            <span className="font-medium text-foreground">+ free agent</span>
-            <span className="text-2xs text-muted-foreground">no role</span>
-          </button>
+          <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+            by role
+          </div>
+          {AGENT_KIND_ORDER.map((kind) => {
+            const meta = AGENT_KIND_META[kind];
+            const palette = AGENT_KIND_PALETTE[kind];
+            return (
+              <button
+                key={kind}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  void spawnAgent(sessionId, { kindOverride: kind });
+                }}
+                className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+              >
+                <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+                <span className="font-medium text-foreground">{meta.label}</span>
+                <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
+              </button>
+            );
+          })}
           {sortedSteps.length > 0 ? (
             <>
               <div className="mt-1 border-t border-border-soft" aria-hidden />
