@@ -10,9 +10,9 @@ export interface AppShellProps {
   className?: string;
 }
 
-const LEFT_SIDEBAR_MIN = 220;
-const LEFT_SIDEBAR_MAX = 480;
-const LEFT_SIDEBAR_DEFAULT = 280;
+const LEFT_SIDEBAR_MIN = 300;
+const LEFT_SIDEBAR_MAX = 520;
+const LEFT_SIDEBAR_DEFAULT = 380;
 const LEFT_SIDEBAR_STORAGE_KEY = 'kay-am:left-sidebar-width';
 const LEFT_RAIL_WIDTH = 80;
 
