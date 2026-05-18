@@ -22,9 +22,7 @@ import {
 } from 'lucide-react';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
-import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
-import { TelemetryPill } from '../../../../features/providers/components/TelemetryPill';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import type {
   Agent,
@@ -130,7 +128,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* header */}
-      <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
+      <div className="flex shrink-0 items-center gap-1.5 bg-muted/60 px-2 py-2">
         <KayAmLogo />
         <div className="ml-auto flex items-center gap-0.5">
           <button
@@ -165,10 +163,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </div>
 
       {/* workspace select */}
-      <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+      <div className="shrink-0">
+        <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+      </div>
 
       {/* activity bar + detail panel */}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 bg-background/40">
         {currentWorkspace ? (
           <>
             <SessionActivityBar
@@ -199,12 +199,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             Select a workspace to get started.
           </p>
         )}
-      </div>
-
-      {/* footer */}
-      <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
-        <ProvidersChip />
-        <TelemetryPill />
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />

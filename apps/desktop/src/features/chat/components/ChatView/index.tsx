@@ -10,7 +10,6 @@ import {
 } from '../../utils/transcript-items';
 import { TranscriptCard } from '../TranscriptCards';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
-import { ChatHeader } from '../ChatHeader';
 import { ChatInput } from '../ChatInput';
 import {
   MergeDialog,
@@ -296,12 +295,6 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   if (isSplitView) {
     return (
       <div className="flex h-full flex-col">
-        <ChatHeader
-          session={session}
-          worktreePath={worktreePath}
-          parallelRunIds={parallelRunIds}
-          onSelectRun={onSelectRun}
-        />
         <div
           className="flex-1 overflow-hidden"
           style={{
@@ -366,7 +359,6 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <ChatHeader session={session} worktreePath={worktreePath} />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent" />
         <div

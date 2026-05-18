@@ -1,8 +1,18 @@
 import { memo, useMemo, useState } from 'react';
-import { Archive, Plus } from 'lucide-react';
+import {
+  Archive,
+  GitMerge,
+  GitPullRequest,
+  GitPullRequestClosed,
+  GitPullRequestDraft,
+  Inbox,
+  Minus,
+  Plus,
+} from 'lucide-react';
 import { cn, ScrollArea } from '@kay-am/ui';
-import type { Session, SessionId, TurnState } from '@kay-am/types';
-import { useSessionHasUnread } from '../../../../store';
+import type { PullRequestStateKind, Session, SessionId, TurnState } from '@kay-am/types';
+import { useAppStore, useSessionHasUnread } from '../../../../store';
+import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -35,7 +45,7 @@ export function SessionActivityBar({
   const displayList = tab === 'active' ? sortedActive : sortedArchived;
 
   return (
-    <div className="flex w-20 shrink-0 flex-col rounded-lg bg-muted/40 m-1 mr-0">
+    <div className="flex w-20 shrink-0 flex-col rounded-bl-lg bg-muted/50">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-0.5 p-1">
           {displayList.map((session) => (
@@ -67,34 +77,33 @@ export function SessionActivityBar({
       </ScrollArea>
 
       {/* segment control */}
-      <div className="shrink-0 p-1">
-        <div className="flex rounded-md bg-background/60 p-0.5">
+      <div className="shrink-0 border-t border-border-soft/40 p-1.5">
+        <div className="flex rounded-lg border border-border-soft/60 bg-background/80 p-0.5">
           <button
             type="button"
             onClick={() => setTab('active')}
             className={cn(
-              'flex flex-1 items-center justify-center rounded py-1 text-[10px] font-medium transition-colors',
+              'flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors',
               tab === 'active'
-                ? 'bg-muted text-foreground shadow-sm'
-                : 'text-muted-foreground/60 hover:text-muted-foreground',
+                ? 'bg-primary/15 text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
             )}
             title="active sessions"
           >
-            {sortedActive.length}
+            <Inbox size={12} aria-hidden />
           </button>
           <button
             type="button"
             onClick={() => setTab('archived')}
             className={cn(
-              'flex flex-1 items-center justify-center gap-0.5 rounded py-1 text-[10px] font-medium transition-colors',
+              'flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors',
               tab === 'archived'
-                ? 'bg-muted text-foreground shadow-sm'
-                : 'text-muted-foreground/60 hover:text-muted-foreground',
+                ? 'bg-primary/15 text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
             )}
             title="archived sessions"
           >
-            <Archive size={9} aria-hidden />
-            {sortedArchived.length}
+            <Archive size={12} aria-hidden />
           </button>
         </div>
       </div>
@@ -109,6 +118,17 @@ interface SessionActivityItemProps {
   onClick: () => void;
 }
 
+const PR_ICON_MAP: Record<
+  PullRequestStateKind,
+  { icon: React.ElementType; label: string; className: string }
+> = {
+  draft: { icon: GitPullRequestDraft, label: 'draft', className: 'text-muted-foreground' },
+  open: { icon: GitPullRequest, label: 'in review', className: 'text-success' },
+  approved: { icon: GitPullRequest, label: 'approved', className: 'text-success' },
+  merged: { icon: GitMerge, label: 'merged', className: 'text-merged' },
+  closed: { icon: GitPullRequestClosed, label: 'closed', className: 'text-danger' },
+};
+
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
   isActive,
@@ -118,29 +138,43 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const hasUnread = useSessionHasUnread(session.id as SessionId);
   const showUnreadPing = hasUnread && !isActive;
   const dot = useSessionDot(session.state, showUnreadPing);
+  const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
+  const StatusIcon = statusEntry.icon;
+  const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
+  const prEntry = prState ? PR_ICON_MAP[prState] : null;
+  const PrIcon = prEntry?.icon ?? Minus;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      title={session.goal}
+      title={`${session.goal} — ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded-md px-1 py-2 text-center transition-colors',
         isActive
-          ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+          ? 'bg-background/80 text-foreground shadow-sm'
+          : 'text-foreground/70 hover:bg-background/40 hover:text-foreground',
+        dimmed && 'opacity-50',
       )}
     >
-      <span className="relative inline-flex h-2 w-2 shrink-0">
-        {dot.ping && (
-          <span
-            className={cn(
-              'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
-              dot.pingColor,
-            )}
-          />
-        )}
-        <span className={cn('relative inline-block h-2 w-2 rounded-full', dot.color)} />
+      <span className="flex items-center gap-1">
+        <span className="relative inline-flex h-2 w-2 shrink-0">
+          {dot.ping && (
+            <span
+              className={cn(
+                'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
+                dot.pingColor,
+              )}
+            />
+          )}
+          <span className={cn('relative inline-block h-2 w-2 rounded-full', dot.color)} />
+        </span>
+        <span className={cn('shrink-0', statusEntry.className)}>
+          <StatusIcon size={10} aria-hidden />
+        </span>
+        <span className={cn('shrink-0', prEntry?.className ?? 'text-muted-foreground/30')}>
+          <PrIcon size={10} aria-hidden />
+        </span>
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
     </button>

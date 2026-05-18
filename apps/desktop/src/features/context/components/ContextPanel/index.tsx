@@ -310,6 +310,7 @@ export function ContextPanel({
               </span>
             </button>
           )}
+          <CostPill />
         </div>
       </div>
 
@@ -1213,6 +1214,50 @@ function LatestPlanCard({ plan, index }: LatestPlanCardProps) {
         </span>
       </div>
       {expanded ? <Markdown text={plan.bodyMd} className="text-xs" /> : null}
+    </div>
+  );
+}
+
+const PROVIDER_DOT: Record<string, string> = {
+  anthropic: 'bg-[var(--color-provider-anthropic)]',
+  cursor: 'bg-[var(--color-provider-cursor)]',
+  codex: 'bg-[var(--color-provider-codex)]',
+};
+
+const formatCostUsd = (usd: number): string => (usd === 0 ? '$0' : `$${usd.toFixed(2)}`);
+
+function CostPill() {
+  const sessionSummary = useAppStore((s) => s.sessionSummary);
+  const workspaceSummary = useAppStore((s) => s.workspaceSummary);
+  const providerSpend = useAppStore((s) => s.providerSpendBreakdown);
+
+  const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
+  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
+
+  return (
+    <div
+      className="flex items-center gap-1.5 text-xs text-muted-foreground"
+      title={`session: ${formatCostUsd(sessionCost)}\nworkspace: ${formatCostUsd(workspaceCost)}`}
+    >
+      <span className="font-medium">{formatCostUsd(sessionCost)}</span>
+      <span>session</span>
+      <span aria-hidden className="opacity-40">
+        ·
+      </span>
+      <span className="font-medium">{formatCostUsd(workspaceCost)}</span>
+      {providerSpend.length > 0 ? (
+        <span aria-hidden className="ml-0.5 flex items-center -space-x-0.5">
+          {providerSpend
+            .filter((p) => p.spentUsd > 0)
+            .slice(0, 3)
+            .map((p) => (
+              <span
+                key={p.provider}
+                className={`inline-block h-2 w-2 rounded-full ring-1 ring-background ${PROVIDER_DOT[p.provider] ?? 'bg-muted-foreground/40'}`}
+              />
+            ))}
+        </span>
+      ) : null}
     </div>
   );
 }
