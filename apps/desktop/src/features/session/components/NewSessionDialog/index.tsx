@@ -339,7 +339,7 @@ export function NewSessionDialog({
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
-    if (WORKSPACE_FEATURES.initScript) {
+    if (WORKSPACE_FEATURES.initScript && loadInitScript) {
       void loadInitScript(workspaceId);
     }
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
