@@ -3720,10 +3720,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
     }));
 
-    const { section: planSection } = await buildPlanKickoffSection(sessionId);
+    const { section: planSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
     const kickoff = composeKickoff(planSection, promptPrefix);
     if (kickoff.length > 0) {
       void get().sendTurn({ sessionId, content: kickoff });
+    }
+
+    if (latestPlan && latestPlan.status === 'active') {
+      await invokeAddPlanConsumption(latestPlan.id, agentId);
+      const refreshedPlans = await invokeListPlansForSession(sessionId);
+      const consumptions = await invokeListConsumptionsForPlan(latestPlan.id);
+      set((state) => ({
+        sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
+        planConsumptions: { ...state.planConsumptions, [latestPlan.id]: consumptions },
+      }));
     }
   },
 
