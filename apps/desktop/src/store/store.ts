@@ -33,7 +33,6 @@ import {
   listContextSlotHistory,
   listMessagesForAgent,
   listMessagesForSession,
-  listTurnEventsForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,
   listSessionsForWorkspace,
@@ -206,6 +205,7 @@ import {
 } from '../features/session/agent-kind';
 import { detectDrift } from '../features/session/drift-detection';
 import { readArchivedSet } from '../features/session/archived-storage';
+import { loadTurnEventsForAgent } from '../features/chat/utils/load-turn-events';
 import {
   mark as ssMark,
   markForSession as ssMarkFor,
@@ -1906,7 +1906,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadTranscript: async (agentId, sessionId) => {
     const [messages, events] = await Promise.all([
       listMessagesForAgent(tauriDatabase, agentId),
-      listTurnEventsForAgent(tauriDatabase, agentId),
+      loadTurnEventsForAgent(agentId),
     ]);
     set((state) => ({
       messages: { ...state.messages, [sessionId]: messages },
@@ -3332,7 +3332,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       try {
         const [messages, events] = await Promise.all([
           listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-          listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+          loadTurnEventsForAgent(agentId, { limit: INITIAL_LIMIT }),
         ]);
         if (import.meta.env.DEV)
           console.log(
@@ -3365,7 +3365,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             const tFull = performance.now();
             void Promise.all([
               listMessagesForAgent(tauriDatabase, agentId),
-              listTurnEventsForAgent(tauriDatabase, agentId),
+              loadTurnEventsForAgent(agentId),
             ])
               .then(([fullMessages, fullEvents]) => {
                 if (import.meta.env.DEV)
