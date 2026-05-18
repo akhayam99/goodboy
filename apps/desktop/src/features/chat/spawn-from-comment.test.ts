@@ -81,6 +81,8 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');
     expect(args.initialPrompt).toContain('#9108');
+    expect(args.initialPrompt).toContain('EASY');
+    expect(args.initialPrompt).toContain('NON-TRIVIAL');
   });
 
   it('aggregates open comments for fix-all', () => {
@@ -92,5 +94,7 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('bob');
     expect(args.initialPrompt).toContain('eve');
     expect(args.initialPrompt).toContain('a/b.ts:7');
+    expect(args.initialPrompt).toContain('EASY');
+    expect(args.initialPrompt).toContain('NON-TRIVIAL');
   });
 });
