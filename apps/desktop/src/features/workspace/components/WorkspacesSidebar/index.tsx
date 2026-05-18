@@ -33,6 +33,7 @@ import {
   Workflow as WorkflowIcon,
   X,
   Check,
+  Terminal,
   Zap,
   ZapOff,
 } from 'lucide-react';
@@ -1464,8 +1465,19 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
-  const workflowAgents = useMemo(() => sorted.filter((r) => r.stepId != null), [sorted]);
-  const adHocAgents = useMemo(() => sorted.filter((r) => r.stepId == null), [sorted]);
+  const initAgent = useMemo(
+    () => sorted.find((r) => agentKindOverride[r.id] === 'init') ?? null,
+    [sorted, agentKindOverride],
+  );
+  const nonInitSorted = useMemo(
+    () => sorted.filter((r) => agentKindOverride[r.id] !== 'init'),
+    [sorted, agentKindOverride],
+  );
+  const workflowAgents = useMemo(
+    () => nonInitSorted.filter((r) => r.stepId != null),
+    [nonInitSorted],
+  );
+  const adHocAgents = useMemo(() => nonInitSorted.filter((r) => r.stepId == null), [nonInitSorted]);
   const actionableStepId = useMemo(() => {
     if (!workflow) return null;
     return pickNextWorkflowStep(workflow, sorted)?.id ?? null;
@@ -1618,9 +1630,42 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   return (
     <section className="mt-6 flex flex-col px-2 pb-3">
-      {workflow && workflowAgents.length > 0 ? (
+      {initAgent ? (
         <>
           <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className={SECTION_LABEL}>
+              <Terminal size={11} aria-hidden className="text-muted-foreground" />
+              Init
+            </span>
+            <span className="truncate text-2xs text-muted-foreground/70">
+              {initAgent.status === 'completed' ? 'done' : initAgent.status}
+            </span>
+          </header>
+          <div className="flex flex-col gap-1 pl-2">
+            <AgentRow
+              run={initAgent}
+              kind="init"
+              telemetry={latestTelemetryByAgentId.get(initAgent.id) ?? null}
+              aggregate={aggregatesByAgentId.get(initAgent.id) ?? null}
+              turns={turnsByAgentId.get(initAgent.id) ?? 0}
+              turnsLoading={initAgent.id === selectedAgentId && loading.transcript}
+              isSelected={initAgent.id === selectedAgentId}
+              isTaskActive={isTaskActive}
+              isEditing={false}
+              onClick={() => onPickAgent(initAgent.id)}
+              onRenameStart={() => undefined}
+              onRenameCommit={() => undefined}
+              onRenameCancel={() => undefined}
+              onDelete={() => undefined}
+            />
+          </div>
+        </>
+      ) : null}
+      {workflow && workflowAgents.length > 0 ? (
+        <>
+          <header
+            className={cn('flex items-center justify-between gap-2 pb-1.5', initAgent && 'mt-6')}
+          >
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
               Workflow
@@ -1663,7 +1708,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       <header
         className={cn(
           'flex items-center justify-between gap-2 pb-1.5',
-          workflow && workflowAgents.length > 0 && 'mt-6',
+          ((workflow && workflowAgents.length > 0) || initAgent) && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>

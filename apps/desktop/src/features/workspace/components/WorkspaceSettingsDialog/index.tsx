@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@kay-am/types';
 import { Button, Dialog, Input, cn } from '@kay-am/ui';
-import { FolderCode, GitBranch, Unplug, Zap } from 'lucide-react';
+import { FolderCode, GitBranch, Terminal, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
+import { InitScriptPanel } from '../../../../features/init';
 import { BulkSessionDeleteDialog } from '../WorkspacesSidebar';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
@@ -17,7 +18,7 @@ interface WorkspaceSettingsDialogProps {
   onClose: () => void;
 }
 
-type Section = 'general' | 'skills' | 'phases' | 'danger';
+type Section = 'general' | 'skills' | 'init' | 'phases' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -30,6 +31,9 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'general', label: 'General', icon: <FolderCode size={14} aria-hidden /> },
   ...(WORKSPACE_FEATURES.skills
     ? [{ id: 'skills' as const, label: 'Skills', icon: <Zap size={14} aria-hidden /> }]
+    : []),
+  ...(WORKSPACE_FEATURES.initScript
+    ? [{ id: 'init' as const, label: 'Init', icon: <Terminal size={14} aria-hidden /> }]
     : []),
   { id: 'phases', label: 'Workflows', icon: <GitBranch size={14} aria-hidden />, beta: true },
 ];
@@ -154,6 +158,8 @@ export function WorkspaceSettingsDialog({
         );
       case 'skills':
         return <SkillsPanel workspaceId={workspaceId} />;
+      case 'init':
+        return <InitScriptPanel workspaceId={workspaceId} />;
       case 'phases':
         return <PhasesPanel workspaceId={workspaceId} />;
       case 'danger':

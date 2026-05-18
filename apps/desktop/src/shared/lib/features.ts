@@ -11,6 +11,7 @@ export const WORKSPACE_FEATURES = {
   skills: false,
   contextPanel: true,
   permissions: true,
+  initScript: true,
 } as const;
 
 export const SESSION_FEATURES = {

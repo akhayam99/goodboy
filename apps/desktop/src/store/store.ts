@@ -54,7 +54,11 @@ import {
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
+  updateSessionSkipInit,
   updateSessionState,
+  getLatestInitScript,
+  insertInitScript,
+  listInitScriptHistory,
   upsertContextSlot,
   type Notification,
   type NotificationKind,
@@ -142,7 +146,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../features/settings/settings';
-import { AGENT_FEATURES } from '../shared/lib/features';
+import { AGENT_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
   runTurn,
@@ -278,6 +282,7 @@ export interface AppState {
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
+  readonly workspaceInitScripts: Readonly<Record<WorkspaceId, string | null>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -435,6 +440,12 @@ export interface AppActions {
   saveSkill(input: SkillUpsertArgs): Promise<void>;
   deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
+  loadInitScript(workspaceId: WorkspaceId): Promise<void>;
+  saveInitScript(workspaceId: WorkspaceId, content: string): Promise<void>;
+  loadInitScriptHistory(
+    workspaceId: WorkspaceId,
+  ): Promise<ReadonlyArray<import('@kay-am/db').WorkspaceInitScript>>;
+  updateSessionSkipInit(sessionId: SessionId, skipInit: boolean): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -570,6 +581,7 @@ const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
+  workspaceInitScripts: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
@@ -1626,6 +1638,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(workflowId !== undefined ? { workflowId } : {}),
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
+      skipInit: false,
       userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
@@ -1710,6 +1723,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
       prespawnedRuns = [singleAgent];
     }
 
+    let initAgentId: AgentId | null = null;
+    const initScriptContent = WORKSPACE_FEATURES.initScript
+      ? (get().workspaceInitScripts[workspaceId] ?? null)
+      : null;
+    if (initScriptContent && !session.skipInit) {
+      const initAgent = await invokePhaseRunInsert({
+        sessionId: session.id,
+        ordinal: -1,
+        name: 'init',
+        status: 'pending',
+      });
+      agentModelOverrides[initAgent.id] = AGENT_KIND_DEFAULTS.init.model;
+      agentKindOverrides[initAgent.id] = 'init';
+      initAgentId = initAgent.id as AgentId;
+      prespawnedRuns = [initAgent, ...prespawnedRuns];
+    }
+
     const firstAgent = prespawnedRuns[0]!;
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
@@ -1745,7 +1775,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
-    if (firstStepPromptPrefix.length > 0) {
+    if (initAgentId && initScriptContent) {
+      void get().sendTurn({ sessionId: session.id, content: initScriptContent });
+    } else if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
     } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: goalText });
@@ -2640,7 +2672,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }),
         }));
         void get().refreshUnreadWorkspaces();
-        void get().maybeAutoAdvanceWorkflow(sessionId);
+
+        const kindOverride = get().agentKindOverride[resolvedAgentId];
+        if (kindOverride === 'init') {
+          const runs = get().sessionPhaseRuns[sessionId] ?? [];
+          const nextAgent = runs.find((r) => r.id !== resolvedAgentId && r.status === 'pending');
+          if (nextAgent) {
+            void get().selectAgent(sessionId, nextAgent.id as AgentId);
+            const ws = get().sessions.find((s) => s.id === sessionId);
+            const wfId = ws?.workflowId;
+            if (wfId) {
+              const templates = get().phaseTemplates[ws!.workspaceId] ?? [];
+              const wf = templates.find((t) => t.id === wfId);
+              const firstStep = wf
+                ? [...wf.steps].sort((a, b) => a.ordinal - b.ordinal)[0]
+                : undefined;
+              if (firstStep?.promptPrefix) {
+                void get().sendTurn({ sessionId, content: firstStep.promptPrefix });
+              }
+            } else {
+              const goalText = ws?.goal.trim() ?? '';
+              if (goalText.length > 0) {
+                void get().sendTurn({ sessionId, content: goalText });
+              }
+            }
+          }
+        } else {
+          void get().maybeAutoAdvanceWorkflow(sessionId);
+        }
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn — agent stays `running`. It was activated and has
         // context; reverting to `pending` would re-surface the "force spawn"
@@ -3049,6 +3108,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} removed`
         : undefined,
     );
+  },
+
+  loadInitScript: async (workspaceId) => {
+    const latest = await getLatestInitScript(tauriDatabase, workspaceId);
+    set((state) => ({
+      workspaceInitScripts: {
+        ...state.workspaceInitScripts,
+        [workspaceId]: latest?.content ?? null,
+      },
+    }));
+  },
+
+  saveInitScript: async (workspaceId, content) => {
+    await insertInitScript(tauriDatabase, {
+      id: crypto.randomUUID(),
+      workspaceId,
+      content,
+    });
+    set((state) => ({
+      workspaceInitScripts: { ...state.workspaceInitScripts, [workspaceId]: content },
+    }));
+  },
+
+  loadInitScriptHistory: async (workspaceId) => {
+    return listInitScriptHistory(tauriDatabase, workspaceId);
+  },
+
+  updateSessionSkipInit: async (sessionId, skipInit) => {
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateSessionSkipInit(tauriDatabase, sessionId, skipInit, now);
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, skipInit } : s)),
+    }));
   },
 
   loadPhaseTemplates: async (workspaceId) => {

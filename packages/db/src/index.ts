@@ -16,6 +16,7 @@ export {
   updateSessionState,
   updateSessionPermissionMode,
   updateSessionAutoRun,
+  updateSessionSkipInit,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   getSessionById,
@@ -143,3 +144,9 @@ export {
   type UpsertPlanInput,
   type AddPlanConsumptionInput,
 } from './queries/plan';
+export {
+  insertInitScript,
+  getLatestInitScript,
+  listInitScriptHistory,
+  type WorkspaceInitScript,
+} from './queries/workspace-init-script';

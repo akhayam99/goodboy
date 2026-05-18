@@ -48,6 +48,7 @@ export type Session = Readonly<{
   currentStepOrdinal?: number;
   autoRun: boolean;
   titleUserEdited: boolean;
+  skipInit: boolean;
   userStatus: SessionUserStatus;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
@@ -57,4 +58,11 @@ export type Session = Readonly<{
   providerOverride?: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+}>;
+
+export type WorkspaceInitScript = Readonly<{
+  id: string;
+  workspaceId: WorkspaceId;
+  content: string;
+  createdAt: IsoDateTime;
 }>;

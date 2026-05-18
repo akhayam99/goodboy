@@ -171,6 +171,7 @@ function buildSession(): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    skipInit: false,
     userStatus: 'wip',
     workflowId: TEMPLATE_ID,
     createdAt: now,

@@ -1,4 +1,5 @@
 export type AgentKindLabel =
+  | 'init'
   | 'planner'
   | 'scout'
   | 'implementer'
