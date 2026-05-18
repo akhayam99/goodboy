@@ -29,19 +29,29 @@ export interface WorkflowNextStepCtaProps {
  * remains. Issue #424 wires this into the agents bar; future issues
  * (#425/#426/#428) reuse the same hook point for additional surfaces.
  */
-export function pickNextWorkflowStep(workflow: Workflow, runs: ReadonlyArray<Agent>): Step | null {
+export interface PickNextWorkflowStepGate {
+  readonly hasOpenQuestions?: boolean;
+  readonly summarizerBusy?: boolean;
+}
+
+export function pickNextWorkflowStep(
+  workflow: Workflow,
+  runs: ReadonlyArray<Agent>,
+  gate?: PickNextWorkflowStepGate,
+): Step | null {
+  if (gate?.hasOpenQuestions || gate?.summarizerBusy) return null;
   const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
-  const spawnedIds = new Set(
-    runs.map((r) => r.stepId).filter((id): id is Step['id'] => id !== undefined),
-  );
-  const next = sorted.find((s) => !spawnedIds.has(s.id));
-  if (!next) return null;
-  const prevSpawned = sorted.filter((s) => s.ordinal < next.ordinal);
-  if (prevSpawned.length === 0) return next;
-  const prevAllCompleted = prevSpawned.every((s) =>
-    runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
-  );
-  return prevAllCompleted ? next : null;
+  for (const step of sorted) {
+    const agent = runs.find((r) => r.stepId === step.id);
+    if (!agent || agent.status !== 'pending') continue;
+    const prevSteps = sorted.filter((s) => s.ordinal < step.ordinal);
+    const allDone = prevSteps.every((s) =>
+      runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
+    );
+    if (allDone) return step;
+    return null;
+  }
+  return null;
 }
 
 export function WorkflowNextStepCta({
@@ -95,7 +105,7 @@ export function WorkflowNextStepCta({
             className={cn(
               'rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
               palette.bg,
-              palette.fg,
+              'text-zinc-950',
             )}
             aria-hidden
           >

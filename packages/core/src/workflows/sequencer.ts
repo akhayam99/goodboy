@@ -40,7 +40,12 @@ export function currentStep(template: Workflow, runs: ReadonlyArray<Agent>): Ste
 
   const live = runs
     .filter((r) => r.status === 'running' || r.status === 'failed' || r.status === 'pending')
-    .sort((a, b) => isStartedAt(b).localeCompare(isStartedAt(a)));
+    .sort((a, b) => {
+      const aStart = a.startedAt ?? '';
+      const bStart = b.startedAt ?? '';
+      if (aStart !== bStart) return bStart.localeCompare(aStart);
+      return a.ordinal - b.ordinal;
+    });
   const liveStep = live
     .map((r) => (r.stepId !== undefined ? stepById.get(r.stepId) : undefined))
     .find((s): s is Step => !!s);

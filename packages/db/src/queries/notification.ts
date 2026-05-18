@@ -9,6 +9,7 @@ export type NotificationKind =
   | 'agent-auto-spawn'
   | 'pr-created'
   | 'workspace-deleted'
+  | 'boundary-drift'
   | 'error';
 
 export interface Notification {

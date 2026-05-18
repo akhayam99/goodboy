@@ -2,12 +2,14 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
+  AlertTriangle,
   ArrowRight,
   ArrowUpDown,
   Bot,
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Clock,
   FolderOpen,
   FolderPlus,
   Gauge,
@@ -17,6 +19,7 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
   HelpCircle,
+  Layers,
   Loader2,
   MessagesSquare,
   Moon,
@@ -29,6 +32,7 @@ import {
   Users,
   Workflow as WorkflowIcon,
   X,
+  Check,
   Zap,
   ZapOff,
 } from 'lucide-react';
@@ -71,25 +75,31 @@ import {
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { StatusBadge } from '../../../session/components/StatusBadge';
-import { WorkflowNextStepCta } from '../../../../features/workflow/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
   formatTokens,
   shortModel,
-  shortModelWithVersion,
 } from '../../../../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
+  AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
   type AgentKind,
+  inferAgentKindFromName,
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
-import { AgentKindMenu } from '../../../session/components/AgentKindMenu';
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
 import { NextActionChips } from '../../../../features/workflow/components/NextActionChips';
+import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
+import {
+  AgentMetricsBlock,
+  type AgentAggregate,
+} from '../../../../features/session/components/AgentMetricsBlock';
 import {
   spawnFromNextAction,
   spawnKindForAction,
@@ -856,7 +866,10 @@ const SessionRow = memo(function SessionRow({
 }: SessionRowProps) {
   const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
   const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
-  const agentCount = useAppStore((s) => s.sessionPhaseRuns[session.id as SessionId]?.length ?? 0);
+  const agentCount = useAppStore((s) => {
+    const runs = s.sessionPhaseRuns[session.id as SessionId] ?? [];
+    return runs.filter((r) => !(r.stepId && r.status === 'pending')).length;
+  });
   const workflowName = useAppStore((s) => {
     if (!session.workflowId) return null;
     const templates = s.phaseTemplates[session.workspaceId] ?? [];
@@ -1431,9 +1444,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
-  const setAgentKind = useAppStore((s) => s.setAgentKind);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const agentModelOverride = useAppStore((s) => s.agentModelOverride);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
@@ -1445,10 +1459,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const loading = useSessionLoading(task.id);
   const hasOpenQuestions =
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
+  const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
+  const workflowAgents = useMemo(() => sorted.filter((r) => r.stepId != null), [sorted]);
+  const adHocAgents = useMemo(() => sorted.filter((r) => r.stepId == null), [sorted]);
+  const actionableStepId = useMemo(() => {
+    if (!workflow) return null;
+    return pickNextWorkflowStep(workflow, sorted)?.id ?? null;
+  }, [workflow, sorted]);
+  const actionBlocked = hasOpenQuestions || summarizerBusy;
 
   const telemetryByRunId = useMemo(() => {
     const map = new Map<string, TelemetryRecord>();
@@ -1537,6 +1559,13 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const onSpawn = async (stepId: Step['id'] | null, model?: string) => {
     setSpawnError(null);
     try {
+      if (stepId) {
+        const existing = sorted.find((r) => r.stepId === stepId && r.status === 'pending');
+        if (existing) {
+          await activateWorkflowAgent(task.id, existing.id);
+          return;
+        }
+      }
       await spawnAgent(task.id, stepId ? { stepId, ...(model !== undefined && { model }) } : {});
     } catch (err) {
       setSpawnError(formatError(err));
@@ -1560,20 +1589,102 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
   };
 
+  const renderAdHocRow = (run: Agent) => {
+    const kind = resolveAgentKind(
+      run.name,
+      firstUserTextByAgentId.get(run.id) ?? null,
+      agentKindOverride[run.id] ?? null,
+    );
+    return (
+      <AgentRow
+        key={run.id}
+        run={run}
+        kind={kind}
+        telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+        aggregate={aggregatesByAgentId.get(run.id) ?? null}
+        turns={turnsByAgentId.get(run.id) ?? 0}
+        turnsLoading={run.id === selectedAgentId && loading.transcript}
+        isSelected={run.id === selectedAgentId}
+        isTaskActive={isTaskActive}
+        isEditing={editingId === run.id}
+        onClick={() => onPickAgent(run.id)}
+        onRenameStart={() => setEditingId(run.id)}
+        onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+        onRenameCancel={() => setEditingId(null)}
+        onDelete={() => void onDeleteAgent(run.id)}
+      />
+    );
+  };
+
   return (
-    <section className="mt-8 flex flex-col px-2 pb-3">
-      <header className="flex items-center justify-between gap-2 pb-1.5">
+    <section className="mt-6 flex flex-col px-2 pb-3">
+      {workflow && workflowAgents.length > 0 ? (
+        <>
+          <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className={SECTION_LABEL}>
+              <Layers size={11} aria-hidden className="text-primary" />
+              Workflow
+            </span>
+            <span className="truncate text-2xs text-muted-foreground/70">
+              {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
+            </span>
+          </header>
+          <div className="flex flex-col gap-1 pl-2">
+            {workflowAgents.map((run) => {
+              const isActionable = run.stepId === actionableStepId && run.status === 'pending';
+              const kind = inferAgentKindFromName(run.name);
+              const resolvedModel =
+                agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+              return (
+                <WorkflowStepRow
+                  key={run.id}
+                  run={run}
+                  resolvedModel={resolvedModel}
+                  isActionable={isActionable}
+                  isBlocked={isActionable && actionBlocked}
+                  isSelected={run.id === selectedAgentId}
+                  isEditing={editingId === run.id}
+                  telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                  aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                  turns={turnsByAgentId.get(run.id) ?? 0}
+                  turnsLoading={run.id === selectedAgentId && loading.transcript}
+                  onStart={() => void onSpawn(run.stepId!, undefined)}
+                  onSelect={() => onPickAgent(run.id)}
+                  onRenameStart={() => setEditingId(run.id)}
+                  onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                  onRenameCancel={() => setEditingId(null)}
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+
+      <header
+        className={cn(
+          'flex items-center justify-between gap-2 pb-1.5',
+          workflow && workflowAgents.length > 0 && 'mt-6',
+        )}
+      >
         <span className={SECTION_LABEL}>
           <Bot size={11} aria-hidden className="text-success" />
           Agents
         </span>
         <span className="truncate text-2xs text-muted-foreground/70">
-          {sorted.length === 0
-            ? 'none yet'
-            : `${sorted.length} agent${sorted.length === 1 ? '' : 's'}`}
+          {workflow
+            ? adHocAgents.length === 0
+              ? 'none'
+              : `${adHocAgents.length} agent${adHocAgents.length === 1 ? '' : 's'}`
+            : sorted.length === 0
+              ? 'none yet'
+              : `${sorted.length} agent${sorted.length === 1 ? '' : 's'}`}
         </span>
       </header>
-      {sorted.length === 0 ? (
+      {workflow ? (
+        adHocAgents.length > 0 ? (
+          <ul className="flex flex-col gap-1 pl-2">{adHocAgents.map(renderAdHocRow)}</ul>
+        ) : null
+      ) : sorted.length === 0 ? (
         loading.agents ? (
           <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
@@ -1589,56 +1700,19 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </p>
         )
       ) : (
-        <ul className="flex flex-col gap-1 pl-2">
-          {sorted.map((run) => {
-            const stepName = run.stepId
-              ? (workflow?.steps.find((s) => s.id === run.stepId)?.name ?? null)
-              : null;
-            const kind = resolveAgentKind(
-              stepName ?? run.name,
-              firstUserTextByAgentId.get(run.id) ?? null,
-              agentKindOverride[run.id] ?? null,
-            );
-            return (
-              <AgentRow
-                key={run.id}
-                run={run}
-                kind={kind}
-                telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                turns={turnsByAgentId.get(run.id) ?? 0}
-                turnsLoading={run.id === selectedAgentId && loading.transcript}
-                isSelected={run.id === selectedAgentId}
-                isTaskActive={isTaskActive}
-                isEditing={editingId === run.id}
-                onClick={() => onPickAgent(run.id)}
-                onPickKind={(next) => setAgentKind(run.id, next)}
-                onRenameStart={() => setEditingId(run.id)}
-                onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                onRenameCancel={() => setEditingId(null)}
-                onDelete={() => void onDeleteAgent(run.id)}
-              />
-            );
-          })}
-        </ul>
+        <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
-      {workflow ? (
-        <div className="mt-2 pl-2">
-          <WorkflowNextStepCta
-            workflow={workflow}
-            runs={sorted}
-            onAdvance={(step, model) => onSpawn(step.id, model)}
-            hasOpenQuestions={hasOpenQuestions}
-            consumesActivePlan={hasActivePlan}
-          />
-        </div>
-      ) : null}
-      {workflow && hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-      <NextActionChips
-        sessionId={task.id}
-        workflowBound={task.workflowId !== undefined}
-        className="mt-2 px-2"
-      />
+      {!workflow ? (
+        <>
+          {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
+          <NextActionChips sessionId={task.id} workflowBound={false} className="mt-2 px-2" />
+        </>
+      ) : (
+        <>
+          {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
+          <NextActionChips sessionId={task.id} workflowBound className="mt-2 px-2" />
+        </>
+      )}
       <div className="pl-2">
         <SpawnAgentControl sessionId={task.id} workflow={workflow} onSpawn={onSpawn} />
       </div>
@@ -1655,7 +1729,6 @@ interface SpawnAgentControlProps {
 
 function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
-  const [pendingSuggestion, setPendingSuggestion] = useState<NextAction | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const nextActions = useSessionNextActions(sessionId);
   const slots = useSessionSlots(sessionId);
@@ -1678,21 +1751,12 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
     [workflow],
   );
 
-  const suggestions = workflow ? [] : nextActions;
+  const suggestions = workflow || hasOpenQuestions ? [] : nextActions;
 
-  const executeSuggestion = async (action: NextAction) => {
-    setPendingSuggestion(null);
+  const onPickSuggestion = async (action: NextAction) => {
+    setOpen(false);
     const did = await spawnFromNextAction(action, sessionId, spawnAgent);
     if (did) clearSessionNextActions(sessionId);
-  };
-
-  const onPickSuggestion = (action: NextAction) => {
-    setOpen(false);
-    if (hasOpenQuestions) {
-      setPendingSuggestion(action);
-      return;
-    }
-    void executeSuggestion(action);
   };
 
   return (
@@ -1727,18 +1791,29 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
               <div className="mt-1 border-t border-border-soft" aria-hidden />
             </>
           ) : null}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              void onSpawn(null);
-            }}
-            className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
-          >
-            <span className="font-medium text-foreground">+ free agent</span>
-            <span className="text-2xs text-muted-foreground">no role</span>
-          </button>
+          <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+            by role
+          </div>
+          {AGENT_KIND_ORDER.map((kind) => {
+            const meta = AGENT_KIND_META[kind];
+            const palette = AGENT_KIND_PALETTE[kind];
+            return (
+              <button
+                key={kind}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  void spawnAgent(sessionId, { kindOverride: kind });
+                }}
+                className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+              >
+                <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+                <span className="font-medium text-foreground">{meta.label}</span>
+                <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
+              </button>
+            );
+          })}
           {sortedSteps.length > 0 ? (
             <>
               <div className="mt-1 border-t border-border-soft" aria-hidden />
@@ -1766,29 +1841,6 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
               ))}
             </>
           ) : null}
-        </div>
-      ) : null}
-      {pendingSuggestion ? (
-        <div className="mt-1.5 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
-          <p className="mb-2 font-medium text-foreground">
-            open questions need resolution before spawning an agent.
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingSuggestion(null)}
-              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
-            >
-              resolve first
-            </button>
-            <button
-              type="button"
-              onClick={() => void executeSuggestion(pendingSuggestion)}
-              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
-            >
-              force spawn
-            </button>
-          </div>
         </div>
       ) : null}
     </div>
@@ -1865,7 +1917,7 @@ function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect
       title={`${defaults.model} · ${defaults.effort} effort`}
       className={cn(
         'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors',
-        `${palette.bg} ${palette.fg} hover:opacity-90`,
+        `${palette.bg} text-zinc-950 hover:opacity-90`,
       )}
     >
       <span className="flex items-center gap-1.5">
@@ -1885,11 +1937,239 @@ const AGENT_STATUS_TONE: Record<AgentStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-interface AgentAggregate {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
+interface WorkflowStepRowProps {
+  readonly run: Agent;
+  readonly resolvedModel: string;
+  readonly isActionable: boolean;
+  readonly isBlocked: boolean;
+  readonly isSelected: boolean;
+  readonly isEditing: boolean;
+  readonly telemetry: TelemetryRecord | null;
+  readonly aggregate: AgentAggregate | null;
   readonly turns: number;
+  readonly turnsLoading: boolean;
+  readonly onStart: () => void;
+  readonly onSelect: () => void;
+  readonly onRenameStart: () => void;
+  readonly onRenameCommit: (name: string) => void;
+  readonly onRenameCancel: () => void;
+}
+
+function WorkflowStepRow({
+  run,
+  resolvedModel,
+  isActionable,
+  isBlocked,
+  isSelected,
+  isEditing,
+  telemetry,
+  aggregate,
+  turns,
+  turnsLoading,
+  onStart,
+  onSelect,
+  onRenameStart,
+  onRenameCommit,
+  onRenameCancel,
+}: WorkflowStepRowProps) {
+  const kind = inferAgentKindFromName(run.name);
+  const isPendingFuture = run.status === 'pending' && !isActionable;
+  const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
+  const isStartable = isActionable && !isBlocked;
+
+  const [draft, setDraft] = useState(run.name);
+  const [pendingConfirm, setPendingConfirm] = useState(false);
+  useEffect(() => {
+    if (isEditing) setDraft(run.name);
+  }, [isEditing, run.name]);
+  useEffect(() => {
+    if (!isBlocked) setPendingConfirm(false);
+  }, [isBlocked]);
+
+  const handleRowClick = () => {
+    if (isPendingFuture) return;
+    if (isStartable) {
+      onStart();
+    } else if (isActionable && isBlocked) {
+      setPendingConfirm(true);
+    } else {
+      onSelect();
+    }
+  };
+
+  const ROW_BASE =
+    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded-md border px-2.5 py-1.5 text-xs font-medium';
+  const containerClass = isStartable
+    ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
+    : isActionable && isBlocked
+      ? `${ROW_BASE} border-warning/50 bg-warning/10 text-foreground transition-colors hover:border-warning hover:bg-warning/15 cursor-pointer`
+      : isPendingFuture
+        ? `${ROW_BASE} border-transparent text-muted-foreground/40`
+        : cn(
+            `${ROW_BASE} transition-colors cursor-pointer`,
+            isSelected
+              ? 'border-border bg-muted text-foreground'
+              : 'border-border-soft/50 bg-subtle/50 text-foreground/80 hover:border-border hover:bg-muted/50',
+          );
+
+  const renderStatusIcon = () => {
+    if (isStartable) {
+      return <span className="text-2xs uppercase tracking-wide opacity-70">start</span>;
+    }
+    if (isActionable && isBlocked) {
+      return <AlertTriangle size={12} className="text-warning" aria-hidden />;
+    }
+    if (run.status === 'running') {
+      return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
+    }
+    if (run.status === 'completed') {
+      return (
+        <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
+          <Check size={9} className="text-success" aria-hidden />
+        </span>
+      );
+    }
+    if (run.status === 'failed') {
+      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
+    }
+    return <Clock size={11} className="text-muted-foreground/70" aria-hidden />;
+  };
+
+  const renderActionIndicator = () => {
+    if (run.status === 'running') return null;
+    if (isStartable) {
+      return (
+        <ArrowRight
+          size={13}
+          aria-hidden
+          className="transition-transform group-hover:translate-x-0.5"
+        />
+      );
+    }
+    if (isActionable && isBlocked) {
+      return <ArrowRight size={13} aria-hidden className="text-warning" />;
+    }
+    return null;
+  };
+
+  const stableTitle =
+    isActionable && isBlocked
+      ? 'next workflow step — gated by open questions / summarizer (click to force)'
+      : isPendingFuture
+        ? 'waiting for previous steps'
+        : `agent ${run.ordinal + 1} — ${run.status}`;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        role={isPendingFuture ? undefined : 'button'}
+        tabIndex={isEditing || isPendingFuture ? -1 : 0}
+        aria-pressed={isPendingFuture ? undefined : isSelected}
+        title={stableTitle}
+        onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
+        onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
+        onKeyDown={(e) => {
+          if (isEditing) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleRowClick();
+          }
+        }}
+        className={containerClass}
+      >
+        <span className="flex min-w-0 items-center gap-1.5">
+          {renderStatusIcon()}
+          <AgentKindChip kind={kind} muted={isPendingFuture} />
+          {isEditing ? (
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onRenameCommit(draft);
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  onRenameCancel();
+                }
+              }}
+              onBlur={() => onRenameCommit(draft)}
+              className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
+              aria-label="rename agent"
+            />
+          ) : (
+            <span className="truncate font-semibold">{run.name}</span>
+          )}
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span
+            className={cn(
+              'text-[10px] font-normal tabular-nums',
+              isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
+            )}
+            title={`model: ${resolvedModel}`}
+          >
+            {modelLabel}
+          </span>
+          {renderActionIndicator()}
+        </span>
+        <div
+          className={cn(
+            'w-full basis-full grid transition-[grid-template-rows] duration-200 ease-out',
+            isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="flex flex-col gap-1 pt-1">
+              <AgentMetricsBlock
+                run={run}
+                telemetry={telemetry}
+                aggregate={aggregate}
+                turns={turns}
+                turnsLoading={turnsLoading}
+                variant="workflow"
+              />
+              <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
+            </div>
+          </div>
+        </div>
+      </div>
+      {pendingConfirm ? (
+        <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
+          <p className="mb-2 font-medium text-foreground">
+            open questions need resolution before starting this step.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPendingConfirm(false);
+              }}
+              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
+            >
+              resolve first
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPendingConfirm(false);
+                onStart();
+              }}
+              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
+            >
+              force spawn
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 interface AgentRowProps {
@@ -1903,7 +2183,6 @@ interface AgentRowProps {
   readonly isTaskActive: boolean;
   readonly isEditing: boolean;
   readonly onClick: () => void;
-  readonly onPickKind: (next: AgentKind) => void;
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
@@ -1921,7 +2200,6 @@ function AgentRow({
   isTaskActive,
   isEditing,
   onClick,
-  onPickKind,
   onRenameStart,
   onRenameCommit,
   onRenameCancel,
@@ -1970,7 +2248,10 @@ function AgentRow({
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
-        <AgentKindMenu kind={kind} agentLabel={`agent ${run.ordinal + 1}`} onPick={onPickKind} />
+        <AgentKindChip
+          kind={kind}
+          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
+        />
         {isEditing ? (
           <input
             autoFocus
@@ -2069,66 +2350,14 @@ function AgentRow({
       >
         <div className="overflow-hidden">
           <div className="flex flex-col gap-1 px-2 pb-1.5">
-            <div className="flex items-center justify-between gap-2 whitespace-nowrap text-2xs text-muted-foreground/85">
-              <span
-                className="min-w-0 truncate text-muted-foreground/70"
-                title={telemetry?.model ?? undefined}
-              >
-                {telemetry ? shortModelWithVersion(telemetry.model) : '—'}
-              </span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
-                      : 'no input tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↓
-                  </span>
-                  {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
-                </span>
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
-                      : 'no output tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↑
-                  </span>
-                  {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-                </span>
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                {turnsLoading ? (
-                  <span
-                    aria-label="loading turn count"
-                    className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
-                  />
-                ) : (
-                  <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                    {turns}t
-                  </span>
-                )}
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <CostBadge
-                  value={aggregate?.estimatedCostUsd ?? 0}
-                  title={
-                    aggregate
-                      ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
-                      : 'no cost yet'
-                  }
-                />
-              </div>
-            </div>
+            <AgentMetricsBlock
+              run={run}
+              telemetry={telemetry}
+              aggregate={aggregate}
+              turns={turns}
+              turnsLoading={turnsLoading}
+              variant="adhoc"
+            />
             <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
           </div>
         </div>

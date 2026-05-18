@@ -15,11 +15,23 @@ export function parsePlannerOutput(raw: string): PlannerOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(stripped);
-  } catch (err) {
-    throw new PlannerParseError(
-      `planner response was not valid JSON: ${err instanceof Error ? err.message : String(err)}`,
-      raw,
-    );
+  } catch {
+    const extracted = extractJsonObject(stripped);
+    if (extracted) {
+      try {
+        parsed = JSON.parse(extracted);
+      } catch (innerErr) {
+        throw new PlannerParseError(
+          `planner response contained invalid JSON: ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`,
+          raw,
+        );
+      }
+    } else {
+      throw new PlannerParseError(
+        'planner returned plain text instead of JSON. try again or rephrase in English.',
+        raw,
+      );
+    }
   }
 
   if (typeof parsed !== 'object' || parsed === null) {
@@ -80,4 +92,11 @@ export function parsePlannerOutput(raw: string): PlannerOutput {
 function stripCodeFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();
+}
+
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
 }

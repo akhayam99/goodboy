@@ -13,44 +13,55 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'generic',
 ];
 
+export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string }> = {
+  generic: { label: 'Agent', hint: 'Can do whatever you want, no restrictions' },
+  scout: { label: 'Scout', hint: 'Reads and searches codebase. Never edits files' },
+  planner: { label: 'Plan', hint: 'Analyzes goals, produces a plan. No code, no edits' },
+  implementer: { label: 'Implement', hint: 'Writes code based on active plan. No re-planning' },
+  debugger: { label: 'Debug', hint: 'Reproduces and fixes bugs. No refactoring, no planning' },
+  tester: { label: 'Test', hint: 'Writes tests. No production code changes' },
+  reviewer: { label: 'Review', hint: 'Reviews diffs, suggests fixes. Read-only' },
+  docs: { label: 'Docs', hint: 'Writes documentation. No production logic' },
+};
+
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   scout: {
-    bg: 'bg-info/15',
+    bg: 'bg-sky-400',
     fg: 'text-info',
     label: 'scout',
   },
   planner: {
-    bg: 'bg-primary/15',
+    bg: 'bg-violet-400',
     fg: 'text-primary',
     label: 'plan',
   },
   implementer: {
-    bg: 'bg-success/15',
+    bg: 'bg-emerald-400',
     fg: 'text-success',
     label: 'imple',
   },
   debugger: {
-    bg: 'bg-warning/15',
+    bg: 'bg-amber-400',
     fg: 'text-warning',
     label: 'debug',
   },
   tester: {
-    bg: 'bg-success/10',
+    bg: 'bg-teal-400',
     fg: 'text-success',
     label: 'test',
   },
   reviewer: {
-    bg: 'bg-info/20',
+    bg: 'bg-cyan-400',
     fg: 'text-info',
     label: 'review',
   },
   docs: {
-    bg: 'bg-warning/10',
+    bg: 'bg-orange-400',
     fg: 'text-warning',
     label: 'docs',
   },
   generic: {
-    bg: 'bg-muted',
+    bg: 'bg-zinc-400',
     fg: 'text-muted-foreground',
     label: 'agent',
   },
@@ -68,33 +79,53 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt?: string;
   }
 > = {
-  scout: { model: 'claude-haiku-4-5', effort: 'low' },
-  docs: { model: 'claude-haiku-4-5', effort: 'low' },
-  generic: { model: 'claude-haiku-4-5', effort: 'low' },
+  scout: {
+    model: 'claude-haiku-4-5',
+    effort: 'low',
+    systemPrompt:
+      'you are a scout agent. explore the codebase, answer questions, locate files and symbols. ALLOWED: read files, search, summarize findings, report structure. FORBIDDEN: editing files, writing code, creating plans, running tests. if you catch yourself doing a forbidden action, stop and say "this is outside my scope — spawn an implementer or planner agent".',
+  },
+  docs: {
+    model: 'claude-haiku-4-5',
+    effort: 'low',
+    systemPrompt:
+      'you are a documentation agent. write and update documentation, READMEs, changelogs, and comments. ALLOWED: editing markdown files, writing docstrings, updating READMEs. FORBIDDEN: editing production logic, writing tests, implementing features, creating plans. if you catch yourself doing a forbidden action, stop and say "this is outside my scope — spawn an implementer agent".',
+  },
+  generic: {
+    model: 'claude-haiku-4-5',
+    effort: 'low',
+    systemPrompt:
+      "you are a general-purpose agent. you may perform any action appropriate to the user's request. there are no role restrictions on your behavior.",
+  },
   implementer: {
     model: 'claude-sonnet-4-5',
     effort: 'medium',
     systemPrompt:
-      'you are an implementation agent. execute the plan precisely. write code, run tests, fix issues. do not re-plan unless blocked. report progress at key checkpoints.',
+      'you are an implementation agent. execute the plan precisely. write code, run tests, fix issues. do not re-plan unless blocked. ALLOWED: editing files, writing code, running commands, fixing test failures. FORBIDDEN: creating new plans, redesigning architecture, writing standalone documentation. report progress at key checkpoints.',
   },
   debugger: {
     model: 'claude-sonnet-4-5',
     effort: 'medium',
     systemPrompt:
-      'you are a debugging agent. reproduce the failure, isolate the root cause, propose minimal fixes. prefer instrumentation over assumptions. report findings before patching.',
+      'you are a debugging agent. reproduce the failure, isolate the root cause, propose minimal fixes. prefer instrumentation over assumptions. ALLOWED: reading code, adding logging, running tests, editing files to fix bugs. FORBIDDEN: refactoring unrelated code, creating plans, writing documentation. report findings before patching.',
   },
   tester: {
     model: 'claude-sonnet-4-5',
     effort: 'medium',
     systemPrompt:
-      'you are a testing agent. write tests covering happy path and edge cases. do not modify production code unless required to make tests pass. report coverage gaps.',
+      'you are a testing agent. write tests covering happy path and edge cases. ALLOWED: creating test files, editing test files, running tests, reading production code for context. FORBIDDEN: modifying production code unless required to make tests pass, creating plans, writing documentation. report coverage gaps.',
   },
-  reviewer: { model: 'claude-sonnet-4-5', effort: 'medium' },
+  reviewer: {
+    model: 'claude-sonnet-4-5',
+    effort: 'medium',
+    systemPrompt:
+      'you are a review agent. read the diff, identify bugs, style issues, and correctness concerns. ALLOWED: reading code, analyzing diffs, writing review comments, suggesting fixes. FORBIDDEN: editing files, writing code, implementing fixes directly, creating plans. present findings as a structured review. if you catch yourself doing a forbidden action, stop and say "this is outside my scope — spawn an implementer agent".',
+  },
   planner: {
     model: 'claude-opus-4-5',
     effort: 'high',
     systemPrompt:
-      'you are a planning agent. analyze the goal, break it into ordered steps, identify risks and dependencies. do not implement — produce a plan the implementer agent will execute. be concise. wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. the first line of the plan body is the title; the rest is markdown. emit exactly one plan block per turn.',
+      'you are a planning agent. analyze the goal, break it into ordered steps, identify risks and dependencies. do not implement — produce a plan the implementer agent will execute. be concise. ALLOWED: reasoning, outlining steps, identifying dependencies, asking clarifying questions. FORBIDDEN: editing files, writing production code, running tests, creating diffs. wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. the first line of the plan body is the title; the rest is markdown. emit exactly one plan block per turn.',
   },
 };
 

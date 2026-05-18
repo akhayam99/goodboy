@@ -6,7 +6,6 @@ import {
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
-  currentStep,
   findReusableAgent,
   parseSlashCommand,
   resolveConflicts,
@@ -196,9 +195,11 @@ import { exportConfigToFile, importConfigFromFile } from '../features/settings/c
 import { formatError } from '../shared/lib/errors';
 import {
   AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind,
 } from '../features/session/agent-kind';
+import { detectDrift } from '../features/session/drift-detection';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -394,6 +395,8 @@ export interface AppActions {
     providerPreference?: SessionProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
+    firstAgentKind?: AgentKind;
+    firstAgentModel?: string;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -401,6 +404,7 @@ export interface AppActions {
   ): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
+  activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;
@@ -445,6 +449,7 @@ export interface AppActions {
       effort?: string;
       initialPrompt?: string;
       triggeredPlanId?: PlanId;
+      kindOverride?: AgentKind;
     },
   ): Promise<AgentId>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
@@ -620,6 +625,12 @@ interface SummarizerTaskQueue {
 }
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
+
+// Run IDs cancelled by the user via cancelCurrentTurn. The stream-end
+// finalization in sendTurn checks this set and skips marking the agent as
+// `completed` — a cancelled turn must NOT count as a workflow step
+// completion, otherwise the next-step CTA appears prematurely.
+const cancelledRunIds = new Set<ProviderRunId>();
 
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
@@ -1585,6 +1596,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     providerPreference,
     workflowId,
     autoRun,
+    firstAgentKind,
+    firstAgentModel: requestedModel,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -1640,49 +1653,70 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     }
 
-    // Every session spawns exactly one agent up-front. Without a workflow
-    // attached this is a generic "agent 1" so the chat view has something to
-    // render. With a workflow attached this is the FIRST step's agent only —
-    // subsequent phases are user-driven via the lit "start <next>" CTA in the
-    // agents bar (issue #424). Spawning all phases up-front buried the
-    // current step in a list and removed any sense of progression.
-    let firstAgent: Agent;
+    // Pre-create all workflow agents so the sidebar shows the full plan as a
+    // progress tracker. Only the first step fires sendTurn; the rest stay
+    // pending until the user (or autoRun) advances. Ad-hoc agents spawned
+    // later appear in a separate "Agents" block below the workflow block.
+    let prespawnedRuns: ReadonlyArray<Agent>;
     let firstStepPromptPrefix = '';
-    let firstAgentModel: string | null = null;
+    const agentModelOverrides: Record<string, string> = {};
+    const agentKindOverrides: Record<string, string> = {};
+
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
       const template = templates.find((t) => t.id === workflowId) ?? null;
-      const firstStep = template
-        ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal)[0]
-        : null;
-      if (template && firstStep) {
-        firstStepPromptPrefix = firstStep.promptPrefix;
-        const kind = inferAgentKindFromName(firstStep.name);
-        firstAgentModel = AGENT_KIND_DEFAULTS[kind].model;
-        firstAgent = await invokePhaseRunInsert({
-          sessionId: session.id,
-          stepId: firstStep.id,
-          ordinal: 0,
-          name: firstStep.name,
-          status: 'pending',
-        });
+      const sortedSteps = template ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal) : [];
+
+      if (sortedSteps.length > 0) {
+        const allAgents: Agent[] = [];
+        for (const step of sortedSteps) {
+          const agent = await invokePhaseRunInsert({
+            sessionId: session.id,
+            stepId: step.id,
+            ordinal: step.ordinal,
+            name: step.name,
+            status: 'pending',
+          });
+          const kind = inferAgentKindFromName(step.name);
+          agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+          agentKindOverrides[agent.id] = kind;
+          allAgents.push(agent);
+        }
+        firstStepPromptPrefix = sortedSteps[0]!.promptPrefix;
+        prespawnedRuns = allAgents;
       } else {
-        firstAgent = await invokePhaseRunInsert({
+        const fallback = await invokePhaseRunInsert({
           sessionId: session.id,
           ordinal: 0,
           name: 'agent 1',
           status: 'pending',
         });
+        prespawnedRuns = [fallback];
       }
     } else {
-      firstAgent = await invokePhaseRunInsert({
+      const agentName = firstAgentKind
+        ? AGENT_KIND_META[firstAgentKind].label.toLowerCase()
+        : 'agent 1';
+      const model =
+        requestedModel ?? (firstAgentKind ? AGENT_KIND_DEFAULTS[firstAgentKind].model : null);
+      const singleAgent = await invokePhaseRunInsert({
         sessionId: session.id,
         ordinal: 0,
-        name: 'agent 1',
+        name: agentName,
         status: 'pending',
       });
+      if (model !== null) agentModelOverrides[singleAgent.id] = model;
+      if (firstAgentKind !== undefined) agentKindOverrides[singleAgent.id] = firstAgentKind;
+      prespawnedRuns = [singleAgent];
     }
-    const prespawnedRuns: ReadonlyArray<Agent> = [firstAgent];
+
+    const firstAgent = prespawnedRuns[0]!;
+    const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
+    const turnStateEntries: Record<string, { kind: 'draft' }> = {};
+    for (const agent of prespawnedRuns) {
+      transcriptEntries[agent.id] = [];
+      turnStateEntries[agent.id] = { kind: 'draft' };
+    }
 
     set((state) => ({
       sessions:
@@ -1703,17 +1737,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
       selectedAgentId: { ...state.selectedAgentId, [session.id]: firstAgent.id },
-      transcripts: { ...state.transcripts, [firstAgent.id]: [] },
+      transcripts: { ...state.transcripts, ...transcriptEntries },
       messages: { ...state.messages, [session.id]: [] },
-      agentTurnState: { ...state.agentTurnState, [firstAgent.id]: { kind: 'draft' } },
-      ...(firstAgentModel !== null && {
-        agentModelOverride: { ...get().agentModelOverride, [firstAgent.id]: firstAgentModel },
-      }),
+      agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
+      agentModelOverride: { ...get().agentModelOverride, ...agentModelOverrides },
+      agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
+    } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
+      void get().sendTurn({ sessionId: session.id, content: goalText });
     }
 
     void get().emitNotification(
@@ -1916,12 +1951,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
         }));
-        // Resolve the step the next turn should land on. Auto-advance is gone:
-        // currentStep keeps the agent on its current role until the user
-        // explicitly spawns a new agent from the sidebar. Multiple turns
-        // stack on the same Session row instead of inserting a fresh row
-        // per message.
-        const nextDef = currentStep(template, freshRuns);
+        // Route the turn to the step of the currently selected agent. With
+        // pre-creation, selectedAgentId is the source of truth: it's set by
+        // activateWorkflowAgent (auto-advance / CTA) or spawnAgent (retry),
+        // or the user via the sidebar. Falling back to currentStep here
+        // would mis-route follow-up turns to the next pre-created pending
+        // step instead of staying on the active agent.
+        const initialRuns = before.sessionPhaseRuns[sessionId] ?? [];
+        const activeAgentRow =
+          freshRuns.find((r) => r.id === activeAgentId) ??
+          initialRuns.find((r) => r.id === activeAgentId) ??
+          null;
+        const nextDef = activeAgentRow?.stepId
+          ? (template.steps.find((s) => s.id === activeAgentRow.stepId) ?? null)
+          : null;
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
@@ -1938,7 +1981,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
           // prompt isn't bloated by duplicating the previous step's summary on
           // every message and the transcript doesn't show a phantom step
           // transition mid-conversation.
-          const isFirstTurnOfStep = !freshRuns.some((r) => r.stepId === nextDef.id);
+          const isFirstTurnOfStep = !freshRuns.some(
+            (r) => r.stepId === nextDef.id && r.status !== 'pending',
+          );
           if (prevDef && prevRun && isFirstTurnOfStep) {
             const propagator = new WorkflowPropagator({
               summarizer: { summarizePhaseOutput: async (text) => text },
@@ -2354,7 +2399,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // M1: read the agent row once here; used by M5 (provider-id check) and M3 below.
     const agentRowEarly =
       (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
-    const earlyAgentKind = inferAgentKindFromName(agentRowEarly?.name ?? '');
+    const earlyAgentKind =
+      get().agentKindOverride[activeAgentId] ?? inferAgentKindFromName(agentRowEarly?.name ?? '');
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
@@ -2402,6 +2448,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     let assistantText = '';
     let lastError: unknown = null;
+    let turnWasCancelled = false;
     const filesTouchedThisTurn = new Set<string>();
 
     // M1: thread the per-agent provider session id so claude `--resume`s and
@@ -2412,6 +2459,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // their role. Only claude consumes it today; other providers ignore the
     // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
+
+    if (provider !== 'anthropic' && kindSystemPrompt) {
+      resolvedPrompt = `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n${resolvedPrompt}`;
+    }
 
     try {
       for await (const event of runTurn({
@@ -2564,11 +2615,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
           });
         }
       }
-      await updateProviderRunStatus(tauriDatabase, runId, {
-        kind: 'succeeded',
-        finishedAt: now(),
-      });
-      if (resolvedAgentId) {
+      const wasCancelled = cancelledRunIds.delete(runId);
+      turnWasCancelled = wasCancelled;
+      await updateProviderRunStatus(
+        tauriDatabase,
+        runId,
+        wasCancelled
+          ? { kind: 'failed', finishedAt: now(), error: 'cancelled by user' }
+          : { kind: 'succeeded', finishedAt: now() },
+      );
+      if (resolvedAgentId && !wasCancelled) {
         await invokePhaseRunUpdateStatus(resolvedAgentId, {
           status: 'completed',
           outputSummary: assistantText.slice(0, 2000),
@@ -2585,6 +2641,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }));
         void get().refreshUnreadWorkspaces();
         void get().maybeAutoAdvanceWorkflow(sessionId);
+      } else if (resolvedAgentId && wasCancelled) {
+        // Cancelled turn — agent stays `running`. It was activated and has
+        // context; reverting to `pending` would re-surface the "force spawn"
+        // dialog. We only block workflow advancement (no auto-advance call).
+        const refreshedRuns = await invokePhaseRunList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+        }));
       }
 
       // Auto-populate ContextPanel from this turn's output: file paths come
@@ -2660,9 +2724,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await insertMessage(tauriDatabase, assistantMessage);
     }
 
-    if (!lastError && assistantText.length > 0) {
+    if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
       void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText);
+      const driftViolations = detectDrift({
+        agentKind: earlyAgentKind,
+        assistantText,
+        filesEdited: Array.from(filesTouchedThisTurn),
+      });
+      if (driftViolations.length > 0) {
+        void get().emitNotification(
+          'boundary-drift',
+          'warning',
+          `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
+          driftViolations[0]!.detail,
+          { sessionId },
+        );
+      }
       if (
         !get().sessionGithub[sessionId]?.pr &&
         /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(assistantText)
@@ -2700,6 +2778,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.state.kind !== 'running') return;
     const cancelAgentId = get().selectedAgentId[sessionId] ?? null;
+    cancelledRunIds.add(session.state.runId);
     await cancelTurn(session.state.runId).catch(() => undefined);
     const now = new Date().toISOString() as IsoDateTime;
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
@@ -3159,6 +3238,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(args.model !== undefined && {
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
       }),
+      ...(args.kindOverride !== undefined && {
+        agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
+      }),
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
     const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
@@ -3503,6 +3585,38 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  activateWorkflowAgent: async (sessionId, agentId) => {
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agent = runs.find((r) => r.id === agentId);
+    if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
+
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session || !session.workflowId) throw new Error('session has no workflow');
+
+    const template = (get().phaseTemplates[session.workspaceId] ?? []).find(
+      (t) => t.id === session.workflowId,
+    );
+    const step = template?.steps.find((s) => s.id === agent.stepId);
+    const promptPrefix = step?.promptPrefix ?? '';
+
+    set((s) => ({
+      selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId },
+      agentTurnState: {
+        ...s.agentTurnState,
+        [agentId]: {
+          kind: 'idle' as const,
+          lastActivityAt: new Date().toISOString() as IsoDateTime,
+        },
+      },
+    }));
+
+    const { section: planSection } = await buildPlanKickoffSection(sessionId);
+    const kickoff = composeKickoff(planSection, promptPrefix);
+    if (kickoff.length > 0) {
+      void get().sendTurn({ sessionId, content: kickoff });
+    }
+  },
+
   maybeAutoAdvanceWorkflow: async (sessionId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
@@ -3513,17 +3627,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!template) return;
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     if (runs.some((r) => r.status === 'failed')) return;
+    const slots = state.sessionSlots[sessionId] ?? [];
+    const hasOpenQuestions =
+      (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
+    const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
+    if (hasOpenQuestions || summarizerBusy) return;
     const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-    const spawnedStepIds = new Set(
-      runs.map((r) => r.stepId).filter((id): id is StepId => id !== undefined),
-    );
-    const next = sortedSteps.find((s) => !spawnedStepIds.has(s.id));
-    if (!next) return;
-    const prevSteps = sortedSteps.filter((s) => s.ordinal < next.ordinal);
-    const prevAllCompleted = prevSteps.every((s) =>
-      runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
-    );
-    if (!prevAllCompleted) return;
+    const nextPendingAgent = (() => {
+      for (const step of sortedSteps) {
+        const agent = runs.find((r) => r.stepId === step.id);
+        if (!agent || agent.status !== 'pending') continue;
+        const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
+        const allDone = prevSteps.every((s) =>
+          runs.some(
+            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
+          ),
+        );
+        if (allDone) return agent;
+        return null;
+      }
+      return null;
+    })();
+    if (!nextPendingAgent) return;
     const exceeded = state.budgetAlerts.some(
       (a) =>
         a.dismissedAt === undefined &&
@@ -3531,18 +3656,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           a.kind === 'provider-exceeded'),
     );
     if (exceeded) return;
-    const kind = inferAgentKindFromName(next.name);
-    const defaults = AGENT_KIND_DEFAULTS[kind];
-    await get().spawnAgent(sessionId, {
-      name: next.name,
-      stepId: next.id,
-      model: next.modelOverride ?? defaults.model,
-      effort: next.effort ?? defaults.effort,
-    });
+    await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
     void get().emitNotification(
       'agent-auto-spawn',
       'info',
-      `agent auto-spawned: ${next.name}`,
+      `agent auto-spawned: ${nextPendingAgent.name}`,
       undefined,
       { sessionId },
     );
