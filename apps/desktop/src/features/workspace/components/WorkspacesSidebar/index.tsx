@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -146,7 +146,9 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   // skip re-render on every parent paint.
   const onSelectSession = useCallback(
     (id: SessionId) => {
-      void setCurrentSession(id);
+      startTransition(() => {
+        void setCurrentSession(id);
+      });
     },
     [setCurrentSession],
   );
@@ -263,7 +265,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 key={ws.id}
                 workspace={ws}
                 isActive={ws.id === currentWorkspace?.id}
-                onClick={() => void setCurrentWorkspace(ws.id)}
+                onClick={() => startTransition(() => void setCurrentWorkspace(ws.id))}
               />
             ))}
             <li>
@@ -2150,7 +2152,7 @@ interface AgentRowProps {
   readonly onDelete: () => void;
 }
 
-function AgentRow({
+const AgentRow = memo(function AgentRow({
   run,
   kind,
   telemetry,
@@ -2325,7 +2327,7 @@ function AgentRow({
       </div>
     </li>
   );
-}
+});
 
 function findContextWindow(model: string): number | null {
   for (const cap of Object.values(PROVIDER_CAPABILITIES)) {
