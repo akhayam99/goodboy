@@ -419,6 +419,7 @@ export interface AppActions {
   resetTranscript(agentId: AgentId): void;
   sendTurn(input: {
     sessionId: SessionId;
+    agentId?: AgentId;
     content: string;
     override?: TurnProviderOverride;
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
@@ -1895,7 +1896,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  sendTurn: async ({ sessionId, content, override, onNewAlerts }) => {
+  sendTurn: async ({ sessionId, agentId, content, override, onNewAlerts }) => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -1908,7 +1909,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-    const activeAgentId = before.selectedAgentId[sessionId] ?? null;
+    const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
       throw new Error('no agent selected — spawn one before sending a turn');
     }
@@ -3363,7 +3364,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       : latestSection;
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
-      void get().sendTurn({ sessionId, content: kickoff });
+      void get().sendTurn({ sessionId, agentId: inserted.id, content: kickoff });
     }
 
     const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
@@ -3723,7 +3724,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const { section: planSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
     const kickoff = composeKickoff(planSection, promptPrefix);
     if (kickoff.length > 0) {
-      void get().sendTurn({ sessionId, content: kickoff });
+      void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
 
     if (latestPlan && latestPlan.status === 'active') {
