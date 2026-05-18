@@ -642,6 +642,25 @@ interface SummarizerTaskQueue {
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 
+// Tracks in-flight idle-frame telemetry loads per session. Aborted on session
+// switch (cancel stale work) and on workspace switch (clear all).
+const idleTelemetryLoads = new Map<SessionId, AbortController>();
+
+// Merges a freshly-fetched telemetry snapshot with the in-memory slice,
+// preserving any records inserted while the idle load was in flight
+// (e.g. usage events from an active turn). Dedupes by stable record id and
+// orders by recordedAt ASC.
+function mergeTelemetry(
+  existing: ReadonlyArray<TelemetryRecord>,
+  fetched: ReadonlyArray<TelemetryRecord>,
+): ReadonlyArray<TelemetryRecord> {
+  if (existing.length === 0) return fetched;
+  const byId = new Map<string, TelemetryRecord>();
+  for (const r of fetched) byId.set(r.id, r);
+  for (const r of existing) if (!byId.has(r.id)) byId.set(r.id, r);
+  return [...byId.values()].sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt));
+}
+
 // Run IDs cancelled by the user via cancelCurrentTurn. The stream-end
 // finalization in sendTurn checks this set and skips marking the agent as
 // `completed` — a cancelled turn must NOT count as a workflow step
@@ -1199,6 +1218,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Option A: wipe all per-session maps unconditionally. Simpler than filtering by
     // workspaceId (Option B) and correct because setCurrentSession reloads from DB
     // on demand — the cache is cheap to rebuild, stale cross-workspace data is not.
+    for (const ctl of idleTelemetryLoads.values()) ctl.abort();
+    idleTelemetryLoads.clear();
     set({
       currentWorkspaceId: id,
       currentSessionId: null,
@@ -1377,10 +1398,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     };
 
-    const needsBatch = !cached?.agents || !cached?.telemetry || !cached?.slots;
+    const needsBatch = !cached?.agents || !cached?.slots;
 
     if (needsBatch) {
-      // Single IPC call replaces 4+ separate queries through the DB mutex.
+      // Single IPC call replaces 3+ separate queries through the DB mutex.
+      // Telemetry records are NOT in the batch — deferred via requestIdleCallback
+      // below so first paint shows agents + summary + slots immediately.
       const endHydrate = perf('hydrate');
       void sessionHydrate(id)
         .then((hydration) => {
@@ -1391,14 +1414,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
             state.currentSessionId === id ? { sessionSummary: hydration.telemetrySummary } : {},
           );
           markDone('summary');
-
-          // Telemetry
-          if (!cached?.telemetry) {
-            set((state) => ({
-              sessionTelemetry: { ...state.sessionTelemetry, [id]: hydration.telemetry },
-            }));
-          }
-          markDone('telemetry');
 
           // Context slots
           if (!cached?.slots) {
@@ -1473,7 +1488,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         })
         .catch(() => {
           markDone('summary');
-          markDone('telemetry');
           markDone('slots');
           markDone('agents');
           markDone('transcript');
@@ -1491,6 +1505,43 @@ export const useAppStore = create<AppStore>((set, get) => ({
           endSummary();
           markDone('summary');
         });
+    }
+
+    // Telemetry records: deferred to idle frame. UI shows session total
+    // (from summary in batch) immediately; per-agent costs and PricingDialog
+    // breakdown populate when the idle callback fires.
+    if (!cached?.telemetry) {
+      idleTelemetryLoads.get(id)?.abort();
+      const controller = new AbortController();
+      idleTelemetryLoads.set(id, controller);
+
+      const endIdleTelemetry = perf('idleTelemetry');
+      scheduleIdle(() => {
+        if (controller.signal.aborted) return;
+        if (get().currentSessionId !== id) return;
+        void listTelemetryForSession(tauriDatabase, id)
+          .then((records) => {
+            if (controller.signal.aborted) return;
+            if (get().currentSessionId !== id) return;
+            set((state) => {
+              const existing = state.sessionTelemetry[id] ?? [];
+              return {
+                sessionTelemetry: {
+                  ...state.sessionTelemetry,
+                  [id]: mergeTelemetry(existing, records),
+                },
+              };
+            });
+          })
+          .catch(() => {})
+          .finally(() => {
+            endIdleTelemetry();
+            markDone('telemetry');
+            if (idleTelemetryLoads.get(id) === controller) {
+              idleTelemetryLoads.delete(id);
+            }
+          });
+      });
     }
 
     // Plans: separate IPC (lives in planner.rs, different Rust module)
@@ -3049,6 +3100,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Optimistic UI update
     const prevWorkspaces = state.workspaces;
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
+    if (wasCurrentWorkspace) {
+      for (const ctl of idleTelemetryLoads.values()) ctl.abort();
+      idleTelemetryLoads.clear();
+    }
     set((s) => ({
       workspaces: s.workspaces.filter((w) => w.id !== id),
       ...(wasCurrentWorkspace

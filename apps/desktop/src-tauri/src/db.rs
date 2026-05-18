@@ -199,7 +199,6 @@ fn query_rows(
 pub struct SessionHydration {
     agents: Vec<Map<String, serde_json::Value>>,
     agent_run_ids: Vec<Map<String, serde_json::Value>>,
-    telemetry: Vec<Map<String, serde_json::Value>>,
     telemetry_summary: Map<String, serde_json::Value>,
     slots: Vec<Map<String, serde_json::Value>>,
 }
@@ -237,12 +236,6 @@ pub fn session_hydrate(
         &[sid],
     )?;
 
-    let telemetry = query_rows(
-        &conn,
-        "SELECT * FROM telemetry_records WHERE session_id = ?1 ORDER BY recorded_at ASC",
-        &[sid],
-    )?;
-
     let telemetry_summary = {
         let rows = query_rows(
             &conn,
@@ -265,7 +258,6 @@ pub fn session_hydrate(
     Ok(SessionHydration {
         agents,
         agent_run_ids,
-        telemetry,
         telemetry_summary,
         slots,
     })

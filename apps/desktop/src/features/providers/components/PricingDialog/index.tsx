@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, cn } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
@@ -80,6 +80,16 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
     (s) => s.providerSpendBreakdown ?? (EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>),
   );
 
+  // Telemetry records are deferred to idle on session switch. If the user
+  // opens the dialog before the idle frame fires (or before records exist),
+  // trigger an explicit fetch so the breakdown isn't blank.
+  useEffect(() => {
+    if (!open || !currentSessionId || sessionTelemetry.length > 0) return;
+    void useAppStore.getState().loadSessionTelemetry(currentSessionId);
+  }, [open, currentSessionId, sessionTelemetry.length]);
+
+  const isLoading = open && currentSessionId !== null && sessionTelemetry.length === 0;
+
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -159,7 +169,18 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
           </section>
         ) : null}
 
-        {modelBreakdown.length > 0 ? (
+        {isLoading ? (
+          <section>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              by model
+            </h3>
+            <div className="space-y-1.5 rounded-md border border-border-soft p-3">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+            </div>
+          </section>
+        ) : modelBreakdown.length > 0 ? (
           <section>
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               by model

@@ -11,13 +11,9 @@ import type {
   AgentStatus,
   ContextSlot,
   IsoDateTime,
-  ProviderName,
   ProviderRunId,
   SessionId,
   StepId,
-  TelemetryKind,
-  TelemetryRecord,
-  TelemetryRecordId,
 } from '@kay-am/types';
 
 export const tauriDatabase: Database = {
@@ -50,7 +46,6 @@ export async function wipeDb(): Promise<MigrateResult> {
 export interface SessionHydration {
   agents: ReadonlyArray<Record<string, unknown>>;
   agent_run_ids: ReadonlyArray<{ agent_id: string; run_ids: string | null }>;
-  telemetry: ReadonlyArray<Record<string, unknown>>;
   telemetry_summary: { input: number; output: number; cost: number; count: number };
   slots: ReadonlyArray<Record<string, unknown>>;
 }
@@ -62,7 +57,6 @@ async function sessionHydrateRaw(sessionId: string): Promise<SessionHydration> {
 export interface ParsedSessionHydration {
   agents: ReadonlyArray<Agent>;
   agentRunIds: Map<AgentId, ReadonlyArray<ProviderRunId>>;
-  telemetry: ReadonlyArray<TelemetryRecord>;
   telemetrySummary: TelemetrySummary;
   slots: ReadonlyArray<ContextSlot>;
 }
@@ -82,21 +76,6 @@ function parseAgent(r: Record<string, unknown>): Agent {
     ...(r.providerSessionId != null && { providerSessionId: r.providerSessionId as string }),
     ...(r.lastFinishedAt != null && { lastFinishedAt: r.lastFinishedAt as IsoDateTime }),
     ...(r.lastViewedAt != null && { lastViewedAt: r.lastViewedAt as IsoDateTime }),
-  };
-}
-
-function parseTelemetry(r: Record<string, unknown>): TelemetryRecord {
-  return {
-    id: r.id as TelemetryRecordId,
-    runId: r.run_id as ProviderRunId,
-    sessionId: r.session_id as SessionId,
-    kind: r.kind as TelemetryKind,
-    provider: r.provider as ProviderName,
-    model: r.model as string,
-    inputTokens: r.input_tokens as number,
-    outputTokens: r.output_tokens as number,
-    estimatedCostUsd: r.estimated_cost_usd as number,
-    recordedAt: new Date(r.recorded_at as number).toISOString() as IsoDateTime,
   };
 }
 
@@ -121,7 +100,6 @@ export async function sessionHydrate(sessionId: string): Promise<ParsedSessionHy
   return {
     agents: raw.agents.map(parseAgent),
     agentRunIds,
-    telemetry: raw.telemetry.map(parseTelemetry),
     telemetrySummary: {
       inputTokens: raw.telemetry_summary.input ?? 0,
       outputTokens: raw.telemetry_summary.output ?? 0,
