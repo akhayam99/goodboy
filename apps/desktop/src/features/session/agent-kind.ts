@@ -170,6 +170,7 @@ export function inferAgentKindFromName(name: string): AgentKind {
   if (/test|qa/.test(lower)) return 'tester';
   if (/review|verify|check|audit/.test(lower)) return 'reviewer';
   if (/doc|readme|changelog/.test(lower)) return 'docs';
+  if (/^init$|setup|bootstrap/.test(lower)) return 'init';
   return 'generic';
 }
 

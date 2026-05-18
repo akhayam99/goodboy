@@ -9,6 +9,7 @@ import {
   Layers,
   Loader2,
   Sparkles,
+  Terminal,
   Wand2,
   Target,
   Zap,
@@ -43,7 +44,7 @@ import {
 } from '../config-selects';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PlannerWidget } from '../../../../features/plans/components/PlannerWidget';
 import { fetchGithubIssue, parseGithubIssueUrl } from '../../../../features/github/github';
@@ -231,6 +232,8 @@ export function NewSessionDialog({
   const providers = useAppStore((s) => s.providers);
   const settingKey = settingBranchPrefix(workspaceId);
   const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
+  const loadInitScript = useAppStore((s) => s.loadInitScript);
+  const workspaceInitScript = useAppStore((s) => s.workspaceInitScripts[workspaceId] ?? null);
 
   const [goal, setGoal] = useState('');
   const [issueUrl, setIssueUrl] = useState('');
@@ -267,6 +270,8 @@ export function NewSessionDialog({
 
   const [hasCustomPlan, setHasCustomPlan] = useState(false);
   const [pendingProviderSwitch, setPendingProviderSwitch] = useState<ProviderId | null>(null);
+  const [initEnabled, setInitEnabled] = useState(true);
+  const [initContent, setInitContent] = useState('');
 
   const [selectedProvider, setSelectedProvider] = useState<ProviderId>(() => {
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
@@ -329,9 +334,14 @@ export function NewSessionDialog({
     setEffort('medium');
     setVerbosity('normal');
     setError(null);
+    setInitEnabled(true);
+    setInitContent('');
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
+    if (WORKSPACE_FEATURES.initScript) {
+      void loadInitScript(workspaceId);
+    }
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
     const provider = pickDefaultProvider(ids);
     setSelectedProvider(provider);
@@ -343,7 +353,11 @@ export function NewSessionDialog({
         .catch(() => setExistingBranches([]))
         .finally(() => setBranchesLoading(false));
     }
-  }, [open, settingKey, loadSetting, providers, workspaceId, workspace?.rootPath]);
+  }, [open, settingKey, loadSetting, providers, workspaceId, workspace?.rootPath, loadInitScript]);
+
+  useEffect(() => {
+    if (open && workspaceInitScript) setInitContent(workspaceInitScript);
+  }, [open, workspaceInitScript]);
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
@@ -399,6 +413,8 @@ export function NewSessionDialog({
     setAutoRun(false);
     setEffort('medium');
     setVerbosity('normal');
+    setInitEnabled(true);
+    setInitContent('');
     setError(null);
   };
 
@@ -423,6 +439,10 @@ export function NewSessionDialog({
         ...(hasWorkflow ? { workflowId: selectedPhaseTemplateId as WorkflowId } : {}),
         ...(hasWorkflow && autoRun ? { autoRun: true } : {}),
         ...(!hasWorkflow ? { firstAgentKind, firstAgentModel: selectedModel } : {}),
+        ...(!initEnabled ? { skipInit: true } : {}),
+        ...(initContent !== (workspaceInitScript ?? '')
+          ? { initContentOverride: initContent }
+          : {}),
       });
       const parsedCap = parseCap(softCapRaw);
       if (parsedCap !== null) {
@@ -448,7 +468,7 @@ export function NewSessionDialog({
     providers.filter((p) => p.connection === 'connected').map((p) => p.id),
   );
 
-  type SectionId = 'goal' | 'budget' | 'workflow' | 'provider';
+  type SectionId = 'goal' | 'budget' | 'workflow' | 'provider' | 'init';
   const [activeSection, setActiveSection] = useState<SectionId>('goal');
 
   const branchReady =
@@ -489,6 +509,17 @@ export function NewSessionDialog({
       ready: workflowReady,
       required: true,
     },
+    ...(WORKSPACE_FEATURES.initScript && workspaceInitScript
+      ? [
+          {
+            id: 'init' as const,
+            label: 'Init',
+            icon: <Terminal size={13} aria-hidden />,
+            ready: initEnabled,
+            required: false,
+          },
+        ]
+      : []),
     ...(SESSION_FEATURES.budget
       ? [
           {
@@ -697,6 +728,40 @@ export function NewSessionDialog({
                 disabled={busy}
               />
             </Field>
+          </div>
+
+          <div className={activeSection === 'init' ? '' : 'hidden'}>
+            <div className="flex flex-col gap-4">
+              <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={initEnabled}
+                  onChange={(e) => setInitEnabled(e.target.checked)}
+                  className="mt-0.5 accent-primary"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-medium text-foreground">Run init script</span>
+                  <span className="text-muted-foreground">
+                    Execute workspace setup before agents start.
+                  </span>
+                </span>
+              </label>
+              <Field
+                label="Script"
+                hint="Edit for this session only. Changes won't save to workspace."
+              >
+                <Textarea
+                  value={initContent}
+                  onChange={(e) => setInitContent(e.target.value)}
+                  className="min-h-[200px] resize-y font-mono text-xs"
+                  disabled={!initEnabled || busy}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  rows={10}
+                />
+              </Field>
+            </div>
           </div>
 
           <div className={activeSection === 'workflow' ? '' : 'hidden'}>
@@ -1323,6 +1388,7 @@ function AgentKindSelect({
       {open ? (
         <div className="absolute left-0 top-full z-50 mt-1 max-h-[280px] w-full overflow-y-auto rounded-md border border-border bg-background py-0.5 shadow-lg">
           {[...AGENT_KIND_ORDER]
+            .filter((k) => k !== 'init')
             .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
             .map((kind) => {
               const m = AGENT_KIND_META[kind];

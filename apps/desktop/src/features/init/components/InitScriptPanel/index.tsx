@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Button, Textarea, cn } from '@kay-am/ui';
 import type { ProviderId, WorkspaceId } from '@kay-am/types';
 import type { WorkspaceInitScript } from '@kay-am/db';
-import { ChevronDown, ChevronUp, Loader2, RotateCcw, Save, Wand2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, RotateCcw, Save, Trash2, Wand2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
@@ -61,6 +61,7 @@ export function InitScriptPanel({ workspaceId }: InitScriptPanelProps) {
   const loadInitScript = useAppStore((s) => s.loadInitScript);
   const saveInitScript = useAppStore((s) => s.saveInitScript);
   const loadInitScriptHistory = useAppStore((s) => s.loadInitScriptHistory);
+  const deleteInitScriptEntry = useAppStore((s) => s.deleteInitScriptEntry);
   const cached = useAppStore((s) => s.workspaceInitScripts[workspaceId]);
   const connectedProviderId = useAppStore((s) => {
     if (s.providerStatus?.available) return s.providerStatus.id as ProviderId;
@@ -117,6 +118,15 @@ export function InitScriptPanel({ workspaceId }: InitScriptPanelProps) {
   const onRestore = (entry: WorkspaceInitScript) => {
     setContent(entry.content);
     setHistoryOpen(false);
+  };
+
+  const onDeleteEntry = async (entry: WorkspaceInitScript) => {
+    try {
+      await deleteInitScriptEntry(entry.id, workspaceId);
+      setHistoryEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   const onRegenerate = async () => {
@@ -200,14 +210,24 @@ export function InitScriptPanel({ workspaceId }: InitScriptPanelProps) {
                     <span className="text-2xs text-muted-foreground">
                       {formatRelative(entry.createdAt)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => onRestore(entry)}
-                      className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                    >
-                      <RotateCcw size={10} aria-hidden />
-                      restore
-                    </button>
+                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => onRestore(entry)}
+                        className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <RotateCcw size={10} aria-hidden />
+                        restore
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteEntry(entry)}
+                        className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 size={10} aria-hidden />
+                        delete
+                      </button>
+                    </div>
                   </div>
                   <pre className="whitespace-pre-wrap font-mono text-2xs leading-relaxed text-foreground/80 line-clamp-3">
                     {entry.content}

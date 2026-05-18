@@ -63,6 +63,10 @@ export async function getLatestInitScript(
   return first ? toDomain(first) : null;
 }
 
+export async function deleteInitScript(db: Database, id: string): Promise<void> {
+  await db.execute(`DELETE FROM workspace_init_scripts WHERE id = ?`, [id]);
+}
+
 export async function listInitScriptHistory(
   db: Database,
   workspaceId: WorkspaceId,

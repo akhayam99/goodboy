@@ -58,6 +58,7 @@ import {
   updateSessionState,
   getLatestInitScript,
   insertInitScript,
+  deleteInitScript,
   listInitScriptHistory,
   upsertContextSlot,
   type Notification,
@@ -402,6 +403,8 @@ export interface AppActions {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
+    skipInit?: boolean;
+    initContentOverride?: string;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -445,6 +448,7 @@ export interface AppActions {
   loadInitScriptHistory(
     workspaceId: WorkspaceId,
   ): Promise<ReadonlyArray<import('@kay-am/db').WorkspaceInitScript>>;
+  deleteInitScriptEntry(id: string, workspaceId: WorkspaceId): Promise<void>;
   updateSessionSkipInit(sessionId: SessionId, skipInit: boolean): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
@@ -1610,6 +1614,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
+    skipInit: skipInitOverride,
+    initContentOverride,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -1638,7 +1644,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(workflowId !== undefined ? { workflowId } : {}),
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
-      skipInit: false,
+      skipInit: skipInitOverride ?? false,
       userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
@@ -1725,9 +1731,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     let initAgentId: AgentId | null = null;
     const initScriptContent = WORKSPACE_FEATURES.initScript
-      ? (get().workspaceInitScripts[workspaceId] ?? null)
+      ? initContentOverride?.trim() || get().workspaceInitScripts[workspaceId] || null
       : null;
-    if (initScriptContent && !session.skipInit) {
+    const shouldSkipInit = skipInitOverride ?? session.skipInit;
+    if (initScriptContent && !shouldSkipInit) {
       const initAgent = await invokePhaseRunInsert({
         sessionId: session.id,
         ordinal: -1,
@@ -3133,6 +3140,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   loadInitScriptHistory: async (workspaceId) => {
     return listInitScriptHistory(tauriDatabase, workspaceId);
+  },
+
+  deleteInitScriptEntry: async (id, workspaceId) => {
+    await deleteInitScript(tauriDatabase, id);
+    const latest = await getLatestInitScript(tauriDatabase, workspaceId);
+    set((state) => ({
+      workspaceInitScripts: {
+        ...state.workspaceInitScripts,
+        [workspaceId]: latest?.content ?? null,
+      },
+    }));
   },
 
   updateSessionSkipInit: async (sessionId, skipInit) => {

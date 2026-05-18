@@ -147,6 +147,7 @@ export {
 export {
   insertInitScript,
   getLatestInitScript,
+  deleteInitScript,
   listInitScriptHistory,
   type WorkspaceInitScript,
 } from './queries/workspace-init-script';

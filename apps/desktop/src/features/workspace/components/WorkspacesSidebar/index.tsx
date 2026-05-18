@@ -65,7 +65,6 @@ import {
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
-  useSessionNextActions,
   useSessionLoading,
   useSessionPlans,
   useSessionSlots,
@@ -84,7 +83,7 @@ import {
   formatTokens,
   shortModel,
 } from '../../../../features/session/agent-row-format';
-import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
+import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
@@ -95,16 +94,11 @@ import {
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
-import { NextActionChips } from '../../../../features/workflow/components/NextActionChips';
 import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
 import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../features/session/components/AgentMetricsBlock';
-import {
-  spawnFromNextAction,
-  spawnKindForAction,
-} from '../../../../features/session/spawn-from-next-action';
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
@@ -1466,12 +1460,12 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const initAgent = useMemo(
-    () => sorted.find((r) => agentKindOverride[r.id] === 'init') ?? null,
-    [sorted, agentKindOverride],
+    () => sorted.find((r) => inferAgentKindFromName(r.name) === 'init') ?? null,
+    [sorted],
   );
   const nonInitSorted = useMemo(
-    () => sorted.filter((r) => agentKindOverride[r.id] !== 'init'),
-    [sorted, agentKindOverride],
+    () => sorted.filter((r) => inferAgentKindFromName(r.name) !== 'init'),
+    [sorted],
   );
   const workflowAgents = useMemo(
     () => nonInitSorted.filter((r) => r.stepId != null),
@@ -1642,21 +1636,26 @@ function AgentsSection({ task }: AgentsSectionProps) {
             </span>
           </header>
           <div className="flex flex-col gap-1 pl-2">
-            <AgentRow
+            <WorkflowStepRow
               run={initAgent}
-              kind="init"
+              resolvedModel={
+                agentModelOverride[initAgent.id] ??
+                initAgent.modelOverride ??
+                AGENT_KIND_DEFAULTS.init.model
+              }
+              isActionable={false}
+              isBlocked={false}
+              isSelected={initAgent.id === selectedAgentId}
+              isEditing={false}
               telemetry={latestTelemetryByAgentId.get(initAgent.id) ?? null}
               aggregate={aggregatesByAgentId.get(initAgent.id) ?? null}
               turns={turnsByAgentId.get(initAgent.id) ?? 0}
               turnsLoading={initAgent.id === selectedAgentId && loading.transcript}
-              isSelected={initAgent.id === selectedAgentId}
-              isTaskActive={isTaskActive}
-              isEditing={false}
-              onClick={() => onPickAgent(initAgent.id)}
+              onStart={() => undefined}
+              onSelect={() => onPickAgent(initAgent.id)}
               onRenameStart={() => undefined}
               onRenameCommit={() => undefined}
               onRenameCancel={() => undefined}
-              onDelete={() => undefined}
             />
           </div>
         </>
@@ -1747,19 +1746,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : (
         <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
-      {!workflow ? (
-        <>
-          {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-          <NextActionChips sessionId={task.id} workflowBound={false} className="mt-2 px-2" />
-        </>
-      ) : (
-        <>
-          {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-          <NextActionChips sessionId={task.id} workflowBound className="mt-2 px-2" />
-        </>
-      )}
+      {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
+      <div className="mt-2 px-2">
+        <div className="rounded-md border border-dashed border-border-soft px-3 py-2">
+          <p className="text-2xs font-medium text-muted-foreground">Next</p>
+          <p className="text-2xs text-muted-foreground/60">temporarily disabled</p>
+        </div>
+      </div>
       <div className="pl-2">
-        <SpawnAgentControl sessionId={task.id} workflow={workflow} onSpawn={onSpawn} />
+        <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
     </section>
@@ -1768,19 +1763,12 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
 interface SpawnAgentControlProps {
   sessionId: SessionId;
-  workflow: Workflow | null;
-  onSpawn: (stepId: Step['id'] | null, model?: string) => void | Promise<void>;
 }
 
-function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlProps) {
+function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const nextActions = useSessionNextActions(sessionId);
-  const slots = useSessionSlots(sessionId);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const clearSessionNextActions = useAppStore((s) => s.clearSessionNextActions);
-  const hasOpenQuestions =
-    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -1790,19 +1778,6 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
     window.addEventListener('mousedown', onDocClick);
     return () => window.removeEventListener('mousedown', onDocClick);
   }, [open]);
-
-  const sortedSteps = useMemo(
-    () => (workflow ? [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal) : []),
-    [workflow],
-  );
-
-  const suggestions = workflow || hasOpenQuestions ? [] : nextActions;
-
-  const onPickSuggestion = async (action: NextAction) => {
-    setOpen(false);
-    const did = await spawnFromNextAction(action, sessionId, spawnAgent);
-    if (did) clearSessionNextActions(sessionId);
-  };
 
   return (
     <div className="relative mt-1" ref={ref}>
@@ -1821,71 +1796,32 @@ function SpawnAgentControl({ sessionId, workflow, onSpawn }: SpawnAgentControlPr
           role="menu"
           className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
         >
-          {suggestions.length > 0 ? (
-            <>
-              <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
-                suggested next
-              </div>
-              {suggestions.map((action) => (
-                <SuggestionMenuItem
-                  key={action.id}
-                  action={action}
-                  onSelect={() => void onPickSuggestion(action)}
-                />
-              ))}
-              <div className="mt-1 border-t border-border-soft" aria-hidden />
-            </>
-          ) : null}
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
             by role
           </div>
-          {AGENT_KIND_ORDER.map((kind) => {
-            const meta = AGENT_KIND_META[kind];
-            const palette = AGENT_KIND_PALETTE[kind];
-            return (
-              <button
-                key={kind}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  void spawnAgent(sessionId, { kindOverride: kind });
-                }}
-                className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
-              >
-                <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
-                <span className="font-medium text-foreground">{meta.label}</span>
-                <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
-              </button>
-            );
-          })}
-          {sortedSteps.length > 0 ? (
-            <>
-              <div className="mt-1 border-t border-border-soft" aria-hidden />
-              <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
-                from workflow
-              </div>
-              {sortedSteps.map((step) => (
+          {[...AGENT_KIND_ORDER]
+            .filter((k) => k !== 'init')
+            .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
+            .map((kind) => {
+              const meta = AGENT_KIND_META[kind];
+              const palette = AGENT_KIND_PALETTE[kind];
+              return (
                 <button
-                  key={step.id}
+                  key={kind}
                   type="button"
                   role="menuitem"
                   onClick={() => {
                     setOpen(false);
-                    void onSpawn(step.id, step.modelOverride);
+                    void spawnAgent(sessionId, { kindOverride: kind });
                   }}
-                  className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                  className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
                 >
-                  <span className="font-medium text-foreground">{step.name}</span>
-                  {step.modelOverride ? (
-                    <span className="text-2xs text-muted-foreground">
-                      {shortModel(step.modelOverride)}
-                    </span>
-                  ) : null}
+                  <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+                  <span className="font-medium text-foreground">{meta.label}</span>
+                  <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
                 </button>
-              ))}
-            </>
-          ) : null}
+              );
+            })}
         </div>
       ) : null}
     </div>
@@ -1947,30 +1883,6 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
         </button>
       </div>
     </div>
-  );
-}
-
-function SuggestionMenuItem({ action, onSelect }: { action: NextAction; onSelect: () => void }) {
-  const kind = spawnKindForAction(action);
-  const palette = AGENT_KIND_PALETTE[kind];
-  const defaults = AGENT_KIND_DEFAULTS[kind];
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onSelect}
-      title={`${defaults.model} · ${defaults.effort} effort`}
-      className={cn(
-        'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors',
-        `${palette.bg} text-zinc-950 hover:opacity-90`,
-      )}
-    >
-      <span className="flex items-center gap-1.5">
-        <ArrowRight size={11} aria-hidden />
-        <span className="font-medium">{action.label}</span>
-      </span>
-      <span className="text-2xs opacity-70">{shortModel(defaults.model)}</span>
-    </button>
   );
 }
 
