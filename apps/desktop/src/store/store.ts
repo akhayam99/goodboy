@@ -205,6 +205,7 @@ import {
   type AgentKind,
 } from '../features/session/agent-kind';
 import { detectDrift } from '../features/session/drift-detection';
+import { readArchivedSet } from '../features/session/archived-storage';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -1279,21 +1280,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
+      // Archived sessions get a minimal render (title + settings icon) and load
+      // their full state only on click. Skip the per-session warmup for them —
+      // saves N IPC calls × 2 queries on workspaces with many archives.
+      const archivedSet = readArchivedSet();
+      const activeForWarmup = sessions.filter((s) => !archivedSet[s.id]);
       const [worktreeRows, phaseRunsPerTask] = await Promise.all([
-        Promise.all(sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id))),
-        // Eager-load agents (phase runs) for every session in this workspace. The
+        Promise.all(activeForWarmup.map((s) => listWorktreesForSession(tauriDatabase, s.id))),
+        // Eager-load agents (phase runs) for every NON-ARCHIVED session. The
         // unread indicators on workspace- and session-rows derive from each
         // agent's `lastFinishedAt` vs `lastViewedAt` columns, and those are
         // only inspected once we have the agent rows in memory. Without this
         // prefetch, the sidebar would only know about agents for sessions the
         // user has explicitly opened — yellow dots vanish on workspace switch.
-        Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+        Promise.all(activeForWarmup.map((s) => invokePhaseRunList(s.id))),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
-      for (let i = 0; i < sessions.length; i++) {
-        const s = sessions[i]!;
+      for (let i = 0; i < activeForWarmup.length; i++) {
+        const s = activeForWarmup[i]!;
         const rows = worktreeRows[i]!;
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
@@ -1564,6 +1570,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
           endPlans();
           markDone('plans');
         });
+    }
+
+    // Worktree/branch lazy-load: archived sessions skip the workspace warmup,
+    // so on first click we have to fetch the worktree info ourselves. Active
+    // sessions already have it cached from setCurrentWorkspace.
+    if (get().sessionWorktrees[id] === undefined) {
+      void listWorktreesForSession(tauriDatabase, id)
+        .then((rows) => {
+          if (get().currentSessionId !== id) return;
+          if (rows.length === 0) return;
+          const paths = rows.map((r) => r.worktreePath);
+          const primaryRow = rows[0];
+          set((state) => ({
+            sessionWorktrees: { ...state.sessionWorktrees, [id]: paths },
+            sessionBranches: primaryRow
+              ? { ...state.sessionBranches, [id]: primaryRow.branch }
+              : state.sessionBranches,
+          }));
+        })
+        .catch(() => {});
     }
   },
 

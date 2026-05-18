@@ -124,7 +124,7 @@ import {
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { readArchivedSet, writeArchivedSet } from '../../../session/archived-storage';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 
 interface WorkspacesSidebarProps {
@@ -619,12 +619,11 @@ function SessionList({
           {archivedOpen && (
             <ul className="flex flex-col gap-0.5 opacity-70">
               {sortedArchived.map((session) => (
-                <SessionRow
+                <ArchivedSessionRow
                   key={session.id}
                   session={session}
                   isActive={session.id === currentSessionId}
                   onClick={rowHandlers.click.get(session.id)!}
-                  archived
                   onArchive={rowHandlers.arch.get(session.id)!}
                   onUnarchive={rowHandlers.unarch.get(session.id)!}
                 />
@@ -709,32 +708,6 @@ function sortSessions(list: ReadonlyArray<Session>, sort: SessionSort): Readonly
   if (sort === 'alpha') copy.sort((a, b) => a.goal.localeCompare(b.goal));
   else copy.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   return copy;
-}
-
-const ARCHIVED_KEY = STORAGE_KEYS.archivedTasks;
-
-function readArchivedSet(): Record<string, true> {
-  try {
-    const raw = localStorage.getItem(ARCHIVED_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === 'object') {
-      const out: Record<string, true> = {};
-      for (const k of Object.keys(parsed as Record<string, unknown>)) out[k] = true;
-      return out;
-    }
-  } catch {
-    // ignore
-  }
-  return {};
-}
-
-function writeArchivedSet(map: Record<string, true>): void {
-  try {
-    localStorage.setItem(ARCHIVED_KEY, JSON.stringify(map));
-  } catch {
-    // ignore
-  }
 }
 
 function useArchivedSessions(): [
@@ -1186,6 +1159,68 @@ const SessionRow = memo(function SessionRow({
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
           archived={archived}
+          onArchive={onArchive}
+          onUnarchive={onUnarchive}
+        />
+      </Suspense>
+    </li>
+  );
+});
+
+interface ArchivedSessionRowProps {
+  session: Session;
+  isActive: boolean;
+  onClick: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
+}
+
+// Minimal row for archived sessions: title + settings icon. No subscriptions
+// to git, agents, cost, or auto-run — those slices aren't even loaded for
+// archived sessions (see setCurrentWorkspace warmup). Full hydration kicks
+// in on click via setCurrentSession.
+const ArchivedSessionRow = memo(function ArchivedSessionRow({
+  session,
+  isActive,
+  onClick,
+  onArchive,
+  onUnarchive,
+}: ArchivedSessionRowProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  return (
+    <li
+      className={cn(
+        'group flex items-center gap-1 rounded px-2 py-1.5 text-xs transition-colors',
+        isActive ? 'bg-muted' : 'hover:bg-muted/60',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className="min-w-0 flex-1 truncate text-left"
+        title={session.goal}
+      >
+        {session.goal}
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setSettingsOpen(true);
+        }}
+        className="shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
+        title="session settings"
+        aria-label={`settings for ${session.goal}`}
+      >
+        <Settings2 size={12} aria-hidden />
+      </button>
+      <Suspense fallback={null}>
+        <SessionSettingsDialog
+          sessionId={session.id as SessionId}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          archived
           onArchive={onArchive}
           onUnarchive={onUnarchive}
         />
