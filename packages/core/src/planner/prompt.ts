@@ -32,7 +32,9 @@ Rules:
 - expectedOutput tells the post-step summarizer what to extract; be specific.
 - Pick roles from the canonical list above. Use "other" only if none fit.
 - Names should be short (1-3 words), in title case.
-- Do not include preamble, apologies, or explanations outside the JSON object.`;
+- Do not include preamble, apologies, or explanations outside the JSON object.
+- The user may write in any language. Always respond with JSON regardless of input language.
+  All JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput) must be in English.`;
 
 export function buildPlannerUserPrompt(input: PlannerInput): string {
   const parts = ['Theme:', input.theme];

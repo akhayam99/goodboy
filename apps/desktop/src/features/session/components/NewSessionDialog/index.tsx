@@ -23,7 +23,7 @@ import type {
   WorkspaceId,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@kay-am/core';
-import { shortModel, shortModelWithVersion } from '../../../../features/session/agent-row-format';
+import { shortModel } from '../../../../features/session/agent-row-format';
 import {
   AGENT_KIND_META,
   AGENT_KIND_ORDER,
@@ -33,16 +33,14 @@ import {
 } from '../../../../features/session/agent-kind';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 import {
-  EFFORT_LABEL,
-  EFFORT_DOT,
   type EffortLevel,
-  modelEffortLevels,
-} from '../../../../features/chat/utils/chat-constants';
-import {
-  VERBOSITY_LEVELS,
-  VERBOSITY_LABEL,
   type VerbosityLevel,
-} from '../../../../features/settings/verbosity';
+  modelEffortLevels,
+  InlineField,
+  ModelSelect,
+  EffortSelect,
+  VerbositySelect,
+} from '../config-selects';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
@@ -249,19 +247,49 @@ export function NewSessionDialog({
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
 
   const [softCapRaw, setSoftCapRaw] = useState('');
-  const [selectedPhaseTemplateId, setSelectedPhaseTemplateId] = useState<WorkflowId | ''>('');
-  const [firstAgentKind, setFirstAgentKind] = useState<AgentKind>('generic');
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('one-off');
+  const [presetTemplateId, setPresetTemplateId] = useState<WorkflowId | ''>('');
+  const [customTemplateId, setCustomTemplateId] = useState<WorkflowId | ''>('');
+  const selectedPhaseTemplateId =
+    workflowMode === 'preset'
+      ? presetTemplateId
+      : workflowMode === 'custom'
+        ? customTemplateId
+        : '';
+  const setSelectedPhaseTemplateId =
+    workflowMode === 'preset' ? setPresetTemplateId : setCustomTemplateId;
+  const [firstAgentKind, setFirstAgentKind] = useState<AgentKind>('generic');
   const [autoRun, setAutoRun] = useState(false);
   const [effort, setEffort] = useState<EffortLevel>('medium');
   const [verbosity, setVerbosity] = useState<VerbosityLevel>('normal');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [hasCustomPlan, setHasCustomPlan] = useState(false);
+  const [pendingProviderSwitch, setPendingProviderSwitch] = useState<ProviderId | null>(null);
+
   const [selectedProvider, setSelectedProvider] = useState<ProviderId>(() => {
     const ids = new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id));
     return pickDefaultProvider(ids);
   });
+
+  const requestProviderChange = (nextProvider: ProviderId) => {
+    if (nextProvider === selectedProvider) return;
+    if (hasCustomPlan || customTemplateId !== '' || presetTemplateId !== '') {
+      setPendingProviderSwitch(nextProvider);
+    } else {
+      setSelectedProvider(nextProvider);
+    }
+  };
+
+  const confirmProviderSwitch = () => {
+    if (!pendingProviderSwitch) return;
+    setSelectedProvider(pendingProviderSwitch);
+    setPresetTemplateId('');
+    setCustomTemplateId('');
+    setHasCustomPlan(false);
+    setPendingProviderSwitch(null);
+  };
   const [selectedModel, setSelectedModel] = useState<string>(() =>
     getDefaultTurnModel(
       pickDefaultProvider(
@@ -292,7 +320,9 @@ export function NewSessionDialog({
     setBranchMode('new');
     setExistingBranch('');
     setSoftCapRaw('');
-    setSelectedPhaseTemplateId('');
+    setPresetTemplateId('');
+    setCustomTemplateId('');
+    setHasCustomPlan(false);
     setFirstAgentKind('generic');
     setWorkflowMode('one-off');
     setAutoRun(false);
@@ -361,7 +391,9 @@ export function NewSessionDialog({
     setBranchSlug('');
     setSlugGenerating(false);
     setSoftCapRaw('');
-    setSelectedPhaseTemplateId('');
+    setPresetTemplateId('');
+    setCustomTemplateId('');
+    setHasCustomPlan(false);
     setFirstAgentKind('generic');
     setWorkflowMode('one-off');
     setAutoRun(false);
@@ -423,7 +455,10 @@ export function NewSessionDialog({
     branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
   const goalReady = goal.trim().length > 0 && branchReady;
   const budgetReady = softCapRaw.trim().length > 0;
-  const workflowReady = workflowMode === 'one-off' || selectedPhaseTemplateId !== '';
+  const workflowReady =
+    workflowMode === 'one-off' ||
+    selectedPhaseTemplateId !== '' ||
+    (workflowMode === 'custom' && hasCustomPlan);
   const providerReady = connectedProviderIds.has(selectedProvider);
 
   const sections: ReadonlyArray<{
@@ -469,13 +504,6 @@ export function NewSessionDialog({
 
   const onWorkflowModeChange = (next: WorkflowMode) => {
     setWorkflowMode(next);
-    if (next === 'one-off') {
-      setSelectedPhaseTemplateId('');
-      setAutoRun(false);
-    } else {
-      setSelectedPhaseTemplateId('');
-      setFirstAgentKind('generic');
-    }
   };
 
   const missingRequired = sections.filter((s) => s.required && !s.ready);
@@ -555,8 +583,8 @@ export function NewSessionDialog({
           ))}
         </nav>
 
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4">
-          {activeSection === 'goal' ? (
+        <div className="min-w-0 flex-1 overflow-y-auto pl-4 pr-2">
+          <div className={activeSection === 'goal' ? '' : 'hidden'}>
             <div className="flex flex-col gap-4">
               <Field
                 label="Issue link"
@@ -652,9 +680,9 @@ export function NewSessionDialog({
                 </div>
               </Field>
             </div>
-          ) : null}
+          </div>
 
-          {activeSection === 'budget' ? (
+          <div className={activeSection === 'budget' ? '' : 'hidden'}>
             <Field
               label="Soft cap (USD)"
               hint="Optional spend limit. Session gets flagged when exceeded."
@@ -669,142 +697,121 @@ export function NewSessionDialog({
                 disabled={busy}
               />
             </Field>
-          ) : null}
+          </div>
 
-          {activeSection === 'workflow' ? (
+          <div className={activeSection === 'workflow' ? '' : 'hidden'}>
             <Field label="Workflow" hint={workflowModeHint(workflowMode)}>
               <WorkflowModeSegmented mode={workflowMode} onChange={onWorkflowModeChange} />
 
-              {workflowMode === 'one-off' ? (
-                <div className="mt-3 flex flex-col gap-3">
-                  <Field
-                    label="Agent role"
-                    hint="Role for the first agent. Spawn more from the sidebar."
-                  >
-                    <AgentKindSelect
-                      value={firstAgentKind}
-                      onChange={setFirstAgentKind}
+              <div className={workflowMode === 'one-off' ? 'mt-3 flex flex-col gap-3' : 'hidden'}>
+                <Field
+                  label="Agent role"
+                  hint="Role for the first agent. Spawn more from the sidebar."
+                >
+                  <AgentKindSelect
+                    value={firstAgentKind}
+                    onChange={setFirstAgentKind}
+                    disabled={busy}
+                  />
+                </Field>
+                <div className="grid grid-cols-3 gap-3">
+                  <InlineField label="Model">
+                    <ModelSelect
+                      provider={selectedProvider}
+                      value={selectedModel}
+                      onChange={setSelectedModel}
+                      disabled={busy || !providerReady}
+                    />
+                  </InlineField>
+                  <InlineField label="Effort">
+                    <EffortSelect
+                      model={selectedModel}
+                      value={effort}
+                      onChange={setEffort}
                       disabled={busy}
                     />
-                  </Field>
-                  <div className="grid grid-cols-3 gap-3">
-                    <InlineField label="Model">
-                      <ModelSelect
-                        provider={selectedProvider}
-                        value={selectedModel}
-                        onChange={setSelectedModel}
-                        disabled={busy || !providerReady}
-                      />
-                    </InlineField>
-                    <InlineField label="Effort">
-                      <EffortSelect
-                        model={selectedModel}
-                        value={effort}
-                        onChange={setEffort}
-                        disabled={busy}
-                      />
-                    </InlineField>
-                    <InlineField label="Verbosity">
-                      <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={busy} />
-                    </InlineField>
+                  </InlineField>
+                  <InlineField label="Verbosity">
+                    <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={busy} />
+                  </InlineField>
+                </div>
+              </div>
+
+              <div className={workflowMode === 'preset' ? 'mt-3 flex flex-col gap-3' : 'hidden'}>
+                {phaseTemplates.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border-soft bg-subtle px-4 py-6 text-center">
+                    <Layers size={20} className="text-muted-foreground/30" aria-hidden />
+                    <p className="text-xs font-medium text-muted-foreground">No workflow presets</p>
+                    <p className="max-w-[14rem] text-2xs leading-relaxed text-muted-foreground/60">
+                      Switch to{' '}
+                      <button
+                        type="button"
+                        onClick={() => onWorkflowModeChange('custom')}
+                        className="font-medium text-primary underline-offset-2 hover:underline"
+                      >
+                        Custom
+                      </button>{' '}
+                      to design your first workflow.
+                    </p>
                   </div>
-                </div>
-              ) : null}
+                ) : (
+                  <PresetSelect
+                    templates={phaseTemplates}
+                    value={selectedPhaseTemplateId}
+                    onChange={setSelectedPhaseTemplateId}
+                    disabled={busy}
+                  />
+                )}
+                {selectedPhaseTemplateId !== '' ? (
+                  <WorkflowPreview
+                    template={phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null}
+                  />
+                ) : null}
+              </div>
 
-              {workflowMode === 'preset' ? (
-                <div className="mt-3 flex flex-col gap-3">
-                  {phaseTemplates.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border-soft bg-subtle px-4 py-6 text-center">
-                      <Layers size={20} className="text-muted-foreground/30" aria-hidden />
-                      <p className="text-xs font-medium text-muted-foreground">
-                        No workflow presets
-                      </p>
-                      <p className="max-w-[14rem] text-2xs leading-relaxed text-muted-foreground/60">
-                        Switch to{' '}
-                        <button
-                          type="button"
-                          onClick={() => onWorkflowModeChange('custom')}
-                          className="font-medium text-primary underline-offset-2 hover:underline"
-                        >
-                          Custom
-                        </button>{' '}
-                        to design your first workflow.
-                      </p>
-                    </div>
-                  ) : (
-                    <PresetSelect
-                      templates={phaseTemplates}
-                      value={selectedPhaseTemplateId}
-                      onChange={setSelectedPhaseTemplateId}
-                      disabled={busy}
-                    />
-                  )}
-                  {selectedPhaseTemplateId !== '' ? (
-                    <WorkflowPreview
-                      template={
-                        phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null
-                      }
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-
-              {workflowMode === 'custom' ? (
-                <div className="mt-3 flex flex-col gap-3">
-                  {selectedPhaseTemplateId !== '' ? (
-                    (() => {
-                      const customTemplate =
-                        phaseTemplates.find((t) => t.id === selectedPhaseTemplateId) ?? null;
-                      return (
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
-                              <Check size={10} className="text-success" />
-                            </span>
-                            <span className="font-medium text-foreground">
-                              Workflow ready
-                              {customTemplate
-                                ? ` · ${customTemplate.steps.length} step${customTemplate.steps.length === 1 ? '' : 's'}`
-                                : ''}
-                            </span>
-                          </div>
-                          <WorkflowPreview template={customTemplate} />
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedPhaseTemplateId('')}
-                              className="flex items-center gap-1 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-                            >
-                              <Sparkles size={10} aria-hidden /> Re-design
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle px-3 py-3">
-                      <div className="flex flex-col gap-1">
+              <div className={workflowMode === 'custom' ? 'mt-3 flex flex-col gap-3' : 'hidden'}>
+                {customTemplateId !== '' ? (
+                  (() => {
+                    const customTemplate =
+                      phaseTemplates.find((t) => t.id === customTemplateId) ?? null;
+                    return (
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-1.5 text-xs">
-                          <Sparkles size={12} className="text-primary/70" aria-hidden />
-                          <span className="font-semibold text-foreground">Design with planner</span>
+                          <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
+                            <Check size={10} className="text-success" />
+                          </span>
+                          <span className="font-medium text-foreground">
+                            Workflow ready
+                            {customTemplate
+                              ? ` · ${customTemplate.steps.length} step${customTemplate.steps.length === 1 ? '' : 's'}`
+                              : ''}
+                          </span>
                         </div>
-                        <p className="text-2xs leading-relaxed text-muted-foreground">
-                          Describe your goal and the planner generates a multi-step workflow. Each
-                          step spawns its own agent.
-                        </p>
+                        <WorkflowPreview template={customTemplate} />
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCustomTemplateId('')}
+                            className="flex items-center gap-1 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+                          >
+                            <Sparkles size={10} aria-hidden /> Re-design
+                          </button>
+                        </div>
                       </div>
-                      <PlannerWidget
-                        workspaceId={workspaceId}
-                        providerId={selectedProvider}
-                        initialTheme={goal}
-                        onWorkflowReady={(workflowId) => {
-                          setSelectedPhaseTemplateId(workflowId);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : null}
+                    );
+                  })()
+                ) : (
+                  <PlannerWidget
+                    workspaceId={workspaceId}
+                    providerId={selectedProvider}
+                    initialTheme={goal}
+                    onWorkflowReady={(workflowId) => {
+                      setCustomTemplateId(workflowId);
+                    }}
+                    onPlanChange={setHasCustomPlan}
+                  />
+                )}
+              </div>
 
               {workflowMode !== 'one-off' && selectedPhaseTemplateId !== '' ? (
                 <label className="mt-4 flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2 text-xs">
@@ -823,9 +830,9 @@ export function NewSessionDialog({
                 </label>
               ) : null}
             </Field>
-          ) : null}
+          </div>
 
-          {activeSection === 'provider' ? (
+          <div className={activeSection === 'provider' ? '' : 'hidden'}>
             <div className="flex flex-col gap-4">
               <Field label="Provider">
                 <div className="flex gap-2">
@@ -837,7 +844,7 @@ export function NewSessionDialog({
                         key={id}
                         type="button"
                         disabled={!connected}
-                        onClick={() => setSelectedProvider(id)}
+                        onClick={() => requestProviderChange(id)}
                         className={cn(
                           'flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors',
                           selected && connected
@@ -894,8 +901,30 @@ export function NewSessionDialog({
                   })}
                 </div>
               </Field>
+              {pendingProviderSwitch ? (
+                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 px-3 py-2.5">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warning" aria-hidden />
+                  <div className="flex flex-1 flex-col gap-1.5">
+                    <p className="text-xs font-medium text-foreground">
+                      Switching provider will discard your custom workflow.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setPendingProviderSwitch(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={confirmProviderSwitch}>
+                        Switch provider
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
       </div>
     </Dialog>
@@ -919,8 +948,8 @@ function Field({
         {label}
         {labelSuffix}
       </span>
+      {hint ? <p className="text-2xs leading-relaxed text-muted-foreground">{hint}</p> : null}
       {children}
-      {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
@@ -1440,302 +1469,6 @@ function PresetSelect({
                     })}
                   </div>
                 ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function InlineField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
-
-const MODEL_COST_DOT: Record<string, string> = {
-  cheap: 'bg-emerald-400',
-  mid: 'bg-amber-400',
-  premium: 'bg-rose-400',
-};
-
-const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  brief: 'bg-emerald-400',
-  normal: 'bg-amber-400',
-  verbose: 'bg-rose-400',
-};
-
-function modelCostTier(modelId: string): 'cheap' | 'mid' | 'premium' {
-  if (/haiku|mini|fast/i.test(modelId)) return 'cheap';
-  if (/opus/i.test(modelId)) return 'premium';
-  return 'mid';
-}
-
-function ModelSelect({
-  provider,
-  value,
-  onChange,
-  disabled,
-}: {
-  provider: ProviderId;
-  value: string;
-  onChange: (model: string) => void;
-  disabled: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
-  const tier = modelCostTier(value);
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen(!open)}
-        className={cn(
-          'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
-          open
-            ? 'border-primary bg-primary/5'
-            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <span className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[tier])} aria-hidden />
-        <span className="flex-1 truncate font-mono font-medium text-foreground">
-          {shortModelWithVersion(value)}
-        </span>
-        <ChevronDown
-          size={11}
-          className={cn(
-            'shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[10rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
-          {models.map((m) => {
-            const active = value === m.id;
-            const t = modelCostTier(m.id);
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  onChange(m.id);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs font-mono transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                )}
-              >
-                <span
-                  className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[t])}
-                  aria-hidden
-                />
-                <span className="flex-1 truncate">{shortModelWithVersion(m.id)}</span>
-                {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function EffortSelect({
-  model,
-  value,
-  onChange,
-  disabled,
-}: {
-  model: string;
-  value: EffortLevel;
-  onChange: (level: EffortLevel) => void;
-  disabled: boolean;
-}) {
-  const levels = modelEffortLevels(model);
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  if (!levels) {
-    return (
-      <div className="flex h-[34px] items-center rounded-md border border-border-soft/50 bg-subtle/50 px-2 text-xs text-muted-foreground/40">
-        N/A
-      </div>
-    );
-  }
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen(!open)}
-        className={cn(
-          'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
-          open
-            ? 'border-primary bg-primary/5'
-            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <span className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[value])} aria-hidden />
-        <span className="flex-1 truncate font-medium text-foreground">{EFFORT_LABEL[value]}</span>
-        <ChevronDown
-          size={11}
-          className={cn(
-            'shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[8rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
-          {levels.map((level) => {
-            const active = value === level;
-            return (
-              <button
-                key={level}
-                type="button"
-                onClick={() => {
-                  onChange(level);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                )}
-              >
-                <span
-                  className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[level])}
-                  aria-hidden
-                />
-                <span className="flex-1">{EFFORT_LABEL[level]}</span>
-                {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function VerbositySelect({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: VerbosityLevel;
-  onChange: (level: VerbosityLevel) => void;
-  disabled: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen(!open)}
-        className={cn(
-          'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
-          open
-            ? 'border-primary bg-primary/5'
-            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <span className={cn('size-1.5 shrink-0 rounded-full', VERBOSITY_DOT[value])} aria-hidden />
-        <span className="flex-1 truncate font-medium text-foreground">
-          {VERBOSITY_LABEL[value]}
-        </span>
-        <ChevronDown
-          size={11}
-          className={cn(
-            'shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[7rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
-          {VERBOSITY_LEVELS.map((level) => {
-            const active = value === level;
-            return (
-              <button
-                key={level}
-                type="button"
-                onClick={() => {
-                  onChange(level);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                )}
-              >
-                <span
-                  className={cn('size-1.5 shrink-0 rounded-full', VERBOSITY_DOT[level])}
-                  aria-hidden
-                />
-                <span className="flex-1">{VERBOSITY_LABEL[level]}</span>
-                {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
             );
           })}

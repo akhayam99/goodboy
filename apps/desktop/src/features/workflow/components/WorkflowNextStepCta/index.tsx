@@ -95,7 +95,7 @@ export function WorkflowNextStepCta({
             className={cn(
               'rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
               palette.bg,
-              palette.fg,
+              'text-zinc-950',
             )}
             aria-hidden
           >
