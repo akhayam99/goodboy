@@ -822,7 +822,12 @@ export function NewSessionDialog({
                     className="mt-0.5 accent-primary"
                   />
                   <span className="flex flex-col gap-0.5">
-                    <span className="font-medium text-foreground">Run autonomously</span>
+                    <span className="flex items-center gap-1.5 font-medium text-foreground">
+                      Run autonomously
+                      <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
+                        beta
+                      </span>
+                    </span>
                     <span className="text-muted-foreground">
                       Auto-spawn each step on completion. Pauses on error or budget exceed.
                     </span>
@@ -866,6 +871,11 @@ export function NewSessionDialog({
                             <X size={10} className="text-danger/60" aria-hidden />
                           )}
                           {PROVIDER_LABEL_LOWER[id]}
+                          {id !== 'anthropic' ? (
+                            <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
+                              beta
+                            </span>
+                          ) : null}
                         </span>
                         {!connected ? (
                           <span

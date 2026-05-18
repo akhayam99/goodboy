@@ -6,7 +6,6 @@ import {
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
-  currentStep,
   findReusableAgent,
   parseSlashCommand,
   resolveConflicts,
@@ -1952,12 +1951,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
         }));
-        // Resolve the step the next turn should land on. Auto-advance is gone:
-        // currentStep keeps the agent on its current role until the user
-        // explicitly spawns a new agent from the sidebar. Multiple turns
-        // stack on the same Session row instead of inserting a fresh row
-        // per message.
-        const nextDef = currentStep(template, freshRuns);
+        // Route the turn to the step of the currently selected agent. With
+        // pre-creation, selectedAgentId is the source of truth: it's set by
+        // activateWorkflowAgent (auto-advance / CTA) or spawnAgent (retry),
+        // or the user via the sidebar. Falling back to currentStep here
+        // would mis-route follow-up turns to the next pre-created pending
+        // step instead of staying on the active agent.
+        const initialRuns = before.sessionPhaseRuns[sessionId] ?? [];
+        const activeAgentRow =
+          freshRuns.find((r) => r.id === activeAgentId) ??
+          initialRuns.find((r) => r.id === activeAgentId) ??
+          null;
+        const nextDef = activeAgentRow?.stepId
+          ? (template.steps.find((s) => s.id === activeAgentRow.stepId) ?? null)
+          : null;
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
@@ -2441,6 +2448,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     let assistantText = '';
     let lastError: unknown = null;
+    let turnWasCancelled = false;
     const filesTouchedThisTurn = new Set<string>();
 
     // M1: thread the per-agent provider session id so claude `--resume`s and
@@ -2608,6 +2616,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       }
       const wasCancelled = cancelledRunIds.delete(runId);
+      turnWasCancelled = wasCancelled;
       await updateProviderRunStatus(
         tauriDatabase,
         runId,
@@ -2633,12 +2642,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         void get().refreshUnreadWorkspaces();
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (resolvedAgentId && wasCancelled) {
-        // Cancelled turn — revert agent back to `pending` so the workflow does
-        // not appear to have progressed. Partial transcript stays for the user.
-        await invokePhaseRunUpdateStatus(resolvedAgentId, {
-          status: 'pending',
-          outputSummary: assistantText.slice(0, 2000),
-        });
+        // Cancelled turn — agent stays `running`. It was activated and has
+        // context; reverting to `pending` would re-surface the "force spawn"
+        // dialog. We only block workflow advancement (no auto-advance call).
         const refreshedRuns = await invokePhaseRunList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
@@ -2718,7 +2724,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await insertMessage(tauriDatabase, assistantMessage);
     }
 
-    if (!lastError && assistantText.length > 0) {
+    if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
       void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText);
       const driftViolations = detectDrift({

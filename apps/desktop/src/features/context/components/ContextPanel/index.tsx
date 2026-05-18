@@ -1081,8 +1081,10 @@ function SummarizerBadge({
   };
 }) {
   if (status === 'idle') {
-    if (totals.count === 0 || totals.estimatedCostUsd <= 0) return null;
-    const tooltip = `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+    const tooltip =
+      totals.count === 0
+        ? 'summarizer has not run yet'
+        : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
     return (
       <span
         title={tooltip}

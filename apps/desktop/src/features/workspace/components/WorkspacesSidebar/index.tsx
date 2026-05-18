@@ -82,7 +82,6 @@ import {
   formatCost,
   formatTokens,
   shortModel,
-  shortModelWithVersion,
 } from '../../../../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, type NextAction } from '@kay-am/core';
 import {
@@ -97,6 +96,10 @@ import {
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
 import { NextActionChips } from '../../../../features/workflow/components/NextActionChips';
 import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
+import {
+  AgentMetricsBlock,
+  type AgentAggregate,
+} from '../../../../features/session/components/AgentMetricsBlock';
 import {
   spawnFromNextAction,
   spawnKindForAction,
@@ -1444,6 +1447,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const agentModelOverride = useAppStore((s) => s.agentModelOverride);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
@@ -1613,7 +1617,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   return (
-    <section className="flex flex-col px-2 pb-3">
+    <section className="mt-6 flex flex-col px-2 pb-3">
       {workflow && workflowAgents.length > 0 ? (
         <>
           <header className="flex items-center justify-between gap-2 pb-1.5">
@@ -1628,10 +1632,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
           <div className="flex flex-col gap-1 pl-2">
             {workflowAgents.map((run) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
+              const kind = inferAgentKindFromName(run.name);
+              const resolvedModel =
+                agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
               return (
                 <WorkflowStepRow
                   key={run.id}
                   run={run}
+                  resolvedModel={resolvedModel}
                   isActionable={isActionable}
                   isBlocked={isActionable && actionBlocked}
                   isSelected={run.id === selectedAgentId}
@@ -1655,7 +1663,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       <header
         className={cn(
           'flex items-center justify-between gap-2 pb-1.5',
-          workflow && workflowAgents.length > 0 && 'mt-8',
+          workflow && workflowAgents.length > 0 && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>
@@ -1929,15 +1937,9 @@ const AGENT_STATUS_TONE: Record<AgentStatus, string> = {
   skipped: 'bg-muted-foreground/20',
 };
 
-interface AgentAggregate {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
-  readonly turns: number;
-}
-
 interface WorkflowStepRowProps {
   readonly run: Agent;
+  readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly isBlocked: boolean;
   readonly isSelected: boolean;
@@ -1955,6 +1957,7 @@ interface WorkflowStepRowProps {
 
 function WorkflowStepRow({
   run,
+  resolvedModel,
   isActionable,
   isBlocked,
   isSelected,
@@ -1970,9 +1973,8 @@ function WorkflowStepRow({
   onRenameCancel,
 }: WorkflowStepRowProps) {
   const kind = inferAgentKindFromName(run.name);
-  const defaults = AGENT_KIND_DEFAULTS[kind];
   const isPendingFuture = run.status === 'pending' && !isActionable;
-  const modelLabel = (run.modelOverride ?? defaults.model).split('-').slice(1, 3).join('-');
+  const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
 
   const [draft, setDraft] = useState(run.name);
@@ -1980,26 +1982,31 @@ function WorkflowStepRow({
   useEffect(() => {
     if (isEditing) setDraft(run.name);
   }, [isEditing, run.name]);
+  useEffect(() => {
+    if (!isBlocked) setPendingConfirm(false);
+  }, [isBlocked]);
 
   const handleRowClick = () => {
+    if (isPendingFuture) return;
     if (isStartable) {
       onStart();
     } else if (isActionable && isBlocked) {
-      onSelect();
       setPendingConfirm(true);
     } else {
       onSelect();
     }
   };
 
+  const ROW_BASE =
+    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded-md border px-2.5 py-1.5 text-xs font-medium';
   const containerClass = isStartable
-    ? 'group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer'
+    ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
     : isActionable && isBlocked
-      ? 'group flex w-full items-center justify-between gap-2 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-warning hover:bg-warning/15 cursor-pointer'
+      ? `${ROW_BASE} border-warning/50 bg-warning/10 text-foreground transition-colors hover:border-warning hover:bg-warning/15 cursor-pointer`
       : isPendingFuture
-        ? 'group flex w-full items-center justify-between gap-2 rounded-md border border-border-soft/30 bg-subtle/30 px-2.5 py-1.5 text-xs font-medium opacity-60 transition-opacity hover:opacity-90 cursor-pointer'
+        ? `${ROW_BASE} border-transparent text-muted-foreground/40`
         : cn(
-            'group flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+            `${ROW_BASE} transition-colors cursor-pointer`,
             isSelected
               ? 'border-border bg-muted text-foreground'
               : 'border-border-soft/50 bg-subtle/50 text-foreground/80 hover:border-border hover:bg-muted/50',
@@ -2055,12 +2062,12 @@ function WorkflowStepRow({
   return (
     <div className="flex flex-col gap-1">
       <div
-        role="button"
-        tabIndex={isEditing ? -1 : 0}
-        aria-pressed={isSelected}
+        role={isPendingFuture ? undefined : 'button'}
+        tabIndex={isEditing || isPendingFuture ? -1 : 0}
+        aria-pressed={isPendingFuture ? undefined : isSelected}
         title={stableTitle}
-        onClick={isEditing ? undefined : handleRowClick}
-        onDoubleClick={isEditing ? undefined : onRenameStart}
+        onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
+        onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
         onKeyDown={(e) => {
           if (isEditing) return;
           if (e.key === 'Enter' || e.key === ' ') {
@@ -2072,7 +2079,7 @@ function WorkflowStepRow({
       >
         <span className="flex min-w-0 items-center gap-1.5">
           {renderStatusIcon()}
-          <AgentKindChip kind={kind} />
+          <AgentKindChip kind={kind} muted={isPendingFuture} />
           {isEditing ? (
             <input
               autoFocus
@@ -2104,12 +2111,32 @@ function WorkflowStepRow({
               'text-[10px] font-normal tabular-nums',
               isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
             )}
-            title={`model: ${run.modelOverride ?? defaults.model}`}
+            title={`model: ${resolvedModel}`}
           >
             {modelLabel}
           </span>
           {renderActionIndicator()}
         </span>
+        <div
+          className={cn(
+            'w-full basis-full grid transition-[grid-template-rows] duration-200 ease-out',
+            isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="flex flex-col gap-1 pt-1">
+              <AgentMetricsBlock
+                run={run}
+                telemetry={telemetry}
+                aggregate={aggregate}
+                turns={turns}
+                turnsLoading={turnsLoading}
+                variant="workflow"
+              />
+              <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
+            </div>
+          </div>
+        </div>
       </div>
       {pendingConfirm ? (
         <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
@@ -2141,82 +2168,6 @@ function WorkflowStepRow({
           </div>
         </div>
       ) : null}
-      <div
-        className={cn(
-          'grid transition-[grid-template-rows] duration-200 ease-out',
-          isSelected ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="flex flex-col gap-1 px-1.5 pb-1">
-            <div className="flex items-center justify-between gap-2 whitespace-nowrap text-2xs text-muted-foreground/85">
-              <span
-                className="min-w-0 truncate text-muted-foreground/70"
-                title={telemetry?.model ?? run.modelOverride ?? defaults.model}
-              >
-                {telemetry ? shortModelWithVersion(telemetry.model) : modelLabel}
-              </span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative)`
-                      : 'no input tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↓
-                  </span>
-                  {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
-                </span>
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative)`
-                      : 'no output tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↑
-                  </span>
-                  {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-                </span>
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                {turnsLoading ? (
-                  <span
-                    aria-label="loading turn count"
-                    className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
-                  />
-                ) : (
-                  <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                    {turns}t
-                  </span>
-                )}
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <CostBadge
-                  value={aggregate?.estimatedCostUsd ?? 0}
-                  title={
-                    aggregate
-                      ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative`
-                      : 'no cost yet'
-                  }
-                />
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <AgentLifetime run={run} />
-              </div>
-            </div>
-            <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -2399,66 +2350,14 @@ function AgentRow({
       >
         <div className="overflow-hidden">
           <div className="flex flex-col gap-1 px-2 pb-1.5">
-            <div className="flex items-center justify-between gap-2 whitespace-nowrap text-2xs text-muted-foreground/85">
-              <span
-                className="min-w-0 truncate text-muted-foreground/70"
-                title={telemetry?.model ?? undefined}
-              >
-                {telemetry ? shortModelWithVersion(telemetry.model) : '—'}
-              </span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `in: ${aggregate.inputTokens.toLocaleString()} tokens (cumulative across providers)`
-                      : 'no input tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↓
-                  </span>
-                  {aggregate ? formatTokens(aggregate.inputTokens) : '0'}
-                </span>
-                <span
-                  className="inline-flex items-baseline gap-0.5 tabular-nums"
-                  title={
-                    aggregate
-                      ? `out: ${aggregate.outputTokens.toLocaleString()} tokens (cumulative across providers)`
-                      : 'no output tokens yet'
-                  }
-                >
-                  <span aria-hidden className="text-muted-foreground/60">
-                    ↑
-                  </span>
-                  {aggregate ? formatTokens(aggregate.outputTokens) : '0'}
-                </span>
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                {turnsLoading ? (
-                  <span
-                    aria-label="loading turn count"
-                    className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
-                  />
-                ) : (
-                  <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
-                    {turns}t
-                  </span>
-                )}
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <CostBadge
-                  value={aggregate?.estimatedCostUsd ?? 0}
-                  title={
-                    aggregate
-                      ? `$${aggregate.estimatedCostUsd.toFixed(4)} cumulative across providers`
-                      : 'no cost yet'
-                  }
-                />
-              </div>
-            </div>
+            <AgentMetricsBlock
+              run={run}
+              telemetry={telemetry}
+              aggregate={aggregate}
+              turns={turns}
+              turnsLoading={turnsLoading}
+              variant="adhoc"
+            />
             <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
           </div>
         </div>

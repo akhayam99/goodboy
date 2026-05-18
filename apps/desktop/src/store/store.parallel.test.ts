@@ -223,12 +223,14 @@ function setupSession(
   useAppStore: Awaited<ReturnType<typeof importStore>>,
   steps: ReadonlyArray<Step>,
 ) {
+  const firstStep = steps[0];
   const defaultAgent: Agent = {
     id: 'agent-1' as AgentId,
     sessionId: SESSION_ID,
     ordinal: 0,
     name: 'agent 1',
     status: 'pending',
+    ...(firstStep ? { stepId: firstStep.id } : {}),
   };
   useAppStore.setState({
     sessions: [buildSession()],
