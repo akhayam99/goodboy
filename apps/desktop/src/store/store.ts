@@ -990,6 +990,14 @@ async function generateAutoTitle(
       await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false);
     }
     if (agentId) {
+      if (!get().agentKindOverride[agentId]) {
+        const runs = get().sessionPhaseRuns[sessionId] ?? [];
+        const row = runs.find((r) => r.id === agentId);
+        const currentKind = inferAgentKindFromName(row?.name ?? '');
+        set((s) => ({
+          agentKindOverride: { ...s.agentKindOverride, [agentId]: currentKind },
+        }));
+      }
       await get().renameAgent(sessionId, agentId, title);
     }
   } catch {

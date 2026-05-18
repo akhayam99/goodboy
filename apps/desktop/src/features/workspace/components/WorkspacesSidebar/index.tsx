@@ -1460,12 +1460,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const initAgent = useMemo(
-    () => sorted.find((r) => inferAgentKindFromName(r.name) === 'init') ?? null,
-    [sorted],
+    () =>
+      sorted.find((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) === 'init') ??
+      null,
+    [sorted, agentKindOverride],
   );
   const nonInitSorted = useMemo(
-    () => sorted.filter((r) => inferAgentKindFromName(r.name) !== 'init'),
-    [sorted],
+    () =>
+      sorted.filter((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) !== 'init'),
+    [sorted, agentKindOverride],
   );
   const workflowAgents = useMemo(
     () => nonInitSorted.filter((r) => r.stepId != null),
@@ -1638,6 +1641,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           <div className="flex flex-col gap-1 pl-2">
             <WorkflowStepRow
               run={initAgent}
+              kind={agentKindOverride[initAgent.id] ?? 'init'}
               resolvedModel={
                 agentModelOverride[initAgent.id] ??
                 initAgent.modelOverride ??
@@ -1676,13 +1680,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
           <div className="flex flex-col gap-1 pl-2">
             {workflowAgents.map((run) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
-              const kind = inferAgentKindFromName(run.name);
+              const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
               const resolvedModel =
                 agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
               return (
                 <WorkflowStepRow
                   key={run.id}
                   run={run}
+                  kind={kind}
                   resolvedModel={resolvedModel}
                   isActionable={isActionable}
                   isBlocked={isActionable && actionBlocked}
@@ -1896,6 +1901,7 @@ const AGENT_STATUS_TONE: Record<AgentStatus, string> = {
 
 interface WorkflowStepRowProps {
   readonly run: Agent;
+  readonly kind: AgentKind;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly isBlocked: boolean;
@@ -1914,6 +1920,7 @@ interface WorkflowStepRowProps {
 
 function WorkflowStepRow({
   run,
+  kind,
   resolvedModel,
   isActionable,
   isBlocked,
@@ -1929,7 +1936,6 @@ function WorkflowStepRow({
   onRenameCommit,
   onRenameCancel,
 }: WorkflowStepRowProps) {
-  const kind = inferAgentKindFromName(run.name);
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;

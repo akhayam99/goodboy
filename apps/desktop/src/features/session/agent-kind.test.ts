@@ -99,6 +99,11 @@ describe('resolveAgentKind', () => {
     expect(resolveAgentKind('Plan the migration', 'find the bug', 'docs')).toBe('docs');
   });
 
+  it('override wins even when name contains role-triggering keywords', () => {
+    expect(resolveAgentKind('fix login bug', null, 'generic')).toBe('generic');
+    expect(resolveAgentKind('refactor auth module', null, 'scout')).toBe('scout');
+  });
+
   it('prefers name-based inference when the name is meaningful', () => {
     expect(resolveAgentKind('Plan the migration', 'find the bug')).toBe('planner');
     expect(resolveAgentKind('Review diff', 'implement the feature')).toBe('reviewer');
