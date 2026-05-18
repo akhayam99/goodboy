@@ -6,6 +6,7 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
   Inbox,
+  MessagesSquare,
   Minus,
   Plus,
 } from 'lucide-react';
@@ -45,9 +46,13 @@ export function SessionActivityBar({
   const displayList = tab === 'active' ? sortedActive : sortedArchived;
 
   return (
-    <div className="flex w-20 shrink-0 flex-col rounded-bl-lg bg-muted/50">
+    <div className="flex w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-0.5 p-1">
+        <div className="flex flex-col px-1.5 py-1.5">
+          <span className="mb-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <MessagesSquare size={10} aria-hidden className="text-info" />
+            Sessions
+          </span>
           {displayList.map((session) => (
             <SessionActivityItem
               key={session.id}
@@ -61,7 +66,7 @@ export function SessionActivityBar({
             <button
               type="button"
               onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center rounded-md py-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/60 hover:text-muted-foreground"
+              className="mt-0.5 flex w-full items-center justify-center rounded py-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/60 hover:text-muted-foreground"
               title="new session"
               aria-label="create new session"
             >
@@ -77,13 +82,13 @@ export function SessionActivityBar({
       </ScrollArea>
 
       {/* segment control */}
-      <div className="shrink-0 border-t border-border-soft/40 p-1.5">
-        <div className="flex rounded-lg border border-border-soft/60 bg-background/80 p-0.5">
+      <div className="shrink-0 p-1.5">
+        <div className="flex rounded p-0.5">
           <button
             type="button"
             onClick={() => setTab('active')}
             className={cn(
-              'flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors',
+              'flex flex-1 items-center justify-center rounded py-1.5 transition-colors',
               tab === 'active'
                 ? 'bg-primary/15 text-primary shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
@@ -96,7 +101,7 @@ export function SessionActivityBar({
             type="button"
             onClick={() => setTab('archived')}
             className={cn(
-              'flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors',
+              'flex flex-1 items-center justify-center rounded py-1.5 transition-colors',
               tab === 'archived'
                 ? 'bg-primary/15 text-primary shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
@@ -150,10 +155,10 @@ const SessionActivityItem = memo(function SessionActivityItem({
       onClick={onClick}
       title={`${session.goal} — ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
-        'flex w-full flex-col items-center gap-1 rounded-md px-1 py-2 text-center transition-colors',
+        'flex w-full flex-col items-center gap-1 rounded px-1 py-2 text-center transition-colors',
         isActive
-          ? 'bg-background/80 text-foreground shadow-sm'
-          : 'text-foreground/70 hover:bg-background/40 hover:text-foreground',
+          ? 'bg-background text-foreground shadow-sm dark:bg-muted'
+          : 'text-foreground/70 hover:bg-background/50 hover:text-foreground',
         dimmed && 'opacity-50',
       )}
     >

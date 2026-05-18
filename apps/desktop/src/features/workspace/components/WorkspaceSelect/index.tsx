@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { FolderOpen, Plus } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import type { Workspace } from '@kay-am/types';
 import {
@@ -21,6 +21,10 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
 
   return (
     <div className="shrink-0 px-2 py-1.5">
+      <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <FolderOpen size={11} aria-hidden className="text-primary" />
+        Workspaces
+      </span>
       <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
         {sorted.map((ws) => (
           <WorkspaceCard
@@ -33,7 +37,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
         <button
           type="button"
           onClick={onAddWorkspace}
-          className="flex shrink-0 items-center justify-center rounded-md border border-dashed border-border-soft px-2 py-1.5 text-muted-foreground/60 transition-colors hover:border-border hover:bg-muted/50 hover:text-muted-foreground"
+          className="flex shrink-0 items-center justify-center rounded border border-dashed border-border-soft px-2 py-1.5 text-muted-foreground/60 transition-colors hover:border-border hover:bg-muted/50 hover:text-muted-foreground"
           title="add workspace"
           aria-label="add workspace"
         >
@@ -60,7 +64,7 @@ function WorkspaceCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'relative flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+        'relative flex shrink-0 items-center gap-1.5 rounded border px-2.5 py-1.5 text-xs font-medium transition-colors',
         isActive
           ? 'border-primary bg-primary/5 text-foreground'
           : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',

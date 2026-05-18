@@ -169,7 +169,7 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
-        leftSidebar={<WorkspacesSidebar onOpenSettings={() => setSettingsOpen(true)} />}
+        leftSidebar={<WorkspacesSidebar onOpenSettings={openSettings} />}
         main={
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>

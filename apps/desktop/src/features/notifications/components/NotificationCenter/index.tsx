@@ -52,7 +52,9 @@ export function NotificationCenter() {
   const clearNotifications = useAppStore((s) => s.clearNotifications);
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     void loadNotifications();
@@ -67,7 +69,11 @@ export function NotificationCenter() {
       const desiredLeft = rect.right - DROPDOWN_WIDTH;
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      setCoords({ top: rect.bottom + 6, left });
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openAbove = spaceBelow < 300;
+      const top = openAbove ? undefined : rect.bottom + 6;
+      const bottom = openAbove ? window.innerHeight - rect.top + 6 : undefined;
+      setCoords({ top, bottom, left });
     };
     updatePosition();
     window.addEventListener('resize', updatePosition);
@@ -89,18 +95,20 @@ export function NotificationCenter() {
 
   return (
     <div role="region" aria-label="notifications" aria-live="polite">
-      <Tooltip content="notifications" side="bottom">
+      <Tooltip content="notifications" side="top">
         <button
           ref={triggerRef}
           type="button"
           onClick={handleOpen}
           className={cn(
-            'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
-            open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60',
+            'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+            open
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
           )}
           aria-label={`notifications${unread > 0 ? `, ${unread} unread` : ''}`}
         >
-          <Bell size={13} aria-hidden />
+          <Bell size={14} aria-hidden />
           {unread > 0 && (
             <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-2xs font-bold leading-none text-warning-foreground">
               {unread > 9 ? '9+' : unread}
@@ -115,7 +123,7 @@ export function NotificationCenter() {
               <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
               <div
                 className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
-                style={{ top: coords.top, left: coords.left }}
+                style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
                 <header className="flex items-center justify-between border-b border-border-soft px-3 py-2">
                   <span className="text-xs font-semibold text-foreground">notifications</span>

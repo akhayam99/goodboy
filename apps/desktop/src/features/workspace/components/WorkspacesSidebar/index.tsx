@@ -80,10 +80,10 @@ interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
 }
 
-const HEADER_ICON_BTN =
-  'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground' as const;
+const FOOTER_ICON_BTN =
+  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
-const PREVIEW_LIST_ITEM = 'rounded-md bg-subtle px-3 py-2 text-xs' as const;
+const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
@@ -127,48 +127,13 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* header */}
-      <div className="flex shrink-0 items-center gap-1.5 bg-muted/60 px-2 py-2">
-        <KayAmLogo />
-        <div className="ml-auto flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            className={HEADER_ICON_BTN}
-          >
-            {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
-          </button>
-          <NotificationCenter />
-          <button
-            type="button"
-            onClick={() => setGuideOpen(true)}
-            title="getting started — guide"
-            aria-label="open getting started guide"
-            className={HEADER_ICON_BTN}
-          >
-            <HelpCircle size={13} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            title="settings (⌘,)"
-            aria-label="open settings"
-            className={HEADER_ICON_BTN}
-          >
-            <Settings size={13} aria-hidden />
-          </button>
-        </div>
-      </div>
-
-      {/* workspace select */}
-      <div className="shrink-0">
+      {/* workspace select — also serves as window drag region */}
+      <div data-tauri-drag-region className="shrink-0">
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
       {/* activity bar + detail panel */}
-      <div className="flex min-h-0 flex-1 bg-background/40">
+      <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           <>
             <SessionActivityBar
@@ -178,7 +143,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
               onSelectSession={onSelectSession}
               onNewSession={() => setNewSessionOpen(true)}
             />
-            <ScrollArea className="flex-1">
+            <ScrollArea className="mr-1.5 mt-1.5 mb-1.5 flex-1 rounded-lg bg-background dark:bg-muted">
               {currentSession ? (
                 <>
                   <SessionDetailPanel
@@ -199,6 +164,42 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
             Select a workspace to get started.
           </p>
         )}
+      </div>
+
+      {/* sidebar footer — logo + controls */}
+      <div className="flex shrink-0 items-center px-2.5 py-2">
+        <SidebarLogo />
+        <div className="flex-1" />
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            className={FOOTER_ICON_BTN}
+          >
+            {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
+          </button>
+          <NotificationCenter />
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            title="getting started"
+            aria-label="open getting started guide"
+            className={FOOTER_ICON_BTN}
+          >
+            <HelpCircle size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title="settings (⌘,)"
+            aria-label="open settings"
+            className={FOOTER_ICON_BTN}
+          >
+            <Settings size={14} aria-hidden />
+          </button>
+        </div>
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
@@ -225,12 +226,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   );
 }
 
-function KayAmLogo() {
+function SidebarLogo() {
   return (
-    <span className="flex items-center gap-1.5 px-1">
+    <span className="flex items-center gap-1.5">
       <svg
-        width="18"
-        height="18"
+        width="14"
+        height="14"
         viewBox="0 0 18 18"
         fill="none"
         aria-hidden
@@ -241,7 +242,7 @@ function KayAmLogo() {
         <line x1="9" y1="1" x2="9" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.2" />
         <line x1="1" y1="9" x2="17" y2="9" stroke="currentColor" strokeWidth="1" opacity="0.2" />
       </svg>
-      <span className="text-sm font-semibold tracking-tight text-foreground">kAY.am</span>
+      <span className="text-xs font-semibold tracking-tight text-foreground">kAY.am</span>
     </span>
   );
 }
@@ -430,7 +431,7 @@ function AddWsNavItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
+        'flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
         active
           ? 'bg-muted font-medium text-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -825,7 +826,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         loading.agents ? (
           <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
-              <li key={i} className="flex items-center gap-2 rounded-md px-2 py-1.5">
+              <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
                 <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
               </li>
@@ -841,7 +842,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       )}
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
       <div className="mt-2 px-2">
-        <div className="rounded-md border border-dashed border-border-soft px-3 py-2">
+        <div className="rounded border border-dashed border-border-soft px-3 py-2">
           <p className="text-2xs font-medium text-muted-foreground">Next</p>
           <p className="text-2xs text-muted-foreground/60">temporarily disabled</p>
         </div>
@@ -877,7 +878,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -887,7 +888,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
         >
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
             by role
@@ -954,7 +955,7 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
           onClick={() => void handleTrigger()}
           disabled={spawning}
           className={cn(
-            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+            'inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
             spawning && 'cursor-not-allowed opacity-60',
           )}
           title="spawn new agent to execute this plan"
@@ -969,7 +970,7 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
         <button
           type="button"
           onClick={() => void abandonPlan(sessionId, latest.id)}
-          className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
           title="mark plan as superseded; next plan emitted starts a new logical plan"
         >
           abandon
@@ -1049,7 +1050,7 @@ function WorkflowStepRow({
   };
 
   const ROW_BASE =
-    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded-md border px-2.5 py-1.5 text-xs font-medium';
+    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
   const containerClass = isStartable
     ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
     : isActionable && isBlocked
@@ -1292,7 +1293,7 @@ function AgentRow({
         }
       }}
       className={cn(
-        'group rounded-md transition-colors',
+        'group rounded transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-muted' : 'hover:bg-muted/60',
         agentHasUnread(run, isSelected && isTaskActive) && 'ring-1 ring-inset ring-warning/70',
@@ -1598,7 +1599,7 @@ export function BulkSessionDeleteDialog({
         {workspaceSessions.map((s) => (
           <li
             key={s.id}
-            className="flex items-center justify-between gap-2 rounded-md border border-border-soft bg-subtle px-3 py-1.5 text-xs"
+            className="flex items-center justify-between gap-2 rounded border border-border-soft bg-subtle px-3 py-1.5 text-xs"
           >
             <span className="min-w-0 truncate font-mono text-foreground">{s.goal}</span>
             <span className="shrink-0 text-muted-foreground/60">
