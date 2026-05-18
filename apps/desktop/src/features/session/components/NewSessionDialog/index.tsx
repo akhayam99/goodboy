@@ -233,7 +233,7 @@ export function NewSessionDialog({
   const settingKey = settingBranchPrefix(workspaceId);
   const phaseTemplates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const loadInitScript = useAppStore((s) => s.loadInitScript);
-  const workspaceInitScript = useAppStore((s) => s.workspaceInitScripts[workspaceId] ?? null);
+  const workspaceInitScript = useAppStore((s) => s.workspaceInitScripts?.[workspaceId] ?? null);
 
   const [goal, setGoal] = useState('');
   const [issueUrl, setIssueUrl] = useState('');
