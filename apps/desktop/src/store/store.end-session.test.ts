@@ -154,6 +154,7 @@ function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    skipInit: false,
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,

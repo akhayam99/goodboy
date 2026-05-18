@@ -13,7 +13,7 @@ import {
 import type { SessionId } from '@kay-am/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { useToast } from '../../../../app/components/Toast';
@@ -69,6 +69,10 @@ export function SessionSettingsDialog({
   const workspace = useAppStore((s) =>
     session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
   );
+  const hasInitScript = useAppStore((s) =>
+    session ? s.workspaceInitScripts[session.workspaceId] != null : false,
+  );
+  const updateSessionSkipInit = useAppStore((s) => s.updateSessionSkipInit);
   const { showToast } = useToast();
 
   const [active, setActive] = useState<Section>('general');
@@ -255,6 +259,22 @@ export function SessionSettingsDialog({
                 {session.providerPreference.defaultProvider}
               </span>
             </Field>
+            {WORKSPACE_FEATURES.initScript && hasInitScript ? (
+              <Field
+                label="init script"
+                hint="when enabled, a setup agent runs the workspace init script before the first agent fires."
+              >
+                <label className="flex items-center gap-2 text-xs text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={!session.skipInit}
+                    onChange={(e) => void updateSessionSkipInit(sessionId, !e.target.checked)}
+                    className="accent-primary"
+                  />
+                  run workspace init script
+                </label>
+              </Field>
+            ) : null}
           </div>
         );
 
