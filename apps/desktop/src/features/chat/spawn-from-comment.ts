@@ -35,7 +35,20 @@ export function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): str
   lines.push(`Comment URL: ${c.url}`);
   lines.push('');
   lines.push(
-    'Your task: address this comment with the smallest reasonable change. Read the file, apply the change, run lint/tests, commit and push. Do not over-scope.',
+    'Your task: address this comment with the smallest reasonable change. Read the file, apply the change, run lint/tests. Do not over-scope.',
+  );
+  lines.push('');
+  lines.push('Before committing, classify your change:');
+  lines.push(
+    'EASY (auto-commit+push): rename, typo, formatting, import fix, small one-liner, adjusting a literal/constant.',
+  );
+  lines.push(
+    'NON-TRIVIAL (stop and ask): structural rework, new/deleted files, multi-file refactor, architecture change, anything you are uncertain about.',
+  );
+  lines.push('');
+  lines.push('If EASY: commit and push immediately.');
+  lines.push(
+    'If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing.',
   );
   return lines.join('\n');
 }
@@ -88,7 +101,20 @@ export function buildReviewChangesAgentArgs(
     lines.push('');
   }
   lines.push(
-    'Your task: address every comment with the smallest reasonable change. Read the files, apply the changes, run lint/tests, commit and push. Do not over-scope.',
+    'Your task: address every comment with the smallest reasonable change. Read the files, apply the changes, run lint/tests. Do not over-scope.',
+  );
+  lines.push('');
+  lines.push('Before committing, classify the overall change:');
+  lines.push(
+    'EASY (auto-commit+push): all fixes are renames, typos, formatting, import fixes, small one-liners, adjusting literals/constants.',
+  );
+  lines.push(
+    'NON-TRIVIAL (stop and ask): any fix involves structural rework, new/deleted files, multi-file refactor, architecture change, or anything you are uncertain about.',
+  );
+  lines.push('');
+  lines.push('If EASY: commit and push immediately.');
+  lines.push(
+    'If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing.',
   );
   return {
     name: truncate(`resolve: address review changes on #${pr.number}`, TITLE_MAX),
