@@ -1,4 +1,13 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
@@ -17,7 +26,11 @@ import {
   type MergeConflict,
   type MergeResolution,
 } from '../../../../features/permissions/components/MergeDialog';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
+const DiffViewerDialog = lazy(() =>
+  import('../../../../features/permissions/components/DiffViewerDialog').then((m) => ({
+    default: m.DiffViewerDialog,
+  })),
+);
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 
 interface ChatViewProps {
@@ -350,15 +363,17 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
             providerDisconnected={isProviderDisconnected}
           />
         )}
-        <DiffViewerDialog
-          open={diffJumpFile !== null}
-          onClose={() => setDiffJumpFile(null)}
-          sessionId={session.id}
-          title="worktree diff"
-          loader={diffLoader}
-          workingDir={worktreePath ?? undefined}
-          jumpToFile={diffJumpFile ?? undefined}
-        />
+        <Suspense fallback={null}>
+          <DiffViewerDialog
+            open={diffJumpFile !== null}
+            onClose={() => setDiffJumpFile(null)}
+            sessionId={session.id}
+            title="worktree diff"
+            loader={diffLoader}
+            workingDir={worktreePath ?? undefined}
+            jumpToFile={diffJumpFile ?? undefined}
+          />
+        </Suspense>
       </div>
     );
   }

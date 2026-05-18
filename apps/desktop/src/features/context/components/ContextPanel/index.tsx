@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useState, useCallback, useMemo } from 'react';
 import {
   PanelRightClose,
   PanelRightOpen,
@@ -50,7 +50,11 @@ import {
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { tauriGhRunner } from '../../../../features/github/github';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
+const DiffViewerDialog = lazy(() =>
+  import('../../../../features/permissions/components/DiffViewerDialog').then((m) => ({
+    default: m.DiffViewerDialog,
+  })),
+);
 import { GithubCard } from '../../../../features/github/components/Card';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
 import type { WorktreeStatus } from '@kay-am/types';
@@ -320,15 +324,17 @@ export function ContextPanel({
         </div>
       </div>
 
-      <DiffViewerDialog
-        open={filesDiffOpen}
-        onClose={() => setFilesDiffOpen(false)}
-        sessionId={session.id}
-        title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
-        workingDir={workingDir ?? undefined}
-        worktreePath={workingDir ?? undefined}
-        jumpToFirstCommented={filesDiffJumpToNotes}
-      />
+      <Suspense fallback={null}>
+        <DiffViewerDialog
+          open={filesDiffOpen}
+          onClose={() => setFilesDiffOpen(false)}
+          sessionId={session.id}
+          title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
+          workingDir={workingDir ?? undefined}
+          worktreePath={workingDir ?? undefined}
+          jumpToFirstCommented={filesDiffJumpToNotes}
+        />
+      </Suspense>
     </>
   );
 }
@@ -700,15 +706,17 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
       </div>
 
       {repoSlug && pr ? (
-        <DiffViewerDialog
-          open={diffOpen}
-          onClose={() => setDiffOpen(false)}
-          sessionId={session.id}
-          repoSlug={repoSlug}
-          prNumber={pr.number}
-          cwd={workspace?.rootPath}
-          workingDir={workspace?.rootPath}
-        />
+        <Suspense fallback={null}>
+          <DiffViewerDialog
+            open={diffOpen}
+            onClose={() => setDiffOpen(false)}
+            sessionId={session.id}
+            repoSlug={repoSlug}
+            prNumber={pr.number}
+            cwd={workspace?.rootPath}
+            workingDir={workspace?.rootPath}
+          />
+        </Suspense>
       ) : null}
     </section>
   );

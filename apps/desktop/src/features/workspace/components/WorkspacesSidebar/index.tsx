@@ -1,4 +1,14 @@
-import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  memo,
+  startTransition,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -37,9 +47,17 @@ import {
   Zap,
   ZapOff,
 } from 'lucide-react';
-import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
-import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
-import { GuideDialog } from '../../../settings/components/GuideDialog';
+const WorkspaceSettingsDialog = lazy(() =>
+  import('../WorkspaceSettingsDialog').then((m) => ({ default: m.WorkspaceSettingsDialog })),
+);
+const SessionSettingsDialog = lazy(() =>
+  import('../../../session/components/SessionSettingsDialog').then((m) => ({
+    default: m.SessionSettingsDialog,
+  })),
+);
+const GuideDialog = lazy(() =>
+  import('../../../settings/components/GuideDialog').then((m) => ({ default: m.GuideDialog })),
+);
 import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
 import { TelemetryPill } from '../../../../features/providers/components/TelemetryPill';
@@ -73,7 +91,11 @@ import {
   useWorkspaceHasUnread,
   useWorkspaces,
 } from '../../../../store';
-import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
+const NewSessionDialog = lazy(() =>
+  import('../../../session/components/NewSessionDialog').then((m) => ({
+    default: m.NewSessionDialog,
+  })),
+);
 import { StatusBadge } from '../../../session/components/StatusBadge';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
@@ -333,14 +355,18 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       </div>
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
-      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <Suspense fallback={null}>
+        <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      </Suspense>
       {currentWorkspace ? (
-        <NewSessionDialog
-          open={newSessionOpen}
-          onClose={() => setNewSessionOpen(false)}
-          workspaceId={currentWorkspace.id}
-          onOpenSettings={onOpenSettings}
-        />
+        <Suspense fallback={null}>
+          <NewSessionDialog
+            open={newSessionOpen}
+            onClose={() => setNewSessionOpen(false)}
+            workspaceId={currentWorkspace.id}
+            onOpenSettings={onOpenSettings}
+          />
+        </Suspense>
       ) : null}
     </div>
   );
@@ -426,12 +452,14 @@ function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
           <Settings2 size={12} aria-hidden />
         </button>
       </div>
-      <WorkspaceSettingsDialog
-        workspaceId={workspace.id}
-        workspaceName={workspace.name}
-        open={wsSettingsOpen}
-        onClose={() => setWsSettingsOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <WorkspaceSettingsDialog
+          workspaceId={workspace.id}
+          workspaceName={workspace.name}
+          open={wsSettingsOpen}
+          onClose={() => setWsSettingsOpen(false)}
+        />
+      </Suspense>
     </li>
   );
 }
@@ -1152,14 +1180,16 @@ const SessionRow = memo(function SessionRow({
           onCancel={() => setConfirmDelete(false)}
         />
       )}
-      <SessionSettingsDialog
-        sessionId={session.id as SessionId}
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        archived={archived}
-        onArchive={onArchive}
-        onUnarchive={onUnarchive}
-      />
+      <Suspense fallback={null}>
+        <SessionSettingsDialog
+          sessionId={session.id as SessionId}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          archived={archived}
+          onArchive={onArchive}
+          onUnarchive={onUnarchive}
+        />
+      </Suspense>
     </li>
   );
 });
