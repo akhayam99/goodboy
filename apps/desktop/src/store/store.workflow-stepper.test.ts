@@ -260,7 +260,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
     vi.clearAllMocks();
   });
 
-  it('seeds exactly one agent for the first workflow step (no redundant default agent)', async () => {
+  it('pre-creates agents for all workflow steps', async () => {
     const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
@@ -274,15 +274,20 @@ describe('createSession — workflow stepper seeding (#424)', () => {
       workflowId: WORKFLOW_ID,
     });
 
-    expect(phaseRunInsertSpy).toHaveBeenCalledTimes(1);
-    const args = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args['stepId']).toBe('s-scout');
-    expect(args['name']).toBe('Scout');
-    expect(args['ordinal']).toBe(0);
+    expect(phaseRunInsertSpy).toHaveBeenCalledTimes(4);
+    const firstArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(firstArgs['stepId']).toBe('s-scout');
+    expect(firstArgs['name']).toBe('Scout');
+    expect(firstArgs['ordinal']).toBe(0);
+    const lastArgs = phaseRunInsertSpy.mock.calls[3]?.[0] as Record<string, unknown>;
+    expect(lastArgs['stepId']).toBe('s-verify');
+    expect(lastArgs['name']).toBe('Verify');
+    expect(lastArgs['ordinal']).toBe(3);
 
     const state = useAppStore.getState();
     const sid = state.currentSessionId as SessionId;
-    expect(state.sessionPhaseRuns[sid]?.length).toBe(1);
+    expect(state.sessionPhaseRuns[sid]?.length).toBe(4);
+    expect(state.sessionPhaseRuns[sid]?.every((r) => r.status === 'pending')).toBe(true);
   });
 
   it('falls back to a single generic "agent 1" when no workflow is attached', async () => {
@@ -301,7 +306,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
     expect(args['stepId']).toBeUndefined();
   });
 
-  it('spawnAgent advances to the next workflow step after the first completes', async () => {
+  it('spawnAgent creates a new agent when called for a step (e.g. retry)', async () => {
     const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
@@ -321,13 +326,10 @@ describe('createSession — workflow stepper seeding (#424)', () => {
 
     await useAppStore.getState().spawnAgent(session.id, { stepId: 's-plan' as StepId });
 
-    expect(phaseRunInsertSpy).toHaveBeenCalledTimes(2);
-    const second = phaseRunInsertSpy.mock.calls[1]?.[0] as Record<string, unknown>;
-    expect(second['stepId']).toBe('s-plan');
-    expect(second['name']).toBe('Plan');
-
-    const state = useAppStore.getState();
-    expect(state.sessionPhaseRuns[session.id]?.length).toBe(2);
+    expect(phaseRunInsertSpy).toHaveBeenCalledTimes(5);
+    const fifth = phaseRunInsertSpy.mock.calls[4]?.[0] as Record<string, unknown>;
+    expect(fifth['stepId']).toBe('s-plan');
+    expect(fifth['name']).toBe('Plan');
   });
 });
 
