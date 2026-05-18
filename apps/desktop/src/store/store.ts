@@ -1360,12 +1360,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const perf = (op: string) => {
       const t0 = performance.now();
       return () => {
-        // eslint-disable-next-line no-console
-        console.log(`[perf] session:${op} ${(performance.now() - t0).toFixed(0)}ms`);
+        if (import.meta.env.DEV)
+          console.log(`[perf] session:${op} ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
       };
     };
-    // eslint-disable-next-line no-console
-    console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`);
+    if (import.meta.env.DEV)
+      console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`); // eslint-disable-line no-console
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {
@@ -3206,8 +3206,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const cached = get().transcripts[agentId];
     if (cached) {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] selectAgent:${agentId} cached`);
+      if (import.meta.env.DEV) console.log(`[perf] selectAgent:${agentId} cached`); // eslint-disable-line no-console
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
@@ -3245,10 +3244,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
         listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
       ]);
-      // eslint-disable-next-line no-console
-      console.log(
-        `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
-      );
+      if (import.meta.env.DEV)
+        console.log(
+          `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
+        ); // eslint-disable-line no-console
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
@@ -3274,10 +3273,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
           listTurnEventsForAgent(tauriDatabase, agentId),
         ])
           .then(([fullMessages, fullEvents]) => {
-            // eslint-disable-next-line no-console
-            console.log(
-              `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
-            );
+            if (import.meta.env.DEV)
+              console.log(
+                `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
+              ); // eslint-disable-line no-console
             // Replace only if the agent is still selected and the in-store
             // slice hasn't grown past the full snapshot via streaming.
             set((state) => {

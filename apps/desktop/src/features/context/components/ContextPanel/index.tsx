@@ -183,8 +183,8 @@ export function ContextPanel({
     if (!isActive) return;
     const t0 = performance.now();
     void loadDiffComments(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`);
+      if (import.meta.env.DEV)
+        console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
     });
   }, [isActive, session.id, loadDiffComments]);
 
@@ -463,8 +463,8 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     if (ghState?.fetchedAt != null) return;
     const t0 = performance.now();
     void refreshSessionPr(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`);
+      if (import.meta.env.DEV)
+        console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
     });
   }, [isActive, branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
 
@@ -479,8 +479,8 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     if (prDetailFetchedAt !== null) return;
     const t0 = performance.now();
     void refreshSessionPrDetail(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`);
+      if (import.meta.env.DEV)
+        console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
     });
   }, [isActive, prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
 
