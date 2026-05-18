@@ -1,5 +1,5 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { AppShell } from '@kay-am/ui';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppShell, Skeleton } from '@kay-am/ui';
 import type { SessionId } from '@kay-am/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
@@ -152,12 +152,7 @@ export function App() {
     return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
   }, [keepAliveIds, currentSession?.id]);
 
-  // Defer the heavy panel mount so sidebar selection + AppShell swap paint
-  // urgently while React schedules the fresh ChatView/ContextPanel at low
-  // priority. Active id is deferred too so the previous panel stays visible
-  // (and `isActive`) during the lag — otherwise we'd flash a blank frame.
-  const deferredRenderedIds = useDeferredValue(renderedSessionIds);
-  const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
+  const activeSessionId = currentSession?.id ?? null;
 
   if (!hydrated) {
     return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
@@ -179,11 +174,11 @@ export function App() {
             // the others). React skips unmount/mount on switches between
             // recent sessions — no flash, scroll position preserved.
             <div className="relative h-full w-full">
-              {deferredRenderedIds.map((id) => (
+              {renderedSessionIds.map((id) => (
                 <KeepAliveChatPanel
                   key={id}
                   sessionId={id}
-                  isActive={id === deferredActiveId}
+                  isActive={id === activeSessionId}
                   onRequestEnd={onRequestEnd}
                 />
               ))}
@@ -200,11 +195,11 @@ export function App() {
             // (loadDiffComments, refreshSessionPr*) on isActive so hidden
             // panels don't fire background work.
             <div className="relative h-full w-full">
-              {deferredRenderedIds.map((id) => (
+              {renderedSessionIds.map((id) => (
                 <KeepAliveContextPanel
                   key={id}
                   sessionId={id}
-                  isActive={id === deferredActiveId}
+                  isActive={id === activeSessionId}
                   collapsed={contextCollapsed}
                   onCollapse={onToggleContext}
                   onExpand={onToggleContext}
@@ -249,6 +244,69 @@ export function App() {
   );
 }
 
+// Defers a heavy mount to the next browser idle frame. Returns `true` only
+// once the browser has yielded a slot — the synchronous click + initial paint
+// run with `false`, so a skeleton can fill the panel area immediately. After
+// the idle callback fires, the real component mounts on a subsequent render
+// without blocking input or scroll. Sessions already in the LRU keep-alive
+// window stay `mounted: true` because their KeepAlive component instance
+// persists across switches.
+function useIdleMounted(): boolean {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const handle = requestIdleCallback(() => setMounted(true), { timeout: 200 });
+      return () => cancelIdleCallback(handle);
+    }
+    const t = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(t);
+  }, []);
+  return mounted;
+}
+
+function ChatViewSkeleton() {
+  return (
+    <div role="status" aria-label="loading session" className="flex h-full flex-col">
+      <div className="sticky top-0 z-10 bg-background px-10 py-2.5">
+        <div className="mx-auto flex w-full max-w-[880px] items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-3.5 w-1/3" />
+            <div className="mt-2 flex gap-3">
+              <Skeleton className="h-2.5 w-20" />
+              <Skeleton className="h-2.5 w-16" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 px-10 py-6">
+        <div className="mx-auto flex w-full max-w-[880px] flex-col gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContextPanelSkeleton() {
+  return (
+    <div role="status" aria-label="loading context" className="flex h-full flex-col p-3">
+      <Skeleton className="h-4 w-1/2" />
+      <div className="mt-3 flex flex-col gap-2">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <Skeleton className="h-3 w-3/5" />
+      </div>
+    </div>
+  );
+}
+
 interface KeepAliveChatPanelProps {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
@@ -257,10 +315,15 @@ interface KeepAliveChatPanelProps {
 
 function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
+  const mounted = useIdleMounted();
   if (!session) return null;
   return (
     <div hidden={!isActive} className="absolute inset-0">
-      <ChatView session={session} isActive={isActive} onRequestEnd={onRequestEnd} />
+      {mounted ? (
+        <ChatView session={session} isActive={isActive} onRequestEnd={onRequestEnd} />
+      ) : (
+        <ChatViewSkeleton />
+      )}
     </div>
   );
 }
@@ -281,16 +344,21 @@ function KeepAliveContextPanel({
   onExpand,
 }: KeepAliveContextPanelProps) {
   const session = useSessionById(sessionId);
+  const mounted = useIdleMounted();
   if (!session) return null;
   return (
     <div hidden={!isActive} className="absolute inset-0">
-      <ContextPanel
-        session={session}
-        isActive={isActive}
-        collapsed={collapsed}
-        onCollapse={onCollapse}
-        onExpand={onExpand}
-      />
+      {mounted ? (
+        <ContextPanel
+          session={session}
+          isActive={isActive}
+          collapsed={collapsed}
+          onCollapse={onCollapse}
+          onExpand={onExpand}
+        />
+      ) : (
+        <ContextPanelSkeleton />
+      )}
     </div>
   );
 }
