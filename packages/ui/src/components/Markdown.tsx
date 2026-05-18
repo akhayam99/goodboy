@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 
@@ -618,7 +618,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
 }
 
 export function Markdown({ text, className }: MarkdownProps) {
-  const blocks = parseBlocks(text);
+  const blocks = useMemo(() => parseBlocks(text), [text]);
   return (
     <div className={cn('space-y-2 text-base text-foreground/85', className)}>
       {blocks.map(renderBlock)}

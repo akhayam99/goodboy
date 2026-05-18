@@ -179,14 +179,18 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     [workspaces],
   );
 
-  const filteredSessions = sessions.filter((s) => {
-    const matchesState =
-      sidebarStateFilter.length === 0 || sidebarStateFilter.includes(s.state.kind);
-    const matchesProvider =
-      sidebarProviderFilter.length === 0 ||
-      sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
-    return matchesState && matchesProvider;
-  });
+  const filteredSessions = useMemo(
+    () =>
+      sessions.filter((s) => {
+        const matchesState =
+          sidebarStateFilter.length === 0 || sidebarStateFilter.includes(s.state.kind);
+        const matchesProvider =
+          sidebarProviderFilter.length === 0 ||
+          sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
+        return matchesState && matchesProvider;
+      }),
+    [sessions, sidebarStateFilter, sidebarProviderFilter],
+  );
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);

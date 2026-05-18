@@ -331,6 +331,8 @@ export function DiffViewerDialog({
     }
     return m;
   }, [comments]);
+  const openCommentsByFileRef = useRef(openCommentsByFile);
+  openCommentsByFileRef.current = openCommentsByFile;
 
   useEffect(() => {
     if (open) setViewState(DEFAULT_VIEW);
@@ -379,8 +381,8 @@ export function DiffViewerDialog({
         if (jumpToFile) {
           const idx = parsed.findIndex((f) => f.path === jumpToFile || jumpToFile.endsWith(f.path));
           setSelectedIdx(idx >= 0 ? idx : 0);
-        } else if (jumpToFirstCommented && openCommentsByFile.size > 0) {
-          const idx = parsed.findIndex((f) => openCommentsByFile.has(f.path));
+        } else if (jumpToFirstCommented && openCommentsByFileRef.current.size > 0) {
+          const idx = parsed.findIndex((f) => openCommentsByFileRef.current.has(f.path));
           setSelectedIdx(idx >= 0 ? idx : 0);
         } else {
           setSelectedIdx(0);
@@ -406,7 +408,6 @@ export function DiffViewerDialog({
     cwd,
     jumpToFirstCommented,
     jumpToFile,
-    openCommentsByFile,
   ]);
 
   useEffect(() => {

@@ -107,8 +107,15 @@ export function ContextPanel({
 
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
 
-  const slotsByKey = new Map<string, ContextSlot>(
-    slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
+  const slotsByKey = useMemo(
+    () =>
+      new Map<string, ContextSlot>(
+        slots.map((s) => [
+          s.key,
+          s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s,
+        ]),
+      ),
+    [slots, workingDir],
   );
 
   const visibleSlotKeys = useMemo(
