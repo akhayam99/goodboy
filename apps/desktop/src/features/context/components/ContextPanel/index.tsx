@@ -49,6 +49,7 @@ import {
 } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
+import { scheduleIdle } from '../../../../shared/utils/idle';
 import { tauriGhRunner } from '../../../../features/github/github';
 const DiffViewerDialog = lazy(() =>
   import('../../../../features/permissions/components/DiffViewerDialog').then((m) => ({
@@ -467,10 +468,15 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     if (!isActive) return;
     if (!branch || githubStatus?.mode === 'absent') return;
     if (ghState?.fetchedAt != null) return;
-    const t0 = performance.now();
-    void refreshSessionPr(session.id).finally(() => {
-      if (import.meta.env.DEV)
-        console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
+    // Defer until the browser is idle. `gh` CLI returns JSON the main thread
+    // has to JSON.parse — large PR comment payloads blocked scrolling and
+    // sidebar clicks for seconds even after the panel skeleton rendered.
+    return scheduleIdle(() => {
+      const t0 = performance.now();
+      void refreshSessionPr(session.id).finally(() => {
+        if (import.meta.env.DEV)
+          console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
+      });
     });
   }, [isActive, branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
 
@@ -483,10 +489,14 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     // network call (~3s) re-fired on every session switch, leaving a pending
     // PR-card spinner visible for the entire wait.
     if (prDetailFetchedAt !== null) return;
-    const t0 = performance.now();
-    void refreshSessionPrDetail(session.id).finally(() => {
-      if (import.meta.env.DEV)
-        console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
+    // Same idle-defer as the list fetch above — the detail call uses
+    // `gh api --paginate` and parses megabytes of issue comments synchronously.
+    return scheduleIdle(() => {
+      const t0 = performance.now();
+      void refreshSessionPrDetail(session.id).finally(() => {
+        if (import.meta.env.DEV)
+          console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
+      });
     });
   }, [isActive, prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
 
