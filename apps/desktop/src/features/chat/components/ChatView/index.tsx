@@ -12,11 +12,8 @@ import { ArrowDown } from 'lucide-react';
 import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
-import {
-  detectParallelRunIds,
-  filterEventsByRunId,
-  reduceTranscript,
-} from '../../utils/transcript-items';
+import { detectParallelRunIds, filterEventsByRunId } from '../../utils/transcript-items';
+import { useReduceTranscript } from '../../utils/use-reduce-transcript';
 import { TranscriptCard } from '../TranscriptCards';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatHeader } from '../ChatHeader';
@@ -82,7 +79,7 @@ function ParallelColumn({
   onOpenDiff,
 }: ColumnProps) {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
-  const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
+  const items = useReduceTranscript(columnEvents);
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
   return (
@@ -195,7 +192,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
   const events = useTranscript(selectedAgentId);
-  const items = useMemo(() => reduceTranscript(events), [events]);
+  const items = useReduceTranscript(events);
   // Defer the heavy transcript list so React 18 can paint header / input /
   // empty shell first on session switch and treat the card list as low-priority.
   // Pairs with React.memo on TranscriptCard — together they make session swaps
