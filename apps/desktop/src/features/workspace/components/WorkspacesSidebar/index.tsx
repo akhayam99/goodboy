@@ -150,7 +150,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
     },
     [setCurrentSession],
   );
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
 
   const sidebarStateFilter = useAppStore((s) => s.sidebarStateFilter);
@@ -164,12 +163,13 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   useEffect(() => {
     if (warmedRef.current || sessions.length === 0) return;
     warmedRef.current = true;
+    const branches = useAppStore.getState().sessionBranches;
     for (const s of sessions) {
-      if (sessionBranches[s.id]) {
+      if (branches[s.id]) {
         void refreshSessionPr(s.id as SessionId);
       }
     }
-  }, [sessions, sessionBranches, refreshSessionPr]);
+  }, [sessions, refreshSessionPr]);
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);

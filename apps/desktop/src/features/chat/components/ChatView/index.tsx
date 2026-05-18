@@ -202,14 +202,15 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     void selectAgent(session.id, selectedAgentId);
   }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const authResults = useAppStore((s) => s.authResults);
+  const provider = session.providerPreference.defaultProvider;
+  const providerAuthState = useAppStore((s) => s.authResults?.[provider]?.state ?? null);
+  const providerIdentity = useAppStore((s) => s.authResults?.[provider]?.identity ?? null);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const settings = useAppStore((s) => s.settings);
+  const parallelAgentsEnabled = useAppStore(
+    (s) => s.settings['experimental.enable_parallel_agents'] === 'true',
+  );
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
-  const provider = session.providerPreference.defaultProvider;
-  const providerAuthState = authResults?.[provider]?.state ?? null;
-  const providerIdentity = authResults?.[provider]?.identity ?? null;
   const isProviderDisconnected = providerAuthState === 'disconnected';
 
   const agentState = useAppStore((s) => {
@@ -221,11 +222,9 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const isThinking =
     agentKind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
 
-  const flagOn = settings['experimental.enable_parallel_agents'] === 'true';
-
   const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
-    () => (flagOn ? detectParallelRunIds(events) : []),
-    [events, flagOn],
+    () => (parallelAgentsEnabled ? detectParallelRunIds(events) : []),
+    [events, parallelAgentsEnabled],
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -240,7 +239,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     });
   }, [parallelRunIds, phaseRuns]);
 
-  const isSplitView = flagOn && parallelRunIds.length > 1;
+  const isSplitView = parallelAgentsEnabled && parallelRunIds.length > 1;
 
   const onSelectRun = (runId: ProviderRunId) => {
     document

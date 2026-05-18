@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type {
   Agent,
   ContextSlot,
@@ -116,8 +116,9 @@ const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0 };
  * transcript events. Slot-based 'files_touched' lags until the summarizer
  * runs — this gives a live count regardless of summarizer state.
  *
- * Selectors return raw slices so Zustand's Object.is check is stable; the
- * derived list is memoized in React.
+ * Subscribes to per-session slices (phaseRuns, worktrees) and the full transcripts
+ * map, but stabilises the output via ref comparison so the component only re-renders
+ * when the actual file list changes — not on every streaming event.
  */
 export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
   const phaseRuns = useAppStore((s) =>
@@ -127,6 +128,7 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
   const workingDir = useAppStore((s) =>
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
   );
+  const prev = useRef<FilesTouched>(EMPTY_FILES_TOUCHED);
   return useMemo(() => {
     if (!phaseRuns || phaseRuns.length === 0) return EMPTY_FILES_TOUCHED;
     const seen = new Set<string>();
@@ -142,7 +144,15 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
       }
     }
     if (ordered.length === 0) return EMPTY_FILES_TOUCHED;
-    return { paths: ordered, count: ordered.length };
+    const next: FilesTouched = { paths: ordered, count: ordered.length };
+    if (
+      prev.current.count === next.count &&
+      prev.current.paths.every((p, i) => p === next.paths[i])
+    ) {
+      return prev.current;
+    }
+    prev.current = next;
+    return next;
   }, [phaseRuns, transcripts, workingDir]);
 };
 
