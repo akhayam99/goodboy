@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell, Skeleton } from '@kay-am/ui';
+import { markForSession as ssMarkFor } from './shared/utils/session-switch-trace';
 import type { SessionId } from '@kay-am/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
@@ -316,6 +317,12 @@ interface KeepAliveChatPanelProps {
 function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
   const mounted = useIdleMounted();
+  useEffect(() => {
+    if (isActive && !mounted) ssMarkFor(sessionId, 'chat skeleton mounted (active)');
+  }, [isActive, mounted, sessionId]);
+  useEffect(() => {
+    if (isActive && mounted) ssMarkFor(sessionId, 'real ChatView mounted (active)');
+  }, [isActive, mounted, sessionId]);
   if (!session) return null;
   return (
     <div hidden={!isActive} className="absolute inset-0">
@@ -345,6 +352,12 @@ function KeepAliveContextPanel({
 }: KeepAliveContextPanelProps) {
   const session = useSessionById(sessionId);
   const mounted = useIdleMounted();
+  useEffect(() => {
+    if (isActive && !mounted) ssMarkFor(sessionId, 'context skeleton mounted (active)');
+  }, [isActive, mounted, sessionId]);
+  useEffect(() => {
+    if (isActive && mounted) ssMarkFor(sessionId, 'real ContextPanel mounted (active)');
+  }, [isActive, mounted, sessionId]);
   if (!session) return null;
   return (
     <div hidden={!isActive} className="absolute inset-0">

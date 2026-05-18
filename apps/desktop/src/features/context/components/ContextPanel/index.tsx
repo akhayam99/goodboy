@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState, useCallback, useMemo } from 'react';
+import { markForSession as ssMarkFor } from '../../../../shared/utils/session-switch-trace';
 import {
   PanelRightClose,
   PanelRightOpen,
@@ -87,6 +88,9 @@ export function ContextPanel({
   onExpand,
   isActive = true,
 }: ContextPanelProps) {
+  useLayoutEffect(() => {
+    if (isActive) ssMarkFor(session.id, `ContextPanel render+commit (collapsed=${collapsed})`);
+  }, [isActive, session.id, collapsed]);
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const loading = useSessionLoading(session.id);
@@ -146,9 +150,13 @@ export function ContextPanel({
       return;
     }
     let cancelled = false;
+    ssMarkFor(session.id, 'worktreeStatus fetch start');
     worktreeStatus(workingDir)
       .then((s) => {
-        if (!cancelled) setGitStatus(s);
+        if (!cancelled) {
+          ssMarkFor(session.id, 'worktreeStatus fetch done');
+          setGitStatus(s);
+        }
       })
       .catch(() => {
         if (!cancelled) setGitStatus(null);
@@ -156,7 +164,7 @@ export function ContextPanel({
     return () => {
       cancelled = true;
     };
-  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
+  }, [workingDir, filesTouched.count, summarizer.lastUpdate, session.id]);
 
   const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
   const filesTooltip = useMemo(() => {
@@ -186,8 +194,10 @@ export function ContextPanel({
 
   useEffect(() => {
     if (!isActive) return;
+    ssMarkFor(session.id, 'loadDiffComments dispatched');
     const t0 = performance.now();
     void loadDiffComments(session.id).finally(() => {
+      ssMarkFor(session.id, 'loadDiffComments done');
       if (import.meta.env.DEV)
         console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
     });
@@ -471,9 +481,12 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     // Defer until the browser is idle. `gh` CLI returns JSON the main thread
     // has to JSON.parse — large PR comment payloads blocked scrolling and
     // sidebar clicks for seconds even after the panel skeleton rendered.
+    ssMarkFor(session.id, 'refreshSessionPr scheduled (idle)');
     return scheduleIdle(() => {
+      ssMarkFor(session.id, 'refreshSessionPr fetch start (idle fired)');
       const t0 = performance.now();
       void refreshSessionPr(session.id).finally(() => {
+        ssMarkFor(session.id, 'refreshSessionPr fetch+parse done');
         if (import.meta.env.DEV)
           console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
       });
@@ -491,9 +504,12 @@ function GitHubSection({ session, isActive = true }: { session: Session; isActiv
     if (prDetailFetchedAt !== null) return;
     // Same idle-defer as the list fetch above — the detail call uses
     // `gh api --paginate` and parses megabytes of issue comments synchronously.
+    ssMarkFor(session.id, 'refreshSessionPrDetail scheduled (idle)');
     return scheduleIdle(() => {
+      ssMarkFor(session.id, 'refreshSessionPrDetail fetch start (idle fired)');
       const t0 = performance.now();
       void refreshSessionPrDetail(session.id).finally(() => {
+        ssMarkFor(session.id, 'refreshSessionPrDetail fetch+parse done');
         if (import.meta.env.DEV)
           console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`); // eslint-disable-line no-console
       });

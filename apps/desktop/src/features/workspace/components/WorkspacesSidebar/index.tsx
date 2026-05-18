@@ -5,10 +5,12 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { markForSession as ssMarkFor } from '../../../../shared/utils/session-switch-trace';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -1495,6 +1497,9 @@ interface AgentsSectionProps {
 }
 
 function AgentsSection({ task }: AgentsSectionProps) {
+  useLayoutEffect(() => {
+    ssMarkFor(task.id, 'sidebar AgentsSection render+commit');
+  }, [task.id]);
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
   const plansForTask = useSessionPlans(task.id);
   const latestPlan = plansForTask[plansForTask.length - 1];

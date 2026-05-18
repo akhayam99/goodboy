@@ -4,11 +4,13 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { ArrowDown } from 'lucide-react';
+import { markForSession as ssMarkFor } from '../../../../shared/utils/session-switch-trace';
 import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
@@ -188,10 +190,20 @@ function ThinkingIndicator() {
 }
 
 export function ChatView({ session, isActive = true }: ChatViewProps) {
+  useLayoutEffect(() => {
+    if (isActive) ssMarkFor(session.id, 'ChatView render+commit');
+  }, [isActive, session.id]);
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
   const events = useTranscript(selectedAgentId);
+  useLayoutEffect(() => {
+    if (isActive)
+      ssMarkFor(
+        session.id,
+        `transcript events=${events.length} agentId=${selectedAgentId?.slice(0, 8) ?? 'null'}`,
+      );
+  }, [isActive, events.length, selectedAgentId, session.id]);
   const items = useReduceTranscript(events);
   // Defer the heavy transcript list so React 18 can paint header / input /
   // empty shell first on session switch and treat the card list as low-priority.

@@ -207,6 +207,11 @@ import {
 import { detectDrift } from '../features/session/drift-detection';
 import { readArchivedSet } from '../features/session/archived-storage';
 import {
+  mark as ssMark,
+  markForSession as ssMarkFor,
+  startTrace as ssStart,
+} from '../shared/utils/session-switch-trace';
+import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
@@ -1331,6 +1336,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // the action so callers can pass the action ref directly (stable ref
     // helps memoized rows skip re-renders on session-switch clicks).
     if (get().currentSessionId === id) return;
+    if (id) ssStart(id);
     // Immediately swap the visible session so the UI doesn't freeze while
     // heavy per-session data loads. Each block (agents/transcript/telemetry/
     // slots/plans/summary) loads independently and flips its own loading flag
@@ -1393,6 +1399,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     if (import.meta.env.DEV)
       console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`); // eslint-disable-line no-console
+    ssMark(
+      `store.setCurrentSession sync done (cached: agents=${!!cached?.agents} slots=${!!cached?.slots} telemetry=${!!cached?.telemetry} plans=${!!cached?.plans})`,
+    );
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {
@@ -1411,9 +1420,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Telemetry records are NOT in the batch — deferred via requestIdleCallback
       // below so first paint shows agents + summary + slots immediately.
       const endHydrate = perf('hydrate');
+      ssMarkFor(id, 'batch sessionHydrate dispatched');
       void sessionHydrate(id)
         .then((hydration) => {
           if (get().currentSessionId !== id) return;
+          ssMarkFor(id, 'batch sessionHydrate resolved');
 
           // Summary (always set — was reset to null above)
           set((state) =>
@@ -1522,9 +1533,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       idleTelemetryLoads.set(id, controller);
 
       const endIdleTelemetry = perf('idleTelemetry');
+      ssMarkFor(id, 'idle telemetry scheduled');
       scheduleIdle(() => {
         if (controller.signal.aborted) return;
         if (get().currentSessionId !== id) return;
+        ssMarkFor(id, 'idle telemetry fetch start');
         void listTelemetryForSession(tauriDatabase, id)
           .then((records) => {
             if (controller.signal.aborted) return;
@@ -1542,6 +1555,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           .catch(() => {})
           .finally(() => {
             endIdleTelemetry();
+            ssMarkFor(id, 'idle telemetry done');
             markDone('telemetry');
             if (idleTelemetryLoads.get(id) === controller) {
               idleTelemetryLoads.delete(id);
@@ -1553,6 +1567,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Plans: separate IPC (lives in planner.rs, different Rust module)
     if (!cached?.plans) {
       const endPlans = perf('plans');
+      ssMarkFor(id, 'plans dispatched');
       void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
         try {
           return await invokeListPlansForSession(id);
@@ -1568,6 +1583,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         .catch(() => {})
         .finally(() => {
           endPlans();
+          ssMarkFor(id, 'plans done');
           markDone('plans');
         });
     }
@@ -1576,9 +1592,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // so on first click we have to fetch the worktree info ourselves. Active
     // sessions already have it cached from setCurrentWorkspace.
     if (get().sessionWorktrees[id] === undefined) {
+      ssMarkFor(id, 'lazy worktree fetch dispatched');
       void listWorktreesForSession(tauriDatabase, id)
         .then((rows) => {
           if (get().currentSessionId !== id) return;
+          ssMarkFor(id, `lazy worktree fetch resolved (${rows.length} rows)`);
           if (rows.length === 0) return;
           const paths = rows.map((r) => r.worktreePath);
           const primaryRow = rows[0];
