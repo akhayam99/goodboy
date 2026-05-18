@@ -77,6 +77,9 @@ export function InitScriptPanel({ workspaceId }: InitScriptPanelProps) {
         onChange={(e) => setContent(e.target.value)}
         placeholder="# workspace setup&#10;pnpm install&#10;cp .env.example .env"
         className="min-h-[200px] resize-y font-mono text-xs"
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="off"
         rows={10}
       />
 
