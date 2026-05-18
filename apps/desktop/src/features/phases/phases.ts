@@ -77,7 +77,7 @@ function rowToTemplate(row: RawPhaseTemplateRow): Workflow {
   };
 }
 
-function rowToPhaseRun(row: RawPhaseRunRow): Agent {
+export function rowToPhaseRun(row: RawPhaseRunRow): Agent {
   return {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,

@@ -126,7 +126,7 @@ import {
   computeCursorCostUsd,
   extractPlanFromMarker,
 } from '@kay-am/core';
-import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
+import { runDbMigrations, sessionHydrate, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -1377,51 +1377,123 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     };
 
-    // Summary
-    const endSummary = perf('summary');
-    void summarizeSessionTelemetry(tauriDatabase, id)
-      .then((summary) => {
-        set((state) => (state.currentSessionId === id ? { sessionSummary: summary } : {}));
-      })
-      .catch(() => {})
-      .finally(() => {
-        endSummary();
-        markDone('summary');
-      });
+    const needsBatch = !cached?.agents || !cached?.telemetry || !cached?.slots;
 
-    // Telemetry
-    if (!cached?.telemetry) {
-      const endTelemetry = perf('telemetry');
-      void listTelemetryForSession(tauriDatabase, id)
-        .then((telemetry) => {
-          set((state) => ({
-            sessionTelemetry: { ...state.sessionTelemetry, [id]: telemetry },
-          }));
-        })
-        .catch(() => {})
-        .finally(() => {
-          endTelemetry();
+    if (needsBatch) {
+      // Single IPC call replaces 4+ separate queries through the DB mutex.
+      const endHydrate = perf('hydrate');
+      void sessionHydrate(id)
+        .then((hydration) => {
+          if (get().currentSessionId !== id) return;
+
+          // Summary (always set — was reset to null above)
+          set((state) =>
+            state.currentSessionId === id ? { sessionSummary: hydration.telemetrySummary } : {},
+          );
+          markDone('summary');
+
+          // Telemetry
+          if (!cached?.telemetry) {
+            set((state) => ({
+              sessionTelemetry: { ...state.sessionTelemetry, [id]: hydration.telemetry },
+            }));
+          }
           markDone('telemetry');
-        });
-    }
 
-    // Context slots
-    if (!cached?.slots) {
-      const endSlots = perf('slots');
-      void listContextSlotsForSession(tauriDatabase, id)
-        .then((slots) => {
-          set((state) => ({
-            sessionSlots: { ...state.sessionSlots, [id]: slots },
-          }));
+          // Context slots
+          if (!cached?.slots) {
+            set((state) => ({
+              sessionSlots: { ...state.sessionSlots, [id]: hydration.slots },
+            }));
+          }
+          markDone('slots');
+
+          // Agents + run ID seeding
+          if (!cached?.agents) {
+            const agents = hydration.agents;
+            const agentRunIds = hydration.agentRunIds;
+            const previouslySelected = get().selectedAgentId[id] ?? null;
+            const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
+            const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
+            const selectedAgent =
+              (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
+              fallbackAgent;
+
+            const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
+            const seededTurnState: Record<string, TurnState> = {};
+            const session = get().sessions.find((s) => s.id === id);
+            const sessionState =
+              session?.state ??
+              ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
+            for (const agent of agents) {
+              const historical = agentRunIds.get(agent.id) ?? [];
+              const merged: ProviderRunId[] = [...historical];
+              if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+              if (merged.length > 0) {
+                seededHistory[agent.id] = merged;
+              }
+              if (agent.status === 'running' && agent.runId) {
+                seededTurnState[agent.id] = {
+                  kind: 'running',
+                  runId: agent.runId,
+                  startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
+                };
+              } else if (agent.status === 'failed') {
+                seededTurnState[agent.id] = {
+                  kind: 'error',
+                  message: 'agent failed',
+                  failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
+                };
+              } else {
+                seededTurnState[agent.id] =
+                  sessionState.kind === 'ended'
+                    ? sessionState
+                    : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
+              }
+            }
+
+            set((state) => ({
+              sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+              selectedAgentId: {
+                ...state.selectedAgentId,
+                [id]: selectedAgent?.id ?? null,
+              },
+              agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+              agentTurnState: { ...state.agentTurnState, ...seededTurnState },
+            }));
+            markDone('agents');
+
+            if (!selectedAgent) {
+              set((state) => ({
+                messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
+              }));
+              markDone('transcript');
+            }
+          }
+        })
+        .catch(() => {
+          markDone('summary');
+          markDone('telemetry');
+          markDone('slots');
+          markDone('agents');
+          markDone('transcript');
+        })
+        .finally(() => endHydrate());
+    } else {
+      // Hot revisit — all slices cached. Only summary needs refresh.
+      const endSummary = perf('summary');
+      void summarizeSessionTelemetry(tauriDatabase, id)
+        .then((summary) => {
+          set((state) => (state.currentSessionId === id ? { sessionSummary: summary } : {}));
         })
         .catch(() => {})
         .finally(() => {
-          endSlots();
-          markDone('slots');
+          endSummary();
+          markDone('summary');
         });
     }
 
-    // Plans
+    // Plans: separate IPC (lives in planner.rs, different Rust module)
     if (!cached?.plans) {
       const endPlans = perf('plans');
       void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
@@ -1441,98 +1513,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
           endPlans();
           markDone('plans');
         });
-    }
-
-    // Agents only: transcript is loaded lazily by ChatView when an agent is
-    // selected (via selectAgent). Keeps session switch fast — no per-agent
-    // history fetch blocks the UI.
-    if (cached?.agents) {
-      // Cached: phase runs + selected agent are already in store. transcript
-      // flag still gets cleared by ChatView's selectAgent effect (cached or
-      // fresh). Nothing else to do.
-    } else {
-      const endAgents = perf('agents+runIds');
-      const endPhaseRunList = perf('agents:phaseRunList');
-      const endRunIds = perf('agents:runIds');
-      void Promise.all([
-        invokePhaseRunList(id).finally(() => endPhaseRunList()),
-        listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
-      ])
-        .then(([agents, agentRunIds]) => {
-          const previouslySelected = get().selectedAgentId[id] ?? null;
-          const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-          // Fresh entry defaults to the most recently created agent (highest
-          // ordinal). Chronologically the latest is the one the user is most
-          // likely returning to. Previous selection still wins on revisit.
-          const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
-          const selectedAgent =
-            (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
-            fallbackAgent;
-
-          // Seed agentRunHistory with EVERY provider run an agent ever spawned,
-          // not just its latest. Recovered from turn_events (single source of
-          // truth post restart) so aggregate token/cost counters in the sidebar
-          // reflect the full agent lifetime — birth to death — instead of the
-          // last turn.
-          const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
-          const seededTurnState: Record<string, TurnState> = {};
-          const session = get().sessions.find((s) => s.id === id);
-          const sessionState =
-            session?.state ??
-            ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
-          for (const agent of agents) {
-            const historical = agentRunIds.get(agent.id) ?? [];
-            const merged: ProviderRunId[] = [...historical];
-            if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
-            if (merged.length > 0) {
-              seededHistory[agent.id] = merged;
-            }
-            if (agent.status === 'running' && agent.runId) {
-              seededTurnState[agent.id] = {
-                kind: 'running',
-                runId: agent.runId,
-                startedAt: agent.startedAt ?? (new Date().toISOString() as IsoDateTime),
-              };
-            } else if (agent.status === 'failed') {
-              seededTurnState[agent.id] = {
-                kind: 'error',
-                message: 'agent failed',
-                failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
-              };
-            } else {
-              seededTurnState[agent.id] =
-                sessionState.kind === 'ended'
-                  ? sessionState
-                  : { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime };
-            }
-          }
-
-          set((state) => ({
-            sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-            selectedAgentId: {
-              ...state.selectedAgentId,
-              [id]: selectedAgent?.id ?? null,
-            },
-            agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
-            agentTurnState: { ...state.agentTurnState, ...seededTurnState },
-          }));
-          markDone('agents');
-
-          // No selected agent → no chat to render → drop transcript flag now.
-          // With a selected agent, ChatView's effect calls selectAgent which
-          // owns the flag lifecycle from there.
-          if (!selectedAgent) {
-            set((state) => ({
-              messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
-            }));
-            markDone('transcript');
-          }
-        })
-        .catch(() => {
-          markDone('agents');
-          markDone('transcript');
-        })
-        .finally(() => endAgents());
     }
   },
 
