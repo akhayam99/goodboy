@@ -652,6 +652,12 @@ export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 // switch (cancel stale work) and on workspace switch (clear all).
 const idleTelemetryLoads = new Map<SessionId, AbortController>();
 
+// In-flight selectAgent calls keyed by agentId. React StrictMode mounts every
+// effect twice in dev, which previously fired two parallel transcript fetches
+// per session switch — duplicate DB load + duplicate JSON.parse storm. The
+// shared Promise dedupes them; both callers `await` the same fetch.
+const inFlightSelectAgent = new Map<AgentId, Promise<void>>();
+
 // Merges a freshly-fetched telemetry snapshot with the in-memory slice,
 // preserving any records inserted while the idle load was in flight
 // (e.g. usage events from an active turn). Dedupes by stable record id and
@@ -3267,119 +3273,140 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectAgent: async (sessionId, agentId) => {
-    // Stamp `lastViewedAt` on both the previously-selected agent (capturing
-    // "user was looking at it until now") and the newly-selected agent. The
-    // unread selector additionally treats the currently-selected agent as
-    // viewed, so no visible flicker while you're actually on the row.
-    const stampedAt = new Date().toISOString() as IsoDateTime;
-    const prevAgentId = get().selectedAgentId[sessionId] ?? null;
-    const stampAgents = new Set<AgentId>([agentId]);
-    if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
+    // Dedupe parallel calls — StrictMode (dev) fires effects twice, which
+    // doubled the transcript fetch + JSON.parse cost on every session switch.
+    const inFlight = inFlightSelectAgent.get(agentId);
+    if (inFlight) return inFlight;
+    const run = (async () => {
+      // Stamp `lastViewedAt` on both the previously-selected agent (capturing
+      // "user was looking at it until now") and the newly-selected agent. The
+      // unread selector additionally treats the currently-selected agent as
+      // viewed, so no visible flicker while you're actually on the row.
+      const stampedAt = new Date().toISOString() as IsoDateTime;
+      const prevAgentId = get().selectedAgentId[sessionId] ?? null;
+      const stampAgents = new Set<AgentId>([agentId]);
+      if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
 
-    for (const id of stampAgents) {
-      void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
-    }
+      for (const id of stampAgents) {
+        void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
+      }
 
-    const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
+      const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
+        runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
 
-    const cached = get().transcripts[agentId];
-    if (cached) {
-      if (import.meta.env.DEV) console.log(`[perf] selectAgent:${agentId} cached`); // eslint-disable-line no-console
+      const cached = get().transcripts[agentId];
+      if (cached) {
+        if (import.meta.env.DEV) console.log(`[perf] selectAgent:${agentId} cached`); // eslint-disable-line no-console
+        set((state) => {
+          const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+          return {
+            selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
+            sessionLoading: {
+              ...state.sessionLoading,
+              [sessionId]: { ...current, transcript: false },
+            },
+            sessionPhaseRuns: {
+              ...state.sessionPhaseRuns,
+              [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
+            },
+          };
+        });
+        void get().refreshUnreadWorkspaces();
+        return;
+      }
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
           selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
           sessionLoading: {
             ...state.sessionLoading,
-            [sessionId]: { ...current, transcript: false },
-          },
-          sessionPhaseRuns: {
-            ...state.sessionPhaseRuns,
-            [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
+            [sessionId]: { ...current, transcript: true },
           },
         };
       });
-      void get().refreshUnreadWorkspaces();
-      return;
-    }
-    set((state) => {
-      const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
-      return {
-        selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
-        sessionLoading: {
-          ...state.sessionLoading,
-          [sessionId]: { ...current, transcript: true },
-        },
-      };
-    });
-    // Two-phase load: phase 1 fetches the recent slice fast (~50-150ms),
-    // unblocks the chat skeleton, then phase 2 fills in older history in the
-    // background. Sessions with <= INITIAL_LIMIT events get only phase 1.
-    const INITIAL_LIMIT = 50;
-    const tInitial = performance.now();
-    try {
-      const [messages, events] = await Promise.all([
-        listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-        listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-      ]);
-      if (import.meta.env.DEV)
-        console.log(
-          `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
-        ); // eslint-disable-line no-console
-      set((state) => {
-        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
-        return {
-          transcripts: { ...state.transcripts, [agentId]: events },
-          messages: { ...state.messages, [sessionId]: messages },
-          sessionLoading: {
-            ...state.sessionLoading,
-            [sessionId]: { ...current, transcript: false },
-          },
-          sessionPhaseRuns: {
-            ...state.sessionPhaseRuns,
-            [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
-          },
-        };
-      });
-      void get().refreshUnreadWorkspaces();
-      // Phase 2: only when the recent slice was at the limit (more older
-      // history likely exists). Fired non-awaited so the click flow returns.
-      if (events.length === INITIAL_LIMIT) {
-        const tFull = performance.now();
-        void Promise.all([
-          listMessagesForAgent(tauriDatabase, agentId),
-          listTurnEventsForAgent(tauriDatabase, agentId),
-        ])
-          .then(([fullMessages, fullEvents]) => {
-            if (import.meta.env.DEV)
-              console.log(
-                `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
-              ); // eslint-disable-line no-console
-            // Replace only if the agent is still selected and the in-store
-            // slice hasn't grown past the full snapshot via streaming.
-            set((state) => {
-              const current = state.transcripts[agentId];
-              if (current && current.length > fullEvents.length) return {};
-              return {
-                transcripts: { ...state.transcripts, [agentId]: fullEvents },
-                messages: { ...state.messages, [sessionId]: fullMessages },
-              };
-            });
-          })
-          .catch(() => {});
+      // Two-phase load: phase 1 fetches the recent slice fast (~50-150ms),
+      // unblocks the chat skeleton, then phase 2 fills in older history in the
+      // background. Sessions with <= INITIAL_LIMIT events get only phase 1.
+      const INITIAL_LIMIT = 50;
+      const tInitial = performance.now();
+      try {
+        const [messages, events] = await Promise.all([
+          listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+          listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
+        ]);
+        if (import.meta.env.DEV)
+          console.log(
+            `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
+          ); // eslint-disable-line no-console
+        set((state) => {
+          const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+          return {
+            transcripts: { ...state.transcripts, [agentId]: events },
+            messages: { ...state.messages, [sessionId]: messages },
+            sessionLoading: {
+              ...state.sessionLoading,
+              [sessionId]: { ...current, transcript: false },
+            },
+            sessionPhaseRuns: {
+              ...state.sessionPhaseRuns,
+              [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
+            },
+          };
+        });
+        void get().refreshUnreadWorkspaces();
+        // Phase 2: only when the recent slice was at the limit (more older
+        // history likely exists). Deferred to a browser-idle frame — the parse
+        // is JSON.parse-per-row and was eating 800-1300ms on the main thread
+        // right after the panel skeleton rendered. Idle-deferring keeps clicks
+        // and scrolls responsive while the backfill catches up.
+        if (events.length === INITIAL_LIMIT) {
+          scheduleIdle(() => {
+            if (get().selectedAgentId[sessionId] !== agentId) return;
+            const tFull = performance.now();
+            void Promise.all([
+              listMessagesForAgent(tauriDatabase, agentId),
+              listTurnEventsForAgent(tauriDatabase, agentId),
+            ])
+              .then(([fullMessages, fullEvents]) => {
+                if (import.meta.env.DEV)
+                  console.log(
+                    `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
+                  ); // eslint-disable-line no-console
+                // Replace only if the agent is still selected and the in-store
+                // slice hasn't grown past the full snapshot via streaming.
+                set((state) => {
+                  if (state.selectedAgentId[sessionId] !== agentId) return {};
+                  const current = state.transcripts[agentId];
+                  if (current && current.length > fullEvents.length) return {};
+                  return {
+                    transcripts: { ...state.transcripts, [agentId]: fullEvents },
+                    messages: { ...state.messages, [sessionId]: fullMessages },
+                  };
+                });
+              })
+              .catch(() => {});
+          });
+        }
+      } catch (err) {
+        set((state) => {
+          const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+          return {
+            sessionLoading: {
+              ...state.sessionLoading,
+              [sessionId]: { ...current, transcript: false },
+            },
+          };
+        });
+        throw err;
       }
-    } catch (err) {
-      set((state) => {
-        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
-        return {
-          sessionLoading: {
-            ...state.sessionLoading,
-            [sessionId]: { ...current, transcript: false },
-          },
-        };
-      });
-      throw err;
+    })();
+    inFlightSelectAgent.set(agentId, run);
+    try {
+      await run;
+    } finally {
+      if (inFlightSelectAgent.get(agentId) === run) {
+        inFlightSelectAgent.delete(agentId);
+      }
     }
   },
 

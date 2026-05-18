@@ -150,19 +150,26 @@ export function ContextPanel({
       return;
     }
     let cancelled = false;
-    ssMarkFor(session.id, 'worktreeStatus fetch start');
-    worktreeStatus(workingDir)
-      .then((s) => {
-        if (!cancelled) {
-          ssMarkFor(session.id, 'worktreeStatus fetch done');
-          setGitStatus(s);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setGitStatus(null);
-      });
+    // Defer to idle — `git status` shell call was eating ~800ms on the main
+    // thread right after the panel mounted. Idle-defer keeps interactions
+    // responsive; status appears when the browser has a free frame.
+    const cancelIdle = scheduleIdle(() => {
+      if (cancelled) return;
+      ssMarkFor(session.id, 'worktreeStatus fetch start');
+      worktreeStatus(workingDir)
+        .then((s) => {
+          if (!cancelled) {
+            ssMarkFor(session.id, 'worktreeStatus fetch done');
+            setGitStatus(s);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setGitStatus(null);
+        });
+    });
     return () => {
       cancelled = true;
+      cancelIdle();
     };
   }, [workingDir, filesTouched.count, summarizer.lastUpdate, session.id]);
 
