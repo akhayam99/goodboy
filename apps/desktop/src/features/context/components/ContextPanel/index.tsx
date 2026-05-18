@@ -292,52 +292,56 @@ export function ContextPanel({
           {filesTouchedCount === 0 && (loading.transcript || loading.agents) ? (
             <FilesTouchedSkeleton />
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setFilesDiffJumpToNotes(false);
-                setFilesDiffOpen(true);
-              }}
-              disabled={!workingDir}
+            <div
               className={cn(
-                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                'flex w-full items-center gap-1 rounded-md border text-xs transition-colors',
                 !workingDir
-                  ? 'cursor-not-allowed text-muted-foreground/50'
+                  ? 'cursor-not-allowed border-border-soft text-muted-foreground/50'
                   : filesTouchedCount === 0
-                    ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                    : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+                    ? 'border-border-soft text-muted-foreground'
+                    : 'border-info/20 bg-info/5 text-info',
               )}
-              title={filesTooltip}
             >
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <FileEdit size={11} aria-hidden />
-                <span className="truncate">
-                  {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+              <button
+                type="button"
+                onClick={() => {
+                  setFilesDiffJumpToNotes(false);
+                  setFilesDiffOpen(true);
+                }}
+                disabled={!workingDir}
+                className={cn(
+                  'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors',
+                  workingDir &&
+                    (filesTouchedCount === 0
+                      ? 'hover:bg-muted/30 hover:text-foreground'
+                      : 'hover:bg-info/10'),
+                )}
+                title={filesTooltip}
+              >
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <FileEdit size={11} aria-hidden />
+                  <span className="truncate">
+                    {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+                  </span>
                 </span>
-                {openNotesCount > 0 ? (
-                  <>
-                    <span aria-hidden className="opacity-40">
-                      ·
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFilesDiffJumpToNotes(true);
-                        setFilesDiffOpen(true);
-                      }}
-                      className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                      title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                    >
-                      {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                    </button>
-                  </>
-                ) : null}
-              </span>
-              <span aria-hidden className="opacity-60">
-                ↗
-              </span>
-            </button>
+                <span aria-hidden className="opacity-60">
+                  ↗
+                </span>
+              </button>
+              {openNotesCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilesDiffJumpToNotes(true);
+                    setFilesDiffOpen(true);
+                  }}
+                  className="mr-1 shrink-0 rounded-sm px-1.5 py-1 text-warning transition-colors hover:bg-warning/10"
+                  title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
+                >
+                  {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
+                </button>
+              ) : null}
+            </div>
           )}
         </div>
       </div>
