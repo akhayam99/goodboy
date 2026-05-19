@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { WorkspaceId } from '@kay-am/types';
-import { Button, Dialog, Input, cn } from '@kay-am/ui';
+import { Button, Dialog, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
   Check,
@@ -121,8 +121,9 @@ export function WorkspaceSettingsDialog({
       title="Workspace settings"
       description={workspaceName}
       size="xl"
-      className="w-[64rem] max-w-[95vw]"
+      className="w-[52rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
+      fixedHeightClass="h-[560px]"
       fullScreenOnSmall
       footer={
         <div className="flex w-full items-center gap-2">
@@ -316,19 +317,30 @@ function GeneralSection({
           <code className="rounded bg-background px-1 font-mono">[a-z0-9-]</code>, up to 16
           characters.
         </p>
-        <div className="flex items-stretch gap-1 rounded-md border border-border bg-background px-1.5 py-1 font-mono text-sm focus-within:border-primary">
-          <Input
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
             value={branchPrefix}
             onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
             placeholder={DEFAULT_BRANCH_PREFIX}
             disabled={busy}
-            className="!h-7 border-0 bg-transparent px-1.5 text-foreground shadow-none focus-visible:ring-0"
+            aria-label="branch prefix"
+            className={cn(
+              'h-9 w-40 rounded-md border border-border bg-background px-3 font-mono text-sm text-foreground motion-safe:transition-colors',
+              'placeholder:text-muted-foreground/40',
+              'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+              busy && 'cursor-not-allowed opacity-50',
+            )}
           />
-          <span className="flex select-none items-center text-muted-foreground/50">/</span>
-          <span className="flex select-none items-center text-muted-foreground/40">
-            branch-slug
-          </span>
+          <span className="font-mono text-sm text-muted-foreground/50">/</span>
+          <span className="font-mono text-sm text-muted-foreground/40">&lt;slug&gt;</span>
         </div>
+        <p className="flex items-center gap-1.5 text-2xs text-muted-foreground/70">
+          <span>Preview:</span>
+          <span className="font-mono text-muted-foreground">
+            {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/refactor-auth-domain
+          </span>
+        </p>
       </div>
     </div>
   );
