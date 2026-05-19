@@ -1,4 +1,4 @@
-export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
+export { turnReducer } from './turn';
 
 export {
   checkProviderBudget,
@@ -48,9 +48,9 @@ export {
 
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
-export { resolveProvider, type ResolveProviderInput } from './budget/router';
+export { resolveProvider } from './budget/router';
 
-export { computeCostUsd, priceFor } from './providers/claude/cost';
+export { computeCostUsd } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 // registry.ts (node:child_process) is intentionally excluded from this browser-safe barrel.
@@ -65,12 +65,8 @@ export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
-export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
-export { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
-export {
-  parseCursorStreamLine,
-  type ParseContext as CursorParseContext,
-} from './providers/cursor/parser';
+export { computeCursorCostUsd } from './providers/cursor/cost';
+export { parseCursorStreamLine } from './providers/cursor/parser';
 
 export {
   SkillParseError,
@@ -88,12 +84,8 @@ export {
 
 // CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/providers/codex/adapter in Node contexts.
-export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
-export {
-  parseJsonLine as parseCodexJsonLine,
-  type ParseContext as CodexParseContext,
-} from './providers/codex/parser';
+export { parseJsonLine as parseCodexJsonLine } from './providers/codex/parser';
 
 // SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/summarizer/cli in Node/test contexts.

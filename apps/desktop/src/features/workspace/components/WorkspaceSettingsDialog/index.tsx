@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
-import { InitScriptPanel } from '../../../../features/init';
+import { InitScriptPanel } from '../../../init/components/InitScriptPanel';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';

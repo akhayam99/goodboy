@@ -8,27 +8,13 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
+import { formatError } from '../../../../shared/lib/errors';
 
 interface NewSessionDialogProps {
   open: boolean;
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
-}
-
-function formatError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    const maybe = err as { message?: unknown };
-    if (typeof maybe.message === 'string') return maybe.message;
-    try {
-      return JSON.stringify(err);
-    } catch {
-      return 'unknown error';
-    }
-  }
-  return String(err);
 }
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
