@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { cn } from '../cn';
 
 export interface AppShellProps {
-  leftSidebar: ReactNode;
+  leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
@@ -34,6 +34,7 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 function buildLayout(opts: {
   collapsed: boolean;
   leftCollapsed: boolean;
+  hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
   leftWidthPx: number;
   rightWidthPx: number;
@@ -42,7 +43,26 @@ function buildLayout(opts: {
   templateColumns: string;
   templateRows: string;
 } {
-  const { collapsed, leftCollapsed, hasRightSidebar, leftWidthPx, rightWidthPx } = opts;
+  const { collapsed, leftCollapsed, hasLeftSidebar, hasRightSidebar, leftWidthPx, rightWidthPx } =
+    opts;
+
+  if (!hasLeftSidebar) {
+    if (!hasRightSidebar) {
+      return {
+        templateAreas: '"main"',
+        templateColumns: 'minmax(0,1fr)',
+        templateRows: 'minmax(0,1fr)',
+      };
+    }
+    return {
+      templateAreas: '"main rhandle right"',
+      templateColumns: `minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
+        collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
+      }px`,
+      templateRows: 'minmax(0,1fr)',
+    };
+  }
+
   const leftCol = `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
   if (!hasRightSidebar) {
     return {
@@ -68,6 +88,7 @@ export function AppShell({
   rightSidebarCollapsed = false,
   className,
 }: AppShellProps) {
+  const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
     readPersistedWidth(
@@ -163,6 +184,7 @@ export function AppShell({
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
     leftCollapsed: leftSidebarCollapsed,
+    hasLeftSidebar,
     hasRightSidebar,
     leftWidthPx: leftWidth,
     rightWidthPx: rightWidth,
@@ -182,24 +204,28 @@ export function AppShell({
         )}
         style={gridStyle}
       >
-        <aside
-          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-subtle shadow-md"
-          style={{ gridArea: 'left' }}
-        >
-          {leftSidebar}
-        </aside>
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="resize left sidebar"
-          tabIndex={0}
-          onMouseDown={startDrag('left')}
-          onKeyDown={onLeftKeyDown}
-          className="group relative cursor-col-resize select-none"
-          style={{ gridArea: 'lhandle' }}
-        >
-          <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
-        </div>
+        {hasLeftSidebar ? (
+          <aside
+            className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-subtle shadow-md"
+            style={{ gridArea: 'left' }}
+          >
+            {leftSidebar}
+          </aside>
+        ) : null}
+        {hasLeftSidebar ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="resize left sidebar"
+            tabIndex={0}
+            onMouseDown={startDrag('left')}
+            onKeyDown={onLeftKeyDown}
+            className="group relative cursor-col-resize select-none"
+            style={{ gridArea: 'lhandle' }}
+          >
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
+          </div>
+        ) : null}
         <main
           className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
           style={{ gridArea: 'main' }}
