@@ -96,7 +96,7 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
 // strings only; we never dangerouslySetHTML so any unmatched delimiter just
 // shows literal characters.
 
-interface MarkdownProps {
+export interface MarkdownProps {
   readonly text: string;
   readonly className?: string;
 }

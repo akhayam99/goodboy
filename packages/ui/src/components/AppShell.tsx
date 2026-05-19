@@ -8,18 +8,23 @@ export interface AppShellProps {
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
   className?: string;
+  /**
+   * localStorage key for the persisted left-sidebar width. The host app
+   * controls the namespace so this UI primitive stays product-agnostic.
+   */
+  leftWidthStorageKey?: string;
+  /** localStorage key for the persisted right-sidebar width. */
+  rightWidthStorageKey?: string;
 }
 
 const LEFT_SIDEBAR_MIN = 300;
 const LEFT_SIDEBAR_MAX = 520;
 const LEFT_SIDEBAR_DEFAULT = 380;
-const LEFT_SIDEBAR_STORAGE_KEY = 'kay-am:left-sidebar-width';
 const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
 const RIGHT_SIDEBAR_DEFAULT = 340;
-const RIGHT_SIDEBAR_STORAGE_KEY = 'kay-am:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
@@ -87,36 +92,42 @@ export function AppShell({
   rightSidebar,
   rightSidebarCollapsed = false,
   className,
+  leftWidthStorageKey,
+  rightWidthStorageKey,
 }: AppShellProps) {
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
-    readPersistedWidth(
-      LEFT_SIDEBAR_STORAGE_KEY,
-      LEFT_SIDEBAR_DEFAULT,
-      LEFT_SIDEBAR_MIN,
-      LEFT_SIDEBAR_MAX,
-    ),
+    leftWidthStorageKey
+      ? readPersistedWidth(
+          leftWidthStorageKey,
+          LEFT_SIDEBAR_DEFAULT,
+          LEFT_SIDEBAR_MIN,
+          LEFT_SIDEBAR_MAX,
+        )
+      : LEFT_SIDEBAR_DEFAULT,
   );
   const [rightWidth, setRightWidth] = useState<number>(() =>
-    readPersistedWidth(
-      RIGHT_SIDEBAR_STORAGE_KEY,
-      RIGHT_SIDEBAR_DEFAULT,
-      RIGHT_SIDEBAR_MIN,
-      RIGHT_SIDEBAR_MAX,
-    ),
+    rightWidthStorageKey
+      ? readPersistedWidth(
+          rightWidthStorageKey,
+          RIGHT_SIDEBAR_DEFAULT,
+          RIGHT_SIDEBAR_MIN,
+          RIGHT_SIDEBAR_MAX,
+        )
+      : RIGHT_SIDEBAR_DEFAULT,
   );
   const draggingRef = useRef<'left' | 'right' | null>(null);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
-  }, [leftWidth]);
+    if (typeof localStorage === 'undefined' || !leftWidthStorageKey) return;
+    localStorage.setItem(leftWidthStorageKey, String(leftWidth));
+  }, [leftWidth, leftWidthStorageKey]);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, String(rightWidth));
-  }, [rightWidth]);
+    if (typeof localStorage === 'undefined' || !rightWidthStorageKey) return;
+    localStorage.setItem(rightWidthStorageKey, String(rightWidth));
+  }, [rightWidth, rightWidthStorageKey]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {

@@ -6,32 +6,20 @@ export interface CopyButtonProps {
   label?: string;
 }
 
-function fallbackCopy(text: string): void {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-}
-
 export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
   const [state, setState] = useState<'idle' | 'copied' | 'error'>('idle');
 
+  // Previously this component fell back to `document.execCommand('copy')`
+  // via a synthetic textarea when the async clipboard API was unavailable.
+  // execCommand is deprecated and the host environment (Tauri 2 / Chromium
+  // 130+) always exposes navigator.clipboard, so the fallback was dead
+  // surface that mutated the DOM for no real benefit.
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
       setState('copied');
     } catch {
-      try {
-        fallbackCopy(value);
-        setState('copied');
-      } catch {
-        setState('error');
-      }
+      setState('error');
     }
     window.setTimeout(() => setState('idle'), 1200);
   };

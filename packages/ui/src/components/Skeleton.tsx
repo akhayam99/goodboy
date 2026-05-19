@@ -1,6 +1,6 @@
 import { cn } from '../cn';
 
-interface SkeletonProps {
+export interface SkeletonProps {
   className?: string;
 }
 

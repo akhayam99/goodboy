@@ -186,6 +186,8 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
+        leftWidthStorageKey="kay-am:left-sidebar-width"
+        rightWidthStorageKey="kay-am:right-sidebar-width"
         leftSidebar={
           hasWorkspaces ? <WorkspacesSidebar onOpenSettings={openSettings} /> : undefined
         }

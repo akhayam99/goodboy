@@ -121,6 +121,7 @@ export function Dialog({
     <dialog
       ref={ref}
       onClick={onBackdropClick}
+      aria-modal="true"
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(

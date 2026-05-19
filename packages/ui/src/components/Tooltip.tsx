@@ -1,4 +1,4 @@
-import { cloneElement, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
@@ -6,12 +6,7 @@ export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 export interface TooltipProps {
   content: string;
   side?: TooltipSide;
-  children: React.ReactElement<{
-    onMouseEnter?: React.MouseEventHandler;
-    onMouseLeave?: React.MouseEventHandler;
-    onFocus?: React.FocusEventHandler;
-    onBlur?: React.FocusEventHandler;
-  }>;
+  children: ReactNode;
 }
 
 const SIDE_CLASSES: Record<TooltipSide, string> = {
@@ -24,6 +19,7 @@ const SIDE_CLASSES: Record<TooltipSide, string> = {
 export function Tooltip({ content, side = 'top', children }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipId = useId();
 
   const show = () => {
     delayRef.current = setTimeout(() => setVisible(true), 400);
@@ -37,29 +33,16 @@ export function Tooltip({ content, side = 'top', children }: TooltipProps) {
     setVisible(false);
   };
 
-  const enhanced = cloneElement(children, {
-    onMouseEnter: (e: React.MouseEvent) => {
-      show();
-      children.props.onMouseEnter?.(e);
-    },
-    onMouseLeave: (e: React.MouseEvent) => {
-      hide();
-      children.props.onMouseLeave?.(e);
-    },
-    onFocus: (e: React.FocusEvent) => {
-      show();
-      children.props.onFocus?.(e);
-    },
-    onBlur: (e: React.FocusEvent) => {
-      hide();
-      children.props.onBlur?.(e);
-    },
-  });
-
+  // Previously this component used `cloneElement` to inject event handlers
+  // and aria-describedby into the consumer's child. React 19 discourages that
+  // pattern (no static type for "the child accepts these props") so we wrap
+  // the child in a span instead — the trigger element still owns its own
+  // role/markup, and screen readers get a real `aria-describedby` link.
   return (
     <span className="relative inline-flex">
       {visible ? (
         <span
+          id={tooltipId}
           role="tooltip"
           className={cn(
             'pointer-events-none absolute z-50 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
@@ -69,7 +52,16 @@ export function Tooltip({ content, side = 'top', children }: TooltipProps) {
           {content}
         </span>
       ) : null}
-      {enhanced}
+      <span
+        aria-describedby={visible ? tooltipId : undefined}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        className="contents"
+      >
+        {children}
+      </span>
     </span>
   );
 }
