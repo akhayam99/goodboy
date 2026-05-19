@@ -153,18 +153,26 @@ export function PlannerWidget({
 
   return (
     <div className="flex flex-col gap-2">
-      <Textarea
-        value={theme}
-        onChange={(e) => setTheme(e.target.value)}
-        placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
-        autoGrow
-        maxRows={5}
-      />
-      <div className="flex items-center justify-end gap-2">
-        <span className="mr-auto text-2xs text-muted-foreground/60">cheap-tier · {providerId}</span>
-        <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
-          {planButtonLabel}
-        </Button>
+      <div className="rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+        <div className="relative">
+          <Textarea
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
+            autoGrow
+            minRows={5}
+            maxRows={10}
+            className="min-h-24 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
+          />
+          <div className="absolute bottom-2.5 right-2.5">
+            <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
+              {planButtonLabel}
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end px-1">
+        <span className="text-2xs text-muted-foreground/60">cheap-tier · {providerId}</span>
       </div>
       {error ? (
         <p role="alert" className="text-xs text-danger">

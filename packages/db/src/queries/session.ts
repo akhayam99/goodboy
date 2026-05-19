@@ -191,6 +191,19 @@ export async function updateSessionAutoRun(
   ]);
 }
 
+export async function updateSessionWorkflow(
+  db: Database,
+  id: SessionId,
+  workflowId: WorkflowId | null,
+  autoRun: boolean,
+  updatedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute(
+    'UPDATE sessions SET workflow_id = ?, auto_run = ?, updated_at = ? WHERE id = ?',
+    [workflowId, autoRun ? 1 : 0, Date.parse(updatedAt), id],
+  );
+}
+
 export async function updateSessionUserStatus(
   db: Database,
   id: SessionId,

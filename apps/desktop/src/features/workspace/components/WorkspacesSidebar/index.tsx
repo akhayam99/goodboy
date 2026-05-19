@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -54,6 +55,7 @@ import {
   useWorkspaces,
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
+import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
 import {
   computeLatestTelemetryByAgentId,
@@ -668,6 +670,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
+  const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
@@ -876,6 +879,24 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </div>
         </>
       ) : null}
+      {!workflow ? (
+        <div className={cn('flex flex-col gap-1.5', initAgent && 'mt-6')}>
+          <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className={SECTION_LABEL}>
+              <Layers size={11} aria-hidden className="text-primary" />
+              Workflow
+            </span>
+          </header>
+          <button
+            type="button"
+            onClick={() => setStartWorkflowOpen(true)}
+            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={13} aria-hidden />
+            Start a workflow
+          </button>
+        </div>
+      ) : null}
       {workflow && workflowAgents.length > 0 ? (
         <>
           <header
@@ -924,7 +945,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       <header
         className={cn(
           'flex items-center justify-between gap-2 pb-1.5',
-          ((workflow && workflowAgents.length > 0) || initAgent) && 'mt-6',
+          ((workflow && workflowAgents.length > 0) || initAgent || !workflow) && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>
@@ -968,6 +989,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+      <StartWorkflowDialog
+        open={startWorkflowOpen}
+        onClose={() => setStartWorkflowOpen(false)}
+        session={task}
+      />
     </section>
   );
 }
@@ -976,39 +1002,111 @@ interface SpawnAgentControlProps {
   sessionId: SessionId;
 }
 
+interface PopoverAnchor {
+  readonly left: number;
+  readonly top: number | null;
+  readonly bottom: number | null;
+  readonly direction: 'up' | 'down';
+}
+
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
-  const [direction, setDirection] = useState<'up' | 'down'>('up');
-  const ref = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+
+  const computeAnchor = useCallback((): PopoverAnchor | null => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
+    const left = rect.right + 4;
+    if (direction === 'down') {
+      return { left, top: rect.top, bottom: null, direction };
+    }
+    return { left, top: null, bottom: window.innerHeight - rect.bottom, direction };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onReanchor = () => {
+      const next = computeAnchor();
+      if (next) setAnchor(next);
+      else setOpen(false);
     };
     window.addEventListener('mousedown', onDocClick);
-    return () => window.removeEventListener('mousedown', onDocClick);
-  }, [open]);
+    window.addEventListener('resize', onReanchor);
+    window.addEventListener('scroll', onReanchor, true);
+    return () => {
+      window.removeEventListener('mousedown', onDocClick);
+      window.removeEventListener('resize', onReanchor);
+      window.removeEventListener('scroll', onReanchor, true);
+    };
+  }, [open, computeAnchor]);
 
   const onToggle = () => {
     if (!open) {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        // Open in the direction with more room. Trigger near the top of
-        // the viewport → open downward (avoids clipping under the sticky
-        // panel header); trigger near the bottom → open upward.
-        setDirection(spaceBelow > spaceAbove ? 'down' : 'up');
-      }
+      const next = computeAnchor();
+      if (next) setAnchor(next);
     }
     setOpen((v) => !v);
   };
 
+  const menu =
+    open && anchor
+      ? createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{
+              position: 'fixed',
+              left: anchor.left,
+              ...(anchor.top !== null ? { top: anchor.top } : {}),
+              ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
+            }}
+            className="z-50 w-80 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          >
+            <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+              by role
+            </div>
+            {[...AGENT_KIND_ORDER]
+              .filter((k) => k !== 'init')
+              .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
+              .map((kind) => {
+                const meta = AGENT_KIND_META[kind];
+                const palette = AGENT_KIND_PALETTE[kind];
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      void spawnAgent(sessionId, { kindOverride: kind });
+                    }}
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                  >
+                    <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+                    <span className="font-medium text-foreground">{meta.label}</span>
+                    <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
+                  </button>
+                );
+              })}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="relative mt-1" ref={ref}>
+    <div className="relative mt-1">
       <button
         ref={triggerRef}
         type="button"
@@ -1020,42 +1118,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         <Plus size={13} aria-hidden />
         Spawn agent
       </button>
-      {open ? (
-        <div
-          role="menu"
-          className={cn(
-            'absolute left-0 right-0 z-20 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
-            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
-          )}
-        >
-          <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
-            by role
-          </div>
-          {[...AGENT_KIND_ORDER]
-            .filter((k) => k !== 'init')
-            .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
-            .map((kind) => {
-              const meta = AGENT_KIND_META[kind];
-              const palette = AGENT_KIND_PALETTE[kind];
-              return (
-                <button
-                  key={kind}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setOpen(false);
-                    void spawnAgent(sessionId, { kindOverride: kind });
-                  }}
-                  className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
-                  <span className="font-medium text-foreground">{meta.label}</span>
-                  <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
-                </button>
-              );
-            })}
-        </div>
-      ) : null}
+      {menu}
     </div>
   );
 }

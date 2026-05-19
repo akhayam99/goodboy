@@ -19,6 +19,7 @@ export {
   updateSessionState,
   updateSessionPermissionMode,
   updateSessionAutoRun,
+  updateSessionWorkflow,
   updateSessionSkipInit,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
