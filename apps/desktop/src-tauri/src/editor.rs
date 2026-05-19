@@ -4,6 +4,11 @@ use thiserror::Error;
 
 const DEFAULT_EDITOR: &str = "code";
 
+/// Schemes accepted by [`open_url`]. Anything else (file://, javascript:, etc.)
+/// is rejected at the boundary so a compromised frontend cannot pivot into
+/// arbitrary file or script execution via the OS opener.
+const ALLOWED_URL_SCHEMES: &[&str] = &["http", "https", "mailto"];
+
 /// Explicit allowlist of known editors. No auto-discovery of unknown binaries.
 const KNOWN_EDITORS: &[(&str, &str)] = &[
     ("code", "VS Code"),
@@ -15,6 +20,10 @@ const KNOWN_EDITORS: &[(&str, &str)] = &[
     ("vim", "Vim"),
     ("nvim", "Neovim"),
 ];
+
+fn is_known_editor(binary: &str) -> bool {
+    KNOWN_EDITORS.iter().any(|(b, _)| *b == binary)
+}
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct DetectedEditor {
@@ -50,6 +59,12 @@ pub fn detect_editors() -> Vec<DetectedEditor> {
 pub enum EditorError {
     #[error("editor binary '{0}' not found in PATH")]
     NotFound(String),
+    #[error("editor binary '{0}' is not in the allowlist")]
+    NotAllowed(String),
+    #[error("url scheme '{0}' is not allowed")]
+    SchemeNotAllowed(String),
+    #[error("url is malformed")]
+    MalformedUrl,
     #[error("failed to spawn editor '{binary}': {source}")]
     Spawn {
         binary: String,
@@ -67,6 +82,9 @@ impl serde::Serialize for EditorError {
 #[tauri::command]
 pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
+    if !is_known_editor(&binary) {
+        return Err(EditorError::NotAllowed(binary));
+    }
 
     // Resolve to absolute canonical path so editors load it as a workspace folder
     // rather than treating it as a relative-to-cwd file. Falls back to the input
@@ -102,6 +120,9 @@ pub fn open_file_in_workspace(
     editor: Option<String>,
 ) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
+    if !is_known_editor(&binary) {
+        return Err(EditorError::NotAllowed(binary));
+    }
 
     let mut cmd = crate::path_env::command(&binary);
     if binary == "code" || binary == "cursor" {
@@ -122,7 +143,15 @@ pub fn open_file_in_workspace(
 }
 
 #[tauri::command]
-pub fn open_url(url: String) -> Result<(), String> {
+pub fn open_url(url: String) -> Result<(), EditorError> {
+    let scheme = url
+        .split_once(':')
+        .map(|(s, _)| s.to_ascii_lowercase())
+        .ok_or(EditorError::MalformedUrl)?;
+    if !ALLOWED_URL_SCHEMES.iter().any(|s| *s == scheme) {
+        return Err(EditorError::SchemeNotAllowed(scheme));
+    }
+
     #[cfg(target_os = "macos")]
     let result = Command::new("open").arg(&url).spawn();
     #[cfg(target_os = "linux")]
@@ -130,5 +159,8 @@ pub fn open_url(url: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let result = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
 
-    result.map(|_| ()).map_err(|e| e.to_string())
+    result.map(|_| ()).map_err(|source| EditorError::Spawn {
+        binary: "open".to_string(),
+        source,
+    })
 }

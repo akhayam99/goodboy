@@ -17,6 +17,49 @@ pub enum GithubError {
     Secret(#[from] secrets::SecretError),
     #[error("gh validation failed: {0}")]
     Validation(String),
+    #[error("gh subcommand '{0}' is not allowed")]
+    SubcommandNotAllowed(String),
+}
+
+/// Top-level `gh` subcommands that the frontend may invoke. Everything else
+/// (auth, repo delete, secret, etc.) is rejected at the boundary. `auth` and
+/// secret management are reachable only through the typed [`gh_set_token`] /
+/// [`gh_clear_token`] / [`gh_status`] commands above.
+const ALLOWED_GH_SUBCOMMANDS: &[&str] = &["--version", "api", "pr", "repo"];
+
+/// Per-subcommand allowlist of safe verbs. `api` is intentionally unrestricted
+/// because it is the canonical GraphQL/REST escape hatch used by the codebase
+/// and its blast radius is bounded by the token's scopes.
+const ALLOWED_PR_VERBS: &[&str] = &["view", "list", "diff", "checks"];
+const ALLOWED_REPO_VERBS: &[&str] = &["view"];
+
+fn validate_gh_args(args: &[&str]) -> Result<(), GithubError> {
+    let head = args
+        .first()
+        .ok_or_else(|| GithubError::SubcommandNotAllowed(String::new()))?;
+    if !ALLOWED_GH_SUBCOMMANDS.contains(head) {
+        return Err(GithubError::SubcommandNotAllowed((*head).to_string()));
+    }
+    match *head {
+        "pr" => {
+            let verb = args
+                .get(1)
+                .ok_or_else(|| GithubError::SubcommandNotAllowed("pr".to_string()))?;
+            if !ALLOWED_PR_VERBS.contains(verb) {
+                return Err(GithubError::SubcommandNotAllowed(format!("pr {verb}")));
+            }
+        }
+        "repo" => {
+            let verb = args
+                .get(1)
+                .ok_or_else(|| GithubError::SubcommandNotAllowed("repo".to_string()))?;
+            if !ALLOWED_REPO_VERBS.contains(verb) {
+                return Err(GithubError::SubcommandNotAllowed(format!("repo {verb}")));
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 impl Serialize for GithubError {
@@ -159,6 +202,7 @@ pub fn gh_clear_token() -> Result<(), GithubError> {
 pub fn gh_run(args: Vec<String>, cwd: Option<String>) -> Result<GhRunResult, GithubError> {
     let token = read_token();
     let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    validate_gh_args(&arg_refs)?;
     run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
 }
 

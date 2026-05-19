@@ -23,7 +23,16 @@ use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let database = db::open().expect("failed to open kay-am database");
+  let database = match db::open() {
+    Ok(db) => db,
+    Err(err) => {
+      // Surfacing this through a native dialog would require booting the
+      // Tauri runtime first, which is what failed. Printing to stderr is the
+      // most useful next step for the launcher / log collector.
+      eprintln!("kay-am: failed to open database: {err}");
+      std::process::exit(1);
+    }
+  };
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
