@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::db::{Db, DbError};
+use crate::util::{days_in_month, is_leap_year, iso_now, ms_col_to_iso};
 
 // ---------------------------------------------------------------------------
 // Schema version — bump on breaking change
@@ -668,34 +669,12 @@ pub fn import_config(
 // Utilities
 // ---------------------------------------------------------------------------
 
-fn iso_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64;
-    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        year, month, day, hour, min, sec
-    )
-}
-
 fn now_ms() -> i64 {
     use std::time::{SystemTime, UNIX_EPOCH};
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as i64
-}
-
-fn ms_col_to_iso(ms: i64) -> String {
-    let secs = ms / 1000;
-    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        year, month, day, hour, min, sec
-    )
 }
 
 fn iso_to_ms(s: &str) -> Option<i64> {
@@ -709,6 +688,9 @@ fn iso_to_ms(s: &str) -> Option<i64> {
     let hour: u32 = s[11..13].parse().ok()?;
     let min: u32 = s[14..16].parse().ok()?;
     let sec: u32 = s[17..19].parse().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
 
     let mut days: i64 = 0;
     for y in 1970..year {
@@ -720,54 +702,6 @@ fn iso_to_ms(s: &str) -> Option<i64> {
     days += day as i64 - 1;
     let total_secs = days * 86400 + hour as i64 * 3600 + min as i64 * 60 + sec as i64;
     Some(total_secs * 1000)
-}
-
-fn is_leap_year(y: i64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
-}
-
-fn days_in_month(y: i64, m: u32) -> i64 {
-    match m {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if is_leap_year(y) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 30,
-    }
-}
-
-fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
-    let sec = (s % 60) as u32;
-    s /= 60;
-    let min = (s % 60) as u32;
-    s /= 60;
-    let hour = (s % 24) as u32;
-    s /= 24;
-    let mut year: i64 = 1970;
-    loop {
-        let days = if is_leap_year(year) { 366 } else { 365 };
-        if s < days {
-            break;
-        }
-        s -= days;
-        year += 1;
-    }
-    let mut month: u32 = 1;
-    loop {
-        let d = days_in_month(year, month);
-        if s < d {
-            break;
-        }
-        s -= d;
-        month += 1;
-    }
-    let day = s as u32 + 1;
-    (year, month, day, hour, min, sec)
 }
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,6 @@ mod parallel_groups;
 mod path_env;
 mod permissions;
 mod planner;
-mod workflows;
 mod providers;
 mod repo;
 mod secrets;
@@ -15,6 +14,8 @@ mod settings_overrides;
 mod skills;
 mod summarize;
 mod turn;
+mod util;
+mod workflows;
 mod worktree;
 
 pub use secrets::read as read_secret;

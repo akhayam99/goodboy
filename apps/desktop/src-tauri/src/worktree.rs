@@ -105,11 +105,19 @@ pub struct ChangeBranchArgs {
 }
 
 pub fn sanitize_slug(input: &str) -> String {
-    let lowered = input.to_ascii_lowercase();
-    let alnum_dash = Regex::new(r"[^a-z0-9-]+").unwrap();
-    let collapsed_dashes = Regex::new(r"-+").unwrap();
-    let edge_dashes = Regex::new(r"^-+|-+$").unwrap();
+    use std::sync::OnceLock;
+    // Compile the three slug regexes once. Previously this function rebuilt
+    // them on every invocation and would have panicked at runtime on a bad
+    // pattern instead of failing at startup.
+    static ALNUM_DASH: OnceLock<Regex> = OnceLock::new();
+    static COLLAPSED_DASHES: OnceLock<Regex> = OnceLock::new();
+    static EDGE_DASHES: OnceLock<Regex> = OnceLock::new();
+    let alnum_dash = ALNUM_DASH.get_or_init(|| Regex::new(r"[^a-z0-9-]+").expect("slug regex"));
+    let collapsed_dashes =
+        COLLAPSED_DASHES.get_or_init(|| Regex::new(r"-+").expect("slug regex"));
+    let edge_dashes = EDGE_DASHES.get_or_init(|| Regex::new(r"^-+|-+$").expect("slug regex"));
 
+    let lowered = input.to_ascii_lowercase();
     let stage1 = alnum_dash.replace_all(&lowered, "-");
     let stage2 = collapsed_dashes.replace_all(&stage1, "-");
     let stage3 = edge_dashes.replace_all(&stage2, "");
