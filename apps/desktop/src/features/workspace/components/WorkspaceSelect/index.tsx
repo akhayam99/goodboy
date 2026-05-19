@@ -24,15 +24,22 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  // Two pieces of state instead of one nullable target so the dialog can
+  // stay mounted across opens. Mount-on-first-click was racing with the
+  // <dialog>.showModal() effect under React 19 strict mode and silently
+  // dropping the open call.
   const [settingsTarget, setSettingsTarget] = useState<WorkspaceTarget | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const openSettings = (target: WorkspaceTarget) => {
+    setSettingsTarget(target);
+    setSettingsOpen(true);
+  };
 
   const sorted = [...workspaces].sort((a, b) => a.name.localeCompare(b.name));
   const atCap = workspaces.length >= MAX_WORKSPACES;
 
   return (
-    // The whole row sits below the OS title-bar drag region. Without this
-    // opt-out, Tauri swallows clicks on the cards (gear / select) before
-    // React ever sees them — that's why both buttons looked dead.
     <div className="shrink-0 px-2 py-1.5" data-tauri-drag-region="false">
       <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <FolderOpen size={11} aria-hidden className="text-primary" />
@@ -57,7 +64,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
             workspace={ws}
             isActive={ws.id === currentWorkspace?.id}
             onSelect={() => void setCurrentWorkspace(ws.id)}
-            onOpenSettings={() => setSettingsTarget({ id: ws.id, name: ws.name })}
+            onOpenSettings={() => openSettings({ id: ws.id, name: ws.name })}
           />
         ))}
         <button
@@ -85,8 +92,8 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
         <WorkspaceSettingsDialog
           workspaceId={settingsTarget.id}
           workspaceName={settingsTarget.name}
-          open
-          onClose={() => setSettingsTarget(null)}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
         />
       ) : null}
     </div>
