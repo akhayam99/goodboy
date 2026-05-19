@@ -378,19 +378,23 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
             loading.transcript ? (
               <TranscriptSkeleton />
             ) : isProviderDisconnected ? (
-              <div className="mx-auto w-full max-w-[880px]">
-                <AuthRequiredCallout
-                  providerId={provider}
-                  identity={providerIdentity}
-                  onRefresh={() => void refreshProviders()}
-                />
+              <div className="flex h-full items-center justify-center">
+                <div className="mx-auto w-full max-w-[880px]">
+                  <AuthRequiredCallout
+                    providerId={provider}
+                    identity={providerIdentity}
+                    onRefresh={() => void refreshProviders()}
+                  />
+                </div>
               </div>
             ) : (
-              <ChatEmptyState
-                selectedAgentId={selectedAgentId}
-                phaseRuns={phaseRuns}
-                workflowId={session.workflowId ?? null}
-              />
+              <div className="flex h-full items-center justify-center">
+                <ChatEmptyState
+                  selectedAgentId={selectedAgentId}
+                  phaseRuns={phaseRuns}
+                  workflowId={session.workflowId ?? null}
+                />
+              </div>
             )
           ) : (
             <ul
@@ -486,13 +490,13 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
           session ended. no further turns. branch preserved.
         </div>
-      ) : (
+      ) : selectedAgentId ? (
         <ChatInput
           key={session.id}
           session={session}
           providerDisconnected={isProviderDisconnected}
         />
-      )}
+      ) : null}
       <DiffViewerDialog
         open={diffJumpFile !== null}
         onClose={() => setDiffJumpFile(null)}
@@ -583,7 +587,8 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
       <div className="relative flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
         <span
           aria-hidden
-          className="absolute inset-0 animate-ping rounded-full bg-primary/15 opacity-60"
+          className="absolute inset-0 animate-ping rounded-full bg-primary/15 opacity-50"
+          style={{ animationDuration: '3.2s' }}
         />
         <DogMascot size={40} className="relative" />
       </div>
