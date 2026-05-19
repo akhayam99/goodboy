@@ -171,14 +171,10 @@ export function SessionDetailPanel({
         </button>
       </div>
 
-      {/* subtitle row: branch (click to copy) + session cost + refresh github */}
+      {/* subtitle row: branch (click to copy) + refresh github */}
       {branch && (
         <div className="flex items-center gap-1">
           <BranchChip branch={branch} />
-          <span aria-hidden className="text-muted-foreground/30">
-            ·
-          </span>
-          <SessionCostChip sessionId={session.id as SessionId} />
           <span className="flex-1" />
           <GithubRefreshButton sessionId={session.id as SessionId} />
         </div>
@@ -252,9 +248,8 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   return (
     <span
       title={`Estimated cost for this session: ${label} (excluding summarizer)`}
-      className="inline-flex items-center gap-0.5 text-2xs font-mono text-muted-foreground"
+      className="inline-flex shrink-0 items-center text-2xs font-mono text-muted-foreground"
     >
-      <span className="text-muted-foreground/60">∑</span>
       {label}
     </span>
   );
@@ -438,22 +433,23 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
 
   if (filesTouchedCount === 0 && (loading.transcript || loading.agents)) {
     return (
-      <div className="shrink-0 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
         <div
           role="status"
           aria-label="loading files touched"
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
+          className="inline-flex flex-1 items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
         >
           <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
           <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
         </div>
+        <SessionCostChip sessionId={session.id} />
       </div>
     );
   }
 
   return (
     <>
-      <div className="shrink-0 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
         <button
           type="button"
           onClick={() => {
@@ -462,7 +458,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
           }}
           disabled={!workingDir}
           className={cn(
-            'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+            'flex flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
             !workingDir
               ? 'cursor-not-allowed text-muted-foreground/50'
               : filesTouchedCount === 0
@@ -512,6 +508,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
             </span>
           </span>
         </button>
+        <SessionCostChip sessionId={session.id} />
       </div>
 
       <DiffViewerDialog
