@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { FolderOpen, Plus, X } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { Workspace, WorkspaceId } from '@kay-am/types';
+import { useEffect, useState } from 'react';
+import { FolderOpen, Plus, Unplug, X } from 'lucide-react';
+import { Button, Dialog, cn } from '@kay-am/ui';
+import type { SessionId, Workspace, WorkspaceId } from '@kay-am/types';
 import { MAX_WORKSPACES } from '../../../../shared/lib/features';
-import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
+import { formatError } from '../../../../shared/lib/errors';
 import {
   useAppStore,
   useCurrentWorkspace,
+  useSessions,
   useWorkspaceHasUnread,
   useWorkspaces,
 } from '../../../../store';
@@ -28,6 +29,15 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
 
   const sorted = [...workspaces].sort((a, b) => a.name.localeCompare(b.name));
   const atCap = workspaces.length >= MAX_WORKSPACES;
+
+  const onRequestDisconnect = async (target: DisconnectTarget) => {
+    // sessions are only hydrated for the current workspace, so switch first
+    // to make sure bulk-delete + disconnect operate on real data.
+    if (currentWorkspace?.id !== target.id) {
+      await setCurrentWorkspace(target.id);
+    }
+    setDisconnectTarget(target);
+  };
 
   return (
     <div className="shrink-0 px-2 py-1.5">
@@ -51,7 +61,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
             workspace={ws}
             isActive={ws.id === currentWorkspace?.id}
             onSelect={() => void setCurrentWorkspace(ws.id)}
-            onDisconnect={() => setDisconnectTarget({ id: ws.id, name: ws.name })}
+            onDisconnect={() => void onRequestDisconnect({ id: ws.id, name: ws.name })}
           />
         ))}
         <button
@@ -75,12 +85,11 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
         </button>
       </div>
       {disconnectTarget ? (
-        <WorkspaceSettingsDialog
+        <DisconnectWorkspaceDialog
           workspaceId={disconnectTarget.id}
           workspaceName={disconnectTarget.name}
           open
           onClose={() => setDisconnectTarget(null)}
-          initialSection="danger"
         />
       ) : null}
     </div>
@@ -132,5 +141,103 @@ function WorkspaceCard({
         <X size={11} aria-hidden />
       </button>
     </div>
+  );
+}
+
+interface DisconnectWorkspaceDialogProps {
+  workspaceId: WorkspaceId;
+  workspaceName: string;
+  open: boolean;
+  onClose: () => void;
+}
+
+function DisconnectWorkspaceDialog({
+  workspaceId,
+  workspaceName,
+  open,
+  onClose,
+}: DisconnectWorkspaceDialogProps) {
+  const sessions = useSessions();
+  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
+  const bulkDelete = useAppStore((s) => s.bulkDeleteSessionsForWorkspace);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const wsSessions = sessions.filter((s) => s.workspaceId === workspaceId);
+  const count = wsSessions.length;
+
+  useEffect(() => {
+    if (open) setError(null);
+  }, [open]);
+
+  const onConfirm = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (count > 0) {
+        await bulkDelete(
+          workspaceId,
+          wsSessions.map((s) => s.id as SessionId),
+        );
+      } else {
+        await deleteWorkspace(workspaceId);
+      }
+      onClose();
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (busy) return;
+    onClose();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      title={`Disconnect "${workspaceName}"?`}
+      description={
+        count > 0
+          ? `this will permanently delete ${count} session${count === 1 ? '' : 's'} (worktrees, transcripts, audit logs) and unlink the workspace. the repository on disk stays untouched.`
+          : 'removes kAY.am state for this workspace and unlinks it. the repository on disk stays untouched. you can re-add it later.'
+      }
+      size="sm"
+      footer={
+        <>
+          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
+          <Button variant="ghost" onClick={handleClose} disabled={busy}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
+            <Unplug size={13} aria-hidden className="mr-1.5" />
+            {busy
+              ? 'Disconnecting…'
+              : count > 0
+                ? `Delete ${count} & disconnect`
+                : 'Confirm disconnect'}
+          </Button>
+        </>
+      }
+    >
+      {count > 0 ? (
+        <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+          {wsSessions.map((s) => (
+            <li
+              key={s.id}
+              className="flex items-center justify-between gap-2 rounded border border-border-soft bg-subtle px-3 py-1.5 text-xs"
+            >
+              <span className="min-w-0 truncate font-mono text-foreground">{s.goal}</span>
+              <span className="shrink-0 text-muted-foreground/60">
+                {new Date(s.updatedAt).toLocaleDateString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Dialog>
   );
 }
