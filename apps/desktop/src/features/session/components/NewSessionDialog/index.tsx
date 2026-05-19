@@ -1611,10 +1611,22 @@ function AgentKindSelect({
 
   useEffect(() => {
     if (!open) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const el = containerRef.current;
+    const rect = el?.getBoundingClientRect();
+    if (!el || !rect) return;
+    // Walk up to the nearest clipping ancestor — the Dialog's
+    // overflow-hidden wrapper would clip the popover otherwise.
+    let clipper: HTMLElement | null = el.parentElement;
+    while (clipper) {
+      const overflowY = getComputedStyle(clipper).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'hidden') break;
+      clipper = clipper.parentElement;
+    }
+    const clipperRect = clipper?.getBoundingClientRect();
+    const bottomBound = clipperRect ? clipperRect.bottom : window.innerHeight;
+    const topBound = clipperRect ? clipperRect.top : 0;
+    const spaceBelow = bottomBound - rect.bottom;
+    const spaceAbove = rect.top - topBound;
     // ~280px tall popup; flip up when below is tight.
     setDirection(spaceBelow < 300 && spaceAbove > spaceBelow ? 'up' : 'down');
   }, [open]);
