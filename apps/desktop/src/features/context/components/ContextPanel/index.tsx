@@ -4,16 +4,8 @@ import {
   PanelRightOpen,
   History,
   RotateCcw,
-  GitBranch,
-  GitPullRequest,
-  GitPullRequestDraft,
-  GitMerge,
-  RefreshCw,
-  Plus,
-  Loader2,
   ChevronRight,
   ChevronDown,
-  FileEdit,
   Target,
   CheckCheck,
   HelpCircle,
@@ -22,42 +14,27 @@ import {
   List,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
-import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
+import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@kay-am/ui';
+import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   PlanStatus,
   PlanWithCount,
-  PrComment,
   Session,
   SessionId,
   TelemetryRecord,
-  PullRequestStateKind,
 } from '@kay-am/types';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useDiffComments,
-  useFilesTouched,
   useSessionLoading,
   useSessionPlans,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
 } from '../../../../store';
-import { openUrl } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
-import { tauriGhRunner } from '../../../../features/github/github';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
-import { GithubCard } from '../../../../features/github/components/Card';
-import { worktreeStatus } from '../../../../features/worktree/worktree';
-import type { WorktreeStatus } from '@kay-am/types';
-import {
-  buildCommentAgentArgs,
-  buildReviewChangesAgentArgs,
-} from '../../../../features/chat/spawn-from-comment';
 
 interface ContextPanelProps {
   session: Session;
@@ -124,62 +101,6 @@ export function ContextPanel({
       }),
     [],
   );
-
-  const filesTouched = useFilesTouched(session.id);
-  const [gitStatus, setGitStatus] = useState<WorktreeStatus | null>(null);
-
-  useEffect(() => {
-    if (!workingDir) {
-      setGitStatus(null);
-      return;
-    }
-    let cancelled = false;
-    worktreeStatus(workingDir)
-      .then((s) => {
-        if (!cancelled) setGitStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setGitStatus(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
-
-  const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
-  const filesTooltip = useMemo(() => {
-    if (!gitStatus) {
-      return filesTouchedCount === 0
-        ? 'no files touched yet'
-        : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`;
-    }
-    const parts: string[] = [];
-    if (gitStatus.unstaged > 0) parts.push(`${gitStatus.unstaged} unstaged`);
-    if (gitStatus.staged > 0) parts.push(`${gitStatus.staged} staged`);
-    if (gitStatus.untracked > 0) parts.push(`${gitStatus.untracked} untracked`);
-    if (gitStatus.hasUpstream && (gitStatus.ahead > 0 || gitStatus.behind > 0)) {
-      parts.push(`ahead ${gitStatus.ahead} / behind ${gitStatus.behind}`);
-    }
-    return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
-  }, [gitStatus, filesTouchedCount]);
-
-  const [filesDiffOpen, setFilesDiffOpen] = useState(false);
-  const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);
-  const diffComments = useDiffComments(session.id);
-  const openNotesCount = useMemo(
-    () => diffComments.filter((c) => c.status === 'open').length,
-    [diffComments],
-  );
-  const loadDiffComments = useAppStore((s) => s.loadDiffComments);
-
-  useEffect(() => {
-    if (!isActive) return;
-    const t0 = performance.now();
-    void loadDiffComments(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, session.id, loadDiffComments]);
 
   return (
     <>
@@ -259,99 +180,11 @@ export function ContextPanel({
         </ScrollArea>
 
         <div className="flex shrink-0 flex-col gap-3 border-t border-border-soft px-3 py-3">
-          <GitHubSection session={session} isActive={isActive} />
-          {filesTouchedCount === 0 && (loading.transcript || loading.agents) ? (
-            <FilesTouchedSkeleton />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setFilesDiffJumpToNotes(false);
-                setFilesDiffOpen(true);
-              }}
-              disabled={!workingDir}
-              className={cn(
-                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                !workingDir
-                  ? 'cursor-not-allowed text-muted-foreground/50'
-                  : filesTouchedCount === 0
-                    ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                    : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
-              )}
-              title={filesTooltip}
-            >
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <FileEdit size={11} aria-hidden />
-                <span className="truncate">
-                  {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
-                </span>
-                {openNotesCount > 0 ? (
-                  <>
-                    <span aria-hidden className="opacity-40">
-                      ·
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFilesDiffJumpToNotes(true);
-                        setFilesDiffOpen(true);
-                      }}
-                      className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                      title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                    >
-                      {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                    </button>
-                  </>
-                ) : null}
-              </span>
-              <span aria-hidden className="opacity-60">
-                ↗
-              </span>
-            </button>
-          )}
           <CostPill />
         </div>
       </div>
-
-      <DiffViewerDialog
-        open={filesDiffOpen}
-        onClose={() => setFilesDiffOpen(false)}
-        sessionId={session.id}
-        title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
-        workingDir={workingDir ?? undefined}
-        worktreePath={workingDir ?? undefined}
-        jumpToFirstCommented={filesDiffJumpToNotes}
-      />
     </>
   );
-}
-
-const PR_STATE_LABEL: Record<PullRequestStateKind, string> = {
-  draft: 'draft',
-  open: 'open',
-  approved: 'approved',
-  merged: 'merged',
-  closed: 'closed',
-};
-
-const PR_STATE_ICON_CLASS: Record<PullRequestStateKind, string> = {
-  draft: 'text-muted-foreground',
-  open: 'text-success',
-  approved: 'text-success',
-  merged: 'text-accent',
-  closed: 'text-danger',
-};
-
-function PrStateIcon({ state, size = 12 }: { state: PullRequestStateKind; size?: number }) {
-  const cls = PR_STATE_ICON_CLASS[state];
-  if (state === 'draft') return <GitPullRequestDraft size={size} aria-hidden className={cls} />;
-  if (state === 'merged') return <GitMerge size={size} aria-hidden className={cls} />;
-  return <GitPullRequest size={size} aria-hidden className={cls} />;
-}
-
-function openInBrowser(url: string) {
-  openUrl(url).catch(() => window.open(url, '_blank'));
 }
 
 function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
@@ -402,309 +235,6 @@ function PlansSkeleton() {
       <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
       <div className="h-3 w-2/3 animate-pulse rounded bg-muted/70" />
     </div>
-  );
-}
-
-function FilesTouchedSkeleton() {
-  return (
-    <div
-      role="status"
-      aria-label="loading files touched"
-      className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
-    >
-      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
-      <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
-    </div>
-  );
-}
-
-function PrSkeleton() {
-  return (
-    <div className="flex items-center gap-1.5" role="status" aria-label="loading pr">
-      <div className="h-3 w-3 animate-pulse rounded-sm bg-muted [animation-delay:0ms]" />
-      <div className="h-3 w-10 animate-pulse rounded bg-muted [animation-delay:80ms]" />
-      <div className="h-3 flex-1 animate-pulse rounded bg-muted [animation-delay:160ms]" />
-    </div>
-  );
-}
-
-function GitHubSection({ session, isActive = true }: { session: Session; isActive?: boolean }) {
-  const githubStatus = useAppStore((s) => s.githubStatus);
-  const branch = useAppStore((s) => s.sessionBranches[session.id]);
-  const ghState = useAppStore((s) => s.sessionGithub[session.id]);
-  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === session.workspaceId));
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-
-  const [repoSlug, setRepoSlug] = useState<string | null>(null);
-  const [diffOpen, setDiffOpen] = useState(false);
-  const [issuesExpanded, setIssuesExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!branch || !workspace?.rootPath) return;
-    detectRepoSlug(tauriGhRunner, workspace.rootPath)
-      .then(setRepoSlug)
-      .catch(() => setRepoSlug(null));
-  }, [branch, workspace?.rootPath]);
-
-  useEffect(() => {
-    if (!isActive) return;
-    if (!branch || githubStatus?.mode === 'absent') return;
-    if (ghState?.fetchedAt != null) return;
-    const t0 = performance.now();
-    void refreshSessionPr(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
-
-  const prNumber = ghState?.pr?.number ?? null;
-  const prDetailFetchedAt = ghState?.detailFetchedAt ?? null;
-  useEffect(() => {
-    if (!isActive) return;
-    if (prNumber === null) return;
-    // Skip when detail was already fetched. Without this guard the GitHub
-    // network call (~3s) re-fired on every session switch, leaving a pending
-    // PR-card spinner visible for the entire wait.
-    if (prDetailFetchedAt !== null) return;
-    const t0 = performance.now();
-    void refreshSessionPrDetail(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
-
-  if (!branch || githubStatus?.mode === 'absent') return null;
-
-  const pr = ghState?.pr ?? null;
-  const linkedIssues = ghState?.linkedIssues ?? [];
-  const loading = ghState?.loading ?? false;
-  const isFirstLoad = loading && ghState?.fetchedAt == null;
-  const ISSUE_LIMIT = 3;
-  const visibleIssues = issuesExpanded ? linkedIssues : linkedIssues.slice(0, ISSUE_LIMIT);
-  const hiddenCount = linkedIssues.length - ISSUE_LIMIT;
-
-  const copyBranch = () => {
-    navigator.clipboard.writeText(branch).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  const handleCreatePr = async () => {
-    setCreateError(null);
-    try {
-      await createPrForSession(session.id);
-    } catch (err) {
-      setCreateError(formatError(err));
-    }
-  };
-
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <GitBranch size={11} aria-hidden className="text-provider-cursor" />
-          github
-        </span>
-        <button
-          type="button"
-          onClick={() => void refreshSessionPr(session.id, { force: true })}
-          disabled={loading}
-          title="refresh pr status"
-          aria-label="refresh pr status"
-          className={cn(ICON_BTN, 'disabled:opacity-40')}
-        >
-          <RefreshCw size={11} className={cn(loading && 'animate-spin')} aria-hidden />
-        </button>
-      </div>
-
-      <div
-        className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2"
-        aria-live="polite"
-      >
-        {isFirstLoad ? (
-          <PrSkeleton />
-        ) : pr ? (
-          <div
-            className="flex items-center gap-1.5"
-            title={`#${pr.number} ${pr.title} — ${PR_STATE_LABEL[pr.state]}`}
-          >
-            <PrStateIcon state={pr.state} />
-            <button
-              type="button"
-              onClick={() => openInBrowser(pr.url)}
-              className="shrink-0 font-mono text-xs text-foreground hover:underline focus:underline focus:outline-none"
-              title={`open #${pr.number} on github — ${pr.title}`}
-              aria-label={`open pull request #${pr.number} on github`}
-            >
-              #{pr.number}
-            </button>
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
-                copied
-                  ? 'text-success'
-                  : 'text-muted-foreground hover:text-foreground focus:text-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-            {repoSlug ? (
-              <button
-                type="button"
-                onClick={() => setDiffOpen(true)}
-                title="view diff"
-                aria-label="view pr diff"
-                className={cn('shrink-0', ICON_BTN)}
-              >
-                <FileEdit size={11} aria-hidden />
-              </button>
-            ) : null}
-          </div>
-        ) : loading ? (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 size={11} className="shrink-0 animate-spin" aria-hidden />
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono focus:outline-none',
-                copied ? 'text-success' : 'hover:text-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
-                copied
-                  ? 'text-success'
-                  : 'text-foreground hover:text-muted-foreground focus:text-muted-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void handleCreatePr()}
-              disabled={loading}
-              className="h-5 shrink-0 gap-0.5 px-1.5 text-[10px]"
-            >
-              <Plus size={10} aria-hidden />
-              Open PR
-            </Button>
-          </div>
-        )}
-
-        {linkedIssues.length > 0 ? (
-          <div className="flex flex-col gap-0.5 border-t border-border-soft pt-1.5">
-            {visibleIssues.map((issue) => (
-              <div key={issue.number} className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'shrink-0 rounded-sm px-1 py-0.5 text-[9px] uppercase tracking-wide',
-                    issue.closes ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
-                  )}
-                >
-                  {issue.closes ? 'closes' : 'ref'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => openInBrowser(issue.url)}
-                  className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground hover:text-foreground hover:underline"
-                  title={issue.title ?? `#${issue.number}`}
-                >
-                  #{issue.number}
-                  {issue.title ? ` ${issue.title}` : ''}
-                </button>
-              </div>
-            ))}
-            {!issuesExpanded && hiddenCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setIssuesExpanded(true)}
-                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                +{hiddenCount} more
-              </button>
-            ) : issuesExpanded && hiddenCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setIssuesExpanded(false)}
-                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                show less
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {createError ? (
-          <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
-            {createError}
-          </p>
-        ) : null}
-
-        {pr ? (
-          <div className="border-t border-border-soft pt-1.5">
-            <GithubCard
-              pr={pr}
-              detail={ghState?.detail ?? null}
-              detailLoading={ghState?.detailLoading ?? false}
-              detailError={ghState?.detailError ?? null}
-              detailFetchedAt={ghState?.detailFetchedAt ?? null}
-              branchLastActivity={session.updatedAt}
-              onOpenUrl={openInBrowser}
-              onRefresh={() => void refreshSessionPrDetail(session.id, { force: true })}
-              onSpawnFromComment={(c: PrComment) => {
-                const args = buildCommentAgentArgs(c, pr);
-                void spawnAgent(session.id, args);
-              }}
-              onSpawnFromReviewChanges={() => {
-                const open = (ghState?.detail?.comments ?? []).filter(
-                  (c) => c.source !== 'review' || c.resolved === false,
-                );
-                if (open.length === 0) return;
-                const args = buildReviewChangesAgentArgs(pr, open);
-                void spawnAgent(session.id, args);
-              }}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      {repoSlug && pr ? (
-        <DiffViewerDialog
-          open={diffOpen}
-          onClose={() => setDiffOpen(false)}
-          sessionId={session.id}
-          repoSlug={repoSlug}
-          prNumber={pr.number}
-          cwd={workspace?.rootPath}
-          workingDir={workspace?.rootPath}
-        />
-      ) : null}
-    </section>
   );
 }
 
@@ -917,7 +447,7 @@ function SlotRow({
           onClick={() => setEditing(true)}
           className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
         >
-          {meta?.emptyLabel ?? 'empty — click to edit'}
+          {meta?.emptyLabel ?? 'empty, click to edit'}
         </button>
       ) : singleLine ? (
         <button
@@ -1005,7 +535,7 @@ function SlotHistoryDialog({
   onClose,
 }: SlotHistoryDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="xl">
+    <Dialog open={open} onClose={onClose} title={`history: ${label}`} size="xl">
       {entries.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">no history yet</p>
       ) : (
@@ -1106,7 +636,7 @@ function SummarizerBadge({
   const tooltip = (() => {
     if (status === 'error' && error) return `last error: ${error}`;
     if (lastUpdate) return `last update: ${lastUpdate}`;
-    return 'summarizer running — input is not blocked';
+    return 'summarizer running; input is not blocked';
   })();
   return (
     <span
