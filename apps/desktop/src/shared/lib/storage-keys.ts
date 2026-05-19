@@ -36,6 +36,29 @@ const LEGACY_PREFIX_MAP: Record<string, string> = {
   'kayam:context-panel-open:': STORAGE_PREFIXES.contextPanelOpen,
 };
 
+/**
+ * Read the archived-session set from localStorage. Returns an empty map when
+ * the key is missing, the value is malformed, or localStorage is unavailable.
+ * The archive list lives in localStorage (client-only filter) rather than the
+ * DB, so any code outside React components that needs it has to go through
+ * here.
+ */
+export function readArchivedSessionsFromStorage(): Record<string, true> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.archivedTasks);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === 'object') {
+      const out: Record<string, true> = {};
+      for (const k of Object.keys(parsed as Record<string, unknown>)) out[k] = true;
+      return out;
+    }
+  } catch {
+    // ignore — fall through to empty
+  }
+  return {};
+}
+
 export function migrateLegacyStorageKeys(): void {
   try {
     const moves: Array<[string, string]> = [];

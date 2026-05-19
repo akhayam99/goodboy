@@ -202,6 +202,7 @@ import {
 } from './parallel-turn';
 import { exportConfigToFile, importConfigFromFile } from '../features/settings/config-export';
 import { formatError } from '../shared/lib/errors';
+import { readArchivedSessionsFromStorage } from '../shared/lib/storage-keys';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
@@ -1319,11 +1320,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // list visible. With a single session the activity bar is intentionally
       // collapsed, so without this the user has no way to reach the session
       // they just left behind by switching workspace.
+      //
+      // Skip archived sessions: archive is a localStorage-only filter, so
+      // the freshly-loaded `sessions` array still contains them. Without
+      // this filter the auto-select would resurrect the most recently
+      // archived session — which usually has a high `updatedAt` because it
+      // was the user's last interaction before archiving.
       if (sessions.length > 0) {
-        const mostRecent = [...sessions].sort(
+        const archived = readArchivedSessionsFromStorage();
+        const candidates = sessions.filter((s) => !archived[s.id]);
+        const mostRecent = [...candidates].sort(
           (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-        )[0]!;
-        await get().setCurrentSession(mostRecent.id);
+        )[0];
+        if (mostRecent) {
+          await get().setCurrentSession(mostRecent.id);
+        }
       }
     } else {
       set({ providerSpendBreakdown: [] });
