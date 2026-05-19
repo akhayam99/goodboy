@@ -1314,11 +1314,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
+      // Auto-select the most-recently-updated session so the user lands on
+      // something useful instead of "Pick a session from the list" with no
+      // list visible. With a single session the activity bar is intentionally
+      // collapsed, so without this the user has no way to reach the session
+      // they just left behind by switching workspace.
+      if (sessions.length > 0) {
+        const mostRecent = [...sessions].sort(
+          (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+        )[0]!;
+        await get().setCurrentSession(mostRecent.id);
+      }
     } else {
       set({ providerSpendBreakdown: [] });
     }
     await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     void get().refreshUnreadWorkspaces();
   },
 
