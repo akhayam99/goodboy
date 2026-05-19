@@ -59,9 +59,7 @@ export function SlashCommandPopover({
   return (
     <div className="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-background shadow-md">
       {filtered.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">
-          no skills — create one in settings
-        </p>
+        <p className="px-3 py-2 text-xs text-muted-foreground">no skills. create one in settings</p>
       ) : (
         <ul ref={listRef} className="max-h-48 overflow-y-auto py-1">
           {filtered.map((item, i) => (

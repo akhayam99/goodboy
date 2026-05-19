@@ -386,7 +386,7 @@ export function SessionSettingsDialog({
                 <>
                   <div className="flex items-center gap-2 text-xs text-warning">
                     <Archive size={13} aria-hidden />
-                    <span>consider archiving instead — keeps history and is reversible.</span>
+                    <span>consider archiving instead. keeps history and is reversible.</span>
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busy}>

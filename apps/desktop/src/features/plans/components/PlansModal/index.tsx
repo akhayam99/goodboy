@@ -217,7 +217,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                           : 'text-foreground hover:underline',
                       )}
                       title={
-                        creatorDeleted ? 'agent deleted — click for details' : 'open creator agent'
+                        creatorDeleted ? 'agent deleted, click for details' : 'open creator agent'
                       }
                     >
                       {selectedAgentName}
@@ -256,7 +256,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                               ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
                               : 'text-foreground hover:underline',
                           )}
-                          title={isDeleted ? 'agent deleted — click for details' : 'open agent'}
+                          title={isDeleted ? 'agent deleted, click for details' : 'open agent'}
                         >
                           {displayName}
                         </button>
@@ -287,7 +287,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                       retriggerArmed
                         ? 'click again to confirm retrigger'
                         : selected.status === 'consumed'
-                          ? 'plan already consumed — click to retrigger (asks for confirmation)'
+                          ? 'plan already consumed. click to retrigger (asks for confirmation)'
                           : 'spawn new agent to execute this plan'
                     }
                   >
@@ -299,7 +299,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                       <Play size={12} aria-hidden className="fill-current" />
                     )}
                     {retriggerArmed
-                      ? 'already consumed — click again to confirm'
+                      ? 'already consumed. click again to confirm'
                       : selected.status === 'consumed'
                         ? 'retrigger plan'
                         : 'trigger plan'}

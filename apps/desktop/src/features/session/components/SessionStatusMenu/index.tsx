@@ -45,13 +45,13 @@ export function SessionStatusMenu({ status, sessionLabel, onPick }: SessionStatu
         }}
         onDoubleClick={(e) => e.stopPropagation()}
         className={cn(
-          'inline-flex h-4 w-4 items-center justify-center rounded transition-colors hover:bg-muted',
+          'inline-flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-foreground/10',
           entry.className,
         )}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`change session status (current: ${entry.label})`}
-        title={`${sessionLabel} — ${entry.label} (click to change)`}
+        title={`${sessionLabel}: ${entry.label} (click to change)`}
       >
         <Icon size={12} aria-hidden />
       </button>

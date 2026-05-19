@@ -48,7 +48,7 @@ export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViol
     violations.push({
       kind: agentKind,
       signal: 'plan-marker-from-non-planner',
-      detail: `${agentKind} agent emitted a <<plan>> marker — only planner agents should produce plans.`,
+      detail: `${agentKind} agent emitted a <<plan>> marker. only planner agents should produce plans.`,
     });
   }
 
@@ -62,7 +62,7 @@ export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViol
       violations.push({
         kind: agentKind,
         signal: 'file-edit-from-readonly-kind',
-        detail: `${agentKind} agent edited ${nonDocFiles.length} file(s) — this role should not modify files.`,
+        detail: `${agentKind} agent edited ${nonDocFiles.length} file(s). this role should not modify files.`,
       });
     }
   }
@@ -71,7 +71,7 @@ export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViol
     violations.push({
       kind: agentKind,
       signal: 'impl-output-from-readonly-kind',
-      detail: `${agentKind} agent produced implementation-like diff output — consider spawning an implementer.`,
+      detail: `${agentKind} agent produced implementation-like diff output. consider spawning an implementer.`,
     });
   }
 

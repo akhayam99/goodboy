@@ -110,7 +110,7 @@ function Absent({
     <div className="flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
         connect with a personal access token (classic or fine-grained, scope:{' '}
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">repo</code>) — or run{' '}
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">repo</code>), or run{' '}
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">gh auth login</code> in
         a terminal and reload kAY.am.
       </p>

@@ -183,7 +183,7 @@ export function WorkspaceSettingsDialog({
                   <div className="text-xs font-semibold text-foreground">disconnect workspace</div>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                     removes kAY.am state (sessions, transcripts, worktrees, audit). the repository
-                    on disk is left untouched — you can re-add it later.
+                    on disk is left untouched. you can re-add it later.
                   </p>
                 </div>
                 {!confirmDisconnect ? (

@@ -1911,7 +1911,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
-        'session worktree not initialized — restart the app to reload persisted worktree paths',
+        'session worktree not initialized. restart the app to reload persisted worktree paths',
       );
     }
 
@@ -1919,7 +1919,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
-      throw new Error('no agent selected — spawn one before sending a turn');
+      throw new Error('no agent selected. spawn one before sending a turn');
     }
 
     const userTurnText = content;
@@ -2478,7 +2478,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const ratio = estimated / ctxWindow;
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
-        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%) — consider /compact`;
+        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%). consider /compact`;
         if (import.meta.env.DEV) console.warn(msg);
         set((state) => ({
           systemAlerts: [
