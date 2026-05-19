@@ -12,6 +12,7 @@ import {
   GitPullRequestDraft,
   Loader2,
   MessageSquare,
+  RefreshCw,
   Settings2,
   XCircle,
 } from 'lucide-react';
@@ -124,12 +125,16 @@ export function SessionDetailPanel({
         </button>
       </div>
 
-      {/* subtitle: branch (click to copy) */}
-      {branch && <BranchChip branch={branch} />}
+      {/* subtitle: branch (click to copy) + refresh github */}
+      {branch && (
+        <div className="flex items-center gap-1">
+          <BranchChip branch={branch} />
+          <GithubRefreshButton sessionId={session.id as SessionId} />
+        </div>
+      )}
 
       {/* github card */}
       <GithubCard
-        sessionId={session.id as SessionId}
         pr={pr}
         loading={prLoading}
         detail={github?.detail ?? null}
@@ -180,6 +185,33 @@ function BranchChip({ branch }: { branch: string }) {
   );
 }
 
+function GithubRefreshButton({ sessionId }: { sessionId: SessionId }) {
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
+  const loading = useAppStore((s) => s.sessionGithub[sessionId]?.loading ?? false);
+  const detailLoading = useAppStore((s) => s.sessionGithub[sessionId]?.detailLoading ?? false);
+  const spinning = loading || detailLoading;
+
+  const onRefresh = () => {
+    void refreshSessionPr(sessionId, { force: true }).then(() =>
+      refreshSessionPrDetail(sessionId, { force: true }),
+    );
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onRefresh}
+      disabled={spinning}
+      title="refresh github status"
+      aria-label="refresh github status"
+      className="shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:hover:bg-transparent"
+    >
+      <RefreshCw size={10} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
+    </button>
+  );
+}
+
 const PR_ICON_MAP: Record<
   PullRequestStateKind,
   { icon: React.ElementType; label: string; className: string }
@@ -192,17 +224,13 @@ const PR_ICON_MAP: Record<
 };
 
 interface GithubCardProps {
-  sessionId: SessionId;
   pr: { number: number; state: PullRequestStateKind; url: string } | null;
   loading: boolean;
   detail: import('@kay-am/types').PrDetail | null;
   onOpenDetails?: () => void;
 }
 
-function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCardProps) {
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const [creating, setCreating] = useState(false);
-
+function GithubCard({ pr, loading, detail, onOpenDetails }: GithubCardProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs text-muted-foreground">
@@ -213,30 +241,10 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
   }
 
   if (!pr) {
-    const onCreate = async () => {
-      setCreating(true);
-      try {
-        await createPrForSession(sessionId);
-      } finally {
-        setCreating(false);
-      }
-    };
     return (
       <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs">
         <GitPullRequest size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <span className="text-muted-foreground">no PR yet</span>
-        <button
-          type="button"
-          onClick={() => void onCreate()}
-          disabled={creating}
-          className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-        >
-          {creating ? (
-            <Loader2 size={10} aria-hidden className="animate-spin" />
-          ) : (
-            <span>create PR</span>
-          )}
-        </button>
       </div>
     );
   }
