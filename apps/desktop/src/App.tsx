@@ -10,6 +10,7 @@ import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
 import { ToastProvider } from './app/components/Toast';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import { DogMascot } from './shared/components/DogMascot';
 import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
   useAppStore,
@@ -297,17 +298,75 @@ function KeepAliveContextPanel({
 
 function EmptyState({ hasWorkspace }: { hasWorkspace: boolean }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6">
-      <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-border-soft bg-subtle p-8 text-center shadow-sm">
-        <span className="text-sm font-semibold tracking-tight">
-          {hasWorkspace ? 'pick up where you left off' : 'add a workspace to begin'}
-        </span>
-        <p className="text-xs text-muted-foreground">
-          {hasWorkspace
-            ? 'create a session from the sidebar, or open an existing one.'
-            : 'workspaces are git repos. each session is its own worktree + branch.'}
-        </p>
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden px-6">
+      {/* radial vignette — keeps focus center, fades edges */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 0%, transparent 40%, var(--color-background) 100%)',
+        }}
+        aria-hidden
+      />
+
+      <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
+        <EmptyStateLogo />
+        <div className="flex flex-col gap-2.5">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            {hasWorkspace ? 'Pick up where you left off' : 'Welcome to kAY.am'}
+          </h2>
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+            {hasWorkspace
+              ? 'Spin up a new session from the sidebar, or jump back into an existing one. Each session lives in its own worktree.'
+              : 'Add a git repo as your first workspace. Every session you create gets its own worktree and branch, so experiments never touch your main checkout.'}
+          </p>
+        </div>
+        <KeyboardHints hasWorkspace={hasWorkspace} />
       </div>
     </div>
+  );
+}
+
+function EmptyStateLogo() {
+  return (
+    <div className="relative">
+      <div className="absolute -inset-6 animate-pulse rounded-full bg-primary/10 blur-2xl" />
+      <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
+        <DogMascot size={56} className="text-foreground" />
+      </div>
+    </div>
+  );
+}
+
+function KeyboardHints({ hasWorkspace }: { hasWorkspace: boolean }) {
+  if (!hasWorkspace) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-2xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1">
+        <Kbd>⌘</Kbd>
+        <Kbd>K</Kbd>
+        <span className="ml-1">command palette</span>
+      </span>
+      <span className="text-muted-foreground/30">·</span>
+      <span className="inline-flex items-center gap-1">
+        <Kbd>⌘</Kbd>
+        <Kbd>,</Kbd>
+        <span className="ml-1">settings</span>
+      </span>
+      <span className="text-muted-foreground/30">·</span>
+      <span className="inline-flex items-center gap-1">
+        <Kbd>⌘</Kbd>
+        <Kbd>/</Kbd>
+        <span className="ml-1">shortcuts</span>
+      </span>
+    </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex h-4 min-w-[1rem] items-center justify-center rounded border border-border-soft bg-subtle/60 px-1 font-mono text-[10px] font-medium text-muted-foreground">
+      {children}
+    </kbd>
   );
 }
