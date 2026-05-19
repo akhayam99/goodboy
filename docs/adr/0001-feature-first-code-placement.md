@@ -1,7 +1,7 @@
-# ADR-0007: Feature-First Code Placement
+# ADR-0001: Feature-first code placement
 
 **Status**: Accepted  
-**Date**: 2026-05-17  
+**Date**: 2026-05-17 (re-numbered from ADR-0007 on 2026-05-19)  
 **Deciders**: Amin
 
 ---
@@ -13,7 +13,7 @@ The desktop codebase grew organically: domain logic, components, and utilities l
 1. **Discoverability failure** — finding all code for a feature required searching multiple unrelated directories.
 2. **Coupling risk** — shared locations created implicit dependencies between unrelated features; every refactor risked unexpected breakage.
 
-ADR-0004 (module boundaries) and ADR-0006 (import hygiene) established the rules for how code relates across modules. This ADR establishes **where** code physically lives and how new code enters the codebase.
+This ADR establishes **where** code physically lives and how new code enters the codebase. Subsequent ADRs cover component co-location ([ADR-0002](./0002-component-co-location.md)), the Tauri command boundary ([ADR-0003](./0003-tauri-command-boundary.md)), dependency direction ([ADR-0004](./0004-package-dependency-direction.md)), and testing layout ([ADR-0005](./0005-test-layout.md)).
 
 ---
 

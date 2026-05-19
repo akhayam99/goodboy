@@ -1,14 +1,15 @@
 # Conventions — @kay-am/core
 
-Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This package must be runnable in Node, browsers, and tests without changes.
+Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** Must run in Node, browsers, and tests without modification.
 
 ## Scope
 
-- Provider adapters (Anthropic, OpenAI, Cursor, etc.).
+- Provider adapters (Claude, Codex, Cursor) and the registry.
 - Routing & balance logic (priority, threshold, fallback).
-- Session orchestration (macro session lifecycle, task state transitions).
+- Session orchestration (lifecycle, task state transitions).
 - Skill registry & execution.
 - Validation schemas, type guards, refinement functions.
+- Planner, summarizer, scheduler, telemetry recording.
 - Pure utilities (parsing, formatting, calculations).
 
 ## What does NOT belong here
@@ -16,78 +17,86 @@ Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This packag
 - React components → `@kay-am/ui`.
 - SQLite queries → `@kay-am/db`.
 - Tauri command bindings → `apps/desktop`.
-- Side effects bound to a runtime (file system, processes, native APIs).
+- Side effects bound to a specific runtime (file system, processes, native APIs).
 
-## Architecture
+## Provider adapter pattern
 
-### Provider adapter pattern
-
-Every AI provider implements a common interface:
+Every adapter implements `ProviderAdapter` from `@kay-am/types`:
 
 ```ts
-export interface ProviderAdapter {
+interface ProviderAdapter {
   readonly id: ProviderId;
-  readonly name: string;
   readonly capabilities: ProviderCapabilities;
-  send(request: ProviderRequest): Promise<ProviderResponse>;
-  estimateCost(request: ProviderRequest): number;
-  getUsage(): Promise<ProviderUsage>;
+  detect(): Promise<DetectResult>;
+  cost(usage: ProviderUsage, model: string): number;
+  spawn(request: TurnRequest): AsyncIterable<TurnEvent>;
 }
 ```
 
-- Adapters are stateless. Configuration is injected.
-- Adapters never read environment variables or files. The host provides credentials.
-- Errors are typed (`Result<T, ProviderError>` pattern) — no thrown exceptions for expected failures.
+Adapters share their child-process bookkeeping via `providers/shared/spawn-stream.ts`:
 
-### Routing
+- `detectBinary(binary, spawnFn)` — `--version` probe → `DetectResult`.
+- `spawnLineStream(binary, args, spawnFn, { parseLine, parseCtx, onClose? })` — spawn + line-by-line parse + leak-free cleanup.
 
-The `Router` selects the active provider based on:
+A new adapter implements its CLI flags + line parser; it does not re-implement the spawn loop. Re-implementing it is a review-fail.
 
-1. User-defined priority order.
-2. Current usage vs. configured threshold.
-3. Task-type to model mapping.
+## Pure-function discipline
 
-Pure function: `route(request, providers, config) → ProviderId`.
+- No singletons. Pass dependencies explicitly via a `Deps` object on the public function or constructor.
+- No `Date.now()` / `Math.random()` / `crypto.randomUUID()` in business logic — inject a clock (`now: () => IsoDateTime`) and an RNG / id generator.
+- No `console.*` for production code paths. Inject a logger interface.
+- No reading from environment, files, or processes inside the package. The host provides credentials and IO.
+- Pure functions return `Promise<Result<T, E>>` for fallible async operations _or_ throw typed exception classes. The codebase currently uses typed exceptions throughout (`PlannerParseError`, `WorktreeError`, `GhCliError`, etc.); when picking a new fallible API, follow the existing exception pattern unless there's a reason to prefer `Result`.
+- No null returns for "not found" — use discriminated unions or `T | null` with the absence path obvious to the caller.
 
-### Sessions
+## Public API surface
 
-Macro sessions and tasks are immutable data structures with state transition functions. No instance methods that mutate. All transitions return new objects.
+`src/index.ts` re-exports the browser-safe public surface. Node-only modules (anything importing `node:child_process`, `node:fs`, etc.) are excluded from the barrel and must be imported from their full path — `packages/core/src/providers/registry`, `packages/core/src/summarizer/cli`, etc.
 
-## Code rules
-
-- Pure functions wherever possible. Side effects pushed to the boundary.
-- No singletons. Pass dependencies explicitly.
-- No `console.*` for production code paths. Use a logger interface injected by the host.
-- No `Date.now()` or `Math.random()` in business logic — inject clock and RNG.
-- Async functions return `Promise<Result<T, E>>` for fallible operations.
-- No null returns for "not found" — use discriminated unions or `Option<T>`-style wrappers.
-
-## Testing
-
-- Vitest. Every public function has tests.
-- No mocking of internal modules. Mock only at the boundary (provider adapters, fetch).
-- Test data via factories, not fixtures.
-- Naming: `<module>.test.ts` colocated with source.
+Any export in `src/index.ts` that has zero consumers outside the package is dead surface and must be removed.
 
 ## Folder structure
 
 ```
 src/
-├── index.ts              # public API (re-exports only)
+├── index.ts                # browser-safe public barrel
+├── budget/
+├── context/
+├── first-turn-classifier.ts
+├── github/
+├── permissions/
+├── planner/
 ├── providers/
-│   ├── adapter.ts        # ProviderAdapter interface
-│   ├── anthropic.ts
-│   ├── openai.ts
-│   └── registry.ts
-├── routing/
-│   ├── router.ts
-│   └── balance.ts
-├── sessions/
-│   ├── workspace.ts
-│   └── task.ts
+│   ├── capabilities.ts
+│   ├── preferences.ts          # DEFAULT_SESSION_PROVIDER_PREFERENCE (runtime)
+│   ├── registry.ts             # node-only, not in barrel
+│   ├── turn-weight.ts
+│   ├── claude/ codex/ cursor/  # adapters
+│   └── shared/                 # spawn-stream + anthropic-envelope-parser
+├── roles.ts
+├── scheduler/
+├── settings/
 ├── skills/
-│   └── registry.ts
-└── shared/
-    ├── result.ts         # Result<T, E> helpers
-    └── id.ts             # ID generation
+├── summarizer/
+├── telemetry/
+├── turn/
+├── workflows/
+└── worktree/
 ```
+
+## Testing
+
+See [ADR-0005](../../docs/adr/0005-test-layout.md).
+
+- Vitest. Colocated `<module>.test.ts` next to source.
+- Tests use factories from `<module>.test.ts` itself; no shared `__fixtures__/`.
+- Mock only at the boundary (provider adapters via `spawnFn`, `gh` via `GhRunner`, etc.).
+- Integration tests that actually shell out are env-gated (`process.env.RUN_INTEGRATION === '1'`).
+
+## Code rules
+
+- No `any`. `unknown` + type guards.
+- No default exports. Named only.
+- Discriminated unions for state machines and `kind`-tagged events.
+- `satisfies` over `as` for const validation.
+- No comments unless explaining **why**.
