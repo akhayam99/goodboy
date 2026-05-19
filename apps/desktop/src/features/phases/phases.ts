@@ -51,6 +51,7 @@ interface RawPhaseRunRow {
   readonly providerSessionId: string | null;
   readonly lastFinishedAt: string | null;
   readonly lastViewedAt: string | null;
+  readonly kind: string | null;
 }
 
 function rowToDefinition(row: RawPhaseDefinitionRow): Step {
@@ -92,6 +93,7 @@ function rowToPhaseRun(row: RawPhaseRunRow): Agent {
     ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
+    ...(row.kind != null && { kind: row.kind }),
   };
 }
 
@@ -159,6 +161,7 @@ export interface PhaseRunInsertArgs {
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
+  readonly kind?: string;
 }
 
 export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Agent> {
@@ -174,9 +177,14 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Age
       outputSummary: run.outputSummary ?? null,
       startedAt: run.startedAt ?? null,
       completedAt: run.completedAt ?? null,
+      kind: run.kind ?? null,
     },
   });
   return rowToPhaseRun(row);
+}
+
+export async function invokeAgentSetKind(id: AgentId, kind: string | null): Promise<void> {
+  return invoke<void>('agent_set_kind', { id, kind });
 }
 
 export interface PhaseRunUpdateFields {

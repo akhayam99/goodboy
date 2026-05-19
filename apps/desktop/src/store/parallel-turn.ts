@@ -38,6 +38,7 @@ import {
   invokePhaseRunUpdateStatus,
 } from '../features/phases/phases';
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
+import { inferAgentKindFromName } from '../features/session/agent-kind';
 
 export interface ParallelBranchInputs {
   readonly session: Session;
@@ -297,6 +298,7 @@ export async function runParallelBranch(
       status: 'running',
       providerRunId: runId,
       startedAt: now(),
+      kind: inferAgentKindFromName(def.name),
     });
   }
   await effects.refreshPhaseRuns(session.id);

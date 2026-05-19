@@ -83,6 +83,7 @@ pub struct SessionRow {
     pub last_finished_at: Option<String>,
     #[serde(rename = "lastViewedAt")]
     pub last_viewed_at: Option<String>,
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -103,6 +104,7 @@ pub struct PhaseRunInsertInput {
     pub started_at: Option<String>,
     #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -431,7 +433,7 @@ pub fn agent_list_for_session(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at
+                provider_session_id, last_finished_at, last_viewed_at, kind
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -451,6 +453,7 @@ pub fn agent_list_for_session(
             provider_session_id: row.get(10)?,
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
+            kind: row.get(13)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -467,8 +470,8 @@ pub fn agent_insert(
     conn.execute(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
-            provider_run_id, output_summary, started_at, completed_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            provider_run_id, output_summary, started_at, completed_at, kind)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         rusqlite::params![
             id,
             input.session_id,
@@ -480,6 +483,7 @@ pub fn agent_insert(
             input.output_summary,
             input.started_at,
             input.completed_at,
+            input.kind,
         ],
     )?;
 
@@ -497,6 +501,7 @@ pub fn agent_insert(
         provider_session_id: None,
         last_finished_at: None,
         last_viewed_at: None,
+        kind: input.kind,
     })
 }
 
@@ -537,7 +542,7 @@ pub fn agent_update_status(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at
+                provider_session_id, last_finished_at, last_viewed_at, kind
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -557,12 +562,33 @@ pub fn agent_update_status(
             provider_session_id: row.get(10)?,
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
+            kind: row.get(13)?,
         })
     })?;
     match rows.next() {
         Some(r) => Ok(r.map_err(PhaseError::Db)?),
         None => Err(PhaseError::RunNotFound(input.id)),
     }
+}
+
+// Persists the agent role kind (planner/scout/implementer/...) so the
+// chip survives an app restart. agentKindOverride in the store mirrors
+// this column; both are kept in sync via this command.
+#[tauri::command]
+pub fn agent_set_kind(
+    state: State<'_, Db>,
+    id: String,
+    kind: Option<String>,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE agents SET kind = ?2 WHERE id = ?1",
+        rusqlite::params![id, kind],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::RunNotFound(id));
+    }
+    Ok(())
 }
 
 // Persists the provider-side session id captured from the CLI's `system` init
