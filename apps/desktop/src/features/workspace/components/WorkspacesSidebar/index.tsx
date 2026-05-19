@@ -7,10 +7,12 @@ import {
   Bot,
   ClipboardList,
   Clock,
+  FolderPlus,
   Gauge,
   HelpCircle,
   Layers,
   Loader2,
+  MessagesSquare,
   Moon,
   Play,
   Plus,
@@ -24,6 +26,7 @@ import { SessionSettingsDialog } from '../../../session/components/SessionSettin
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { DogMascot } from '../../../../shared/components/DogMascot';
 import type {
   Agent,
   AgentId,
@@ -74,7 +77,8 @@ import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
-import { SessionDetailPanel } from '../SessionDetailPanel';
+import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
+import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -124,6 +128,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
+  const [githubDetailsOpen, setGithubDetailsOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -135,34 +140,55 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       {/* activity bar + detail panel */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
-          <>
-            <SessionActivityBar
-              sessions={activeSessions}
-              archivedSessions={archivedSessions}
-              currentSessionId={currentSession?.id ?? null}
-              onSelectSession={onSelectSession}
-              onNewSession={() => setNewSessionOpen(true)}
-            />
-            <ScrollArea className="mr-1.5 mt-1.5 mb-1.5 flex-1 rounded-lg bg-background dark:bg-muted">
-              {currentSession ? (
-                <>
-                  <SessionDetailPanel
-                    session={currentSession}
-                    onOpenSessionSettings={() => setSessionSettingsOpen(true)}
+          (() => {
+            const hasAnySession = activeSessions.length > 0 || archivedSessions.length > 0;
+            return (
+              <>
+                <div
+                  className={cn(
+                    'overflow-hidden transition-[width] duration-300 ease-out',
+                    hasAnySession ? 'w-28' : 'w-0',
+                  )}
+                  aria-hidden={!hasAnySession}
+                >
+                  <SessionActivityBar
+                    sessions={activeSessions}
+                    archivedSessions={archivedSessions}
+                    currentSessionId={currentSession?.id ?? null}
+                    onSelectSession={onSelectSession}
+                    onNewSession={() => setNewSessionOpen(true)}
                   />
-                  <AgentsSection task={currentSession} />
-                </>
-              ) : (
-                <p className="px-3 py-4 text-xs text-muted-foreground/70">
-                  Select a session to see details.
-                </p>
-              )}
-            </ScrollArea>
-          </>
+                </div>
+                <div
+                  className={cn(
+                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
+                    hasAnySession ? 'ml-0' : 'ml-1.5',
+                  )}
+                >
+                  {currentSession ? (
+                    <>
+                      <SessionDetailPanel
+                        session={currentSession}
+                        onOpenSessionSettings={() => setSessionSettingsOpen(true)}
+                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                      />
+                      <ScrollArea className="min-h-0 flex-1">
+                        <AgentsSection task={currentSession} />
+                      </ScrollArea>
+                      <SessionFilesTouchedFooter session={currentSession} />
+                    </>
+                  ) : (
+                    <NoSessionSelectedEmpty
+                      hasAnySession={hasAnySession}
+                      onNewSession={() => setNewSessionOpen(true)}
+                    />
+                  )}
+                </div>
+              </>
+            );
+          })()
         ) : (
-          <p className="px-3 py-4 text-xs text-muted-foreground/70">
-            Select a workspace to get started.
-          </p>
+          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
         )}
       </div>
 
@@ -222,6 +248,11 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onUnarchive={() => unarchive(currentSession.id as SessionId)}
         />
       ) : null}
+      <GithubDetailsDialog
+        open={githubDetailsOpen}
+        onClose={() => setGithubDetailsOpen(false)}
+        sessionId={(currentSession?.id as SessionId) ?? null}
+      />
     </div>
   );
 }
@@ -229,21 +260,73 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 function SidebarLogo() {
   return (
     <span className="flex items-center gap-1.5">
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 18 18"
-        fill="none"
-        aria-hidden
-        className="shrink-0 text-foreground"
-      >
-        <circle cx="9" cy="9" r="3.5" fill="currentColor" opacity="0.9" />
-        <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.2" opacity="0.35" />
-        <line x1="9" y1="1" x2="9" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-        <line x1="1" y1="9" x2="17" y2="9" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-      </svg>
+      <DogMascot size={16} className="shrink-0 text-foreground" />
       <span className="text-xs font-semibold tracking-tight text-foreground">kAY.am</span>
     </span>
+  );
+}
+
+function NoSessionSelectedEmpty({
+  hasAnySession,
+  onNewSession,
+}: {
+  hasAnySession: boolean;
+  onNewSession: () => void;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+      <div className="relative">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
+          <MessagesSquare size={26} className="text-info" aria-hidden />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold text-foreground">
+          {hasAnySession ? 'Ready when you are' : 'No sessions yet'}
+        </h3>
+        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
+          {hasAnySession
+            ? 'Pick a session from the list to dive in, or spin up a new one to start cooking.'
+            : 'This workspace is empty. Spin up your first session to start working.'}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onNewSession}
+        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+      >
+        <Plus size={12} aria-hidden />
+        <span>{hasAnySession ? 'New session' : 'Create first session'}</span>
+      </button>
+    </div>
+  );
+}
+
+function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+      <div className="relative">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
+          <FolderPlus size={26} className="text-info" aria-hidden />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
+        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
+          Add a git repo to spin up worktrees and start orchestrating sessions.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAddWorkspace}
+        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+      >
+        <Plus size={12} aria-hidden />
+        <span>Add workspace</span>
+      </button>
+    </div>
   );
 }
 
@@ -454,7 +537,7 @@ function AddWsSkillsPreview() {
         <h3 className="text-xs font-semibold text-foreground">skills discovered on add</h3>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           after the workspace is registered, kay.am scans these locations and surfaces every skill
-          it finds in chat as `/skill-name`. you don&rsquo;t need to author anything here — existing
+          it finds in chat as `/skill-name`. you don&rsquo;t need to author anything here; existing
           files are picked up automatically.
         </p>
       </div>
@@ -834,7 +917,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </ul>
         ) : (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No agents yet — spawn one below.
+            No agents yet. Spawn one below.
           </p>
         )
       ) : (
@@ -1066,7 +1149,17 @@ function WorkflowStepRow({
 
   const renderStatusIcon = () => {
     if (isStartable) {
-      return <span className="text-2xs uppercase tracking-wide opacity-70">start</span>;
+      return (
+        <span className="relative inline-flex size-3.5">
+          <span
+            className="absolute inset-0 animate-ping rounded-full bg-primary/30 opacity-75"
+            aria-hidden
+          />
+          <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+            <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
+          </span>
+        </span>
+      );
     }
     if (isActionable && isBlocked) {
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
@@ -1089,15 +1182,6 @@ function WorkflowStepRow({
 
   const renderActionIndicator = () => {
     if (run.status === 'running') return null;
-    if (isStartable) {
-      return (
-        <ArrowRight
-          size={13}
-          aria-hidden
-          className="transition-transform group-hover:translate-x-0.5"
-        />
-      );
-    }
     if (isActionable && isBlocked) {
       return <ArrowRight size={13} aria-hidden className="text-warning" />;
     }
@@ -1106,10 +1190,10 @@ function WorkflowStepRow({
 
   const stableTitle =
     isActionable && isBlocked
-      ? 'next workflow step — gated by open questions / summarizer (click to force)'
+      ? 'next workflow step. gated by open questions / summarizer (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `agent ${run.ordinal + 1} — ${run.status}`;
+        : `agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -1261,7 +1345,7 @@ function AgentRow({
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
-    isSelected ? 'selected — chat shows this agent' : 'click to switch chat to this agent',
+    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1302,7 +1386,7 @@ function AgentRow({
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
         <AgentKindChip
           kind={kind}
-          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
         {isEditing ? (
           <input

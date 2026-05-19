@@ -45,10 +45,12 @@ export function SessionActivityBar({
 
   const displayList = tab === 'active' ? sortedActive : sortedArchived;
 
+  const isArchivedView = tab === 'archived';
+
   return (
-    <div className="flex w-28 shrink-0 flex-col">
+    <div className="flex h-full w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col px-1.5 py-1.5">
+        <div className="flex flex-col gap-1 px-1.5 py-1.5">
           <span className="mb-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             <MessagesSquare size={10} aria-hidden className="text-info" />
             Sessions
@@ -58,22 +60,23 @@ export function SessionActivityBar({
               key={session.id}
               session={session}
               isActive={session.id === currentSessionId}
-              dimmed={tab === 'archived'}
+              dimmed={isArchivedView}
               onClick={() => onSelectSession(session.id as SessionId)}
             />
           ))}
-          {tab === 'active' && (
+          {!isArchivedView && (
             <button
               type="button"
               onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center rounded py-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/60 hover:text-muted-foreground"
+              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/40 hover:text-foreground"
               title="new session"
               aria-label="create new session"
             >
-              <Plus size={13} aria-hidden />
+              <Plus size={12} aria-hidden />
+              <span>New</span>
             </button>
           )}
-          {tab === 'archived' && sortedArchived.length === 0 && (
+          {isArchivedView && sortedArchived.length === 0 && (
             <p className="px-1 py-3 text-center text-[10px] text-muted-foreground/50">
               no archived sessions
             </p>
@@ -81,36 +84,22 @@ export function SessionActivityBar({
         </div>
       </ScrollArea>
 
-      {/* segment control */}
+      {/* archive toggle — single button at bottom */}
       <div className="shrink-0 p-1.5">
-        <div className="flex rounded p-0.5">
-          <button
-            type="button"
-            onClick={() => setTab('active')}
-            className={cn(
-              'flex flex-1 items-center justify-center rounded py-1.5 transition-colors',
-              tab === 'active'
-                ? 'bg-primary/15 text-primary shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            title="active sessions"
-          >
-            <Inbox size={12} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('archived')}
-            className={cn(
-              'flex flex-1 items-center justify-center rounded py-1.5 transition-colors',
-              tab === 'archived'
-                ? 'bg-primary/15 text-primary shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            title="archived sessions"
-          >
-            <Archive size={12} aria-hidden />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setTab(isArchivedView ? 'active' : 'archived')}
+          className={cn(
+            'flex w-full items-center justify-center gap-1.5 rounded py-1.5 text-2xs font-medium transition-colors',
+            isArchivedView
+              ? 'bg-foreground/10 text-foreground'
+              : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+          )}
+          title={isArchivedView ? 'show active sessions' : 'show archived sessions'}
+        >
+          {isArchivedView ? <Inbox size={11} aria-hidden /> : <Archive size={11} aria-hidden />}
+          <span>{isArchivedView ? 'Active' : 'Archive'}</span>
+        </button>
       </div>
     </div>
   );
@@ -153,7 +142,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} — ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
+      title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded px-1 py-2 text-center transition-colors',
         isActive
