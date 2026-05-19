@@ -1072,7 +1072,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               ...(anchor.top !== null ? { top: anchor.top } : {}),
               ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
             }}
-            className="z-50 w-64 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+            className="z-50 w-80 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
           >
             <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
               by role
