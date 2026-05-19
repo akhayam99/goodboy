@@ -1049,8 +1049,8 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         <div
           role="menu"
           className={cn(
-            'absolute left-0 right-0 z-20 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
-            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
+            'absolute left-full z-20 ml-1 w-64 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
+            direction === 'up' ? 'bottom-0' : 'top-0',
           )}
         >
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
