@@ -54,6 +54,32 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
   }, [ref, onClose]);
 }
 
+/**
+ * Picks the opening direction based on the trigger's viewport position
+ * when the dropdown is about to open. Avoids the bottom-of-scroll-container
+ * trap where `top-full` would push the popover into a scroll region.
+ */
+function useDropdownDirection(
+  triggerRef: React.RefObject<HTMLElement | null>,
+  open: boolean,
+): 'up' | 'down' {
+  const [direction, setDirection] = useState<'up' | 'down'>('down');
+  useEffect(() => {
+    if (!open) return;
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setDirection(spaceBelow < 200 && spaceAbove > spaceBelow ? 'up' : 'down');
+  }, [open, triggerRef]);
+  return direction;
+}
+
+const POPUP_BASE =
+  'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle py-0.5 shadow-lg';
+const POPUP_DOWN = 'top-full mt-1';
+const POPUP_UP = 'bottom-full mb-1';
+
 export function ModelSelect({
   provider,
   value,
@@ -68,6 +94,7 @@ export function ModelSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
   const tier = modelCostTier(value);
@@ -100,7 +127,9 @@ export function ModelSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[10rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div
+          className={cn(POPUP_BASE, 'min-w-[10rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
+        >
           {models.map((m) => {
             const active = value === m.id;
             const t = modelCostTier(m.id);
@@ -149,6 +178,7 @@ export function EffortSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   if (!levels) {
     return (
@@ -184,7 +214,7 @@ export function EffortSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[8rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div className={cn(POPUP_BASE, 'min-w-[8rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {levels.map((level) => {
             const active = value === level;
             return (
@@ -229,6 +259,7 @@ export function VerbositySelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   return (
     <div ref={containerRef} className="relative">
@@ -258,7 +289,7 @@ export function VerbositySelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[7rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div className={cn(POPUP_BASE, 'min-w-[7rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {VERBOSITY_LEVELS.map((level) => {
             const active = value === level;
             return (

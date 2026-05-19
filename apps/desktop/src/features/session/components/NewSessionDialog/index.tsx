@@ -1596,6 +1596,7 @@ function AgentKindSelect({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [direction, setDirection] = useState<'up' | 'down'>('down');
 
   useEffect(() => {
     if (!open) return;
@@ -1606,6 +1607,16 @@ function AgentKindSelect({
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    // ~280px tall popup; flip up when below is tight.
+    setDirection(spaceBelow < 300 && spaceAbove > spaceBelow ? 'up' : 'down');
   }, [open]);
 
   const meta = AGENT_KIND_META[value];
@@ -1638,7 +1649,12 @@ function AgentKindSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-[280px] w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div
+          className={cn(
+            'absolute left-0 z-50 max-h-[280px] w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg',
+            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
+          )}
+        >
           {[...AGENT_KIND_ORDER]
             .filter((k) => k !== 'init')
             .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
