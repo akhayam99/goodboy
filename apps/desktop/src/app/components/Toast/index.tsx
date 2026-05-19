@@ -27,7 +27,9 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
   const showToast = useCallback((kind: ToastKind, message: string) => {
     const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, kind, message }]);
+    const formatted =
+      message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message;
+    setToasts((prev) => [...prev, { id, kind, message: formatted }]);
   }, []);
 
   const dismiss = useCallback((id: string) => {
@@ -58,7 +60,7 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
 
   return (
     <div
-      className="pointer-events-none fixed right-4 top-4 z-50 flex flex-col gap-2"
+      className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2"
       role="region"
       aria-label="notifications"
       aria-live="polite"
