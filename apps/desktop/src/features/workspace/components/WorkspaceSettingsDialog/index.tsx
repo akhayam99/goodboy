@@ -317,16 +317,18 @@ function GeneralSection({
           <code className="rounded bg-background px-1 font-mono">[a-z0-9-]</code>, up to 16
           characters.
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <input
             type="text"
             value={branchPrefix}
             onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
             placeholder={DEFAULT_BRANCH_PREFIX}
             disabled={busy}
+            maxLength={16}
+            size={16}
             aria-label="branch prefix"
             className={cn(
-              'h-9 w-40 rounded-md border border-border bg-background px-3 font-mono text-sm text-foreground motion-safe:transition-colors',
+              'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
               'placeholder:text-muted-foreground/40',
               'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
               busy && 'cursor-not-allowed opacity-50',
@@ -334,6 +336,9 @@ function GeneralSection({
           />
           <span className="font-mono text-sm text-muted-foreground/50">/</span>
           <span className="font-mono text-sm text-muted-foreground/40">&lt;slug&gt;</span>
+          <span className="ml-auto font-mono text-2xs tabular-nums text-muted-foreground/60">
+            {branchPrefix.length}/16
+          </span>
         </div>
         <p className="flex items-center gap-1.5 text-2xs text-muted-foreground/70">
           <span>Preview:</span>
