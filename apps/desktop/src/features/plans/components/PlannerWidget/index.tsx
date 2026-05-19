@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Textarea, cn } from '@kay-am/ui';
+import { Button, cn } from '@kay-am/ui';
 import { PlannerClient, type PlannerOutput, defaultsForRole } from '@kay-am/core';
 import type {
   AgentEffort,
@@ -154,14 +154,12 @@ export function PlannerWidget({
   return (
     <div className="flex flex-col gap-2">
       <div className="relative rounded-md border border-border/30 bg-background shadow-sm transition-[border-color,box-shadow] focus-within:border-primary/40 focus-within:shadow-md focus-within:ring-1 focus-within:ring-primary/15">
-        <Textarea
+        <textarea
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
           placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
-          autoGrow
-          minRows={5}
-          maxRows={10}
-          className="!border-0 !shadow-none !bg-transparent pb-12 focus-visible:!ring-0 focus-visible:!shadow-none focus-visible:!border-0"
+          rows={5}
+          className="block w-full resize-none border-0 bg-transparent px-3 pb-12 pt-3 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
         />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-end p-2">
           <div className="pointer-events-auto">
