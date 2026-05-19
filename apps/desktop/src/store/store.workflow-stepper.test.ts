@@ -290,7 +290,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
     expect(state.sessionPhaseRuns[sid]?.every((r) => r.status === 'pending')).toBe(true);
   });
 
-  it('falls back to a single generic "agent 1" when no workflow is attached', async () => {
+  it('pre-spawns nothing when no workflow and no firstAgentKind are passed', async () => {
     const { useAppStore } = await import('./store');
     useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
 
@@ -300,10 +300,12 @@ describe('createSession — workflow stepper seeding (#424)', () => {
       branchPrefix: 'kay',
     });
 
-    expect(phaseRunInsertSpy).toHaveBeenCalledTimes(1);
-    const args = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args['name']).toBe('agent 1');
-    expect(args['stepId']).toBeUndefined();
+    // The session is created empty — the user explicitly spawns an agent or
+    // starts a workflow from the panel after creation. No placeholder.
+    expect(phaseRunInsertSpy).not.toHaveBeenCalled();
+    const state = useAppStore.getState();
+    const sid = state.currentSessionId as SessionId;
+    expect(state.sessionPhaseRuns[sid] ?? []).toHaveLength(0);
   });
 
   it('spawnAgent creates a new agent when called for a step (e.g. retry)', async () => {
