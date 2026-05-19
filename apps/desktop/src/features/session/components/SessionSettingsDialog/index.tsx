@@ -221,7 +221,6 @@ export function SessionSettingsDialog({
       description={session.goal}
       size="xl"
       className="w-[64rem] max-w-[95vw]"
-      fixedHeightClass="h-[600px]"
       bodyClassName="px-0 py-0 gap-0"
       fullScreenOnSmall
       footer={
@@ -555,15 +554,7 @@ function GeneralSection(props: GeneralSectionProps) {
                 </div>
               ) : null}
 
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setBranchEditOpen(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </Button>
+              <div className="flex items-center justify-end">
                 <Button
                   size="sm"
                   onClick={onChangeBranch}
