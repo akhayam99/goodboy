@@ -30,7 +30,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const atCap = workspaces.length >= MAX_WORKSPACES;
 
   return (
-    <div className="shrink-0 px-2 py-1.5">
+    <div className="shrink-0 px-2 py-1.5" data-tauri-drag-region={false}>
       <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <FolderOpen size={11} aria-hidden className="text-primary" />
         Workspaces
@@ -44,7 +44,10 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           {workspaces.length}/{MAX_WORKSPACES}
         </span>
       </span>
-      <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]"
+        data-tauri-drag-region={false}
+      >
         {sorted.map((ws) => (
           <WorkspaceCard
             key={ws.id}
@@ -58,6 +61,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           type="button"
           onClick={onAddWorkspace}
           disabled={atCap}
+          data-tauri-drag-region={false}
           className={cn(
             'flex shrink-0 items-center justify-center rounded border border-dashed px-2 py-1.5 transition-colors',
             atCap
@@ -108,6 +112,7 @@ function WorkspaceCard({
           : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
       )}
       title={workspace.name}
+      data-tauri-drag-region={false}
     >
       {hasUnread && !isActive && (
         <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2">
@@ -115,7 +120,12 @@ function WorkspaceCard({
           <span className="relative inline-block h-2 w-2 rounded-full bg-warning" />
         </span>
       )}
-      <button type="button" onClick={onSelect} className="flex items-center gap-1.5 px-2.5 py-1.5">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1.5"
+        data-tauri-drag-region={false}
+      >
         <span className="max-w-[100px] truncate">{workspace.name}</span>
       </button>
       <button
@@ -124,11 +134,12 @@ function WorkspaceCard({
           e.stopPropagation();
           onDisconnect();
         }}
-        className="flex h-full items-center pr-1.5 pl-0.5 text-muted-foreground/40 opacity-0 transition-opacity hover:text-danger group-hover:opacity-100 focus-visible:opacity-100"
+        className="flex h-full items-center pl-0.5 pr-1.5 text-muted-foreground/50 transition-colors hover:text-danger focus-visible:text-danger"
         title={`disconnect "${workspace.name}"`}
         aria-label={`disconnect workspace ${workspace.name}`}
+        data-tauri-drag-region={false}
       >
-        <X size={11} aria-hidden />
+        <X size={12} aria-hidden />
       </button>
     </div>
   );
