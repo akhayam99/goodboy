@@ -124,7 +124,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
           />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-px">
           {mode === 'preset' ? (
             <PresetPicker
               templates={phaseTemplates}

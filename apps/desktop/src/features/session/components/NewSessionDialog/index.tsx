@@ -267,8 +267,8 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
         </div>
       }
     >
-      <div className="flex flex-col gap-5">
-        <SectionCard
+      <div className="flex flex-col gap-7">
+        <Section
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
           title="Goal"
@@ -284,9 +284,9 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
             autoFocus
             disabled={busy}
           />
-        </SectionCard>
+        </Section>
 
-        <SectionCard
+        <Section
           icon={<GitBranch size={14} aria-hidden className="text-success" />}
           tone="success"
           title="Branch"
@@ -343,7 +343,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
               />
             )}
           </div>
-        </SectionCard>
+        </Section>
       </div>
     </Dialog>
   );
@@ -356,7 +356,7 @@ const TONE_BG: Record<Tone, string> = {
   success: 'bg-success/10',
 };
 
-function SectionCard({
+function Section({
   icon,
   tone,
   title,
@@ -370,11 +370,11 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
+    <section className="flex flex-col gap-2.5">
       <header className="flex items-start gap-2.5">
         <span
           className={cn(
-            'mt-0.5 flex h-7 w-7 items-center justify-center rounded-md',
+            'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
             TONE_BG[tone],
           )}
         >
@@ -385,7 +385,7 @@ function SectionCard({
           <p className="text-2xs leading-relaxed text-muted-foreground">{subtitle}</p>
         </div>
       </header>
-      <div className="pl-[2.375rem]">{children}</div>
+      <div>{children}</div>
     </section>
   );
 }
