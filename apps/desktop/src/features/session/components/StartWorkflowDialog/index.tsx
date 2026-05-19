@@ -198,7 +198,7 @@ function ModeCard({
 function CustomIntro({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-lg border border-border-soft bg-subtle/40 p-4">{children}</div>
+      {children}
       <div className="grid grid-cols-3 gap-2">
         <PlannerHint
           tone="primary"

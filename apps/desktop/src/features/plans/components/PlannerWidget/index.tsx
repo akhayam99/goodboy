@@ -153,18 +153,26 @@ export function PlannerWidget({
 
   return (
     <div className="flex flex-col gap-2">
-      <Textarea
-        value={theme}
-        onChange={(e) => setTheme(e.target.value)}
-        placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
-        autoGrow
-        maxRows={5}
-      />
-      <div className="flex items-center justify-end gap-2">
-        <span className="mr-auto text-2xs text-muted-foreground/60">cheap-tier · {providerId}</span>
-        <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
-          {planButtonLabel}
-        </Button>
+      <div className="relative rounded-md border border-border/30 bg-background shadow-sm transition-[border-color,box-shadow] focus-within:border-primary/40 focus-within:shadow-md focus-within:ring-1 focus-within:ring-primary/15">
+        <Textarea
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+          placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
+          autoGrow
+          minRows={5}
+          maxRows={10}
+          className="!border-0 !shadow-none !bg-transparent pb-12 focus-visible:!ring-0 focus-visible:!shadow-none focus-visible:!border-0"
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-end p-2">
+          <div className="pointer-events-auto">
+            <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
+              {planButtonLabel}
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end px-1">
+        <span className="text-2xs text-muted-foreground/60">cheap-tier · {providerId}</span>
       </div>
       {error ? (
         <p role="alert" className="text-xs text-danger">
