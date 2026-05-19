@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { worktreeChangedFiles } from '../features/worktree/worktree';
 import type {
   Agent,
   ContextSlot,
@@ -29,12 +30,6 @@ const NO_LOADING: SessionLoadingFlags = {
 
 export const useSessionLoading = (sessionId: SessionId | null): SessionLoadingFlags =>
   useAppStore((s) => (sessionId ? (s.sessionLoading[sessionId] ?? NO_LOADING) : NO_LOADING));
-
-function toRelPath(absPath: string, workingDir: string | null): string {
-  if (!workingDir) return absPath;
-  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
-  return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
-}
 
 const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
 const selectCurrentWorkspace = (state: AppState): Workspace | null =>
@@ -112,38 +107,55 @@ interface FilesTouched {
 const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0 };
 
 /**
- * Distinct files edited across every agent of a session, derived from `file_edit`
- * transcript events. Slot-based 'files_touched' lags until the summarizer
- * runs — this gives a live count regardless of summarizer state.
+ * Files that differ between the session worktree and its base branch
+ * (`main`/`master`, or their `origin/` counterparts — first existing wins).
+ * Includes uncommitted + untracked changes. Stable across pushes: pushing
+ * commits doesn't drop the count because the diff is computed against the
+ * merge-base with the base branch, not against `HEAD`.
  *
- * Selectors return raw slices so Zustand's Object.is check is stable; the
- * derived list is memoized in React.
+ * Refreshed on session switch, after agent activity (transcript grows), and
+ * after summarizer ticks (proxy for "something on disk likely changed").
  */
 export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
-  const phaseRuns = useAppStore((s) =>
-    sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
-  );
-  const transcripts = useAppStore((s) => s.transcripts);
   const workingDir = useAppStore((s) =>
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
   );
-  return useMemo(() => {
-    if (!phaseRuns || phaseRuns.length === 0) return EMPTY_FILES_TOUCHED;
-    const seen = new Set<string>();
-    const ordered: string[] = [];
-    for (const run of phaseRuns) {
-      const events = transcripts[run.id] ?? [];
-      for (const ev of events) {
-        if (ev.kind !== 'file_edit') continue;
-        const rel = toRelPath(ev.path, workingDir);
-        if (seen.has(rel)) continue;
-        seen.add(rel);
-        ordered.push(rel);
-      }
+  // Refresh triggers: any new transcript event for this session's agents, or
+  // a summarizer tick. We don't need the actual content, just the size.
+  const transcriptSize = useAppStore((s) => {
+    if (!sessionId) return 0;
+    const runs = s.sessionPhaseRuns[sessionId];
+    if (!runs) return 0;
+    let total = 0;
+    for (const run of runs) total += (s.transcripts[run.id] ?? []).length;
+    return total;
+  });
+  const summarizerLastUpdate = useAppStore((s) =>
+    sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
+  );
+
+  const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED);
+
+  useEffect(() => {
+    if (!workingDir) {
+      setState(EMPTY_FILES_TOUCHED);
+      return;
     }
-    if (ordered.length === 0) return EMPTY_FILES_TOUCHED;
-    return { paths: ordered, count: ordered.length };
-  }, [phaseRuns, transcripts, workingDir]);
+    let cancelled = false;
+    worktreeChangedFiles(workingDir)
+      .then((paths) => {
+        if (cancelled) return;
+        setState(paths.length === 0 ? EMPTY_FILES_TOUCHED : { paths, count: paths.length });
+      })
+      .catch(() => {
+        if (!cancelled) setState(EMPTY_FILES_TOUCHED);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workingDir, transcriptSize, summarizerLastUpdate]);
+
+  return state;
 };
 
 /**

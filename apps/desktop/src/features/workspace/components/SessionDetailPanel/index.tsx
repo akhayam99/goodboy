@@ -372,7 +372,10 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
     };
   }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
 
-  const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
+  // Prefer the branch-vs-base count: stable across pushes (it counts every
+  // file that differs from main, not just current working-tree dirt).
+  // Fall back to working-tree status only if the branch diff is unavailable.
+  const filesTouchedCount = filesTouched.count > 0 ? filesTouched.count : (gitStatus?.changed ?? 0);
   const openNotesCount = useMemo(
     () => diffComments.filter((c) => c.status === 'open').length,
     [diffComments],

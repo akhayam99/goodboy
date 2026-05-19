@@ -304,6 +304,45 @@ pub fn worktree_diff(
     git(p, &["diff", &resolved])
 }
 
+/// Returns the distinct file paths that differ between the worktree (including
+/// uncommitted + untracked) and the merge-base with the given base branch.
+/// Stable count across "before vs after push": pushing commits doesn't shrink
+/// this list because the diff is computed against `<base>` not `HEAD`.
+#[tauri::command]
+pub fn worktree_changed_files(
+    worktree_path: String,
+    base: Option<String>,
+) -> Result<Vec<String>, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let user_base = base.unwrap_or_else(|| "main".to_string());
+    let candidates = [
+        format!("origin/{user_base}"),
+        user_base.clone(),
+        "origin/master".to_string(),
+        "master".to_string(),
+    ];
+    let resolved = candidates
+        .iter()
+        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
+        .map(|s| s.trim().to_string())
+        .ok_or_else(|| WorktreeError::Git {
+            message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
+        })?;
+    let tracked = git(p, &["diff", "--name-only", &resolved]).unwrap_or_default();
+    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
+    let mut set: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for line in tracked.lines().chain(untracked.lines()) {
+        let t = line.trim();
+        if !t.is_empty() {
+            set.insert(t.to_string());
+        }
+    }
+    Ok(set.into_iter().collect())
+}
+
 #[derive(Debug, Serialize)]
 pub struct BranchCommit {
     pub sha: String,

@@ -64,6 +64,7 @@ pub fn run() {
       worktree::worktree_list,
       worktree::worktree_exists,
       worktree::worktree_diff,
+      worktree::worktree_changed_files,
       worktree::worktree_commits,
       worktree::worktree_diff_commit,
       worktree::worktree_diff_working,

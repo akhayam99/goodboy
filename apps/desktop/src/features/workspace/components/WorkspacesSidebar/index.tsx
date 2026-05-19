@@ -136,8 +136,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* workspace select — also serves as window drag region */}
-      <div data-tauri-drag-region className="shrink-0">
+      {/* workspace select */}
+      <div className="shrink-0">
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
