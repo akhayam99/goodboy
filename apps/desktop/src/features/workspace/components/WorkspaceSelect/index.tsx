@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
-import { FolderOpen, Plus, Settings, Unplug, X } from 'lucide-react';
-import { Button, Dialog, cn } from '@kay-am/ui';
+import { useState } from 'react';
+import { FolderOpen, Plus, Settings } from 'lucide-react';
+import { cn } from '@kay-am/ui';
 import type { Workspace, WorkspaceId } from '@kay-am/types';
 import { MAX_WORKSPACES } from '../../../../shared/lib/features';
-import { formatError } from '../../../../shared/lib/errors';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 import {
   useAppStore,
@@ -25,14 +24,16 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
-  const [disconnectTarget, setDisconnectTarget] = useState<WorkspaceTarget | null>(null);
   const [settingsTarget, setSettingsTarget] = useState<WorkspaceTarget | null>(null);
 
   const sorted = [...workspaces].sort((a, b) => a.name.localeCompare(b.name));
   const atCap = workspaces.length >= MAX_WORKSPACES;
 
   return (
-    <div className="shrink-0 px-2 py-1.5">
+    // The whole row sits below the OS title-bar drag region. Without this
+    // opt-out, Tauri swallows clicks on the cards (gear / select) before
+    // React ever sees them — that's why both buttons looked dead.
+    <div className="shrink-0 px-2 py-1.5" data-tauri-drag-region="false">
       <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <FolderOpen size={11} aria-hidden className="text-primary" />
         Workspaces
@@ -46,7 +47,10 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           {workspaces.length}/{MAX_WORKSPACES}
         </span>
       </span>
-      <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]"
+        data-tauri-drag-region="false"
+      >
         {sorted.map((ws) => (
           <WorkspaceCard
             key={ws.id}
@@ -54,13 +58,13 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
             isActive={ws.id === currentWorkspace?.id}
             onSelect={() => void setCurrentWorkspace(ws.id)}
             onOpenSettings={() => setSettingsTarget({ id: ws.id, name: ws.name })}
-            onDisconnect={() => setDisconnectTarget({ id: ws.id, name: ws.name })}
           />
         ))}
         <button
           type="button"
           onClick={onAddWorkspace}
           disabled={atCap}
+          data-tauri-drag-region="false"
           className={cn(
             'flex shrink-0 items-center justify-center rounded border border-dashed px-2 py-1.5 transition-colors',
             atCap
@@ -77,14 +81,6 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           <Plus size={12} aria-hidden />
         </button>
       </div>
-      {disconnectTarget ? (
-        <DisconnectWorkspaceDialog
-          workspaceId={disconnectTarget.id}
-          workspaceName={disconnectTarget.name}
-          open
-          onClose={() => setDisconnectTarget(null)}
-        />
-      ) : null}
       {settingsTarget ? (
         <WorkspaceSettingsDialog
           workspaceId={settingsTarget.id}
@@ -102,13 +98,11 @@ function WorkspaceCard({
   isActive,
   onSelect,
   onOpenSettings,
-  onDisconnect,
 }: {
   workspace: Workspace;
   isActive: boolean;
   onSelect: () => void;
   onOpenSettings: () => void;
-  onDisconnect: () => void;
 }) {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
 
@@ -121,6 +115,7 @@ function WorkspaceCard({
           : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
       )}
       title={workspace.name}
+      data-tauri-drag-region="false"
     >
       {hasUnread && !isActive && (
         <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2">
@@ -131,6 +126,7 @@ function WorkspaceCard({
       <button
         type="button"
         onClick={onSelect}
+        data-tauri-drag-region="false"
         className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1"
       >
         <span className="max-w-[100px] truncate">{workspace.name}</span>
@@ -141,91 +137,13 @@ function WorkspaceCard({
           e.stopPropagation();
           onOpenSettings();
         }}
-        className="flex h-full items-center px-0.5 text-muted-foreground/50 transition-colors hover:text-foreground focus-visible:text-foreground"
+        data-tauri-drag-region="false"
+        className="flex h-full items-center px-1.5 text-muted-foreground/50 transition-colors hover:text-foreground focus-visible:text-foreground"
         title={`workspace settings — ${workspace.name}`}
         aria-label={`open workspace settings for ${workspace.name}`}
       >
         <Settings size={11} aria-hidden />
       </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDisconnect();
-        }}
-        className="flex h-full items-center pl-0.5 pr-1.5 text-muted-foreground/50 transition-colors hover:text-danger focus-visible:text-danger"
-        title={`disconnect "${workspace.name}"`}
-        aria-label={`disconnect workspace ${workspace.name}`}
-      >
-        <X size={12} aria-hidden />
-      </button>
     </div>
-  );
-}
-
-interface DisconnectWorkspaceDialogProps {
-  workspaceId: WorkspaceId;
-  workspaceName: string;
-  open: boolean;
-  onClose: () => void;
-}
-
-function DisconnectWorkspaceDialog({
-  workspaceId,
-  workspaceName,
-  open,
-  onClose,
-}: DisconnectWorkspaceDialogProps) {
-  const disconnect = useAppStore((s) => s.deleteWorkspace);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) setError(null);
-  }, [open]);
-
-  const onConfirm = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await disconnect(workspaceId);
-      onClose();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (busy) return;
-    onClose();
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      title={`Disconnect "${workspaceName}"?`}
-      description="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk. Re-add the same path to bring it back."
-      size="sm"
-      footer={
-        <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={handleClose} disabled={busy}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-            <Unplug size={13} aria-hidden className="mr-1.5" />
-            {busy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
-        </>
-      }
-    >
-      <div className="rounded-md border border-border-soft bg-subtle/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-        Nothing is deleted. The repo and all its sessions stay in place — they just stop showing up
-        in the sidebar until you re-add the path.
-      </div>
-    </Dialog>
   );
 }
