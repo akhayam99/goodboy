@@ -147,7 +147,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../features/settings/settings';
-import { AGENT_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
+import { AGENT_FEATURES, MAX_WORKSPACES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
   runTurn,
@@ -3010,6 +3010,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   addWorkspace: async ({ rootPath, name }) => {
+    // Enforce hard cap so beta users keep a manageable disk/worktree footprint.
+    if (get().workspaces.length >= MAX_WORKSPACES) {
+      throw new Error(
+        `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
+      );
+    }
+
     const check = await validateGitRepo(rootPath);
     if (!check.isRepo || !check.rootPath) {
       throw new Error(check.error ?? 'not a git repository');

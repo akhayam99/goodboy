@@ -11,14 +11,15 @@ import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore, useSessions } from '../../../../store';
 
+type Section = 'general' | 'skills' | 'init' | 'phases' | 'danger';
+
 interface WorkspaceSettingsDialogProps {
   workspaceId: WorkspaceId;
   workspaceName: string;
   open: boolean;
   onClose: () => void;
+  initialSection?: Section;
 }
-
-type Section = 'general' | 'skills' | 'init' | 'phases' | 'danger';
 
 interface NavItem {
   id: Section;
@@ -57,6 +58,7 @@ export function WorkspaceSettingsDialog({
   workspaceName,
   open,
   onClose,
+  initialSection = 'general',
 }: WorkspaceSettingsDialogProps) {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -65,7 +67,11 @@ export function WorkspaceSettingsDialog({
   const sessions = useSessions();
   const workspaceSessions = sessions.filter((s) => s.workspaceId === workspaceId);
 
-  const [active, setActive] = useState<Section>('general');
+  const [active, setActive] = useState<Section>(initialSection);
+
+  useEffect(() => {
+    if (open) setActive(initialSection);
+  }, [open, initialSection]);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);

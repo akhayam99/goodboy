@@ -27,7 +27,7 @@ import { SessionSettingsDialog } from '../../../session/components/SessionSettin
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
 import { PricingDialog } from '../../../providers/components/PricingDialog';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import type {
   Agent,
@@ -51,6 +51,7 @@ import {
   useSessionPlans,
   useSessionSlots,
   useSessions,
+  useWorkspaces,
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
@@ -402,6 +403,8 @@ interface AddWorkspaceDialogProps {
 function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const addWorkspace = useAppStore((s) => s.addWorkspace);
+  const workspaces = useWorkspaces();
+  const atCap = workspaces.length >= MAX_WORKSPACES;
   const [path, setPath] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -450,7 +453,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy}>
+          <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy || atCap}>
             {busy ? 'Adding…' : 'Add workspace'}
           </Button>
         </>
@@ -483,6 +486,12 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">
           {activeSection === 'repo' ? (
             <div className="flex flex-col gap-1.5">
+              {atCap ? (
+                <div className="mb-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">
+                  Workspace limit reached ({MAX_WORKSPACES}). Disconnect one from the sidebar before
+                  adding another.
+                </div>
+              ) : null}
               <span className="text-xs font-semibold text-foreground">repository path</span>
               <div className="flex gap-2">
                 <Input
