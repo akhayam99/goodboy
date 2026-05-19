@@ -182,7 +182,7 @@ function Content({ section }: { section: Section }) {
               ],
               [
                 'tools inside a turn',
-                'when the agent calls grep, edit, run, etc., those are part of the same turn — not separate ones.',
+                'when the agent calls grep, edit, run, etc., those are part of the same turn, not separate ones.',
               ],
               [
                 'queueing',
@@ -203,7 +203,7 @@ function Content({ section }: { section: Section }) {
       return (
         <Article
           heading="Tools"
-          intro="tools are actions the agent takes outside of just talking — reading files, running shell commands, editing code, fetching docs."
+          intro="tools are actions the agent takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
         >
           <H3>How they show up</H3>
           <P>
@@ -214,7 +214,7 @@ function Content({ section }: { section: Section }) {
           <H3>Permissions</H3>
           <P>
             kAY.am proxies the CLI's permission system. above the input you see{' '}
-            <Code>permissions: X allow / Y deny</Code> — that's the rule set the next turn will run
+            <Code>permissions: X allow / Y deny</Code>. that's the rule set the next turn will run
             under. click it to manage rules in settings.
           </P>
           {WORKSPACE_FEATURES.skills ? (
@@ -223,7 +223,7 @@ function Content({ section }: { section: Section }) {
               <P>
                 type <Code>/</Code> in the input to invoke a workspace skill (a pre-defined prompt
                 template stored in <Code>.kay/skills/</Code> or <Code>.claude/skills/</Code>).
-                useful for repeatable flows — release notes, security review, migration plan.
+                useful for repeatable flows: release notes, security review, migration plan.
               </P>
             </>
           ) : null}
@@ -234,14 +234,14 @@ function Content({ section }: { section: Section }) {
       return (
         <Article
           heading="Tokens & cost"
-          intro="every message — yours and the assistant's — is converted into tokens before billing. roughly 1 token ≈ ¾ of an English word."
+          intro="every message, yours and the assistant's, is converted into tokens before billing. roughly 1 token ≈ ¾ of an English word."
         >
           <H3>Input vs output</H3>
           <List
             items={[
               [
                 'input tokens',
-                'everything sent into the model: system prompt, conversation history, tool results, your latest message. grows every turn — that is why later turns cost more even if your message is short.',
+                'everything sent into the model: system prompt, conversation history, tool results, your latest message. grows every turn. that is why later turns cost more even if your message is short.',
               ],
               [
                 'cached input tokens',
@@ -275,8 +275,8 @@ function Content({ section }: { section: Section }) {
             ]}
           />
           <P>
-            the picker sorts <Strong>cheapest first</Strong> on purpose — switching down a tier
-            often costs nothing in quality on routine tasks.
+            the picker sorts <Strong>cheapest first</Strong> on purpose. switching down a tier often
+            costs nothing in quality on routine tasks.
           </P>
         </Article>
       );
@@ -285,7 +285,7 @@ function Content({ section }: { section: Section }) {
       return (
         <Article
           heading="Agents"
-          intro="an agent is one provider invocation inside a session. a session can host multiple agents — same provider or different ones."
+          intro="an agent is one provider invocation inside a session. a session can host multiple agents, same provider or different ones."
         >
           <H3>Why multiple agents per session</H3>
           <List
@@ -332,7 +332,7 @@ function Content({ section }: { section: Section }) {
               ],
               [
                 "queue, don't cancel",
-                "if the agent is mid-tool and you have a follow-up, type it — it'll queue. cancelling mid-turn loses the partial work.",
+                "if the agent is mid-tool and you have a follow-up, type it: it'll queue. cancelling mid-turn loses the partial work.",
               ],
               [
                 'archive freely',
@@ -350,7 +350,7 @@ function Content({ section }: { section: Section }) {
     case 'legenda':
       return (
         <Article heading="Legend" intro="color meanings used throughout the interface.">
-          <H3>Status dots — sessions & agents</H3>
+          <H3>Status dots: sessions & agents</H3>
           <LegendaGrid
             rows={[
               { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
@@ -364,7 +364,7 @@ function Content({ section }: { section: Section }) {
               },
             ]}
           />
-          <H3>Edit types — transcript</H3>
+          <H3>Edit types: transcript</H3>
           <LegendaGrid
             rows={[
               { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
@@ -372,34 +372,34 @@ function Content({ section }: { section: Section }) {
               { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
             ]}
           />
-          <H3>Context window bar — CTX fill level</H3>
+          <H3>Context window bar: CTX fill level</H3>
           <LegendaGrid
             rows={[
               {
                 dot: 'bg-success',
                 label: '< 50%',
-                desc: 'comfortable — plenty of context remaining',
+                desc: 'comfortable: plenty of context remaining',
               },
-              { dot: 'bg-info', label: '50–75%', desc: 'moderate — monitor closely' },
-              { dot: 'bg-warning', label: '75–90%', desc: 'high — consider summarizing soon' },
-              { dot: 'bg-danger', label: '≥ 90%', desc: 'critical — start a new session' },
+              { dot: 'bg-info', label: '50–75%', desc: 'moderate: monitor closely' },
+              { dot: 'bg-warning', label: '75–90%', desc: 'high: consider summarizing soon' },
+              { dot: 'bg-danger', label: '≥ 90%', desc: 'critical: start a new session' },
             ]}
           />
-          <H3>Verbosity — output density</H3>
+          <H3>Verbosity: output density</H3>
           <LegendaGrid
             rows={[
-              { dot: 'bg-success', label: 'brief', desc: 'bare minimum — one-liners only' },
+              { dot: 'bg-success', label: 'brief', desc: 'bare minimum: one-liners only' },
               { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
               { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
             ]}
           />
-          <H3>Permission mode — tool access</H3>
+          <H3>Permission mode: tool access</H3>
           <LegendaGrid
             rows={[
-              { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely — no prompts' },
+              { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },
               { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
               { dot: 'bg-blue-500', label: 'default', desc: 'writes and runs ask for approval' },
-              { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed — read-only' },
+              { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed, read-only' },
             ]}
           />
           <H3>Auto badge</H3>
@@ -408,7 +408,7 @@ function Content({ section }: { section: Section }) {
               {
                 dot: 'bg-amber-400',
                 label: 'AUTO',
-                desc: 'autorun mode — next action fires without user confirmation',
+                desc: 'autorun mode: next action fires without user confirmation',
               },
             ]}
           />

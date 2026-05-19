@@ -99,7 +99,11 @@ export function WorkflowNextStepCta({
         aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
       >
         <span className="flex items-center gap-1.5">
-          <span className="text-2xs uppercase tracking-wide opacity-70">start</span>
+          <ArrowRight
+            size={13}
+            aria-hidden
+            className="shrink-0 transition-transform group-hover:translate-x-0.5"
+          />
           <span className="font-semibold">{next.name}</span>
           <span
             className={cn(
@@ -121,15 +125,8 @@ export function WorkflowNextStepCta({
             </span>
           ) : null}
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="text-[10px] font-normal opacity-60">
-            {defaults.model.split('-').slice(1, 3).join('-')}
-          </span>
-          <ArrowRight
-            size={13}
-            aria-hidden
-            className="transition-transform group-hover:translate-x-0.5"
-          />
+        <span className="text-[10px] font-normal opacity-60">
+          {defaults.model.split('-').slice(1, 3).join('-')}
         </span>
       </button>
       {pendingConfirm ? (

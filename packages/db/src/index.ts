@@ -9,6 +9,9 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
+  findWorkspaceByRootPath,
+  disconnectWorkspace,
+  reconnectWorkspace,
   deleteWorkspace,
 } from './queries/workspace';
 export {

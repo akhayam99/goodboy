@@ -28,6 +28,27 @@ export async function worktreeDiff(worktreePath: string, base?: string): Promise
   return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
 }
 
+export interface ChangedFilesSummary {
+  readonly paths: ReadonlyArray<string>;
+  readonly additions: number;
+  readonly deletions: number;
+}
+
+/**
+ * Distinct file paths that differ vs the merge-base with `base` (default
+ * "main"), plus aggregate line additions/deletions. Includes uncommitted +
+ * untracked, stable across pushes.
+ */
+export async function worktreeChangedFiles(
+  worktreePath: string,
+  base?: string,
+): Promise<ChangedFilesSummary> {
+  return invoke<ChangedFilesSummary>('worktree_changed_files', {
+    worktreePath,
+    base: base ?? null,
+  });
+}
+
 export async function listBranchCommits(
   worktreePath: string,
 ): Promise<ReadonlyArray<BranchCommit>> {

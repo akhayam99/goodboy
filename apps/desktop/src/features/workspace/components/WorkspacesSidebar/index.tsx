@@ -1,23 +1,15 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
   ArrowRight,
-  ArrowUpDown,
   Bot,
-  ChevronDown,
-  ChevronRight,
   ClipboardList,
   Clock,
-  FolderOpen,
+  DollarSign,
   FolderPlus,
   Gauge,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestArrow,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
   HelpCircle,
   Layers,
   Loader2,
@@ -26,37 +18,27 @@ import {
   Play,
   Plus,
   Settings,
-  Settings2,
   Sun,
   Trash2,
-  Users,
-  Workflow as WorkflowIcon,
-  X,
   Check,
   Terminal,
-  Zap,
-  ZapOff,
 } from 'lucide-react';
-import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
-import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
-import { TelemetryPill } from '../../../../features/providers/components/TelemetryPill';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { PricingDialog } from '../../../providers/components/PricingDialog';
+import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { DogMascot } from '../../../../shared/components/DogMascot';
 import type {
   Agent,
   AgentId,
   AgentStatus,
-  ProviderId,
-  PullRequestStateKind,
   Session,
   SessionId,
   Step,
   TelemetryRecord,
   TurnState,
   Workflow,
-  Workspace,
   WorkspaceId,
 } from '@kay-am/types';
 import {
@@ -69,19 +51,14 @@ import {
   useSessionPlans,
   useSessionSlots,
   useSessions,
-  useSessionHasUnread,
-  useWorkspaceHasUnread,
   useWorkspaces,
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
-import { StatusBadge } from '../../../session/components/StatusBadge';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
-import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
   formatTokens,
-  shortModel,
 } from '../../../../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@kay-am/core';
 import {
@@ -93,57 +70,36 @@ import {
   inferAgentKindFromName,
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
-import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
 import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
 import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../features/session/components/AgentMetricsBlock';
-import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { parseCap } from '../../../../shared/lib/parse-cap';
+import { WorkspaceSelect } from '../WorkspaceSelect';
+import { SessionActivityBar } from '../SessionActivityBar';
+import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
+import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
 }
 
-const PROVIDER_SHORT: Record<ProviderId, string> = {
-  anthropic: 'cl',
-  cursor: 'cu',
-  codex: 'cx',
-};
+const FOOTER_ICON_BTN =
+  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
-const STATE_FILTER_OPTIONS: ReadonlyArray<TurnState['kind']> = [
-  'idle',
-  'running',
-  'ended',
-  'error',
-];
-
-const PROVIDER_FILTER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
-
-const HEADER_ICON_BTN =
-  'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground' as const;
-
-const PREVIEW_LIST_ITEM = 'rounded-md bg-subtle px-3 py-2 text-xs' as const;
+const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
 
-type SessionSort = 'updated' | 'alpha';
-
 export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
-  const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  // Adapter with the (id: SessionId) => void signature SessionList expects.
-  // useCallback gives a stable ref so memoized SessionRow rows downstream
-  // skip re-render on every parent paint.
   const onSelectSession = useCallback(
     (id: SessionId) => {
       void setCurrentSession(id);
@@ -152,13 +108,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   );
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-
-  const sidebarStateFilter = useAppStore((s) => s.sidebarStateFilter);
-  const sidebarProviderFilter = useAppStore((s) => s.sidebarProviderFilter);
-  const setSidebarStateFilter = useAppStore((s) => s.setSidebarStateFilter);
-  const setSidebarProviderFilter = useAppStore((s) => s.setSidebarProviderFilter);
-
-  const [sessionSort, setSessionSort] = useState<SessionSort>('updated');
 
   const warmedRef = useRef(false);
   useEffect(() => {
@@ -173,161 +122,128 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
-
-  const filteredWorkspaces = useMemo(
-    () => [...workspaces].sort((a, b) => a.name.localeCompare(b.name)),
-    [workspaces],
-  );
-
-  const filteredSessions = sessions.filter((s) => {
-    const matchesState =
-      sidebarStateFilter.length === 0 || sidebarStateFilter.includes(s.state.kind);
-    const matchesProvider =
-      sidebarProviderFilter.length === 0 ||
-      sidebarProviderFilter.includes(s.providerPreference.defaultProvider);
-    return matchesState && matchesProvider;
-  });
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const [archivedMap, archive, unarchive] = useArchivedSessions();
-  const activeSessions = filteredSessions.filter((s) => !archivedMap[s.id]);
-  const archivedSessions = filteredSessions.filter((s) => archivedMap[s.id]);
+  const activeSessions = sessions.filter((s) => !archivedMap[s.id]);
+  const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
-  const toggleStateFilter = (kind: TurnState['kind']) => {
-    const next = sidebarStateFilter.includes(kind)
-      ? sidebarStateFilter.filter((k) => k !== kind)
-      : [...sidebarStateFilter, kind];
-    setSidebarStateFilter(next);
-  };
-
-  const toggleProviderFilter = (provider: ProviderId) => {
-    const next = sidebarProviderFilter.includes(provider)
-      ? sidebarProviderFilter.filter((p) => p !== provider)
-      : [...sidebarProviderFilter, provider];
-    setSidebarProviderFilter(next);
-  };
+  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
+  const [githubDetailsOpen, setGithubDetailsOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center gap-1.5 px-2 py-2">
-        <KayAmLogo />
-        <div className="ml-auto flex items-center gap-0.5">
+      {/* workspace select */}
+      <div className="shrink-0">
+        <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+      </div>
+
+      {/* activity bar + detail panel */}
+      <div className="flex min-h-0 flex-1">
+        {currentWorkspace ? (
+          (() => {
+            const hasAnySession = activeSessions.length > 0 || archivedSessions.length > 0;
+            return (
+              <>
+                <div
+                  className={cn(
+                    'overflow-hidden transition-[width] duration-300 ease-out',
+                    hasAnySession ? 'w-28' : 'w-0',
+                  )}
+                  aria-hidden={!hasAnySession}
+                >
+                  <SessionActivityBar
+                    sessions={activeSessions}
+                    archivedSessions={archivedSessions}
+                    currentSessionId={currentSession?.id ?? null}
+                    onSelectSession={onSelectSession}
+                    onNewSession={() => setNewSessionOpen(true)}
+                  />
+                </div>
+                <div
+                  className={cn(
+                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
+                    hasAnySession ? 'ml-0' : 'ml-1.5',
+                  )}
+                >
+                  {currentSession ? (
+                    <>
+                      <SessionDetailPanel
+                        session={currentSession}
+                        onOpenSessionSettings={() => setSessionSettingsOpen(true)}
+                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                      />
+                      <ScrollArea className="min-h-0 flex-1">
+                        <AgentsSection task={currentSession} />
+                      </ScrollArea>
+                      <SessionFilesTouchedFooter session={currentSession} />
+                    </>
+                  ) : (
+                    <NoSessionSelectedEmpty
+                      hasAnySession={hasAnySession}
+                      onNewSession={() => setNewSessionOpen(true)}
+                    />
+                  )}
+                </div>
+              </>
+            );
+          })()
+        ) : (
+          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+        )}
+      </div>
+
+      {/* sidebar footer — logo + controls */}
+      <div className="flex shrink-0 items-center px-2.5 py-2">
+        <SidebarLogo />
+        <div className="flex-1" />
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setPricingOpen(true)}
+            title="open spend & pricing"
+            aria-label="open spend and pricing"
+            className={FOOTER_ICON_BTN}
+          >
+            <DollarSign size={14} aria-hidden />
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
             aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            className={HEADER_ICON_BTN}
+            className={FOOTER_ICON_BTN}
           >
-            {theme === 'dark' ? <Sun size={13} aria-hidden /> : <Moon size={13} aria-hidden />}
+            {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
           </button>
           <NotificationCenter />
           <button
             type="button"
             onClick={() => setGuideOpen(true)}
-            title="getting started — guide"
+            title="getting started"
             aria-label="open getting started guide"
-            className={HEADER_ICON_BTN}
+            className={FOOTER_ICON_BTN}
           >
-            <HelpCircle size={13} aria-hidden />
+            <HelpCircle size={14} aria-hidden />
           </button>
           <button
             type="button"
             onClick={onOpenSettings}
             title="settings (⌘,)"
             aria-label="open settings"
-            className={HEADER_ICON_BTN}
+            className={FOOTER_ICON_BTN}
           >
-            <Settings size={13} aria-hidden />
+            <Settings size={14} aria-hidden />
           </button>
         </div>
       </div>
 
-      <ScrollArea className="max-h-[40%] shrink-0">
-        <section className="flex flex-col px-2">
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <FolderOpen size={11} aria-hidden className="text-primary" />
-              Workspaces
-            </span>
-          </header>
-          <ul className="flex flex-col gap-0.5 pl-2">
-            {filteredWorkspaces.map((ws) => (
-              <WorkspaceRow
-                key={ws.id}
-                workspace={ws}
-                isActive={ws.id === currentWorkspace?.id}
-                onClick={() => void setCurrentWorkspace(ws.id)}
-              />
-            ))}
-            <li>
-              <AddRow
-                label="Add workspace"
-                icon={<FolderPlus size={13} aria-hidden />}
-                onClick={() => setAddWorkspaceOpen(true)}
-              />
-            </li>
-          </ul>
-        </section>
-      </ScrollArea>
-
-      <ScrollArea className="mt-8 flex-1">
-        <section className="flex flex-col px-2">
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <MessagesSquare size={11} aria-hidden className="text-info" />
-              Sessions
-            </span>
-            <div className="flex items-center gap-1.5">
-              {currentWorkspace ? (
-                <span className="max-w-[80px] truncate text-2xs text-muted-foreground/70">
-                  {currentWorkspace.name}
-                </span>
-              ) : null}
-              <SortIconButton sort={sessionSort} onChange={setSessionSort} />
-            </div>
-          </header>
-          {currentWorkspace ? (
-            <div className="pl-2">
-              <SessionList
-                activeSessions={activeSessions}
-                archivedSessions={archivedSessions}
-                currentSessionId={currentSession?.id ?? null}
-                sort={sessionSort}
-                stateFilter={sidebarStateFilter}
-                providerFilter={sidebarProviderFilter}
-                stateFilterOptions={STATE_FILTER_OPTIONS}
-                providerFilterOptions={PROVIDER_FILTER_OPTIONS}
-                onToggleState={toggleStateFilter}
-                onToggleProvider={toggleProviderFilter}
-                // Stable ref: setCurrentSession action is itself stable, but
-                // we need the matching (id: SessionId) => void signature. The
-                // action no-ops on same id internally.
-                onSelectSession={onSelectSession}
-                onNewSession={() => setNewSessionOpen(true)}
-                onArchive={archive}
-                onUnarchive={unarchive}
-              />
-            </div>
-          ) : (
-            <p className="px-2 py-2 text-xs text-muted-foreground/70">
-              Select a workspace to see its sessions.
-            </p>
-          )}
-        </section>
-
-        {currentSession ? <AgentsSection task={currentSession} /> : null}
-      </ScrollArea>
-
-      <div className="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5">
-        <ProvidersChip />
-        <TelemetryPill />
-      </div>
-
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
       {currentWorkspace ? (
         <NewSessionDialog
           open={newSessionOpen}
@@ -336,345 +252,96 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onOpenSettings={onOpenSettings}
         />
       ) : null}
+      {currentSession ? (
+        <SessionSettingsDialog
+          sessionId={currentSession.id as SessionId}
+          open={sessionSettingsOpen}
+          onClose={() => setSessionSettingsOpen(false)}
+          archived={!!archivedMap[currentSession.id]}
+          onArchive={() => archive(currentSession.id as SessionId)}
+          onUnarchive={() => unarchive(currentSession.id as SessionId)}
+        />
+      ) : null}
+      <GithubDetailsDialog
+        open={githubDetailsOpen}
+        onClose={() => setGithubDetailsOpen(false)}
+        sessionId={(currentSession?.id as SessionId) ?? null}
+      />
     </div>
   );
 }
 
-function KayAmLogo() {
+function SidebarLogo() {
   return (
-    <span className="flex items-center gap-1.5 px-1">
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 18 18"
-        fill="none"
-        aria-hidden
-        className="shrink-0 text-foreground"
-      >
-        <circle cx="9" cy="9" r="3.5" fill="currentColor" opacity="0.9" />
-        <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.2" opacity="0.35" />
-        <line x1="9" y1="1" x2="9" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-        <line x1="1" y1="9" x2="17" y2="9" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-      </svg>
-      <span className="text-sm font-semibold tracking-tight text-foreground">kAY.am</span>
+    <span className="flex items-center gap-1.5">
+      <DogMascot size={16} className="shrink-0 text-foreground" />
+      <span className="text-xs font-semibold tracking-tight text-foreground">kAY.am</span>
     </span>
   );
 }
 
-interface WorkspaceRowProps {
-  workspace: Workspace;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-function WorkspaceRow({ workspace, isActive, onClick }: WorkspaceRowProps) {
-  const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
-  const workspaceHasUnread = useWorkspaceHasUnread(workspace.id);
-  const showUnreadDot = workspaceHasUnread && !isActive;
-
-  return (
-    <li className="group">
-      <div
-        className={cn(
-          'flex items-center gap-1 rounded-md transition-colors',
-          isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/60',
-        )}
-      >
-        <button
-          type="button"
-          onClick={onClick}
-          className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
-        >
-          <span
-            aria-hidden
-            title={showUnreadDot ? 'unread agent response in this workspace' : undefined}
-            className="relative inline-flex h-1.5 w-1.5 shrink-0"
-          >
-            {showUnreadDot && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-            )}
-            <span
-              className={cn(
-                'relative inline-block h-1.5 w-1.5 rounded-full',
-                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-              )}
-            />
-          </span>
-          <FolderOpen
-            size={13}
-            aria-hidden
-            className={cn('shrink-0', isActive ? 'text-foreground' : 'text-muted-foreground')}
-          />
-          <span className="line-clamp-1 flex-1 font-medium">{workspace.name}</span>
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setWsSettingsOpen(true);
-          }}
-          className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground/40 transition-colors hover:bg-muted hover:text-foreground group-hover:text-muted-foreground"
-          title="workspace settings (incl. disconnect)"
-          aria-label={`settings for workspace ${workspace.name}`}
-        >
-          <Settings2 size={12} aria-hidden />
-        </button>
-      </div>
-      <WorkspaceSettingsDialog
-        workspaceId={workspace.id}
-        workspaceName={workspace.name}
-        open={wsSettingsOpen}
-        onClose={() => setWsSettingsOpen(false)}
-      />
-    </li>
-  );
-}
-
-interface SessionListProps {
-  activeSessions: ReadonlyArray<Session>;
-  archivedSessions: ReadonlyArray<Session>;
-  currentSessionId: SessionId | null;
-  sort: SessionSort;
-  stateFilter: ReadonlyArray<TurnState['kind']>;
-  providerFilter: ReadonlyArray<ProviderId>;
-  stateFilterOptions: ReadonlyArray<TurnState['kind']>;
-  providerFilterOptions: ReadonlyArray<ProviderId>;
-  onToggleState: (kind: TurnState['kind']) => void;
-  onToggleProvider: (provider: ProviderId) => void;
-  onSelectSession: (id: SessionId) => void;
-  onNewSession: () => void;
-  onArchive: (id: SessionId) => void;
-  onUnarchive: (id: SessionId) => void;
-}
-
-function SessionList({
-  activeSessions,
-  archivedSessions,
-  currentSessionId,
-  sort,
-  stateFilter,
-  providerFilter,
-  stateFilterOptions,
-  providerFilterOptions,
-  onToggleState,
-  onToggleProvider,
-  onSelectSession,
+function NoSessionSelectedEmpty({
+  hasAnySession,
   onNewSession,
-  onArchive,
-  onUnarchive,
-}: SessionListProps) {
-  const [archivedOpen, setArchivedOpen] = useState(false);
-
-  const sortedActive = useMemo(() => sortSessions(activeSessions, sort), [activeSessions, sort]);
-  const sortedArchived = useMemo(
-    () => sortSessions(archivedSessions, sort),
-    [archivedSessions, sort],
-  );
-
-  // Stable per-id closures so memoized SessionRow props don't get a fresh
-  // function ref on every parent render. These maps only rebuild when the
-  // session list itself or one of the upstream callbacks actually changes.
-  const rowHandlers = useMemo(() => {
-    const click = new Map<SessionId, () => void>();
-    const arch = new Map<SessionId, () => void>();
-    const unarch = new Map<SessionId, () => void>();
-    const ids = new Set<SessionId>();
-    for (const s of sortedActive) ids.add(s.id);
-    for (const s of sortedArchived) ids.add(s.id);
-    for (const id of ids) {
-      click.set(id, () => onSelectSession(id));
-      arch.set(id, () => onArchive(id));
-      unarch.set(id, () => onUnarchive(id));
-    }
-    return { click, arch, unarch };
-  }, [sortedActive, sortedArchived, onSelectSession, onArchive, onUnarchive]);
-
-  return (
-    <div className="flex flex-col gap-1">
-      {stateFilter.length > 0 || providerFilter.length > 0 ? (
-        <div className="flex flex-wrap gap-0.5">
-          {stateFilter.map((k) => (
-            <FilterChip key={k} label={k} onRemove={() => onToggleState(k)} />
-          ))}
-          {providerFilter.map((p) => (
-            <FilterChip
-              key={p}
-              label={PROVIDER_SHORT[p] ?? p}
-              onRemove={() => onToggleProvider(p)}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {(stateFilter.length > 0 || providerFilter.length > 0) && (
-        <details>
-          <summary className="cursor-pointer text-2xs uppercase tracking-wide text-muted-foreground hover:text-foreground">
-            edit filters
-          </summary>
-          <div className="mt-1 flex flex-wrap gap-0.5">
-            {stateFilterOptions.map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => onToggleState(kind)}
-                className={cn(
-                  'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
-                  stateFilter.includes(kind)
-                    ? 'bg-foreground/15 text-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                )}
-              >
-                {kind}
-              </button>
-            ))}
-            {providerFilterOptions.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => onToggleProvider(p)}
-                className={cn(
-                  'rounded px-1 py-0.5 text-2xs font-medium uppercase tracking-wide transition-colors',
-                  providerFilter.includes(p)
-                    ? 'bg-foreground/15 text-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                )}
-              >
-                {PROVIDER_SHORT[p]}
-              </button>
-            ))}
-          </div>
-        </details>
-      )}
-
-      <ul className="flex flex-col gap-0.5">
-        {sortedActive.map((session) => (
-          <SessionRow
-            key={session.id}
-            session={session}
-            isActive={session.id === currentSessionId}
-            onClick={rowHandlers.click.get(session.id)!}
-            archived={false}
-            onArchive={rowHandlers.arch.get(session.id)!}
-            onUnarchive={rowHandlers.unarch.get(session.id)!}
-          />
-        ))}
-        <li>
-          <AddRow
-            label="Add session"
-            icon={<Plus size={13} aria-hidden />}
-            onClick={onNewSession}
-          />
-        </li>
-      </ul>
-
-      {sortedArchived.length > 0 && (
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={() => setArchivedOpen((v) => !v)}
-            className="flex w-full items-center gap-1 px-1 py-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-            aria-expanded={archivedOpen}
-          >
-            {archivedOpen ? (
-              <ChevronDown size={11} aria-hidden />
-            ) : (
-              <ChevronRight size={11} aria-hidden />
-            )}
-            archived ({sortedArchived.length})
-          </button>
-          {archivedOpen && (
-            <ul className="flex flex-col gap-0.5 opacity-70">
-              {sortedArchived.map((session) => (
-                <SessionRow
-                  key={session.id}
-                  session={session}
-                  isActive={session.id === currentSessionId}
-                  onClick={rowHandlers.click.get(session.id)!}
-                  archived
-                  onArchive={rowHandlers.arch.get(session.id)!}
-                  onUnarchive={rowHandlers.unarch.get(session.id)!}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const SORT_OPTIONS: ReadonlyArray<{ value: SessionSort; label: string }> = [
-  { value: 'updated', label: 'recent' },
-  { value: 'alpha', label: 'a → z' },
-];
-
-function SortIconButton({
-  sort,
-  onChange,
 }: {
-  sort: SessionSort;
-  onChange: (s: SessionSort) => void;
+  hasAnySession: boolean;
+  onNewSession: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const current = SORT_OPTIONS.find((o) => o.value === sort) ?? SORT_OPTIONS[0]!;
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener('mousedown', onDocClick);
-    return () => window.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
   return (
-    <div className="relative" ref={ref}>
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+      <div className="relative">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
+          <MessagesSquare size={26} className="text-info" aria-hidden />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold text-foreground">
+          {hasAnySession ? 'Ready when you are' : 'No sessions yet'}
+        </h3>
+        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
+          {hasAnySession
+            ? 'Pick a session from the list to dive in, or spin up a new one to start cooking.'
+            : 'This workspace is empty. Spin up your first session to start working.'}
+        </p>
+      </div>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        title={`sort: ${current.label}`}
-        aria-label="sort sessions"
+        onClick={onNewSession}
+        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
       >
-        <ArrowUpDown size={12} aria-hidden />
+        <Plus size={12} aria-hidden />
+        <span>{hasAnySession ? 'New session' : 'Create first session'}</span>
       </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-20 mt-1 min-w-[120px] rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onChange(opt.value);
-                setOpen(false);
-              }}
-              className={cn(
-                'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
-                opt.value === sort ? 'text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <span>{opt.label}</span>
-              {opt.value === sort ? <span className="text-2xs">✓</span> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }
 
-function sortSessions(list: ReadonlyArray<Session>, sort: SessionSort): ReadonlyArray<Session> {
-  const copy = [...list];
-  if (sort === 'alpha') copy.sort((a, b) => a.goal.localeCompare(b.goal));
-  else copy.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
-  return copy;
+function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+      <div className="relative">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
+          <FolderPlus size={26} className="text-info" aria-hidden />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
+        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
+          Add a git repo to spin up worktrees and start orchestrating sessions.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAddWorkspace}
+        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+      >
+        <Plus size={12} aria-hidden />
+        <span>Add workspace</span>
+      </button>
+    </div>
+  );
 }
 
 const ARCHIVED_KEY = STORAGE_KEYS.archivedTasks;
@@ -728,487 +395,6 @@ function useArchivedSessions(): [
   return [map, archive, unarchive];
 }
 
-interface FilterChipProps {
-  label: string;
-  onRemove: () => void;
-}
-
-function FilterChip({ label, onRemove }: FilterChipProps) {
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded bg-foreground/10 px-1 py-0.5 text-2xs text-foreground">
-      {label}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="hover:text-danger"
-        aria-label={`remove filter ${label}`}
-      >
-        <X size={9} aria-hidden />
-      </button>
-    </span>
-  );
-}
-
-const PR_ICON_MAP: Record<
-  PullRequestStateKind,
-  { icon: React.ElementType; label: string; className: string }
-> = {
-  draft: {
-    icon: GitPullRequestDraft,
-    label: 'draft',
-    className: 'text-muted-foreground',
-  },
-  open: {
-    icon: GitPullRequest,
-    label: 'in review',
-    className: 'text-success',
-  },
-  approved: {
-    icon: GitPullRequestArrow,
-    label: 'approved',
-    className: 'text-success',
-  },
-  merged: {
-    icon: GitMerge,
-    label: 'merged',
-    className: 'text-merged',
-  },
-  closed: {
-    icon: GitPullRequestClosed,
-    label: 'closed',
-    className: 'text-danger',
-  },
-};
-
-interface PrStatusIconProps {
-  sessionId: SessionId;
-}
-
-function PrStatusIcon({ sessionId }: PrStatusIconProps) {
-  const github = useAppStore((s) => s.sessionGithub[sessionId]);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId]);
-
-  const isLoading = !github || github.loading || (github.fetchedAt === null && !github.error);
-
-  if (isLoading) {
-    return (
-      <span
-        title="loading PR status…"
-        aria-label="loading PR status"
-        className="shrink-0 rounded p-0.5 text-muted-foreground/50"
-      >
-        <Loader2 size={12} aria-hidden className="animate-spin" />
-      </span>
-    );
-  }
-
-  if (!branch || !github.pr) {
-    return (
-      <span
-        title="no PR open"
-        aria-label="no PR open"
-        className="shrink-0 rounded p-0.5 text-danger/70"
-      >
-        <GitPullRequest size={12} aria-hidden />
-      </span>
-    );
-  }
-
-  const { pr } = github;
-  const entry = PR_ICON_MAP[pr.state];
-  if (!entry) return null;
-
-  const Icon = entry.icon;
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    void openUrl(pr.url);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      title={`PR #${pr.number} — ${entry.label}`}
-      aria-label={`PR #${pr.number} — ${entry.label}`}
-      className={cn('shrink-0 rounded p-0.5 transition-colors hover:bg-muted', entry.className)}
-    >
-      <Icon size={12} aria-hidden />
-    </button>
-  );
-}
-
-interface SessionRowProps {
-  session: Session;
-  isActive: boolean;
-  onClick: () => void;
-  archived: boolean;
-  onArchive: () => void;
-  onUnarchive: () => void;
-}
-
-// Memoized so a session-switch click only re-renders the two rows whose
-// `isActive` flips, not every row in the workspace. Handler refs come from
-// SessionList via stable closures keyed by session.id, so default shallow
-// compare is enough.
-const SessionRow = memo(function SessionRow({
-  session,
-  isActive,
-  onClick,
-  archived,
-  onArchive,
-  onUnarchive,
-}: SessionRowProps) {
-  const budget = useAppStore((s) => s.sessionBudgets[session.id as SessionId] ?? null);
-  const spentUsd = useAppStore((s) => s.sessionSummary?.estimatedCostUsd ?? null);
-  const agentCount = useAppStore((s) => {
-    const runs = s.sessionPhaseRuns[session.id as SessionId] ?? [];
-    return runs.filter((r) => !(r.stepId && r.status === 'pending')).length;
-  });
-  const workflowName = useAppStore((s) => {
-    if (!session.workflowId) return null;
-    const templates = s.phaseTemplates[session.workspaceId] ?? [];
-    return templates.find((t) => t.id === session.workflowId)?.name ?? null;
-  });
-  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
-  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
-  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
-  const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
-  const renameTask = useAppStore((s) => s.renameTask);
-  const deleteTask = useAppStore((s) => s.deleteTask);
-  const budgetLoaded = useRef(false);
-
-  const [editingCap, setEditingCap] = useState(false);
-  const [capDraft, setCapDraft] = useState('');
-  const [renaming, setRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState('');
-  const [renameError, setRenameError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!SESSION_FEATURES.budget) return;
-    if (!budgetLoaded.current) {
-      budgetLoaded.current = true;
-      void loadSessionBudget(session.id as SessionId);
-    }
-  }, [session.id, loadSessionBudget]);
-
-  const spent = isActive ? (spentUsd ?? 0) : 0;
-  const cap = budget?.softCapUsd ?? null;
-  const pct = cap !== null && cap > 0 ? spent / cap : null;
-
-  const barColor = (() => {
-    if (pct === null) return '';
-    if (pct >= 1) return 'bg-danger';
-    if (pct >= 0.8) return 'bg-warning';
-    return 'bg-muted-foreground';
-  })();
-
-  const onCapClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCapDraft(cap !== null ? String(cap) : '');
-    setEditingCap(true);
-  };
-
-  const onCapSave = async () => {
-    const parsed = parseCap(capDraft);
-    if (parsed !== null) {
-      await setSessionBudget(session.id as SessionId, parsed);
-    }
-    setEditingCap(false);
-  };
-
-  const onCapKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') void onCapSave();
-    if (e.key === 'Escape') setEditingCap(false);
-  };
-
-  const startRename = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRenameDraft(session.goal);
-    setRenameError(null);
-    setRenaming(true);
-  };
-
-  const commitRename = async () => {
-    if (!renameDraft.trim()) {
-      setRenameError('name cannot be empty');
-      return;
-    }
-    try {
-      await renameTask(session.id as SessionId, renameDraft.trim());
-      setRenaming(false);
-      setRenameError(null);
-    } catch (err) {
-      setRenameError(formatError(err));
-    }
-  };
-
-  const onRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') void commitRename();
-    if (e.key === 'Escape') {
-      setRenaming(false);
-      setRenameError(null);
-    }
-  };
-
-  const onDeleteConfirm = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await deleteTask(session.id as SessionId);
-    setConfirmDelete(false);
-  };
-
-  const sessionHasUnread = useSessionHasUnread(session.id as SessionId);
-  const showUnreadDot = sessionHasUnread && !isActive;
-
-  return (
-    <li>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onClick();
-        }}
-        onDoubleClick={startRename}
-        className={cn(
-          'group flex cursor-pointer flex-col gap-1 rounded-md px-2 py-1.5 transition-colors',
-          isActive ? 'bg-muted' : 'hover:bg-muted/60',
-        )}
-      >
-        <div className="flex min-w-0 w-full items-center gap-2 text-xs">
-          <span
-            aria-hidden
-            title={showUnreadDot ? 'unread agent response' : undefined}
-            className="relative inline-flex h-1.5 w-1.5 shrink-0"
-          >
-            {showUnreadDot && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-            )}
-            <span
-              className={cn(
-                'relative inline-block h-1.5 w-1.5 rounded-full',
-                showUnreadDot ? 'bg-warning' : isActive ? 'bg-primary' : 'bg-muted-foreground/30',
-              )}
-            />
-          </span>
-          <SessionStatusMenu
-            status={session.userStatus}
-            sessionLabel={session.goal}
-            onPick={(next) => void setSessionUserStatus(session.id as SessionId, next)}
-          />
-          {renaming ? (
-            <div
-              className="flex min-w-0 flex-1 flex-col gap-0.5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <input
-                autoFocus
-                value={renameDraft}
-                onChange={(e) => setRenameDraft(e.target.value)}
-                onBlur={() => void commitRename()}
-                onKeyDown={onRenameKeyDown}
-                className="flex-1 rounded border border-border bg-background px-1 py-0 text-xs outline-none focus:ring-1 focus:ring-primary"
-              />
-              {renameError ? <span className="text-2xs text-danger">{renameError}</span> : null}
-            </div>
-          ) : (
-            <span className="line-clamp-1 min-w-0 flex-1 truncate">{session.goal}</span>
-          )}
-          <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <PrStatusIcon sessionId={session.id as SessionId} />
-            <StatusBadge state={session.state} />
-            {(() => {
-              const hasWorkflow = !!session.workflowId;
-              const tooltip = !hasWorkflow
-                ? 'no workflow configured — auto-run unavailable'
-                : session.autoRun
-                  ? 'autorun on — click to pause'
-                  : 'autorun off — click to enable';
-              const ariaLabel = !hasWorkflow
-                ? 'autorun unavailable'
-                : session.autoRun
-                  ? 'autorun on'
-                  : 'autorun off';
-              const cls = !hasWorkflow
-                ? 'text-muted-foreground/25 cursor-not-allowed'
-                : session.autoRun
-                  ? 'text-primary hover:bg-primary/10'
-                  : 'text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground';
-              return (
-                <button
-                  type="button"
-                  disabled={!hasWorkflow}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!hasWorkflow) return;
-                    void setSessionAutoRun(session.id as SessionId, !session.autoRun);
-                  }}
-                  title={tooltip}
-                  aria-label={ariaLabel}
-                  className={cn('rounded p-0.5 transition-colors', cls)}
-                >
-                  {hasWorkflow && session.autoRun ? (
-                    <Zap size={11} aria-hidden />
-                  ) : (
-                    <ZapOff size={11} aria-hidden />
-                  )}
-                </button>
-              );
-            })()}
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-              title={
-                SESSION_FEATURES.budget
-                  ? 'session settings (rename · budget · archive · delete)'
-                  : 'session settings (rename · archive · delete)'
-              }
-              aria-label="session settings"
-            >
-              <Settings2 size={12} aria-hidden />
-            </button>
-          </div>
-        </div>
-
-        {isActive && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-3.5 text-2xs text-muted-foreground">
-            {workflowName ? (
-              <span className="inline-flex min-w-0 items-center gap-1" title="workflow">
-                <WorkflowIcon size={10} aria-hidden className="shrink-0" />
-                <span className="truncate">{workflowName.toLowerCase()}</span>
-              </span>
-            ) : null}
-            <span
-              className="inline-flex items-center gap-1"
-              title={`${agentCount} agent${agentCount === 1 ? '' : 's'}`}
-            >
-              <Users size={10} aria-hidden />
-              <span className="tabular-nums">{agentCount}</span>
-            </span>
-            {spentUsd !== null && spentUsd > 0 ? (
-              <CostBadge
-                value={spentUsd}
-                title={`$${spentUsd.toFixed(4)} total session cost`}
-                className="text-2xs"
-              />
-            ) : null}
-          </div>
-        )}
-
-        {SESSION_FEATURES.budget && cap !== null && (
-          <div className="flex flex-col gap-0.5 pl-3.5">
-            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn('h-full rounded-full transition-all', barColor)}
-                style={{ width: `${Math.min((pct ?? 0) * 100, 100)}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2xs text-muted-foreground">
-                ${spent.toFixed(2)} /{' '}
-                {editingCap ? null : (
-                  <button
-                    type="button"
-                    className="text-2xs text-muted-foreground underline-offset-2 hover:underline"
-                    onClick={onCapClick}
-                    title="click to edit cap"
-                  >
-                    ${cap.toFixed(2)}
-                  </button>
-                )}
-              </span>
-              {editingCap && (
-                <input
-                  autoFocus
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={capDraft}
-                  onChange={(e) => setCapDraft(e.target.value)}
-                  onBlur={() => void onCapSave()}
-                  onKeyDown={onCapKeyDown}
-                  onClick={(e) => e.stopPropagation()}
-                  className="ml-1 w-16 rounded border border-border bg-background px-1 py-0 text-2xs outline-none focus:ring-1 focus:ring-primary"
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {confirmDelete && (
-        <DeleteConfirmDialog
-          sessionGoal={session.goal}
-          onConfirm={onDeleteConfirm}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
-      <SessionSettingsDialog
-        sessionId={session.id as SessionId}
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        archived={archived}
-        onArchive={onArchive}
-        onUnarchive={onUnarchive}
-      />
-    </li>
-  );
-});
-
-interface DeleteConfirmDialogProps {
-  sessionGoal: string;
-  onConfirm: (e: React.MouseEvent) => void;
-  onCancel: () => void;
-}
-
-function DeleteConfirmDialog({ sessionGoal, onConfirm, onCancel }: DeleteConfirmDialogProps) {
-  return (
-    <Dialog
-      open
-      onClose={onCancel}
-      title="Delete session?"
-      description={`"${sessionGoal}" will be permanently removed. worktree, transcripts, and audit logs will be deleted. this cannot be undone.`}
-      size="sm"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={onConfirm}>
-            Delete
-          </Button>
-        </>
-      }
-    >
-      <span />
-    </Dialog>
-  );
-}
-
-interface AddRowProps {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}
-
-function AddRow({ label, icon, onClick }: AddRowProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mt-0.5 flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-    >
-      <span className="text-muted-foreground" aria-hidden>
-        {icon}
-      </span>
-      {label}
-    </button>
-  );
-}
-
 interface AddWorkspaceDialogProps {
   open: boolean;
   onClose: () => void;
@@ -1217,6 +403,8 @@ interface AddWorkspaceDialogProps {
 function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const addWorkspace = useAppStore((s) => s.addWorkspace);
+  const workspaces = useWorkspaces();
+  const atCap = workspaces.length >= MAX_WORKSPACES;
   const [path, setPath] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1265,7 +453,7 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy}>
+          <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy || atCap}>
             {busy ? 'Adding…' : 'Add workspace'}
           </Button>
         </>
@@ -1298,6 +486,12 @@ function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
         <div className="min-w-0 flex-1 overflow-y-auto pl-4">
           {activeSection === 'repo' ? (
             <div className="flex flex-col gap-1.5">
+              {atCap ? (
+                <div className="mb-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">
+                  Workspace limit reached ({MAX_WORKSPACES}). Disconnect one from the sidebar before
+                  adding another.
+                </div>
+              ) : null}
               <span className="text-xs font-semibold text-foreground">repository path</span>
               <div className="flex gap-2">
                 <Input
@@ -1342,7 +536,7 @@ function AddWsNavItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
+        'flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
         active
           ? 'bg-muted font-medium text-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -1365,7 +559,7 @@ function AddWsSkillsPreview() {
         <h3 className="text-xs font-semibold text-foreground">skills discovered on add</h3>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           after the workspace is registered, kay.am scans these locations and surfaces every skill
-          it finds in chat as `/skill-name`. you don&rsquo;t need to author anything here — existing
+          it finds in chat as `/skill-name`. you don&rsquo;t need to author anything here; existing
           files are picked up automatically.
         </p>
       </div>
@@ -1626,7 +820,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   return (
-    <section className="mt-6 flex flex-col px-2 pb-3">
+    <section className="mt-2 flex flex-col px-2 pb-3">
       {initAgent ? (
         <>
           <header className="flex items-center justify-between gap-2 pb-1.5">
@@ -1737,7 +931,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         loading.agents ? (
           <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
-              <li key={i} className="flex items-center gap-2 rounded-md px-2 py-1.5">
+              <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
                 <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
               </li>
@@ -1745,7 +939,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </ul>
         ) : (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No agents yet — spawn one below.
+            No agents yet. Spawn one below.
           </p>
         )
       ) : (
@@ -1753,7 +947,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       )}
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
       <div className="mt-2 px-2">
-        <div className="rounded-md border border-dashed border-border-soft px-3 py-2">
+        <div className="rounded border border-dashed border-border-soft px-3 py-2">
           <p className="text-2xs font-medium text-muted-foreground">Next</p>
           <p className="text-2xs text-muted-foreground/60">temporarily disabled</p>
         </div>
@@ -1772,7 +966,9 @@ interface SpawnAgentControlProps {
 
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
+  const [direction, setDirection] = useState<'up' | 'down'>('up');
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
 
   useEffect(() => {
@@ -1784,12 +980,28 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
     return () => window.removeEventListener('mousedown', onDocClick);
   }, [open]);
 
+  const onToggle = () => {
+    if (!open) {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // Open in the direction with more room. Trigger near the top of
+        // the viewport → open downward (avoids clipping under the sticky
+        // panel header); trigger near the bottom → open upward.
+        setDirection(spaceBelow > spaceAbove ? 'down' : 'up');
+      }
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <div className="relative mt-1" ref={ref}>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -1799,7 +1011,10 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-md bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          className={cn(
+            'absolute left-0 right-0 z-20 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
+            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
+          )}
         >
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
             by role
@@ -1866,7 +1081,7 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
           onClick={() => void handleTrigger()}
           disabled={spawning}
           className={cn(
-            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+            'inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
             spawning && 'cursor-not-allowed opacity-60',
           )}
           title="spawn new agent to execute this plan"
@@ -1881,7 +1096,7 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
         <button
           type="button"
           onClick={() => void abandonPlan(sessionId, latest.id)}
-          className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
           title="mark plan as superseded; next plan emitted starts a new logical plan"
         >
           abandon
@@ -1961,7 +1176,7 @@ function WorkflowStepRow({
   };
 
   const ROW_BASE =
-    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded-md border px-2.5 py-1.5 text-xs font-medium';
+    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
   const containerClass = isStartable
     ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
     : isActionable && isBlocked
@@ -1977,7 +1192,17 @@ function WorkflowStepRow({
 
   const renderStatusIcon = () => {
     if (isStartable) {
-      return <span className="text-2xs uppercase tracking-wide opacity-70">start</span>;
+      return (
+        <span className="relative inline-flex size-3.5">
+          <span
+            className="absolute inset-0 animate-ping rounded-full bg-primary/30 opacity-75"
+            aria-hidden
+          />
+          <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+            <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
+          </span>
+        </span>
+      );
     }
     if (isActionable && isBlocked) {
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
@@ -2000,15 +1225,6 @@ function WorkflowStepRow({
 
   const renderActionIndicator = () => {
     if (run.status === 'running') return null;
-    if (isStartable) {
-      return (
-        <ArrowRight
-          size={13}
-          aria-hidden
-          className="transition-transform group-hover:translate-x-0.5"
-        />
-      );
-    }
     if (isActionable && isBlocked) {
       return <ArrowRight size={13} aria-hidden className="text-warning" />;
     }
@@ -2017,10 +1233,10 @@ function WorkflowStepRow({
 
   const stableTitle =
     isActionable && isBlocked
-      ? 'next workflow step — gated by open questions / summarizer (click to force)'
+      ? 'next workflow step. gated by open questions / summarizer (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `agent ${run.ordinal + 1} — ${run.status}`;
+        : `agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -2172,7 +1388,7 @@ function AgentRow({
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
-    isSelected ? 'selected — chat shows this agent' : 'click to switch chat to this agent',
+    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -2204,7 +1420,7 @@ function AgentRow({
         }
       }}
       className={cn(
-        'group rounded-md transition-colors',
+        'group rounded transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-muted' : 'hover:bg-muted/60',
         agentHasUnread(run, isSelected && isTaskActive) && 'ring-1 ring-inset ring-warning/70',
@@ -2213,7 +1429,7 @@ function AgentRow({
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
         <AgentKindChip
           kind={kind}
-          title={`agent ${run.ordinal + 1} — ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
         {isEditing ? (
           <input
@@ -2440,85 +1656,5 @@ function ContextWindowBar({
         />
       </div>
     </div>
-  );
-}
-
-interface BulkSessionDeleteDialogProps {
-  workspaceId: WorkspaceId;
-  workspaceName: string;
-  open: boolean;
-  onClose: () => void;
-  onDeleted: () => void;
-}
-
-export function BulkSessionDeleteDialog({
-  workspaceId,
-  workspaceName,
-  open,
-  onClose,
-  onDeleted,
-}: BulkSessionDeleteDialogProps) {
-  const sessions = useSessions();
-  const bulkDelete = useAppStore((s) => s.bulkDeleteSessionsForWorkspace);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const workspaceSessions = sessions.filter((s) => s.workspaceId === workspaceId);
-
-  const onConfirm = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await bulkDelete(
-        workspaceId,
-        workspaceSessions.map((s) => s.id as SessionId),
-      );
-      onDeleted();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (busy) return;
-    setError(null);
-    onClose();
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      title="Delete all sessions?"
-      description={`disconnecting "${workspaceName}" will permanently remove all ${workspaceSessions.length} session${workspaceSessions.length === 1 ? '' : 's'} listed below. worktrees, transcripts, and audit logs will be deleted. this cannot be undone.`}
-      size="sm"
-      footer={
-        <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={handleClose} disabled={busy}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-            {busy ? 'Deleting…' : 'Delete all & disconnect'}
-          </Button>
-        </>
-      }
-    >
-      <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto">
-        {workspaceSessions.map((s) => (
-          <li
-            key={s.id}
-            className="flex items-center justify-between gap-2 rounded-md border border-border-soft bg-subtle px-3 py-1.5 text-xs"
-          >
-            <span className="min-w-0 truncate font-mono text-foreground">{s.goal}</span>
-            <span className="shrink-0 text-muted-foreground/60">
-              {new Date(s.updatedAt).toLocaleDateString()}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Dialog>
   );
 }

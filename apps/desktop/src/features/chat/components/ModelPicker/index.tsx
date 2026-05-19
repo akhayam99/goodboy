@@ -112,7 +112,11 @@ export function ModelPicker({
         type="button"
         onClick={() => !disabled && setOpen((v) => !v)}
         disabled={disabled}
-        title={disabled ? disabledTitle : 'choose provider · model · effort'}
+        title={
+          disabled
+            ? disabledTitle
+            : `Sending to ${PROVIDER_LABEL[provider]} · ${modelLabel(model)}${showEffort ? ` · ${EFFORT_LABEL[effort]} effort` : ''} · ${VERBOSITY_LABEL[verbosity]} replies. Click to change.`
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         className={cn(
@@ -149,10 +153,10 @@ export function ModelPicker({
         <div
           role="dialog"
           aria-label="model picker"
-          className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-background py-2 text-xs shadow-lg ring-1 ring-border-soft"
+          className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-2 text-xs shadow-lg ring-1 ring-border-soft"
         >
           {/* Provider */}
-          <PickerSection label="Provider">
+          <PickerSection label="Provider" hint="Which CLI agent runs your turns">
             <div className={CHIP_ROW}>
               {providers.map((id) => {
                 const isConnected = connectedProviders.includes(id);
@@ -232,7 +236,7 @@ export function ModelPicker({
           <PickerDivider />
 
           {/* Effort — always visible */}
-          <PickerSection label="Effort">
+          <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
               <div className={CHIP_ROW}>
                 {effortLevels.map((level) => (
@@ -260,7 +264,7 @@ export function ModelPicker({
           <PickerDivider />
 
           {/* Verbosity */}
-          <PickerSection label="Verbosity">
+          <PickerSection label="Verbosity" hint="How detailed the replies should be">
             <div className={CHIP_ROW}>
               {VERBOSITY_LEVELS.map((level) => (
                 <button
@@ -285,11 +289,24 @@ export function ModelPicker({
   );
 }
 
-function PickerSection({ label, children }: { label: string; children: React.ReactNode }) {
+function PickerSection({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col">
-      <div className="px-2.5 pb-0.5 pt-1 text-2xs tracking-wide text-muted-foreground/70">
-        {label}
+      <div className="flex flex-col gap-0.5 px-2.5 pb-1 pt-1.5">
+        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+          {label}
+        </span>
+        {hint ? (
+          <span className="text-[10px] leading-tight text-muted-foreground/60">{hint}</span>
+        ) : null}
       </div>
       {children}
     </div>

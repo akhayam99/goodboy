@@ -27,7 +27,9 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
   const showToast = useCallback((kind: ToastKind, message: string) => {
     const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, kind, message }]);
+    const formatted =
+      message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message;
+    setToasts((prev) => [...prev, { id, kind, message: formatted }]);
   }, []);
 
   const dismiss = useCallback((id: string) => {
@@ -58,7 +60,7 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
 
   return (
     <div
-      className="pointer-events-none fixed right-4 top-4 z-50 flex flex-col gap-2"
+      className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2"
       role="region"
       aria-label="notifications"
       aria-live="polite"
@@ -98,12 +100,12 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         'pointer-events-auto flex max-w-xs items-start gap-2 rounded-lg border px-3 py-2.5 shadow-md motion-safe:transition-all motion-safe:duration-200',
         visible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
         toast.kind === 'error'
-          ? 'border-danger/30 bg-background text-danger'
+          ? 'border-danger/30 bg-subtle text-danger'
           : toast.kind === 'success'
-            ? 'border-success/30 bg-background text-success'
+            ? 'border-success/30 bg-subtle text-success'
             : toast.kind === 'info'
-              ? 'border-info/30 bg-background text-info'
-              : 'border-warning/30 bg-background text-warning',
+              ? 'border-info/30 bg-subtle text-info'
+              : 'border-warning/30 bg-subtle text-warning',
       )}
       role="alert"
     >

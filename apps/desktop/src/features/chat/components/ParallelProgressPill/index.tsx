@@ -30,8 +30,8 @@ export function ParallelProgressPill({
           <button
             key={runId}
             type="button"
-            aria-label={`run p${i + 1} — ${status}`}
-            title={`run p${i + 1} — ${status}`}
+            aria-label={`run p${i + 1}: ${status}`}
+            title={`run p${i + 1}: ${status}`}
             onClick={() => onSelectRun(runId)}
             className={cn(
               'inline-block h-2 w-2 rounded-full motion-safe:transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',

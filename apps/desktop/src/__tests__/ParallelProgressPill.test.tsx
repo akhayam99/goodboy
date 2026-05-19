@@ -41,10 +41,10 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    expect(screen.getByRole('button', { name: 'run p1 — running' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p2 — completed' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p3 — failed' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p4 — skipped' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'run p1: running' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'run p2: completed' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'run p3: failed' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'run p4: skipped' })).toBeDefined();
   });
 
   it('click on badge calls onSelectRun with correct runId', () => {
@@ -56,7 +56,7 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'run p2 — completed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'run p2: completed' }));
     expect(onSelectRun).toHaveBeenCalledOnce();
     expect(onSelectRun).toHaveBeenCalledWith(rid('r2'));
   });
@@ -71,7 +71,7 @@ describe('ParallelProgressPill', () => {
       />,
     );
     runIds.forEach((runId, i) => {
-      fireEvent.click(screen.getByRole('button', { name: `run p${i + 1} — ${statusList[i]}` }));
+      fireEvent.click(screen.getByRole('button', { name: `run p${i + 1}: ${statusList[i]}` }));
       expect(onSelectRun).toHaveBeenNthCalledWith(i + 1, runId);
     });
     expect(onSelectRun).toHaveBeenCalledTimes(4);
@@ -98,6 +98,6 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    expect(screen.getByRole('button', { name: 'run p1 — pending' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'run p1: pending' })).toBeDefined();
   });
 });

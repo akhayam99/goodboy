@@ -27,7 +27,9 @@ import {
   insertTelemetry,
   insertTurnEvent,
   insertWorkspace,
-  deleteWorkspace,
+  disconnectWorkspace as disconnectWorkspaceInDb,
+  reconnectWorkspace as reconnectWorkspaceInDb,
+  findWorkspaceByRootPath,
   listContextSlotsForSession,
   insertContextSlotHistory,
   listContextSlotHistory,
@@ -147,7 +149,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../features/settings/settings';
-import { AGENT_FEATURES, WORKSPACE_FEATURES } from '../shared/lib/features';
+import { AGENT_FEATURES, MAX_WORKSPACES, WORKSPACE_FEATURES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
   runTurn,
@@ -189,6 +191,7 @@ import {
   invokePhaseRunUpdateStatus,
   invokeSessionSetProviderSessionId,
   invokeSessionMarkViewed,
+  invokeAgentSetKind,
   type PhaseTemplateUpsertArgs,
 } from '../features/phases/phases';
 import {
@@ -487,10 +490,6 @@ export interface AppActions {
   setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
-  bulkDeleteSessionsForWorkspace(
-    workspaceId: WorkspaceId,
-    sessionIds: ReadonlyArray<SessionId>,
-  ): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
@@ -998,6 +997,9 @@ async function generateAutoTitle(
         set((s) => ({
           agentKindOverride: { ...s.agentKindOverride, [agentId]: currentKind },
         }));
+        void invokeAgentSetKind(agentId, currentKind).catch(() => {
+          // Best-effort persistence; not fatal if it fails.
+        });
       }
       await get().renameAgent(sessionId, agentId, title);
     }
@@ -1280,6 +1282,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
+      const kindOverridesFromDb: Record<string, AgentKind> = {};
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
@@ -1288,7 +1291,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const primaryRow = rows[0];
           if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
-        sessionPhaseRuns[s.id] = phaseRunsPerTask[i]!;
+        const runs = phaseRunsPerTask[i]!;
+        sessionPhaseRuns[s.id] = runs;
+        for (const run of runs) {
+          if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
+        }
       }
       set((state) => ({
         sessions,
@@ -1299,6 +1306,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
         phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
+        agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
     } else {
       set({ providerSpendBreakdown: [] });
@@ -1516,6 +1524,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
             }
           }
 
+          const kindOverridesFromDb: Record<string, AgentKind> = {};
+          for (const agent of agents) {
+            if (agent.kind) kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+          }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
             selectedAgentId: {
@@ -1524,6 +1536,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
             agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
             agentTurnState: { ...state.agentTurnState, ...seededTurnState },
+            agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
           }));
           markDone('agents');
 
@@ -1698,14 +1711,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (sortedSteps.length > 0) {
         const allAgents: Agent[] = [];
         for (const step of sortedSteps) {
+          const kind = inferAgentKindFromName(step.name);
           const agent = await invokePhaseRunInsert({
             sessionId: session.id,
             stepId: step.id,
             ordinal: step.ordinal,
             name: step.name,
             status: 'pending',
+            kind,
           });
-          const kind = inferAgentKindFromName(step.name);
           agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
           agentKindOverrides[agent.id] = kind;
           allAgents.push(agent);
@@ -1732,6 +1746,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ordinal: 0,
         name: agentName,
         status: 'pending',
+        ...(firstAgentKind !== undefined && { kind: firstAgentKind }),
       });
       if (model !== null) agentModelOverrides[singleAgent.id] = model;
       if (firstAgentKind !== undefined) agentKindOverrides[singleAgent.id] = firstAgentKind;
@@ -1749,6 +1764,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ordinal: -1,
         name: 'init',
         status: 'pending',
+        kind: 'init',
       });
       agentModelOverrides[initAgent.id] = AGENT_KIND_DEFAULTS.init.model;
       agentKindOverrides[initAgent.id] = 'init';
@@ -1911,7 +1927,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
-        'session worktree not initialized — restart the app to reload persisted worktree paths',
+        'session worktree not initialized. restart the app to reload persisted worktree paths',
       );
     }
 
@@ -1919,7 +1935,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
-      throw new Error('no agent selected — spawn one before sending a turn');
+      throw new Error('no agent selected. spawn one before sending a turn');
     }
 
     const userTurnText = content;
@@ -2207,6 +2223,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           status: 'running',
           providerRunId: runId,
           startedAt: now(),
+          kind: inferAgentKindFromName(phaseDefinition.name),
         });
       }
       resolvedAgentId = resolved.id;
@@ -2478,7 +2495,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const ratio = estimated / ctxWindow;
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
-        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%) — consider /compact`;
+        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%). consider /compact`;
         if (import.meta.env.DEV) console.warn(msg);
         set((state) => ({
           systemAlerts: [
@@ -2997,11 +3014,43 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     const resolvedRoot = check.rootPath;
 
-    // Surface a friendly error if the repo is already registered, instead of leaking
-    // SQLite's UNIQUE constraint violation as `[object Object]` to the dialog.
-    const existing = get().workspaces.find((w) => w.rootPath === resolvedRoot);
-    if (existing) {
-      throw new Error(`workspace already exists: ${existing.name}`);
+    // Path-match reactivation: if the user previously disconnected a workspace
+    // pointing at this path, "adding" it again clears the disconnect flag and
+    // brings back all its sessions/worktrees/transcripts.
+    const onDisk = await findWorkspaceByRootPath(tauriDatabase, resolvedRoot);
+    if (onDisk) {
+      if (!onDisk.disconnectedAt) {
+        throw new Error(`workspace already exists: ${onDisk.name}`);
+      }
+      // Cap counts only active workspaces.
+      if (get().workspaces.length >= MAX_WORKSPACES) {
+        throw new Error(
+          `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
+        );
+      }
+      const now = new Date().toISOString() as IsoDateTime;
+      await reconnectWorkspaceInDb(tauriDatabase, onDisk.id, now);
+      const reactivated: Workspace = { ...onDisk, updatedAt: now };
+      delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
+      set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
+      // Refresh side caches owned by this workspace; sessions hydrate lazily
+      // via setCurrentWorkspace when the user actually picks it.
+      try {
+        const templates = await invokePhaseTemplateList(reactivated.id);
+        set((state) => ({
+          phaseTemplates: { ...state.phaseTemplates, [reactivated.id]: templates },
+        }));
+      } catch {
+        // non-fatal: templates can be re-fetched on next workspace switch
+      }
+      return reactivated;
+    }
+
+    // New workspace path → enforce cap before insert.
+    if (get().workspaces.length >= MAX_WORKSPACES) {
+      throw new Error(
+        `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
+      );
     }
 
     const inferredName =
@@ -3048,36 +3097,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
     return workspace;
   },
 
+  /**
+   * Soft "disconnect". Sessions, worktrees, transcripts are left untouched in
+   * the DB. The workspace just stops appearing in the sidebar. Re-adding it
+   * via `addWorkspace` with the same `rootPath` reactivates the row and brings
+   * everything back. UI uses this everywhere; the destructive hard-delete on
+   * `packages/db` is kept only for data-purge flows.
+   */
   deleteWorkspace: async (id) => {
     const state = get();
     const workspace = state.workspaces.find((w) => w.id === id);
     if (!workspace) throw new Error(`workspace not found: ${id}`);
 
-    const sessions = await listSessionsForWorkspace(tauriDatabase, id);
-    const aliveSessions = sessions.filter(
-      (s) => s.state.kind === 'running' || s.state.kind === 'idle',
-    );
-    if (aliveSessions.length > 0) {
-      throw new Error(
-        `${aliveSessions.length} session${aliveSessions.length > 1 ? 's are' : ' is'} still running or idle. end them before deleting this workspace.`,
+    // Cancel any running turns for this workspace so we don't leak processes
+    // emitting events into a workspace the user can no longer see.
+    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+    if (wasCurrentWorkspace) {
+      const runningSessions = state.sessions.filter((s) => s.state.kind === 'running');
+      await Promise.all(
+        runningSessions.map((s) =>
+          cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(() => {
+            // best-effort: registry may already be clean
+          }),
+        ),
       );
     }
 
-    // Remove all worktrees from disk for sessions that have ended
-    for (const session of sessions) {
-      const worktreePaths = state.sessionWorktrees[session.id] ?? [];
-      for (const worktreePath of worktreePaths) {
-        try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-        } catch {
-          // worktree may already be gone — best-effort cleanup
-        }
-      }
-    }
-
-    // Optimistic UI update
+    const now = new Date().toISOString() as IsoDateTime;
     const prevWorkspaces = state.workspaces;
-    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+
+    // Optimistic: drop from sidebar list (and clear per-ws caches if it was
+    // the active one).
     set((s) => ({
       workspaces: s.workspaces.filter((w) => w.id !== id),
       ...(wasCurrentWorkspace
@@ -3107,9 +3157,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
 
     try {
-      await deleteWorkspace(tauriDatabase, id);
+      await disconnectWorkspaceInDb(tauriDatabase, id, now);
     } catch (err) {
-      // Rollback optimistic update
       set((s) => ({
         workspaces: prevWorkspaces,
         ...(wasCurrentWorkspace ? { currentWorkspaceId: id } : {}),
@@ -3119,10 +3168,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     void get().emitNotification(
       'workspace-deleted',
       'info',
-      `workspace deleted: ${workspace.name}`,
-      sessions.length > 0
-        ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} removed`
-        : undefined,
+      `Workspace disconnected: ${workspace.name}`,
+      'Re-add the same path to bring it back with all its sessions.',
     );
   },
 
@@ -3343,6 +3390,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ordinal: nextOrdinal,
       name: resolvedName,
       status: 'pending',
+      ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
     });
     const refreshed = await invokePhaseRunList(sessionId);
     set((s) => ({
@@ -3411,6 +3459,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         agentKindOverride: { ...s.agentKindOverride, [agentId]: kind },
         agentModelOverride: nextModelOverride,
       };
+    });
+    void invokeAgentSetKind(agentId, kind).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('[store] failed to persist agent kind', err);
     });
   },
 
@@ -3555,24 +3607,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title.trim() } : s)),
     }));
     await renameSessionInDb(tauriDatabase, sessionId, title.trim(), now, false);
-  },
-
-  bulkDeleteSessionsForWorkspace: async (workspaceId, sessionIds) => {
-    for (const sessionId of sessionIds) {
-      await get().deleteTask(sessionId);
-    }
-    const remaining = get().sessions.filter((s) => s.workspaceId === workspaceId);
-    if (remaining.length === 0) {
-      await deleteWorkspace(tauriDatabase, workspaceId);
-      set((state) => ({
-        workspaces: state.workspaces.filter((w) => w.id !== workspaceId),
-        currentSessionId:
-          state.currentSessionId &&
-          state.sessions.find((s) => s.id === state.currentSessionId)?.workspaceId === workspaceId
-            ? null
-            : state.currentSessionId,
-      }));
-    }
   },
 
   deleteTask: async (sessionId) => {

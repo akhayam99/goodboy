@@ -8,6 +8,12 @@ export type Workspace = Readonly<{
   rootPath: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+  /**
+   * Set when the user "disconnects" the workspace. Soft delete: the row stays
+   * in DB along with all sessions, transcripts, worktree refs. Reactivated by
+   * adding a workspace pointing at the same `rootPath`.
+   */
+  disconnectedAt?: IsoDateTime;
 }>;
 
 export type ContextSlot = Readonly<{

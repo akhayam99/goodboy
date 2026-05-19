@@ -10,9 +10,9 @@ export interface AppShellProps {
   className?: string;
 }
 
-const LEFT_SIDEBAR_MIN = 220;
-const LEFT_SIDEBAR_MAX = 480;
-const LEFT_SIDEBAR_DEFAULT = 280;
+const LEFT_SIDEBAR_MIN = 300;
+const LEFT_SIDEBAR_MAX = 520;
+const LEFT_SIDEBAR_DEFAULT = 380;
 const LEFT_SIDEBAR_STORAGE_KEY = 'kay-am:left-sidebar-width';
 const LEFT_RAIL_WIDTH = 80;
 
@@ -40,20 +40,23 @@ function buildLayout(opts: {
 }): {
   templateAreas: string;
   templateColumns: string;
+  templateRows: string;
 } {
   const { collapsed, leftCollapsed, hasRightSidebar, leftWidthPx, rightWidthPx } = opts;
   const leftCol = `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
   if (!hasRightSidebar) {
     return {
-      templateAreas: `"left lhandle main"`,
+      templateAreas: '"left lhandle main"',
       templateColumns: `${leftCol} 6px minmax(0,1fr)`,
+      templateRows: 'minmax(0,1fr)',
     };
   }
   return {
-    templateAreas: `"left lhandle main rhandle right"`,
+    templateAreas: '"left lhandle main rhandle right"',
     templateColumns: `${leftCol} 6px minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
       collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
     }px`,
+    templateRows: 'minmax(0,1fr)',
   };
 }
 
@@ -167,7 +170,7 @@ export function AppShell({
   const gridStyle: CSSProperties = {
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
-    gridTemplateRows: 'minmax(0,1fr)',
+    gridTemplateRows: layout.templateRows,
   };
 
   return (
@@ -180,7 +183,7 @@ export function AppShell({
         style={gridStyle}
       >
         <aside
-          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-subtle shadow-md"
+          className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-subtle shadow-md"
           style={{ gridArea: 'left' }}
         >
           {leftSidebar}
@@ -226,7 +229,7 @@ export function AppShell({
               'flex min-h-0 min-w-0 flex-col overflow-hidden transition-[margin,background-color,border-radius,box-shadow] duration-200 ease-out',
               rightSidebarCollapsed
                 ? 'mr-3 mt-3 bg-background'
-                : 'm-3 rounded-xl bg-subtle shadow-md',
+                : 'm-3 rounded-lg bg-subtle shadow-md',
             )}
             style={{ gridArea: 'right' }}
           >

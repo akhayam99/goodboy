@@ -75,7 +75,9 @@ interface DiffViewerDialogProps {
   jumpToFile?: string;
 }
 
-const DEFAULT_VIEW: DiffView = { kind: 'working', scope: 'all' };
+// Default to the same scope the sidebar files-touched counter uses
+// (branch vs main) so opening the dialog matches what the count promises.
+const DEFAULT_VIEW: DiffView = { kind: 'branch' };
 
 function viewStorageKey(sessionId: SessionId | undefined): string | null {
   return sessionId ? `${STORAGE_PREFIXES.diffView}${sessionId}` : null;

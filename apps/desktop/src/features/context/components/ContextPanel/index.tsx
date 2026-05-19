@@ -4,60 +4,38 @@ import {
   PanelRightOpen,
   History,
   RotateCcw,
-  GitBranch,
-  GitPullRequest,
-  GitPullRequestDraft,
-  GitMerge,
-  RefreshCw,
-  Plus,
-  Loader2,
   ChevronRight,
   ChevronDown,
-  FileEdit,
   Target,
   CheckCheck,
   HelpCircle,
   Activity,
   ClipboardList,
   List,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Button, Markdown, cn } from '@kay-am/ui';
-import { SLOT_KEYS, SLOT_LABELS, type SlotKey, detectRepoSlug } from '@kay-am/core';
+import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@kay-am/ui';
+import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   PlanStatus,
   PlanWithCount,
-  PrComment,
   Session,
   SessionId,
   TelemetryRecord,
-  PullRequestStateKind,
 } from '@kay-am/types';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useDiffComments,
-  useFilesTouched,
   useSessionLoading,
   useSessionPlans,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
 } from '../../../../store';
-import { openUrl } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
-import { tauriGhRunner } from '../../../../features/github/github';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
-import { GithubCard } from '../../../../features/github/components/Card';
-import { worktreeStatus } from '../../../../features/worktree/worktree';
-import type { WorktreeStatus } from '@kay-am/types';
-import {
-  buildCommentAgentArgs,
-  buildReviewChangesAgentArgs,
-} from '../../../../features/chat/spawn-from-comment';
 
 interface ContextPanelProps {
   session: Session;
@@ -111,75 +89,32 @@ export function ContextPanel({
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
   );
 
+  // open_questions is pinned in a sticky footer; goal/decisions/last_output_summary
+  // remain inline in the scroll area.
   const visibleSlotKeys = useMemo(
     () =>
-      SLOT_KEYS.filter((k) => k !== 'files_touched').sort((a, b) => {
+      SLOT_KEYS.filter((k) => k !== 'files_touched' && k !== 'open_questions').sort((a, b) => {
         const order: Record<string, number> = {
           goal: 0,
-          open_questions: 1,
-          decisions: 2,
-          last_output_summary: 3,
+          decisions: 1,
+          last_output_summary: 2,
         };
         return (order[a] ?? 99) - (order[b] ?? 99);
       }),
     [],
   );
 
-  const filesTouched = useFilesTouched(session.id);
-  const [gitStatus, setGitStatus] = useState<WorktreeStatus | null>(null);
-
-  useEffect(() => {
-    if (!workingDir) {
-      setGitStatus(null);
-      return;
-    }
-    let cancelled = false;
-    worktreeStatus(workingDir)
-      .then((s) => {
-        if (!cancelled) setGitStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setGitStatus(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
-
-  const filesTouchedCount = gitStatus?.changed ?? filesTouched.count;
-  const filesTooltip = useMemo(() => {
-    if (!gitStatus) {
-      return filesTouchedCount === 0
-        ? 'no files touched yet'
-        : `view diff for ${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'}`;
-    }
-    const parts: string[] = [];
-    if (gitStatus.unstaged > 0) parts.push(`${gitStatus.unstaged} unstaged`);
-    if (gitStatus.staged > 0) parts.push(`${gitStatus.staged} staged`);
-    if (gitStatus.untracked > 0) parts.push(`${gitStatus.untracked} untracked`);
-    if (gitStatus.hasUpstream && (gitStatus.ahead > 0 || gitStatus.behind > 0)) {
-      parts.push(`ahead ${gitStatus.ahead} / behind ${gitStatus.behind}`);
-    }
-    return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
-  }, [gitStatus, filesTouchedCount]);
-
-  const [filesDiffOpen, setFilesDiffOpen] = useState(false);
-  const [filesDiffJumpToNotes, setFilesDiffJumpToNotes] = useState(false);
-  const diffComments = useDiffComments(session.id);
-  const openNotesCount = useMemo(
-    () => diffComments.filter((c) => c.status === 'open').length,
-    [diffComments],
-  );
-  const loadDiffComments = useAppStore((s) => s.loadDiffComments);
-
-  useEffect(() => {
-    if (!isActive) return;
-    const t0 = performance.now();
-    void loadDiffComments(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:diffComments ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, session.id, loadDiffComments]);
+  const plans = useSessionPlans(session.id);
+  const isFreshContext = useMemo(() => {
+    if (loading.slots || loading.plans) return false;
+    if (plans.length > 0) return false;
+    const trimmedValue = (key: SlotKey) => slotsByKey.get(key)?.value?.trim() ?? '';
+    return (
+      trimmedValue('open_questions').length === 0 &&
+      trimmedValue('decisions').length === 0 &&
+      trimmedValue('last_output_summary').length === 0
+    );
+  }, [loading.slots, loading.plans, plans, slotsByKey]);
 
   return (
     <>
@@ -205,41 +140,46 @@ export function ContextPanel({
         </button>
       </div>
 
-      <div className={cn('flex h-full min-h-0 flex-col', collapsed && 'hidden')}>
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="flex flex-col gap-4 p-4">
-            <header className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-                CONTEXT
-              </span>
-              <div className="flex items-center gap-1">
-                <SummarizerBadge
-                  status={summarizer.status}
-                  lastUpdate={summarizer.lastUpdate}
-                  error={summarizer.error}
-                  totals={summarizerTotals}
-                />
-                {onCollapse ? (
-                  <button
-                    type="button"
-                    onClick={onCollapse}
-                    title="hide context panel"
-                    aria-label="hide context panel"
-                    className={ICON_BTN}
-                  >
-                    <PanelRightClose size={13} aria-hidden />
-                  </button>
-                ) : null}
-              </div>
-            </header>
+      <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', collapsed && 'hidden')}>
+        <div className="shrink-0 flex flex-col gap-4 px-4 pt-4 pb-2">
+          <header className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <BookOpen size={11} aria-hidden className="text-accent" />
+              Context
+            </span>
+            <div className="flex items-center gap-1">
+              <SummarizerBadge
+                status={summarizer.status}
+                lastUpdate={summarizer.lastUpdate}
+                error={summarizer.error}
+                totals={summarizerTotals}
+              />
+              {onCollapse ? (
+                <button
+                  type="button"
+                  onClick={onCollapse}
+                  title="hide context panel"
+                  aria-label="hide context panel"
+                  className={ICON_BTN}
+                >
+                  <PanelRightClose size={13} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          </header>
+        </div>
 
+        {isFreshContext ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ContextFreshEmpty goal={session.goal} />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pb-4">
             <PlansSection sessionId={session.id} />
-
-            {/* Per-slot independence: <ul> is always rendered. Each SlotRow
-                shows its own skeleton when its data slice is missing AND the
-                slots fetch is in flight. One slot finishing first paints
-                without waiting for siblings. */}
-            <ul className="flex flex-col gap-6">
+            {/* Per-slot independence: each SlotRow shows its own skeleton.
+                Slots that can grow large (decisions / last_output_summary)
+                are flex-1 and scroll internally; goal stays auto-height. */}
+            <ul className="flex min-h-0 flex-1 flex-col gap-2.5">
               {visibleSlotKeys.map((key) => {
                 const slot = slotsByKey.get(key);
                 return (
@@ -256,101 +196,23 @@ export function ContextPanel({
               })}
             </ul>
           </div>
-        </ScrollArea>
+        )}
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border-soft px-3 py-3">
-          <GitHubSection session={session} isActive={isActive} />
-          {filesTouchedCount === 0 && (loading.transcript || loading.agents) ? (
-            <FilesTouchedSkeleton />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setFilesDiffJumpToNotes(false);
-                setFilesDiffOpen(true);
-              }}
-              disabled={!workingDir}
-              className={cn(
-                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                !workingDir
-                  ? 'cursor-not-allowed text-muted-foreground/50'
-                  : filesTouchedCount === 0
-                    ? 'border border-border-soft text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                    : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
-              )}
-              title={filesTooltip}
-            >
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <FileEdit size={11} aria-hidden />
-                <span className="truncate">
-                  {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
-                </span>
-                {openNotesCount > 0 ? (
-                  <>
-                    <span aria-hidden className="opacity-40">
-                      ·
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFilesDiffJumpToNotes(true);
-                        setFilesDiffOpen(true);
-                      }}
-                      className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                      title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                    >
-                      {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                    </button>
-                  </>
-                ) : null}
-              </span>
-              <span aria-hidden className="opacity-60">
-                ↗
-              </span>
-            </button>
-          )}
+        <div className="shrink-0 border-t border-border-soft bg-subtle/30 px-4 py-3">
+          <ul className="flex flex-col">
+            <SlotRow
+              sessionId={session.id}
+              slotKey="open_questions"
+              slot={slotsByKey.get('open_questions')}
+              loading={loading.slots}
+              isSummarizing={summarizer.status === 'running'}
+              onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
+            />
+          </ul>
         </div>
       </div>
-
-      <DiffViewerDialog
-        open={filesDiffOpen}
-        onClose={() => setFilesDiffOpen(false)}
-        sessionId={session.id}
-        title={`${filesTouchedCount} file${filesTouchedCount === 1 ? '' : 's'} touched`}
-        workingDir={workingDir ?? undefined}
-        worktreePath={workingDir ?? undefined}
-        jumpToFirstCommented={filesDiffJumpToNotes}
-      />
     </>
   );
-}
-
-const PR_STATE_LABEL: Record<PullRequestStateKind, string> = {
-  draft: 'draft',
-  open: 'open',
-  approved: 'approved',
-  merged: 'merged',
-  closed: 'closed',
-};
-
-const PR_STATE_ICON_CLASS: Record<PullRequestStateKind, string> = {
-  draft: 'text-muted-foreground',
-  open: 'text-success',
-  approved: 'text-success',
-  merged: 'text-accent',
-  closed: 'text-danger',
-};
-
-function PrStateIcon({ state, size = 12 }: { state: PullRequestStateKind; size?: number }) {
-  const cls = PR_STATE_ICON_CLASS[state];
-  if (state === 'draft') return <GitPullRequestDraft size={size} aria-hidden className={cls} />;
-  if (state === 'merged') return <GitMerge size={size} aria-hidden className={cls} />;
-  return <GitPullRequest size={size} aria-hidden className={cls} />;
-}
-
-function openInBrowser(url: string) {
-  openUrl(url).catch(() => window.open(url, '_blank'));
 }
 
 function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
@@ -404,315 +266,16 @@ function PlansSkeleton() {
   );
 }
 
-function FilesTouchedSkeleton() {
-  return (
-    <div
-      role="status"
-      aria-label="loading files touched"
-      className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
-    >
-      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
-      <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
-    </div>
-  );
-}
-
-function PrSkeleton() {
-  return (
-    <div className="flex items-center gap-1.5" role="status" aria-label="loading pr">
-      <div className="h-3 w-3 animate-pulse rounded-sm bg-muted [animation-delay:0ms]" />
-      <div className="h-3 w-10 animate-pulse rounded bg-muted [animation-delay:80ms]" />
-      <div className="h-3 flex-1 animate-pulse rounded bg-muted [animation-delay:160ms]" />
-    </div>
-  );
-}
-
-function GitHubSection({ session, isActive = true }: { session: Session; isActive?: boolean }) {
-  const githubStatus = useAppStore((s) => s.githubStatus);
-  const branch = useAppStore((s) => s.sessionBranches[session.id]);
-  const ghState = useAppStore((s) => s.sessionGithub[session.id]);
-  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === session.workspaceId));
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-
-  const [repoSlug, setRepoSlug] = useState<string | null>(null);
-  const [diffOpen, setDiffOpen] = useState(false);
-  const [issuesExpanded, setIssuesExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!branch || !workspace?.rootPath) return;
-    detectRepoSlug(tauriGhRunner, workspace.rootPath)
-      .then(setRepoSlug)
-      .catch(() => setRepoSlug(null));
-  }, [branch, workspace?.rootPath]);
-
-  useEffect(() => {
-    if (!isActive) return;
-    if (!branch || githubStatus?.mode === 'absent') return;
-    if (ghState?.fetchedAt != null) return;
-    const t0 = performance.now();
-    void refreshSessionPr(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPr ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, branch, githubStatus?.mode, session.id, ghState?.fetchedAt, refreshSessionPr]);
-
-  const prNumber = ghState?.pr?.number ?? null;
-  const prDetailFetchedAt = ghState?.detailFetchedAt ?? null;
-  useEffect(() => {
-    if (!isActive) return;
-    if (prNumber === null) return;
-    // Skip when detail was already fetched. Without this guard the GitHub
-    // network call (~3s) re-fired on every session switch, leaving a pending
-    // PR-card spinner visible for the entire wait.
-    if (prDetailFetchedAt !== null) return;
-    const t0 = performance.now();
-    void refreshSessionPrDetail(session.id).finally(() => {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] ctx:refreshSessionPrDetail ${(performance.now() - t0).toFixed(0)}ms`);
-    });
-  }, [isActive, prNumber, prDetailFetchedAt, session.id, refreshSessionPrDetail]);
-
-  if (!branch || githubStatus?.mode === 'absent') return null;
-
-  const pr = ghState?.pr ?? null;
-  const linkedIssues = ghState?.linkedIssues ?? [];
-  const loading = ghState?.loading ?? false;
-  const isFirstLoad = loading && ghState?.fetchedAt == null;
-  const ISSUE_LIMIT = 3;
-  const visibleIssues = issuesExpanded ? linkedIssues : linkedIssues.slice(0, ISSUE_LIMIT);
-  const hiddenCount = linkedIssues.length - ISSUE_LIMIT;
-
-  const copyBranch = () => {
-    navigator.clipboard.writeText(branch).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  const handleCreatePr = async () => {
-    setCreateError(null);
-    try {
-      await createPrForSession(session.id);
-    } catch (err) {
-      setCreateError(formatError(err));
-    }
-  };
-
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <GitBranch size={11} aria-hidden className="text-provider-cursor" />
-          github
-        </span>
-        <button
-          type="button"
-          onClick={() => void refreshSessionPr(session.id, { force: true })}
-          disabled={loading}
-          title="refresh pr status"
-          aria-label="refresh pr status"
-          className={cn(ICON_BTN, 'disabled:opacity-40')}
-        >
-          <RefreshCw size={11} className={cn(loading && 'animate-spin')} aria-hidden />
-        </button>
-      </div>
-
-      <div
-        className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2"
-        aria-live="polite"
-      >
-        {isFirstLoad ? (
-          <PrSkeleton />
-        ) : pr ? (
-          <div
-            className="flex items-center gap-1.5"
-            title={`#${pr.number} ${pr.title} — ${PR_STATE_LABEL[pr.state]}`}
-          >
-            <PrStateIcon state={pr.state} />
-            <button
-              type="button"
-              onClick={() => openInBrowser(pr.url)}
-              className="shrink-0 font-mono text-xs text-foreground hover:underline focus:underline focus:outline-none"
-              title={`open #${pr.number} on github — ${pr.title}`}
-              aria-label={`open pull request #${pr.number} on github`}
-            >
-              #{pr.number}
-            </button>
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
-                copied
-                  ? 'text-success'
-                  : 'text-muted-foreground hover:text-foreground focus:text-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-            {repoSlug ? (
-              <button
-                type="button"
-                onClick={() => setDiffOpen(true)}
-                title="view diff"
-                aria-label="view pr diff"
-                className={cn('shrink-0', ICON_BTN)}
-              >
-                <FileEdit size={11} aria-hidden />
-              </button>
-            ) : null}
-          </div>
-        ) : loading ? (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 size={11} className="shrink-0 animate-spin" aria-hidden />
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono focus:outline-none',
-                copied ? 'text-success' : 'hover:text-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-            <button
-              type="button"
-              onClick={copyBranch}
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-mono text-xs transition-colors focus:outline-none',
-                copied
-                  ? 'text-success'
-                  : 'text-foreground hover:text-muted-foreground focus:text-muted-foreground',
-              )}
-              title={copied ? 'copied!' : `copy branch: ${branch}`}
-              aria-label={`copy branch name ${branch}`}
-            >
-              {branch}
-            </button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void handleCreatePr()}
-              disabled={loading}
-              className="h-5 shrink-0 gap-0.5 px-1.5 text-[10px]"
-            >
-              <Plus size={10} aria-hidden />
-              Open PR
-            </Button>
-          </div>
-        )}
-
-        {linkedIssues.length > 0 ? (
-          <div className="flex flex-col gap-0.5 border-t border-border-soft pt-1.5">
-            {visibleIssues.map((issue) => (
-              <div key={issue.number} className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'shrink-0 rounded-sm px-1 py-0.5 text-[9px] uppercase tracking-wide',
-                    issue.closes ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
-                  )}
-                >
-                  {issue.closes ? 'closes' : 'ref'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => openInBrowser(issue.url)}
-                  className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground hover:text-foreground hover:underline"
-                  title={issue.title ?? `#${issue.number}`}
-                >
-                  #{issue.number}
-                  {issue.title ? ` ${issue.title}` : ''}
-                </button>
-              </div>
-            ))}
-            {!issuesExpanded && hiddenCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setIssuesExpanded(true)}
-                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                +{hiddenCount} more
-              </button>
-            ) : issuesExpanded && hiddenCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setIssuesExpanded(false)}
-                className="self-start text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                show less
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {createError ? (
-          <p className="rounded border border-danger/30 bg-danger/10 px-2 py-1 text-[10px] text-danger">
-            {createError}
-          </p>
-        ) : null}
-
-        {pr ? (
-          <div className="border-t border-border-soft pt-1.5">
-            <GithubCard
-              pr={pr}
-              detail={ghState?.detail ?? null}
-              detailLoading={ghState?.detailLoading ?? false}
-              detailError={ghState?.detailError ?? null}
-              detailFetchedAt={ghState?.detailFetchedAt ?? null}
-              branchLastActivity={session.updatedAt}
-              onOpenUrl={openInBrowser}
-              onRefresh={() => void refreshSessionPrDetail(session.id, { force: true })}
-              onSpawnFromComment={(c: PrComment) => {
-                const args = buildCommentAgentArgs(c, pr);
-                void spawnAgent(session.id, args);
-              }}
-              onSpawnFromReviewChanges={() => {
-                const open = (ghState?.detail?.comments ?? []).filter(
-                  (c) => c.source !== 'review' || c.resolved === false,
-                );
-                if (open.length === 0) return;
-                const args = buildReviewChangesAgentArgs(pr, open);
-                void spawnAgent(session.id, args);
-              }}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      {repoSlug && pr ? (
-        <DiffViewerDialog
-          open={diffOpen}
-          onClose={() => setDiffOpen(false)}
-          sessionId={session.id}
-          repoSlug={repoSlug}
-          prNumber={pr.number}
-          cwd={workspace?.rootPath}
-          workingDir={workspace?.rootPath}
-        />
-      ) : null}
-    </section>
-  );
-}
-
 interface SlotMeta {
   readonly icon: LucideIcon;
   readonly iconClass: string;
+  readonly iconChipBg: string;
+  readonly description: string;
   readonly emphasis?: boolean;
-  readonly tintedWhenNonEmpty?: string;
+  /** Tailwind ring-* class to swap the default border-soft ring when hasValue. */
+  readonly accentRingWhenNonEmpty?: string;
   readonly emptyLabel: string;
+  readonly emptyCta: string;
   readonly collapsible?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
@@ -728,29 +291,41 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   goal: {
     icon: Target,
     iconClass: 'text-primary',
+    iconChipBg: 'bg-primary/10 ring-primary/20',
+    description: 'What this session is set out to achieve',
     emphasis: true,
     singleLine: true,
-    emptyLabel: 'no goal set',
-  },
-  decisions: {
-    icon: CheckCheck,
-    iconClass: 'text-success',
-    collapsible: true,
-    defaultCollapsed: true,
-    emptyLabel: 'no decisions yet',
+    emptyLabel: 'No goal yet',
+    emptyCta: 'Add the session goal',
   },
   open_questions: {
     icon: HelpCircle,
     iconClass: 'text-warning',
-    tintedWhenNonEmpty: 'border-l-2 border-warning bg-warning/5',
-    emptyLabel: 'no open questions',
+    iconChipBg: 'bg-warning/10 ring-warning/20',
+    description: 'Things the agent still needs clarified',
+    accentRingWhenNonEmpty: 'ring-warning/60',
+    emptyLabel: 'No open questions',
+    emptyCta: 'Add a question to ask the user',
+  },
+  decisions: {
+    icon: CheckCheck,
+    iconClass: 'text-success',
+    iconChipBg: 'bg-success/10 ring-success/20',
+    description: 'Choices already locked in for this session',
+    collapsible: true,
+    defaultCollapsed: true,
+    emptyLabel: 'No decisions yet',
+    emptyCta: 'Log a decision',
   },
   last_output_summary: {
     icon: Activity,
     iconClass: 'text-info',
+    iconChipBg: 'bg-info/10 ring-info/20',
+    description: "Summary of the assistant's most recent reply",
     collapsible: true,
     defaultCollapsed: true,
-    emptyLabel: 'no output yet',
+    emptyLabel: 'No output yet',
+    emptyCta: 'Write a manual summary',
   },
 };
 
@@ -848,40 +423,65 @@ function SlotRow({
     if (draft !== value) onCommit(draft);
   };
 
-  const headerLabel = collapsible ? (
+  const itemCountLabel =
+    hasValue && itemCount > 0 ? `${itemCount} item${itemCount === 1 ? '' : 's'}` : null;
+
+  const headerToggle = collapsible ? (
     <button
       type="button"
       onClick={() => setCollapsed((v) => !v)}
-      className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-      title={collapsed ? 'expand' : 'collapse'}
+      title={collapsed ? 'Expand' : 'Collapse'}
       aria-expanded={!collapsed}
+      className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
     >
-      <CollapseIcon size={11} aria-hidden className="shrink-0" />
-      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-      <span>{SLOT_LABELS[slotKey]}</span>
-      {hasValue && collapsed ? (
-        <span className="ml-1 normal-case tracking-normal text-2xs text-muted-foreground/70">
-          {itemCount > 0 ? `· ${itemCount} item${itemCount === 1 ? '' : 's'}` : '· …'}
-        </span>
-      ) : null}
+      <CollapseIcon size={11} aria-hidden />
     </button>
-  ) : (
-    <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-      {SLOT_LABELS[slotKey]}
-    </label>
-  );
+  ) : null;
+
+  const accentRing =
+    hasValue && meta?.accentRingWhenNonEmpty ? meta.accentRingWhenNonEmpty : 'ring-border-soft';
 
   return (
-    <li className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        {headerLabel}
+    <li
+      className={cn(
+        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 transition-colors',
+        accentRing,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {Icon ? (
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
+              meta?.iconChipBg,
+            )}
+          >
+            <Icon size={11} className={meta?.iconClass} aria-hidden />
+          </span>
+        ) : null}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+            <span>{SLOT_LABELS[slotKey]}</span>
+            {itemCountLabel ? (
+              <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+                · {itemCountLabel}
+              </span>
+            ) : null}
+          </span>
+          {meta?.description ? (
+            <span className="text-[10px] leading-tight text-muted-foreground/60">
+              {meta.description}
+            </span>
+          ) : null}
+        </div>
+        {headerToggle}
         <button
           type="button"
           onClick={openHistory}
-          title="view history"
+          title="View history"
           aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className={cn(ICON_BTN, 'shrink-0')}
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
         >
           <History size={11} aria-hidden />
         </button>
@@ -914,19 +514,19 @@ function SlotRow({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
+          className="flex flex-col items-start gap-0.5 rounded text-left text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
         >
-          {meta?.emptyLabel ?? 'empty — click to edit'}
+          <span>{meta?.emptyLabel ?? 'Empty'}</span>
+          <span className="text-[10px] text-muted-foreground/40 underline-offset-2 group-hover:underline">
+            {meta?.emptyCta ?? 'Click to edit'}
+          </span>
         </button>
       ) : singleLine ? (
         <button
           type="button"
           onClick={() => setEditing(true)}
           title={value}
-          className={cn(
-            'truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-sm font-medium hover:border-border-soft hover:bg-muted/40',
-            meta?.tintedWhenNonEmpty,
-          )}
+          className="cursor-text rounded text-left text-sm font-medium leading-snug text-foreground transition-colors hover:bg-foreground/5"
         >
           {value}
         </button>
@@ -934,10 +534,8 @@ function SlotRow({
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          title="expand"
-          className={cn(
-            'flex w-full items-center gap-1.5 truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-border-soft hover:bg-muted/40 hover:text-foreground',
-          )}
+          title="Expand"
+          className="flex w-full cursor-pointer items-center gap-1.5 truncate rounded text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <span className="truncate">{preview}</span>
         </button>
@@ -952,11 +550,8 @@ function SlotRow({
               setEditing(true);
             }
           }}
-          className={cn(
-            'cursor-text rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15',
-            'bg-subtle',
-            meta?.tintedWhenNonEmpty,
-          )}
+          className="min-h-0 flex-1 cursor-text overflow-y-auto overflow-x-hidden rounded pr-3 text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
+          style={{ scrollbarGutter: 'stable' }}
         >
           <Markdown text={value} className="text-[13px] text-foreground" />
         </div>
@@ -965,10 +560,10 @@ function SlotRow({
           type="button"
           onClick={() => setEditing(true)}
           className={cn(
-            'whitespace-pre-wrap break-words rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40',
-            meta?.emphasis ? 'bg-subtle text-sm font-medium' : 'bg-subtle text-xs',
-            meta?.tintedWhenNonEmpty,
+            'min-h-0 flex-1 cursor-text overflow-y-auto whitespace-pre-wrap break-words rounded pr-3 text-left leading-relaxed transition-colors hover:bg-foreground/5',
+            meta?.emphasis ? 'text-sm font-medium' : 'text-xs',
           )}
+          style={{ scrollbarGutter: 'stable' }}
         >
           {value}
         </button>
@@ -1004,7 +599,7 @@ function SlotHistoryDialog({
   onClose,
 }: SlotHistoryDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} title={`history — ${label}`} size="xl">
+    <Dialog open={open} onClose={onClose} title={`history: ${label}`} size="xl">
       {entries.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">no history yet</p>
       ) : (
@@ -1105,7 +700,7 @@ function SummarizerBadge({
   const tooltip = (() => {
     if (status === 'error' && error) return `last error: ${error}`;
     if (lastUpdate) return `last update: ${lastUpdate}`;
-    return 'summarizer running — input is not blocked';
+    return 'summarizer running; input is not blocked';
   })();
   return (
     <span
@@ -1138,6 +733,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const loading = useSessionLoading(sessionId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     void loadSessionPlans(sessionId);
@@ -1149,26 +745,77 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const latest = plans[plans.length - 1];
   if (!latest) return null;
   const latestIndex = plans.length;
+  const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <ClipboardList size={11} aria-hidden className="text-primary" />
-          plans
+    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 ring-border-soft transition-colors">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
+        >
+          <ClipboardList size={11} className="text-primary" aria-hidden />
         </span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+            <span>Plans</span>
+            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+              · {plans.length} total
+            </span>
+          </span>
+          <span className="text-[10px] leading-tight text-muted-foreground/60">
+            Step-by-step plans queued for this session
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          title={expanded ? 'Collapse' : 'Expand'}
+          aria-expanded={expanded}
+          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        >
+          <Chevron size={11} aria-hidden />
+        </button>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          title={`view all plans (${plans.length})`}
+          title={`View all plans (${plans.length})`}
           aria-label={`view all plans (${plans.length})`}
-          className={cn(ICON_BTN, 'inline-flex items-center gap-1 text-2xs')}
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
         >
-          <span>{plans.length}</span>
           <List size={11} aria-hidden />
         </button>
       </div>
-      <LatestPlanCard plan={latest} index={latestIndex} />
+
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 rounded text-left transition-colors hover:bg-foreground/5"
+        title={expanded ? 'Collapse plan' : 'Expand plan'}
+      >
+        <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
+          plan {latestIndex}
+        </span>
+        <span className="truncate text-xs font-medium text-foreground">{latest.title}</span>
+        <span
+          className={cn(
+            'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+            PLAN_STATUS_STYLE[latest.status],
+          )}
+        >
+          {latest.status}
+        </span>
+      </button>
+
+      {expanded ? (
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-3 text-left leading-relaxed [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
+          style={{ scrollbarGutter: 'stable' }}
+        >
+          <Markdown text={latest.bodyMd} className="text-[13px] text-foreground" />
+        </div>
+      ) : null}
+
       <PlansModal
         sessionId={sessionId}
         open={modalOpen}
@@ -1179,40 +826,94 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
-interface LatestPlanCardProps {
-  readonly plan: PlanWithCount;
-  readonly index: number;
+interface ContextFreshEmptyProps {
+  readonly goal: string;
 }
 
-function LatestPlanCard({ plan, index }: LatestPlanCardProps) {
-  const [expanded, setExpanded] = useState(false);
-  const Chevron = expanded ? ChevronDown : ChevronRight;
-
+function ContextFreshEmpty({ goal }: ContextFreshEmptyProps) {
+  const trimmedGoal = goal.trim();
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
-      <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-          title={expanded ? 'collapse plan' : 'expand plan'}
-        >
-          <Chevron size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-            plan {index}
-          </span>
-          <span className="truncate text-xs font-medium text-foreground">{plan.title}</span>
-        </button>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-            PLAN_STATUS_STYLE[plan.status],
-          )}
-        >
-          {plan.status}
-        </span>
+    <div className="flex flex-col items-center gap-4 px-2 py-6 text-center">
+      <div className="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent ring-1 ring-accent/20">
+        <BookOpen size={24} aria-hidden />
       </div>
-      {expanded ? <Markdown text={plan.bodyMd} className="text-xs" /> : null}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+          Context is empty
+        </span>
+        <h3 className="text-sm font-semibold text-foreground">Your shared agent brief</h3>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          This panel keeps every agent on the same page. Open questions, decisions and the latest
+          output summary land here as you work, so spawning a new agent never resets the
+          conversation.
+        </p>
+      </div>
+      {trimmedGoal.length > 0 ? (
+        <div className="flex w-full flex-col gap-1.5 rounded-md bg-subtle/60 px-3 py-2.5 text-left ring-1 ring-border-soft">
+          <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+            <Target size={10} aria-hidden className="text-accent" />
+            Goal
+          </span>
+          <span className="text-xs leading-snug text-foreground">{trimmedGoal}</span>
+        </div>
+      ) : null}
+      <div className="flex w-full flex-col gap-2 rounded-md bg-subtle/40 px-3 py-2.5 text-left ring-1 ring-border-soft">
+        <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+          <Activity size={10} aria-hidden className="text-info" />
+          How it works
+        </span>
+        <ol className="flex flex-col gap-1.5 text-[11px] leading-snug text-muted-foreground">
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              1.
+            </span>
+            <span>
+              At the end of every turn, a summarizer fires automatically in the background.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              2.
+            </span>
+            <span>
+              It uses the <span className="text-foreground">cheapest model</span> of the same
+              provider as the turn (Haiku for Claude, mini for Codex, etc.), so the overhead stays
+              negligible.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              3.
+            </span>
+            <span>
+              It reads the assistant&rsquo;s full reply and updates the slots above: new decisions,
+              still-open questions, a fresh output summary.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              4.
+            </span>
+            <span>
+              You can edit any slot inline at any time. Manual edits win over the next summarizer
+              pass.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              5.
+            </span>
+            <span>
+              Every slot keeps a full history. Click the{' '}
+              <History size={10} aria-hidden className="inline -translate-y-px" /> icon on any slot
+              to browse previous versions and roll back if needed.
+            </span>
+          </li>
+        </ol>
+      </div>
+      <p className="text-[10px] leading-relaxed text-muted-foreground/60">
+        Slots fill in automatically once the first turn completes.
+      </p>
     </div>
   );
 }
