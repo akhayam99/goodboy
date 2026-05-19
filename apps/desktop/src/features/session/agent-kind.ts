@@ -68,8 +68,8 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
     label: 'docs',
   },
   generic: {
-    bg: 'bg-zinc-400',
-    fg: 'text-muted-foreground',
+    bg: 'bg-rose-400',
+    fg: 'text-rose-400',
     label: 'agent',
   },
 };

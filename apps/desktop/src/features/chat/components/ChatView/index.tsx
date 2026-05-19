@@ -1,5 +1,18 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, Sparkles } from 'lucide-react';
+import {
+  ArrowDown,
+  Bot,
+  BookOpen,
+  Bug,
+  ClipboardList,
+  FlaskConical,
+  Hammer,
+  ScanEye,
+  Sparkles,
+  Telescope,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import {
   AGENT_KIND_META,
@@ -582,15 +595,33 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
     }
   }, [scenario, selectedKind, phaseRuns.length]);
 
+  const agentVisual = scenario === 'agent_focus' && selectedKind ? KIND_ICON[selectedKind] : null;
+
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
-      <div className="relative flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div
+        className={cn(
+          'relative flex size-20 items-center justify-center rounded-full',
+          agentVisual ? agentVisual.ringBg : 'bg-primary/10 text-primary',
+        )}
+      >
         <span
           aria-hidden
-          className="absolute inset-0 animate-ping rounded-full bg-primary/15 opacity-50"
+          className={cn(
+            'absolute inset-0 animate-ping rounded-full opacity-50',
+            agentVisual ? agentVisual.pulseBg : 'bg-primary/15',
+          )}
           style={{ animationDuration: '3.2s' }}
         />
-        <DogMascot size={40} className="relative" />
+        {agentVisual ? (
+          <agentVisual.Icon
+            size={36}
+            className={cn('relative', agentVisual.iconClass)}
+            aria-hidden
+          />
+        ) : (
+          <DogMascot size={40} className="relative" />
+        )}
       </div>
       <div className="flex flex-col gap-1.5">
         <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
@@ -615,6 +646,70 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
 }
 
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
+
+interface KindVisual {
+  Icon: LucideIcon;
+  iconClass: string;
+  ringBg: string;
+  pulseBg: string;
+}
+
+const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
+  generic: {
+    Icon: Bot,
+    iconClass: 'text-rose-400',
+    ringBg: 'bg-rose-400/10',
+    pulseBg: 'bg-rose-400/15',
+  },
+  init: {
+    Icon: Wrench,
+    iconClass: 'text-slate-400',
+    ringBg: 'bg-slate-400/10',
+    pulseBg: 'bg-slate-400/15',
+  },
+  scout: {
+    Icon: Telescope,
+    iconClass: 'text-sky-400',
+    ringBg: 'bg-sky-400/10',
+    pulseBg: 'bg-sky-400/15',
+  },
+  planner: {
+    Icon: ClipboardList,
+    iconClass: 'text-violet-400',
+    ringBg: 'bg-violet-400/10',
+    pulseBg: 'bg-violet-400/15',
+  },
+  implementer: {
+    Icon: Hammer,
+    iconClass: 'text-emerald-400',
+    ringBg: 'bg-emerald-400/10',
+    pulseBg: 'bg-emerald-400/15',
+  },
+  debugger: {
+    Icon: Bug,
+    iconClass: 'text-amber-400',
+    ringBg: 'bg-amber-400/10',
+    pulseBg: 'bg-amber-400/15',
+  },
+  tester: {
+    Icon: FlaskConical,
+    iconClass: 'text-teal-400',
+    ringBg: 'bg-teal-400/10',
+    pulseBg: 'bg-teal-400/15',
+  },
+  reviewer: {
+    Icon: ScanEye,
+    iconClass: 'text-cyan-400',
+    ringBg: 'bg-cyan-400/10',
+    pulseBg: 'bg-cyan-400/15',
+  },
+  docs: {
+    Icon: BookOpen,
+    iconClass: 'text-orange-400',
+    ringBg: 'bg-orange-400/10',
+    pulseBg: 'bg-orange-400/15',
+  },
+};
 
 interface EmptyCopy {
   eyebrow: string;
