@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
-import { Check, Layers, Sparkles, AlertTriangle } from 'lucide-react';
+import { Check, Layers, Sparkles, AlertTriangle, Wand2 } from 'lucide-react';
 import type { ProviderId, Session, Workflow, WorkflowId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PlannerWidget } from '../../../plans/components/PlannerWidget';
@@ -138,12 +138,14 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
               onReset={() => setCustomId('')}
             />
           ) : (
-            <PlannerWidget
-              workspaceId={session.workspaceId}
-              providerId={providerId}
-              initialTheme={session.goal}
-              onWorkflowReady={(workflowId) => setCustomId(workflowId)}
-            />
+            <CustomIntro>
+              <PlannerWidget
+                workspaceId={session.workspaceId}
+                providerId={providerId}
+                initialTheme={session.goal}
+                onWorkflowReady={(workflowId) => setCustomId(workflowId)}
+              />
+            </CustomIntro>
           )}
         </div>
       </div>
@@ -190,6 +192,87 @@ function ModeCard({
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
     </button>
+  );
+}
+
+function CustomIntro({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/15">
+          <Wand2 size={15} className="text-primary" aria-hidden />
+        </span>
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-sm font-semibold text-foreground">Design with the planner</h3>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Describe what this session should accomplish. The planner drafts a step-by-step workflow
+            tailored to the goal — you tweak the model, effort, and verbosity per step before
+            spawning.
+          </p>
+        </div>
+      </div>
+      <div className="rounded-lg border border-border-soft bg-subtle/40 p-4">{children}</div>
+      <div className="grid grid-cols-3 gap-2">
+        <PlannerHint
+          tone="primary"
+          eyebrow="Step 1"
+          title="Describe the goal"
+          body="Paste a goal or refine the prefilled one."
+        />
+        <PlannerHint
+          tone="info"
+          eyebrow="Step 2"
+          title="Generate plan"
+          body="Cheap-tier model drafts ordered steps with roles."
+        />
+        <PlannerHint
+          tone="success"
+          eyebrow="Step 3"
+          title="Tweak & spawn"
+          body="Override models per step, then spawn the workflow."
+        />
+      </div>
+    </div>
+  );
+}
+
+const HINT_TONE_BG: Record<'primary' | 'info' | 'success', string> = {
+  primary: 'bg-primary/10',
+  info: 'bg-info/10',
+  success: 'bg-success/10',
+};
+
+const HINT_TONE_FG: Record<'primary' | 'info' | 'success', string> = {
+  primary: 'text-primary',
+  info: 'text-info',
+  success: 'text-success',
+};
+
+function PlannerHint({
+  tone,
+  eyebrow,
+  title,
+  body,
+}: {
+  tone: 'primary' | 'info' | 'success';
+  eyebrow: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-md border border-border-soft bg-background p-2.5">
+      <span
+        className={cn(
+          'w-fit rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider',
+          HINT_TONE_BG[tone],
+          HINT_TONE_FG[tone],
+        )}
+      >
+        {eyebrow}
+      </span>
+      <span className="text-xs font-semibold text-foreground">{title}</span>
+      <span className="text-2xs leading-relaxed text-muted-foreground">{body}</span>
+    </div>
   );
 }
 
