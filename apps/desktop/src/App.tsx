@@ -52,6 +52,7 @@ export function App() {
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
   const error = useAppStore((s) => s.error);
+  const [splashFinished, setSplashFinished] = useState(false);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const slots = useSessionSlots(currentSession?.id ?? null);
@@ -160,8 +161,15 @@ export function App() {
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
-  if (!hydrated) {
-    return <BootSplash phase={bootPhase} error={error} onRetry={() => void hydrate()} />;
+  if (!hydrated || !splashFinished) {
+    return (
+      <BootSplash
+        phase={bootPhase}
+        error={error}
+        onRetry={() => void hydrate()}
+        onFinished={() => setSplashFinished(true)}
+      />
+    );
   }
 
   const contextCollapsed = !contextOpen;
