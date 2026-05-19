@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
@@ -1001,39 +1002,111 @@ interface SpawnAgentControlProps {
   sessionId: SessionId;
 }
 
+interface PopoverAnchor {
+  readonly left: number;
+  readonly top: number | null;
+  readonly bottom: number | null;
+  readonly direction: 'up' | 'down';
+}
+
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
-  const [direction, setDirection] = useState<'up' | 'down'>('up');
-  const ref = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+
+  const computeAnchor = useCallback((): PopoverAnchor | null => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
+    const left = rect.right + 4;
+    if (direction === 'down') {
+      return { left, top: rect.top, bottom: null, direction };
+    }
+    return { left, top: null, bottom: window.innerHeight - rect.bottom, direction };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onReanchor = () => {
+      const next = computeAnchor();
+      if (next) setAnchor(next);
+      else setOpen(false);
     };
     window.addEventListener('mousedown', onDocClick);
-    return () => window.removeEventListener('mousedown', onDocClick);
-  }, [open]);
+    window.addEventListener('resize', onReanchor);
+    window.addEventListener('scroll', onReanchor, true);
+    return () => {
+      window.removeEventListener('mousedown', onDocClick);
+      window.removeEventListener('resize', onReanchor);
+      window.removeEventListener('scroll', onReanchor, true);
+    };
+  }, [open, computeAnchor]);
 
   const onToggle = () => {
     if (!open) {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        // Open in the direction with more room. Trigger near the top of
-        // the viewport → open downward (avoids clipping under the sticky
-        // panel header); trigger near the bottom → open upward.
-        setDirection(spaceBelow > spaceAbove ? 'down' : 'up');
-      }
+      const next = computeAnchor();
+      if (next) setAnchor(next);
     }
     setOpen((v) => !v);
   };
 
+  const menu =
+    open && anchor
+      ? createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{
+              position: 'fixed',
+              left: anchor.left,
+              ...(anchor.top !== null ? { top: anchor.top } : {}),
+              ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
+            }}
+            className="z-50 w-64 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          >
+            <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+              by role
+            </div>
+            {[...AGENT_KIND_ORDER]
+              .filter((k) => k !== 'init')
+              .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
+              .map((kind) => {
+                const meta = AGENT_KIND_META[kind];
+                const palette = AGENT_KIND_PALETTE[kind];
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      void spawnAgent(sessionId, { kindOverride: kind });
+                    }}
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                  >
+                    <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+                    <span className="font-medium text-foreground">{meta.label}</span>
+                    <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
+                  </button>
+                );
+              })}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="relative mt-1" ref={ref}>
+    <div className="relative mt-1">
       <button
         ref={triggerRef}
         type="button"
@@ -1045,42 +1118,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         <Plus size={13} aria-hidden />
         Spawn agent
       </button>
-      {open ? (
-        <div
-          role="menu"
-          className={cn(
-            'absolute left-full z-20 ml-1 w-64 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
-            direction === 'up' ? 'bottom-0' : 'top-0',
-          )}
-        >
-          <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
-            by role
-          </div>
-          {[...AGENT_KIND_ORDER]
-            .filter((k) => k !== 'init')
-            .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
-            .map((kind) => {
-              const meta = AGENT_KIND_META[kind];
-              const palette = AGENT_KIND_PALETTE[kind];
-              return (
-                <button
-                  key={kind}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setOpen(false);
-                    void spawnAgent(sessionId, { kindOverride: kind });
-                  }}
-                  className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
-                  <span className="font-medium text-foreground">{meta.label}</span>
-                  <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
-                </button>
-              );
-            })}
-        </div>
-      ) : null}
+      {menu}
     </div>
   );
 }
