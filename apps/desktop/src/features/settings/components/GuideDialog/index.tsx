@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
+  ArrowRight,
   BookOpen,
   Bot,
   Coins,
+  FolderGit2,
   GitBranch,
   Lightbulb,
+  MessageSquare,
   MessagesSquare,
   Palette,
+  Sparkles,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 
@@ -20,20 +25,20 @@ interface GuideDialogProps {
 type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 interface NavItem {
-  id: Section;
-  label: string;
-  icon: React.ReactNode;
+  readonly id: Section;
+  readonly label: string;
+  readonly icon: ReactNode;
 }
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'overview', label: 'Overview', icon: <BookOpen size={14} aria-hidden /> },
-  { id: 'session', label: 'Sessions', icon: <GitBranch size={14} aria-hidden /> },
-  { id: 'turn', label: 'Turns', icon: <MessagesSquare size={14} aria-hidden /> },
-  { id: 'tools', label: 'Tools', icon: <Wrench size={14} aria-hidden /> },
-  { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={14} aria-hidden /> },
-  { id: 'agents', label: 'Agents', icon: <Bot size={14} aria-hidden /> },
-  { id: 'tips', label: 'Tips', icon: <Lightbulb size={14} aria-hidden /> },
-  { id: 'legenda', label: 'Legend', icon: <Palette size={14} aria-hidden /> },
+  { id: 'overview', label: 'Overview', icon: <BookOpen size={13} aria-hidden /> },
+  { id: 'session', label: 'Sessions', icon: <GitBranch size={13} aria-hidden /> },
+  { id: 'turn', label: 'Turns', icon: <MessagesSquare size={13} aria-hidden /> },
+  { id: 'tools', label: 'Tools', icon: <Wrench size={13} aria-hidden /> },
+  { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={13} aria-hidden /> },
+  { id: 'agents', label: 'Agents', icon: <Bot size={13} aria-hidden /> },
+  { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },
+  { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
 ];
 
 export function GuideDialog({ open, onClose }: GuideDialogProps) {
@@ -44,9 +49,11 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
       open={open}
       onClose={onClose}
       title="Getting started"
-      description="how kAY.am, sessions, agents, and CLI providers fit together."
+      description="How kAY.am, sessions, agents, and CLI providers fit together."
       size="xl"
-      fixedHeightClass="h-[640px]"
+      className="w-[64rem] max-w-[95vw]"
+      bodyClassName="px-0 py-0 gap-0"
+      fixedHeightClass="h-[720px]"
       fullScreenOnSmall
       footer={
         <Button variant="ghost" onClick={onClose}>
@@ -54,18 +61,18 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
         </Button>
       }
     >
-      <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
+      <div className="flex h-full min-h-0">
+        <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border-soft bg-subtle/40 px-3 py-5">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setActive(item.id)}
               className={cn(
-                'relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
+                'relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
                 active === item.id
-                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  ? 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
+                  : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
               )}
             >
               {item.icon}
@@ -73,402 +80,741 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
             </button>
           ))}
         </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4 pr-1">
-          <Content section={active} />
+        <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
+          <Content section={active} onJump={setActive} />
         </div>
       </div>
     </Dialog>
   );
 }
 
-function Content({ section }: { section: Section }) {
+function Content({ section, onJump }: { section: Section; onJump: (s: Section) => void }) {
   switch (section) {
     case 'overview':
-      return (
-        <Article
-          heading="What is kAY.am?"
-          intro={
-            SESSION_FEATURES.budget
-              ? 'kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
-              : 'kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
-          }
-        >
-          <P>
-            kAY.am does <Strong>not</Strong> talk to AI providers directly. It spawns the provider's
-            CLI as a subprocess and streams events. That means: your usage, login, and quotas live
-            in the CLI itself; kAY.am just adds the workspace layer on top.
-          </P>
-          <H3>Mental model</H3>
-          <List
-            items={[
-              ['Workspace', 'a git repo on disk. you can connect many.'],
-              [
-                'Session',
-                'a chat with one goal, on its own git worktree + branch. like a feature branch with built-in chat.',
-              ],
-              [
-                'Agent',
-                'one provider/CLI invocation inside a session. a session may have several agents (e.g. one for planning, one for coding).',
-              ],
-              [
-                'Turn',
-                'a single user → assistant exchange inside an agent. tools called inside count as the same turn.',
-              ],
-            ]}
-          />
-        </Article>
-      );
-
+      return <OverviewSection onJump={onJump} />;
     case 'session':
-      return (
-        <Article
-          heading="Sessions"
-          intro="a session is one focused unit of work. it owns a git worktree, a branch, transcripts, and a goal."
-        >
-          <H3>What gets created</H3>
-          <List
-            items={[
-              ['worktree', 'a separate working directory cut from your repo root.'],
-              ['branch', '<prefix>/<slug> derived from the goal. configurable per workspace.'],
-              ['transcript', 'every user message, assistant reply, tool call, and edit is stored.'],
-              ...(SESSION_FEATURES.budget
-                ? ([
-                    [
-                      'budget (optional)',
-                      'soft cap in usd. warning at 80%, error at 100%. session keeps running.',
-                    ],
-                  ] as const)
-                : []),
-            ]}
-          />
-          <H3>When to start a new session</H3>
-          <List
-            items={[
-              [
-                'goal shifts',
-                'if the task changes meaningfully, a new session is cheaper than steering an old one off-track.',
-              ],
-              [
-                'context bloat',
-                'context window getting close to full → start fresh. transferring the relevant decisions takes seconds, fighting a saturated agent costs more.',
-              ],
-              [
-                'parallel exploration',
-                'two ways to solve the same problem? spin two sessions, compare.',
-              ],
-            ]}
-          />
-          <H3>Archive vs delete</H3>
-          <P>
-            <Strong>archive</Strong> hides from the active list, keeps the worktree, transcripts,
-            and audit. <Strong>delete</Strong> removes everything irreversibly. when in doubt,
-            archive.
-          </P>
-        </Article>
-      );
-
+      return <SessionsSection />;
     case 'turn':
-      return (
-        <Article
-          heading="Turns"
-          intro="a turn is one user message + the assistant's full response (which may include many tool calls and edits)."
-        >
-          <H3>How turns are counted</H3>
-          <List
-            items={[
-              [
-                'user → assistant',
-                'each user message you send is one turn. the count in the chat header reflects that.',
-              ],
-              [
-                'tools inside a turn',
-                'when the agent calls grep, edit, run, etc., those are part of the same turn, not separate ones.',
-              ],
-              [
-                'queueing',
-                'while a turn is running you can still type. clicking send queues the message and fires automatically when the current turn ends.',
-              ],
-            ]}
-          />
-          <H3>Why this matters</H3>
-          <P>
-            providers bill per token across all messages in the conversation, not per turn. but from
-            a UX perspective, "i've sent 14 turns and we still don't have a working build" is a
-            useful signal that the session is drifting.
-          </P>
-        </Article>
-      );
-
+      return <TurnsSection />;
     case 'tools':
-      return (
-        <Article
-          heading="Tools"
-          intro="tools are actions the agent takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
-        >
-          <H3>How they show up</H3>
-          <P>
-            in the transcript, a tool invocation collapses to a single row (e.g. <Code>Bash</Code>,{' '}
-            <Code>Read</Code>, <Code>Edit</Code>). click it to expand input/output. consecutive tool
-            rows are visually grouped to keep the chat readable.
-          </P>
-          <H3>Permissions</H3>
-          <P>
-            kAY.am proxies the CLI's permission system. above the input you see{' '}
-            <Code>permissions: X allow / Y deny</Code>. that's the rule set the next turn will run
-            under. click it to manage rules in settings.
-          </P>
-          {WORKSPACE_FEATURES.skills ? (
-            <>
-              <H3>Skills</H3>
-              <P>
-                type <Code>/</Code> in the input to invoke a workspace skill (a pre-defined prompt
-                template stored in <Code>.kay/skills/</Code> or <Code>.claude/skills/</Code>).
-                useful for repeatable flows: release notes, security review, migration plan.
-              </P>
-            </>
-          ) : null}
-        </Article>
-      );
-
+      return <ToolsSection />;
     case 'tokens':
-      return (
-        <Article
-          heading="Tokens & cost"
-          intro="every message, yours and the assistant's, is converted into tokens before billing. roughly 1 token ≈ ¾ of an English word."
-        >
-          <H3>Input vs output</H3>
-          <List
-            items={[
-              [
-                'input tokens',
-                'everything sent into the model: system prompt, conversation history, tool results, your latest message. grows every turn. that is why later turns cost more even if your message is short.',
-              ],
-              [
-                'cached input tokens',
-                'portions of the prompt the provider can re-use from a recent call (Anthropic prompt cache). billed at ~10% of input rate. green numbers in pricing dialog.',
-              ],
-              [
-                'output tokens',
-                'what the model writes back: text + tool calls. the most expensive token category (5–15× input rate).',
-              ],
-            ]}
-          />
-          <H3>Context window</H3>
-          <P>
-            each model has a hard ceiling on how many tokens fit in one call (Opus 4.7 1M, Sonnet
-            4.6 / Haiku 4.5 200k, gpt-4o 128k). the bar under each agent shows how full the current
-            context is. above 75% → the agent starts forgetting; consider summarizing or starting a
-            new session.
-          </P>
-          <H3>Cost colors</H3>
-          <List
-            items={[
-              [
-                'green models',
-                'cheap (haiku, cursor-small). good for grep-heavy / planning steps.',
-              ],
-              ['amber models', 'mid (sonnet, gpt-4o). default for most coding work.'],
-              [
-                'red models',
-                'expensive (opus). reserve for hard reasoning, refactors, last-resort fixes.',
-              ],
-            ]}
-          />
-          <P>
-            the picker sorts <Strong>cheapest first</Strong> on purpose. switching down a tier often
-            costs nothing in quality on routine tasks.
-          </P>
-        </Article>
-      );
-
+      return <TokensSection />;
     case 'agents':
-      return (
-        <Article
-          heading="Agents"
-          intro="an agent is one provider invocation inside a session. a session can host multiple agents, same provider or different ones."
-        >
-          <H3>Why multiple agents per session</H3>
-          <List
-            items={[
-              [
-                'role separation',
-                'spawn a planning agent on Opus, then a coding agent on Sonnet. each keeps its own transcript.',
-              ],
-              [
-                'workflow steps',
-                'a workflow defines ordered steps (e.g. plan → implement → done). each step spawns an agent with its own model + system prompt.',
-              ],
-              [
-                'parallel exploration',
-                'two agents on the same goal, diff their results, pick the better diff at merge time.',
-              ],
-            ]}
-          />
-          <H3>Reading the agent row</H3>
-          <P>
-            the second line on each agent shows:{' '}
-            <Code>model · ↓ input · ↑ output · cost · ⏱ age</Code>. below it, a thin bar = context
-            window utilization. tooltip on the bar gives exact numbers.
-          </P>
-        </Article>
-      );
-
+      return <AgentsSection />;
     case 'tips':
-      return (
-        <Article heading="Tips" intro="patterns that compound across sessions.">
-          <List
-            items={[
-              [
-                'pin one short goal per session',
-                'long open-ended sessions drift. when you notice scope creeping, spin a new one and link via context.',
-              ],
-              [
-                'set a soft cap',
-                'even a generous one. it forces a pause before a runaway agent burns $20 on a bad assumption.',
-              ],
-              [
-                'use cheap models for navigation',
-                'haiku / cursor-small can grep, list, summarize in seconds at 1/15th the price. swap up only when reasoning gets hard.',
-              ],
-              [
-                "queue, don't cancel",
-                "if the agent is mid-tool and you have a follow-up, type it: it'll queue. cancelling mid-turn loses the partial work.",
-              ],
-              [
-                'archive freely',
-                'archive is reversible. the only irreversible move is delete, and you have to confirm twice.',
-              ],
-              [
-                'restart on cli upgrades',
-                'when you update the underlying CLI (claude / cursor-agent / codex), restart kAY.am so it re-detects versions and auth.',
-              ],
-            ]}
-          />
-        </Article>
-      );
-
+      return <TipsSection />;
     case 'legenda':
-      return (
-        <Article heading="Legend" intro="color meanings used throughout the interface.">
-          <H3>Status dots: sessions & agents</H3>
-          <LegendaGrid
-            rows={[
-              { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
-              { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
-              { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
-              { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
-              {
-                dot: 'bg-muted-foreground/30',
-                label: 'skipped',
-                desc: 'bypassed by workflow logic',
-              },
-            ]}
-          />
-          <H3>Edit types: transcript</H3>
-          <LegendaGrid
-            rows={[
-              { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
-              { dot: 'bg-muted-foreground/60', label: 'modify', desc: 'existing file changed' },
-              { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
-            ]}
-          />
-          <H3>Context window bar: CTX fill level</H3>
-          <LegendaGrid
-            rows={[
-              {
-                dot: 'bg-success',
-                label: '< 50%',
-                desc: 'comfortable: plenty of context remaining',
-              },
-              { dot: 'bg-info', label: '50–75%', desc: 'moderate: monitor closely' },
-              { dot: 'bg-warning', label: '75–90%', desc: 'high: consider summarizing soon' },
-              { dot: 'bg-danger', label: '≥ 90%', desc: 'critical: start a new session' },
-            ]}
-          />
-          <H3>Verbosity: output density</H3>
-          <LegendaGrid
-            rows={[
-              { dot: 'bg-success', label: 'brief', desc: 'bare minimum: one-liners only' },
-              { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
-              { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
-            ]}
-          />
-          <H3>Permission mode: tool access</H3>
-          <LegendaGrid
-            rows={[
-              { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },
-              { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
-              { dot: 'bg-blue-500', label: 'default', desc: 'writes and runs ask for approval' },
-              { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed, read-only' },
-            ]}
-          />
-          <H3>Auto badge</H3>
-          <LegendaGrid
-            rows={[
-              {
-                dot: 'bg-amber-400',
-                label: 'AUTO',
-                desc: 'autorun mode: next action fires without user confirmation',
-              },
-            ]}
-          />
-        </Article>
-      );
+      return <LegendSection />;
   }
 }
 
-function Article({
-  heading,
-  intro,
-  children,
+/* ──────────────────────────────────────────────────────────────────── */
+/* Sections                                                              */
+/* ──────────────────────────────────────────────────────────────────── */
+
+function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<BookOpen size={14} aria-hidden className="text-primary" />}
+        title="What is kAY.am?"
+        subtitle={
+          SESSION_FEATURES.budget
+            ? 'kAY.am orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with budget caps, audit logs, and structured workflows.'
+            : 'kAY.am orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.'
+        }
+        accent="primary"
+      />
+
+      <Callout tone="info" icon={<Sparkles size={13} />}>
+        kAY.am does <strong className="text-foreground">not</strong> talk to AI providers directly.
+        It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and
+        quotas live in the CLI itself — kAY.am just adds the workspace layer on top.
+      </Callout>
+
+      <div>
+        <Eyebrow>Mental model</Eyebrow>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <ConceptCard
+            icon={<FolderGit2 size={14} aria-hidden />}
+            tone="primary"
+            label="Workspace"
+            body="A git repo on disk. You can connect many."
+            onClick={() => onJump('session')}
+          />
+          <ConceptCard
+            icon={<GitBranch size={14} aria-hidden />}
+            tone="success"
+            label="Session"
+            body="A chat with one goal, on its own git worktree + branch. Like a feature branch with built-in chat."
+            onClick={() => onJump('session')}
+          />
+          <ConceptCard
+            icon={<Bot size={14} aria-hidden />}
+            tone="warning"
+            label="Agent"
+            body="One provider/CLI invocation inside a session. A session may host several agents (planning, coding, review…)."
+            onClick={() => onJump('agents')}
+          />
+          <ConceptCard
+            icon={<MessageSquare size={14} aria-hidden />}
+            tone="info"
+            label="Turn"
+            body="A single user → assistant exchange inside an agent. Tools called inside count as the same turn."
+            onClick={() => onJump('turn')}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SessionsSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<GitBranch size={14} aria-hidden className="text-success" />}
+        title="Sessions"
+        subtitle="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal."
+        accent="success"
+      />
+
+      <Block title="What gets created">
+        <DefinitionList
+          rows={[
+            {
+              term: 'worktree',
+              desc: 'A separate working directory cut from your repo root.',
+              icon: <FolderGit2 size={11} aria-hidden />,
+              tone: 'primary',
+            },
+            {
+              term: 'branch',
+              desc: 'kay/<slug> (or your prefix), derived from the goal. Configurable per workspace.',
+              icon: <GitBranch size={11} aria-hidden />,
+              tone: 'success',
+            },
+            {
+              term: 'transcript',
+              desc: 'Every user message, assistant reply, tool call, and edit is stored.',
+              icon: <MessagesSquare size={11} aria-hidden />,
+              tone: 'info',
+            },
+            ...(SESSION_FEATURES.budget
+              ? [
+                  {
+                    term: 'budget (optional)',
+                    desc: 'Soft cap in USD. Warning at 80%, error at 100%. Session keeps running.',
+                    icon: <Coins size={11} aria-hidden />,
+                    tone: 'warning' as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </Block>
+
+      <Block title="When to start a new session">
+        <DefinitionList
+          rows={[
+            {
+              term: 'Goal shifts',
+              desc: 'If the task changes meaningfully, a new session is cheaper than steering an old one off-track.',
+            },
+            {
+              term: 'Context bloat',
+              desc: 'Context window getting close to full → start fresh. Transferring the relevant decisions takes seconds; fighting a saturated agent costs more.',
+            },
+            {
+              term: 'Parallel exploration',
+              desc: 'Two ways to solve the same problem? Spin two sessions, compare.',
+            },
+          ]}
+        />
+      </Block>
+
+      <Block title="Archive vs delete">
+        <div className="grid grid-cols-2 gap-3">
+          <Tile tone="success" label="Archive">
+            Hides from the active list, keeps the worktree, transcripts, and audit. Reversible.
+          </Tile>
+          <Tile tone="danger" label="Delete">
+            Removes everything irreversibly. When in doubt, archive.
+          </Tile>
+        </div>
+      </Block>
+    </div>
+  );
+}
+
+function TurnsSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<MessagesSquare size={14} aria-hidden className="text-info" />}
+        title="Turns"
+        subtitle="One user message + the assistant's full response (which may include many tool calls and edits)."
+        accent="info"
+      />
+
+      <Block title="How turns are counted">
+        <DefinitionList
+          rows={[
+            {
+              term: 'user → assistant',
+              desc: 'Each user message you send is one turn. The count in the chat header reflects that.',
+            },
+            {
+              term: 'tools inside a turn',
+              desc: 'When the agent calls grep, edit, run, etc., those are part of the same turn — not separate ones.',
+            },
+            {
+              term: 'queueing',
+              desc: 'While a turn is running you can still type. Hitting send queues the message and it fires automatically when the current turn ends.',
+            },
+          ]}
+        />
+      </Block>
+
+      <Callout tone="info" icon={<Lightbulb size={13} />}>
+        Providers bill per token across the whole conversation, not per turn. But from a UX angle,
+        "I've sent 14 turns and we still don't have a working build" is a useful drift signal — time
+        to start a new session.
+      </Callout>
+    </div>
+  );
+}
+
+function ToolsSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<Wrench size={14} aria-hidden className="text-warning" />}
+        title="Tools"
+        subtitle="Actions the agent takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
+        accent="warning"
+      />
+
+      <Block title="How they show up">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          In the transcript, each tool invocation collapses to a single row (
+          <InlineCode>Bash</InlineCode>, <InlineCode>Read</InlineCode>,{' '}
+          <InlineCode>Edit</InlineCode>…). Click to expand input/output. Consecutive tool rows are
+          visually grouped to keep the chat readable.
+        </p>
+      </Block>
+
+      <Block title="Permissions">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          kAY.am proxies the CLI's permission system. Above the input you see{' '}
+          <InlineCode>permissions: X allow / Y deny</InlineCode> — the rule set the next turn will
+          run under. Click it to manage rules in settings.
+        </p>
+      </Block>
+
+      {WORKSPACE_FEATURES.skills ? (
+        <Block title="Skills">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Type <InlineCode>/</InlineCode> in the input to invoke a workspace skill — a pre-defined
+            prompt template stored in <InlineCode>.kay/skills/</InlineCode> or{' '}
+            <InlineCode>.claude/skills/</InlineCode>. Useful for repeatable flows: release notes,
+            security reviews, migration plans.
+          </p>
+        </Block>
+      ) : null}
+    </div>
+  );
+}
+
+function TokensSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<Coins size={14} aria-hidden className="text-amber-400" />}
+        title="Tokens & cost"
+        subtitle="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token ≈ ¾ of an English word."
+        accent="warning"
+      />
+
+      <Block title="Input vs output">
+        <DefinitionList
+          rows={[
+            {
+              term: 'input tokens',
+              desc: 'Everything sent into the model: system prompt, conversation history, tool results, your latest message. Grows every turn — that is why later turns cost more even if your message is short.',
+            },
+            {
+              term: 'cached input tokens',
+              desc: 'Portions of the prompt the provider can reuse from a recent call (Anthropic prompt cache). Billed at ~10% of input rate. Green numbers in the pricing dialog.',
+            },
+            {
+              term: 'output tokens',
+              desc: 'What the model writes back: text + tool calls. The most expensive category (5–15× input rate).',
+            },
+          ]}
+        />
+      </Block>
+
+      <Block title="Context window">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Each model has a hard ceiling on how many tokens fit in one call (Opus 4.7 1M, Sonnet 4.6
+          / Haiku 4.5 200k, gpt-4o 128k). The bar under each agent shows how full the current
+          context is. Above 75% → the agent starts forgetting; consider summarizing or starting a
+          new session.
+        </p>
+      </Block>
+
+      <Block title="Cost colors">
+        <div className="grid grid-cols-3 gap-3">
+          <Tile tone="success" label="Cheap" mono>
+            haiku, cursor-small.
+            <br />
+            Good for grep-heavy / planning steps.
+          </Tile>
+          <Tile tone="warning" label="Mid" mono>
+            sonnet, gpt-4o.
+            <br />
+            Default for most coding work.
+          </Tile>
+          <Tile tone="danger" label="Premium" mono>
+            opus.
+            <br />
+            Reserve for hard reasoning, refactors, last-resort fixes.
+          </Tile>
+        </div>
+        <p className="mt-3 text-2xs leading-relaxed text-muted-foreground/70">
+          The picker sorts <strong className="font-semibold text-foreground">cheapest first</strong>{' '}
+          on purpose. Switching down a tier often costs nothing in quality on routine tasks.
+        </p>
+      </Block>
+    </div>
+  );
+}
+
+function AgentsSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<Bot size={14} aria-hidden className="text-warning" />}
+        title="Agents"
+        subtitle="One provider invocation inside a session. A session can host multiple agents, same provider or different ones."
+        accent="warning"
+      />
+
+      <Block title="Why multiple agents per session">
+        <DefinitionList
+          rows={[
+            {
+              term: 'Role separation',
+              desc: 'Spawn a planning agent on Opus, then a coding agent on Sonnet. Each keeps its own transcript.',
+              icon: <Workflow size={11} aria-hidden />,
+              tone: 'primary',
+            },
+            {
+              term: 'Workflow steps',
+              desc: 'A workflow defines ordered steps (plan → implement → done). Each step spawns an agent with its own model + system prompt.',
+              icon: <ArrowRight size={11} aria-hidden />,
+              tone: 'success',
+            },
+            {
+              term: 'Parallel exploration',
+              desc: 'Two agents on the same goal, diff their results, pick the better diff at merge time.',
+              icon: <Sparkles size={11} aria-hidden />,
+              tone: 'info',
+            },
+          ]}
+        />
+      </Block>
+
+      <Block title="Reading the agent row">
+        <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/50 p-4 text-xs">
+          <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Second line of each agent
+          </span>
+          <div className="flex flex-wrap items-center gap-2 font-mono text-foreground">
+            <Chip tone="primary">model</Chip>
+            <span className="text-muted-foreground/40">·</span>
+            <Chip tone="info">↓ input</Chip>
+            <span className="text-muted-foreground/40">·</span>
+            <Chip tone="warning">↑ output</Chip>
+            <span className="text-muted-foreground/40">·</span>
+            <Chip tone="success">cost</Chip>
+            <span className="text-muted-foreground/40">·</span>
+            <Chip tone="muted">⏱ age</Chip>
+          </div>
+          <p className="text-2xs leading-relaxed text-muted-foreground">
+            Below that line, a thin bar = context window utilization. Hover for exact numbers.
+          </p>
+        </div>
+      </Block>
+    </div>
+  );
+}
+
+function TipsSection() {
+  const tips: ReadonlyArray<{ title: string; body: string }> = [
+    {
+      title: 'Pin one short goal per session',
+      body: 'Long open-ended sessions drift. When scope creeps, spin a new one and link via context.',
+    },
+    {
+      title: 'Set a soft cap',
+      body: 'Even a generous one. It forces a pause before a runaway agent burns $20 on a bad assumption.',
+    },
+    {
+      title: 'Use cheap models for navigation',
+      body: 'Haiku / cursor-small can grep, list, summarize in seconds at 1/15th the price. Swap up only when reasoning gets hard.',
+    },
+    {
+      title: "Queue, don't cancel",
+      body: "If the agent is mid-tool and you have a follow-up, type it: it'll queue. Cancelling mid-turn loses the partial work.",
+    },
+    {
+      title: 'Archive freely',
+      body: 'Archive is reversible. The only irreversible move is delete, and you have to confirm twice.',
+    },
+    {
+      title: 'Restart on CLI upgrades',
+      body: 'When you update the underlying CLI (claude / cursor-agent / codex), restart kAY.am so it re-detects versions and auth.',
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<Lightbulb size={14} aria-hidden className="text-amber-400" />}
+        title="Tips"
+        subtitle="Patterns that compound across sessions."
+        accent="warning"
+      />
+      <div className="grid grid-cols-2 gap-3">
+        {tips.map((t, i) => (
+          <div
+            key={t.title}
+            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle/40 p-4 transition-colors hover:border-border hover:bg-subtle/60"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/15 font-mono text-[10px] font-semibold text-amber-400">
+                {i + 1}
+              </span>
+              <span className="text-sm font-semibold text-foreground">{t.title}</span>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">{t.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LegendSection() {
+  return (
+    <div className="flex flex-col gap-7">
+      <SectionHeader
+        icon={<Palette size={14} aria-hidden className="text-primary" />}
+        title="Legend"
+        subtitle="Color meanings used throughout the interface."
+        accent="primary"
+      />
+
+      <LegendBlock title="Status dots — sessions & agents">
+        <LegendaGrid
+          rows={[
+            { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
+            { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
+            { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
+            { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
+            {
+              dot: 'bg-muted-foreground/30',
+              label: 'skipped',
+              desc: 'bypassed by workflow logic',
+            },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Edit types — transcript">
+        <LegendaGrid
+          rows={[
+            { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
+            { dot: 'bg-muted-foreground/60', label: 'modify', desc: 'existing file changed' },
+            { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Context window — CTX fill level">
+        <LegendaGrid
+          rows={[
+            { dot: 'bg-success', label: '< 50%', desc: 'comfortable: plenty of context remaining' },
+            { dot: 'bg-info', label: '50–75%', desc: 'moderate: monitor closely' },
+            { dot: 'bg-warning', label: '75–90%', desc: 'high: consider summarizing soon' },
+            { dot: 'bg-danger', label: '≥ 90%', desc: 'critical: start a new session' },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Verbosity — output density">
+        <LegendaGrid
+          rows={[
+            { dot: 'bg-success', label: 'brief', desc: 'bare minimum: one-liners only' },
+            { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
+            { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Permission mode — tool access">
+        <LegendaGrid
+          rows={[
+            { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },
+            { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
+            { dot: 'bg-blue-500', label: 'default', desc: 'writes and runs ask for approval' },
+            { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed, read-only' },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Auto badge">
+        <LegendaGrid
+          rows={[
+            {
+              dot: 'bg-amber-400',
+              label: 'AUTO',
+              desc: 'autorun mode: next action fires without user confirmation',
+            },
+          ]}
+        />
+      </LegendBlock>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Building blocks                                                       */
+/* ──────────────────────────────────────────────────────────────────── */
+
+type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
+
+const TONE_BG: Record<Tone, string> = {
+  primary: 'bg-primary/10',
+  success: 'bg-success/10',
+  warning: 'bg-warning/10',
+  danger: 'bg-danger/10',
+  info: 'bg-info/10',
+  muted: 'bg-muted',
+};
+
+const TONE_FG: Record<Tone, string> = {
+  primary: 'text-primary',
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  info: 'text-info',
+  muted: 'text-muted-foreground',
+};
+
+const TONE_BORDER: Record<Tone, string> = {
+  primary: 'border-primary/20',
+  success: 'border-success/20',
+  warning: 'border-warning/20',
+  danger: 'border-danger/20',
+  info: 'border-info/20',
+  muted: 'border-border-soft',
+};
+
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  accent = 'primary',
 }: {
-  heading: string;
-  intro: string;
-  children: React.ReactNode;
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  accent?: Tone;
 }) {
   return (
-    <article className="flex flex-col gap-3 pb-6 text-sm leading-relaxed">
-      <h2 className="text-base font-semibold tracking-tight text-foreground">{heading}</h2>
-      <p className="text-muted-foreground">{intro}</p>
-      {children}
-    </article>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={cn('flex h-8 w-8 items-center justify-center rounded-md', TONE_BG[accent])}
+        >
+          {icon}
+        </span>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      </div>
+      <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
+    </div>
   );
 }
 
-function H3({ children }: { children: React.ReactNode }) {
+function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <h3 className="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground/85">
+    <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
       {children}
-    </h3>
+    </span>
   );
 }
 
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm leading-relaxed text-muted-foreground">{children}</p>;
-}
-
-function Strong({ children }: { children: React.ReactNode }) {
-  return <strong className="font-semibold text-foreground">{children}</strong>;
-}
-
-function Code({ children }: { children: React.ReactNode }) {
+function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-foreground">
+    <div className="flex flex-col gap-3">
+      <Eyebrow>{title}</Eyebrow>
       {children}
-    </code>
+    </div>
   );
 }
 
-function List({ items }: { items: ReadonlyArray<readonly [string, string]> }) {
+function LegendBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <ul className="flex flex-col gap-1.5">
-      {items.map(([term, desc]) => (
-        <li key={term} className="flex flex-col gap-0.5">
-          <span className="text-sm font-semibold text-foreground">{term}</span>
-          <span className="text-sm leading-relaxed text-muted-foreground">{desc}</span>
+    <div className="flex flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle/40 p-4">
+      <Eyebrow>{title}</Eyebrow>
+      {children}
+    </div>
+  );
+}
+
+function Callout({ tone, icon, children }: { tone: Tone; icon: ReactNode; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm leading-relaxed text-muted-foreground',
+        TONE_BG[tone],
+        TONE_BORDER[tone],
+      )}
+    >
+      <span className={cn('mt-0.5 shrink-0', TONE_FG[tone])}>{icon}</span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function ConceptCard({
+  icon,
+  tone,
+  label,
+  body,
+  onClick,
+}: {
+  icon: ReactNode;
+  tone: Tone;
+  label: string;
+  body: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex flex-col items-start gap-2 rounded-lg border border-border-soft bg-background p-4 text-left transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-sm"
+    >
+      <span
+        className={cn(
+          'flex h-8 w-8 items-center justify-center rounded-md',
+          TONE_BG[tone],
+          TONE_FG[tone],
+        )}
+      >
+        {icon}
+      </span>
+      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <span className="text-xs leading-relaxed text-muted-foreground">{body}</span>
+    </button>
+  );
+}
+
+interface DefinitionRow {
+  readonly term: string;
+  readonly desc: string;
+  readonly icon?: ReactNode;
+  readonly tone?: Tone;
+}
+
+function DefinitionList({ rows }: { rows: ReadonlyArray<DefinitionRow> }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <li
+          key={row.term}
+          className="flex items-start gap-3 rounded-md border border-border-soft bg-subtle/40 px-3 py-2.5"
+        >
+          {row.icon ? (
+            <span
+              className={cn(
+                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md',
+                TONE_BG[row.tone ?? 'muted'],
+                TONE_FG[row.tone ?? 'muted'],
+              )}
+            >
+              {row.icon}
+            </span>
+          ) : (
+            <span
+              className={cn(
+                'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+                TONE_FG[row.tone ?? 'muted'].replace('text-', 'bg-'),
+              )}
+            />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm font-semibold text-foreground">{row.term}</span>
+            <span className="text-sm leading-relaxed text-muted-foreground">{row.desc}</span>
+          </div>
         </li>
       ))}
     </ul>
+  );
+}
+
+function Tile({
+  tone,
+  label,
+  mono,
+  children,
+}: {
+  tone: Tone;
+  label: string;
+  mono?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-1.5 rounded-lg border p-3.5',
+        TONE_BG[tone],
+        TONE_BORDER[tone],
+      )}
+    >
+      <span className={cn('text-xs font-semibold uppercase tracking-wide', TONE_FG[tone])}>
+        {label}
+      </span>
+      <span className={cn('text-xs leading-relaxed text-muted-foreground', mono && 'font-mono')}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function Chip({ tone, children }: { tone: Tone; children: ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-md px-2 py-0.5 text-2xs font-medium',
+        TONE_BG[tone],
+        TONE_FG[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function InlineCode({ children }: { children: ReactNode }) {
+  return (
+    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+      {children}
+    </code>
   );
 }
 
@@ -483,8 +829,11 @@ function LegendaGrid({ rows }: { rows: ReadonlyArray<LegendaRow> }) {
     <ul className="flex flex-col gap-1">
       {rows.map((row) => (
         <li key={row.label} className="flex items-center gap-2.5">
-          <span aria-hidden className={cn('inline-block h-2 w-2 shrink-0 rounded-full', row.dot)} />
-          <span className="w-20 shrink-0 text-sm font-medium text-foreground">{row.label}</span>
+          <span
+            aria-hidden
+            className={cn('inline-block h-2.5 w-2.5 shrink-0 rounded-full', row.dot)}
+          />
+          <span className="w-24 shrink-0 text-sm font-medium text-foreground">{row.label}</span>
           <span className="text-sm text-muted-foreground">{row.desc}</span>
         </li>
       ))}
