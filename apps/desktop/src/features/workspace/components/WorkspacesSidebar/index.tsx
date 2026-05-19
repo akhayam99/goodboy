@@ -145,15 +145,20 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
-            const hasAnySession = activeSessions.length > 0 || archivedSessions.length > 0;
+            const totalSessions = activeSessions.length + archivedSessions.length;
+            const hasAnySession = totalSessions > 0;
+            // The activity bar only makes sense as a switcher. With a single
+            // session the user never switches — collapse it and expose the
+            // "new session" action inside the detail panel header instead.
+            const showActivityBar = totalSessions > 1;
             return (
               <>
                 <div
                   className={cn(
                     'overflow-hidden transition-[width] duration-300 ease-out',
-                    hasAnySession ? 'w-28' : 'w-0',
+                    showActivityBar ? 'w-28' : 'w-0',
                   )}
-                  aria-hidden={!hasAnySession}
+                  aria-hidden={!showActivityBar}
                 >
                   <SessionActivityBar
                     sessions={activeSessions}
@@ -166,7 +171,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 <div
                   className={cn(
                     'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
-                    hasAnySession ? 'ml-0' : 'ml-1.5',
+                    showActivityBar ? 'ml-0' : 'ml-1.5',
                   )}
                 >
                   {currentSession ? (
@@ -175,6 +180,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
                         onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                        onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />

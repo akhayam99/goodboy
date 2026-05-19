@@ -12,6 +12,7 @@ import {
   GitPullRequestDraft,
   Loader2,
   MessageSquare,
+  Plus,
   RefreshCw,
   Settings2,
   XCircle,
@@ -42,12 +43,19 @@ interface SessionDetailPanelProps {
   session: Session;
   onOpenSessionSettings: () => void;
   onOpenGithubDetails?: () => void;
+  /**
+   * When provided, renders a "+ New session" affordance in the header. The
+   * sidebar passes this only when the activity bar is collapsed (1 session
+   * total) — so the user always has a discoverable way to add another.
+   */
+  onNewSession?: () => void;
 }
 
 export function SessionDetailPanel({
   session,
   onOpenSessionSettings,
   onOpenGithubDetails,
+  onNewSession,
 }: SessionDetailPanelProps) {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
@@ -121,6 +129,18 @@ export function SessionDetailPanel({
             </span>
           )}
         </div>
+        {onNewSession ? (
+          <button
+            type="button"
+            onClick={onNewSession}
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-border-soft bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            title="new session"
+            aria-label="new session"
+          >
+            <Plus size={11} aria-hidden />
+            <span>New</span>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onOpenSessionSettings}
