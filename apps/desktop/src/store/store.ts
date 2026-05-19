@@ -3410,21 +3410,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }),
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
-    const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
-    const explicitTrigger = args.triggeredPlanId !== undefined;
-    const explicitPlan = explicitTrigger
-      ? (get().sessionPlans[sessionId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
-      : null;
-    const planSection = explicitPlan
-      ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
-      : latestSection;
+    const effectiveKind: AgentKind =
+      args.kindOverride ??
+      (inserted.kind as AgentKind | undefined) ??
+      inferAgentKindFromName(resolvedName);
+    const isImplementer = effectiveKind === 'implementer';
+    let planSection = '';
+    let planToConsume: PlanWithCount | null = null;
+    if (isImplementer) {
+      const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
+      const explicitPlan =
+        args.triggeredPlanId !== undefined
+          ? (get().sessionPlans[sessionId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
+          : null;
+      planSection = explicitPlan
+        ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+        : latestSection;
+      const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
+      planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
+    }
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
       void get().sendTurn({ sessionId, agentId: inserted.id, content: kickoff });
     }
 
-    const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
-    const planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
     if (planToConsume) {
       await invokeAddPlanConsumption(planToConsume.id, inserted.id);
       const refreshed = await invokeListPlansForSession(sessionId);
@@ -3763,13 +3772,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
     }));
 
-    const { section: planSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
+    const effectiveKind: AgentKind =
+      (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
+    const isImplementer = effectiveKind === 'implementer';
+    const { section: planSection, plan: latestPlan } = isImplementer
+      ? await buildPlanKickoffSection(sessionId)
+      : { section: '', plan: null };
     const kickoff = composeKickoff(planSection, promptPrefix);
     if (kickoff.length > 0) {
       void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
 
-    if (latestPlan && latestPlan.status === 'active') {
+    if (isImplementer && latestPlan && latestPlan.status === 'active') {
       await invokeAddPlanConsumption(latestPlan.id, agentId);
       const refreshedPlans = await invokeListPlansForSession(sessionId);
       const consumptions = await invokeListConsumptionsForPlan(latestPlan.id);
