@@ -400,7 +400,7 @@ interface AddWorkspaceDialogProps {
   onClose: () => void;
 }
 
-function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
+export function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const addWorkspace = useAppStore((s) => s.addWorkspace);
   const workspaces = useWorkspaces();

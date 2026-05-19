@@ -9,8 +9,12 @@ import { EndSessionDialog } from './features/session/components/EndSessionDialog
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
 import { ToastProvider } from './app/components/Toast';
-import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import {
+  WorkspacesSidebar,
+  AddWorkspaceDialog,
+} from './features/workspace/components/WorkspacesSidebar';
 import { DogMascot } from './shared/components/DogMascot';
+import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
   useAppStore,
@@ -18,6 +22,7 @@ import {
   useCurrentWorkspace,
   useSessionById,
   useSessionSlots,
+  useWorkspaces,
 } from './store';
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
@@ -53,6 +58,8 @@ export function App() {
   const bootPhase = useAppStore((s) => s.bootPhase);
   const error = useAppStore((s) => s.error);
   const [splashFinished, setSplashFinished] = useState(false);
+  const workspaces = useWorkspaces();
+  const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const slots = useSessionSlots(currentSession?.id ?? null);
@@ -63,6 +70,7 @@ export function App() {
   const [endOpen, setEndOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -178,15 +186,13 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
-        leftSidebar={<WorkspacesSidebar onOpenSettings={openSettings} />}
+        leftSidebar={
+          hasWorkspaces ? <WorkspacesSidebar onOpenSettings={openSettings} /> : undefined
+        }
         main={
           error ? (
             <p className="p-6 text-sm text-danger">init error: {error}</p>
           ) : currentSession ? (
-            // Keep-alive: every visited session keeps a mounted ChatView in
-            // the LRU window. Only the active one is shown (`hidden` attr on
-            // the others). React skips unmount/mount on switches between
-            // recent sessions — no flash, scroll position preserved.
             <div className="relative h-full w-full">
               {deferredRenderedIds.map((id) => (
                 <KeepAliveChatPanel
@@ -198,7 +204,10 @@ export function App() {
               ))}
             </div>
           ) : (
-            <EmptyState hasWorkspace={Boolean(currentWorkspace)} />
+            <EmptyState
+              hasWorkspace={Boolean(currentWorkspace)}
+              onAddWorkspace={() => setAddWorkspaceOpen(true)}
+            />
           )
         }
         rightSidebar={
@@ -247,6 +256,7 @@ export function App() {
           }}
         />
       ) : null}
+      <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       {currentSession ? (
         <EndSessionDialog
           session={currentSession}
@@ -304,10 +314,47 @@ function KeepAliveContextPanel({
   );
 }
 
-function EmptyState({ hasWorkspace }: { hasWorkspace: boolean }) {
+function EmptyState({
+  hasWorkspace,
+  onAddWorkspace,
+}: {
+  hasWorkspace: boolean;
+  onAddWorkspace: () => void;
+}) {
+  if (!hasWorkspace) {
+    return <OnboardingScreen onAddWorkspace={onAddWorkspace} />;
+  }
+
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden px-6">
-      {/* radial vignette — keeps focus center, fades edges */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 0%, transparent 40%, var(--color-background) 100%)',
+        }}
+        aria-hidden
+      />
+      <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
+        <EmptyStateLogo />
+        <div className="flex flex-col gap-2.5">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Pick up where you left off
+          </h2>
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Spin up a new session from the sidebar, or jump back into an existing one. Each session
+            lives in its own worktree.
+          </p>
+        </div>
+        <KeyboardHints hasWorkspace />
+      </div>
+    </div>
+  );
+}
+
+function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden px-6">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -317,19 +364,64 @@ function EmptyState({ hasWorkspace }: { hasWorkspace: boolean }) {
         aria-hidden
       />
 
-      <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
+      <div className="relative flex max-w-2xl flex-col items-center gap-10 text-center">
         <EmptyStateLogo />
-        <div className="flex flex-col gap-2.5">
+
+        <div className="flex flex-col gap-3">
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            {hasWorkspace ? 'Pick up where you left off' : 'Welcome to kAY.am'}
+            Welcome to kAY.am
           </h2>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {hasWorkspace
-              ? 'Spin up a new session from the sidebar, or jump back into an existing one. Each session lives in its own worktree.'
-              : 'Add a git repo as your first workspace. Every session you create gets its own worktree and branch, so experiments never touch your main checkout.'}
+          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+            Point at a git repo to create your first workspace. Every session spins up its own
+            worktree and branch — your main checkout stays untouched.
           </p>
         </div>
-        <KeyboardHints hasWorkspace={hasWorkspace} />
+
+        <button
+          type="button"
+          onClick={onAddWorkspace}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+        >
+          Add workspace
+        </button>
+
+        <AppLayoutPreview />
+      </div>
+    </div>
+  );
+}
+
+function AppLayoutPreview() {
+  return (
+    <div className="flex w-full max-w-2xl gap-3">
+      <div className="flex w-[30%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
+          <MessagesSquare size={20} className="text-muted-foreground/60" aria-hidden />
+        </div>
+        <span className="text-xs font-semibold text-muted-foreground">Sessions</span>
+        <p className="text-2xs leading-relaxed text-muted-foreground/50">
+          Switch workspaces, manage sessions, track agents and workflow progress.
+        </p>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-background/30 px-6 py-6">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+          <MessageSquare size={20} className="text-primary/60" aria-hidden />
+        </div>
+        <span className="text-xs font-semibold text-muted-foreground">Chat</span>
+        <p className="text-2xs leading-relaxed text-muted-foreground/50">
+          Talk to your agents, send instructions, and watch execution unfold in real time.
+        </p>
+      </div>
+
+      <div className="flex w-[26%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
+          <BookOpen size={20} className="text-muted-foreground/60" aria-hidden />
+        </div>
+        <span className="text-xs font-semibold text-muted-foreground">Context</span>
+        <p className="text-2xs leading-relaxed text-muted-foreground/50">
+          Inject context slots, review touched files, and check PR details at a glance.
+        </p>
       </div>
     </div>
   );
