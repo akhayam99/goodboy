@@ -70,7 +70,6 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
       title="Start a workflow"
       description="Pick a saved preset or design a fresh workflow with the planner."
       size="xl"
-      fixedHeightClass="h-[600px]"
       footer={
         <div className="flex w-full items-center gap-3">
           <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
@@ -105,8 +104,8 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
         </div>
       }
     >
-      <div className="flex h-full min-h-0 flex-col gap-4">
-        <div className="grid shrink-0 grid-cols-2 gap-3">
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <ModeCard
             active={mode === 'preset'}
             onClick={() => setMode('preset')}
@@ -124,7 +123,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
           />
         </div>
 
-        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-px">
+        <div>
           {mode === 'preset' ? (
             <PresetPicker
               templates={phaseTemplates}
