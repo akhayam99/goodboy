@@ -4,7 +4,7 @@
 
 kAY.am sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them. One workspace per repo. One session per goal. N agents per session, each with its own chat, provider, and kind. Routing across Anthropic, Cursor, and Codex based on priority and budget. Plans as first-class artifacts. GitHub PR/CI integration. Real-time cost. Skills for the repeatable.
 
-> **Status**: post-v0.7 sprint complete — domain rename, GitHub panel, plans, agent kinds, next-actions, diff viewer, notifications all live. **v1.0 next** — see [ROADMAP.md](./ROADMAP.md).
+> **Status**: open beta. Sidebar redesigned around workspace cards + per-session activity bar + detail panel. Soft-disconnect for workspaces, branch-vs-main files counter with line totals, per-kind agent icons, polished context panel + boot splash. **v1.0 next** — see [ROADMAP.md](./ROADMAP.md).
 
 ---
 
@@ -65,10 +65,11 @@ kay-am/
 
 Two columns. Fixed sidebar left, chat + context panel right. No top header, no bottom footer — both fold into the sidebar.
 
-- **Sidebar top** — brand · light/dark toggle · alerts bell (notification center) · guide · settings (⌘,).
-- **Sidebar middle** — workspaces → sessions (with status icons) → agents (with kind chips + unread indicators).
-- **Sidebar footer** — providers chip · cost telemetry pill (click for per-model breakdown).
-- **Right rail** — shared context panel for the current session (collapsible slots, markdown rendered).
+- **Sidebar — workspaces row** — workspace cards (gear opens per-workspace settings, X soft-disconnects). Up to 3 active workspaces during beta. `N/3` counter at the top right.
+- **Sidebar — activity bar** — vertical session strip with status dot per session, unread ping, `+ new` at the bottom.
+- **Sidebar — detail panel** — selected session: goal, branch chip, session cost chip, GitHub PR (with refresh + details dialog), agents list (kind icons + unread), files-touched footer (branch-vs-main with `+N −N` line totals).
+- **Sidebar footer** — brand · spend / pricing · light-dark toggle · notifications bell · guide · settings (⌘,).
+- **Right rail** — shared context panel for the current session (slot cards, sticky open questions, plans, markdown rendered).
 
 ---
 
@@ -110,25 +111,25 @@ pnpm tauri:dev          # launches the desktop app in dev
 
 ## First run
 
-1. **Boot** — `pnpm tauri:dev`, wait for the splash to reach _ready_.
+1. **Boot** — `pnpm tauri:dev`, wait for the splash to reach _ready_ (mascot + smooth progress).
 2. **Connect a provider** — ⌘, → **Providers** → connect at least one of Claude / Cursor / Codex.
 3. **Configure GitHub** _(optional)_ — ⌘, → **Integrations** → connect via `gh` CLI or personal access token.
-4. **Add a workspace** — sidebar **Workspaces** → **add workspace…** → pick a local git repo.
-5. **Create a session** — sidebar **Sessions** → **add session** → set a goal, optionally pick a workflow (beta).
-6. **Talk to agent 1** — auto-spawned on session creation. Type → enter. Watch the transcript stream, the cost pill tick, and a `worktree-{slug}` directory appear next to your repo.
-7. **Spawn more agents** — **Agents** block → **+ spawn agent**. Click any row to switch. Agents auto-name from their first message. Hover + pencil to rename. Kind is inferred or set manually.
+4. **Add a workspace** — sidebar **Workspaces** row → **+** → pick a local git repo. Up to 3 active workspaces during beta — the **X** on a card soft-disconnects (sessions, transcripts, worktrees stay safe; re-adding the same path brings everything back).
+5. **Create a session** — activity bar **+ new** → set a goal, optionally pick a workflow (beta).
+6. **Talk to agent 1** — auto-spawned on session creation. Type → enter. Watch the transcript stream, the session cost chip tick, and a `worktree-{slug}` directory appear next to your repo.
+7. **Spawn more agents** — **Agents** block → **+ spawn agent**. Click any row to switch. Agents auto-name from their first message. Hover + pencil to rename. Kind is inferred or set manually; the icon and accent color follow the kind (scout/planner/implementer/debugger/tester/reviewer/docs/generic).
 8. **Use next-action chips** — after each turn, the summarizer suggests next steps (scout / plan / implement). Click to spawn a pre-configured agent.
-9. **Open in editor** — **Open in code** button in the chat header opens the worktree in VS Code or Cursor (dropdown if both detected).
-10. **Watch cost + alerts** — providers chip + telemetry pill in the sidebar footer. Bell icon opens the notification center for budget thresholds.
-11. **Set session status** — click the status icon on a session row to mark it wip / waiting / blocked / done.
-12. **Archive / end** — sidebar kebab → **archive** (keeps it inspectable) or end the session (cleans the worktree, keeps the branch).
+9. **Track files touched** — footer chip on the detail panel shows `N files touched +A −D` versus `main` (stable across pushes). Click to open the diff viewer (defaults to **branch vs main**).
+10. **Watch cost + alerts** — session cost chip in the detail panel, spend dialog in the sidebar footer (dollar icon). Bell icon opens the notification center for budget thresholds.
+11. **Set session status** — click the status icon on a session in the activity bar to mark it wip / waiting / blocked / done.
+12. **Archive / end** — session settings → **archive** (keeps it inspectable) or end the session (cleans the worktree, keeps the branch).
 
 ---
 
 ## Settings
 
-- **Global** (⌘, top of sidebar) — App / Providers / Budget / Integrations / Initialization / Advanced. **Initialization → Wipe local database** drops every workspace/session/agent/message in `~/.kay-am/data.db` and re-runs migrations on next boot. OS-keychain API keys are untouched.
-- **Per-workspace** (workspace row → gear on hover) — General (branch prefix), Skills, Workflows (beta). Scoped — never bleeds into the global dialog.
+- **Global** (⌘, footer of sidebar) — App / Providers / Budget / Integrations / Initialization / Advanced. **Initialization → Wipe local database** drops every workspace/session/agent/message in `~/.kay-am/data.db` and re-runs migrations on next boot. OS-keychain API keys are untouched.
+- **Per-workspace** (gear icon on each workspace card) — General (branch prefix), Skills, Init script, Workflows (beta), Disconnect. Scoped — never bleeds into the global dialog.
 
 ## Roadmap & contributing
 

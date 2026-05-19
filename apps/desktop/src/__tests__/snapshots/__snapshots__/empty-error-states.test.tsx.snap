@@ -2,2720 +2,6 @@
 
 exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
-  aria-describedby="_r_3_-desc"
-  aria-labelledby="_r_3_-title"
-  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  open=""
->
-  <div
-    class="flex min-h-0 flex-col h-[640px] w-[56rem]"
-  >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
-    >
-      <div
-        class="flex min-w-0 flex-col gap-1"
-      >
-        <h2
-          class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_3_-title"
-        >
-          New session
-        </h2>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_3_-desc"
-        >
-          Creates a worktree on a fresh branch from the workspace root.
-        </p>
-      </div>
-      <button
-        aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="text-base leading-none"
-        >
-          ×
-        </span>
-      </button>
-    </header>
-    <div
-      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-    >
-      <div
-        class="flex h-full min-h-0 gap-0"
-      >
-        <nav
-          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
-        >
-          <button
-            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
-            title="goal is required"
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-target"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="13"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="6"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="2"
-              />
-            </svg>
-            <span
-              class="flex-1"
-            >
-              Goal
-            </span>
-            <svg
-              aria-label="goal required"
-              class="lucide lucide-triangle-alert text-warning"
-              fill="none"
-              height="11"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="11"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-              />
-              <path
-                d="M12 9v4"
-              />
-              <path
-                d="M12 17h.01"
-              />
-            </svg>
-          </button>
-          <button
-            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            title="provider is required"
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-zap"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="13"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
-              />
-            </svg>
-            <span
-              class="flex-1"
-            >
-              Provider
-            </span>
-            <svg
-              aria-label="provider required"
-              class="lucide lucide-triangle-alert text-warning"
-              fill="none"
-              height="11"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="11"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-              />
-              <path
-                d="M12 9v4"
-              />
-              <path
-                d="M12 17h.01"
-              />
-            </svg>
-          </button>
-          <button
-            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-layers"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="13"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
-              />
-              <path
-                d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
-              />
-              <path
-                d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
-              />
-            </svg>
-            <span
-              class="flex-1"
-            >
-              Workflow
-            </span>
-            <svg
-              aria-label="filled"
-              class="lucide lucide-check text-success"
-              fill="none"
-              height="11"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="11"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M20 6 9 17l-5-5"
-              />
-            </svg>
-          </button>
-        </nav>
-        <div
-          class="min-w-0 flex-1 overflow-y-auto pl-4 pr-2"
-        >
-          <div
-            class=""
-          >
-            <div
-              class="flex flex-col gap-4"
-            >
-              <div
-                class="flex flex-col gap-1.5"
-              >
-                <span
-                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                >
-                  Issue link
-                  <span
-                    class="rounded-sm bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning"
-                  >
-                    beta
-                  </span>
-                </span>
-                <p
-                  class="text-2xs leading-relaxed text-muted-foreground"
-                >
-                  Paste a GitHub, GitLab, Jira, or Linear issue URL. The goal will be generated automatically.
-                </p>
-                <div
-                  class="relative"
-                >
-                  <input
-                    class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-                    placeholder="github.com/…/issues/42 · linear.app/…/TEAM-1 · jira · gitlab"
-                    type="text"
-                    value=""
-                  />
-                </div>
-              </div>
-              <div
-                class="flex flex-col gap-1.5"
-              >
-                <span
-                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                >
-                  Goal
-                </span>
-                <p
-                  class="text-2xs leading-relaxed text-muted-foreground"
-                >
-                  What this session should accomplish.
-                </p>
-                <textarea
-                  class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
-                  placeholder="Refactor auth domain"
-                  style="overflow-y: hidden;"
-                />
-              </div>
-              <div
-                class="flex flex-col gap-1.5"
-              >
-                <span
-                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                >
-                  Branch
-                </span>
-                <p
-                  class="text-2xs leading-relaxed text-muted-foreground"
-                >
-                  Worktree branch for this session.
-                </p>
-                <div
-                  class="flex flex-col gap-2"
-                >
-                  <div
-                    aria-label="branch source"
-                    class="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
-                    role="tablist"
-                  >
-                    <button
-                      aria-selected="true"
-                      class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
-                      role="tab"
-                      type="button"
-                    >
-                      New
-                    </button>
-                    <button
-                      aria-selected="false"
-                      class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-                      role="tab"
-                      type="button"
-                    >
-                      Existing
-                    </button>
-                  </div>
-                  <div
-                    class="flex items-center gap-1.5"
-                  >
-                    <span
-                      class="shrink-0 text-xs text-muted-foreground font-mono"
-                    >
-                      kay
-                      /
-                    </span>
-                    <input
-                      aria-label="Branch slug"
-                      class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
-                      placeholder="branch-slug"
-                      type="text"
-                      value=""
-                    />
-                    <button
-                      aria-label="Generate branch name"
-                      class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
-                      disabled=""
-                      title="Generate from goal"
-                      type="button"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="lucide lucide-wand-sparkles"
-                        fill="none"
-                        height="13"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="13"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
-                        />
-                        <path
-                          d="m14 7 3 3"
-                        />
-                        <path
-                          d="M5 6v4"
-                        />
-                        <path
-                          d="M19 14v4"
-                        />
-                        <path
-                          d="M10 2v2"
-                        />
-                        <path
-                          d="M7 8H3"
-                        />
-                        <path
-                          d="M21 16h-4"
-                        />
-                        <path
-                          d="M11 3H9"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="hidden"
-          >
-            <div
-              class="flex flex-col gap-1.5"
-            >
-              <span
-                class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-              >
-                Soft cap (USD)
-              </span>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                Optional spend limit. Session gets flagged when exceeded.
-              </p>
-              <input
-                class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
-                min="0"
-                placeholder="5.00"
-                step="0.01"
-                type="number"
-                value=""
-              />
-            </div>
-          </div>
-          <div
-            class="hidden"
-          >
-            <div
-              class="flex flex-col gap-4"
-            >
-              <label
-                class="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2 text-xs"
-              >
-                <input
-                  class="mt-0.5 accent-primary"
-                  type="checkbox"
-                />
-                <span
-                  class="flex flex-col gap-0.5"
-                >
-                  <span
-                    class="font-medium text-foreground"
-                  >
-                    Run init script
-                  </span>
-                  <span
-                    class="text-muted-foreground"
-                  >
-                    Execute workspace setup before agents start.
-                  </span>
-                </span>
-              </label>
-              <div
-                class="flex flex-col gap-1.5"
-              >
-                <span
-                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                >
-                  Script
-                </span>
-                <p
-                  class="text-2xs leading-relaxed text-muted-foreground"
-                >
-                  Edit for this session only. Changes won't save to workspace.
-                </p>
-                <textarea
-                  autocapitalize="off"
-                  autocorrect="off"
-                  class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 transition-[border-color,box-shadow] focus-visible:shadow-md min-h-[200px] resize-y font-mono text-xs"
-                  rows="10"
-                  spellcheck="false"
-                />
-              </div>
-            </div>
-          </div>
-          <div
-            class="hidden"
-          >
-            <div
-              class="flex flex-col gap-1.5"
-            >
-              <span
-                class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-              >
-                Workflow
-              </span>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                Single chat session. Spawn agents manually as needed.
-              </p>
-              <div
-                aria-label="workflow mode"
-                class="inline-flex rounded-md border border-border bg-subtle p-0.5"
-                role="tablist"
-              >
-                <button
-                  aria-selected="true"
-                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
-                  role="tab"
-                  type="button"
-                >
-                  One-off
-                </button>
-                <button
-                  aria-selected="false"
-                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-                  role="tab"
-                  type="button"
-                >
-                  Preset
-                  <span
-                    class="rounded-sm bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning"
-                  >
-                    beta
-                  </span>
-                </button>
-                <button
-                  aria-selected="false"
-                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-                  role="tab"
-                  type="button"
-                >
-                  Custom
-                  <span
-                    class="rounded-sm bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning"
-                  >
-                    beta
-                  </span>
-                </button>
-              </div>
-              <div
-                class="mt-3 flex flex-col gap-3"
-              >
-                <div
-                  class="flex flex-col gap-1.5"
-                >
-                  <span
-                    class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                  >
-                    Agent role
-                  </span>
-                  <p
-                    class="text-2xs leading-relaxed text-muted-foreground"
-                  >
-                    Role for the first agent. Spawn more from the sidebar.
-                  </p>
-                  <div
-                    class="relative"
-                  >
-                    <button
-                      class="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
-                      type="button"
-                    >
-                      <span
-                        aria-hidden="true"
-                        class="size-2 shrink-0 rounded-full bg-zinc-400"
-                      />
-                      <span
-                        class="shrink-0 font-medium text-foreground"
-                      >
-                        Agent
-                      </span>
-                      <span
-                        class="flex-1 truncate text-muted-foreground/70"
-                      >
-                        Can do whatever you want, no restrictions
-                      </span>
-                      <svg
-                        aria-hidden="true"
-                        class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
-                        fill="none"
-                        height="12"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="12"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="m6 9 6 6 6-6"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div
-                  class="grid grid-cols-3 gap-3"
-                >
-                  <div
-                    class="flex flex-col gap-1"
-                  >
-                    <span
-                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
-                    >
-                      Model
-                    </span>
-                    <div
-                      class="relative"
-                    >
-                      <button
-                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50 cursor-not-allowed opacity-50"
-                        disabled=""
-                        type="button"
-                      >
-                        <span
-                          aria-hidden="true"
-                          class="size-1.5 shrink-0 rounded-full bg-rose-400"
-                        />
-                        <span
-                          class="flex-1 truncate font-mono font-medium text-foreground"
-                        >
-                          opus 4.7
-                        </span>
-                        <svg
-                          aria-hidden="true"
-                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
-                          fill="none"
-                          height="11"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          viewBox="0 0 24 24"
-                          width="11"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="m6 9 6 6 6-6"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div
-                    class="flex flex-col gap-1"
-                  >
-                    <span
-                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
-                    >
-                      Effort
-                    </span>
-                    <div
-                      class="relative"
-                    >
-                      <button
-                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
-                        type="button"
-                      >
-                        <span
-                          aria-hidden="true"
-                          class="size-1.5 shrink-0 rounded-full bg-info"
-                        />
-                        <span
-                          class="flex-1 truncate font-medium text-foreground"
-                        >
-                          Medium
-                        </span>
-                        <svg
-                          aria-hidden="true"
-                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
-                          fill="none"
-                          height="11"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          viewBox="0 0 24 24"
-                          width="11"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="m6 9 6 6 6-6"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div
-                    class="flex flex-col gap-1"
-                  >
-                    <span
-                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
-                    >
-                      Verbosity
-                    </span>
-                    <div
-                      class="relative"
-                    >
-                      <button
-                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
-                        type="button"
-                      >
-                        <span
-                          aria-hidden="true"
-                          class="size-1.5 shrink-0 rounded-full bg-amber-400"
-                        />
-                        <span
-                          class="flex-1 truncate font-medium text-foreground"
-                        >
-                          Normal
-                        </span>
-                        <svg
-                          aria-hidden="true"
-                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
-                          fill="none"
-                          height="11"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          viewBox="0 0 24 24"
-                          width="11"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="m6 9 6 6 6-6"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div
-                class="hidden"
-              >
-                <div
-                  class="flex flex-col items-center gap-2 rounded-md border border-dashed border-border-soft bg-subtle px-4 py-6 text-center"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-layers text-muted-foreground/30"
-                    fill="none"
-                    height="20"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
-                    />
-                    <path
-                      d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
-                    />
-                    <path
-                      d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
-                    />
-                  </svg>
-                  <p
-                    class="text-xs font-medium text-muted-foreground"
-                  >
-                    No workflow presets
-                  </p>
-                  <p
-                    class="max-w-[14rem] text-2xs leading-relaxed text-muted-foreground/60"
-                  >
-                    Switch to
-                     
-                    <button
-                      class="font-medium text-primary underline-offset-2 hover:underline"
-                      type="button"
-                    >
-                      Custom
-                    </button>
-                     
-                    to design your first workflow.
-                  </p>
-                </div>
-              </div>
-              <div
-                class="hidden"
-              >
-                <div
-                  class="flex flex-col gap-2"
-                >
-                  <textarea
-                    class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
-                    placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
-                    style="overflow-y: hidden;"
-                  />
-                  <div
-                    class="flex items-center justify-end gap-2"
-                  >
-                    <span
-                      class="mr-auto text-2xs text-muted-foreground/60"
-                    >
-                      cheap-tier · 
-                      anthropic
-                    </span>
-                    <button
-                      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
-                      disabled=""
-                      type="button"
-                    >
-                      Generate plan
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="hidden"
-          >
-            <div
-              class="flex flex-col gap-4"
-            >
-              <div
-                class="flex flex-col gap-1.5"
-              >
-                <span
-                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
-                >
-                  Provider
-                </span>
-                <div
-                  class="flex gap-2"
-                >
-                  <button
-                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
-                    disabled=""
-                    type="button"
-                  >
-                    <span
-                      class="flex items-center gap-1.5"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="lucide lucide-x text-danger/60"
-                        fill="none"
-                        height="10"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="10"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M18 6 6 18"
-                        />
-                        <path
-                          d="m6 6 12 12"
-                        />
-                      </svg>
-                      claude
-                    </span>
-                    <span
-                      class="text-2xs text-primary/70 underline"
-                      role="button"
-                      tabindex="0"
-                    >
-                      Connect
-                    </span>
-                  </button>
-                  <button
-                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
-                    disabled=""
-                    type="button"
-                  >
-                    <span
-                      class="flex items-center gap-1.5"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="lucide lucide-x text-danger/60"
-                        fill="none"
-                        height="10"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="10"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M18 6 6 18"
-                        />
-                        <path
-                          d="m6 6 12 12"
-                        />
-                      </svg>
-                      cursor
-                      <span
-                        class="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning"
-                      >
-                        beta
-                      </span>
-                    </span>
-                    <span
-                      class="text-2xs text-primary/70 underline"
-                      role="button"
-                      tabindex="0"
-                    >
-                      Connect
-                    </span>
-                  </button>
-                  <button
-                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
-                    disabled=""
-                    type="button"
-                  >
-                    <span
-                      class="flex items-center gap-1.5"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="lucide lucide-x text-danger/60"
-                        fill="none"
-                        height="10"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="10"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M18 6 6 18"
-                        />
-                        <path
-                          d="m6 6 12 12"
-                        />
-                      </svg>
-                      codex
-                      <span
-                        class="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning"
-                      >
-                        beta
-                      </span>
-                    </span>
-                    <span
-                      class="text-2xs text-primary/70 underline"
-                      role="button"
-                      tabindex="0"
-                    >
-                      Connect
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <footer
-      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
-    >
-      <div
-        class="flex w-full items-center gap-2"
-      >
-        <div
-          class="flex-1"
-        >
-          <span
-            class="inline-flex items-center gap-1 text-xs text-warning"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-triangle-alert"
-              fill="none"
-              height="12"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="12"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-              />
-              <path
-                d="M12 9v4"
-              />
-              <path
-                d="M12 17h.01"
-              />
-            </svg>
-            Complete: 
-            Goal, Provider
-          </span>
-        </div>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-          type="button"
-        >
-          Cancel
-        </button>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-          disabled=""
-          title="Complete: Goal, Provider"
-          type="button"
-        >
-          Create session
-        </button>
-      </div>
-    </footer>
-  </div>
-</dialog>
-`;
-
-exports[`snapshot — empty states > NotificationCenter: no notifications 1`] = `
-<div
-  aria-label="notifications"
-  aria-live="polite"
-  role="region"
->
-  <span
-    class="relative inline-flex"
-  >
-    <button
-      aria-label="notifications"
-      class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
-      type="button"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-bell"
-        fill="none"
-        height="13"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="13"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M10.268 21a2 2 0 0 0 3.464 0"
-        />
-        <path
-          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-        />
-      </svg>
-    </button>
-  </span>
-</div>
-`;
-
-exports[`snapshot — empty states > ProvidersPanel: no providers (store returns []) 1`] = `
-<div
-  class="flex flex-col gap-3"
->
-  <div
-    class="flex items-center justify-between"
-  >
-    <div
-      class="text-xs font-semibold text-foreground"
-    >
-      Providers
-    </div>
-    <span
-      class="relative inline-flex"
-    >
-      <button
-        aria-label="Re-detect installed CLIs"
-        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-rotate-cw"
-          fill="none"
-          height="14"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="14"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"
-          />
-          <path
-            d="M21 3v5h-5"
-          />
-        </svg>
-      </button>
-    </span>
-  </div>
-  <p
-    class="text-2xs text-muted-foreground"
-  >
-    No providers configured
-  </p>
-  <div
-    class="flex items-start gap-1.5 text-2xs text-muted-foreground"
-  >
-    <svg
-      aria-hidden="true"
-      class="lucide lucide-info mt-0.5 shrink-0"
-      fill="none"
-      height="11"
-      stroke="currentColor"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      viewBox="0 0 24 24"
-      width="11"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-      />
-      <path
-        d="M12 16v-4"
-      />
-      <path
-        d="M12 8h.01"
-      />
-    </svg>
-    <span>
-      Sign in once via each provider's CLI (e.g. run
-       
-      <code
-        class="rounded bg-muted px-1"
-      >
-        claude
-      </code>
-       in a terminal). kay-am picks up the credentials.
-    </span>
-  </div>
-</div>
-`;
-
-exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
-<div
-  class="flex flex-col gap-3"
->
-  <div
-    class="flex items-center justify-between"
-  >
-    <div
-      class="text-xs font-semibold text-foreground"
-    >
-      Skills
-    </div>
-    <div
-      class="flex items-center gap-2"
-    >
-      <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-        type="button"
-      >
-        Rescan
-      </button>
-      <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-        type="button"
-      >
-        New skill
-      </button>
-    </div>
-  </div>
-  <p
-    class="text-2xs text-muted-foreground"
-  >
-    No skills for this workspace. Create one or rescan the workspace directory.
-  </p>
-</div>
-`;
-
-exports[`snapshot — empty states > SlashCommandPopover: no skills / empty items 1`] = `
-<div
-  class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-background shadow-md"
->
-  <p
-    class="px-3 py-2 text-xs text-muted-foreground"
-  >
-    no skills — create one in settings
-  </p>
-</div>
-`;
-
-exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`] = `
-<div
-  class="flex h-full min-h-0 flex-col"
->
-  <div
-    class="flex shrink-0 items-center gap-1.5 px-2 py-2"
-  >
-    <span
-      class="flex items-center gap-1.5 px-1"
-    >
-      <svg
-        aria-hidden="true"
-        class="shrink-0 text-foreground"
-        fill="none"
-        height="18"
-        viewBox="0 0 18 18"
-        width="18"
-      >
-        <circle
-          cx="9"
-          cy="9"
-          fill="currentColor"
-          opacity="0.9"
-          r="3.5"
-        />
-        <circle
-          cx="9"
-          cy="9"
-          opacity="0.35"
-          r="7.5"
-          stroke="currentColor"
-          stroke-width="1.2"
-        />
-        <line
-          opacity="0.2"
-          stroke="currentColor"
-          stroke-width="1"
-          x1="9"
-          x2="9"
-          y1="1"
-          y2="17"
-        />
-        <line
-          opacity="0.2"
-          stroke="currentColor"
-          stroke-width="1"
-          x1="1"
-          x2="17"
-          y1="9"
-          y2="9"
-        />
-      </svg>
-      <span
-        class="text-sm font-semibold tracking-tight text-foreground"
-      >
-        kAY.am
-      </span>
-    </span>
-    <div
-      class="ml-auto flex items-center gap-0.5"
-    >
-      <button
-        aria-label="switch to light mode"
-        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        title="switch to light mode"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-sun"
-          fill="none"
-          height="13"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="13"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
-          />
-          <path
-            d="M12 2v2"
-          />
-          <path
-            d="M12 20v2"
-          />
-          <path
-            d="m4.93 4.93 1.41 1.41"
-          />
-          <path
-            d="m17.66 17.66 1.41 1.41"
-          />
-          <path
-            d="M2 12h2"
-          />
-          <path
-            d="M20 12h2"
-          />
-          <path
-            d="m6.34 17.66-1.41 1.41"
-          />
-          <path
-            d="m19.07 4.93-1.41 1.41"
-          />
-        </svg>
-      </button>
-      <div
-        aria-label="notifications"
-        aria-live="polite"
-        role="region"
-      >
-        <span
-          class="relative inline-flex"
-        >
-          <button
-            aria-label="notifications"
-            class="relative flex items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors text-muted-foreground hover:bg-muted/60"
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-bell"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="13"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M10.268 21a2 2 0 0 0 3.464 0"
-              />
-              <path
-                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-              />
-            </svg>
-          </button>
-        </span>
-      </div>
-      <button
-        aria-label="open getting started guide"
-        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        title="getting started — guide"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-circle-question-mark"
-          fill="none"
-          height="13"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="13"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-          />
-          <path
-            d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
-          />
-          <path
-            d="M12 17h.01"
-          />
-        </svg>
-      </button>
-      <button
-        aria-label="open settings"
-        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        title="settings (⌘,)"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-settings"
-          fill="none"
-          height="13"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="13"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
-          />
-          <circle
-            cx="12"
-            cy="12"
-            r="3"
-          />
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div
-    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] max-h-[40%] shrink-0"
-  >
-    <section
-      class="flex flex-col px-2"
-    >
-      <header
-        class="flex items-center justify-between gap-2 pb-1.5"
-      >
-        <span
-          class="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-        >
-          <svg
-            aria-hidden="true"
-            class="lucide lucide-folder-open text-primary"
-            fill="none"
-            height="11"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="11"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
-            />
-          </svg>
-          Workspaces
-        </span>
-      </header>
-      <ul
-        class="flex flex-col gap-0.5 pl-2"
-      >
-        <li>
-          <button
-            class="mt-0.5 flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-            type="button"
-          >
-            <span
-              aria-hidden="true"
-              class="text-muted-foreground"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-folder-plus"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="13"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 10v6"
-                />
-                <path
-                  d="M9 13h6"
-                />
-                <path
-                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-                />
-              </svg>
-            </span>
-            Add workspace
-          </button>
-        </li>
-      </ul>
-    </section>
-  </div>
-  <div
-    class="overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin] mt-8 flex-1"
-  >
-    <section
-      class="flex flex-col px-2"
-    >
-      <header
-        class="flex items-center justify-between gap-2 pb-1.5"
-      >
-        <span
-          class="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-        >
-          <svg
-            aria-hidden="true"
-            class="lucide lucide-messages-square text-info"
-            fill="none"
-            height="11"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="11"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-            />
-            <path
-              d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
-            />
-          </svg>
-          Sessions
-        </span>
-        <div
-          class="flex items-center gap-1.5"
-        >
-          <div
-            class="relative"
-          >
-            <button
-              aria-expanded="false"
-              aria-haspopup="menu"
-              aria-label="sort sessions"
-              class="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="sort: recent"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-arrow-up-down"
-                fill="none"
-                height="12"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="m21 16-4 4-4-4"
-                />
-                <path
-                  d="M17 20V4"
-                />
-                <path
-                  d="m3 8 4-4 4 4"
-                />
-                <path
-                  d="M7 4v16"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
-      <p
-        class="px-2 py-2 text-xs text-muted-foreground/70"
-      >
-        Select a workspace to see its sessions.
-      </p>
-    </section>
-  </div>
-  <div
-    class="flex shrink-0 flex-col items-center gap-1.5 px-2 pb-2 pt-1.5"
-  >
-    <button
-      class="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted text-danger"
-      title="open settings → providers"
-      type="button"
-    >
-      <span
-        aria-hidden="true"
-        class="flex items-center -space-x-0.5"
-      />
-      <span>
-        0
-        /
-        0
-         providers
-      </span>
-    </button>
-    <button
-      aria-label="open pricing breakdown"
-      class="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
-      title="session: $0
-workspace: $0"
-      type="button"
-    >
-      <span
-        class="font-medium"
-      >
-        $0
-      </span>
-      <span
-        class="text-muted-foreground"
-      >
-        session
-      </span>
-      <span
-        aria-hidden="true"
-        class="text-muted-foreground"
-      >
-        ·
-      </span>
-      <span
-        class="font-medium"
-      >
-        $0
-      </span>
-    </button>
-    <dialog
-      aria-labelledby="_r_0_-title"
-      class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-    >
-      <div
-        class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
-      >
-        <header
-          class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
-        >
-          <div
-            class="flex min-w-0 flex-col gap-1"
-          >
-            <h2
-              class="text-sm font-semibold tracking-tight text-foreground"
-              id="_r_0_-title"
-            >
-              Pricing
-            </h2>
-          </div>
-          <button
-            aria-label="close"
-            class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-            type="button"
-          >
-            <span
-              aria-hidden="true"
-              class="text-base leading-none"
-            >
-              ×
-            </span>
-          </button>
-        </header>
-        <div
-          class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-        >
-          <div
-            class="flex flex-col gap-4 text-sm"
-          >
-            <div
-              class="grid grid-cols-2 gap-3"
-            >
-              <div
-                class="rounded-md bg-subtle px-3 py-2"
-              >
-                <div
-                  class="text-2xs uppercase tracking-wide text-muted-foreground"
-                >
-                  current session
-                </div>
-                <div
-                  class="mt-0.5 font-mono text-base"
-                >
-                  $0.0000
-                </div>
-              </div>
-              <div
-                class="rounded-md bg-subtle px-3 py-2"
-              >
-                <div
-                  class="text-2xs uppercase tracking-wide text-muted-foreground"
-                >
-                  workspace total
-                </div>
-                <div
-                  class="mt-0.5 font-mono text-base"
-                >
-                  $0.0000
-                </div>
-              </div>
-            </div>
-            <section>
-              <div
-                class="mb-1 flex items-center justify-between"
-              >
-                <h3
-                  class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                >
-                  turns
-                </h3>
-                <div
-                  class="flex gap-1"
-                >
-                  <button
-                    class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-foreground text-background"
-                    type="button"
-                  >
-                    recent
-                  </button>
-                  <button
-                    class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-muted text-muted-foreground"
-                    type="button"
-                  >
-                    expensive
-                  </button>
-                </div>
-              </div>
-              <div
-                class="max-h-72 overflow-y-auto rounded-md border border-border-soft"
-              >
-                <p
-                  class="py-2 text-center text-xs text-muted-foreground"
-                >
-                  no recorded turns yet.
-                </p>
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-    </dialog>
-  </div>
-  <dialog
-    aria-describedby="_r_1_-desc"
-    aria-labelledby="_r_1_-title"
-    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  >
-    <div
-      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
-    >
-      <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
-      >
-        <div
-          class="flex min-w-0 flex-col gap-1"
-        >
-          <h2
-            class="text-sm font-semibold tracking-tight text-foreground"
-            id="_r_1_-title"
-          >
-            Add workspace
-          </h2>
-          <p
-            class="text-xs leading-relaxed text-muted-foreground"
-            id="_r_1_-desc"
-          >
-            point at a git repository on disk. each task creates its own worktree.
-          </p>
-        </div>
-        <button
-          aria-label="close"
-          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="text-base leading-none"
-          >
-            ×
-          </span>
-        </button>
-      </header>
-      <div
-        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-      >
-        <div
-          class="flex h-full min-h-0 gap-0"
-        >
-          <nav
-            class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
-          >
-            <button
-              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
-              type="button"
-            >
-              <span
-                class="flex-1"
-              >
-                repository
-              </span>
-            </button>
-            <button
-              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <span
-                class="flex-1"
-              >
-                workflows
-              </span>
-            </button>
-          </nav>
-          <div
-            class="min-w-0 flex-1 overflow-y-auto pl-4"
-          >
-            <div
-              class="flex flex-col gap-1.5"
-            >
-              <span
-                class="text-xs font-semibold text-foreground"
-              >
-                repository path
-              </span>
-              <div
-                class="flex gap-2"
-              >
-                <input
-                  class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 flex-1"
-                  placeholder="/path/to/repo"
-                  type="text"
-                  value=""
-                />
-                <button
-                  class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
-                  type="button"
-                >
-                  Browse
-                </button>
-              </div>
-              <p
-                class="text-xs leading-relaxed text-muted-foreground"
-              >
-                the directory must contain a \`.git\` folder.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <footer
-        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
-      >
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-          type="button"
-        >
-          Cancel
-        </button>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-          disabled=""
-          type="button"
-        >
-          Add workspace
-        </button>
-      </footer>
-    </div>
-  </dialog>
-  <dialog
-    aria-describedby="_r_2_-desc"
-    aria-labelledby="_r_2_-title"
-    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none"
-  >
-    <div
-      class="flex min-h-0 flex-col h-[640px] w-[56rem] max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none"
-    >
-      <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
-      >
-        <div
-          class="flex min-w-0 flex-col gap-1"
-        >
-          <h2
-            class="text-sm font-semibold tracking-tight text-foreground"
-            id="_r_2_-title"
-          >
-            Getting started
-          </h2>
-          <p
-            class="text-xs leading-relaxed text-muted-foreground"
-            id="_r_2_-desc"
-          >
-            how kAY.am, sessions, agents, and CLI providers fit together.
-          </p>
-        </div>
-        <button
-          aria-label="close"
-          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="text-base leading-none"
-          >
-            ×
-          </span>
-        </button>
-      </header>
-      <div
-        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-      >
-        <div
-          class="flex h-full min-h-0 gap-0"
-        >
-          <nav
-            class="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
-          >
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-book-open"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 7v14"
-                />
-                <path
-                  d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
-                />
-              </svg>
-              <span>
-                Overview
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-git-branch"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 6a9 9 0 0 0-9 9V3"
-                />
-                <circle
-                  cx="18"
-                  cy="6"
-                  r="3"
-                />
-                <circle
-                  cx="6"
-                  cy="18"
-                  r="3"
-                />
-              </svg>
-              <span>
-                Sessions
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-messages-square"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-                />
-                <path
-                  d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
-                />
-              </svg>
-              <span>
-                Turns
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-wrench"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
-                />
-              </svg>
-              <span>
-                Tools
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-coins"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M13.744 17.736a6 6 0 1 1-7.48-7.48"
-                />
-                <path
-                  d="M15 6h1v4"
-                />
-                <path
-                  d="m6.134 14.768.866-.5 2 3.464"
-                />
-                <circle
-                  cx="16"
-                  cy="8"
-                  r="6"
-                />
-              </svg>
-              <span>
-                Tokens & cost
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-bot"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8V4H8"
-                />
-                <rect
-                  height="12"
-                  rx="2"
-                  width="16"
-                  x="4"
-                  y="8"
-                />
-                <path
-                  d="M2 14h2"
-                />
-                <path
-                  d="M20 14h2"
-                />
-                <path
-                  d="M15 13v2"
-                />
-                <path
-                  d="M9 13v2"
-                />
-              </svg>
-              <span>
-                Agents
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-lightbulb"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
-                />
-                <path
-                  d="M9 18h6"
-                />
-                <path
-                  d="M10 22h4"
-                />
-              </svg>
-              <span>
-                Tips
-              </span>
-            </button>
-            <button
-              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-palette"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"
-                />
-                <circle
-                  cx="13.5"
-                  cy="6.5"
-                  fill="currentColor"
-                  r=".5"
-                />
-                <circle
-                  cx="17.5"
-                  cy="10.5"
-                  fill="currentColor"
-                  r=".5"
-                />
-                <circle
-                  cx="6.5"
-                  cy="12.5"
-                  fill="currentColor"
-                  r=".5"
-                />
-                <circle
-                  cx="8.5"
-                  cy="7.5"
-                  fill="currentColor"
-                  r=".5"
-                />
-              </svg>
-              <span>
-                Legend
-              </span>
-            </button>
-          </nav>
-          <div
-            class="min-w-0 flex-1 overflow-y-auto pl-4 pr-1"
-          >
-            <article
-              class="flex flex-col gap-3 pb-6 text-sm leading-relaxed"
-            >
-              <h2
-                class="text-base font-semibold tracking-tight text-foreground"
-              >
-                What is kAY.am?
-              </h2>
-              <p
-                class="text-muted-foreground"
-              >
-                kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.
-              </p>
-              <p
-                class="text-sm leading-relaxed text-muted-foreground"
-              >
-                kAY.am does 
-                <strong
-                  class="font-semibold text-foreground"
-                >
-                  not
-                </strong>
-                 talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. That means: your usage, login, and quotas live in the CLI itself; kAY.am just adds the workspace layer on top.
-              </p>
-              <h3
-                class="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground/85"
-              >
-                Mental model
-              </h3>
-              <ul
-                class="flex flex-col gap-1.5"
-              >
-                <li
-                  class="flex flex-col gap-0.5"
-                >
-                  <span
-                    class="text-sm font-semibold text-foreground"
-                  >
-                    Workspace
-                  </span>
-                  <span
-                    class="text-sm leading-relaxed text-muted-foreground"
-                  >
-                    a git repo on disk. you can connect many.
-                  </span>
-                </li>
-                <li
-                  class="flex flex-col gap-0.5"
-                >
-                  <span
-                    class="text-sm font-semibold text-foreground"
-                  >
-                    Session
-                  </span>
-                  <span
-                    class="text-sm leading-relaxed text-muted-foreground"
-                  >
-                    a chat with one goal, on its own git worktree + branch. like a feature branch with built-in chat.
-                  </span>
-                </li>
-                <li
-                  class="flex flex-col gap-0.5"
-                >
-                  <span
-                    class="text-sm font-semibold text-foreground"
-                  >
-                    Agent
-                  </span>
-                  <span
-                    class="text-sm leading-relaxed text-muted-foreground"
-                  >
-                    one provider/CLI invocation inside a session. a session may have several agents (e.g. one for planning, one for coding).
-                  </span>
-                </li>
-                <li
-                  class="flex flex-col gap-0.5"
-                >
-                  <span
-                    class="text-sm font-semibold text-foreground"
-                  >
-                    Turn
-                  </span>
-                  <span
-                    class="text-sm leading-relaxed text-muted-foreground"
-                  >
-                    a single user → assistant exchange inside an agent. tools called inside count as the same turn.
-                  </span>
-                </li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </div>
-      <footer
-        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
-      >
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-          type="button"
-        >
-          Close
-        </button>
-      </footer>
-    </div>
-  </dialog>
-</div>
-`;
-
-exports[`snapshot — error states > App init error — BootSplash with error message 1`] = `
-<div
-  class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
->
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute inset-0 -z-10"
-  />
-  <div
-    class="flex flex-col items-center gap-4"
-  >
-    <div
-      class="relative flex h-20 w-20 items-center justify-center"
-    >
-      <span
-        aria-hidden="true"
-        class="absolute inset-0 rounded-[22px] motion-safe:animate-ping"
-      />
-      <div
-        class="relative flex h-full w-full items-center justify-center rounded-[22px] bg-subtle shadow-lg ring-1 ring-border-soft"
-        style="box-shadow: 0 0 40px oklch(from var(--color-primary) l c h / 0.15);"
-      >
-        <span
-          class="text-3xl font-bold tracking-tighter text-foreground"
-        >
-          k
-        </span>
-      </div>
-    </div>
-    <div
-      class="flex flex-col items-center gap-0.5"
-    >
-      <span
-        class="text-lg font-bold tracking-tight"
-      >
-        kAY.am
-      </span>
-      <span
-        class="text-[11px] tracking-widest text-muted-foreground/60 uppercase"
-      >
-        ai workspace orchestrator
-      </span>
-    </div>
-  </div>
-  <div
-    class="flex w-64 flex-col gap-4"
-  >
-    <ul
-      class="flex flex-col gap-1 font-mono text-[11px]"
-    >
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          running migrations
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          loading settings
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          detecting providers
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          loading workspaces
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          restoring session
-        </span>
-      </li>
-    </ul>
-    <div
-      class="flex flex-col gap-1.5"
-    >
-      <div
-        class="relative h-[3px] w-full overflow-hidden rounded-full bg-muted/40"
-      >
-        <div
-          class="absolute inset-y-0 left-0 rounded-full bg-primary motion-safe:transition-all motion-safe:duration-700"
-          style="width: 0%; box-shadow: 0 0 8px oklch(from var(--color-primary) l c h / 0.6);"
-        />
-      </div>
-    </div>
-  </div>
-  <div
-    class="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
-    role="alert"
-  >
-    <div
-      class="flex flex-col gap-1"
-    >
-      <span
-        class="text-danger"
-      >
-        ✗ 
-        init
-         failed
-      </span>
-      <p
-        class="leading-relaxed text-danger/70"
-      >
-        database migration failed
-      </p>
-    </div>
-    <div
-      class="flex flex-col gap-1.5"
-    >
-      <button
-        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-        type="button"
-      >
-        › open logs
-      </button>
-      <button
-        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
-        type="button"
-      >
-        report on github ↗
-      </button>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
-<div
-  class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
->
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute inset-0 -z-10"
-  />
-  <div
-    class="flex flex-col items-center gap-4"
-  >
-    <div
-      class="relative flex h-20 w-20 items-center justify-center"
-    >
-      <span
-        aria-hidden="true"
-        class="absolute inset-0 rounded-[22px] motion-safe:animate-ping"
-      />
-      <div
-        class="relative flex h-full w-full items-center justify-center rounded-[22px] bg-subtle shadow-lg ring-1 ring-border-soft"
-        style="box-shadow: 0 0 40px oklch(from var(--color-primary) l c h / 0.15);"
-      >
-        <span
-          class="text-3xl font-bold tracking-tighter text-foreground"
-        >
-          k
-        </span>
-      </div>
-    </div>
-    <div
-      class="flex flex-col items-center gap-0.5"
-    >
-      <span
-        class="text-lg font-bold tracking-tight"
-      >
-        kAY.am
-      </span>
-      <span
-        class="text-[11px] tracking-widest text-muted-foreground/60 uppercase"
-      >
-        ai workspace orchestrator
-      </span>
-    </div>
-  </div>
-  <div
-    class="flex w-64 flex-col gap-4"
-  >
-    <ul
-      class="flex flex-col gap-1 font-mono text-[11px]"
-    >
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          running migrations
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          loading settings
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          detecting providers
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          loading workspaces
-        </span>
-      </li>
-      <li
-        class="flex items-center gap-2.5"
-      >
-        <span
-          class="text-muted-foreground/25"
-        >
-          ·
-        </span>
-        <span
-          class="text-muted-foreground/25"
-        >
-          restoring session
-        </span>
-      </li>
-    </ul>
-    <div
-      class="flex flex-col gap-1.5"
-    >
-      <div
-        class="relative h-[3px] w-full overflow-hidden rounded-full bg-muted/40"
-      >
-        <div
-          class="absolute inset-y-0 left-0 rounded-full bg-primary motion-safe:transition-all motion-safe:duration-700"
-          style="width: 0%; box-shadow: 0 0 8px oklch(from var(--color-primary) l c h / 0.6);"
-        />
-      </div>
-    </div>
-  </div>
-  <div
-    class="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
-    role="alert"
-  >
-    <div
-      class="flex flex-col gap-1"
-    >
-      <span
-        class="text-danger"
-      >
-        ✗ 
-        init
-         failed
-      </span>
-      <p
-        class="leading-relaxed text-danger/70"
-      >
-        detecting-cli failed
-      </p>
-    </div>
-    <div
-      class="flex flex-col gap-1.5"
-    >
-      <button
-        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-        type="button"
-      >
-        › open logs
-      </button>
-      <button
-        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
-        type="button"
-      >
-        report on github ↗
-      </button>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
-<div
-  class="flex flex-col gap-3"
->
-  <div
-    class="flex items-center justify-between"
-  >
-    <div
-      class="text-xs font-semibold text-foreground"
-    >
-      Budget rules
-    </div>
-    <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-      type="button"
-    >
-      Add rule
-    </button>
-  </div>
-  <p
-    class="text-xs text-muted-foreground"
-  >
-    No rules defined. Add one to cap monthly spend per provider.
-  </p>
-</div>
-`;
-
-exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
-<dialog
-  aria-describedby="_r_5_-desc"
-  aria-labelledby="_r_5_-title"
-  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  open=""
->
-  <div
-    class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
-  >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
-    >
-      <div
-        class="flex min-w-0 flex-col gap-1"
-      >
-        <h2
-          class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_5_-title"
-        >
-          End session?
-        </h2>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_5_-desc"
-        >
-          The worktree directory will be removed. The branch is preserved for manual merge.
-        </p>
-      </div>
-      <button
-        aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="text-base leading-none"
-        >
-          ×
-        </span>
-      </button>
-    </header>
-    <div
-      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-    >
-      <div
-        class="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
-      >
-        <span
-          class="font-mono text-foreground"
-        >
-          test goal
-        </span>
-      </div>
-    </div>
-    <footer
-      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
-    >
-      <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-        type="button"
-      >
-        Cancel
-      </button>
-      <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
-        type="button"
-      >
-        End session
-      </button>
-    </footer>
-  </div>
-</dialog>
-`;
-
-exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
-<dialog
   aria-describedby="_r_4_-desc"
   aria-labelledby="_r_4_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
@@ -3250,7 +536,2682 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
                     >
                       <span
                         aria-hidden="true"
-                        class="size-2 shrink-0 rounded-full bg-zinc-400"
+                        class="size-2 shrink-0 rounded-full bg-rose-400"
+                      />
+                      <span
+                        class="shrink-0 font-medium text-foreground"
+                      >
+                        Agent
+                      </span>
+                      <span
+                        class="flex-1 truncate text-muted-foreground/70"
+                      >
+                        Can do whatever you want, no restrictions
+                      </span>
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
+                        fill="none"
+                        height="12"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="12"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="m6 9 6 6 6-6"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="grid grid-cols-3 gap-3"
+                >
+                  <div
+                    class="flex flex-col gap-1"
+                  >
+                    <span
+                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
+                    >
+                      Model
+                    </span>
+                    <div
+                      class="relative"
+                    >
+                      <button
+                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50 cursor-not-allowed opacity-50"
+                        disabled=""
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="size-1.5 shrink-0 rounded-full bg-rose-400"
+                        />
+                        <span
+                          class="flex-1 truncate font-mono font-medium text-foreground"
+                        >
+                          opus 4.7
+                        </span>
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
+                          fill="none"
+                          height="11"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="11"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="m6 9 6 6 6-6"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="flex flex-col gap-1"
+                  >
+                    <span
+                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
+                    >
+                      Effort
+                    </span>
+                    <div
+                      class="relative"
+                    >
+                      <button
+                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="size-1.5 shrink-0 rounded-full bg-info"
+                        />
+                        <span
+                          class="flex-1 truncate font-medium text-foreground"
+                        >
+                          Medium
+                        </span>
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
+                          fill="none"
+                          height="11"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="11"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="m6 9 6 6 6-6"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="flex flex-col gap-1"
+                  >
+                    <span
+                      class="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
+                    >
+                      Verbosity
+                    </span>
+                    <div
+                      class="relative"
+                    >
+                      <button
+                        class="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="size-1.5 shrink-0 rounded-full bg-amber-400"
+                        />
+                        <span
+                          class="flex-1 truncate font-medium text-foreground"
+                        >
+                          Normal
+                        </span>
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-chevron-down shrink-0 text-muted-foreground transition-transform"
+                          fill="none"
+                          height="11"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="11"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="m6 9 6 6 6-6"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="hidden"
+              >
+                <div
+                  class="flex flex-col items-center gap-2 rounded-md border border-dashed border-border-soft bg-subtle px-4 py-6 text-center"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-layers text-muted-foreground/30"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
+                    />
+                    <path
+                      d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
+                    />
+                    <path
+                      d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
+                    />
+                  </svg>
+                  <p
+                    class="text-xs font-medium text-muted-foreground"
+                  >
+                    No workflow presets
+                  </p>
+                  <p
+                    class="max-w-[14rem] text-2xs leading-relaxed text-muted-foreground/60"
+                  >
+                    Switch to
+                     
+                    <button
+                      class="font-medium text-primary underline-offset-2 hover:underline"
+                      type="button"
+                    >
+                      Custom
+                    </button>
+                     
+                    to design your first workflow.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="hidden"
+              >
+                <div
+                  class="flex flex-col gap-2"
+                >
+                  <textarea
+                    class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
+                    placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
+                    style="overflow-y: hidden;"
+                  />
+                  <div
+                    class="flex items-center justify-end gap-2"
+                  >
+                    <span
+                      class="mr-auto text-2xs text-muted-foreground/60"
+                    >
+                      cheap-tier · 
+                      anthropic
+                    </span>
+                    <button
+                      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
+                      disabled=""
+                      type="button"
+                    >
+                      Generate plan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="hidden"
+          >
+            <div
+              class="flex flex-col gap-4"
+            >
+              <div
+                class="flex flex-col gap-1.5"
+              >
+                <span
+                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                >
+                  Provider
+                </span>
+                <div
+                  class="flex gap-2"
+                >
+                  <button
+                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
+                    disabled=""
+                    type="button"
+                  >
+                    <span
+                      class="flex items-center gap-1.5"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-x text-danger/60"
+                        fill="none"
+                        height="10"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="10"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M18 6 6 18"
+                        />
+                        <path
+                          d="m6 6 12 12"
+                        />
+                      </svg>
+                      claude
+                    </span>
+                    <span
+                      class="text-2xs text-primary/70 underline"
+                      role="button"
+                      tabindex="0"
+                    >
+                      Connect
+                    </span>
+                  </button>
+                  <button
+                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
+                    disabled=""
+                    type="button"
+                  >
+                    <span
+                      class="flex items-center gap-1.5"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-x text-danger/60"
+                        fill="none"
+                        height="10"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="10"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M18 6 6 18"
+                        />
+                        <path
+                          d="m6 6 12 12"
+                        />
+                      </svg>
+                      cursor
+                      <span
+                        class="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning"
+                      >
+                        beta
+                      </span>
+                    </span>
+                    <span
+                      class="text-2xs text-primary/70 underline"
+                      role="button"
+                      tabindex="0"
+                    >
+                      Connect
+                    </span>
+                  </button>
+                  <button
+                    class="flex flex-1 flex-col items-center gap-1 rounded-md border px-3 py-2.5 text-sm transition-colors cursor-not-allowed border-border-soft/50 bg-subtle/50 text-muted-foreground/40"
+                    disabled=""
+                    type="button"
+                  >
+                    <span
+                      class="flex items-center gap-1.5"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-x text-danger/60"
+                        fill="none"
+                        height="10"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="10"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M18 6 6 18"
+                        />
+                        <path
+                          d="m6 6 12 12"
+                        />
+                      </svg>
+                      codex
+                      <span
+                        class="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning"
+                      >
+                        beta
+                      </span>
+                    </span>
+                    <span
+                      class="text-2xs text-primary/70 underline"
+                      role="button"
+                      tabindex="0"
+                    >
+                      Connect
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer
+      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+    >
+      <div
+        class="flex w-full items-center gap-2"
+      >
+        <div
+          class="flex-1"
+        >
+          <span
+            class="inline-flex items-center gap-1 text-xs text-warning"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-triangle-alert"
+              fill="none"
+              height="12"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="12"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
+            Complete: 
+            Goal, Provider
+          </span>
+        </div>
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+          type="button"
+        >
+          Cancel
+        </button>
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+          disabled=""
+          title="Complete: Goal, Provider"
+          type="button"
+        >
+          Create session
+        </button>
+      </div>
+    </footer>
+  </div>
+</dialog>
+`;
+
+exports[`snapshot — empty states > NotificationCenter: no notifications 1`] = `
+<div
+  aria-label="notifications"
+  aria-live="polite"
+  role="region"
+>
+  <span
+    class="relative inline-flex"
+  >
+    <button
+      aria-label="notifications"
+      class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-bell"
+        fill="none"
+        height="14"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="14"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10.268 21a2 2 0 0 0 3.464 0"
+        />
+        <path
+          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+        />
+      </svg>
+    </button>
+  </span>
+</div>
+`;
+
+exports[`snapshot — empty states > ProvidersPanel: no providers (store returns []) 1`] = `
+<div
+  class="flex flex-col gap-3"
+>
+  <div
+    class="flex items-center justify-between"
+  >
+    <div
+      class="text-xs font-semibold text-foreground"
+    >
+      Providers
+    </div>
+    <span
+      class="relative inline-flex"
+    >
+      <button
+        aria-label="Re-detect installed CLIs"
+        class="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rotate-cw"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"
+          />
+          <path
+            d="M21 3v5h-5"
+          />
+        </svg>
+      </button>
+    </span>
+  </div>
+  <p
+    class="text-2xs text-muted-foreground"
+  >
+    No providers configured
+  </p>
+  <div
+    class="flex items-start gap-1.5 text-2xs text-muted-foreground"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-info mt-0.5 shrink-0"
+      fill="none"
+      height="11"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="11"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+      />
+      <path
+        d="M12 16v-4"
+      />
+      <path
+        d="M12 8h.01"
+      />
+    </svg>
+    <span>
+      Sign in once via each provider's CLI (e.g. run
+       
+      <code
+        class="rounded bg-muted px-1"
+      >
+        claude
+      </code>
+       in a terminal). kay-am picks up the credentials.
+    </span>
+  </div>
+</div>
+`;
+
+exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
+<div
+  class="flex flex-col gap-3"
+>
+  <div
+    class="flex items-center justify-between"
+  >
+    <div
+      class="text-xs font-semibold text-foreground"
+    >
+      Skills
+    </div>
+    <div
+      class="flex items-center gap-2"
+    >
+      <button
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        type="button"
+      >
+        Rescan
+      </button>
+      <button
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        type="button"
+      >
+        New skill
+      </button>
+    </div>
+  </div>
+  <p
+    class="text-2xs text-muted-foreground"
+  >
+    No skills for this workspace. Create one or rescan the workspace directory.
+  </p>
+</div>
+`;
+
+exports[`snapshot — empty states > SlashCommandPopover: no skills / empty items 1`] = `
+<div
+  class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
+>
+  <p
+    class="px-3 py-2 text-xs text-muted-foreground"
+  >
+    no skills. create one in settings
+  </p>
+</div>
+`;
+
+exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`] = `
+<div
+  class="flex h-full min-h-0 flex-col"
+>
+  <div
+    class="shrink-0"
+  >
+    <div
+      class="shrink-0 px-2 py-1.5"
+    >
+      <span
+        class="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-folder-open text-primary"
+          fill="none"
+          height="11"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="11"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
+          />
+        </svg>
+        Workspaces
+        <span
+          class="ml-auto font-mono text-[10px] tracking-normal text-muted-foreground/60"
+          title="up to 3 workspaces during beta"
+        >
+          0
+          /
+          3
+        </span>
+      </span>
+      <div
+        class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]"
+      >
+        <button
+          aria-label="add workspace"
+          class="flex shrink-0 items-center justify-center rounded border border-dashed px-2 py-1.5 transition-colors border-border-soft text-muted-foreground/60 hover:border-border hover:bg-muted/50 hover:text-muted-foreground"
+          title="add workspace"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-plus"
+            fill="none"
+            height="12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 12h14"
+            />
+            <path
+              d="M12 5v14"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="flex min-h-0 flex-1"
+  >
+    <div
+      class="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center"
+    >
+      <div
+        class="relative"
+      >
+        <div
+          class="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl"
+        />
+        <div
+          class="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-folder-plus text-info"
+            fill="none"
+            height="26"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="26"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 10v6"
+            />
+            <path
+              d="M9 13h6"
+            />
+            <path
+              d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex flex-col gap-1"
+      >
+        <h3
+          class="text-sm font-semibold text-foreground"
+        >
+          No workspace yet
+        </h3>
+        <p
+          class="max-w-[220px] text-2xs leading-relaxed text-muted-foreground"
+        >
+          Add a git repo to spin up worktrees and start orchestrating sessions.
+        </p>
+      </div>
+      <button
+        class="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-plus"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="12"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M5 12h14"
+          />
+          <path
+            d="M12 5v14"
+          />
+        </svg>
+        <span>
+          Add workspace
+        </span>
+      </button>
+    </div>
+  </div>
+  <div
+    class="flex shrink-0 items-center px-2.5 py-2"
+  >
+    <span
+      class="flex items-center gap-1.5"
+    >
+      <svg
+        aria-hidden="true"
+        class="shrink-0 text-foreground"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.5"
+        viewBox="0 0 24 24"
+        width="16"
+      >
+        <path
+          d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+        />
+        <path
+          d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+        />
+        <path
+          d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
+        />
+        <circle
+          cx="9.5"
+          cy="11.5"
+          fill="currentColor"
+          r="0.7"
+          stroke="none"
+        />
+        <circle
+          cx="14.5"
+          cy="11.5"
+          fill="currentColor"
+          r="0.7"
+          stroke="none"
+        />
+        <path
+          d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
+          fill="currentColor"
+          stroke="none"
+        />
+        <path
+          d="M 7 16 Q 9.5 15.3 12 15.8"
+        />
+        <path
+          d="M 12 15.8 Q 14.5 15.3 17 16"
+        />
+        <path
+          d="M 8 17 Q 10 16.5 12 16.8"
+        />
+        <path
+          d="M 12 16.8 Q 14 16.5 16 17"
+        />
+      </svg>
+      <span
+        class="text-xs font-semibold tracking-tight text-foreground"
+      >
+        kAY.am
+      </span>
+    </span>
+    <div
+      class="flex-1"
+    />
+    <div
+      class="flex items-center gap-0.5"
+    >
+      <button
+        aria-label="open spend and pricing"
+        class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+        title="open spend & pricing"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-dollar-sign"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <line
+            x1="12"
+            x2="12"
+            y1="2"
+            y2="22"
+          />
+          <path
+            d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+          />
+        </svg>
+      </button>
+      <button
+        aria-label="switch to light mode"
+        class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+        title="switch to light mode"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-sun"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+          />
+          <path
+            d="M12 2v2"
+          />
+          <path
+            d="M12 20v2"
+          />
+          <path
+            d="m4.93 4.93 1.41 1.41"
+          />
+          <path
+            d="m17.66 17.66 1.41 1.41"
+          />
+          <path
+            d="M2 12h2"
+          />
+          <path
+            d="M20 12h2"
+          />
+          <path
+            d="m6.34 17.66-1.41 1.41"
+          />
+          <path
+            d="m19.07 4.93-1.41 1.41"
+          />
+        </svg>
+      </button>
+      <div
+        aria-label="notifications"
+        aria-live="polite"
+        role="region"
+      >
+        <span
+          class="relative inline-flex"
+        >
+          <button
+            aria-label="notifications"
+            class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-bell"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.268 21a2 2 0 0 0 3.464 0"
+              />
+              <path
+                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+              />
+            </svg>
+          </button>
+        </span>
+      </div>
+      <button
+        aria-label="open getting started guide"
+        class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+        title="getting started"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-question-mark"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <path
+            d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+          />
+          <path
+            d="M12 17h.01"
+          />
+        </svg>
+      </button>
+      <button
+        aria-label="open settings"
+        class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+        title="settings (⌘,)"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-settings"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="3"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+  <dialog
+    aria-describedby="_r_0_-desc"
+    aria-labelledby="_r_0_-title"
+    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+  >
+    <div
+      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+    >
+      <header
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1"
+        >
+          <h2
+            class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_0_-title"
+          >
+            Add workspace
+          </h2>
+          <p
+            class="text-xs leading-relaxed text-muted-foreground"
+            id="_r_0_-desc"
+          >
+            point at a git repository on disk. each task creates its own worktree.
+          </p>
+        </div>
+        <button
+          aria-label="close"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="text-base leading-none"
+          >
+            ×
+          </span>
+        </button>
+      </header>
+      <div
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      >
+        <div
+          class="flex h-full min-h-0 gap-0"
+        >
+          <nav
+            class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
+          >
+            <button
+              class="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
+              type="button"
+            >
+              <span
+                class="flex-1"
+              >
+                repository
+              </span>
+            </button>
+            <button
+              class="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <span
+                class="flex-1"
+              >
+                workflows
+              </span>
+            </button>
+          </nav>
+          <div
+            class="min-w-0 flex-1 overflow-y-auto pl-4"
+          >
+            <div
+              class="flex flex-col gap-1.5"
+            >
+              <span
+                class="text-xs font-semibold text-foreground"
+              >
+                repository path
+              </span>
+              <div
+                class="flex gap-2"
+              >
+                <input
+                  class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 flex-1"
+                  placeholder="/path/to/repo"
+                  type="text"
+                  value=""
+                />
+                <button
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
+                  type="button"
+                >
+                  Browse
+                </button>
+              </div>
+              <p
+                class="text-xs leading-relaxed text-muted-foreground"
+              >
+                the directory must contain a \`.git\` folder.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      >
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+          type="button"
+        >
+          Cancel
+        </button>
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+          disabled=""
+          type="button"
+        >
+          Add workspace
+        </button>
+      </footer>
+    </div>
+  </dialog>
+  <dialog
+    aria-describedby="_r_1_-desc"
+    aria-labelledby="_r_1_-title"
+    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none"
+  >
+    <div
+      class="flex min-h-0 flex-col h-[640px] w-[56rem] max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none"
+    >
+      <header
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1"
+        >
+          <h2
+            class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_1_-title"
+          >
+            Getting started
+          </h2>
+          <p
+            class="text-xs leading-relaxed text-muted-foreground"
+            id="_r_1_-desc"
+          >
+            how kAY.am, sessions, agents, and CLI providers fit together.
+          </p>
+        </div>
+        <button
+          aria-label="close"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="text-base leading-none"
+          >
+            ×
+          </span>
+        </button>
+      </header>
+      <div
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      >
+        <div
+          class="flex h-full min-h-0 gap-0"
+        >
+          <nav
+            class="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
+          >
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-book-open"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 7v14"
+                />
+                <path
+                  d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+                />
+              </svg>
+              <span>
+                Overview
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-git-branch"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 6a9 9 0 0 0-9 9V3"
+                />
+                <circle
+                  cx="18"
+                  cy="6"
+                  r="3"
+                />
+                <circle
+                  cx="6"
+                  cy="18"
+                  r="3"
+                />
+              </svg>
+              <span>
+                Sessions
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-messages-square"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                />
+                <path
+                  d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
+                />
+              </svg>
+              <span>
+                Turns
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-wrench"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+                />
+              </svg>
+              <span>
+                Tools
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-coins"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.744 17.736a6 6 0 1 1-7.48-7.48"
+                />
+                <path
+                  d="M15 6h1v4"
+                />
+                <path
+                  d="m6.134 14.768.866-.5 2 3.464"
+                />
+                <circle
+                  cx="16"
+                  cy="8"
+                  r="6"
+                />
+              </svg>
+              <span>
+                Tokens & cost
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-bot"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 8V4H8"
+                />
+                <rect
+                  height="12"
+                  rx="2"
+                  width="16"
+                  x="4"
+                  y="8"
+                />
+                <path
+                  d="M2 14h2"
+                />
+                <path
+                  d="M20 14h2"
+                />
+                <path
+                  d="M15 13v2"
+                />
+                <path
+                  d="M9 13v2"
+                />
+              </svg>
+              <span>
+                Agents
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-lightbulb"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+                />
+                <path
+                  d="M9 18h6"
+                />
+                <path
+                  d="M10 22h4"
+                />
+              </svg>
+              <span>
+                Tips
+              </span>
+            </button>
+            <button
+              class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-palette"
+                fill="none"
+                height="14"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="14"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"
+                />
+                <circle
+                  cx="13.5"
+                  cy="6.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="17.5"
+                  cy="10.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="6.5"
+                  cy="12.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+                <circle
+                  cx="8.5"
+                  cy="7.5"
+                  fill="currentColor"
+                  r=".5"
+                />
+              </svg>
+              <span>
+                Legend
+              </span>
+            </button>
+          </nav>
+          <div
+            class="min-w-0 flex-1 overflow-y-auto pl-4 pr-1"
+          >
+            <article
+              class="flex flex-col gap-3 pb-6 text-sm leading-relaxed"
+            >
+              <h2
+                class="text-base font-semibold tracking-tight text-foreground"
+              >
+                What is kAY.am?
+              </h2>
+              <p
+                class="text-muted-foreground"
+              >
+                kAY.am orchestrates AI coding CLIs (claude, cursor-agent, codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.
+              </p>
+              <p
+                class="text-sm leading-relaxed text-muted-foreground"
+              >
+                kAY.am does 
+                <strong
+                  class="font-semibold text-foreground"
+                >
+                  not
+                </strong>
+                 talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. That means: your usage, login, and quotas live in the CLI itself; kAY.am just adds the workspace layer on top.
+              </p>
+              <h3
+                class="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground/85"
+              >
+                Mental model
+              </h3>
+              <ul
+                class="flex flex-col gap-1.5"
+              >
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Workspace
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a git repo on disk. you can connect many.
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Session
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a chat with one goal, on its own git worktree + branch. like a feature branch with built-in chat.
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Agent
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    one provider/CLI invocation inside a session. a session may have several agents (e.g. one for planning, one for coding).
+                  </span>
+                </li>
+                <li
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="text-sm font-semibold text-foreground"
+                  >
+                    Turn
+                  </span>
+                  <span
+                    class="text-sm leading-relaxed text-muted-foreground"
+                  >
+                    a single user → assistant exchange inside an agent. tools called inside count as the same turn.
+                  </span>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      >
+        <button
+          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+          type="button"
+        >
+          Close
+        </button>
+      </footer>
+    </div>
+  </dialog>
+  <dialog
+    aria-labelledby="_r_2_-title"
+    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+  >
+    <div
+      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+    >
+      <header
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1"
+        >
+          <h2
+            class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_2_-title"
+          >
+            Pricing
+          </h2>
+        </div>
+        <button
+          aria-label="close"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="text-base leading-none"
+          >
+            ×
+          </span>
+        </button>
+      </header>
+      <div
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      >
+        <div
+          class="flex flex-col gap-4 text-sm"
+        >
+          <div
+            class="grid grid-cols-2 gap-3"
+          >
+            <div
+              class="rounded-md bg-subtle px-3 py-2"
+            >
+              <div
+                class="text-2xs uppercase tracking-wide text-muted-foreground"
+              >
+                current session
+              </div>
+              <div
+                class="mt-0.5 font-mono text-base"
+              >
+                $0.0000
+              </div>
+            </div>
+            <div
+              class="rounded-md bg-subtle px-3 py-2"
+            >
+              <div
+                class="text-2xs uppercase tracking-wide text-muted-foreground"
+              >
+                workspace total
+              </div>
+              <div
+                class="mt-0.5 font-mono text-base"
+              >
+                $0.0000
+              </div>
+            </div>
+          </div>
+          <section>
+            <div
+              class="mb-1 flex items-center justify-between"
+            >
+              <h3
+                class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+              >
+                turns
+              </h3>
+              <div
+                class="flex gap-1"
+              >
+                <button
+                  class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-foreground text-background"
+                  type="button"
+                >
+                  recent
+                </button>
+                <button
+                  class="rounded px-1.5 py-0.5 text-2xs uppercase tracking-wide bg-muted text-muted-foreground"
+                  type="button"
+                >
+                  expensive
+                </button>
+              </div>
+            </div>
+            <div
+              class="max-h-72 overflow-y-auto rounded-md border border-border-soft"
+            >
+              <p
+                class="py-2 text-center text-xs text-muted-foreground"
+              >
+                no recorded turns yet.
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </dialog>
+  <dialog
+    aria-labelledby="_r_3_-title"
+    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+  >
+    <div
+      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+    >
+      <header
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1"
+        >
+          <h2
+            class="text-sm font-semibold tracking-tight text-foreground"
+            id="_r_3_-title"
+          >
+            GitHub
+          </h2>
+        </div>
+        <button
+          aria-label="close"
+          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="text-base leading-none"
+          >
+            ×
+          </span>
+        </button>
+      </header>
+      <div
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      >
+        <p
+          class="px-3 py-6 text-center text-sm text-muted-foreground"
+        >
+          no pull request linked
+        </p>
+      </div>
+    </div>
+  </dialog>
+</div>
+`;
+
+exports[`snapshot — error states > App init error — BootSplash with error message 1`] = `
+<div
+  class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
+>
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+    style="background-size: 18px 18px;"
+  />
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+  />
+  <div
+    class="flex flex-col items-center gap-5"
+  >
+    <div
+      class="relative flex h-24 w-24 items-center justify-center text-primary"
+    >
+      <span
+        aria-hidden="true"
+        class="absolute inset-0 rounded-full motion-safe:animate-ping"
+        style="animation-duration: 2.2s;"
+      />
+      <div
+        class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
+        style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
+      >
+        <svg
+          aria-hidden="true"
+          class="text-primary motion-safe:animate-pulse"
+          fill="none"
+          height="52"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+          width="52"
+        >
+          <path
+            d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+          />
+          <path
+            d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+          />
+          <path
+            d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
+          />
+          <circle
+            cx="9.5"
+            cy="11.5"
+            fill="currentColor"
+            r="0.7"
+            stroke="none"
+          />
+          <circle
+            cx="14.5"
+            cy="11.5"
+            fill="currentColor"
+            r="0.7"
+            stroke="none"
+          />
+          <path
+            d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
+            fill="currentColor"
+            stroke="none"
+          />
+          <path
+            d="M 7 16 Q 9.5 15.3 12 15.8"
+          />
+          <path
+            d="M 12 15.8 Q 14.5 15.3 17 16"
+          />
+          <path
+            d="M 8 17 Q 10 16.5 12 16.8"
+          />
+          <path
+            d="M 12 16.8 Q 14 16.5 16 17"
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      class="flex flex-col items-center gap-0.5"
+    >
+      <span
+        class="text-lg font-bold tracking-tight"
+      >
+        kAY.am
+      </span>
+      <span
+        class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
+      >
+        AI workspace orchestrator
+      </span>
+    </div>
+  </div>
+  <div
+    class="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
+    role="alert"
+  >
+    <div
+      class="flex flex-col gap-1"
+    >
+      <span
+        class="text-danger"
+      >
+        ✗ 
+        init
+         failed
+      </span>
+      <p
+        class="leading-relaxed text-danger/70"
+      >
+        database migration failed
+      </p>
+    </div>
+    <div
+      class="flex flex-col gap-1.5"
+    >
+      <button
+        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
+        type="button"
+      >
+        › open logs
+      </button>
+      <button
+        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
+        type="button"
+      >
+        report on github ↗
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
+<div
+  class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
+>
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+    style="background-size: 18px 18px;"
+  />
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+  />
+  <div
+    class="flex flex-col items-center gap-5"
+  >
+    <div
+      class="relative flex h-24 w-24 items-center justify-center text-primary"
+    >
+      <span
+        aria-hidden="true"
+        class="absolute inset-0 rounded-full motion-safe:animate-ping"
+        style="animation-duration: 2.2s;"
+      />
+      <div
+        class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
+        style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
+      >
+        <svg
+          aria-hidden="true"
+          class="text-primary motion-safe:animate-pulse"
+          fill="none"
+          height="52"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+          width="52"
+        >
+          <path
+            d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+          />
+          <path
+            d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+          />
+          <path
+            d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
+          />
+          <circle
+            cx="9.5"
+            cy="11.5"
+            fill="currentColor"
+            r="0.7"
+            stroke="none"
+          />
+          <circle
+            cx="14.5"
+            cy="11.5"
+            fill="currentColor"
+            r="0.7"
+            stroke="none"
+          />
+          <path
+            d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
+            fill="currentColor"
+            stroke="none"
+          />
+          <path
+            d="M 7 16 Q 9.5 15.3 12 15.8"
+          />
+          <path
+            d="M 12 15.8 Q 14.5 15.3 17 16"
+          />
+          <path
+            d="M 8 17 Q 10 16.5 12 16.8"
+          />
+          <path
+            d="M 12 16.8 Q 14 16.5 16 17"
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      class="flex flex-col items-center gap-0.5"
+    >
+      <span
+        class="text-lg font-bold tracking-tight"
+      >
+        kAY.am
+      </span>
+      <span
+        class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
+      >
+        AI workspace orchestrator
+      </span>
+    </div>
+  </div>
+  <div
+    class="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
+    role="alert"
+  >
+    <div
+      class="flex flex-col gap-1"
+    >
+      <span
+        class="text-danger"
+      >
+        ✗ 
+        init
+         failed
+      </span>
+      <p
+        class="leading-relaxed text-danger/70"
+      >
+        detecting-cli failed
+      </p>
+    </div>
+    <div
+      class="flex flex-col gap-1.5"
+    >
+      <button
+        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
+        type="button"
+      >
+        › open logs
+      </button>
+      <button
+        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
+        type="button"
+      >
+        report on github ↗
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
+<div
+  class="flex flex-col gap-3"
+>
+  <div
+    class="flex items-center justify-between"
+  >
+    <div
+      class="text-xs font-semibold text-foreground"
+    >
+      Budget rules
+    </div>
+    <button
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+      type="button"
+    >
+      Add rule
+    </button>
+  </div>
+  <p
+    class="text-xs text-muted-foreground"
+  >
+    No rules defined. Add one to cap monthly spend per provider.
+  </p>
+</div>
+`;
+
+exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
+<dialog
+  aria-describedby="_r_6_-desc"
+  aria-labelledby="_r_6_-title"
+  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+  open=""
+>
+  <div
+    class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
+  >
+    <header
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-1"
+      >
+        <h2
+          class="text-sm font-semibold tracking-tight text-foreground"
+          id="_r_6_-title"
+        >
+          End session?
+        </h2>
+        <p
+          class="text-xs leading-relaxed text-muted-foreground"
+          id="_r_6_-desc"
+        >
+          The worktree directory will be removed. The branch is preserved for manual merge.
+        </p>
+      </div>
+      <button
+        aria-label="close"
+        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="text-base leading-none"
+        >
+          ×
+        </span>
+      </button>
+    </header>
+    <div
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+    >
+      <div
+        class="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
+      >
+        <span
+          class="font-mono text-foreground"
+        >
+          test goal
+        </span>
+      </div>
+    </div>
+    <footer
+      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+    >
+      <button
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
+        type="button"
+      >
+        End session
+      </button>
+    </footer>
+  </div>
+</dialog>
+`;
+
+exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
+<dialog
+  aria-describedby="_r_5_-desc"
+  aria-labelledby="_r_5_-title"
+  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
+  open=""
+>
+  <div
+    class="flex min-h-0 flex-col h-[640px] w-[56rem]"
+  >
+    <header
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-1"
+      >
+        <h2
+          class="text-sm font-semibold tracking-tight text-foreground"
+          id="_r_5_-title"
+        >
+          New session
+        </h2>
+        <p
+          class="text-xs leading-relaxed text-muted-foreground"
+          id="_r_5_-desc"
+        >
+          Creates a worktree on a fresh branch from the workspace root.
+        </p>
+      </div>
+      <button
+        aria-label="close"
+        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="text-base leading-none"
+        >
+          ×
+        </span>
+      </button>
+    </header>
+    <div
+      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+    >
+      <div
+        class="flex h-full min-h-0 gap-0"
+      >
+        <nav
+          class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2"
+        >
+          <button
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary"
+            title="goal is required"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-target"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              Goal
+            </span>
+            <svg
+              aria-label="goal required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
+          </button>
+          <button
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            title="provider is required"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-zap"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              Provider
+            </span>
+            <svg
+              aria-label="provider required"
+              class="lucide lucide-triangle-alert text-warning"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+              />
+              <path
+                d="M12 9v4"
+              />
+              <path
+                d="M12 17h.01"
+              />
+            </svg>
+          </button>
+          <button
+            class="relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-layers"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="13"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
+              />
+              <path
+                d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
+              />
+              <path
+                d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
+              />
+            </svg>
+            <span
+              class="flex-1"
+            >
+              Workflow
+            </span>
+            <svg
+              aria-label="filled"
+              class="lucide lucide-check text-success"
+              fill="none"
+              height="11"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="11"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20 6 9 17l-5-5"
+              />
+            </svg>
+          </button>
+        </nav>
+        <div
+          class="min-w-0 flex-1 overflow-y-auto pl-4 pr-2"
+        >
+          <div
+            class=""
+          >
+            <div
+              class="flex flex-col gap-4"
+            >
+              <div
+                class="flex flex-col gap-1.5"
+              >
+                <span
+                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                >
+                  Issue link
+                  <span
+                    class="rounded-sm bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning"
+                  >
+                    beta
+                  </span>
+                </span>
+                <p
+                  class="text-2xs leading-relaxed text-muted-foreground"
+                >
+                  Paste a GitHub, GitLab, Jira, or Linear issue URL. The goal will be generated automatically.
+                </p>
+                <div
+                  class="relative"
+                >
+                  <input
+                    class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+                    placeholder="github.com/…/issues/42 · linear.app/…/TEAM-1 · jira · gitlab"
+                    type="text"
+                    value=""
+                  />
+                </div>
+              </div>
+              <div
+                class="flex flex-col gap-1.5"
+              >
+                <span
+                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                >
+                  Goal
+                </span>
+                <p
+                  class="text-2xs leading-relaxed text-muted-foreground"
+                >
+                  What this session should accomplish.
+                </p>
+                <textarea
+                  class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
+                  placeholder="Refactor auth domain"
+                  style="overflow-y: hidden;"
+                />
+              </div>
+              <div
+                class="flex flex-col gap-1.5"
+              >
+                <span
+                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                >
+                  Branch
+                </span>
+                <p
+                  class="text-2xs leading-relaxed text-muted-foreground"
+                >
+                  Worktree branch for this session.
+                </p>
+                <div
+                  class="flex flex-col gap-2"
+                >
+                  <div
+                    aria-label="branch source"
+                    class="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
+                    role="tablist"
+                  >
+                    <button
+                      aria-selected="true"
+                      class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
+                      role="tab"
+                      type="button"
+                    >
+                      New
+                    </button>
+                    <button
+                      aria-selected="false"
+                      class="rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                      role="tab"
+                      type="button"
+                    >
+                      Existing
+                    </button>
+                  </div>
+                  <div
+                    class="flex items-center gap-1.5"
+                  >
+                    <span
+                      class="shrink-0 text-xs text-muted-foreground font-mono"
+                    >
+                      kay
+                      /
+                    </span>
+                    <input
+                      aria-label="Branch slug"
+                      class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
+                      placeholder="branch-slug"
+                      type="text"
+                      value=""
+                    />
+                    <button
+                      aria-label="Generate branch name"
+                      class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
+                      disabled=""
+                      title="Generate from goal"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-wand-sparkles"
+                        fill="none"
+                        height="13"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="13"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+                        />
+                        <path
+                          d="m14 7 3 3"
+                        />
+                        <path
+                          d="M5 6v4"
+                        />
+                        <path
+                          d="M19 14v4"
+                        />
+                        <path
+                          d="M10 2v2"
+                        />
+                        <path
+                          d="M7 8H3"
+                        />
+                        <path
+                          d="M21 16h-4"
+                        />
+                        <path
+                          d="M11 3H9"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="hidden"
+          >
+            <div
+              class="flex flex-col gap-1.5"
+            >
+              <span
+                class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+              >
+                Soft cap (USD)
+              </span>
+              <p
+                class="text-2xs leading-relaxed text-muted-foreground"
+              >
+                Optional spend limit. Session gets flagged when exceeded.
+              </p>
+              <input
+                class="h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+                min="0"
+                placeholder="5.00"
+                step="0.01"
+                type="number"
+                value=""
+              />
+            </div>
+          </div>
+          <div
+            class="hidden"
+          >
+            <div
+              class="flex flex-col gap-4"
+            >
+              <label
+                class="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2 text-xs"
+              >
+                <input
+                  class="mt-0.5 accent-primary"
+                  type="checkbox"
+                />
+                <span
+                  class="flex flex-col gap-0.5"
+                >
+                  <span
+                    class="font-medium text-foreground"
+                  >
+                    Run init script
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    Execute workspace setup before agents start.
+                  </span>
+                </span>
+              </label>
+              <div
+                class="flex flex-col gap-1.5"
+              >
+                <span
+                  class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                >
+                  Script
+                </span>
+                <p
+                  class="text-2xs leading-relaxed text-muted-foreground"
+                >
+                  Edit for this session only. Changes won't save to workspace.
+                </p>
+                <textarea
+                  autocapitalize="off"
+                  autocorrect="off"
+                  class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 transition-[border-color,box-shadow] focus-visible:shadow-md min-h-[200px] resize-y font-mono text-xs"
+                  rows="10"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            class="hidden"
+          >
+            <div
+              class="flex flex-col gap-1.5"
+            >
+              <span
+                class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+              >
+                Workflow
+              </span>
+              <p
+                class="text-2xs leading-relaxed text-muted-foreground"
+              >
+                Single chat session. Spawn agents manually as needed.
+              </p>
+              <div
+                aria-label="workflow mode"
+                class="inline-flex rounded-md border border-border bg-subtle p-0.5"
+                role="tablist"
+              >
+                <button
+                  aria-selected="true"
+                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors bg-background text-foreground shadow-sm"
+                  role="tab"
+                  type="button"
+                >
+                  One-off
+                </button>
+                <button
+                  aria-selected="false"
+                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                  role="tab"
+                  type="button"
+                >
+                  Preset
+                  <span
+                    class="rounded-sm bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning"
+                  >
+                    beta
+                  </span>
+                </button>
+                <button
+                  aria-selected="false"
+                  class="flex items-center gap-1 rounded px-3 py-1 text-xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                  role="tab"
+                  type="button"
+                >
+                  Custom
+                  <span
+                    class="rounded-sm bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning"
+                  >
+                    beta
+                  </span>
+                </button>
+              </div>
+              <div
+                class="mt-3 flex flex-col gap-3"
+              >
+                <div
+                  class="flex flex-col gap-1.5"
+                >
+                  <span
+                    class="flex items-center gap-1.5 text-xs font-semibold text-foreground"
+                  >
+                    Agent role
+                  </span>
+                  <p
+                    class="text-2xs leading-relaxed text-muted-foreground"
+                  >
+                    Role for the first agent. Spawn more from the sidebar.
+                  </p>
+                  <div
+                    class="relative"
+                  >
+                    <button
+                      class="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-xs transition-colors border-border-soft bg-subtle hover:border-border hover:bg-muted/50"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="size-2 shrink-0 rounded-full bg-rose-400"
                       />
                       <span
                         class="shrink-0 font-medium text-foreground"
