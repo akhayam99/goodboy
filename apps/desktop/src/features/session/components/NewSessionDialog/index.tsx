@@ -339,6 +339,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
                 onChange={setExistingBranch}
                 disabled={busy || branchesLoading}
                 loading={branchesLoading}
+                openDirection="up"
               />
             )}
           </div>
