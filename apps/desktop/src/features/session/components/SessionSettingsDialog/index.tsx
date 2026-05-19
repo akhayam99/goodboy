@@ -21,6 +21,7 @@ import { useAppStore } from '../../../../store';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
+import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 
@@ -516,29 +517,14 @@ function GeneralSection(props: GeneralSectionProps) {
               </div>
 
               {branchMode === 'existing' ? (
-                <select
+                <BranchCombobox
+                  branches={branches}
                   value={branchTarget}
-                  onChange={(e) => setBranchTarget(e.target.value)}
-                  disabled={busy || branchesLoading}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-mono motion-safe:transition-colors hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">
-                    {branchesLoading
-                      ? 'Loading…'
-                      : branches.length === 0
-                        ? 'No local branches'
-                        : 'Select branch…'}
-                  </option>
-                  {branches
-                    .filter((b) => b.name !== branch)
-                    .map((b) => (
-                      <option key={b.name} value={b.name}>
-                        {b.name}
-                        {b.inUse ? ' · in use' : ''}
-                        {b.hasUncommitted ? ' · dirty' : ''}
-                      </option>
-                    ))}
-                </select>
+                  onChange={setBranchTarget}
+                  disabled={busy}
+                  loading={branchesLoading}
+                  excludeNames={branch ? [branch] : undefined}
+                />
               ) : (
                 <Input
                   value={branchTarget}

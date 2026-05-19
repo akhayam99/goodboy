@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
@@ -52,6 +52,7 @@ import { PlannerWidget } from '../../../../features/plans/components/PlannerWidg
 import { useToast } from '../../../../app/components/Toast';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
+import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -1580,159 +1581,6 @@ function WorkflowPreview({ template }: { template: Workflow | null }) {
       <p className="text-2xs text-muted-foreground/70">
         each agent runs in its own chat thread. you decide which one gets the next turn.
       </p>
-    </div>
-  );
-}
-
-function BranchCombobox({
-  branches,
-  value,
-  onChange,
-  disabled,
-  loading,
-}: {
-  branches: ReadonlyArray<LocalBranchInfo>;
-  value: string;
-  onChange: (v: string) => void;
-  disabled: boolean;
-  loading: boolean;
-}) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const [highlightIdx, setHighlightIdx] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-
-  const filtered = useMemo(
-    () => branches.filter((b) => b.name.toLowerCase().includes(query.toLowerCase())),
-    [branches, query],
-  );
-
-  const select = useCallback(
-    (name: string) => {
-      onChange(name);
-      setQuery(name);
-      setOpen(false);
-    },
-    [onChange],
-  );
-
-  useEffect(() => {
-    if (value && !query) setQuery(value);
-  }, [value, query]);
-
-  useEffect(() => {
-    setHighlightIdx(0);
-  }, [query]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !listRef.current) return;
-    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [highlightIdx, open]);
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      setOpen(true);
-      e.preventDefault();
-      return;
-    }
-    if (!open) return;
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.max(i - 1, 0));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (filtered[highlightIdx]) select(filtered[highlightIdx].name);
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setOpen(false);
-        break;
-    }
-  };
-
-  const placeholder = loading
-    ? 'Loading…'
-    : branches.length === 0
-      ? 'No local branches'
-      : 'Search branch…';
-
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <input
-        ref={inputRef}
-        type="text"
-        value={query}
-        placeholder={placeholder}
-        disabled={disabled || branches.length === 0}
-        aria-label="Existing branch"
-        role="combobox"
-        aria-expanded={open}
-        aria-autocomplete="list"
-        autoComplete="off"
-        className="h-8 w-full truncate rounded border border-border bg-background px-2.5 text-sm font-mono motion-safe:transition-colors placeholder:text-muted-foreground/50 hover:border-border-strong focus:outline-none focus:ring-1 focus:ring-primary"
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          if (!e.target.value) onChange('');
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-      />
-      {open && filtered.length > 0 ? (
-        <ul
-          ref={listRef}
-          role="listbox"
-          className="absolute bottom-full left-0 z-50 mb-1 max-h-48 w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg"
-        >
-          {filtered.map((b, i) => (
-            <li
-              key={b.name}
-              role="option"
-              aria-selected={highlightIdx === i}
-              onMouseEnter={() => setHighlightIdx(i)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                select(b.name);
-              }}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <span className="min-w-0 truncate">{b.name}</span>
-              {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
-              {b.hasUncommitted ? (
-                <span className="shrink-0 text-2xs text-warning">dirty</span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {open && !loading && filtered.length === 0 && query ? (
-        <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-md border border-border bg-subtle px-2 py-2 text-xs text-muted-foreground shadow-lg">
-          No matching branches
-        </div>
-      ) : null}
     </div>
   );
 }
