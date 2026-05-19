@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
-import { Loader2, Wand2 } from 'lucide-react';
+import { GitBranch, Loader2, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, WorkspaceId } from '@kay-am/types';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
@@ -239,7 +239,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       onClose={onClose}
       title="New session"
       description="Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards."
-      size="md"
+      size="lg"
       footer={
         <div className="flex w-full items-center gap-2">
           <div className="flex-1 text-xs text-danger">{error ?? ''}</div>
@@ -259,11 +259,16 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
-        <Field label="Goal" hint="What this session should accomplish.">
+      <div className="flex flex-col gap-5">
+        <SectionCard
+          icon={<Target size={14} aria-hidden className="text-primary" />}
+          tone="primary"
+          title="Goal"
+          subtitle="What this session should accomplish. Be specific — agents lean on it for context."
+        >
           <Textarea
             value={goal}
-            placeholder="Refactor auth domain"
+            placeholder="Refactor auth domain to extract token validation into a shared module…"
             onChange={(e) => setGoal(e.target.value)}
             autoGrow
             minRows={4}
@@ -271,9 +276,15 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
             autoFocus
             disabled={busy}
           />
-        </Field>
-        <Field label="Branch" hint="Worktree branch for this session.">
-          <div className="flex flex-col gap-2">
+        </SectionCard>
+
+        <SectionCard
+          icon={<GitBranch size={14} aria-hidden className="text-success" />}
+          tone="success"
+          title="Branch"
+          subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
+        >
+          <div className="flex flex-col gap-2.5">
             <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
             {branchMode === 'new' ? (
               <div className="flex items-center gap-1.5">
@@ -323,27 +334,50 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
               />
             )}
           </div>
-        </Field>
+        </SectionCard>
       </div>
     </Dialog>
   );
 }
 
-function Field({
-  label,
-  hint,
+type Tone = 'primary' | 'success';
+
+const TONE_BG: Record<Tone, string> = {
+  primary: 'bg-primary/10',
+  success: 'bg-success/10',
+};
+
+function SectionCard({
+  icon,
+  tone,
+  title,
+  subtitle,
   children,
 }: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
+  icon: ReactNode;
+  tone: Tone;
+  title: string;
+  subtitle: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold text-foreground">{label}</span>
-      {hint ? <p className="text-2xs leading-relaxed text-muted-foreground">{hint}</p> : null}
-      {children}
-    </div>
+    <section className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
+      <header className="flex items-start gap-2.5">
+        <span
+          className={cn(
+            'mt-0.5 flex h-7 w-7 items-center justify-center rounded-md',
+            TONE_BG[tone],
+          )}
+        >
+          {icon}
+        </span>
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="text-2xs leading-relaxed text-muted-foreground">{subtitle}</p>
+        </div>
+      </header>
+      <div className="pl-[2.375rem]">{children}</div>
+    </section>
   );
 }
 
@@ -364,7 +398,7 @@ function BranchModeToggle({
     <div
       role="tablist"
       aria-label="branch source"
-      className="inline-flex shrink-0 rounded border border-border bg-subtle p-0.5"
+      className="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
     >
       {modes.map((m) => {
         const active = mode === m.id;
@@ -377,9 +411,9 @@ function BranchModeToggle({
             disabled={disabled}
             onClick={() => onChange(m.id)}
             className={cn(
-              'rounded px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-colors',
+              'rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors',
               active
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-muted text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
               disabled && 'cursor-not-allowed opacity-50',
             )}
