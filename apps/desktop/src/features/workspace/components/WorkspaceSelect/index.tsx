@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { FolderOpen, Plus, Unplug, X } from 'lucide-react';
+import { FolderOpen, Plus, Settings, Unplug, X } from 'lucide-react';
 import { Button, Dialog, cn } from '@kay-am/ui';
 import type { Workspace, WorkspaceId } from '@kay-am/types';
 import { MAX_WORKSPACES } from '../../../../shared/lib/features';
 import { formatError } from '../../../../shared/lib/errors';
+import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 import {
   useAppStore,
   useCurrentWorkspace,
@@ -15,7 +16,7 @@ interface WorkspaceSelectProps {
   onAddWorkspace: () => void;
 }
 
-interface DisconnectTarget {
+interface WorkspaceTarget {
   readonly id: WorkspaceId;
   readonly name: string;
 }
@@ -24,7 +25,8 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
-  const [disconnectTarget, setDisconnectTarget] = useState<DisconnectTarget | null>(null);
+  const [disconnectTarget, setDisconnectTarget] = useState<WorkspaceTarget | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<WorkspaceTarget | null>(null);
 
   const sorted = [...workspaces].sort((a, b) => a.name.localeCompare(b.name));
   const atCap = workspaces.length >= MAX_WORKSPACES;
@@ -51,6 +53,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
             workspace={ws}
             isActive={ws.id === currentWorkspace?.id}
             onSelect={() => void setCurrentWorkspace(ws.id)}
+            onOpenSettings={() => setSettingsTarget({ id: ws.id, name: ws.name })}
             onDisconnect={() => setDisconnectTarget({ id: ws.id, name: ws.name })}
           />
         ))}
@@ -82,6 +85,14 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           onClose={() => setDisconnectTarget(null)}
         />
       ) : null}
+      {settingsTarget ? (
+        <WorkspaceSettingsDialog
+          workspaceId={settingsTarget.id}
+          workspaceName={settingsTarget.name}
+          open
+          onClose={() => setSettingsTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -90,11 +101,13 @@ function WorkspaceCard({
   workspace,
   isActive,
   onSelect,
+  onOpenSettings,
   onDisconnect,
 }: {
   workspace: Workspace;
   isActive: boolean;
   onSelect: () => void;
+  onOpenSettings: () => void;
   onDisconnect: () => void;
 }) {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
@@ -118,9 +131,21 @@ function WorkspaceCard({
       <button
         type="button"
         onClick={onSelect}
-        className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1.5"
+        className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1"
       >
         <span className="max-w-[100px] truncate">{workspace.name}</span>
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenSettings();
+        }}
+        className="flex h-full items-center px-0.5 text-muted-foreground/50 transition-colors hover:text-foreground focus-visible:text-foreground"
+        title={`workspace settings — ${workspace.name}`}
+        aria-label={`open workspace settings for ${workspace.name}`}
+      >
+        <Settings size={11} aria-hidden />
       </button>
       <button
         type="button"
