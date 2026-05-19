@@ -15,29 +15,29 @@ interface ModeMeta {
 const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
     value: 'bypassPermissions',
-    label: 'bypass',
-    description: 'bypass: agent uses all tools freely',
+    label: 'Bypass',
+    description: 'Agent uses all tools freely, no prompts',
     dot: 'bg-red-500',
     text: 'text-red-500',
   },
   {
     value: 'acceptEdits',
-    label: 'edits',
-    description: 'accept edits: asks before bash',
+    label: 'Edits',
+    description: 'File edits allowed, asks before bash',
     dot: 'bg-amber-500',
     text: 'text-amber-500',
   },
   {
     value: 'default',
-    label: 'default',
-    description: 'default: asks before writes/runs',
+    label: 'Default',
+    description: 'Asks before writes and runs',
     dot: 'bg-blue-500',
     text: 'text-blue-500',
   },
   {
     value: 'plan',
-    label: 'plan',
-    description: 'plan: no tool calls executed',
+    label: 'Plan',
+    description: 'No tool calls executed, read-only',
     dot: 'bg-slate-400',
     text: 'text-slate-400',
   },
@@ -96,10 +96,15 @@ export function PermissionModePicker({ session }: PermissionModePickerProps) {
         <div
           role="dialog"
           aria-label="permission mode"
-          className="absolute bottom-full left-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-background py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
+          className="absolute bottom-full left-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
         >
-          <div className="px-2.5 pb-0.5 pt-1 text-2xs uppercase tracking-wide text-muted-foreground/70">
-            permission mode
+          <div className="flex items-center justify-between px-2.5 pb-0.5 pt-1">
+            <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
+              Permission mode
+            </span>
+            <span className="rounded-sm bg-warning/15 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
+              Beta
+            </span>
           </div>
           {PERMISSION_MODES.map((m) => {
             const active = session.permissionMode === m.value;
