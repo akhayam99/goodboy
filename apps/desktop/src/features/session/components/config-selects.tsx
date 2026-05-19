@@ -100,7 +100,7 @@ export function ModelSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[10rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[10rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
           {models.map((m) => {
             const active = value === m.id;
             const t = modelCostTier(m.id);
@@ -184,7 +184,7 @@ export function EffortSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[8rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[8rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
           {levels.map((level) => {
             const active = value === level;
             return (
@@ -258,7 +258,7 @@ export function VerbositySelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[7rem] rounded-md border border-border bg-background py-0.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[7rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
           {VERBOSITY_LEVELS.map((level) => {
             const active = value === level;
             return (

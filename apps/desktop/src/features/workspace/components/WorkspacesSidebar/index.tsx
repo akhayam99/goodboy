@@ -971,7 +971,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded bg-background py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
         >
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
             by role

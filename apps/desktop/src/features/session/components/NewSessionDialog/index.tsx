@@ -1298,7 +1298,7 @@ function BranchCombobox({
         <ul
           ref={listRef}
           role="listbox"
-          className="absolute bottom-full left-0 z-50 mb-1 max-h-48 w-full overflow-y-auto rounded-md border border-border bg-background py-0.5 shadow-lg"
+          className="absolute bottom-full left-0 z-50 mb-1 max-h-48 w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg"
         >
           {filtered.map((b, i) => (
             <li
@@ -1325,7 +1325,7 @@ function BranchCombobox({
         </ul>
       ) : null}
       {open && !loading && filtered.length === 0 && query ? (
-        <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs text-muted-foreground shadow-lg">
+        <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-md border border-border bg-subtle px-2 py-2 text-xs text-muted-foreground shadow-lg">
           No matching branches
         </div>
       ) : null}
@@ -1386,7 +1386,7 @@ function AgentKindSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-[280px] w-full overflow-y-auto rounded-md border border-border bg-background py-0.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-[280px] w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg">
           {[...AGENT_KIND_ORDER]
             .filter((k) => k !== 'init')
             .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
@@ -1494,7 +1494,7 @@ function PresetSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-[240px] w-full overflow-y-auto rounded-md border border-border bg-background py-0.5 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-[240px] w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg">
           {templates.map((t) => {
             const active = value === t.id;
             const sorted = [...t.steps].sort((a, b) => a.ordinal - b.ordinal);

@@ -225,7 +225,7 @@ export function DiffViewSelector({
       {open ? (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- captures keys for menu nav
         <div
-          className="absolute left-0 top-[calc(100%+4px)] z-50 w-[440px] overflow-hidden rounded-md border border-border bg-background shadow-lg"
+          className="absolute left-0 top-[calc(100%+4px)] z-50 w-[440px] overflow-hidden rounded-md border border-border bg-subtle shadow-lg"
           onKeyDown={handleKey}
         >
           <div className="border-b border-border-soft px-2 py-1.5">

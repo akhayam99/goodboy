@@ -122,7 +122,7 @@ export function NotificationCenter() {
             <>
               <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
               <div
-                className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
+                className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-subtle shadow-lg"
                 style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
                 <header className="flex items-center justify-between border-b border-border-soft px-3 py-2">

@@ -100,12 +100,12 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         'pointer-events-auto flex max-w-xs items-start gap-2 rounded-lg border px-3 py-2.5 shadow-md motion-safe:transition-all motion-safe:duration-200',
         visible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
         toast.kind === 'error'
-          ? 'border-danger/30 bg-background text-danger'
+          ? 'border-danger/30 bg-subtle text-danger'
           : toast.kind === 'success'
-            ? 'border-success/30 bg-background text-success'
+            ? 'border-success/30 bg-subtle text-success'
             : toast.kind === 'info'
-              ? 'border-info/30 bg-background text-info'
-              : 'border-warning/30 bg-background text-warning',
+              ? 'border-info/30 bg-subtle text-info'
+              : 'border-warning/30 bg-subtle text-warning',
       )}
       role="alert"
     >

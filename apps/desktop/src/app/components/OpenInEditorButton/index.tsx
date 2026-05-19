@@ -108,7 +108,7 @@ export function OpenInEditorButton({
       </div>
 
       {dropdownOpen ? (
-        <div className="absolute right-0 top-full z-20 mt-0.5 min-w-[160px] rounded-md border border-border bg-background py-1 shadow-md text-xs">
+        <div className="absolute right-0 top-full z-20 mt-0.5 min-w-[160px] rounded-md border border-border bg-subtle py-1 shadow-md text-xs">
           {detectedEditors.map((ed) => (
             <button
               key={ed.binary}
