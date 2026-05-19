@@ -506,7 +506,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   }, [rightSizePending, rightSizeSuggested]);
 
   return (
-    <div className="px-10 py-3">
+    <div className="px-10 pb-4 pt-2">
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
         {!isRunning && !providerDisconnected ? (
           <RoutingIndicator
@@ -516,46 +516,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <PermissionModePicker session={session} />
-            {queued ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
-                queued
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQueued(null);
-                    setValue(queued.content);
-                  }}
-                  title="cancel queued message (returns to input)"
-                  aria-label="cancel queued message"
-                  className="rounded-full p-0.5 hover:bg-primary/20"
-                >
-                  <X size={10} aria-hidden />
-                </button>
-              </span>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2">
-            <ProviderUsagePill provider={effectiveProvider} />
-            <ModelPicker
-              providers={providerCandidates}
-              models={modelCandidates}
-              provider={effectiveProvider}
-              model={effectiveModel}
-              effort={effort}
-              verbosity={verbosity}
-              connectedProviders={connectedProviderIds}
-              disabled={!allowOverride || isRunning}
-              disabledTitle={overrideDisabledTitle}
-              onSelectProvider={onSelectProvider}
-              onSelectModel={onSelectModel}
-              onSelectEffort={setEffort}
-              onSelectVerbosity={setVerbosity}
-            />
-          </div>
-        </div>
         {rightSizePending !== null && rightSizeSuggested !== null ? (
           <RightSizeCard
             currentModel={effectiveModel}
@@ -565,55 +525,100 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onChangeModel={onChangeModel}
           />
         ) : null}
-        <div className="relative" ref={wrapperRef}>
-          {WORKSPACE_FEATURES.skills && showPopover && isSlashMode ? (
-            <SlashCommandPopover
-              items={workspaceSkills}
-              query={slashQuery}
-              onSelect={onSkillSelect}
-              onDismiss={() => setShowPopover(false)}
+        <div
+          className="flex flex-col rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
+          style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
+        >
+          <div className="relative" ref={wrapperRef}>
+            {WORKSPACE_FEATURES.skills && showPopover && isSlashMode ? (
+              <SlashCommandPopover
+                items={workspaceSkills}
+                query={slashQuery}
+                onSelect={onSkillSelect}
+                onDismiss={() => setShowPopover(false)}
+              />
+            ) : null}
+            <Textarea
+              value={value}
+              onChange={(e) => onValueChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={
+                providerDisconnected
+                  ? 'Sign in to send a message.'
+                  : isRunning
+                    ? queued
+                      ? 'Message queued. Type to replace.'
+                      : 'Turn running. Type to queue next message.'
+                    : 'Message Claude. Shift+enter for newline.'
+              }
+              disabled={providerDisconnected}
+              autoGrow
+              maxRows={12}
+              className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-2 pr-12 text-sm leading-relaxed shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
-          ) : null}
-          <Textarea
-            value={value}
-            onChange={(e) => onValueChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={
-              providerDisconnected
-                ? 'Sign in to send a message.'
-                : isRunning
-                  ? queued
-                    ? 'Message queued. Type to replace.'
-                    : 'Turn running. Type to queue next message.'
-                  : 'Message Claude. Shift+enter for newline.'
-            }
-            disabled={providerDisconnected}
-            autoGrow
-            maxRows={12}
-            className="min-h-20 pr-12"
-          />
-          {isRunning && value.trim().length === 0 ? (
-            <button
-              type="button"
-              onClick={() => void cancelCurrentTurn(session.id)}
-              title="cancel turn"
-              aria-label="cancel turn"
-              className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/10"
-            >
-              <Square size={16} aria-hidden fill="currentColor" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void onSend()}
-              disabled={!canSend}
-              title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
-              aria-label={isRunning ? 'queue message' : 'send message'}
-              className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:hover:bg-transparent"
-            >
-              <Send size={16} aria-hidden className="-translate-x-px" />
-            </button>
-          )}
+            {isRunning && value.trim().length === 0 ? (
+              <button
+                type="button"
+                onClick={() => void cancelCurrentTurn(session.id)}
+                title="cancel turn"
+                aria-label="cancel turn"
+                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+              >
+                <Square size={14} aria-hidden fill="currentColor" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void onSend()}
+                disabled={!canSend}
+                title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
+                aria-label={isRunning ? 'queue message' : 'send message'}
+                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/40 disabled:shadow-none"
+              >
+                <Send size={14} aria-hidden className="-translate-x-px" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t border-border-soft/60 px-2.5 py-2">
+            <div className="flex items-center gap-2">
+              <PermissionModePicker session={session} />
+              {queued ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
+                  queued
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQueued(null);
+                      setValue(queued.content);
+                    }}
+                    title="cancel queued message (returns to input)"
+                    aria-label="cancel queued message"
+                    className="rounded-full p-0.5 hover:bg-primary/20"
+                  >
+                    <X size={10} aria-hidden />
+                  </button>
+                </span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              <ProviderUsagePill provider={effectiveProvider} />
+              <ModelPicker
+                providers={providerCandidates}
+                models={modelCandidates}
+                provider={effectiveProvider}
+                model={effectiveModel}
+                effort={effort}
+                verbosity={verbosity}
+                connectedProviders={connectedProviderIds}
+                disabled={!allowOverride || isRunning}
+                disabledTitle={overrideDisabledTitle}
+                onSelectProvider={onSelectProvider}
+                onSelectModel={onSelectModel}
+                onSelectEffort={setEffort}
+                onSelectVerbosity={setVerbosity}
+              />
+            </div>
+          </div>
         </div>
         {error ? (
           <div role="alert" className="flex items-center gap-2">
