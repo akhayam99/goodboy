@@ -957,7 +957,9 @@ interface SpawnAgentControlProps {
 
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
+  const [direction, setDirection] = useState<'up' | 'down'>('up');
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
 
   useEffect(() => {
@@ -969,11 +971,27 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
     return () => window.removeEventListener('mousedown', onDocClick);
   }, [open]);
 
+  const onToggle = () => {
+    if (!open) {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // Open in the direction with more room. Trigger near the top of
+        // the viewport → open downward (avoids clipping under the sticky
+        // panel header); trigger near the bottom → open upward.
+        setDirection(spaceBelow > spaceAbove ? 'down' : 'up');
+      }
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <div className="relative mt-1" ref={ref}>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -984,7 +1002,10 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+          className={cn(
+            'absolute left-0 right-0 z-20 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft',
+            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
+          )}
         >
           <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
             by role
