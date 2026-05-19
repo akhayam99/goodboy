@@ -156,6 +156,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
   const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
   const [existingBranch, setExistingBranch] = useState<string>('');
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -171,19 +172,26 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
     setSlugGenerating(false);
     setBranchMode('new');
     setExistingBranch('');
+    setExistingBranches([]);
+    setBranchesLoaded(false);
     setError(null);
     setBusy(false);
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
-    if (workspace?.rootPath) {
-      setBranchesLoading(true);
-      listLocalBranches(workspace.rootPath)
-        .then(setExistingBranches)
-        .catch(() => setExistingBranches([]))
-        .finally(() => setBranchesLoading(false));
-    }
-  }, [open, settingKey, loadSetting, workspaceId, workspace?.rootPath]);
+  }, [open, settingKey, loadSetting, workspaceId]);
+
+  useEffect(() => {
+    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) return;
+    setBranchesLoading(true);
+    listLocalBranches(workspace.rootPath)
+      .then(setExistingBranches)
+      .catch(() => setExistingBranches([]))
+      .finally(() => {
+        setBranchesLoading(false);
+        setBranchesLoaded(true);
+      });
+  }, [open, branchMode, branchesLoaded, workspace?.rootPath]);
 
   useEffect(() => {
     if (slugTouched) return;
