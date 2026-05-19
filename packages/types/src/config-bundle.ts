@@ -1,6 +1,9 @@
 import type { WorkspaceId } from './ids';
 
-export const CONFIG_BUNDLE_SCHEMA_VERSION = 1 as const;
+// The Rust side (apps/desktop/src-tauri/src/config_export.rs) is the source
+// of truth for the actual version number. This literal type pins the shape
+// of the JSON envelope on the TS side; bumps land in both places.
+export type ConfigBundleSchemaVersion = 1;
 
 export type ConfigBundleWorkspace = Readonly<{
   id: WorkspaceId;
@@ -78,7 +81,7 @@ export type ConfigBundleSettings = Readonly<{
 }>;
 
 export type ConfigBundle = Readonly<{
-  schemaVersion: typeof CONFIG_BUNDLE_SCHEMA_VERSION;
+  schemaVersion: ConfigBundleSchemaVersion;
   exportedAt: string;
   workspaces: ReadonlyArray<ConfigBundleWorkspace>;
   skills: ReadonlyArray<ConfigBundleSkill>;

@@ -1,28 +1,16 @@
-import type { IsoDateTime, SessionId, WorkspaceId } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  Notification,
+  NotificationKind,
+  NotificationSeverity,
+  SessionId,
+  WorkspaceId,
+} from '@kay-am/types';
 import type { Database } from '../client';
 
-export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
-export type NotificationKind =
-  | 'session-created'
-  | 'session-deleted'
-  | 'summarizer-success'
-  | 'agent-auto-spawn'
-  | 'pr-created'
-  | 'workspace-deleted'
-  | 'boundary-drift'
-  | 'error';
-
-export interface Notification {
-  readonly id: string;
-  readonly ts: IsoDateTime;
-  readonly kind: NotificationKind;
-  readonly title: string;
-  readonly body: string | null;
-  readonly severity: NotificationSeverity;
-  readonly sessionId: SessionId | null;
-  readonly workspaceId: WorkspaceId | null;
-  readonly read: boolean;
-}
+// Re-export so legacy `import { Notification } from '@kay-am/db'` keeps
+// working during the transition; new code should import from @kay-am/types.
+export type { Notification, NotificationKind, NotificationSeverity } from '@kay-am/types';
 
 interface NotificationRow {
   id: string;

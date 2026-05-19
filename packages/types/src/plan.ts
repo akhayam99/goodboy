@@ -1,6 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId } from './ids';
-
-export type PlanId = string & { readonly __brand: 'PlanId' };
+import type { AgentId, IsoDateTime, PlanConsumptionId, PlanId, SessionId } from './ids';
 
 export type PlanStatus = 'active' | 'consumed' | 'superseded';
 
@@ -16,8 +14,6 @@ export type Plan = Readonly<{
 }>;
 
 export type PlanWithCount = Plan & Readonly<{ consumptionCount: number }>;
-
-export type PlanConsumptionId = string & { readonly __brand: 'PlanConsumptionId' };
 
 export type PlanConsumption = Readonly<{
   id: PlanConsumptionId;

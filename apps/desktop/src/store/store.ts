@@ -122,8 +122,8 @@ import type {
   LinkedIssue,
   PrDetail,
 } from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
 import {
+  DEFAULT_SESSION_PROVIDER_PREFERENCE,
   computeCostUsd,
   computeCodexCostUsd,
   computeCursorCostUsd,

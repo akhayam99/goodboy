@@ -7,6 +7,7 @@ import type {
   AgentId,
   Session,
   SessionId,
+  SessionProviderPreference,
   Step,
   StepId,
   Workflow,
@@ -14,7 +15,14 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
+
+// Inlined here to avoid a runtime import from @kay-am/core (which would be a
+// forbidden upward dep). The real default ships from packages/core; we just
+// need *a* default for fixture rows.
+const DEFAULT_SESSION_PROVIDER_PREFERENCE: SessionProviderPreference = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+};
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';

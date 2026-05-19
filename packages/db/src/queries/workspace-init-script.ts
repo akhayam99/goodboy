@@ -1,14 +1,11 @@
-import type { IsoDateTime, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, WorkspaceId, WorkspaceInitScript } from '@kay-am/types';
 import type { Database } from '../client';
 
 const HISTORY_CAP = 20;
 
-export interface WorkspaceInitScript {
-  readonly id: string;
-  readonly workspaceId: WorkspaceId;
-  readonly content: string;
-  readonly createdAt: IsoDateTime;
-}
+// Re-export so legacy `import { WorkspaceInitScript } from '@kay-am/db'`
+// keeps working; new code should import from @kay-am/types directly.
+export type { WorkspaceInitScript } from '@kay-am/types';
 
 interface InitScriptRow {
   id: string;

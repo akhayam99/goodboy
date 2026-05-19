@@ -63,6 +63,8 @@ export {
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
+export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/preferences';
+
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
 export { computeCursorCostUsd } from './providers/cursor/cost';

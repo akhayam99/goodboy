@@ -44,7 +44,6 @@ export type {
   ProviderRegistryCapabilities,
 } from './provider-registry';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
-export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
@@ -57,6 +56,8 @@ export type {
   BudgetAlert,
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
+export type { Notification, NotificationKind, NotificationSeverity } from './notification';
+export type { WorkspaceInitScript } from './workspace-init-script';
 export type {
   Agent,
   AgentEffort,
@@ -76,6 +77,7 @@ export type {
   ConfigBundleBudgetRule,
   ConfigBundleImportResult,
   ConfigBundlePermissionRule,
+  ConfigBundleSchemaVersion,
   ConfigBundleSettings,
   ConfigBundleSkill,
   ConfigBundleStep,
@@ -83,7 +85,6 @@ export type {
   ConfigBundleWorkflow,
   ConfigBundleWorkspace,
 } from './config-bundle';
-export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
 export type {
   ClaudePermissionMode,
   PermissionAuditEntry,
@@ -102,14 +103,8 @@ export type {
   DiffCommentSide,
   DiffCommentStatus,
 } from './diff-comment';
-export type {
-  Plan,
-  PlanConsumption,
-  PlanConsumptionId,
-  PlanId,
-  PlanStatus,
-  PlanWithCount,
-} from './plan';
+export type { PlanConsumptionId, PlanId } from './ids';
+export type { Plan, PlanConsumption, PlanStatus, PlanWithCount } from './plan';
 export type {
   DiffHunk,
   DiffHunkLine,
