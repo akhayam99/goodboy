@@ -17,8 +17,15 @@ import {
   XCircle,
 } from 'lucide-react';
 import { cn } from '@kay-am/ui';
-import type { PullRequestStateKind, Session, SessionId, WorktreeStatus } from '@kay-am/types';
+import type {
+  PullRequestStateKind,
+  Session,
+  SessionId,
+  TelemetryRecord,
+  WorktreeStatus,
+} from '@kay-am/types';
 import {
+  EMPTY_ARRAY,
   useAppStore,
   useDiffComments,
   useFilesTouched,
@@ -125,10 +132,15 @@ export function SessionDetailPanel({
         </button>
       </div>
 
-      {/* subtitle: branch (click to copy) + refresh github */}
+      {/* subtitle row: branch (click to copy) + session cost + refresh github */}
       {branch && (
         <div className="flex items-center gap-1">
           <BranchChip branch={branch} />
+          <span aria-hidden className="text-muted-foreground/30">
+            ·
+          </span>
+          <SessionCostChip sessionId={session.id as SessionId} />
+          <span className="flex-1" />
           <GithubRefreshButton sessionId={session.id as SessionId} />
         </div>
       )}
@@ -182,6 +194,30 @@ function BranchChip({ branch }: { branch: string }) {
       )}
       <span className="truncate font-mono">{branch}</span>
     </button>
+  );
+}
+
+function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
+  const telemetry = useAppStore(
+    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+  const sessionCost = useMemo(() => {
+    let sum = 0;
+    for (const rec of telemetry) {
+      if (rec.kind === 'summarizer') continue;
+      sum += rec.estimatedCostUsd;
+    }
+    return sum;
+  }, [telemetry]);
+  const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
+  return (
+    <span
+      title={`Estimated cost for this session: ${label} (excluding summarizer)`}
+      className="inline-flex items-center gap-0.5 text-2xs font-mono text-muted-foreground"
+    >
+      <span className="text-muted-foreground/60">∑</span>
+      {label}
+    </span>
   );
 }
 

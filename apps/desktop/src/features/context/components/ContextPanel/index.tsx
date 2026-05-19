@@ -89,14 +89,15 @@ export function ContextPanel({
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
   );
 
+  // open_questions is pinned in a sticky footer; goal/decisions/last_output_summary
+  // remain inline in the scroll area.
   const visibleSlotKeys = useMemo(
     () =>
-      SLOT_KEYS.filter((k) => k !== 'files_touched').sort((a, b) => {
+      SLOT_KEYS.filter((k) => k !== 'files_touched' && k !== 'open_questions').sort((a, b) => {
         const order: Record<string, number> = {
           goal: 0,
-          open_questions: 1,
-          decisions: 2,
-          last_output_summary: 3,
+          decisions: 1,
+          last_output_summary: 2,
         };
         return (order[a] ?? 99) - (order[b] ?? 99);
       }),
@@ -139,67 +140,75 @@ export function ContextPanel({
         </button>
       </div>
 
-      <div className={cn('flex h-full min-h-0 flex-col', collapsed && 'hidden')}>
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="flex flex-col gap-4 p-4">
-            <header className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <BookOpen size={11} aria-hidden className="text-accent" />
-                Context
-              </span>
-              <div className="flex items-center gap-1">
-                <SummarizerBadge
-                  status={summarizer.status}
-                  lastUpdate={summarizer.lastUpdate}
-                  error={summarizer.error}
-                  totals={summarizerTotals}
-                />
-                {onCollapse ? (
-                  <button
-                    type="button"
-                    onClick={onCollapse}
-                    title="hide context panel"
-                    aria-label="hide context panel"
-                    className={ICON_BTN}
-                  >
-                    <PanelRightClose size={13} aria-hidden />
-                  </button>
-                ) : null}
-              </div>
-            </header>
+      <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', collapsed && 'hidden')}>
+        <div className="shrink-0 flex flex-col gap-4 px-4 pt-4 pb-2">
+          <header className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <BookOpen size={11} aria-hidden className="text-accent" />
+              Context
+            </span>
+            <div className="flex items-center gap-1">
+              <SummarizerBadge
+                status={summarizer.status}
+                lastUpdate={summarizer.lastUpdate}
+                error={summarizer.error}
+                totals={summarizerTotals}
+              />
+              {onCollapse ? (
+                <button
+                  type="button"
+                  onClick={onCollapse}
+                  title="hide context panel"
+                  aria-label="hide context panel"
+                  className={ICON_BTN}
+                >
+                  <PanelRightClose size={13} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+          </header>
+        </div>
 
-            {isFreshContext ? (
-              <ContextFreshEmpty goal={session.goal} />
-            ) : (
-              <>
-                <PlansSection sessionId={session.id} />
-                {/* Per-slot independence: <ul> is always rendered. Each SlotRow
-                    shows its own skeleton when its data slice is missing AND the
-                    slots fetch is in flight. One slot finishing first paints
-                    without waiting for siblings. */}
-                <ul className="flex flex-col gap-6">
-                  {visibleSlotKeys.map((key) => {
-                    const slot = slotsByKey.get(key);
-                    return (
-                      <SlotRow
-                        key={key}
-                        sessionId={session.id}
-                        slotKey={key}
-                        slot={slot}
-                        loading={loading.slots}
-                        isSummarizing={summarizer.status === 'running'}
-                        onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                      />
-                    );
-                  })}
-                </ul>
-              </>
-            )}
+        {isFreshContext ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ContextFreshEmpty goal={session.goal} />
           </div>
-        </ScrollArea>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pb-4">
+            <PlansSection sessionId={session.id} />
+            {/* Per-slot independence: each SlotRow shows its own skeleton.
+                Slots that can grow large (decisions / last_output_summary)
+                are flex-1 and scroll internally; goal stays auto-height. */}
+            <ul className="flex min-h-0 flex-1 flex-col gap-2.5">
+              {visibleSlotKeys.map((key) => {
+                const slot = slotsByKey.get(key);
+                return (
+                  <SlotRow
+                    key={key}
+                    sessionId={session.id}
+                    slotKey={key}
+                    slot={slot}
+                    loading={loading.slots}
+                    isSummarizing={summarizer.status === 'running'}
+                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                  />
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border-soft px-3 py-3">
-          <CostPill />
+        <div className="shrink-0 border-t border-border-soft bg-subtle/30 px-4 py-3">
+          <ul className="flex flex-col">
+            <SlotRow
+              sessionId={session.id}
+              slotKey="open_questions"
+              slot={slotsByKey.get('open_questions')}
+              loading={loading.slots}
+              isSummarizing={summarizer.status === 'running'}
+              onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
+            />
+          </ul>
         </div>
       </div>
     </>
@@ -260,9 +269,13 @@ function PlansSkeleton() {
 interface SlotMeta {
   readonly icon: LucideIcon;
   readonly iconClass: string;
+  readonly iconChipBg: string;
+  readonly description: string;
   readonly emphasis?: boolean;
-  readonly tintedWhenNonEmpty?: string;
+  /** Tailwind ring-* class to swap the default border-soft ring when hasValue. */
+  readonly accentRingWhenNonEmpty?: string;
   readonly emptyLabel: string;
+  readonly emptyCta: string;
   readonly collapsible?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
@@ -278,29 +291,41 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
   goal: {
     icon: Target,
     iconClass: 'text-primary',
+    iconChipBg: 'bg-primary/10 ring-primary/20',
+    description: 'What this session is set out to achieve',
     emphasis: true,
     singleLine: true,
-    emptyLabel: 'no goal set',
-  },
-  decisions: {
-    icon: CheckCheck,
-    iconClass: 'text-success',
-    collapsible: true,
-    defaultCollapsed: true,
-    emptyLabel: 'no decisions yet',
+    emptyLabel: 'No goal yet',
+    emptyCta: 'Add the session goal',
   },
   open_questions: {
     icon: HelpCircle,
     iconClass: 'text-warning',
-    tintedWhenNonEmpty: 'border-l-2 border-warning bg-warning/5',
-    emptyLabel: 'no open questions',
+    iconChipBg: 'bg-warning/10 ring-warning/20',
+    description: 'Things the agent still needs clarified',
+    accentRingWhenNonEmpty: 'ring-warning/60',
+    emptyLabel: 'No open questions',
+    emptyCta: 'Add a question to ask the user',
+  },
+  decisions: {
+    icon: CheckCheck,
+    iconClass: 'text-success',
+    iconChipBg: 'bg-success/10 ring-success/20',
+    description: 'Choices already locked in for this session',
+    collapsible: true,
+    defaultCollapsed: true,
+    emptyLabel: 'No decisions yet',
+    emptyCta: 'Log a decision',
   },
   last_output_summary: {
     icon: Activity,
     iconClass: 'text-info',
+    iconChipBg: 'bg-info/10 ring-info/20',
+    description: "Summary of the assistant's most recent reply",
     collapsible: true,
     defaultCollapsed: true,
-    emptyLabel: 'no output yet',
+    emptyLabel: 'No output yet',
+    emptyCta: 'Write a manual summary',
   },
 };
 
@@ -398,40 +423,65 @@ function SlotRow({
     if (draft !== value) onCommit(draft);
   };
 
-  const headerLabel = collapsible ? (
+  const itemCountLabel =
+    hasValue && itemCount > 0 ? `${itemCount} item${itemCount === 1 ? '' : 's'}` : null;
+
+  const headerToggle = collapsible ? (
     <button
       type="button"
       onClick={() => setCollapsed((v) => !v)}
-      className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-      title={collapsed ? 'expand' : 'collapse'}
+      title={collapsed ? 'Expand' : 'Collapse'}
       aria-expanded={!collapsed}
+      className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
     >
-      <CollapseIcon size={11} aria-hidden className="shrink-0" />
-      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-      <span>{SLOT_LABELS[slotKey]}</span>
-      {hasValue && collapsed ? (
-        <span className="ml-1 normal-case tracking-normal text-2xs text-muted-foreground/70">
-          {itemCount > 0 ? `· ${itemCount} item${itemCount === 1 ? '' : 's'}` : '· …'}
-        </span>
-      ) : null}
+      <CollapseIcon size={11} aria-hidden />
     </button>
-  ) : (
-    <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {Icon ? <Icon size={11} aria-hidden className={meta?.iconClass} /> : null}
-      {SLOT_LABELS[slotKey]}
-    </label>
-  );
+  ) : null;
+
+  const accentRing =
+    hasValue && meta?.accentRingWhenNonEmpty ? meta.accentRingWhenNonEmpty : 'ring-border-soft';
 
   return (
-    <li className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        {headerLabel}
+    <li
+      className={cn(
+        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 transition-colors',
+        accentRing,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {Icon ? (
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
+              meta?.iconChipBg,
+            )}
+          >
+            <Icon size={11} className={meta?.iconClass} aria-hidden />
+          </span>
+        ) : null}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+            <span>{SLOT_LABELS[slotKey]}</span>
+            {itemCountLabel ? (
+              <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+                · {itemCountLabel}
+              </span>
+            ) : null}
+          </span>
+          {meta?.description ? (
+            <span className="text-[10px] leading-tight text-muted-foreground/60">
+              {meta.description}
+            </span>
+          ) : null}
+        </div>
+        {headerToggle}
         <button
           type="button"
           onClick={openHistory}
-          title="view history"
+          title="View history"
           aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className={cn(ICON_BTN, 'shrink-0')}
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
         >
           <History size={11} aria-hidden />
         </button>
@@ -464,19 +514,19 @@ function SlotRow({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-left text-xs italic text-muted-foreground/60 hover:text-foreground"
+          className="flex flex-col items-start gap-0.5 rounded text-left text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
         >
-          {meta?.emptyLabel ?? 'empty, click to edit'}
+          <span>{meta?.emptyLabel ?? 'Empty'}</span>
+          <span className="text-[10px] text-muted-foreground/40 underline-offset-2 group-hover:underline">
+            {meta?.emptyCta ?? 'Click to edit'}
+          </span>
         </button>
       ) : singleLine ? (
         <button
           type="button"
           onClick={() => setEditing(true)}
           title={value}
-          className={cn(
-            'truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-sm font-medium hover:border-border-soft hover:bg-muted/40',
-            meta?.tintedWhenNonEmpty,
-          )}
+          className="cursor-text rounded text-left text-sm font-medium leading-snug text-foreground transition-colors hover:bg-foreground/5"
         >
           {value}
         </button>
@@ -484,10 +534,8 @@ function SlotRow({
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          title="expand"
-          className={cn(
-            'flex w-full items-center gap-1.5 truncate rounded-md border border-transparent bg-subtle px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-border-soft hover:bg-muted/40 hover:text-foreground',
-          )}
+          title="Expand"
+          className="flex w-full cursor-pointer items-center gap-1.5 truncate rounded text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <span className="truncate">{preview}</span>
         </button>
@@ -502,11 +550,8 @@ function SlotRow({
               setEditing(true);
             }
           }}
-          className={cn(
-            'cursor-text rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15',
-            'bg-subtle',
-            meta?.tintedWhenNonEmpty,
-          )}
+          className="min-h-0 flex-1 cursor-text overflow-y-auto overflow-x-hidden rounded pr-3 text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
+          style={{ scrollbarGutter: 'stable' }}
         >
           <Markdown text={value} className="text-[13px] text-foreground" />
         </div>
@@ -515,10 +560,10 @@ function SlotRow({
           type="button"
           onClick={() => setEditing(true)}
           className={cn(
-            'whitespace-pre-wrap break-words rounded-md border border-transparent px-2.5 py-2 text-left leading-relaxed hover:border-border-soft hover:bg-muted/40',
-            meta?.emphasis ? 'bg-subtle text-sm font-medium' : 'bg-subtle text-xs',
-            meta?.tintedWhenNonEmpty,
+            'min-h-0 flex-1 cursor-text overflow-y-auto whitespace-pre-wrap break-words rounded pr-3 text-left leading-relaxed transition-colors hover:bg-foreground/5',
+            meta?.emphasis ? 'text-sm font-medium' : 'text-xs',
           )}
+          style={{ scrollbarGutter: 'stable' }}
         >
           {value}
         </button>
@@ -688,6 +733,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const loading = useSessionLoading(sessionId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     void loadSessionPlans(sessionId);
@@ -699,26 +745,77 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const latest = plans[plans.length - 1];
   if (!latest) return null;
   const latestIndex = plans.length;
+  const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <ClipboardList size={11} aria-hidden className="text-primary" />
-          plans
+    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 ring-border-soft transition-colors">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
+        >
+          <ClipboardList size={11} className="text-primary" aria-hidden />
         </span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+            <span>Plans</span>
+            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+              · {plans.length} total
+            </span>
+          </span>
+          <span className="text-[10px] leading-tight text-muted-foreground/60">
+            Step-by-step plans queued for this session
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          title={expanded ? 'Collapse' : 'Expand'}
+          aria-expanded={expanded}
+          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        >
+          <Chevron size={11} aria-hidden />
+        </button>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          title={`view all plans (${plans.length})`}
+          title={`View all plans (${plans.length})`}
           aria-label={`view all plans (${plans.length})`}
-          className={cn(ICON_BTN, 'inline-flex items-center gap-1 text-2xs')}
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
         >
-          <span>{plans.length}</span>
           <List size={11} aria-hidden />
         </button>
       </div>
-      <LatestPlanCard plan={latest} index={latestIndex} />
+
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 rounded text-left transition-colors hover:bg-foreground/5"
+        title={expanded ? 'Collapse plan' : 'Expand plan'}
+      >
+        <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
+          plan {latestIndex}
+        </span>
+        <span className="truncate text-xs font-medium text-foreground">{latest.title}</span>
+        <span
+          className={cn(
+            'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+            PLAN_STATUS_STYLE[latest.status],
+          )}
+        >
+          {latest.status}
+        </span>
+      </button>
+
+      {expanded ? (
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-3 text-left leading-relaxed [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
+          style={{ scrollbarGutter: 'stable' }}
+        >
+          <Markdown text={latest.bodyMd} className="text-[13px] text-foreground" />
+        </div>
+      ) : null}
+
       <PlansModal
         sessionId={sessionId}
         open={modalOpen}
@@ -726,88 +823,6 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
         initialPlanId={latest.id}
       />
     </section>
-  );
-}
-
-interface LatestPlanCardProps {
-  readonly plan: PlanWithCount;
-  readonly index: number;
-}
-
-function LatestPlanCard({ plan, index }: LatestPlanCardProps) {
-  const [expanded, setExpanded] = useState(false);
-  const Chevron = expanded ? ChevronDown : ChevronRight;
-
-  return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle px-2.5 py-2">
-      <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-          title={expanded ? 'collapse plan' : 'expand plan'}
-        >
-          <Chevron size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-            plan {index}
-          </span>
-          <span className="truncate text-xs font-medium text-foreground">{plan.title}</span>
-        </button>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-            PLAN_STATUS_STYLE[plan.status],
-          )}
-        >
-          {plan.status}
-        </span>
-      </div>
-      {expanded ? <Markdown text={plan.bodyMd} className="text-xs" /> : null}
-    </div>
-  );
-}
-
-const PROVIDER_DOT: Record<string, string> = {
-  anthropic: 'bg-[var(--color-provider-anthropic)]',
-  cursor: 'bg-[var(--color-provider-cursor)]',
-  codex: 'bg-[var(--color-provider-codex)]',
-};
-
-const formatCostUsd = (usd: number): string => (usd === 0 ? '$0' : `$${usd.toFixed(2)}`);
-
-function CostPill() {
-  const sessionSummary = useAppStore((s) => s.sessionSummary);
-  const workspaceSummary = useAppStore((s) => s.workspaceSummary);
-  const providerSpend = useAppStore((s) => s.providerSpendBreakdown);
-
-  const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
-  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
-
-  return (
-    <div
-      className="flex items-center gap-1.5 text-xs text-muted-foreground"
-      title={`session: ${formatCostUsd(sessionCost)}\nworkspace: ${formatCostUsd(workspaceCost)}`}
-    >
-      <span className="font-medium">{formatCostUsd(sessionCost)}</span>
-      <span>session</span>
-      <span aria-hidden className="opacity-40">
-        ·
-      </span>
-      <span className="font-medium">{formatCostUsd(workspaceCost)}</span>
-      {providerSpend.length > 0 ? (
-        <span aria-hidden className="ml-0.5 flex items-center -space-x-0.5">
-          {providerSpend
-            .filter((p) => p.spentUsd > 0)
-            .slice(0, 3)
-            .map((p) => (
-              <span
-                key={p.provider}
-                className={`inline-block h-2 w-2 rounded-full ring-1 ring-background ${PROVIDER_DOT[p.provider] ?? 'bg-muted-foreground/40'}`}
-              />
-            ))}
-        </span>
-      ) : null}
-    </div>
   );
 }
 

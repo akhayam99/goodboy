@@ -7,6 +7,7 @@ import {
   Bot,
   ClipboardList,
   Clock,
+  DollarSign,
   FolderPlus,
   Gauge,
   HelpCircle,
@@ -25,6 +26,7 @@ import {
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
+import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import type {
@@ -119,6 +121,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -199,6 +202,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         <div className="flex items-center gap-0.5">
           <button
             type="button"
+            onClick={() => setPricingOpen(true)}
+            title="open spend & pricing"
+            aria-label="open spend and pricing"
+            className={FOOTER_ICON_BTN}
+          >
+            <DollarSign size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
             aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
@@ -230,6 +242,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
       {currentWorkspace ? (
         <NewSessionDialog
           open={newSessionOpen}
