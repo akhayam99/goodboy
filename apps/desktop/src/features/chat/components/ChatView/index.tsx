@@ -1,5 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Sparkles } from 'lucide-react';
+import { DogMascot } from '../../../../shared/components/DogMascot';
+import {
+  AGENT_KIND_META,
+  inferAgentKindFromName,
+  type AgentKind as AgentKindLabel,
+} from '../../../session/agent-kind';
 import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
 import { cn, Skeleton } from '@kay-am/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
@@ -316,7 +322,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         </div>
         {allParallelTerminal ? (
           <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2">
-            <span className="text-xs text-muted-foreground">merge pending — review conflicts</span>
+            <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
             <button
               type="button"
               data-testid="merge-dialog-trigger"
@@ -335,7 +341,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         />
         {isEnded ? (
           <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            session ended — no further turns. branch preserved.
+            session ended. no further turns. branch preserved.
           </div>
         ) : (
           <ChatInput
@@ -360,6 +366,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-background to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent" />
         <div
           ref={scrollerRef}
@@ -379,9 +386,11 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                 />
               </div>
             ) : (
-              <p className="mx-auto w-full max-w-[880px] text-sm text-muted-foreground">
-                no turns yet — send a message.
-              </p>
+              <ChatEmptyState
+                selectedAgentId={selectedAgentId}
+                phaseRuns={phaseRuns}
+                workflowId={session.workflowId ?? null}
+              />
             )
           ) : (
             <ul
@@ -475,7 +484,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
       </div>
       {isEnded ? (
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          session ended — no further turns. branch preserved.
+          session ended. no further turns. branch preserved.
         </div>
       ) : (
         <ChatInput
@@ -495,4 +504,116 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
       />
     </div>
   );
+}
+
+interface ChatEmptyStateProps {
+  selectedAgentId: AgentId | null;
+  phaseRuns: ReadonlyArray<import('@kay-am/types').Agent>;
+  workflowId: string | null;
+}
+
+function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptyStateProps) {
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const selectedAgent = useMemo(
+    () => (selectedAgentId ? (phaseRuns.find((r) => r.id === selectedAgentId) ?? null) : null),
+    [selectedAgentId, phaseRuns],
+  );
+  const selectedKind = useMemo(() => {
+    if (!selectedAgent) return null;
+    return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name);
+  }, [selectedAgent, agentKindOverride]);
+
+  const scenario = useMemo<EmptyScenario>(() => {
+    if (selectedAgent && selectedKind) return 'agent_focus';
+    if (phaseRuns.length > 0) return 'pick_agent';
+    if (workflowId) return 'workflow_no_agent';
+    return 'fresh';
+  }, [selectedAgent, selectedKind, phaseRuns.length, workflowId]);
+
+  const copy = useMemo<EmptyCopy>(() => {
+    switch (scenario) {
+      case 'agent_focus': {
+        const meta = AGENT_KIND_META[selectedKind as AgentKindLabel];
+        return {
+          eyebrow: `${meta.label} agent · fresh transcript`,
+          title: `You're talking to a ${meta.label} agent`,
+          body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Just say what you want next.`,
+          hints: [
+            selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
+            selectedKind === 'planner' ? 'Try: "plan how to add X to Y"' : null,
+            selectedKind === 'implementer' ? 'Try: "implement step 2 of the plan"' : null,
+            selectedKind === 'debugger' ? 'Try: "reproduce: <stack trace>"' : null,
+            selectedKind === 'tester' ? 'Try: "write tests for X"' : null,
+            selectedKind === 'reviewer' ? 'Try: "review the current diff"' : null,
+            '⌘↵ to send',
+          ].filter((x): x is string => Boolean(x)),
+        };
+      }
+      case 'pick_agent':
+        return {
+          eyebrow: `${phaseRuns.length} agent${phaseRuns.length === 1 ? '' : 's'} in this session`,
+          title: 'Pick an agent on the left',
+          body: 'Agents share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-agent. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
+          hints: ['Select an agent to see its transcript', 'Spawn fresh, context travels with it'],
+        };
+      case 'workflow_no_agent':
+        return {
+          eyebrow: 'Workflow ready · No agents yet',
+          title: 'Start the first step',
+          body: 'No agents have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first agent, and every one after, will start already knowing it.',
+          hints: ['Describe the goal in 1–2 lines', 'Lands in the shared context'],
+        };
+      case 'fresh':
+      default:
+        return {
+          eyebrow: 'Fresh session · No context yet',
+          title: "Let's populate the context",
+          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every agent you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
+          hints: [
+            'What are we building',
+            'Any constraints or non-goals',
+            'Who should the first agent be',
+          ],
+        };
+    }
+  }, [scenario, selectedKind, phaseRuns.length]);
+
+  return (
+    <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+      <div className="relative flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <span
+          aria-hidden
+          className="absolute inset-0 animate-ping rounded-full bg-primary/15 opacity-60"
+        />
+        <DogMascot size={40} className="relative" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+          {copy.eyebrow}
+        </span>
+        <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted-foreground/70">
+        {copy.hints.map((hint) => (
+          <span
+            key={hint}
+            className="inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5"
+          >
+            <Sparkles size={10} aria-hidden />
+            {hint}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
+
+interface EmptyCopy {
+  eyebrow: string;
+  title: string;
+  body: string;
+  hints: ReadonlyArray<string>;
 }

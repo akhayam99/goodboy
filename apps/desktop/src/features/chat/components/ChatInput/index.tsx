@@ -583,8 +583,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                 ? 'Sign in to send a message.'
                 : isRunning
                   ? queued
-                    ? 'Message queued — type to replace.'
-                    : 'Turn running — type to queue next message.'
+                    ? 'Message queued. Type to replace.'
+                    : 'Turn running. Type to queue next message.'
                   : 'Message Claude. Shift+enter for newline.'
             }
             disabled={providerDisconnected}
