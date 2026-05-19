@@ -1276,7 +1276,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
-      const [worktreeRows, phaseRunsPerTask] = await Promise.all([
+      const [worktreeRows, phaseRunsPerTask, runIdsPerTask] = await Promise.all([
         Promise.all(sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id))),
         // Eager-load agents (phase runs) for every session in this workspace. The
         // unread indicators on workspace- and session-rows derive from each
@@ -1285,11 +1285,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
         // prefetch, the sidebar would only know about agents for sessions the
         // user has explicitly opened — yellow dots vanish on workspace switch.
         Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+        // Eager-load every agent's full provider-run history (not just its
+        // latest run_id). The per-agent cost / token aggregate in the sidebar
+        // reads `agentRunHistory[agent.id]` and falls back to `[agent.runId]`
+        // when missing — which would silently drop earlier runs from the
+        // total. setCurrentSession used to do this seeding lazily on the
+        // not-cached branch, but `setCurrentWorkspace` populates
+        // sessionPhaseRuns first so setCurrentSession sees cached.agents=true
+        // and skips the seed. Doing it here closes the gap for every session
+        // in the workspace.
+        Promise.all(sessions.map((s) => listAgentRunIdsForSession(tauriDatabase, s.id))),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
+      const seededAgentRunHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
@@ -1303,6 +1314,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         for (const run of runs) {
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
+        const runIdsMap = runIdsPerTask[i]!;
+        for (const run of runs) {
+          const historical = runIdsMap.get(run.id) ?? [];
+          const merged: ProviderRunId[] = [...historical];
+          if (run.runId && !merged.includes(run.runId)) merged.push(run.runId);
+          if (merged.length > 0) {
+            seededAgentRunHistory[run.id] = merged;
+          }
+        }
       }
       set((state) => ({
         sessions,
@@ -1314,6 +1334,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         skills: { ...state.skills, [id]: skills },
         phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
+        agentRunHistory: { ...state.agentRunHistory, ...seededAgentRunHistory },
       }));
       // Auto-select the most-recently-updated session so the user lands on
       // something useful instead of "Pick a session from the list" with no
