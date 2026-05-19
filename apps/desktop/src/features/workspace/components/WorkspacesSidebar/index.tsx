@@ -54,6 +54,7 @@ import {
   useWorkspaces,
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
+import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
 import {
   computeLatestTelemetryByAgentId,
@@ -668,6 +669,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
+  const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
@@ -876,6 +878,24 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </div>
         </>
       ) : null}
+      {!workflow ? (
+        <div className={cn('flex flex-col gap-1.5', initAgent && 'mt-6')}>
+          <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className={SECTION_LABEL}>
+              <Layers size={11} aria-hidden className="text-primary" />
+              Workflow
+            </span>
+          </header>
+          <button
+            type="button"
+            onClick={() => setStartWorkflowOpen(true)}
+            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={13} aria-hidden />
+            Start a workflow
+          </button>
+        </div>
+      ) : null}
       {workflow && workflowAgents.length > 0 ? (
         <>
           <header
@@ -924,7 +944,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       <header
         className={cn(
           'flex items-center justify-between gap-2 pb-1.5',
-          ((workflow && workflowAgents.length > 0) || initAgent) && 'mt-6',
+          ((workflow && workflowAgents.length > 0) || initAgent || !workflow) && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>
@@ -968,6 +988,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+      <StartWorkflowDialog
+        open={startWorkflowOpen}
+        onClose={() => setStartWorkflowOpen(false)}
+        session={task}
+      />
     </section>
   );
 }

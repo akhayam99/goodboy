@@ -54,6 +54,7 @@ import {
   updateProviderRunStatus,
   updateSessionPermissionMode,
   updateSessionAutoRun,
+  updateSessionWorkflow,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   updateSessionSkipInit,
@@ -414,6 +415,11 @@ export interface AppActions {
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
+  attachWorkflowToSession(
+    sessionId: SessionId,
+    workflowId: WorkflowId,
+    options?: { autoRun?: boolean },
+  ): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
@@ -1735,22 +1741,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
         prespawnedRuns = [fallback];
       }
-    } else {
-      const agentName = firstAgentKind
-        ? AGENT_KIND_META[firstAgentKind].label.toLowerCase()
-        : 'agent 1';
-      const model =
-        requestedModel ?? (firstAgentKind ? AGENT_KIND_DEFAULTS[firstAgentKind].model : null);
+    } else if (firstAgentKind !== undefined) {
+      const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
+      const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model;
       const singleAgent = await invokePhaseRunInsert({
         sessionId: session.id,
         ordinal: 0,
         name: agentName,
         status: 'pending',
-        ...(firstAgentKind !== undefined && { kind: firstAgentKind }),
+        kind: firstAgentKind,
       });
       if (model !== null) agentModelOverrides[singleAgent.id] = model;
-      if (firstAgentKind !== undefined) agentKindOverrides[singleAgent.id] = firstAgentKind;
+      agentKindOverrides[singleAgent.id] = firstAgentKind;
       prespawnedRuns = [singleAgent];
+    } else {
+      prespawnedRuns = [];
     }
 
     let initAgentId: AgentId | null = null;
@@ -1772,7 +1777,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       prespawnedRuns = [initAgent, ...prespawnedRuns];
     }
 
-    const firstAgent = prespawnedRuns[0]!;
+    const firstAgent = prespawnedRuns[0] ?? null;
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
     for (const agent of prespawnedRuns) {
@@ -1798,7 +1803,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
-      selectedAgentId: { ...state.selectedAgentId, [session.id]: firstAgent.id },
+      selectedAgentId: firstAgent
+        ? { ...state.selectedAgentId, [session.id]: firstAgent.id }
+        : state.selectedAgentId,
       transcripts: { ...state.transcripts, ...transcriptEntries },
       messages: { ...state.messages, [session.id]: [] },
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
@@ -3734,6 +3741,65 @@ export const useAppStore = create<AppStore>((set, get) => ({
         s.id === sessionId ? { ...s, autoRun, updatedAt: now } : s,
       ),
     }));
+    if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+  },
+
+  attachWorkflowToSession: async (sessionId, workflowId, options) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (session.workflowId) throw new Error('session already has a workflow');
+
+    const templates = get().phaseTemplates[session.workspaceId] ?? [];
+    const template = templates.find((t) => t.id === workflowId);
+    if (!template) throw new Error(`workflow not found: ${workflowId}`);
+
+    const autoRun = options?.autoRun === true;
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateSessionWorkflow(tauriDatabase, sessionId, workflowId, autoRun, now);
+
+    const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
+    const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
+    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+    const newAgents: Agent[] = [];
+    const agentModelOverrides: Record<string, string> = {};
+    const agentKindOverrides: Record<string, string> = {};
+    for (let i = 0; i < sortedSteps.length; i += 1) {
+      const step = sortedSteps[i]!;
+      const kind = inferAgentKindFromName(step.name);
+      const agent = await invokePhaseRunInsert({
+        sessionId,
+        stepId: step.id,
+        ordinal: baseOrdinal + 1 + i,
+        name: step.name,
+        status: 'pending',
+        kind,
+      });
+      agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+      agentKindOverrides[agent.id] = kind;
+      newAgents.push(agent);
+    }
+
+    const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
+    const turnStateEntries: Record<string, { kind: 'draft' }> = {};
+    for (const agent of newAgents) {
+      transcriptEntries[agent.id] = [];
+      turnStateEntries[agent.id] = { kind: 'draft' };
+    }
+
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, workflowId, autoRun, updatedAt: now } : s,
+      ),
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [sessionId]: [...existingRuns, ...newAgents],
+      },
+      transcripts: { ...state.transcripts, ...transcriptEntries },
+      agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
+      agentModelOverride: { ...state.agentModelOverride, ...agentModelOverrides },
+      agentKindOverride: { ...state.agentKindOverride, ...agentKindOverrides },
+    }));
+
     if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
   },
 
