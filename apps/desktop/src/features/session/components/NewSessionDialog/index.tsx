@@ -99,6 +99,8 @@ function sanitizePrefix(input: string): string {
     .slice(0, 16);
 }
 
+const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
+
 function isValidBranchSlug(slug: string): boolean {
   const s = slug.trim();
   if (!s) return false;
@@ -172,14 +174,19 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
     setSlugGenerating(false);
     setBranchMode('new');
     setExistingBranch('');
-    setExistingBranches([]);
-    setBranchesLoaded(false);
     setError(null);
     setBusy(false);
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
   }, [open, settingKey, loadSetting, workspaceId]);
+
+  // Drop the cached branch list when the workspace changes (different repo →
+  // different branches). Reuse the cache across reopens of the same workspace.
+  useEffect(() => {
+    setExistingBranches(EMPTY_LOCAL_BRANCHES);
+    setBranchesLoaded(false);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) return;
