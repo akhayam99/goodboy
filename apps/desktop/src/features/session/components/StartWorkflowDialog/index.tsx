@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, cn } from '@kay-am/ui';
-import { Check, Layers, Sparkles, AlertTriangle, Wand2 } from 'lucide-react';
+import { Check, Layers, Sparkles, AlertTriangle } from 'lucide-react';
 import type { ProviderId, Session, Workflow, WorkflowId } from '@kay-am/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PlannerWidget } from '../../../plans/components/PlannerWidget';
@@ -198,19 +198,6 @@ function ModeCard({
 function CustomIntro({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3">
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/15">
-          <Wand2 size={15} className="text-primary" aria-hidden />
-        </span>
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-sm font-semibold text-foreground">Design with the planner</h3>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Describe what this session should accomplish. The planner drafts a step-by-step workflow
-            tailored to the goal — you tweak the model, effort, and verbosity per step before
-            spawning.
-          </p>
-        </div>
-      </div>
       <div className="rounded-lg border border-border-soft bg-subtle/40 p-4">{children}</div>
       <div className="grid grid-cols-3 gap-2">
         <PlannerHint

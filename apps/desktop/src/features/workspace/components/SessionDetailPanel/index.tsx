@@ -61,8 +61,20 @@ export function SessionDetailPanel({
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
+
+  // Kick off a GitHub PR fetch the first time we render this session with a
+  // resolved branch. The sidebar-wide warmup only runs once on app mount and
+  // can miss sessions whose branch loads later, leaving the card stuck on
+  // "loading github…" forever.
+  useEffect(() => {
+    if (!branch) return;
+    if (github && github.fetchedAt !== null) return;
+    if (github?.loading) return;
+    void refreshSessionPr(session.id as SessionId);
+  }, [session.id, branch, github, refreshSessionPr]);
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -97,7 +109,11 @@ export function SessionDetailPanel({
   };
 
   const pr = github?.pr ?? null;
-  const prLoading = !github || github.loading || (github.fetchedAt === null && !github.error);
+  // Without a resolved branch we can't even kick off a fetch — fall through to
+  // the "no PR yet" empty state instead of pinning the card to "loading…".
+  const prLoading = branch
+    ? !github || github.loading || (github.fetchedAt === null && !github.error)
+    : false;
 
   return (
     <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
