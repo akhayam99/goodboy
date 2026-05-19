@@ -434,15 +434,15 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
   if (filesTouchedCount === 0 && (loading.transcript || loading.agents)) {
     return (
       <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
+        <SessionCostChip sessionId={session.id} />
         <div
           role="status"
           aria-label="loading files touched"
-          className="inline-flex flex-1 items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
         >
           <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
           <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
         </div>
-        <SessionCostChip sessionId={session.id} />
       </div>
     );
   }
@@ -450,6 +450,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
   return (
     <>
       <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
+        <SessionCostChip sessionId={session.id} />
         <button
           type="button"
           onClick={() => {
@@ -458,7 +459,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
           }}
           disabled={!workingDir}
           className={cn(
-            'flex flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+            'ml-auto flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
             !workingDir
               ? 'cursor-not-allowed text-muted-foreground/50'
               : filesTouchedCount === 0
@@ -508,7 +509,6 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
             </span>
           </span>
         </button>
-        <SessionCostChip sessionId={session.id} />
       </div>
 
       <DiffViewerDialog
