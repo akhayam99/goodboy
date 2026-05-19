@@ -54,6 +54,57 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
   }, [ref, onClose]);
 }
 
+/**
+ * Walks up the DOM until it finds an ancestor that clips overflow
+ * (auto/scroll/hidden on Y). That's the box our popover would actually
+ * be cut off by — measuring against `window` is misleading when the
+ * trigger sits inside a Dialog with `overflow: hidden`.
+ */
+function findClippingAncestor(el: HTMLElement | null): HTMLElement | null {
+  let current = el?.parentElement ?? null;
+  while (current) {
+    const style = getComputedStyle(current);
+    const overflowY = style.overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'hidden') {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Picks the opening direction based on the trigger's position relative
+ * to its nearest clipping ancestor. Avoids the bottom-of-scroll-container
+ * trap where `top-full` would push the popover into a hidden region.
+ */
+function useDropdownDirection(
+  triggerRef: React.RefObject<HTMLElement | null>,
+  open: boolean,
+  expectedHeight = 200,
+): 'up' | 'down' {
+  const [direction, setDirection] = useState<'up' | 'down'>('down');
+  useEffect(() => {
+    if (!open) return;
+    const el = triggerRef.current;
+    const rect = el?.getBoundingClientRect();
+    if (!el || !rect) return;
+    const clipper = findClippingAncestor(el);
+    const clipperRect = clipper?.getBoundingClientRect();
+    const bottomBound = clipperRect ? clipperRect.bottom : window.innerHeight;
+    const topBound = clipperRect ? clipperRect.top : 0;
+    const spaceBelow = bottomBound - rect.bottom;
+    const spaceAbove = rect.top - topBound;
+    setDirection(spaceBelow < expectedHeight && spaceAbove > spaceBelow ? 'up' : 'down');
+  }, [open, triggerRef, expectedHeight]);
+  return direction;
+}
+
+const POPUP_BASE =
+  'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle py-0.5 shadow-lg';
+const POPUP_DOWN = 'top-full mt-1';
+const POPUP_UP = 'bottom-full mb-1';
+
 export function ModelSelect({
   provider,
   value,
@@ -68,6 +119,7 @@ export function ModelSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
   const tier = modelCostTier(value);
@@ -100,7 +152,9 @@ export function ModelSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[10rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div
+          className={cn(POPUP_BASE, 'min-w-[10rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
+        >
           {models.map((m) => {
             const active = value === m.id;
             const t = modelCostTier(m.id);
@@ -149,6 +203,7 @@ export function EffortSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   if (!levels) {
     return (
@@ -184,7 +239,7 @@ export function EffortSelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[8rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div className={cn(POPUP_BASE, 'min-w-[8rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {levels.map((level) => {
             const active = value === level;
             return (
@@ -229,6 +284,7 @@ export function VerbositySelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
 
   return (
     <div ref={containerRef} className="relative">
@@ -258,7 +314,7 @@ export function VerbositySelect({
         />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[7rem] rounded-md border border-border bg-subtle py-0.5 shadow-lg">
+        <div className={cn(POPUP_BASE, 'min-w-[7rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {VERBOSITY_LEVELS.map((level) => {
             const active = value === level;
             return (

@@ -145,15 +145,20 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
-            const hasAnySession = activeSessions.length > 0 || archivedSessions.length > 0;
+            const totalSessions = activeSessions.length + archivedSessions.length;
+            const hasAnySession = totalSessions > 0;
+            // The activity bar only makes sense as a switcher. With a single
+            // session the user never switches — collapse it and expose the
+            // "new session" action inside the detail panel header instead.
+            const showActivityBar = totalSessions > 1;
             return (
               <>
                 <div
                   className={cn(
                     'overflow-hidden transition-[width] duration-300 ease-out',
-                    hasAnySession ? 'w-28' : 'w-0',
+                    showActivityBar ? 'w-28' : 'w-0',
                   )}
-                  aria-hidden={!hasAnySession}
+                  aria-hidden={!showActivityBar}
                 >
                   <SessionActivityBar
                     sessions={activeSessions}
@@ -166,7 +171,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 <div
                   className={cn(
                     'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
-                    hasAnySession ? 'ml-0' : 'ml-1.5',
+                    showActivityBar ? 'ml-0' : 'ml-1.5',
                   )}
                 >
                   {currentSession ? (
@@ -175,10 +180,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
                         onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                        onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
+                      <NextSuggestionsPlaceholder />
                       <SessionFilesTouchedFooter session={currentSession} />
                     </>
                   ) : (
@@ -267,6 +274,17 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         onClose={() => setGithubDetailsOpen(false)}
         sessionId={(currentSession?.id as SessionId) ?? null}
       />
+    </div>
+  );
+}
+
+function NextSuggestionsPlaceholder() {
+  return (
+    <div
+      className="shrink-0 border-t border-border-soft px-3 py-1.5 text-2xs italic text-muted-foreground/60"
+      title="next-action suggestions are coming back in a future update"
+    >
+      Next suggestions will be re-added soon.
     </div>
   );
 }
@@ -946,12 +964,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-      <div className="mt-2 px-2">
-        <div className="rounded border border-dashed border-border-soft px-3 py-2">
-          <p className="text-2xs font-medium text-muted-foreground">Next</p>
-          <p className="text-2xs text-muted-foreground/60">temporarily disabled</p>
-        </div>
-      </div>
       <div className="pl-2">
         <SpawnAgentControl sessionId={task.id} />
       </div>
