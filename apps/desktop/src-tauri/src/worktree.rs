@@ -335,19 +335,50 @@ pub fn worktree_changed_files(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let user_base = base.unwrap_or_else(|| "main".to_string());
-    let candidates = [
-        format!("origin/{user_base}"),
-        user_base.clone(),
-        "origin/master".to_string(),
-        "master".to_string(),
-    ];
+    // Build the candidate base list. If the caller passed an explicit base, it
+    // wins. Otherwise we ask git for the remote's declared default branch via
+    // `symbolic-ref refs/remotes/origin/HEAD`, which is the only authoritative
+    // way to know whether the repo's "main" is actually `main`, `master`,
+    // `develop`, etc. Previously the list was hard-coded to prefer `main` /
+    // `origin/main`, so repos whose default is `master` (or anything else)
+    // would resolve merge-base against a stale `main` ref and report every
+    // commit the real default has over `main` as a "touched file" of the
+    // current session — even when the session had touched nothing.
+    let user_base = base.clone();
+    let mut candidates: Vec<String> = Vec::new();
+    if let Some(b) = &user_base {
+        candidates.push(format!("origin/{b}"));
+        candidates.push(b.clone());
+    }
+    if let Ok(symbolic) = git(p, &["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]) {
+        let resolved_default = symbolic.trim().to_string();
+        if !resolved_default.is_empty() && !candidates.iter().any(|c| c == &resolved_default) {
+            // resolved_default already includes the `origin/` prefix.
+            candidates.push(resolved_default.clone());
+            // Also push the bare branch name (without `origin/`) so a local
+            // checkout of the default is usable if the symbolic-ref's remote
+            // is unreachable.
+            if let Some(bare) = resolved_default.strip_prefix("origin/") {
+                candidates.push(bare.to_string());
+            }
+        }
+    }
+    // Tail fallbacks for repos with no remote HEAD set.
+    for fallback in ["origin/main", "main", "origin/master", "master"] {
+        let s = fallback.to_string();
+        if !candidates.iter().any(|c| c == &s) {
+            candidates.push(s);
+        }
+    }
     let resolved = candidates
         .iter()
         .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
         .map(|s| s.trim().to_string())
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
+            message: format!(
+                "cannot resolve merge-base against {} or its remote counterpart",
+                user_base.as_deref().unwrap_or("(detected default)")
+            ),
         })?;
     let numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
     let mut additions: u32 = 0;
