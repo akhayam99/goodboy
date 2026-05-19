@@ -457,8 +457,20 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
               </>
             ) : null}
           </span>
-          <span aria-hidden className="opacity-60">
-            ↗
+          <span className="inline-flex shrink-0 items-center gap-1.5">
+            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
+                {filesTouched.additions > 0 ? (
+                  <span className="text-success">+{filesTouched.additions}</span>
+                ) : null}
+                {filesTouched.deletions > 0 ? (
+                  <span className="text-danger">−{filesTouched.deletions}</span>
+                ) : null}
+              </span>
+            ) : null}
+            <span aria-hidden className="opacity-60">
+              ↗
+            </span>
           </span>
         </button>
       </div>

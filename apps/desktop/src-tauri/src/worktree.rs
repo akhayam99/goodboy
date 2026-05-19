@@ -304,15 +304,25 @@ pub fn worktree_diff(
     git(p, &["diff", &resolved])
 }
 
-/// Returns the distinct file paths that differ between the worktree (including
-/// uncommitted + untracked) and the merge-base with the given base branch.
-/// Stable count across "before vs after push": pushing commits doesn't shrink
-/// this list because the diff is computed against `<base>` not `HEAD`.
+#[derive(Debug, Serialize)]
+pub struct ChangedFilesSummary {
+    pub paths: Vec<String>,
+    pub additions: u32,
+    pub deletions: u32,
+}
+
+/// Distinct file paths that differ between the worktree (including uncommitted
+/// + untracked) and the merge-base with the given base branch, plus aggregate
+/// line +/- totals.
+///
+/// Stable across "before vs after push": pushing commits doesn't shrink the
+/// count because we diff against the merge-base, not `HEAD`. Untracked files
+/// contribute their line count to additions.
 #[tauri::command]
 pub fn worktree_changed_files(
     worktree_path: String,
     base: Option<String>,
-) -> Result<Vec<String>, WorktreeError> {
+) -> Result<ChangedFilesSummary, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -331,16 +341,44 @@ pub fn worktree_changed_files(
         .ok_or_else(|| WorktreeError::Git {
             message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
         })?;
-    let tracked = git(p, &["diff", "--name-only", &resolved]).unwrap_or_default();
-    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
+    let numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
+    let mut additions: u32 = 0;
+    let mut deletions: u32 = 0;
     let mut set: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    for line in tracked.lines().chain(untracked.lines()) {
-        let t = line.trim();
-        if !t.is_empty() {
-            set.insert(t.to_string());
+    for line in numstat.lines() {
+        // numstat format: "<adds>\t<dels>\t<path>" — binary files show "-\t-\t<path>"
+        let mut parts = line.splitn(3, '\t');
+        let add_s = parts.next().unwrap_or("");
+        let del_s = parts.next().unwrap_or("");
+        let path = parts.next().unwrap_or("").trim();
+        if path.is_empty() {
+            continue;
+        }
+        if let Ok(a) = add_s.parse::<u32>() {
+            additions = additions.saturating_add(a);
+        }
+        if let Ok(d) = del_s.parse::<u32>() {
+            deletions = deletions.saturating_add(d);
+        }
+        set.insert(path.to_string());
+    }
+    // Untracked files: contribute their content as additions.
+    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
+    for line in untracked.lines() {
+        let rel = line.trim();
+        if rel.is_empty() {
+            continue;
+        }
+        set.insert(rel.to_string());
+        if let Ok(content) = std::fs::read_to_string(p.join(rel)) {
+            additions = additions.saturating_add(content.lines().count() as u32);
         }
     }
-    Ok(set.into_iter().collect())
+    Ok(ChangedFilesSummary {
+        paths: set.into_iter().collect(),
+        additions,
+        deletions,
+    })
 }
 
 #[derive(Debug, Serialize)]

@@ -102,9 +102,11 @@ export const useMostRecentPlan = (sessionId: SessionId | null): PlanWithCount | 
 interface FilesTouched {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
+  readonly additions: number;
+  readonly deletions: number;
 }
 
-const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0 };
+const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
 
 /**
  * Files that differ between the session worktree and its base branch
@@ -143,9 +145,18 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
     }
     let cancelled = false;
     worktreeChangedFiles(workingDir)
-      .then((paths) => {
+      .then((summary) => {
         if (cancelled) return;
-        setState(paths.length === 0 ? EMPTY_FILES_TOUCHED : { paths, count: paths.length });
+        setState(
+          summary.paths.length === 0
+            ? EMPTY_FILES_TOUCHED
+            : {
+                paths: summary.paths,
+                count: summary.paths.length,
+                additions: summary.additions,
+                deletions: summary.deletions,
+              },
+        );
       })
       .catch(() => {
         if (!cancelled) setState(EMPTY_FILES_TOUCHED);
