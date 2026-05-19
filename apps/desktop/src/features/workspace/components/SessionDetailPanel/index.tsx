@@ -38,6 +38,7 @@ import { OpenInEditorIconButton } from '../../../session/components/OpenInEditor
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { DiffViewerDialog } from '../../../permissions/components/DiffViewerDialog';
+import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { worktreeStatus } from '../../../worktree/worktree';
 
 interface SessionDetailPanelProps {
@@ -236,6 +237,7 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
+  const [pricingOpen, setPricingOpen] = useState(false);
   const sessionCost = useMemo(() => {
     let sum = 0;
     for (const rec of telemetry) {
@@ -246,12 +248,17 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   }, [telemetry]);
   const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
   return (
-    <span
-      title={`Estimated cost for this session: ${label} (excluding summarizer)`}
-      className="inline-flex shrink-0 items-center text-2xs font-mono text-muted-foreground"
-    >
-      {label}
-    </span>
+    <>
+      <button
+        type="button"
+        onClick={() => setPricingOpen(true)}
+        title={`Estimated cost for this session: ${label} (excluding summarizer) — click for spend breakdown`}
+        className="inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15"
+      >
+        {label}
+      </button>
+      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
+    </>
   );
 }
 
@@ -433,12 +440,12 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
 
   if (filesTouchedCount === 0 && (loading.transcript || loading.agents)) {
     return (
-      <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-3 border-t border-border-soft px-3 py-2">
         <SessionCostChip sessionId={session.id} />
         <div
           role="status"
           aria-label="loading files touched"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
+          className="flex flex-1 items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
         >
           <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
           <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
@@ -449,7 +456,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-2 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-3 border-t border-border-soft px-3 py-2">
         <SessionCostChip sessionId={session.id} />
         <button
           type="button"
@@ -459,7 +466,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
           }}
           disabled={!workingDir}
           className={cn(
-            'ml-auto flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+            'flex flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
             !workingDir
               ? 'cursor-not-allowed text-muted-foreground/50'
               : filesTouchedCount === 0
