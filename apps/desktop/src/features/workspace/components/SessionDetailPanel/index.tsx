@@ -34,6 +34,7 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
+import { OpenInEditorIconButton } from '../../../session/components/OpenInEditorIconButton';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { DiffViewerDialog } from '../../../permissions/components/DiffViewerDialog';
@@ -58,6 +59,7 @@ export function SessionDetailPanel({
   onNewSession,
 }: SessionDetailPanelProps) {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
+  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
@@ -141,6 +143,7 @@ export function SessionDetailPanel({
             <span>New</span>
           </button>
         ) : null}
+        <OpenInEditorIconButton worktreePath={worktreePath} />
         <button
           type="button"
           onClick={onOpenSessionSettings}
