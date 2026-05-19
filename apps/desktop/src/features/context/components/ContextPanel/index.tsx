@@ -12,6 +12,7 @@ import {
   Activity,
   ClipboardList,
   List,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@kay-am/ui';
@@ -102,6 +103,18 @@ export function ContextPanel({
     [],
   );
 
+  const plans = useSessionPlans(session.id);
+  const isFreshContext = useMemo(() => {
+    if (loading.slots || loading.plans) return false;
+    if (plans.length > 0) return false;
+    const trimmedValue = (key: SlotKey) => slotsByKey.get(key)?.value?.trim() ?? '';
+    return (
+      trimmedValue('open_questions').length === 0 &&
+      trimmedValue('decisions').length === 0 &&
+      trimmedValue('last_output_summary').length === 0
+    );
+  }, [loading.slots, loading.plans, plans, slotsByKey]);
+
   return (
     <>
       <div className={cn('flex h-full w-full justify-end pr-4 pt-4', !collapsed && 'hidden')}>
@@ -130,8 +143,9 @@ export function ContextPanel({
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-4 p-4">
             <header className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-                CONTEXT
+              <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <BookOpen size={11} aria-hidden className="text-accent" />
+                Context
               </span>
               <div className="flex items-center gap-1">
                 <SummarizerBadge
@@ -154,28 +168,33 @@ export function ContextPanel({
               </div>
             </header>
 
-            <PlansSection sessionId={session.id} />
-
-            {/* Per-slot independence: <ul> is always rendered. Each SlotRow
-                shows its own skeleton when its data slice is missing AND the
-                slots fetch is in flight. One slot finishing first paints
-                without waiting for siblings. */}
-            <ul className="flex flex-col gap-6">
-              {visibleSlotKeys.map((key) => {
-                const slot = slotsByKey.get(key);
-                return (
-                  <SlotRow
-                    key={key}
-                    sessionId={session.id}
-                    slotKey={key}
-                    slot={slot}
-                    loading={loading.slots}
-                    isSummarizing={summarizer.status === 'running'}
-                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                  />
-                );
-              })}
-            </ul>
+            {isFreshContext ? (
+              <ContextFreshEmpty goal={session.goal} />
+            ) : (
+              <>
+                <PlansSection sessionId={session.id} />
+                {/* Per-slot independence: <ul> is always rendered. Each SlotRow
+                    shows its own skeleton when its data slice is missing AND the
+                    slots fetch is in flight. One slot finishing first paints
+                    without waiting for siblings. */}
+                <ul className="flex flex-col gap-6">
+                  {visibleSlotKeys.map((key) => {
+                    const slot = slotsByKey.get(key);
+                    return (
+                      <SlotRow
+                        key={key}
+                        sessionId={session.id}
+                        slotKey={key}
+                        slot={slot}
+                        loading={loading.slots}
+                        isSummarizing={summarizer.status === 'running'}
+                        onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                      />
+                    );
+                  })}
+                </ul>
+              </>
+            )}
           </div>
         </ScrollArea>
 
@@ -788,6 +807,98 @@ function CostPill() {
             ))}
         </span>
       ) : null}
+    </div>
+  );
+}
+
+interface ContextFreshEmptyProps {
+  readonly goal: string;
+}
+
+function ContextFreshEmpty({ goal }: ContextFreshEmptyProps) {
+  const trimmedGoal = goal.trim();
+  return (
+    <div className="flex flex-col items-center gap-4 px-2 py-6 text-center">
+      <div className="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent ring-1 ring-accent/20">
+        <BookOpen size={24} aria-hidden />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+          Context is empty
+        </span>
+        <h3 className="text-sm font-semibold text-foreground">Your shared agent brief</h3>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          This panel keeps every agent on the same page. Open questions, decisions and the latest
+          output summary land here as you work, so spawning a new agent never resets the
+          conversation.
+        </p>
+      </div>
+      {trimmedGoal.length > 0 ? (
+        <div className="flex w-full flex-col gap-1.5 rounded-md bg-subtle/60 px-3 py-2.5 text-left ring-1 ring-border-soft">
+          <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+            <Target size={10} aria-hidden className="text-accent" />
+            Goal
+          </span>
+          <span className="text-xs leading-snug text-foreground">{trimmedGoal}</span>
+        </div>
+      ) : null}
+      <div className="flex w-full flex-col gap-2 rounded-md bg-subtle/40 px-3 py-2.5 text-left ring-1 ring-border-soft">
+        <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+          <Activity size={10} aria-hidden className="text-info" />
+          How it works
+        </span>
+        <ol className="flex flex-col gap-1.5 text-[11px] leading-snug text-muted-foreground">
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              1.
+            </span>
+            <span>
+              At the end of every turn, a summarizer fires automatically in the background.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              2.
+            </span>
+            <span>
+              It uses the <span className="text-foreground">cheapest model</span> of the same
+              provider as the turn (Haiku for Claude, mini for Codex, etc.), so the overhead stays
+              negligible.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              3.
+            </span>
+            <span>
+              It reads the assistant&rsquo;s full reply and updates the slots above: new decisions,
+              still-open questions, a fresh output summary.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              4.
+            </span>
+            <span>
+              You can edit any slot inline at any time. Manual edits win over the next summarizer
+              pass.
+            </span>
+          </li>
+          <li className="flex gap-1.5">
+            <span aria-hidden className="shrink-0 font-mono text-muted-foreground/50">
+              5.
+            </span>
+            <span>
+              Every slot keeps a full history. Click the{' '}
+              <History size={10} aria-hidden className="inline -translate-y-px" /> icon on any slot
+              to browse previous versions and roll back if needed.
+            </span>
+          </li>
+        </ol>
+      </div>
+      <p className="text-[10px] leading-relaxed text-muted-foreground/60">
+        Slots fill in automatically once the first turn completes.
+      </p>
     </div>
   );
 }
