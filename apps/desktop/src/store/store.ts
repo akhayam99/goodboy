@@ -27,7 +27,9 @@ import {
   insertTelemetry,
   insertTurnEvent,
   insertWorkspace,
-  deleteWorkspace,
+  disconnectWorkspace as disconnectWorkspaceInDb,
+  reconnectWorkspace as reconnectWorkspaceInDb,
+  findWorkspaceByRootPath,
   listContextSlotsForSession,
   insertContextSlotHistory,
   listContextSlotHistory,
@@ -488,10 +490,6 @@ export interface AppActions {
   setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
-  bulkDeleteSessionsForWorkspace(
-    workspaceId: WorkspaceId,
-    sessionIds: ReadonlyArray<SessionId>,
-  ): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
@@ -3010,24 +3008,49 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   addWorkspace: async ({ rootPath, name }) => {
-    // Enforce hard cap so beta users keep a manageable disk/worktree footprint.
-    if (get().workspaces.length >= MAX_WORKSPACES) {
-      throw new Error(
-        `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
-      );
-    }
-
     const check = await validateGitRepo(rootPath);
     if (!check.isRepo || !check.rootPath) {
       throw new Error(check.error ?? 'not a git repository');
     }
     const resolvedRoot = check.rootPath;
 
-    // Surface a friendly error if the repo is already registered, instead of leaking
-    // SQLite's UNIQUE constraint violation as `[object Object]` to the dialog.
-    const existing = get().workspaces.find((w) => w.rootPath === resolvedRoot);
-    if (existing) {
-      throw new Error(`workspace already exists: ${existing.name}`);
+    // Path-match reactivation: if the user previously disconnected a workspace
+    // pointing at this path, "adding" it again clears the disconnect flag and
+    // brings back all its sessions/worktrees/transcripts.
+    const onDisk = await findWorkspaceByRootPath(tauriDatabase, resolvedRoot);
+    if (onDisk) {
+      if (!onDisk.disconnectedAt) {
+        throw new Error(`workspace already exists: ${onDisk.name}`);
+      }
+      // Cap counts only active workspaces.
+      if (get().workspaces.length >= MAX_WORKSPACES) {
+        throw new Error(
+          `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
+        );
+      }
+      const now = new Date().toISOString() as IsoDateTime;
+      await reconnectWorkspaceInDb(tauriDatabase, onDisk.id, now);
+      const reactivated: Workspace = { ...onDisk, updatedAt: now };
+      delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
+      set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
+      // Refresh side caches owned by this workspace; sessions hydrate lazily
+      // via setCurrentWorkspace when the user actually picks it.
+      try {
+        const templates = await invokePhaseTemplateList(reactivated.id);
+        set((state) => ({
+          phaseTemplates: { ...state.phaseTemplates, [reactivated.id]: templates },
+        }));
+      } catch {
+        // non-fatal: templates can be re-fetched on next workspace switch
+      }
+      return reactivated;
+    }
+
+    // New workspace path → enforce cap before insert.
+    if (get().workspaces.length >= MAX_WORKSPACES) {
+      throw new Error(
+        `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
+      );
     }
 
     const inferredName =
@@ -3074,36 +3097,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
     return workspace;
   },
 
+  /**
+   * Soft "disconnect". Sessions, worktrees, transcripts are left untouched in
+   * the DB. The workspace just stops appearing in the sidebar. Re-adding it
+   * via `addWorkspace` with the same `rootPath` reactivates the row and brings
+   * everything back. UI uses this everywhere; the destructive hard-delete on
+   * `packages/db` is kept only for data-purge flows.
+   */
   deleteWorkspace: async (id) => {
     const state = get();
     const workspace = state.workspaces.find((w) => w.id === id);
     if (!workspace) throw new Error(`workspace not found: ${id}`);
 
-    const sessions = await listSessionsForWorkspace(tauriDatabase, id);
-    const aliveSessions = sessions.filter(
-      (s) => s.state.kind === 'running' || s.state.kind === 'idle',
-    );
-    if (aliveSessions.length > 0) {
-      throw new Error(
-        `${aliveSessions.length} session${aliveSessions.length > 1 ? 's are' : ' is'} still running or idle. end them before deleting this workspace.`,
+    // Cancel any running turns for this workspace so we don't leak processes
+    // emitting events into a workspace the user can no longer see.
+    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+    if (wasCurrentWorkspace) {
+      const runningSessions = state.sessions.filter((s) => s.state.kind === 'running');
+      await Promise.all(
+        runningSessions.map((s) =>
+          cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(() => {
+            // best-effort: registry may already be clean
+          }),
+        ),
       );
     }
 
-    // Remove all worktrees from disk for sessions that have ended
-    for (const session of sessions) {
-      const worktreePaths = state.sessionWorktrees[session.id] ?? [];
-      for (const worktreePath of worktreePaths) {
-        try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-        } catch {
-          // worktree may already be gone — best-effort cleanup
-        }
-      }
-    }
-
-    // Optimistic UI update
+    const now = new Date().toISOString() as IsoDateTime;
     const prevWorkspaces = state.workspaces;
-    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+
+    // Optimistic: drop from sidebar list (and clear per-ws caches if it was
+    // the active one).
     set((s) => ({
       workspaces: s.workspaces.filter((w) => w.id !== id),
       ...(wasCurrentWorkspace
@@ -3133,9 +3157,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
 
     try {
-      await deleteWorkspace(tauriDatabase, id);
+      await disconnectWorkspaceInDb(tauriDatabase, id, now);
     } catch (err) {
-      // Rollback optimistic update
       set((s) => ({
         workspaces: prevWorkspaces,
         ...(wasCurrentWorkspace ? { currentWorkspaceId: id } : {}),
@@ -3145,10 +3168,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     void get().emitNotification(
       'workspace-deleted',
       'info',
-      `workspace deleted: ${workspace.name}`,
-      sessions.length > 0
-        ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} removed`
-        : undefined,
+      `Workspace disconnected: ${workspace.name}`,
+      'Re-add the same path to bring it back with all its sessions.',
     );
   },
 
@@ -3586,24 +3607,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title.trim() } : s)),
     }));
     await renameSessionInDb(tauriDatabase, sessionId, title.trim(), now, false);
-  },
-
-  bulkDeleteSessionsForWorkspace: async (workspaceId, sessionIds) => {
-    for (const sessionId of sessionIds) {
-      await get().deleteTask(sessionId);
-    }
-    const remaining = get().sessions.filter((s) => s.workspaceId === workspaceId);
-    if (remaining.length === 0) {
-      await deleteWorkspace(tauriDatabase, workspaceId);
-      set((state) => ({
-        workspaces: state.workspaces.filter((w) => w.id !== workspaceId),
-        currentSessionId:
-          state.currentSessionId &&
-          state.sessions.find((s) => s.id === state.currentSessionId)?.workspaceId === workspaceId
-            ? null
-            : state.currentSessionId,
-      }));
-    }
   },
 
   deleteTask: async (sessionId) => {

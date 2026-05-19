@@ -5,11 +5,10 @@ import { FolderCode, GitBranch, Terminal, Unplug, Zap } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
 import { InitScriptPanel } from '../../../../features/init';
-import { BulkSessionDeleteDialog } from '../WorkspacesSidebar';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { useAppStore, useSessions } from '../../../../store';
+import { useAppStore } from '../../../../store';
 
 interface WorkspaceSettingsDialogProps {
   workspaceId: WorkspaceId;
@@ -61,9 +60,7 @@ export function WorkspaceSettingsDialog({
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
 
-  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
-  const sessions = useSessions();
-  const workspaceSessions = sessions.filter((s) => s.workspaceId === workspaceId);
+  const disconnect = useAppStore((s) => s.deleteWorkspace);
 
   const [active, setActive] = useState<Section>('general');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
@@ -71,37 +68,18 @@ export function WorkspaceSettingsDialog({
   const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setConfirmDisconnect(false);
     setDisconnecting(false);
-    setBulkDeleteOpen(false);
   }, [open]);
 
   const onDisconnect = async () => {
-    if (workspaceSessions.length > 0) {
-      setBulkDeleteOpen(true);
-      return;
-    }
     setDisconnecting(true);
     setError(null);
     try {
-      await deleteWorkspace(workspaceId);
-      onClose();
-    } catch (err) {
-      setError(formatError(err));
-      setDisconnecting(false);
-    }
-  };
-
-  const onBulkDeleted = async () => {
-    setBulkDeleteOpen(false);
-    setDisconnecting(true);
-    setError(null);
-    try {
-      await deleteWorkspace(workspaceId);
+      await disconnect(workspaceId);
       onClose();
     } catch (err) {
       setError(formatError(err));
@@ -166,9 +144,11 @@ export function WorkspaceSettingsDialog({
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <div className="text-xs font-semibold tracking-wide text-danger">Danger zone</div>
+              <div className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Disconnect
+              </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                irreversible workspace actions.
+                Hides the workspace from the sidebar without deleting anything.
               </p>
             </div>
 
@@ -182,8 +162,8 @@ export function WorkspaceSettingsDialog({
                 <div className="flex-1">
                   <div className="text-xs font-semibold text-foreground">disconnect workspace</div>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                    removes kAY.am state (sessions, transcripts, worktrees, audit). the repository
-                    on disk is left untouched. you can re-add it later.
+                    Sessions, transcripts, and worktrees stay safe on disk. Re-add the same path
+                    later to bring it back exactly as you left it.
                   </p>
                 </div>
                 {!confirmDisconnect ? (
@@ -285,13 +265,6 @@ export function WorkspaceSettingsDialog({
           <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
         </div>
       </Dialog>
-      <BulkSessionDeleteDialog
-        workspaceId={workspaceId}
-        workspaceName={workspaceName}
-        open={bulkDeleteOpen}
-        onClose={() => setBulkDeleteOpen(false)}
-        onDeleted={() => void onBulkDeleted()}
-      />
     </>
   );
 }
