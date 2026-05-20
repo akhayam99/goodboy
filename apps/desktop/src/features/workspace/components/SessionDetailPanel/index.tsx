@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Settings2,
   XCircle,
+  Zap,
+  ZapOff,
 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type {
@@ -64,6 +66,7 @@ export function SessionDetailPanel({
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
+  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const renameTask = useAppStore((s) => s.renameTask);
 
   // Kick off a GitHub PR fetch the first time we render this session with a
@@ -161,6 +164,7 @@ export function SessionDetailPanel({
           </button>
         ) : null}
         <OpenInEditorIconButton worktreePath={worktreePath} />
+        <AutoRunToggle session={session} onToggle={setSessionAutoRun} />
         <button
           type="button"
           onClick={onOpenSessionSettings}
@@ -189,6 +193,50 @@ export function SessionDetailPanel({
         onOpenDetails={onOpenGithubDetails}
       />
     </div>
+  );
+}
+
+interface AutoRunToggleProps {
+  session: Session;
+  onToggle: (sessionId: SessionId, next: boolean) => Promise<void>;
+}
+
+function AutoRunToggle({ session, onToggle }: AutoRunToggleProps) {
+  const hasWorkflow = !!session.workflowId;
+  const tooltip = !hasWorkflow
+    ? 'no workflow configured — auto-run unavailable'
+    : session.autoRun
+      ? 'autorun on — click to pause'
+      : 'autorun off — click to enable';
+  const ariaLabel = !hasWorkflow
+    ? 'autorun unavailable'
+    : session.autoRun
+      ? 'autorun on'
+      : 'autorun off';
+  const cls = !hasWorkflow
+    ? 'text-muted-foreground/25 cursor-not-allowed'
+    : session.autoRun
+      ? 'text-amber-500 hover:bg-amber-500/10'
+      : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground';
+
+  return (
+    <button
+      type="button"
+      disabled={!hasWorkflow}
+      onClick={() => {
+        if (!hasWorkflow) return;
+        void onToggle(session.id as SessionId, !session.autoRun);
+      }}
+      title={tooltip}
+      aria-label={ariaLabel}
+      className={cn('shrink-0 rounded p-1 transition-colors', cls)}
+    >
+      {hasWorkflow && session.autoRun ? (
+        <Zap size={13} aria-hidden />
+      ) : (
+        <ZapOff size={13} aria-hidden />
+      )}
+    </button>
   );
 }
 
