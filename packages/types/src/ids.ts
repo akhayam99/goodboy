@@ -4,6 +4,7 @@ export type MessageId = string & { readonly __brand: 'MessageId' };
 export type ProviderRunId = string & { readonly __brand: 'ProviderRunId' };
 export type TelemetryRecordId = string & { readonly __brand: 'TelemetryRecordId' };
 export type SkillId = string & { readonly __brand: 'SkillId' };
+export type WorkspaceScriptId = string & { readonly __brand: 'WorkspaceScriptId' };
 export type WorkflowId = string & { readonly __brand: 'WorkflowId' };
 export type StepId = string & { readonly __brand: 'StepId' };
 export type AgentId = string & { readonly __brand: 'AgentId' };

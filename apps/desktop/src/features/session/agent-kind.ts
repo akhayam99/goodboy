@@ -3,7 +3,6 @@ import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from
 export type AgentKind = AgentKindLabel;
 
 export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
-  'init',
   'planner',
   'scout',
   'implementer',
@@ -16,11 +15,6 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
 
 export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
   {
-    init: {
-      label: 'Init',
-      hint: 'Workspace setup. Runs shell commands, no code',
-      persona: 'rusty',
-    },
     generic: {
       label: 'Puppy',
       hint: 'Can do whatever you want, no restrictions',
@@ -64,11 +58,6 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
   };
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
-  init: {
-    bg: 'bg-slate-400',
-    fg: 'text-muted-foreground',
-    label: 'init',
-  },
   scout: {
     bg: 'bg-sky-400',
     fg: 'text-info',
@@ -123,12 +112,6 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt?: string;
   }
 > = {
-  init: {
-    model: 'claude-sonnet-4-5',
-    effort: 'medium',
-    systemPrompt:
-      'you are a workspace init agent. execute the setup instructions below in the current worktree. run shell commands as written. report success or failure for each step. ALLOWED: running shell commands, reading output, reporting status. FORBIDDEN: editing source code, creating plans, writing tests, modifying production logic. if you catch yourself doing a forbidden action, stop and say "this is outside my scope".',
-  },
   scout: {
     model: 'claude-haiku-4-5',
     effort: 'low',
@@ -207,7 +190,6 @@ export function inferAgentKindFromName(name: string): AgentKind {
   if (/test|qa/.test(lower)) return 'tester';
   if (/review|verify|check|audit/.test(lower)) return 'reviewer';
   if (/doc|readme|changelog/.test(lower)) return 'docs';
-  if (/^init$|setup|bootstrap/.test(lower)) return 'init';
   return 'generic';
 }
 

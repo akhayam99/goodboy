@@ -17,7 +17,6 @@ import {
   ScanEye,
   Sparkles,
   Telescope,
-  Wrench,
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { DogSniff } from '../../../../shared/components/DogSniff';
@@ -683,12 +682,6 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
     iconClass: 'text-rose-400',
     ringBg: 'bg-rose-400/10',
     pulseBg: 'bg-rose-400/15',
-  },
-  init: {
-    Icon: Wrench,
-    iconClass: 'text-slate-400',
-    ringBg: 'bg-slate-400/10',
-    pulseBg: 'bg-slate-400/15',
   },
   scout: {
     Icon: Telescope,

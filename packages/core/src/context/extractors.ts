@@ -94,7 +94,6 @@ function parsePlanBody(raw: string): ExtractedPlan | null {
 }
 
 const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
-  'init',
   'planner',
   'scout',
   'implementer',

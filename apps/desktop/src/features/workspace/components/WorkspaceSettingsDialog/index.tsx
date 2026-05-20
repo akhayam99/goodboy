@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
-import { InitScriptPanel } from '../../../../features/init';
+import { ScriptsPanel } from '../../../../features/scripts';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -26,7 +26,7 @@ interface WorkspaceSettingsDialogProps {
   onClose: () => void;
 }
 
-type Section = 'general' | 'skills' | 'init' | 'phases' | 'danger';
+type Section = 'general' | 'skills' | 'scripts' | 'phases' | 'danger';
 
 interface NavItem {
   readonly id: Section;
@@ -102,9 +102,7 @@ export function WorkspaceSettingsDialog({
     ...(WORKSPACE_FEATURES.skills
       ? ([{ id: 'skills', label: 'Skills', icon: <Zap size={13} aria-hidden /> }] as const)
       : []),
-    ...(WORKSPACE_FEATURES.initScript
-      ? ([{ id: 'init', label: 'Init', icon: <Terminal size={13} aria-hidden /> }] as const)
-      : []),
+    { id: 'scripts', label: 'Scripts', icon: <Terminal size={13} aria-hidden /> },
     { id: 'phases', label: 'Workflows', icon: <GitBranch size={13} aria-hidden />, beta: true },
     {
       id: 'danger',
@@ -204,13 +202,13 @@ export function WorkspaceSettingsDialog({
             </SectionShell>
           ) : null}
 
-          {active === 'init' ? (
+          {active === 'scripts' ? (
             <SectionShell
               icon={<Terminal size={14} aria-hidden className="text-primary" />}
-              title="Init script"
-              subtitle="Shell snippet that runs once when a new session's worktree is created — install deps, hydrate env, warm caches."
+              title="Scripts"
+              subtitle="User-defined shell scripts you run by hand — copy env files, install deps, build. No agent, no tokens spent."
             >
-              <InitScriptPanel workspaceId={workspaceId} />
+              <ScriptsPanel workspaceId={workspaceId} />
             </SectionShell>
           ) : null}
 

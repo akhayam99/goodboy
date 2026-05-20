@@ -20,7 +20,6 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionWorkflow,
-  updateSessionSkipInit,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   getSessionById,
@@ -158,9 +157,7 @@ export {
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
-  insertInitScript,
-  getLatestInitScript,
-  deleteInitScript,
-  listInitScriptHistory,
-  type WorkspaceInitScript,
-} from './queries/workspace-init-script';
+  listWorkspaceScripts,
+  upsertWorkspaceScript,
+  deleteWorkspaceScript,
+} from './queries/workspace-script';
