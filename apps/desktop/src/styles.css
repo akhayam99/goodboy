@@ -52,6 +52,13 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
+  --animate-soft-pulse: soft-pulse 2.8s ease-in-out infinite;
+
+  @keyframes soft-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+
   /* Dark shadows — subtle drop + faint inner highlight to lift cards on dark bg. */
   --shadow-sm:
     0 1px 2px 0 oklch(0 0 0 / 0.28),

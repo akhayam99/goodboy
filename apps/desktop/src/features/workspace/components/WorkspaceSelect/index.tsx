@@ -113,15 +113,19 @@ function WorkspaceCard({
 }) {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
 
+  const showUnread = hasUnread && !isActive;
+
   return (
     <div
       className={cn(
         'flex shrink-0 items-center rounded border text-xs font-medium transition-colors',
         isActive
           ? 'border-primary bg-primary/5 text-foreground'
-          : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
+          : showUnread
+            ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
+            : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
       )}
-      title={workspace.name}
+      title={showUnread ? `${workspace.name} — new activity` : workspace.name}
       data-tauri-drag-region="false"
     >
       <button
@@ -130,12 +134,6 @@ function WorkspaceCard({
         data-tauri-drag-region="false"
         className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1"
       >
-        {hasUnread && !isActive && (
-          <span className="relative inline-flex h-2 w-2 shrink-0" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-            <span className="relative inline-block h-2 w-2 rounded-full bg-warning" />
-          </span>
-        )}
         <span className="max-w-[100px] truncate">{workspace.name}</span>
       </button>
       <button

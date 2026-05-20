@@ -1443,6 +1443,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     void get().refreshUnreadWorkspaces();
+    // Single-session workspaces don't have an activity rail — the user can't
+    // pick a session manually. Auto-select so the detail panel renders
+    // instead of the empty state.
+    const sessionsNow = get().sessions;
+    if (sessionsNow.length === 1 && get().currentSessionId === null) {
+      await get().setCurrentSession(sessionsNow[0]!.id);
+    }
   },
 
   setCurrentSession: async (id) => {
