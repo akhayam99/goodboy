@@ -22,7 +22,7 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
       persona: 'rusty',
     },
     generic: {
-      label: 'Buddy',
+      label: 'Puppy',
       hint: 'Can do whatever you want, no restrictions',
       persona: 'max',
     },
@@ -107,7 +107,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   generic: {
     bg: 'bg-rose-400',
     fg: 'text-rose-400',
-    label: 'buddy',
+    label: 'puppy',
   },
 };
 
@@ -214,7 +214,7 @@ export function inferAgentKindFromName(name: string): AgentKind {
 /**
  * Resolve the chip's display kind. Override (explicit user pick) wins,
  * else name-based inference, else first-turn classification. Conservative —
- * when nothing matches, stays `generic` (chip shows "buddy").
+ * when nothing matches, stays `generic` (chip shows "puppy").
  */
 export function resolveAgentKind(
   name: string,

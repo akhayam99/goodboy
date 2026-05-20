@@ -159,7 +159,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
 
       {templates.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          No workflows for this workspace. Create one to chain multiple buddies per session.
+          No workflows for this workspace. Create one to chain multiple puppies per session.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">

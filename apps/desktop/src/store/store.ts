@@ -1519,7 +1519,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             } else if (agent.status === 'failed') {
               seededTurnState[agent.id] = {
                 kind: 'error',
-                message: 'buddy failed',
+                message: 'puppy failed',
                 failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
               };
             } else {
@@ -1736,7 +1736,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const fallback = await invokePhaseRunInsert({
           sessionId: session.id,
           ordinal: 0,
-          name: 'buddy 1',
+          name: 'puppy 1',
           status: 'pending',
         });
         prespawnedRuns = [fallback];
@@ -1942,7 +1942,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
-      throw new Error('no buddy selected. spawn one before sending a turn');
+      throw new Error('no puppy selected. spawn one before sending a turn');
     }
 
     const userTurnText = content;
@@ -2851,14 +2851,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === sessionId);
         const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
-        // Only auto-rename buddies whose name still matches the default
-        // `buddy N` pattern (or the legacy `agent N`) — workflow-step names
+        // Only auto-rename puppies whose name still matches the default
+        // `puppy N` pattern (or the legacy `agent N`) — workflow-step names
         // and user edits stay.
         const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find(
           (r) => r.id === activeAgentId,
         );
         const agentNameEditable = agentRecord
-          ? /^(buddy|agent) \d+$/i.test(agentRecord.name)
+          ? /^(puppy|agent) \d+$/i.test(agentRecord.name)
           : false;
         if (sessionForTitle && (titleEditable || agentNameEditable)) {
           void generateAutoTitle(
@@ -3390,7 +3390,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     if (!resolvedName) {
       const existing = state.sessionPhaseRuns[sessionId] ?? [];
-      resolvedName = `buddy ${existing.length + 1}`;
+      resolvedName = `puppy ${existing.length + 1}`;
     }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
@@ -3819,7 +3819,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activateWorkflowAgent: async (sessionId, agentId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
-    if (!agent || !agent.stepId) throw new Error('buddy not found or not a workflow buddy');
+    if (!agent || !agent.stepId) throw new Error('puppy not found or not a workflow puppy');
 
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || !session.workflowId) throw new Error('session has no workflow');
@@ -3906,7 +3906,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     void get().emitNotification(
       'agent-auto-spawn',
       'info',
-      `buddy auto-spawned: ${nextPendingAgent.name}`,
+      `puppy auto-spawned: ${nextPendingAgent.name}`,
       undefined,
       { sessionId },
     );

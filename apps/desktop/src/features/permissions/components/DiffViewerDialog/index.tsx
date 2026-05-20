@@ -724,7 +724,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
         onClick={onPropose}
         disabled={spawning}
         className="inline-flex items-center gap-1.5 rounded-sm border border-info/30 bg-info/5 px-2.5 py-1 text-xs font-medium text-info hover:bg-info/10 disabled:opacity-50"
-        title="spawn a reviewer buddy that proposes fixes without touching code"
+        title="spawn a reviewer puppy that proposes fixes without touching code"
       >
         {spawning ? (
           <Loader2 size={11} className="animate-spin" aria-hidden />
@@ -1131,7 +1131,7 @@ function CommentItem({
               </button>
             </>
           ) : (
-            <span className="italic">consumed by removed buddy</span>
+            <span className="italic">consumed by removed puppy</span>
           )}
         </div>
       ) : null}
@@ -1382,7 +1382,7 @@ function InlineComposer({
           autoFocus
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="note for the buddy… (⌘↵ to save)"
+          placeholder="note for the puppy… (⌘↵ to save)"
           className="text-xs"
           autoGrow
           maxRows={6}

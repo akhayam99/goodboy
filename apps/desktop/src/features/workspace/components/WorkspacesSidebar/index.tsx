@@ -949,16 +949,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
       >
         <span className={SECTION_LABEL}>
           <DogMascot size={14} className="shrink-0 text-success" />
-          Buddies
+          Puppies
         </span>
         <span className="truncate text-2xs text-muted-foreground/70">
           {workflow
             ? adHocAgents.length === 0
               ? 'none'
-              : `${adHocAgents.length} ${adHocAgents.length === 1 ? 'buddy' : 'buddies'}`
+              : `${adHocAgents.length} ${adHocAgents.length === 1 ? 'puppy' : 'puppies'}`
             : sorted.length === 0
               ? 'none yet'
-              : `${sorted.length} ${sorted.length === 1 ? 'buddy' : 'buddies'}`}
+              : `${sorted.length} ${sorted.length === 1 ? 'puppy' : 'puppies'}`}
         </span>
       </header>
       {workflow ? (
@@ -967,7 +967,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         ) : null
       ) : sorted.length === 0 ? (
         loading.agents ? (
-          <ul role="status" aria-label="loading buddies" className="flex flex-col gap-1 pl-2">
+          <ul role="status" aria-label="loading puppies" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
               <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
@@ -977,7 +977,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </ul>
         ) : (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No buddies yet. Spawn one below.
+            No puppies yet. Spawn one below.
           </p>
         )
       ) : (
@@ -1115,7 +1115,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        Spawn buddy
+        Spawn puppy
       </button>
       {menu}
     </div>
@@ -1158,7 +1158,7 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
             'inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
             spawning && 'cursor-not-allowed opacity-60',
           )}
-          title="spawn new buddy to execute this plan"
+          title="spawn new puppy to execute this plan"
         >
           {spawning ? (
             <Loader2 size={11} aria-hidden className="animate-spin" />
@@ -1310,7 +1310,7 @@ function WorkflowStepRow({
       ? 'next workflow step. gated by open questions / summarizer (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `buddy ${run.ordinal + 1}: ${run.status}`;
+        : `puppy ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -1352,7 +1352,7 @@ function WorkflowStepRow({
               }}
               onBlur={() => onRenameCommit(draft)}
               className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
-              aria-label="rename buddy"
+              aria-label="rename puppy"
             />
           ) : (
             <span className="truncate font-semibold">{run.name}</span>
@@ -1460,9 +1460,9 @@ function AgentRow({
 }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `buddy ${run.ordinal + 1}`,
+    `puppy ${run.ordinal + 1}`,
     `status: ${run.status}`,
-    isSelected ? 'selected: chat shows this buddy' : 'click to switch chat to this buddy',
+    isSelected ? 'selected: chat shows this puppy' : 'click to switch chat to this puppy',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1503,7 +1503,7 @@ function AgentRow({
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
         <AgentKindChip
           kind={kind}
-          title={`buddy ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`puppy ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
         {isEditing ? (
           <input
@@ -1524,7 +1524,7 @@ function AgentRow({
             }}
             onBlur={() => onRenameCommit(draft)}
             className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
-            aria-label="rename buddy"
+            aria-label="rename puppy"
           />
         ) : (
           <span
@@ -1586,8 +1586,8 @@ function AgentRow({
                   setConfirmingDelete(true);
                 }}
                 className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
-                title="delete buddy (double-click row to rename)"
-                aria-label="delete buddy"
+                title="delete puppy (double-click row to rename)"
+                aria-label="delete puppy"
               >
                 <Trash2 size={11} aria-hidden />
               </button>
@@ -1655,7 +1655,7 @@ function AgentLifetime({ run }: { run: Agent }) {
     return (
       <span
         className="font-mono text-muted-foreground/60"
-        title="buddy spawned but has not run yet"
+        title="puppy spawned but has not run yet"
       >
         0
       </span>

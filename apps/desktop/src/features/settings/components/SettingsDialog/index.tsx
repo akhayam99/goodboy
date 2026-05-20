@@ -185,7 +185,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           <div className="flex flex-col gap-4">
             <SectionHeading>Initialization</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Wipe the local sqlite database. Drops every workspace, session, buddy, message,
+              Wipe the local sqlite database. Drops every workspace, session, puppy, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
               API keys in the OS keychain are not touched. Fresh schema is recreated on next boot.
             </p>

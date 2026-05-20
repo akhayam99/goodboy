@@ -16,7 +16,7 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
     value: 'bypassPermissions',
     label: 'Bypass',
-    description: 'Buddy uses all tools freely, no prompts',
+    description: 'Puppy uses all tools freely, no prompts',
     dot: 'bg-red-500',
     text: 'text-red-500',
   },

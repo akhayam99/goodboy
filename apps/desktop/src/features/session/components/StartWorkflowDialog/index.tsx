@@ -111,7 +111,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
             onClick={() => setMode('preset')}
             icon={<Layers size={16} className="text-primary" aria-hidden />}
             title="Preset"
-            description="Pick from saved workflows. Each step spawns its own buddy."
+            description="Pick from saved workflows. Each step spawns its own puppy."
           />
           <ModeCard
             active={mode === 'custom'}

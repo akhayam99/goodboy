@@ -1,9 +1,16 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+} from 'react';
 import {
   ArrowDown,
   Bot,
   BookOpen,
-  Bug,
   ClipboardList,
   FlaskConical,
   Hammer,
@@ -11,9 +18,9 @@ import {
   Sparkles,
   Telescope,
   Wrench,
-  type LucideIcon,
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { DogSniff } from '../../../../shared/components/DogSniff';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
@@ -552,8 +559,8 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
       case 'agent_focus': {
         const meta = AGENT_KIND_META[selectedKind as AgentKindLabel];
         return {
-          eyebrow: `${meta.label} buddy · fresh transcript`,
-          title: `You're talking to a ${meta.label} buddy`,
+          eyebrow: `${meta.label} puppy · fresh transcript`,
+          title: `You're talking to a ${meta.label} puppy`,
           body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Just say what you want next.`,
           hints: [
             selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
@@ -568,16 +575,16 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
       }
       case 'pick_agent':
         return {
-          eyebrow: `${phaseRuns.length} ${phaseRuns.length === 1 ? 'buddy' : 'buddies'} in this session`,
-          title: 'Pick a buddy on the left',
-          body: 'Buddies share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-buddy. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
-          hints: ['Select a buddy to see its transcript', 'Spawn fresh, context travels with it'],
+          eyebrow: `${phaseRuns.length} ${phaseRuns.length === 1 ? 'puppy' : 'puppies'} in this session`,
+          title: 'Pick a puppy on the left',
+          body: 'Puppies share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-puppy. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
+          hints: ['Select a puppy to see its transcript', 'Spawn fresh, context travels with it'],
         };
       case 'workflow_no_agent':
         return {
-          eyebrow: 'Workflow ready · No buddies yet',
+          eyebrow: 'Workflow ready · No puppies yet',
           title: 'Start the first step',
-          body: 'No buddies have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first buddy, and every one after, will start already knowing it.',
+          body: 'No puppies have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first puppy, and every one after, will start already knowing it.',
           hints: ['Describe the goal in 1–2 lines', 'Lands in the shared context'],
         };
       case 'fresh':
@@ -585,11 +592,11 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
         return {
           eyebrow: 'Fresh session · No context yet',
           title: "Let's populate the context",
-          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every buddy you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
+          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every puppy you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
           hints: [
             'What are we building',
             'Any constraints or non-goals',
-            'Who should the first buddy be',
+            'Who should the first puppy be',
           ],
         };
     }
@@ -601,7 +608,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
       <div
         className={cn(
-          'relative flex size-20 items-center justify-center rounded-full',
+          'relative flex size-24 items-center justify-center rounded-full',
           agentVisual ? agentVisual.ringBg : 'bg-primary/10 text-primary',
         )}
       >
@@ -615,12 +622,12 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
         />
         {agentVisual ? (
           <agentVisual.Icon
-            size={36}
+            size={agentVisual.size ?? 42}
             className={cn('relative', agentVisual.iconClass)}
             aria-hidden
           />
         ) : (
-          <DogMascot size={40} className="relative" />
+          <DogMascot size={46} className="relative" />
         )}
       </div>
       <div className="flex flex-col gap-1.5">
@@ -648,10 +655,13 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
 interface KindVisual {
-  Icon: LucideIcon;
+  Icon: ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
   iconClass: string;
   ringBg: string;
   pulseBg: string;
+  // Custom illustrations carry more detail than lucide glyphs — render them
+  // larger so they stay legible. Falls back to the default glyph size.
+  size?: number;
 }
 
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
@@ -686,10 +696,11 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
     pulseBg: 'bg-emerald-400/15',
   },
   debugger: {
-    Icon: Bug,
+    Icon: DogSniff,
     iconClass: 'text-amber-400',
     ringBg: 'bg-amber-400/10',
     pulseBg: 'bg-amber-400/15',
+    size: 64,
   },
   tester: {
     Icon: FlaskConical,

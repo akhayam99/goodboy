@@ -430,13 +430,13 @@ function GeneralSection(props: GeneralSectionProps) {
       <SectionHeader
         icon={<Settings2 size={14} aria-hidden className="text-primary" />}
         title="General"
-        subtitle="Identity and infrastructure for this session. The goal text the buddy actually reads lives in the right-hand context panel."
+        subtitle="Identity and infrastructure for this session. The goal text the puppy actually reads lives in the right-hand context panel."
       />
 
       {/* Name */}
       <Field
         label="Name"
-        hint="Display name in the sidebar. Renaming doesn't change what the buddy sees."
+        hint="Display name in the sidebar. Renaming doesn't change what the puppy sees."
       >
         <div className="flex gap-2">
           <Input
@@ -593,7 +593,7 @@ function GeneralSection(props: GeneralSectionProps) {
       {WORKSPACE_FEATURES.initScript && hasInitScript ? (
         <Field
           label="Init script"
-          hint="When enabled, a setup buddy runs the workspace init script before the first buddy fires."
+          hint="When enabled, a setup puppy runs the workspace init script before the first puppy fires."
         >
           <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2.5 text-xs">
             <input
