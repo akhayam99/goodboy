@@ -161,7 +161,7 @@ export function SessionDetailPanel({
             aria-label="new session"
           >
             <Plus size={11} aria-hidden />
-            <span>New</span>
+            <span>New session</span>
           </button>
         ) : null}
         <OpenInEditorIconButton worktreePath={worktreePath} />
