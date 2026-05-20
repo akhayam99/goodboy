@@ -189,7 +189,7 @@ export function Dialog({
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <div
               className={cn(
-                'flex shrink-0 flex-col gap-0.5 bg-subtle/40 px-3 py-5',
+                'flex shrink-0 flex-col gap-0.5 px-3 py-5',
                 panelWidthClass,
                 panelClassName,
               )}
@@ -219,7 +219,7 @@ export function Dialog({
         {footer ? (
           <>
             <Divider />
-            <footer className="flex shrink-0 items-center justify-end gap-2 bg-subtle/60 px-6 py-3">
+            <footer className="flex shrink-0 items-center justify-end gap-2 px-6 py-3">
               {footer}
             </footer>
           </>
