@@ -172,7 +172,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                 </div>
                 <div
                   className={cn(
-                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
+                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-muted transition-[margin-left] duration-300 ease-out',
                     showActivityBar ? 'ml-0' : 'ml-1.5',
                   )}
                 >

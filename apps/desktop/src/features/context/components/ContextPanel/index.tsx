@@ -444,7 +444,7 @@ function SlotRow({
   return (
     <li
       className={cn(
-        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 transition-colors',
+        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-muted p-3 ring-1 transition-colors',
         accentRing,
       )}
     >
@@ -748,7 +748,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 ring-border-soft transition-colors">
+    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-muted p-3 ring-1 ring-border-soft transition-colors">
       <div className="flex items-center gap-2">
         <span
           aria-hidden

@@ -146,8 +146,8 @@ const SessionActivityItem = memo(function SessionActivityItem({
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded px-1 py-2 text-center transition-colors',
         isActive
-          ? 'bg-background text-foreground shadow-sm dark:bg-muted'
-          : 'text-foreground/70 hover:bg-background/50 hover:text-foreground',
+          ? 'bg-muted text-foreground shadow-sm'
+          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground',
         dimmed && 'opacity-50',
       )}
     >
