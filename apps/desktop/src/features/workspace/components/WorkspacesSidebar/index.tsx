@@ -691,14 +691,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry]);
 
+  // Turn count = runs launched per agent. Sourced from agentRunHistory
+  // (seeded from DB for every agent in the workspace) so it stays correct
+  // for agents whose transcript isn't currently loaded — messages[sessionId]
+  // only holds the selected agent's slice.
   const turnsByAgentId = useMemo(() => {
     const map = new Map<string, number>();
-    for (const m of messages) {
-      if (m.role !== 'user') continue;
-      map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
+    for (const run of phaseRuns) {
+      map.set(run.id, agentRunHistory[run.id]?.length ?? 0);
     }
     return map;
-  }, [messages]);
+  }, [phaseRuns, agentRunHistory]);
 
   // First user message per agent, kept stable so the chip's auto-label only
   // ever derives from turn #1 even if later turns arrive.
