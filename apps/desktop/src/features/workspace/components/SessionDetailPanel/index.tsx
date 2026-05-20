@@ -58,22 +58,9 @@ export function SessionDetailPanel({
   onOpenSessionSettings,
   onNewSession,
 }: SessionDetailPanelProps) {
-  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
-
-  // Kick off a GitHub PR fetch the first time we render this session with a
-  // resolved branch. The sidebar-wide warmup only runs once on app mount and
-  // can miss sessions whose branch loads later, leaving the card stuck on
-  // "loading github…" forever.
-  useEffect(() => {
-    if (!branch) return;
-    if (github && github.fetchedAt !== null) return;
-    if (github?.loading) return;
-    void refreshSessionPr(session.id as SessionId);
-  }, [session.id, branch, github, refreshSessionPr]);
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -372,12 +359,23 @@ export function SessionMetaFooter({ session, onOpenGithubDetails }: SessionMetaF
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const pr = github?.pr ?? null;
   // Branch needed to even kick off a fetch — fall through to "no PR yet"
   // instead of pinning the card to "loading…".
   const prLoading = branch
     ? !github || github.loading || (github.fetchedAt === null && !github.error)
     : false;
+
+  // Kick off a GitHub PR fetch the first time we render this session with a
+  // resolved branch. The sidebar-wide warmup runs once on app mount and can
+  // miss sessions whose branch loads later, leaving the card stuck.
+  useEffect(() => {
+    if (!branch) return;
+    if (github && github.fetchedAt !== null) return;
+    if (github?.loading) return;
+    void refreshSessionPr(session.id as SessionId);
+  }, [session.id, branch, github, refreshSessionPr]);
   const filesTouched = useFilesTouched(session.id);
   const diffComments = useDiffComments(session.id);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);

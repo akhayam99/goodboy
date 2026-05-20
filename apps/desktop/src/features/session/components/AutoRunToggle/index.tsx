@@ -28,7 +28,7 @@ export function AutoRunToggle({ session }: AutoRunToggleProps) {
   const cls = !hasWorkflow
     ? 'text-muted-foreground/25 cursor-not-allowed'
     : session.autoRun
-      ? 'text-amber-500 hover:bg-amber-500/10'
+      ? 'text-danger hover:bg-danger/10'
       : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground';
 
   return (

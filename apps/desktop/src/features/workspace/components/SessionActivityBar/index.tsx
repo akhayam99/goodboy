@@ -134,6 +134,8 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const isPending = hasUnread && !isActive;
   const isRunning = session.state.kind === 'running';
   const isErrored = session.state.kind === 'error';
+  const isAutoMode = session.autoRun === true;
+  const spinBorder = isRunning ? (isAutoMode ? 'spin-border-danger' : 'spin-border-info') : null;
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -152,7 +154,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
           : isPending
             ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
             : isRunning
-              ? 'border-info/50 bg-info/5 text-foreground hover:bg-info/10'
+              ? cn(
+                  'spin-border border-transparent text-foreground',
+                  spinBorder,
+                  isAutoMode ? 'bg-danger/5 hover:bg-danger/10' : 'bg-info/5 hover:bg-info/10',
+                )
               : isErrored
                 ? 'border-danger/40 bg-danger/5 text-foreground hover:bg-danger/10'
                 : 'border-transparent text-foreground/70 hover:bg-muted/50 hover:text-foreground',
