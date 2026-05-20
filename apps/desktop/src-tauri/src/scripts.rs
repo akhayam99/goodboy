@@ -74,8 +74,11 @@ impl From<DbError> for ScriptError {
 /// Run a workspace script body via `bash -c`, with cwd set to the workspace
 /// root. Captures stdout/stderr/exit. Never errors on a non-zero exit — the
 /// caller renders the exit code as a status (✓ / ✗).
+///
+/// Async + spawn_blocking so the bash subprocess doesn't block Tauri's main
+/// thread (which would freeze the entire webview until the script returns).
 #[tauri::command]
-pub fn workspace_script_run(
+pub async fn workspace_script_run(
     state: State<'_, Db>,
     script_id: String,
 ) -> Result<ScriptRunResult, ScriptError> {
@@ -93,16 +96,20 @@ pub fn workspace_script_run(
         .map_err(|_| ScriptError::NotFound(script_id.clone()))?
     };
 
-    let output = crate::path_env::command("bash")
-        .arg("-c")
-        .arg(&body)
-        .current_dir(&root)
-        .output()
-        .map_err(|e| ScriptError::Io(e.to_string()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let output = crate::path_env::command("bash")
+            .arg("-c")
+            .arg(&body)
+            .current_dir(&root)
+            .output()
+            .map_err(|e| ScriptError::Io(e.to_string()))?;
 
-    Ok(ScriptRunResult {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
+        Ok(ScriptRunResult {
+            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            exit_code: output.status.code().unwrap_or(-1),
+        })
     })
+    .await
+    .map_err(|e| ScriptError::Io(e.to_string()))?
 }
