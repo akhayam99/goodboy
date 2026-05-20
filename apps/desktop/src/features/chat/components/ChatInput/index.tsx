@@ -213,6 +213,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
@@ -231,8 +232,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   );
 
   const { showToast } = useToast();
-
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
