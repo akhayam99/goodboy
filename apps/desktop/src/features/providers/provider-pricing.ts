@@ -1,4 +1,4 @@
-import type { CodexModelPriceOverride } from '@kay-am/core';
+import type { CodexModelPriceOverride } from '@goodboy/core';
 import shippedPricing from './pricing.json';
 
 interface ModelPrice {
@@ -21,7 +21,7 @@ export function getActivePricingTable(): PricingTable {
 }
 
 // Remote CDN refresh is intentionally disabled — the previous placeholder URL
-// (`kay-am.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
+// (`goodboy.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
 // every boot and spammed DevTools with `Failed to load resource` 3×. The shipped
 // `data/pricing.json` is authoritative until a real CDN endpoint exists.
 export async function refreshPricingTable(): Promise<void> {

@@ -1,4 +1,4 @@
-import type { GithubPrCacheEntry, PullRequestState } from '@kay-am/types';
+import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { resolvePrForBranch } from './resolver';
 

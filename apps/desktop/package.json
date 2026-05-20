@@ -1,5 +1,5 @@
 {
-  "name": "@kay-am/desktop",
+  "name": "@goodboy/desktop",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,10 +14,10 @@
     "test:a11y": "vitest run --passWithNoTests src/__tests__/a11y"
   },
   "dependencies": {
-    "@kay-am/core": "workspace:*",
-    "@kay-am/db": "workspace:*",
-    "@kay-am/types": "workspace:*",
-    "@kay-am/ui": "workspace:*",
+    "@goodboy/core": "workspace:*",
+    "@goodboy/db": "workspace:*",
+    "@goodboy/types": "workspace:*",
+    "@goodboy/ui": "workspace:*",
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "lucide-react": "^1.14.0",

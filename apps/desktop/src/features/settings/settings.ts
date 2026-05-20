@@ -1,4 +1,4 @@
-import type { WorkspaceId } from '@kay-am/types';
+import type { WorkspaceId } from '@goodboy/types';
 
 export const SETTING_EDITOR_BINARY = 'editor.binary';
 export const SETTING_DEFAULT_EDITOR = 'editor.default';

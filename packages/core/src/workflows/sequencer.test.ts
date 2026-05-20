@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Step, Agent, Workflow } from '@kay-am/types';
+import type { Step, Agent, Workflow } from '@goodboy/types';
 import {
   buildStepPrompt,
   currentStep,

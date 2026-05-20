@@ -1,5 +1,5 @@
-import { serializeSlots, type SlotKey, PROVIDER_CAPABILITIES } from '@kay-am/core';
-import type { ContextSlot, TurnEvent } from '@kay-am/types';
+import { serializeSlots, type SlotKey, PROVIDER_CAPABILITIES } from '@goodboy/core';
+import type { ContextSlot, TurnEvent } from '@goodboy/types';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 const CONTEXT_MARKER_HINT =

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { Agent, Step, Workflow } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { Agent, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
   AGENT_KIND_DEFAULTS,
@@ -132,7 +132,7 @@ export function WorkflowNextStepCta({
       {pendingConfirm ? (
         <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
           <p className="mb-2 font-medium text-foreground">
-            open questions need resolution before spawning an agent.
+            open questions need resolution before spawning a buddy.
           </p>
           <div className="flex gap-2">
             <button

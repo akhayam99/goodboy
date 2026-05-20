@@ -1,4 +1,4 @@
-import type { SlotKey } from '@kay-am/core';
+import type { SlotKey } from '@goodboy/core';
 import type { AgentKind } from '../../features/session/agent-kind';
 
 // slots each kind actually consumes. missing kinds get all slots (fallback).

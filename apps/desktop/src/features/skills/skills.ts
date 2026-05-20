@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@kay-am/types';
-import { serializeSkillMarkdown, SkillExecutor } from '@kay-am/core';
-import type { SkillScriptRunner } from '@kay-am/core';
+import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
+import { serializeSkillMarkdown, SkillExecutor } from '@goodboy/core';
+import type { SkillScriptRunner } from '@goodboy/core';
 
 export interface ResolveSkillInvocationArgs {
   readonly skill: Skill;

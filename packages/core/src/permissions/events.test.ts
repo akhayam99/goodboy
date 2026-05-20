@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PermissionRuleId, ProviderRunId } from '@kay-am/types';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId } from '@goodboy/types';
 import { createPermissionDecisionEvent, createPermissionRequestEvent } from './events';
 
 const RUN_ID = 'run-1' as ProviderRunId;

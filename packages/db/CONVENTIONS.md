@@ -1,17 +1,17 @@
-# Conventions — @kay-am/db
+# Conventions — @goodboy/db
 
-SQLite schema, migrations, and queries for kAY.am. Runs locally on the user's machine via `tauri-plugin-sql`.
+SQLite schema, migrations, and queries for Goodboy. Runs locally on the user's machine via `tauri-plugin-sql`.
 
 ## Scope
 
 - Schema definitions (DDL).
 - Idempotent migrations.
 - Query builders / typed query functions.
-- Row-shape types (mirroring `@kay-am/types` domain types where relevant).
+- Row-shape types (mirroring `@goodboy/types` domain types where relevant).
 
 ## What does NOT belong here
 
-- Business logic → `@kay-am/core`.
+- Business logic → `@goodboy/core`.
 - Tauri command bindings → `apps/desktop`.
 - React components.
 
@@ -19,9 +19,9 @@ SQLite schema, migrations, and queries for kAY.am. Runs locally on the user's ma
 
 This is **local-only** persistence. No data leaves the user's machine.
 
-- DB file lives at `~/.kay-am/data.db` (or platform-equivalent app data dir).
+- DB file lives at `~/.goodboy/data.db` (or platform-equivalent app data dir).
 - API keys NEVER stored here — use OS keyring via the desktop secret store.
-- Conversation history (messages, slots, runs, telemetry) is stored locally so kAY.am owns the conversation across providers. Nothing transmitted.
+- Conversation history (messages, slots, runs, telemetry) is stored locally so Goodboy owns the conversation across providers. Nothing transmitted.
 - User can wipe the DB by deleting the file. Reset = clean slate.
 
 ## Schema rules
@@ -51,7 +51,7 @@ This is **local-only** persistence. No data leaves the user's machine.
   ): Promise<Workspace | null> { ... }
   ```
 - Parameterized queries only. Never string concatenation.
-- Return domain types from `@kay-am/types`, not raw rows. Mapping happens here.
+- Return domain types from `@goodboy/types`, not raw rows. Mapping happens here.
 - No N+1 queries. Use joins or batched fetches.
 - Transactions for multi-statement writes.
 

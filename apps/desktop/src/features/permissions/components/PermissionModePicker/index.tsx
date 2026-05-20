@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { ClaudePermissionMode, Session } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { ClaudePermissionMode, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 interface ModeMeta {
@@ -16,7 +16,7 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
     value: 'bypassPermissions',
     label: 'Bypass',
-    description: 'Agent uses all tools freely, no prompts',
+    description: 'Buddy uses all tools freely, no prompts',
     dot: 'bg-red-500',
     text: 'text-red-500',
   },

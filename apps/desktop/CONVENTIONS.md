@@ -1,4 +1,4 @@
-# Conventions — @kay-am/desktop
+# Conventions — @goodboy/desktop
 
 Tauri 2 desktop app. React 19 + Vite + Tailwind v4 + Zustand. Consumes all internal packages.
 
@@ -10,7 +10,7 @@ Tauri 2 desktop app. React 19 + Vite + Tailwind v4 + Zustand. Consumes all inter
 - **Frontend**: React 19, Vite 6, TypeScript strict.
 - **Styling**: Tailwind CSS v4 via `@tailwindcss/vite`. Light mode only.
 - **State**: Zustand. Slices by domain.
-- **Data**: SQLite via `@tauri-apps/plugin-sql`, queried through `@kay-am/db`.
+- **Data**: SQLite via `@tauri-apps/plugin-sql`, queried through `@goodboy/db`.
 - **Subprocess**: `@tauri-apps/plugin-shell` with strict scope. No arbitrary command execution.
 
 ## Scope
@@ -23,7 +23,7 @@ This app is the **only** layer that:
 - Wires features end-to-end (UI ↔ store ↔ Tauri ↔ DB).
 - Owns routing, layouts, and the app shell.
 
-Business logic stays in `@kay-am/core`. Presentational components stay in `@kay-am/ui`. SQL stays in `@kay-am/db`. Types stay in `@kay-am/types`.
+Business logic stays in `@goodboy/core`. Presentational components stay in `@goodboy/ui`. SQL stays in `@goodboy/db`. Types stay in `@goodboy/types`.
 
 ## Folder structure
 
@@ -58,7 +58,7 @@ src/
   ```ts
   type CommandResult<T, E> = { ok: true; value: T } | { ok: false; error: E };
   ```
-- Errors are domain types from `@kay-am/types`. Never expose raw Tauri error strings to the UI.
+- Errors are domain types from `@goodboy/types`. Never expose raw Tauri error strings to the UI.
 - Validate command output at the boundary if the Rust side is not the single source of truth.
 
 ## Capabilities & security
@@ -93,7 +93,7 @@ src/
 - Tailwind utility-first. No `@apply`. No CSS modules.
 - Tokens defined in `styles.css` `@theme` block (OKLCH). Reference via utility classes.
 - Light mode only. No `dark:` variants until dark mode is a feature.
-- Conditional classes via `cn()` from `@kay-am/ui`.
+- Conditional classes via `cn()` from `@goodboy/ui`.
 
 ## Naming
 

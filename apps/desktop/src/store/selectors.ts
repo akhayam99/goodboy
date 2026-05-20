@@ -9,9 +9,9 @@ import type {
   Session,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
-import type { Workspace } from '@kay-am/types';
-import type { NextAction } from '@kay-am/core';
+} from '@goodboy/types';
+import type { Workspace } from '@goodboy/types';
+import type { NextAction } from '@goodboy/core';
 import {
   useAppStore,
   type AppState,

@@ -6,7 +6,7 @@ import type {
   BudgetRule,
   ProviderName,
   SessionBudget,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 export async function invokeBudgetRuleUpsert(rule: BudgetRule): Promise<void> {
   return invoke<void>('budget_rule_upsert', { rule });

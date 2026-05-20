@@ -1,16 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { BudgetAlert, BudgetCheckResult, BudgetRule, SessionBudget } from '@kay-am/types';
-import type { IsoDateTime, SessionId } from '@kay-am/types';
-import type { Database } from '@kay-am/db';
+import type { BudgetAlert, BudgetCheckResult, BudgetRule, SessionBudget } from '@goodboy/types';
+import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { Database } from '@goodboy/db';
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   listBudgetRules: vi.fn(),
   listBudgetAlerts: vi.fn(),
   insertBudgetAlert: vi.fn(),
   getSessionBudget: vi.fn(),
 }));
 
-import { listBudgetRules, listBudgetAlerts, insertBudgetAlert, getSessionBudget } from '@kay-am/db';
+import {
+  listBudgetRules,
+  listBudgetAlerts,
+  insertBudgetAlert,
+  getSessionBudget,
+} from '@goodboy/db';
 
 import { emitBudgetAlerts } from '../alert-emitter';
 import type { AlertEmitterDeps } from '../alert-emitter';

@@ -1,4 +1,4 @@
-# kAY.am
+# Goodboy
 
 AI workspace orchestrator. Manage macro sessions, route agents across providers, balance usage automatically.
 
@@ -58,7 +58,7 @@ Every dependency is a liability. Add the minimum, vet each one, audit regularly.
 ## Architecture
 
 ```
-kay-am/
+goodboy/
 ├── src-tauri/        # Rust backend (Tauri commands, SQLite, process spawn)
 ├── src/
 │   ├── app/          # App shell, routing, layouts
@@ -79,4 +79,4 @@ kay-am/
 ## VS Code integration
 
 - Workspaces open in VS Code via `code /path/to/worktree`.
-- kay-am is the orchestrator, VS Code is the editor.
+- Goodboy is the orchestrator, VS Code is the editor.

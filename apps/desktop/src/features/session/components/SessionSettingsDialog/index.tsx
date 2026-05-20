@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Dialog, Input, cn } from '@kay-am/ui';
+import { Button, Dialog, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Archive,
@@ -15,7 +15,7 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react';
-import type { SessionId } from '@kay-am/types';
+import type { SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -430,13 +430,13 @@ function GeneralSection(props: GeneralSectionProps) {
       <SectionHeader
         icon={<Settings2 size={14} aria-hidden className="text-primary" />}
         title="General"
-        subtitle="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
+        subtitle="Identity and infrastructure for this session. The goal text the buddy actually reads lives in the right-hand context panel."
       />
 
       {/* Name */}
       <Field
         label="Name"
-        hint="Display name in the sidebar. Renaming doesn't change what the agent sees."
+        hint="Display name in the sidebar. Renaming doesn't change what the buddy sees."
       >
         <div className="flex gap-2">
           <Input
@@ -593,7 +593,7 @@ function GeneralSection(props: GeneralSectionProps) {
       {WORKSPACE_FEATURES.initScript && hasInitScript ? (
         <Field
           label="Init script"
-          hint="When enabled, a setup agent runs the workspace init script before the first agent fires."
+          hint="When enabled, a setup buddy runs the workspace init script before the first buddy fires."
         >
           <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2.5 text-xs">
             <input

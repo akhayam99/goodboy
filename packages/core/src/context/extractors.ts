@@ -1,4 +1,4 @@
-import type { TurnEvent } from '@kay-am/types';
+import type { TurnEvent } from '@goodboy/types';
 
 // Extractors that turn raw turn output into ContextPanel updates. Each
 // exported fn is pure — caller persists via the ContextEngine. Split kept

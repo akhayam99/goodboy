@@ -5,7 +5,7 @@ import {
   invokeSkillRescan,
   type SkillUpsertArgs,
 } from '../../features/skills/skills';
-import type { SkillId, WorkspaceId } from '@kay-am/types';
+import type { SkillId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;

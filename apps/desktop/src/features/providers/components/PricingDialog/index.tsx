@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Dialog, cn } from '@kay-am/ui';
+import { Dialog, cn } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
-import { migrate, type Database as DbInterface } from '@kay-am/db';
+import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type {
   IsoDateTime,
   ProviderAdapter,
@@ -9,7 +9,7 @@ import type {
   SessionId,
   TelemetryRecordId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { TelemetryRecorder } from './recorder';
 
 function makeDb(): DbInterface {

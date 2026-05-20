@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FolderOpen, Plus, Settings } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { Workspace, WorkspaceId } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { MAX_WORKSPACES } from '../../../../shared/lib/features';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 import {

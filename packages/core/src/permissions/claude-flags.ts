@@ -4,7 +4,7 @@ import type {
   PermissionRuleScope,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { formatToolPattern } from './matcher';
 
 export interface ClaudeFlagSet {

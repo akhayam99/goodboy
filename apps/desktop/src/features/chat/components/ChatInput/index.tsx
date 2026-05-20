@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { Send, Square, X } from 'lucide-react';
-import { Textarea } from '@kay-am/ui';
+import { Textarea } from '@goodboy/ui';
 import type {
   AgentId,
   BudgetAlert,
@@ -16,8 +16,8 @@ import type {
   Session,
   SessionId,
   TurnProviderOverride,
-} from '@kay-am/types';
-import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
+} from '@goodboy/types';
+import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -333,7 +333,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const onSelectProvider = (id: ProviderId) => {
     if (!connectedProviderIds.includes(id)) {
       window.dispatchEvent(
-        new CustomEvent('kayam:open-settings', { detail: { section: 'providers' } }),
+        new CustomEvent('goodboy:open-settings', { detail: { section: 'providers' } }),
       );
       return;
     }

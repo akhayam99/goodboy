@@ -1,5 +1,5 @@
-import type { IsoDateTime, Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
-import { upsertWorkflow, type Database } from '@kay-am/db';
+import type { IsoDateTime, Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { upsertWorkflow, type Database } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { defaultsForRole } from '../roles';
 

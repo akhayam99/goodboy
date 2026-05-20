@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Dialog } from '@kay-am/ui';
-import type { Session } from '@kay-am/types';
+import { Button, Dialog } from '@goodboy/ui';
+import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 // Tauri errors serialize as `{kind: string; message: string}` plain objects.

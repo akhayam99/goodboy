@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Skill } from '@kay-am/types';
+import type { Skill } from '@goodboy/types';
 import { SkillExecutor, SkillScriptError } from './executor';
 import type { SkillScriptRunner } from './executor';
 

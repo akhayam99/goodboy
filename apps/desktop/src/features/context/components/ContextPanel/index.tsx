@@ -15,8 +15,8 @@ import {
   BookOpen,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@kay-am/ui';
-import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@kay-am/core';
+import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
+import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
@@ -25,7 +25,7 @@ import type {
   Session,
   SessionId,
   TelemetryRecord,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import {
   EMPTY_ARRAY,
@@ -302,7 +302,7 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: HelpCircle,
     iconClass: 'text-warning',
     iconChipBg: 'bg-warning/10 ring-warning/20',
-    description: 'Things the agent still needs clarified',
+    description: 'Things the buddy still needs clarified',
     accentRingWhenNonEmpty: 'ring-warning/60',
     emptyLabel: 'No open questions',
     emptyCta: 'Add a question to ask the user',
@@ -841,10 +841,10 @@ function ContextFreshEmpty({ goal }: ContextFreshEmptyProps) {
         <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
           Context is empty
         </span>
-        <h3 className="text-sm font-semibold text-foreground">Your shared agent brief</h3>
+        <h3 className="text-sm font-semibold text-foreground">Your shared buddy brief</h3>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          This panel keeps every agent on the same page. Open questions, decisions and the latest
-          output summary land here as you work, so spawning a new agent never resets the
+          This panel keeps every buddy on the same page. Open questions, decisions and the latest
+          output summary land here as you work, so spawning a new buddy never resets the
           conversation.
         </p>
       </div>

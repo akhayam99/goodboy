@@ -31,16 +31,16 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@kay-am/core':
+      '@goodboy/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kay-am/db':
+      '@goodboy/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@kay-am/types':
+      '@goodboy/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@kay-am/ui':
+      '@goodboy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tauri-apps/api':
@@ -107,10 +107,10 @@ importers:
 
   packages/core:
     dependencies:
-      '@kay-am/db':
+      '@goodboy/db':
         specifier: workspace:*
         version: link:../db
-      '@kay-am/types':
+      '@goodboy/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:
@@ -132,7 +132,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@kay-am/types':
+      '@goodboy/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:

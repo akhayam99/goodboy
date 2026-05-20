@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, X, Trash2 } from 'lucide-react';
-import { Tooltip, cn } from '@kay-am/ui';
-import type { Notification, NotificationSeverity } from '@kay-am/db';
+import { Tooltip, cn } from '@goodboy/ui';
+import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {

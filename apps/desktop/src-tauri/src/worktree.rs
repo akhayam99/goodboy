@@ -143,14 +143,14 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         .map(|b| b.to_string())
         .unwrap_or_else(|| new_branch_name.clone());
 
-    // Default location: <repo>/.kay-am/worktrees/<prefix>-<slug>. Keeps every
+    // Default location: <repo>/.goodboy/worktrees/<prefix>-<slug>. Keeps every
     // session-scoped checkout inside the workspace folder so the user only has
-    // one project root to track. The .kay-am dir should be in the repo's
+    // one project root to track. The .goodboy dir should be in the repo's
     // .gitignore (we add it on first creation, see ensure_gitignore_entry).
     let parent = args
         .parent_dir
         .map(PathBuf::from)
-        .unwrap_or_else(|| repo_path.join(".kay-am").join("worktrees"));
+        .unwrap_or_else(|| repo_path.join(".goodboy").join("worktrees"));
     // For existing branches we still derive a unique directory from the
     // sanitized branch (with slashes replaced) so two sessions adopting the
     // same branch don't collide on disk.
@@ -159,7 +159,7 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
         .unwrap_or_else(|| slug.clone());
     let worktree_path = parent.join(format!("{}-{dir_slug}", args.branch_prefix));
 
-    ensure_gitignore_entry(&repo_path, ".kay-am/")?;
+    ensure_gitignore_entry(&repo_path, ".goodboy/")?;
 
     if let Some(existing) = find_existing(&repo_path, &worktree_path)? {
         return Ok(CreatedWorktree {
@@ -643,7 +643,7 @@ fn find_existing(
 }
 
 /// Append a line to the repo's .gitignore if it isn't already present, so the
-/// worktree directory created by kay-am doesn't leak into git status. No-ops
+/// worktree directory created by Goodboy doesn't leak into git status. No-ops
 /// when the file is already gitignoring the entry, when no .gitignore exists
 /// and writing fails, or when the entry is already there.
 fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeError> {

@@ -10,8 +10,8 @@ import {
   Minus,
   Plus,
 } from 'lucide-react';
-import { cn, ScrollArea } from '@kay-am/ui';
-import type { PullRequestStateKind, Session, SessionId, TurnState } from '@kay-am/types';
+import { cn, ScrollArea } from '@goodboy/ui';
+import type { PullRequestStateKind, Session, SessionId, TurnState } from '@goodboy/types';
 import { useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
 

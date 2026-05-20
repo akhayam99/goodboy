@@ -1,4 +1,4 @@
-import type { PrComment, PullRequestState } from '@kay-am/types';
+import type { PrComment, PullRequestState } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import { AGENT_KIND_DEFAULTS } from '../session/agent-kind';
 

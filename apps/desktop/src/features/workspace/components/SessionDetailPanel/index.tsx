@@ -17,14 +17,14 @@ import {
   Settings2,
   XCircle,
 } from 'lucide-react';
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 import type {
   PullRequestStateKind,
   Session,
   SessionId,
   TelemetryRecord,
   WorktreeStatus,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -303,7 +303,7 @@ const PR_ICON_MAP: Record<
 interface GithubCardProps {
   pr: { number: number; state: PullRequestStateKind; url: string } | null;
   loading: boolean;
-  detail: import('@kay-am/types').PrDetail | null;
+  detail: import('@goodboy/types').PrDetail | null;
   onOpenDetails?: () => void;
 }
 
@@ -361,7 +361,7 @@ function GithubCard({ pr, loading, detail, onOpenDetails }: GithubCardProps) {
 
 type CiState = 'success' | 'failure' | 'pending' | 'none';
 
-function computeCiState(checks: ReadonlyArray<import('@kay-am/types').PrCheckRun>): CiState {
+function computeCiState(checks: ReadonlyArray<import('@goodboy/types').PrCheckRun>): CiState {
   if (checks.length === 0) return 'none';
   if (
     checks.some(

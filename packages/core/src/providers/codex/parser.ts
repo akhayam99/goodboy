@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
 export interface ParseContext {

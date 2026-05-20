@@ -374,7 +374,7 @@ pub fn skill_rescan(
     let claude_dir = root_path.join(".claude").join("skills");
 
     // Discover skill files from both layouts:
-    //   - <root>/.kay/skills/*.md            (kay-am native)
+    //   - <root>/.kay/skills/*.md            (Goodboy native)
     //   - <root>/.claude/skills/<name>/SKILL.md  (claude-code convention)
     let mut md_files: Vec<PathBuf> = Vec::new();
 

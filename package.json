@@ -1,5 +1,5 @@
 {
-  "name": "kay-am",
+  "name": "goodboy",
   "version": "0.0.0",
   "private": true,
   "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
@@ -20,8 +20,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "tauri:dev": "pnpm --filter @kay-am/desktop tauri:dev",
-    "tauri:build": "pnpm --filter @kay-am/desktop tauri:build",
+    "tauri:dev": "pnpm --filter @goodboy/desktop tauri:dev",
+    "tauri:build": "pnpm --filter @goodboy/desktop tauri:build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "knip": "knip",

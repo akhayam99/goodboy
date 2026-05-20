@@ -8,7 +8,7 @@ import type {
   PlanStatus,
   PlanWithCount,
   SessionId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface PlanRow {

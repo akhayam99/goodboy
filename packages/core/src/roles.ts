@@ -1,6 +1,6 @@
-import type { AgentEffort, AgentRole, ProviderId } from '@kay-am/types';
+import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
 
-export type { AgentEffort, AgentRole } from '@kay-am/types';
+export type { AgentEffort, AgentRole } from '@goodboy/types';
 
 export interface RoleDefaults {
   readonly provider: ProviderId;

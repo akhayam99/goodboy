@@ -8,7 +8,7 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
@@ -43,7 +43,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

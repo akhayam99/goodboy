@@ -1,4 +1,4 @@
-import type { ModelTier } from '@kay-am/types';
+import type { ModelTier } from '@goodboy/types';
 
 // Codex CLI v0.130.0 accepts any model id the user's ChatGPT account / API key
 // has access to. The curated set below mirrors the docs at

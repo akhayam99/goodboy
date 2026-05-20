@@ -6,7 +6,7 @@ import type {
   SessionId,
   TelemetryRecordId,
   TelemetryRecord,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,

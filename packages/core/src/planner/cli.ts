@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import type { ProviderId } from '@kay-am/types';
+import type { ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { parsePlannerOutput } from './parser';

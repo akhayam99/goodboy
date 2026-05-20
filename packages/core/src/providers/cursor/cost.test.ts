@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderUsage } from '@kay-am/types';
+import type { ProviderUsage } from '@goodboy/types';
 import { CURSOR_CHEAP_MODEL, computeCursorCostUsd, cursorPriceFor } from './cost';
 import { computeCostUsd } from '../claude/cost';
 

@@ -1,4 +1,4 @@
-import type { ContextSlot } from '@kay-am/types';
+import type { ContextSlot } from '@goodboy/types';
 
 export const SLOT_KEYS = [
   'goal',

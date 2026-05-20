@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatToolPattern, parseToolPattern } from './matcher';
-import type { PermissionRulePattern } from '@kay-am/types';
+import type { PermissionRulePattern } from '@goodboy/types';
 
 describe('parseToolPattern', () => {
   it('bare tool name matches any args', () => {

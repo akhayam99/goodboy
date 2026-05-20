@@ -1,4 +1,4 @@
-import type { GithubPrCacheEntry, PullRequestState } from '@kay-am/types';
+import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface Row {

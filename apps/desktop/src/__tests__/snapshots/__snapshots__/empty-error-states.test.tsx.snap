@@ -406,7 +406,7 @@ exports[`snapshot — empty states > ProvidersPanel: no providers (store returns
       >
         claude
       </code>
-       in a terminal). kay-am picks up the credentials.
+       in a terminal). Goodboy picks up the credentials.
     </span>
   </div>
 </div>
@@ -683,7 +683,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       <span
         class="text-xs font-semibold tracking-tight text-foreground"
       >
-        kAY.am
+        Goodboy
       </span>
     </span>
     <div
@@ -1020,7 +1020,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
             class="text-xs leading-relaxed text-muted-foreground"
             id="_r_1_-desc"
           >
-            How kAY.am, sessions, agents, and CLI providers fit together.
+            How Goodboy, sessions, agents, and CLI providers fit together.
           </p>
         </div>
         <button
@@ -1361,13 +1361,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                   <h2
                     class="text-lg font-semibold tracking-tight text-foreground"
                   >
-                    What is kAY.am?
+                    What is Goodboy?
                   </h2>
                 </div>
                 <p
                   class="max-w-3xl text-sm leading-relaxed text-muted-foreground"
                 >
-                  kAY.am orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.
+                  Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.
                 </p>
               </div>
               <div
@@ -1406,13 +1406,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                   </svg>
                 </span>
                 <div>
-                  kAY.am does 
+                  Goodboy does 
                   <strong
                     class="text-foreground"
                   >
                     not
                   </strong>
-                   talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and quotas live in the CLI itself — kAY.am just adds the workspace layer on top.
+                   talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and quotas live in the CLI itself — Goodboy just adds the workspace layer on top.
                 </div>
               </div>
               <div>
@@ -1875,7 +1875,7 @@ exports[`snapshot — error states > App init error — BootSplash with error me
       <span
         class="text-lg font-bold tracking-tight"
       >
-        kAY.am
+        Goodboy
       </span>
       <span
         class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
@@ -2013,7 +2013,7 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
       <span
         class="text-lg font-bold tracking-tight"
       >
-        kAY.am
+        Goodboy
       </span>
       <span
         class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
@@ -2606,7 +2606,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
       >
         claude
       </code>
-       in a terminal). kay-am picks up the credentials.
+       in a terminal). Goodboy picks up the credentials.
     </span>
   </div>
 </div>

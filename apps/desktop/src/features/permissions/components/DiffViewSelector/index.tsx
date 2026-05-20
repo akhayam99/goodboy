@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { BranchCommit, DiffView, WorktreeStatus } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 
 interface DiffViewSelectorProps {
   view: DiffView;

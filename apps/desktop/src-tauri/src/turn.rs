@@ -233,7 +233,7 @@ pub(crate) fn spawn_one(
     command
         .current_dir(args.working_dir)
         // Strip env vars that signal "running inside another Claude Code /
-        // Agent SDK session". When kay-am is launched from such a context the
+        // Agent SDK session". When Goodboy is launched from such a context the
         // vars propagate to children; the claude CLI then either refuses with
         // a nested-session error or falls through to broken auth (401). We
         // want every spawn to behave as a fresh shell invocation that hits
@@ -248,7 +248,7 @@ pub(crate) fn spawn_one(
     }
 
     let codex_debug = args.binary == "codex"
-        && std::env::var("KAYAM_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false);
+        && std::env::var("GOODBOY_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false);
     if codex_debug {
         eprintln!(
             "[codex-debug] turn args binary={:?} cwd={:?} cli_args={:?}",
@@ -545,9 +545,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires real codex binary + active login; opt in via KAYAM_TEST_REAL_CODEX=1"]
+    #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
     fn codex_real_spawn_emits_json_events() {
-        if std::env::var("KAYAM_TEST_REAL_CODEX")
+        if std::env::var("GOODBOY_TEST_REAL_CODEX")
             .map(|v| v.is_empty())
             .unwrap_or(true)
         {

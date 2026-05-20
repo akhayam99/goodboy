@@ -1,6 +1,6 @@
-# @kay-am/ui
+# @goodboy/ui
 
-Shared React 19 components for kAY.am. Presentational primitives styled with Tailwind CSS v4.
+Shared React 19 components for Goodboy. Presentational primitives styled with Tailwind CSS v4.
 
 No business logic, no Tauri APIs, no data fetching. Light mode only for now.
 
@@ -13,7 +13,7 @@ See [CONVENTIONS.md](./CONVENTIONS.md).
 ### Button
 
 ```tsx
-import { Button } from '@kay-am/ui';
+import { Button } from '@goodboy/ui';
 
 <Button onClick={handleClick}>save</Button>
 <Button variant="secondary">cancel</Button>
@@ -26,7 +26,7 @@ Variants: `primary` (default), `secondary`, `ghost`, `danger`. Sizes: `sm`, `md`
 ### Input
 
 ```tsx
-import { Input } from '@kay-am/ui';
+import { Input } from '@goodboy/ui';
 
 <Input placeholder="search" value={q} onChange={(e) => setQ(e.target.value)} />;
 ```
@@ -34,7 +34,7 @@ import { Input } from '@kay-am/ui';
 ### Textarea
 
 ```tsx
-import { Textarea } from '@kay-am/ui';
+import { Textarea } from '@goodboy/ui';
 
 <Textarea rows={4} placeholder="goal" />;
 ```
@@ -42,7 +42,7 @@ import { Textarea } from '@kay-am/ui';
 ### ScrollArea
 
 ```tsx
-import { ScrollArea } from '@kay-am/ui';
+import { ScrollArea } from '@goodboy/ui';
 
 <ScrollArea className="h-64">{longList}</ScrollArea>;
 ```
@@ -50,7 +50,7 @@ import { ScrollArea } from '@kay-am/ui';
 ### Collapsible
 
 ```tsx
-import { Collapsible } from '@kay-am/ui';
+import { Collapsible } from '@goodboy/ui';
 
 <Collapsible open={open} onOpenChange={setOpen} trigger="files touched">
   <ul>{...}</ul>
@@ -62,7 +62,7 @@ import { Collapsible } from '@kay-am/ui';
 Wraps native `<dialog>`. Esc closes; backdrop click does not.
 
 ```tsx
-import { Dialog } from '@kay-am/ui';
+import { Dialog } from '@goodboy/ui';
 
 <Dialog open={open} onClose={close} title="confirm">
   <p>are you sure?</p>
@@ -73,7 +73,7 @@ import { Dialog } from '@kay-am/ui';
 ### KbdPill
 
 ```tsx
-import { KbdPill } from '@kay-am/ui';
+import { KbdPill } from '@goodboy/ui';
 
 press <KbdPill>⌘K</KbdPill> to open
 ```
@@ -83,7 +83,7 @@ press <KbdPill>⌘K</KbdPill> to open
 Three-pane layout: header on top, left sidebar, main, right sidebar. Each pane scrolls independently.
 
 ```tsx
-import { AppShell } from '@kay-am/ui';
+import { AppShell } from '@goodboy/ui';
 
 <AppShell
   header={<TopBar />}
@@ -100,7 +100,7 @@ import { AppShell } from '@kay-am/ui';
 Class-merging helper. `clsx` + `tailwind-merge`.
 
 ```tsx
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 
 <span className={cn('text-sm', isActive && 'font-medium')} />;
 ```

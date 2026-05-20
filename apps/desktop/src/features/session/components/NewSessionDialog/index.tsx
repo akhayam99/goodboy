@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Dialog, Input, Textarea, cn } from '@kay-am/ui';
+import { Button, Dialog, Input, Textarea, cn } from '@goodboy/ui';
 import { GitBranch, Loader2, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, WorkspaceId } from '@kay-am/types';
+import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -253,7 +253,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       open={open}
       onClose={onClose}
       title="New session"
-      description="Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards."
+      description="Creates a worktree on a fresh branch. Configure workflow and buddies from the session panel afterwards."
       size="lg"
       footer={
         <div className="flex w-full items-center gap-2">
@@ -279,7 +279,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
           title="Goal"
-          subtitle="What this session should accomplish. Be specific — agents lean on it for context."
+          subtitle="What this session should accomplish. Be specific — buddies lean on it for context."
         >
           <Textarea
             value={goal}

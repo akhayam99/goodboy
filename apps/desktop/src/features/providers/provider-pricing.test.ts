@@ -40,7 +40,7 @@ describe('getCodexPriceOverride', () => {
 });
 
 describe('refreshPricingTable', () => {
-  // CDN refresh is currently a no-op (placeholder URL `kay-am.dev` was never
+  // CDN refresh is currently a no-op (placeholder URL `goodboy.dev` was never
   // provisioned). Kept as a stable resolved-undefined contract so callers
   // (e.g. App.tsx boot) don't break.
   it('resolves to undefined without making any network call', async () => {

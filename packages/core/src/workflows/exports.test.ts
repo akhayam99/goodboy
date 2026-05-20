@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import * as core from '@kay-am/core';
+import * as core from '@goodboy/core';
 import * as phases from './index';
 
 describe('phases barrel exports', () => {
-  it('exposes browser-safe sequencer and propagator from @kay-am/core root', () => {
+  it('exposes browser-safe sequencer and propagator from @goodboy/core root', () => {
     expect(core.nextStep).toBeTypeOf('function');
     expect(core.buildStepPrompt).toBeTypeOf('function');
     expect(core.isWorkflowComplete).toBeTypeOf('function');
@@ -17,7 +17,7 @@ describe('phases barrel exports', () => {
     expect(phases.WorkflowPropagator).toBeTypeOf('function');
   });
 
-  it('does NOT expose WorkflowRegistry from the root @kay-am/core barrel (node-only)', () => {
+  it('does NOT expose WorkflowRegistry from the root @goodboy/core barrel (node-only)', () => {
     expect((core as Record<string, unknown>).WorkflowRegistry).toBeUndefined();
     expect((phases as Record<string, unknown>).WorkflowRegistry).toBeUndefined();
   });

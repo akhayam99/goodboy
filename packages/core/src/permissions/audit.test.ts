@@ -8,7 +8,7 @@ import type {
   PermissionRuleId,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { PermissionAuditRecorder, type AuditQuery } from './audit';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;

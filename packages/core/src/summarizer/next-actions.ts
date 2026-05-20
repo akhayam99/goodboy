@@ -1,4 +1,4 @@
-import type { ContextSlot } from '@kay-am/types';
+import type { ContextSlot } from '@goodboy/types';
 import type { ContextSlotDelta, SummarizeInput } from './client';
 
 export type NextActionKind = 'scout' | 'plan' | 'implement';

@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "kay-am",
+  "productName": "Goodboy",
   "version": "0.0.0",
-  "identifier": "am.kay.desktop",
+  "identifier": "com.goodboy.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1421",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "kAY.am",
+        "title": "Goodboy",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,

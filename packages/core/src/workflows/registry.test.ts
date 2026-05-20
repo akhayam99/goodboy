@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
-import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
-import { migrate, insertWorkspace, type Database as DbInterface } from '@kay-am/db';
+import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { migrate, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
 import { WorkflowRegistry, WorkflowRegistryError } from './registry';
 
 const WORKSPACE_ID = 'ws_test' as WorkspaceId;

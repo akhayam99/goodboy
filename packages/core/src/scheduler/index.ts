@@ -6,7 +6,7 @@ import type {
   AgentStatus,
   ProviderRunId,
   TurnEvent,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 export {
   detectConflicts,

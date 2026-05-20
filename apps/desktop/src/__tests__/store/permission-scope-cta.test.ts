@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@kay-am/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 
 // Module mocks — hoisted before store import.
 vi.mock('../../turn', () => ({
@@ -30,7 +30,7 @@ vi.mock('../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

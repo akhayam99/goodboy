@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button, Input, Select } from '@kay-am/ui';
-import type { BudgetRule, ProviderName } from '@kay-am/types';
+import { Button, Input, Select } from '@goodboy/ui';
+import type { BudgetRule, ProviderName } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 

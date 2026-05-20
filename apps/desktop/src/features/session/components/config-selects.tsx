@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@kay-am/ui';
-import type { ProviderId } from '@kay-am/types';
-import { PROVIDER_CAPABILITIES } from '@kay-am/core';
+import { cn } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { Check, ChevronDown } from 'lucide-react';
 import { shortModelWithVersion } from '../agent-row-format';
 import {

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@goodboy/types';
 import { CodexAdapter } from './adapter';
 import { CODEX_DEFAULT_MODEL } from './constants';
 

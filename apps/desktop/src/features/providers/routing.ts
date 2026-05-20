@@ -1,10 +1,10 @@
-import { getDefaultTurnModel, resolveProvider } from '@kay-am/core';
+import { getDefaultTurnModel, resolveProvider } from '@goodboy/core';
 import type {
   ProviderId,
   RoutingDecision,
   SessionProviderPreference,
   TurnProviderOverride,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { invokeCheckProviderBudget } from '../budget/budget';
 
 export async function resolveProviderForTurn(

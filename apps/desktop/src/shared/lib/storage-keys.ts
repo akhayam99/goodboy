@@ -1,4 +1,4 @@
-const PREFIX = 'kay-am:';
+const PREFIX = 'goodboy:';
 
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
@@ -24,8 +24,14 @@ const LEGACY_KEY_MAP: Record<string, string> = {
   'kayam:theme': STORAGE_KEYS.theme,
   'kayam:archived-tasks': STORAGE_KEYS.archivedTasks,
   'pricing-sort-key': STORAGE_KEYS.pricingSortKey,
-  'kayam:left-sidebar-width': 'kay-am:left-sidebar-width',
-  'kayam:right-sidebar-width': 'kay-am:right-sidebar-width',
+  'kayam:left-sidebar-width': 'goodboy:left-sidebar-width',
+  'kayam:right-sidebar-width': 'goodboy:right-sidebar-width',
+  'kay-am:theme': STORAGE_KEYS.theme,
+  'kay-am:archived-tasks': STORAGE_KEYS.archivedTasks,
+  'kay-am:pricing-sort-key': STORAGE_KEYS.pricingSortKey,
+  'kay-am:diff-sidebar-collapsed': STORAGE_KEYS.diffSidebarCollapsed,
+  'kay-am:left-sidebar-width': 'goodboy:left-sidebar-width',
+  'kay-am:right-sidebar-width': 'goodboy:right-sidebar-width',
 };
 
 const LEGACY_PREFIX_MAP: Record<string, string> = {
@@ -34,6 +40,16 @@ const LEGACY_PREFIX_MAP: Record<string, string> = {
   'kayam:model:': STORAGE_PREFIXES.model,
   'kayam:provider:': STORAGE_PREFIXES.provider,
   'kayam:context-panel-open:': STORAGE_PREFIXES.contextPanelOpen,
+  'kay-am:verbosity:': STORAGE_PREFIXES.verbosity,
+  'kay-am:effort:': STORAGE_PREFIXES.effort,
+  'kay-am:model:': STORAGE_PREFIXES.model,
+  'kay-am:provider:': STORAGE_PREFIXES.provider,
+  'kay-am:context-panel-open:': STORAGE_PREFIXES.contextPanelOpen,
+  'kay-am:agent-verbosity:': STORAGE_PREFIXES.agentVerbosity,
+  'kay-am:agent-effort:': STORAGE_PREFIXES.agentEffort,
+  'kay-am:agent-model:': STORAGE_PREFIXES.agentModel,
+  'kay-am:agent-provider:': STORAGE_PREFIXES.agentProvider,
+  'kay-am:diff-view:': STORAGE_PREFIXES.diffView,
 };
 
 export function migrateLegacyStorageKeys(): void {

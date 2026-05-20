@@ -12,8 +12,8 @@ import {
   type RunFileTouches,
   type SchedulerDeps,
   type SchedulerHandle,
-} from '@kay-am/core';
-import { parseStreamJsonLine } from '@kay-am/core';
+} from '@goodboy/core';
+import { parseStreamJsonLine } from '@goodboy/core';
 import type {
   IsoDateTime,
   ParallelMergeStrategy,
@@ -29,7 +29,7 @@ import type {
   SessionId,
   TurnEvent,
   Workspace,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   invokeParallelPhaseGroupCreate,
   invokeParallelPhaseGroupUpdateCompletedAt,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { Markdown } from '@kay-am/ui';
+import { Markdown } from '@goodboy/ui';
 
 describe('Markdown', () => {
   it('renders headings', () => {

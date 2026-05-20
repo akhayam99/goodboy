@@ -3,7 +3,7 @@ import type {
   ProviderConnectionState,
   ProviderInfo as ProviderInfoBase,
   ProviderId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 

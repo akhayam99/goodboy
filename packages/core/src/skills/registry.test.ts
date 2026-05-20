@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
-import type { IsoDateTime, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import {
   migrate,
   insertWorkspace,
   listSkillsForWorkspace,
   type Database as DbInterface,
-} from '@kay-am/db';
+} from '@goodboy/db';
 import type { SkillFs } from './registry';
 import { SkillRegistry, SkillRegistryError } from './registry';
 

@@ -54,7 +54,7 @@ export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 // registry.ts (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from @kay-am/core/src/providers/registry when needed in Node context.
+// Import directly from @goodboy/core/src/providers/registry when needed in Node context.
 export {
   PROVIDER_CAPABILITIES,
   getCapabilities,
@@ -64,7 +64,7 @@ export {
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from @kay-am/core/src/providers/cursor/adapter when needed in Node context.
+// Import directly from @goodboy/core/src/providers/cursor/adapter when needed in Node context.
 export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export {
@@ -129,7 +129,7 @@ export {
   type SeedResult,
   type SeedWorkflowLibraryDeps,
 } from './workflows';
-// WorkflowRegistry + seeder (@kay-am/db → node) are intentionally excluded from this
+// WorkflowRegistry + seeder (@goodboy/db → node) are intentionally excluded from this
 // browser-safe barrel. Import directly from packages/core/src/workflows/registry
 // or packages/core/src/workflows/seeder in Node/Tauri command contexts.
 

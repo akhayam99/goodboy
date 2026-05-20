@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, SessionId, TurnEvent, TurnRequest } from '@goodboy/types';
 import { CursorAdapter } from './adapter';
 
 const fakeNow = (): IsoDateTime => '2026-05-07T00:00:00.000Z' as IsoDateTime;

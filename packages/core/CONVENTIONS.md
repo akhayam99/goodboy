@@ -1,4 +1,4 @@
-# Conventions — @kay-am/core
+# Conventions — @goodboy/core
 
 Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This package must be runnable in Node, browsers, and tests without changes.
 
@@ -13,8 +13,8 @@ Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This packag
 
 ## What does NOT belong here
 
-- React components → `@kay-am/ui`.
-- SQLite queries → `@kay-am/db`.
+- React components → `@goodboy/ui`.
+- SQLite queries → `@goodboy/db`.
 - Tauri command bindings → `apps/desktop`.
 - Side effects bound to a runtime (file system, processes, native APIs).
 

@@ -44,7 +44,7 @@ parallelGroup:
       prompt: Refactor api module...
 ```
 
-Each phase runs on a new worktree. On completion, kAY.am merges back into main branch (interactive merge conflict resolution if needed).
+Each phase runs on a new worktree. On completion, Goodboy merges back into main branch (interactive merge conflict resolution if needed).
 
 ## Known limitations
 
@@ -59,7 +59,7 @@ See [#214](https://github.com/serenis/kay-am/issues/214) for v0.7 integration te
 
 If a parallel run fails:
 
-1. **Worktree auto-cleanup**: kAY.am deletes throwaway worktrees. No manual cleanup needed.
+1. **Worktree auto-cleanup**: Goodboy deletes throwaway worktrees. No manual cleanup needed.
 2. **Main session unaffected**: Parent worktree + branch remain intact.
 3. **Git state**: Partial merges are rolled back. Re-run or abort safely.
 

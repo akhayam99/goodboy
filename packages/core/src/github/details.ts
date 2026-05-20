@@ -6,7 +6,7 @@ import type {
   PrReview,
   PrReviewRequest,
   PrReviewState,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { GhCliError, runJson } from './gh';
 

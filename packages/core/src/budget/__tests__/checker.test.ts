@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { checkProviderBudget, checkSessionBudget, getPeriodWindow } from '../checker';
-import type { Database } from '@kay-am/db';
-import type { SessionId } from '@kay-am/types';
+import type { Database } from '@goodboy/db';
+import type { SessionId } from '@goodboy/types';
 
 function makeDb(overrides: Partial<Database> = {}): Database {
   return {

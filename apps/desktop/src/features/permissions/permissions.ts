@@ -12,7 +12,7 @@ import type {
   ProviderRunId,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 interface RawPermissionRuleRow {
   readonly id: string;

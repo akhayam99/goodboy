@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { BranchCommit, WorktreeDiffScope, WorktreeStatus } from '@kay-am/types';
+import type { BranchCommit, WorktreeDiffScope, WorktreeStatus } from '@goodboy/types';
 
 export interface CreatedWorktree {
   readonly worktreePath: string;

@@ -1,4 +1,4 @@
-import type { Skill } from '@kay-am/types';
+import type { Skill } from '@goodboy/types';
 
 export interface SkillScriptRunner {
   runScript(scriptPath: string, args: ReadonlyArray<string>, cwd: string): Promise<string>;

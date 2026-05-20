@@ -1,4 +1,4 @@
-import type { Agent, TelemetryRecord } from '@kay-am/types';
+import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { CostBadge } from '../../providers/components/CostBadge';
 import { formatTokens } from '../agent-row-format';
 

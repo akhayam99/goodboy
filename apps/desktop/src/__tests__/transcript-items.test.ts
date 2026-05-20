@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { reduceTranscript } from '../features/chat/utils/transcript-items';
 
 const RUN = 'run-1' as ProviderRunId;

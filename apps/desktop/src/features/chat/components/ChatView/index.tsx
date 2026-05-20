@@ -19,8 +19,8 @@ import {
   inferAgentKindFromName,
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
-import type { AgentId, ProviderRunId, Session } from '@kay-am/types';
-import { cn, Skeleton } from '@kay-am/ui';
+import type { AgentId, ProviderRunId, Session } from '@goodboy/types';
+import { cn, Skeleton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
 import {
   detectParallelRunIds,
@@ -525,7 +525,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
 
 interface ChatEmptyStateProps {
   selectedAgentId: AgentId | null;
-  phaseRuns: ReadonlyArray<import('@kay-am/types').Agent>;
+  phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;
   workflowId: string | null;
 }
 
@@ -552,8 +552,8 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
       case 'agent_focus': {
         const meta = AGENT_KIND_META[selectedKind as AgentKindLabel];
         return {
-          eyebrow: `${meta.label} agent · fresh transcript`,
-          title: `You're talking to a ${meta.label} agent`,
+          eyebrow: `${meta.label} buddy · fresh transcript`,
+          title: `You're talking to a ${meta.label} buddy`,
           body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Just say what you want next.`,
           hints: [
             selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
@@ -568,16 +568,16 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
       }
       case 'pick_agent':
         return {
-          eyebrow: `${phaseRuns.length} agent${phaseRuns.length === 1 ? '' : 's'} in this session`,
-          title: 'Pick an agent on the left',
-          body: 'Agents share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-agent. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
-          hints: ['Select an agent to see its transcript', 'Spawn fresh, context travels with it'],
+          eyebrow: `${phaseRuns.length} ${phaseRuns.length === 1 ? 'buddy' : 'buddies'} in this session`,
+          title: 'Pick a buddy on the left',
+          body: 'Buddies share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-buddy. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
+          hints: ['Select a buddy to see its transcript', 'Spawn fresh, context travels with it'],
         };
       case 'workflow_no_agent':
         return {
-          eyebrow: 'Workflow ready · No agents yet',
+          eyebrow: 'Workflow ready · No buddies yet',
           title: 'Start the first step',
-          body: 'No agents have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first agent, and every one after, will start already knowing it.',
+          body: 'No buddies have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first buddy, and every one after, will start already knowing it.',
           hints: ['Describe the goal in 1–2 lines', 'Lands in the shared context'],
         };
       case 'fresh':
@@ -585,11 +585,11 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
         return {
           eyebrow: 'Fresh session · No context yet',
           title: "Let's populate the context",
-          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every agent you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
+          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every buddy you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
           hints: [
             'What are we building',
             'Any constraints or non-goals',
-            'Who should the first agent be',
+            'Who should the first buddy be',
           ],
         };
     }

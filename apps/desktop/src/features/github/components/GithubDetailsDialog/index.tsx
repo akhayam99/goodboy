@@ -12,7 +12,7 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-react';
-import { Dialog, cn } from '@kay-am/ui';
+import { Dialog, cn } from '@goodboy/ui';
 import type {
   PrCheckConclusion,
   PrCheckRun,
@@ -22,7 +22,7 @@ import type {
   PrReviewState,
   PullRequestState,
   SessionId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 

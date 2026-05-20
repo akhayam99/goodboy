@@ -1,10 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { save, open } from '@tauri-apps/plugin-dialog';
-import type { ConfigBundleImportResult } from '@kay-am/types';
+import type { ConfigBundleImportResult } from '@goodboy/types';
 
 export async function exportConfigToFile(): Promise<string | null> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const defaultPath = `kay-am-backup-${timestamp}.json`;
+  const defaultPath = `goodboy-backup-${timestamp}.json`;
 
   const filePath = await save({
     defaultPath,

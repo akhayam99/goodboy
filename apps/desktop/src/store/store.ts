@@ -17,7 +17,7 @@ import {
   type NextAction,
   type SlotKey,
   seedWorkflowLibrary,
-} from '@kay-am/core';
+} from '@goodboy/core';
 import {
   getSetting,
   insertMessage,
@@ -68,7 +68,7 @@ import {
   type NotificationKind,
   type NotificationSeverity,
   type TelemetrySummary,
-} from '@kay-am/db';
+} from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -121,14 +121,14 @@ import type {
   PullRequestState,
   LinkedIssue,
   PrDetail,
-} from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
+} from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   computeCostUsd,
   computeCodexCostUsd,
   computeCursorCostUsd,
   extractPlanFromMarker,
-} from '@kay-am/core';
+} from '@goodboy/core';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
   buildProviderList,
@@ -457,7 +457,7 @@ export interface AppActions {
   saveInitScript(workspaceId: WorkspaceId, content: string): Promise<void>;
   loadInitScriptHistory(
     workspaceId: WorkspaceId,
-  ): Promise<ReadonlyArray<import('@kay-am/db').WorkspaceInitScript>>;
+  ): Promise<ReadonlyArray<import('@goodboy/db').WorkspaceInitScript>>;
   deleteInitScriptEntry(id: string, workspaceId: WorkspaceId): Promise<void>;
   updateSessionSkipInit(sessionId: SessionId, skipInit: boolean): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
@@ -503,7 +503,7 @@ export interface AppActions {
   setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
   exportConfig(): Promise<string | null>;
-  importConfig(): Promise<import('@kay-am/types').ConfigBundleImportResult | null>;
+  importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
   setGithubPat(token: string): Promise<GhTokenStatus>;
   clearGithubToken(): Promise<void>;
@@ -525,7 +525,7 @@ export interface AppActions {
     sessionId: SessionId,
     filePath: string,
     body: string,
-    anchor?: import('@kay-am/types').DiffCommentAnchor,
+    anchor?: import('@goodboy/types').DiffCommentAnchor,
   ): Promise<void>;
   resolveDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   consumeDiffComments(
@@ -1519,7 +1519,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             } else if (agent.status === 'failed') {
               seededTurnState[agent.id] = {
                 kind: 'error',
-                message: 'agent failed',
+                message: 'buddy failed',
                 failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
               };
             } else {
@@ -1736,7 +1736,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const fallback = await invokePhaseRunInsert({
           sessionId: session.id,
           ordinal: 0,
-          name: 'agent 1',
+          name: 'buddy 1',
           status: 'pending',
         });
         prespawnedRuns = [fallback];
@@ -1942,7 +1942,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
-      throw new Error('no agent selected. spawn one before sending a turn');
+      throw new Error('no buddy selected. spawn one before sending a turn');
     }
 
     const userTurnText = content;
@@ -2851,12 +2851,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === sessionId);
         const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
-        // Only auto-rename agents whose name still matches the default
-        // `agent N` pattern — workflow-step names and user edits stay.
+        // Only auto-rename buddies whose name still matches the default
+        // `buddy N` pattern (or the legacy `agent N`) — workflow-step names
+        // and user edits stay.
         const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find(
           (r) => r.id === activeAgentId,
         );
-        const agentNameEditable = agentRecord ? /^agent \d+$/i.test(agentRecord.name) : false;
+        const agentNameEditable = agentRecord
+          ? /^(buddy|agent) \d+$/i.test(agentRecord.name)
+          : false;
         if (sessionForTitle && (titleEditable || agentNameEditable)) {
           void generateAutoTitle(
             set,
@@ -3387,7 +3390,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     if (!resolvedName) {
       const existing = state.sessionPhaseRuns[sessionId] ?? [];
-      resolvedName = `agent ${existing.length + 1}`;
+      resolvedName = `buddy ${existing.length + 1}`;
     }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
@@ -3816,7 +3819,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activateWorkflowAgent: async (sessionId, agentId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
-    if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
+    if (!agent || !agent.stepId) throw new Error('buddy not found or not a workflow buddy');
 
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || !session.workflowId) throw new Error('session has no workflow');
@@ -3903,7 +3906,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     void get().emitNotification(
       'agent-auto-spawn',
       'info',
-      `agent auto-spawned: ${nextPendingAgent.name}`,
+      `buddy auto-spawned: ${nextPendingAgent.name}`,
       undefined,
       { sessionId },
     );

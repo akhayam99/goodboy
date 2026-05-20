@@ -8,7 +8,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { pickNextWorkflowStep } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;

@@ -156,7 +156,7 @@ export function BootSplash({
           </div>
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-lg font-bold tracking-tight">kAY.am</span>
+          <span className="text-lg font-bold tracking-tight">Goodboy</span>
           <span className="text-[11px] uppercase tracking-widest text-muted-foreground/60">
             AI workspace orchestrator
           </span>

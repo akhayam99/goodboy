@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GhRunner } from '../gh';
 import { GhCliError } from '../gh';
 import { fetchLinkedIssues, parseLinkedIssuesFromBody } from '../resolver';
-import type { PullRequestState } from '@kay-am/types';
+import type { PullRequestState } from '@goodboy/types';
 
 const REPO_URL = 'https://github.com/org/repo/pull/42';
 const REPO_BASE = 'https://github.com/org/repo';

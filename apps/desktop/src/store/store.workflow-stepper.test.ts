@@ -9,7 +9,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 // Module mocks — hoisted before subject import.
 const runTurnSpy = vi.fn();
@@ -39,7 +39,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 // Module mocks — hoisted before store import.
 const cancelTurnSpy = vi.fn();
@@ -44,7 +44,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
@@ -140,7 +140,7 @@ function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
     stateKind === 'running'
       ? {
           kind: 'running' as const,
-          runId: 'run-1' as import('@kay-am/types').ProviderRunId,
+          runId: 'run-1' as import('@goodboy/types').ProviderRunId,
           startedAt: NOW,
         }
       : { kind: 'idle' as const, lastActivityAt: NOW };
@@ -212,7 +212,7 @@ describe('endSession — happy path', () => {
         [SESSION_ID]: [
           {
             kind: 'assistant_text',
-            runId: 'run-1' as import('@kay-am/types').ProviderRunId,
+            runId: 'run-1' as import('@goodboy/types').ProviderRunId,
             delta: 'hello',
             at: NOW,
           },

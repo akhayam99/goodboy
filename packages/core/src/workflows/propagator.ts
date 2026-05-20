@@ -1,4 +1,4 @@
-import type { ContextSlot, IsoDateTime, StepTransition } from '@kay-am/types';
+import type { ContextSlot, IsoDateTime, StepTransition } from '@goodboy/types';
 import { serializeSlots } from '../context';
 
 export interface WorkflowPropagatorDeps {

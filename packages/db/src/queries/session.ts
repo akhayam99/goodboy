@@ -9,7 +9,7 @@ import type {
   TurnState,
   WorkflowId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface SessionRow {

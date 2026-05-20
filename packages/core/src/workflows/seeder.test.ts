@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
-import type { IsoDateTime, WorkspaceId } from '@kay-am/types';
-import { migrate, listWorkflows, insertWorkspace, type Database as DbInterface } from '@kay-am/db';
+import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
+import { migrate, listWorkflows, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { seedWorkflowLibrary } from './seeder';
 

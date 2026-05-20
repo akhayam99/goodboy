@@ -1,12 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@kay-am/core';
-import type { GhTokenStatus, GithubPrCacheEntry } from '@kay-am/types';
+import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
+import type { GhTokenStatus, GithubPrCacheEntry } from '@goodboy/types';
 import {
   getGithubPrCache,
   upsertGithubPrCache,
   deleteGithubPrCache,
   type Database,
-} from '@kay-am/db';
+} from '@goodboy/db';
 import { formatError } from '../../shared/lib/errors';
 
 interface RawGhRunResult {

@@ -8,7 +8,7 @@ import type {
   ProviderUsage,
   TurnEvent,
   TurnRequest,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { computeCostUsd } from './cost';
 import { parseStreamJsonLine } from './parser';
 

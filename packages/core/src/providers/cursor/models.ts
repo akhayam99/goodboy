@@ -1,4 +1,4 @@
-import type { ModelTier } from '@kay-am/types';
+import type { ModelTier } from '@goodboy/types';
 import { CURSOR_CHEAP_MODEL } from './cost';
 
 // Cursor CLI v2026.05.07 default model.

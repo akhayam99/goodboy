@@ -1,4 +1,4 @@
-import { summarizeWorkspaceProviderTelemetry, type ProviderTelemetrySummary } from '@kay-am/db';
+import { summarizeWorkspaceProviderTelemetry, type ProviderTelemetrySummary } from '@goodboy/db';
 import type {
   BudgetRule,
   BudgetAlert,
@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
   IsoDateTime,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   invokeBudgetRuleList,
   invokeBudgetRuleUpsert,

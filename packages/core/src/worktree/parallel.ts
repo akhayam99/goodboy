@@ -1,4 +1,4 @@
-import type { SessionId } from '@kay-am/types';
+import type { SessionId } from '@goodboy/types';
 
 export interface ParallelWorktreeDeps {
   invokeWorktreeCreate: (args: {

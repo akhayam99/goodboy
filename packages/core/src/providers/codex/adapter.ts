@@ -8,7 +8,7 @@ import type {
   ProviderUsage,
   TurnEvent,
   TurnRequest,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
 import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
 import { parseJsonLine } from './parser';

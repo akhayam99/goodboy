@@ -1,8 +1,8 @@
-# kAY.am
+# Goodboy
 
 **AI workspace orchestrator. Local-first. Provider-agnostic.**
 
-kAY.am sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them. One workspace per repo. One session per goal. N agents per session, each with its own chat, provider, and kind. Routing across Anthropic, Cursor, and Codex based on priority and budget. Plans as first-class artifacts. GitHub PR/CI integration. Real-time cost. Skills for the repeatable.
+Goodboy sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them. One workspace per repo. One session per goal. N agents per session, each with its own chat, provider, and kind. Routing across Anthropic, Cursor, and Codex based on priority and budget. Plans as first-class artifacts. GitHub PR/CI integration. Real-time cost. Skills for the repeatable.
 
 > **Status**: open beta. Sidebar redesigned around workspace cards + per-session activity bar + detail panel. Soft-disconnect for workspaces, branch-vs-main files counter with line totals, per-kind agent icons, polished context panel + boot splash. **v1.0 next** — see [ROADMAP.md](./ROADMAP.md).
 
@@ -10,7 +10,7 @@ kAY.am sits between you and your AI agents. It doesn't replace your editor or yo
 
 ## Why
 
-| Problem                                                         | kAY.am                                  |
+| Problem                                                         | Goodboy                                 |
 | --------------------------------------------------------------- | --------------------------------------- |
 | AI sessions are monolithic threads. Context bloats, costs blur. | One session = one goal, scoped context. |
 | Switching providers means switching tools. No layer compares.   | Provider-agnostic routing + budget.     |
@@ -52,7 +52,7 @@ Workspace                  a registered git repo
 **Tauri 2** · **React 19** · **TypeScript 5** · **Vite 6** · **Tailwind v4** · **Zustand 5** · **SQLite** (local, never sent anywhere) · **pnpm 10 workspaces** + **Turborepo**.
 
 ```
-kay-am/
+goodboy/
 ├── apps/desktop/        Tauri 2 desktop app
 └── packages/
     ├── ui/              shared React components
@@ -75,7 +75,7 @@ Two columns. Fixed sidebar left, chat + context panel right. No top header, no b
 
 ## Providers
 
-kAY.am orchestrates through locally installed CLIs. Each uses the **subscription cap**, not API tokens.
+Goodboy orchestrates through locally installed CLIs. Each uses the **subscription cap**, not API tokens.
 
 | Provider               | CLI install                                      | Subscription            |
 | ---------------------- | ------------------------------------------------ | ----------------------- |
@@ -128,7 +128,7 @@ pnpm tauri:dev          # launches the desktop app in dev
 
 ## Settings
 
-- **Global** (⌘, footer of sidebar) — App / Providers / Budget / Integrations / Initialization / Advanced. **Initialization → Wipe local database** drops every workspace/session/agent/message in `~/.kay-am/data.db` and re-runs migrations on next boot. OS-keychain API keys are untouched.
+- **Global** (⌘, footer of sidebar) — App / Providers / Budget / Integrations / Initialization / Advanced. **Initialization → Wipe local database** drops every workspace/session/agent/message in `~/.goodboy/data.db` and re-runs migrations on next boot. OS-keychain API keys are untouched.
 - **Per-workspace** (gear icon on each workspace card) — General (branch prefix), Skills, Init script, Workflows (beta), Disconnect. Scoped — never bleeds into the global dialog.
 
 ## Roadmap & contributing

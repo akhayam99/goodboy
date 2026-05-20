@@ -1,4 +1,4 @@
-import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@kay-am/types';
+import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { GhCliError, runJson } from './gh';
 

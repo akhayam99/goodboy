@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GitFork as GithubIcon, Check, AlertCircle, Loader2 } from 'lucide-react';
-import { Button, Input, cn } from '@kay-am/ui';
+import { Button, Input, cn } from '@goodboy/ui';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
@@ -85,7 +85,7 @@ function NotInstalled() {
             >
               cli.github.com
             </a>{' '}
-            so kAY.am can resolve PR state.
+            so Goodboy can resolve PR state.
           </span>
         </div>
       </div>
@@ -112,7 +112,7 @@ function Absent({
         connect with a personal access token (classic or fine-grained, scope:{' '}
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">repo</code>), or run{' '}
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">gh auth login</code> in
-        a terminal and reload kAY.am.
+        a terminal and reload Goodboy.
       </p>
       <div className="flex items-center gap-2">
         <Input

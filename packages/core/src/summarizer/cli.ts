@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import type { ContextSlot, ProviderId } from '@kay-am/types';
+import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';

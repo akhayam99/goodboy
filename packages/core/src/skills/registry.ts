@@ -1,6 +1,6 @@
-import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@kay-am/types';
-import type { Database as SqlDatabase } from '@kay-am/db';
-import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@kay-am/db';
+import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@goodboy/types';
+import type { Database as SqlDatabase } from '@goodboy/db';
+import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@goodboy/db';
 import { parseSkillMarkdown, SkillParseError } from './parser';
 
 export interface SkillFs {

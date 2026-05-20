@@ -1,4 +1,4 @@
-import type { SlashCommand } from '@kay-am/types';
+import type { SlashCommand } from '@goodboy/types';
 
 const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 

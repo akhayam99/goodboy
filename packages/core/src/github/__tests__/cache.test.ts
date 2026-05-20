@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { GithubPrCacheEntry, PullRequestState } from '@kay-am/types';
+import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { GhRunner } from '../gh';
 import {
   DEFAULT_PR_CACHE_TTL_MS,

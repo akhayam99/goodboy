@@ -7,7 +7,7 @@ import type {
   PlanWithCount,
   AgentId,
   SessionId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   addPlanConsumption as dbAddPlanConsumption,
   deletePlan as dbDeletePlan,
@@ -16,7 +16,7 @@ import {
   updatePlanBody as dbUpdatePlanBody,
   updatePlanStatus as dbUpdatePlanStatus,
   upsertPlan as dbUpsertPlan,
-} from '@kay-am/db';
+} from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 
 export async function listPlansForSession(
