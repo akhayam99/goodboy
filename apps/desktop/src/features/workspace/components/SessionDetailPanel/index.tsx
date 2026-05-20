@@ -440,7 +440,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
 
   if (filesTouchedCount === 0 && (loading.transcript || loading.agents)) {
     return (
-      <div className="flex shrink-0 items-center gap-3 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-3 px-3 py-2">
         <SessionCostChip sessionId={session.id} />
         <div
           role="status"
@@ -456,7 +456,7 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-3 border-t border-border-soft px-3 py-2">
+      <div className="flex shrink-0 items-center gap-3 px-3 py-2">
         <SessionCostChip sessionId={session.id} />
         <button
           type="button"

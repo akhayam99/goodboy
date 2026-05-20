@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { Send, Square, X } from 'lucide-react';
-import { Textarea } from '@kay-am/ui';
+import { Divider, Textarea } from '@kay-am/ui';
 import type {
   AgentId,
   BudgetAlert,
@@ -579,7 +579,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               </button>
             )}
           </div>
-          <div className="flex items-center justify-between gap-2 border-t border-border-soft/60 px-2.5 py-2">
+          <Divider />
+          <div className="flex items-center justify-between gap-2 px-2.5 py-2">
             <div className="flex items-center gap-2">
               <PermissionModePicker session={session} />
               {queued ? (

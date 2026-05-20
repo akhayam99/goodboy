@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
-import { CopyButton, Markdown, cn } from '@kay-am/ui';
+import { CopyButton, Divider, Markdown, cn } from '@kay-am/ui';
 import type { AgentId, SessionId } from '@kay-am/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -80,7 +80,7 @@ function TranscriptCardImpl({
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
     case 'done':
-      return <hr className="border-border" />;
+      return <Divider />;
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':

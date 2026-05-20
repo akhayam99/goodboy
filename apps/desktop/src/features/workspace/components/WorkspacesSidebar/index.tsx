@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, ScrollArea, cn } from '@kay-am/ui';
+import { Button, Dialog, Divider, Input, ScrollArea, cn } from '@kay-am/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -143,21 +143,22 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
-      {/* activity bar + detail panel */}
+      {/* unified master-detail card — sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
             const totalSessions = activeSessions.length + archivedSessions.length;
             const hasAnySession = totalSessions > 0;
             // The activity bar only makes sense as a switcher. With a single
-            // session the user never switches — collapse it and expose the
-            // "new session" action inside the detail panel header instead.
+            // session the user never switches — collapse the rail and expose
+            // the "new session" action inside the detail header instead.
             const showActivityBar = totalSessions > 1;
             return (
-              <>
+              <div className="m-2 flex min-h-0 flex-1 overflow-hidden rounded-lg bg-elevated">
+                {/* sessions rail — same surface as the detail, split only by the divider */}
                 <div
                   className={cn(
-                    'overflow-hidden transition-[width] duration-300 ease-out',
+                    'shrink-0 overflow-hidden transition-[width] duration-300 ease-out',
                     showActivityBar ? 'w-28' : 'w-0',
                   )}
                   aria-hidden={!showActivityBar}
@@ -170,12 +171,15 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     onNewSession={() => setNewSessionOpen(true)}
                   />
                 </div>
-                <div
-                  className={cn(
-                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-muted transition-[margin-left] duration-300 ease-out',
-                    showActivityBar ? 'ml-0' : 'ml-1.5',
-                  )}
-                >
+                {/* inset hairline divider — floats clear of the rounded corners */}
+                {showActivityBar ? (
+                  <div
+                    aria-hidden
+                    className="my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+                  />
+                ) : null}
+                {/* selected-session detail */}
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
                       <SessionDetailPanel
@@ -197,7 +201,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     />
                   )}
                 </div>
-              </>
+              </div>
             );
           })()
         ) : (
@@ -282,11 +286,14 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
 function NextSuggestionsPlaceholder() {
   return (
-    <div
-      className="shrink-0 border-t border-border-soft px-3 py-1.5 text-2xs italic text-muted-foreground/60"
-      title="next-action suggestions are coming back in a future update"
-    >
-      Next suggestions will be re-added soon.
+    <div className="shrink-0">
+      <Divider />
+      <p
+        className="px-3 py-1.5 text-2xs italic text-muted-foreground/60"
+        title="next-action suggestions are coming back in a future update"
+      >
+        Next suggestions will be re-added soon.
+      </p>
     </div>
   );
 }
