@@ -4,7 +4,7 @@ import type {
   FileDiff,
   FileDiffStatus,
   PullRequestDiff,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { GhCliError } from './gh';
 

@@ -5,8 +5,8 @@ import {
   tauriGhRunner,
   createTauriPrCacheStore,
 } from '../../features/github/github';
-import { getPrForBranch, fetchLinkedIssues, fetchPrDetail, detectRepoSlug } from '@kay-am/core';
-import type { GhTokenStatus, SessionId, IsoDateTime } from '@kay-am/types';
+import { getPrForBranch, fetchLinkedIssues, fetchPrDetail, detectRepoSlug } from '@goodboy/core';
+import type { GhTokenStatus, SessionId, IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import { formatError } from '../../shared/lib/errors';
 import type { AppStore } from '../store';

@@ -1,4 +1,4 @@
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 import { AGENT_KIND_PALETTE, type AgentKind } from '../agent-kind';
 
 interface AgentKindChipProps {

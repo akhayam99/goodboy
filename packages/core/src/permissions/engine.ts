@@ -6,7 +6,7 @@ import type {
   PermissionRuleScope,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { formatToolPattern, parseToolPattern } from './matcher';
 
 export interface PermissionEngineDeps {

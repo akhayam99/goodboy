@@ -1,4 +1,4 @@
-# kAY.am — Vision
+# Goodboy — Vision
 
 ## The problem
 
@@ -10,7 +10,7 @@ There is no layer between you and the AI agents. No orchestration. No structured
 
 **Work better. Spend less. Ship faster. Stay in control.**
 
-kAY.am is a local-first AI workspace orchestrator that sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them.
+Goodboy is a local-first AI workspace orchestrator that sits between you and your AI agents. It doesn't replace your editor or your terminal — it commands them.
 
 ## Core concepts
 
@@ -46,7 +46,7 @@ After each agent turn, the summarizer infers what should happen next: scout (exp
 
 ### Provider routing & balance
 
-Register your AI providers (Anthropic, Cursor, Codex). Set priorities. Set budgets. kAY.am routes work to the right provider automatically.
+Register your AI providers (Anthropic, Cursor, Codex). Set priorities. Set budgets. Goodboy routes work to the right provider automatically.
 
 - Provider 1 hits 75% budget → fallback to provider 2.
 - Quick task → fast cheap model. Complex architecture → best available model.
@@ -54,7 +54,7 @@ Register your AI providers (Anthropic, Cursor, Codex). Set priorities. Set budge
 
 ### Telemetry & cost awareness
 
-Every interaction is metered. kAY.am gives you total visibility on what you're spending and where, in real time.
+Every interaction is metered. Goodboy gives you total visibility on what you're spending and where, in real time.
 
 - **Token usage**: input/output tokens per request, per session, per provider, per model.
 - **Estimated cost**: live cost estimate based on provider pricing, with running totals per session.
@@ -65,7 +65,7 @@ All metrics are computed and stored locally. Nothing transmitted.
 
 ### GitHub integration
 
-Connect via `gh` CLI or personal access token. kAY.am surfaces your PR state — draft, open, approved, merged, closed — alongside CI checks, review decisions, and comments. The diff viewer shows file-level hunks with inline annotations. Reviewer agents can consume diff comments directly. The GitHub card auto-refreshes when an agent creates or updates a PR.
+Connect via `gh` CLI or personal access token. Goodboy surfaces your PR state — draft, open, approved, merged, closed — alongside CI checks, review decisions, and comments. The diff viewer shows file-level hunks with inline annotations. Reviewer agents can consume diff comments directly. The GitHub card auto-refreshes when an agent creates or updates a PR.
 
 ### Skills & automation
 
@@ -73,27 +73,27 @@ Local skills live with the workspace: markdown files with frontmatter discovered
 
 ### Editor integration
 
-kAY.am is the brain. Your editor is the hands. When it's time to write code, kAY.am opens your editor on the right worktree, in the right branch. VS Code and Cursor are detected automatically; when both are available, a dropdown lets you pick. When the code is done, control returns to kAY.am.
+Goodboy is the brain. Your editor is the hands. When it's time to write code, Goodboy opens your editor on the right worktree, in the right branch. VS Code and Cursor are detected automatically; when both are available, a dropdown lets you pick. When the code is done, control returns to Goodboy.
 
-## What kAY.am is NOT
+## What Goodboy is NOT
 
 - Not an IDE. You already have one.
 - Not another chat UI. The world has enough.
 - Not a wrapper around one AI provider. It orchestrates all of them.
 - Not a cloud service. It runs on your machine, your data stays local.
-- Not a data collector. Your data flows directly between you and your providers. kAY.am is the local layer in between.
+- Not a data collector. Your data flows directly between you and your providers. Goodboy is the local layer in between.
 
 ## Zero data ownership
 
-kAY.am is a pure orchestration layer. We do not run servers. We do not have accounts. We do not store, log, or transmit your data anywhere except to the AI providers you choose.
+Goodboy is a pure orchestration layer. We do not run servers. We do not have accounts. We do not store, log, or transmit your data anywhere except to the AI providers you choose.
 
 - No backend. Ever.
 - No telemetry. No analytics. No tracking.
 - API keys stay on your machine, in your OS credential store.
 - Conversations, prompts, and responses flow directly between you and the provider.
-- Local persistence is SQLite (`~/.kay-am/data.db`): workspaces, sessions, agents, messages, context slots, plans, telemetry, skills, settings. All yours, all local.
+- Local persistence is SQLite (`~/.goodboy/data.db`): workspaces, sessions, agents, messages, context slots, plans, telemetry, skills, settings. All yours, all local.
 
-If kAY.am disappeared tomorrow, your data would be untouched — because it was never ours.
+If Goodboy disappeared tomorrow, your data would be untouched — because it was never ours.
 
 ## Principles
 

@@ -1,5 +1,5 @@
-import { Button, Dialog } from '@kay-am/ui';
-import type { ConfigBundleImportResult } from '@kay-am/types';
+import { Button, Dialog } from '@goodboy/ui';
+import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
 interface ImportConfigDialogProps {

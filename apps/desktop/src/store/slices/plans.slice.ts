@@ -5,7 +5,7 @@ import {
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../features/plans/plans';
-import type { SessionId, PlanId, PlanStatus } from '@kay-am/types';
+import type { SessionId, PlanId, PlanStatus } from '@goodboy/types';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;

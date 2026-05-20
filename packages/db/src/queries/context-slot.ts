@@ -3,8 +3,8 @@ import type {
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
   SessionId,
-} from '@kay-am/types';
-import type { IsoDateTime } from '@kay-am/types';
+} from '@goodboy/types';
+import type { IsoDateTime } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface ContextSlotRow {

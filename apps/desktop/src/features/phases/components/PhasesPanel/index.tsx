@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Button, Input, Select, Textarea } from '@kay-am/ui';
-import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
-import type { ProviderId } from '@kay-am/types';
+import { Button, Input, Select, Textarea } from '@goodboy/ui';
+import type { Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type {
@@ -159,7 +159,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
 
       {templates.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          No workflows for this workspace. Create one to chain multiple agents per session.
+          No workflows for this workspace. Create one to chain multiple puppies per session.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">

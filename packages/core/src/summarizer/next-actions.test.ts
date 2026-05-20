@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ContextSlot } from '@kay-am/types';
+import type { ContextSlot } from '@goodboy/types';
 import type { ContextSlotDelta, SummarizeInput } from './client';
 import { inferNextActions } from './next-actions';
 

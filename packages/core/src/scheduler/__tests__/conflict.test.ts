@@ -6,7 +6,7 @@ import {
   type FileConflict,
   type RunFileTouches,
 } from '../conflict';
-import type { IsoDateTime, ProviderRunId } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 
 const runId = (id: string) => id as ProviderRunId;
 const iso = (s: string) => s as IsoDateTime;

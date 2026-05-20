@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderRunId, SessionId, TurnRequest } from '@kay-am/types';
+import type { ProviderRunId, SessionId, TurnRequest } from '@goodboy/types';
 import { CursorAdapter } from './adapter';
 
 // Gated behind CURSOR_INTEGRATION=1. Not run on CI by default.
-// To run: CURSOR_INTEGRATION=1 pnpm -w test --filter @kay-am/core
+// To run: CURSOR_INTEGRATION=1 pnpm -w test --filter @goodboy/core
 const enabled = process.env['CURSOR_INTEGRATION'] === '1';
 
 describe.skipIf(!enabled)('CursorAdapter — integration (requires cursor-agent + auth)', () => {

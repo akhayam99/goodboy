@@ -1,4 +1,4 @@
-import type { IsoDateTime, PermissionAuditEntry, SessionId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, PermissionAuditEntry, SessionId, WorkspaceId } from '@goodboy/types';
 
 export interface AuditQuery {
   readonly sessionId?: SessionId;

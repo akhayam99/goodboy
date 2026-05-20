@@ -5,7 +5,7 @@ import type {
   ProviderRunId,
   ProviderUsage,
   TurnEvent,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { decodeAuthRequiredMessage } from '../turn';
 
 export type TranscriptItem =

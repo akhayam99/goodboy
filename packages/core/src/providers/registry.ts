@@ -4,7 +4,7 @@ import type {
   ProviderAdapter,
   ProviderId,
   ProviderRegistryCapabilities,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { ClaudeAdapter } from './claude/adapter';
 import { CursorAdapter } from './cursor/adapter';
 import { CodexAdapter } from './codex/adapter';

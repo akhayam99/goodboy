@@ -1,4 +1,4 @@
-import type { ProviderUsage } from '@kay-am/types';
+import type { ProviderUsage } from '@goodboy/types';
 
 interface ModelPrice {
   readonly inputPerMtok: number;

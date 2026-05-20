@@ -1,6 +1,6 @@
 // Display helpers for the sidebar agent row telemetry pill.
 // Extracted so they can be unit-tested without rendering React.
-import type { TelemetryRecord } from '@kay-am/types';
+import type { TelemetryRecord } from '@goodboy/types';
 
 export function formatTokens(n: number): string {
   if (n < 1000) return `${n}`;

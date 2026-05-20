@@ -1,4 +1,4 @@
-import type { ProviderUsage } from '@kay-am/types';
+import type { ProviderUsage } from '@goodboy/types';
 
 // Cursor proxies agent requests through its own gateway under a flat Pro
 // subscription tier. Per-token prices are not published. The mapping below uses

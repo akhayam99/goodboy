@@ -1,5 +1,5 @@
 import { invokeWorkspacesWithUnread } from '../../features/phases/phases';
-import type { TurnState, ProviderId, WorkspaceId } from '@kay-am/types';
+import type { TurnState, ProviderId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;

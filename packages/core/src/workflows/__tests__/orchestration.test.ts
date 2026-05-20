@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, Step, Agent, Workflow } from '@kay-am/types';
+import type { IsoDateTime, Step, Agent, Workflow } from '@goodboy/types';
 import { nextStep, isWorkflowComplete } from '../sequencer';
 import { WorkflowPropagator } from '../propagator';
 

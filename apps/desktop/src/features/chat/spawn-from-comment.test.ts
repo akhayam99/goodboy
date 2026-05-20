@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrComment, PullRequestState } from '@kay-am/types';
+import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
   buildCommentAgentArgs,
   buildCommentAgentTitle,

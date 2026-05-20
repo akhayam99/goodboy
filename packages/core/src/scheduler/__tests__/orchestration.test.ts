@@ -8,7 +8,7 @@ import type {
   StepId,
   AgentStatus,
   ProviderRunId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import {
   awaitMerge,
   cancelGroup,

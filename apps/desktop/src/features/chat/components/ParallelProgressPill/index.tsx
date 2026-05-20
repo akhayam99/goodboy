@@ -1,5 +1,5 @@
-import { cn } from '@kay-am/ui';
-import type { AgentStatus, ProviderRunId } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 
 interface ParallelProgressPillProps {
   parallelRunIds: ReadonlyArray<ProviderRunId>;

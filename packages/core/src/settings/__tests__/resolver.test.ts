@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { resolveSettings } from '../resolver';
-import type { GlobalSettings, OverrideSettings } from '@kay-am/types';
-import type { WorkflowId } from '@kay-am/types';
-import type { ProviderId } from '@kay-am/types';
+import type { GlobalSettings, OverrideSettings } from '@goodboy/types';
+import type { WorkflowId } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 
 const GLOBAL: GlobalSettings = {
   defaultProviderId: 'anthropic' as ProviderId,

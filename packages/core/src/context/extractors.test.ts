@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TurnEvent } from '@kay-am/types';
+import type { TurnEvent } from '@goodboy/types';
 import {
   extractFilesTouched,
   extractMarkers,

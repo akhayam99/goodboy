@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
-import { Button, Dialog, Input } from '@kay-am/ui';
+import { Button, Dialog, Input } from '@goodboy/ui';
 import { ProvidersPanel } from '../../../../features/providers/components/ProvidersPanel';
 import { BudgetRulesPanel } from '../../../../features/budget/components/BudgetRulesPanel';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
-import type { ConfigBundleImportResult } from '@kay-am/types';
+import type { ConfigBundleImportResult } from '@goodboy/types';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
@@ -185,7 +185,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           <div className="flex flex-col gap-4">
             <SectionHeading>Initialization</SectionHeading>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Wipe the local sqlite database. Drops every workspace, session, agent, message,
+              Wipe the local sqlite database. Drops every workspace, session, puppy, message,
               transcript, telemetry record, budget rule, permission rule, and skill registration.
               API keys in the OS keychain are not touched. Fresh schema is recreated on next boot.
             </p>

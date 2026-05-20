@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Button, Dialog, cn } from '@kay-am/ui';
+import { Button, Dialog, cn } from '@goodboy/ui';
 import { Check, Layers, Sparkles, AlertTriangle } from 'lucide-react';
-import type { ProviderId, Session, Workflow, WorkflowId } from '@kay-am/types';
+import type { ProviderId, Session, Workflow, WorkflowId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PlannerWidget } from '../../../plans/components/PlannerWidget';
 import { shortModel } from '../../agent-row-format';
@@ -111,7 +111,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
             onClick={() => setMode('preset')}
             icon={<Layers size={16} className="text-primary" aria-hidden />}
             title="Preset"
-            description="Pick from saved workflows. Each step spawns its own agent."
+            description="Pick from saved workflows. Each step spawns its own puppy."
           />
           <ModeCard
             active={mode === 'custom'}

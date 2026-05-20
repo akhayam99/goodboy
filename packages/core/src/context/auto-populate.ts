@@ -1,5 +1,5 @@
-import type { ContextSlot, SessionId } from '@kay-am/types';
-import type { Database } from '@kay-am/db';
+import type { ContextSlot, SessionId } from '@goodboy/types';
+import type { Database } from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';

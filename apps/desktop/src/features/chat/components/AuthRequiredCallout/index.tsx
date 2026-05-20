@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Button } from '@kay-am/ui';
-import type { ProviderId } from '@kay-am/types';
+import { Button } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 
 async function providerAction(id: ProviderId, action: 'login' | 'logout'): Promise<void> {

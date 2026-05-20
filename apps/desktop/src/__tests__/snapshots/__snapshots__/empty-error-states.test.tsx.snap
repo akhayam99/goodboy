@@ -26,7 +26,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_4_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
+          Creates a worktree on a fresh branch. Configure workflow and puppies from the session panel afterwards.
         </p>
       </div>
       <button
@@ -98,7 +98,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — agents lean on it for context.
+                What this session should accomplish. Be specific — puppies lean on it for context.
               </p>
             </div>
           </header>
@@ -406,7 +406,7 @@ exports[`snapshot — empty states > ProvidersPanel: no providers (store returns
       >
         claude
       </code>
-       in a terminal). kay-am picks up the credentials.
+       in a terminal). Goodboy picks up the credentials.
     </span>
   </div>
 </div>
@@ -630,60 +630,26 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       <svg
         aria-hidden="true"
         class="shrink-0 text-foreground"
-        fill="none"
+        fill="currentColor"
         height="16"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.5"
         viewBox="0 0 24 24"
         width="16"
       >
         <path
-          d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+          d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
         />
         <path
-          d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+          d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
         />
         <path
-          d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
-        />
-        <circle
-          cx="9.5"
-          cy="11.5"
-          fill="currentColor"
-          r="0.7"
-          stroke="none"
-        />
-        <circle
-          cx="14.5"
-          cy="11.5"
-          fill="currentColor"
-          r="0.7"
-          stroke="none"
-        />
-        <path
-          d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
-          fill="currentColor"
-          stroke="none"
-        />
-        <path
-          d="M 7 16 Q 9.5 15.3 12 15.8"
-        />
-        <path
-          d="M 12 15.8 Q 14.5 15.3 17 16"
-        />
-        <path
-          d="M 8 17 Q 10 16.5 12 16.8"
-        />
-        <path
-          d="M 12 16.8 Q 14 16.5 16 17"
+          d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
+          fill-rule="evenodd"
         />
       </svg>
       <span
         class="text-xs font-semibold tracking-tight text-foreground"
       >
-        kAY.am
+        Goodboy
       </span>
     </span>
     <div
@@ -1020,7 +986,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
             class="text-xs leading-relaxed text-muted-foreground"
             id="_r_1_-desc"
           >
-            How kAY.am, sessions, agents, and CLI providers fit together.
+            How Goodboy, sessions, puppies, and CLI providers fit together.
           </p>
         </div>
         <button
@@ -1203,42 +1169,24 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
             >
               <svg
                 aria-hidden="true"
-                class="lucide lucide-bot"
-                fill="none"
+                fill="currentColor"
                 height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
                 viewBox="0 0 24 24"
                 width="13"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M12 8V4H8"
-                />
-                <rect
-                  height="12"
-                  rx="2"
-                  width="16"
-                  x="4"
-                  y="8"
+                  d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
                 />
                 <path
-                  d="M2 14h2"
+                  d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
                 />
                 <path
-                  d="M20 14h2"
-                />
-                <path
-                  d="M15 13v2"
-                />
-                <path
-                  d="M9 13v2"
+                  d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
+                  fill-rule="evenodd"
                 />
               </svg>
               <span>
-                Agents
+                Puppies
               </span>
             </button>
             <button
@@ -1361,13 +1309,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                   <h2
                     class="text-lg font-semibold tracking-tight text-foreground"
                   >
-                    What is kAY.am?
+                    What is Goodboy?
                   </h2>
                 </div>
                 <p
                   class="max-w-3xl text-sm leading-relaxed text-muted-foreground"
                 >
-                  kAY.am orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.
+                  Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple puppies in parallel against your repo — with audit logs and structured workflows.
                 </p>
               </div>
               <div
@@ -1406,13 +1354,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                   </svg>
                 </span>
                 <div>
-                  kAY.am does 
+                  Goodboy does 
                   <strong
                     class="text-foreground"
                   >
                     not
                   </strong>
-                   talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and quotas live in the CLI itself — kAY.am just adds the workspace layer on top.
+                   talk to AI providers directly. It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and quotas live in the CLI itself — Goodboy just adds the workspace layer on top.
                 </div>
               </div>
               <div>
@@ -1528,50 +1476,32 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                     >
                       <svg
                         aria-hidden="true"
-                        class="lucide lucide-bot"
-                        fill="none"
+                        fill="currentColor"
                         height="14"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
                         viewBox="0 0 24 24"
                         width="14"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M12 8V4H8"
-                        />
-                        <rect
-                          height="12"
-                          rx="2"
-                          width="16"
-                          x="4"
-                          y="8"
+                          d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
                         />
                         <path
-                          d="M2 14h2"
+                          d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
                         />
                         <path
-                          d="M20 14h2"
-                        />
-                        <path
-                          d="M15 13v2"
-                        />
-                        <path
-                          d="M9 13v2"
+                          d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
+                          fill-rule="evenodd"
                         />
                       </svg>
                     </span>
                     <span
                       class="text-sm font-semibold text-foreground"
                     >
-                      Agent
+                      Puppy
                     </span>
                     <span
                       class="text-xs leading-relaxed text-muted-foreground"
                     >
-                      One provider/CLI invocation inside a session. A session may host several agents (planning, coding, review…).
+                      One provider/CLI invocation inside a session. A session may host several puppies (planning, coding, review…).
                     </span>
                   </button>
                   <button
@@ -1607,7 +1537,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                     <span
                       class="text-xs leading-relaxed text-muted-foreground"
                     >
-                      A single user → assistant exchange inside an agent. Tools called inside count as the same turn.
+                      A single user → assistant exchange inside a puppy. Tools called inside count as the same turn.
                     </span>
                   </button>
                 </div>
@@ -1817,54 +1747,20 @@ exports[`snapshot — error states > App init error — BootSplash with error me
         <svg
           aria-hidden="true"
           class="text-primary motion-safe:animate-pulse"
-          fill="none"
+          fill="currentColor"
           height="52"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
           viewBox="0 0 24 24"
           width="52"
         >
           <path
-            d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+            d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
           />
           <path
-            d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+            d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
           />
           <path
-            d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
-          />
-          <circle
-            cx="9.5"
-            cy="11.5"
-            fill="currentColor"
-            r="0.7"
-            stroke="none"
-          />
-          <circle
-            cx="14.5"
-            cy="11.5"
-            fill="currentColor"
-            r="0.7"
-            stroke="none"
-          />
-          <path
-            d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
-            fill="currentColor"
-            stroke="none"
-          />
-          <path
-            d="M 7 16 Q 9.5 15.3 12 15.8"
-          />
-          <path
-            d="M 12 15.8 Q 14.5 15.3 17 16"
-          />
-          <path
-            d="M 8 17 Q 10 16.5 12 16.8"
-          />
-          <path
-            d="M 12 16.8 Q 14 16.5 16 17"
+            d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
+            fill-rule="evenodd"
           />
         </svg>
       </div>
@@ -1875,7 +1771,7 @@ exports[`snapshot — error states > App init error — BootSplash with error me
       <span
         class="text-lg font-bold tracking-tight"
       >
-        kAY.am
+        Goodboy
       </span>
       <span
         class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
@@ -1955,54 +1851,20 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
         <svg
           aria-hidden="true"
           class="text-primary motion-safe:animate-pulse"
-          fill="none"
+          fill="currentColor"
           height="52"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
           viewBox="0 0 24 24"
           width="52"
         >
           <path
-            d="M 5.5 4 Q 3.5 4.5 4 8 Q 4.5 10 6 9.5"
+            d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
           />
           <path
-            d="M 18.5 4 Q 20.5 4.5 20 8 Q 19.5 10 18 9.5"
+            d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
           />
           <path
-            d="M 6 9 Q 5 12 6 15 Q 7 19 12 19 Q 17 19 18 15 Q 19 12 18 9 Q 17 6 12 6 Q 7 6 6 9 Z"
-          />
-          <circle
-            cx="9.5"
-            cy="11.5"
-            fill="currentColor"
-            r="0.7"
-            stroke="none"
-          />
-          <circle
-            cx="14.5"
-            cy="11.5"
-            fill="currentColor"
-            r="0.7"
-            stroke="none"
-          />
-          <path
-            d="M 11 14 Q 12 15 13 14 Q 12 13.5 11 14 Z"
-            fill="currentColor"
-            stroke="none"
-          />
-          <path
-            d="M 7 16 Q 9.5 15.3 12 15.8"
-          />
-          <path
-            d="M 12 15.8 Q 14.5 15.3 17 16"
-          />
-          <path
-            d="M 8 17 Q 10 16.5 12 16.8"
-          />
-          <path
-            d="M 12 16.8 Q 14 16.5 16 17"
+            d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
+            fill-rule="evenodd"
           />
         </svg>
       </div>
@@ -2013,7 +1875,7 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
       <span
         class="text-lg font-bold tracking-tight"
       >
-        kAY.am
+        Goodboy
       </span>
       <span
         class="text-[11px] uppercase tracking-widest text-muted-foreground/60"
@@ -2190,7 +2052,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_5_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
+          Creates a worktree on a fresh branch. Configure workflow and puppies from the session panel afterwards.
         </p>
       </div>
       <button
@@ -2262,7 +2124,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — agents lean on it for context.
+                What this session should accomplish. Be specific — puppies lean on it for context.
               </p>
             </div>
           </header>
@@ -2606,7 +2468,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
       >
         claude
       </code>
-       in a terminal). kay-am picks up the credentials.
+       in a terminal). Goodboy picks up the credentials.
     </span>
   </div>
 </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { parseCursorStreamLine, type ParseContext } from './parser';
 
 const at = '2026-05-07T00:00:00.000Z' as IsoDateTime;

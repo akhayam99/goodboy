@@ -1,4 +1,4 @@
-# Conventions — @kay-am/ui
+# Conventions — @goodboy/ui
 
 Shared React 19 component library. **Presentational only.** No business logic, no Tauri APIs, no data fetching, no global state.
 
@@ -12,7 +12,7 @@ Shared React 19 component library. **Presentational only.** No business logic, n
 
 ## What does NOT belong here
 
-- Business logic → `@kay-am/core`.
+- Business logic → `@goodboy/core`.
 - Tauri command bindings or `@tauri-apps/*` imports → `apps/desktop`.
 - Data fetching, mutations, async I/O.
 - Global state (Zustand stores) → `apps/desktop`.

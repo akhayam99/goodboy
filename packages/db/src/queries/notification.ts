@@ -1,4 +1,4 @@
-import type { IsoDateTime, SessionId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';

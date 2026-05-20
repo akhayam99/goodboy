@@ -6,8 +6,8 @@ import {
   type Notification,
   type NotificationKind,
   type NotificationSeverity,
-} from '@kay-am/db';
-import type { IsoDateTime, SessionId, WorkspaceId } from '@kay-am/types';
+} from '@goodboy/db';
+import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import type { AppStore } from '../store';
 

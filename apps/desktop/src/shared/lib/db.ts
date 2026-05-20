@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { migrate as runMigrations, type Database, type MigrateResult } from '@kay-am/db';
+import { migrate as runMigrations, type Database, type MigrateResult } from '@goodboy/db';
 
 export const tauriDatabase: Database = {
   async exec(sql) {

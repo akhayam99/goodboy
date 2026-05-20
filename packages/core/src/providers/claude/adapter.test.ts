@@ -8,7 +8,7 @@ import type {
   TurnEvent,
   TurnPermissionFlags,
   TurnRequest,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { ClaudeAdapter } from './adapter';
 
 const fakeNow = (): IsoDateTime => '2026-05-07T00:00:00.000Z' as IsoDateTime;

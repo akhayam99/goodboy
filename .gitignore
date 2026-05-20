@@ -42,4 +42,4 @@ coverage/
 *.tsbuildinfo
 .claude/launch.json
 .claude/scheduled_tasks.lock
-.kay-am/
+.goodboy/

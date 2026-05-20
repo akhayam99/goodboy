@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveProvider } from '../router';
 import type { ResolveProviderInput } from '../router';
-import type { BudgetCheckResult } from '@kay-am/types';
+import type { BudgetCheckResult } from '@goodboy/types';
 
 function notExceeded(overrides: Partial<BudgetCheckResult> = {}): BudgetCheckResult {
   return { remainingUsd: 100, pct: 50, exceeded: false, ...overrides };

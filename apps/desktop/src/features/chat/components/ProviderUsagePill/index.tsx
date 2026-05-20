@@ -1,6 +1,6 @@
 import { Gauge } from 'lucide-react';
-import { cn } from '@kay-am/ui';
-import type { ProviderId } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 function nextMonthlyResetLabel(now = new Date()): string {

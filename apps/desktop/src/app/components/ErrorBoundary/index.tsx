@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="flex max-w-md flex-col gap-4 rounded-lg border border-danger/40 bg-subtle p-6 shadow-md">
           <h1 className="text-base font-semibold tracking-tight">something went wrong</h1>
           <p className="text-sm text-muted-foreground">
-            kAY.am hit a runtime error and stopped rendering. your data is safe: sessions, agents,
+            Goodboy hit a runtime error and stopped rendering. your data is safe: sessions, puppies,
             and providers are all persisted to disk. reload to recover.
           </p>
           <pre className="overflow-auto rounded bg-muted px-3 py-2 text-xs text-danger">

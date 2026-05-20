@@ -5,7 +5,7 @@ import {
   summarizeWorkspaceTelemetry,
   type Database,
   type TelemetrySummary,
-} from '@kay-am/db';
+} from '@goodboy/db';
 import type {
   IsoDateTime,
   ProviderAdapter,
@@ -17,7 +17,7 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 export interface RecordTurnInput {
   readonly runId: ProviderRunId;

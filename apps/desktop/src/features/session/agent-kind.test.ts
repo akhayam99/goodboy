@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkflowLibraryStep } from '@kay-am/core';
+import type { WorkflowLibraryStep } from '@goodboy/core';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,

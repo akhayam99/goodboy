@@ -102,7 +102,7 @@ describe('PlannerAgent', () => {
 
     const promise = agent.plan({
       theme: 'Migrate to Drizzle ORM',
-      repoContext: 'Workspace: kay-am — TypeScript monorepo',
+      repoContext: 'Workspace: goodboy — TypeScript monorepo',
     });
 
     setImmediate(() => {
@@ -113,6 +113,6 @@ describe('PlannerAgent', () => {
     await promise;
     const userMsg = capturedArgs[1] ?? '';
     expect(userMsg).toContain('Migrate to Drizzle ORM');
-    expect(userMsg).toContain('Workspace: kay-am');
+    expect(userMsg).toContain('Workspace: goodboy');
   });
 });

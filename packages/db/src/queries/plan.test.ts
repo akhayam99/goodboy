@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, PlanId, SessionId } from '@kay-am/types';
+import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {

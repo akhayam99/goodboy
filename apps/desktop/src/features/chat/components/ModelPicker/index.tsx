@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@kay-am/ui';
-import type { ProviderId } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import {
   VERBOSITY_LEVELS,
   VERBOSITY_LABEL,

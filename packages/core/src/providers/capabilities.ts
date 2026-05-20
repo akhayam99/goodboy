@@ -1,4 +1,4 @@
-import type { ProviderId, ProviderRegistryCapabilities } from '@kay-am/types';
+import type { ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
 import { CURSOR_MODELS } from './cursor/models';
 import { CODEX_MODELS } from './codex/constants';
 

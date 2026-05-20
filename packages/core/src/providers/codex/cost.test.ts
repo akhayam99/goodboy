@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderUsage } from '@kay-am/types';
+import type { ProviderUsage } from '@goodboy/types';
 import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
 
 const usage: ProviderUsage = {

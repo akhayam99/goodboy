@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Textarea, cn } from '@kay-am/ui';
-import { PlannerClient, type PlannerOutput, defaultsForRole } from '@kay-am/core';
+import { Button, Textarea, cn } from '@goodboy/ui';
+import { PlannerClient, type PlannerOutput, defaultsForRole } from '@goodboy/core';
 import type {
   AgentEffort,
   ProviderId,
@@ -10,7 +10,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import {

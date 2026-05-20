@@ -1,4 +1,4 @@
-import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@kay-am/core';
+import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@goodboy/core';
 
 export type AgentKind = AgentKindLabel;
 
@@ -14,17 +14,54 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'generic',
 ];
 
-export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string }> = {
-  init: { label: 'Init', hint: 'Workspace setup. Runs shell commands, no code' },
-  generic: { label: 'Agent', hint: 'Can do whatever you want, no restrictions' },
-  scout: { label: 'Scout', hint: 'Reads and searches codebase. Never edits files' },
-  planner: { label: 'Plan', hint: 'Analyzes goals, produces a plan. No code, no edits' },
-  implementer: { label: 'Implement', hint: 'Writes code based on active plan. No re-planning' },
-  debugger: { label: 'Debug', hint: 'Reproduces and fixes bugs. No refactoring, no planning' },
-  tester: { label: 'Test', hint: 'Writes tests. No production code changes' },
-  reviewer: { label: 'Review', hint: 'Reviews diffs, suggests fixes. Read-only' },
-  docs: { label: 'Docs', hint: 'Writes documentation. No production logic' },
-};
+export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
+  {
+    init: {
+      label: 'Init',
+      hint: 'Workspace setup. Runs shell commands, no code',
+      persona: 'rusty',
+    },
+    generic: {
+      label: 'Puppy',
+      hint: 'Can do whatever you want, no restrictions',
+      persona: 'max',
+    },
+    scout: {
+      label: 'Scout',
+      hint: 'Reads and searches codebase. Never edits files',
+      persona: 'scout',
+    },
+    planner: {
+      label: 'Plan',
+      hint: 'Analyzes goals, produces a plan. No code, no edits',
+      persona: 'drafty',
+    },
+    implementer: {
+      label: 'Implement',
+      hint: 'Writes code based on active plan. No re-planning',
+      persona: 'hammer',
+    },
+    debugger: {
+      label: 'Debug',
+      hint: 'Reproduces and fixes bugs. No refactoring, no planning',
+      persona: 'sherlock',
+    },
+    tester: {
+      label: 'Test',
+      hint: 'Writes tests. No production code changes',
+      persona: 'beaker',
+    },
+    reviewer: {
+      label: 'Review',
+      hint: 'Reviews diffs, suggests fixes. Read-only',
+      persona: 'specs',
+    },
+    docs: {
+      label: 'Docs',
+      hint: 'Writes documentation. No production logic',
+      persona: 'scribble',
+    },
+  };
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   init: {
@@ -70,7 +107,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   generic: {
     bg: 'bg-rose-400',
     fg: 'text-rose-400',
-    label: 'agent',
+    label: 'puppy',
   },
 };
 
@@ -177,7 +214,7 @@ export function inferAgentKindFromName(name: string): AgentKind {
 /**
  * Resolve the chip's display kind. Override (explicit user pick) wins,
  * else name-based inference, else first-turn classification. Conservative —
- * when nothing matches, stays `generic` (chip shows "agent").
+ * when nothing matches, stays `generic` (chip shows "puppy").
  */
 export function resolveAgentKind(
   name: string,

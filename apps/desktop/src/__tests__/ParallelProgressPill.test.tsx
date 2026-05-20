@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AgentStatus, ProviderRunId } from '@kay-am/types';
+import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 import { ParallelProgressPill } from '../features/chat/components/ParallelProgressPill';
 
 function rid(s: string): ProviderRunId {

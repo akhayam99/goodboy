@@ -8,7 +8,7 @@ use serde_json::{Map, Number};
 use tauri::State;
 use thiserror::Error;
 
-const APP_DIR: &str = ".kay-am";
+const APP_DIR: &str = ".goodboy";
 const DB_FILE: &str = "data.db";
 
 #[derive(Debug, Error)]

@@ -1,4 +1,4 @@
-import type { TurnEvent } from '@kay-am/types';
+import type { TurnEvent } from '@goodboy/types';
 import { parseAnthropicEnvelopeLine, type ParseContext } from '../shared/anthropic-envelope-parser';
 
 export type { ParseContext };

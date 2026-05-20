@@ -1,4 +1,4 @@
-import type { Step, Agent, Workflow } from '@kay-am/types';
+import type { Step, Agent, Workflow } from '@goodboy/types';
 
 export function nextStep(template: Workflow, runs: ReadonlyArray<Agent>): Step | null {
   const doneIds = new Set(

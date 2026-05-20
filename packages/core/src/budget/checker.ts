@@ -6,8 +6,8 @@ import type {
   ProviderName,
   SessionBudget,
   SessionId,
-} from '@kay-am/types';
-import type { Database } from '@kay-am/db';
+} from '@goodboy/types';
+import type { Database } from '@goodboy/db';
 
 interface BudgetRuleRow {
   id: string;

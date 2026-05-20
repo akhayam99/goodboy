@@ -6,7 +6,7 @@ import type {
   ProviderRunId,
   SessionId,
   StepId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface AgentRow {

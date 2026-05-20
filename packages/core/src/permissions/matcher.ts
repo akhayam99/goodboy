@@ -1,4 +1,4 @@
-import type { PermissionRulePattern } from '@kay-am/types';
+import type { PermissionRulePattern } from '@goodboy/types';
 
 export interface ToolMatcher {
   matches(toolName: string, input: unknown): boolean;

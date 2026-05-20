@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { AppShell } from '@kay-am/ui';
-import type { SessionId } from '@kay-am/types';
+import { AppShell } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
@@ -86,8 +86,8 @@ export function App() {
       setSettingsInitialSection(detail?.section);
       setSettingsOpen(true);
     };
-    window.addEventListener('kayam:open-settings', handler);
-    return () => window.removeEventListener('kayam:open-settings', handler);
+    window.addEventListener('goodboy:open-settings', handler);
+    return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
 
   // Prevent macOS from exiting native fullscreen on ESC. Calling
@@ -369,7 +369,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
 
         <div className="flex flex-col gap-3">
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            Welcome to kAY.am
+            Welcome to Goodboy
           </h2>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
             Point at a git repo to create your first workspace. Every session spins up its own
@@ -400,7 +400,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Sessions</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Switch workspaces, manage sessions, track agents and workflow progress.
+          Switch workspaces, manage sessions, track puppies and workflow progress.
         </p>
       </div>
 
@@ -410,7 +410,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Chat</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Talk to your agents, send instructions, and watch execution unfold in real time.
+          Talk to your puppies, send instructions, and watch execution unfold in real time.
         </p>
       </div>
 

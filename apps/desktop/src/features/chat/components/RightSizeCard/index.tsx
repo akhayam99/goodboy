@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 
 export interface RightSizeCardProps {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Target } from 'lucide-react';
-import { Collapsible } from '@kay-am/ui';
+import { Collapsible } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 

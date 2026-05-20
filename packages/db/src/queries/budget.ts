@@ -1,6 +1,6 @@
-import type { BudgetAlert, BudgetAlertKind, BudgetRule, SessionBudget } from '@kay-am/types';
-import type { IsoDateTime, SessionId } from '@kay-am/types';
-import type { ProviderName } from '@kay-am/types';
+import type { BudgetAlert, BudgetAlertKind, BudgetRule, SessionBudget } from '@goodboy/types';
+import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { ProviderName } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface BudgetRuleRow {

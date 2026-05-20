@@ -1,5 +1,5 @@
-import { listContextSlotsForSession, upsertContextSlot, type Database } from '@kay-am/db';
-import type { ContextSlot, SessionId } from '@kay-am/types';
+import { listContextSlotsForSession, upsertContextSlot, type Database } from '@goodboy/db';
+import type { ContextSlot, SessionId } from '@goodboy/types';
 import { assertSlotKey, serializeSlots, SLOT_KEYS, type SlotKey } from './slots';
 
 export interface ContextEngineDeps {

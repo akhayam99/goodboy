@@ -1,4 +1,4 @@
-import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface SkillRow {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, FolderOpen } from 'lucide-react';
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import {

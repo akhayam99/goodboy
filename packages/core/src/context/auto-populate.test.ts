@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
-import { migrate, type Database as DbInterface } from '@kay-am/db';
-import type { SessionId, WorkspaceId } from '@kay-am/types';
+import { migrate, type Database as DbInterface } from '@goodboy/db';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { autoPopulateContext } from './auto-populate';
 import { ContextEngine } from './engine';
 

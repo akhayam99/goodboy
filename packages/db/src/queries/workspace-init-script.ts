@@ -1,4 +1,4 @@
-import type { IsoDateTime, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
 const HISTORY_CAP = 20;

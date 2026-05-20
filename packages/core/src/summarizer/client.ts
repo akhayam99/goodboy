@@ -1,4 +1,4 @@
-import type { ContextSlot, ProviderId } from '@kay-am/types';
+import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';

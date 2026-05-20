@@ -1,4 +1,4 @@
-import { Dialog, KbdPill } from '@kay-am/ui';
+import { Dialog, KbdPill } from '@goodboy/ui';
 
 interface ShortcutEntry {
   readonly combo: readonly string[];
@@ -24,7 +24,7 @@ export function ShortcutHelpDialog({ open, onClose }: ShortcutHelpDialogProps) {
       open={open}
       onClose={onClose}
       title="Keyboard shortcuts"
-      description="global shortcuts active anywhere in kAY.am."
+      description="global shortcuts active anywhere in Goodboy."
       size="sm"
     >
       <ul className="flex flex-col divide-y divide-border-soft">

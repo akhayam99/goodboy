@@ -104,7 +104,7 @@ Flow: decompose → (a|b|c in parallel) → merge → done.
 
 ## Prompt building
 
-Synthetic context flows from phase to phase. When phase 2 starts, kAY.am injects:
+Synthetic context flows from phase to phase. When phase 2 starts, Goodboy injects:
 
 ```
 —— Context from prior phases ——
@@ -138,7 +138,7 @@ Now write the code.
 - **Test early**: Create a phase template on a sandbox repo. Verify flow before production use.
 - **Explicit context**: If phase 2 depends on phase 1 output, mention it in the prompt. Don't assume.
 - **Parallel limits**: Keep max parallelism ≤ 5 (provider quota + machine limits).
-- **Error recovery**: If a phase fails, kAY.am rolls back that phase's worktree. Re-run or abort.
+- **Error recovery**: If a phase fails, Goodboy rolls back that phase's worktree. Re-run or abort.
 
 ## Save and reuse
 

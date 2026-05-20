@@ -6,7 +6,7 @@ import type {
   MessageRole,
   SessionId,
   TurnProviderOverride,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface MessageRow {

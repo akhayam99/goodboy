@@ -1,11 +1,11 @@
-import type { Workflow, WorkflowId, WorkspaceId } from '@kay-am/types';
+import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import {
   listWorkflows as dbList,
   getWorkflow as dbGet,
   upsertWorkflow as dbUpsert,
   deleteWorkflow as dbDelete,
   type Database,
-} from '@kay-am/db';
+} from '@goodboy/db';
 
 export class WorkflowRegistryError extends Error {
   constructor(msg: string) {

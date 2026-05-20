@@ -1,4 +1,4 @@
-import type { ProviderUsage } from '@kay-am/types';
+import type { ProviderUsage } from '@goodboy/types';
 
 // Codex CLI does not expose token counts in its output stream. Cost is therefore
 // not computable from usage data alone. Users who want cost attribution for Codex

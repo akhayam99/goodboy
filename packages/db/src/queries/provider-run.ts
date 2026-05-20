@@ -6,7 +6,7 @@ import type {
   ProviderRunStatus,
   RoutingDecision,
   SessionId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface ProviderRunRow {

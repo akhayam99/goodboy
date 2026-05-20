@@ -6,7 +6,7 @@ import type {
   SessionId,
   TurnState,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 const DT = '2024-01-01T00:00:00Z' as IsoDateTime;
 

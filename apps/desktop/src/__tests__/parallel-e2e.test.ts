@@ -11,8 +11,8 @@ import type {
   ProviderRunId,
   TurnEvent,
   WorkspaceId,
-} from '@kay-am/types';
-import type { MergeResult } from '@kay-am/core';
+} from '@goodboy/types';
+import type { MergeResult } from '@goodboy/core';
 
 // Module mocks — hoisted before subject imports.
 // Tauri invoke — stubbed per-test.

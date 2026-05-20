@@ -1,8 +1,13 @@
-import type { BudgetAlert, BudgetAlertKind, BudgetCheckResult, BudgetPeriod } from '@kay-am/types';
-import type { IsoDateTime, SessionId } from '@kay-am/types';
-import type { ProviderName } from '@kay-am/types';
-import type { Database } from '@kay-am/db';
-import { getSessionBudget, insertBudgetAlert, listBudgetAlerts, listBudgetRules } from '@kay-am/db';
+import type { BudgetAlert, BudgetAlertKind, BudgetCheckResult, BudgetPeriod } from '@goodboy/types';
+import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { ProviderName } from '@goodboy/types';
+import type { Database } from '@goodboy/db';
+import {
+  getSessionBudget,
+  insertBudgetAlert,
+  listBudgetAlerts,
+  listBudgetRules,
+} from '@goodboy/db';
 
 export type AlertEmitterDeps = {
   db: Database;

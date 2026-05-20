@@ -1,11 +1,11 @@
-# @kay-am/types
+# @goodboy/types
 
-Shared TypeScript types for the kAY.am monorepo. Zero runtime code — types only.
+Shared TypeScript types for the Goodboy monorepo. Zero runtime code — types only.
 
 ## Usage
 
 ```ts
-import type { WorkspaceId, Session, ProviderAdapter } from '@kay-am/types';
+import type { WorkspaceId, Session, ProviderAdapter } from '@goodboy/types';
 ```
 
 ## Public surface
@@ -25,7 +25,7 @@ import type { WorkspaceId, Session, ProviderAdapter } from '@kay-am/types';
 
 ### Provider adapter contract
 
-The shape every provider implementation must satisfy. Lives in this package so `@kay-am/core` and `apps/desktop` can depend on it without depending on each other.
+The shape every provider implementation must satisfy. Lives in this package so `@goodboy/core` and `apps/desktop` can depend on it without depending on each other.
 
 - `ProviderAdapter` — `id`, `capabilities`, `detect()`, `spawn(request)`, `cost(usage, model)`.
 - `TurnRequest` — input handed to `spawn`.

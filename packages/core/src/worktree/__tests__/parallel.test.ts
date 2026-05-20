@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@kay-am/types';
+import type { SessionId } from '@goodboy/types';
 import {
   createParallelWorktrees,
   removeParallelWorktrees,

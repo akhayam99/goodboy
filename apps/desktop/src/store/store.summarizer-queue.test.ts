@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 // Module mocks — must be hoisted before store import.
 vi.mock('../features/chat/turn', () => ({
@@ -96,8 +96,8 @@ const summarizeSpy = vi.fn(
     }),
 );
 
-vi.mock('@kay-am/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@kay-am/core')>();
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@goodboy/core')>();
   return {
     ...original,
     Summarizer: class {
@@ -113,7 +113,7 @@ vi.mock('@kay-am/core', async (importOriginal) => {
   };
 });
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

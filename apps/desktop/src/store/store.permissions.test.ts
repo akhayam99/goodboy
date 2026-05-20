@@ -10,7 +10,7 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 // Module mocks — these MUST be hoisted before importing the store.
 const runTurnSpy = vi.fn();
@@ -49,7 +49,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

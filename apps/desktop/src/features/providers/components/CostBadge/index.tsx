@@ -1,4 +1,4 @@
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 import { formatCost } from '../../../../features/session/agent-row-format';
 
 export interface CostBadgeProps {

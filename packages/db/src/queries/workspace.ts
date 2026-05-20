@@ -1,4 +1,4 @@
-import type { IsoDateTime, Workspace, WorkspaceId } from '@kay-am/types';
+import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface WorkspaceRow {

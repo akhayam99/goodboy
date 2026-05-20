@@ -7,7 +7,7 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 // Module mocks — hoisted before store import.
 const runTurnSpy = vi.fn();
@@ -51,7 +51,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),
@@ -327,7 +327,7 @@ describe('audit retry queue — drain worker (happy path)', () => {
     const { runDbMigrations } = await import('../shared/lib/db');
     (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
-    const { getSetting } = await import('@kay-am/db');
+    const { getSetting } = await import('@goodboy/db');
     (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { getProviderStatus, getCursorStatus, getCodexStatus, checkProviderAuth } =

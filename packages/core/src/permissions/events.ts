@@ -1,4 +1,4 @@
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
 
 export function createPermissionRequestEvent(params: {
   readonly runId: ProviderRunId;

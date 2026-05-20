@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '@kay-am/ui';
+import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 

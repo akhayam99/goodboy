@@ -23,7 +23,7 @@ use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let database = db::open().expect("failed to open kay-am database");
+  let database = db::open().expect("failed to open Goodboy database");
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));

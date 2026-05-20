@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, TurnState, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, TurnState, TurnEvent } from '@goodboy/types';
 
 export type TurnLifecycleEvent =
   | { kind: 'start'; at: IsoDateTime }

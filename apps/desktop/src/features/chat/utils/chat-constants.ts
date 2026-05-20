@@ -1,4 +1,4 @@
-import type { ProviderId } from '@kay-am/types';
+import type { ProviderId } from '@goodboy/types';
 import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {

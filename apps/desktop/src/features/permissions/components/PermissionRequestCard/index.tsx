@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AgentId, SessionId } from '@kay-am/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { PermissionScopePicker } from '../PermissionScopePicker';
 import { formatCardTime } from '../../../chat/utils/format-card-time';

@@ -5,9 +5,9 @@ import {
   consumeDiffComments as dbConsumeDiffComments,
   reopenDiffComment as dbReopenDiffComment,
   deleteDiffComment as dbDeleteDiffComment,
-} from '@kay-am/db';
-import type { SessionId, AgentId } from '@kay-am/types';
-import type { DiffCommentAnchor } from '@kay-am/types';
+} from '@goodboy/db';
+import type { SessionId, AgentId } from '@goodboy/types';
+import type { DiffCommentAnchor } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import type { AppStore } from '../store';
 

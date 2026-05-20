@@ -1,5 +1,5 @@
-import type { OverrideSettings, SessionId, WorkflowId, WorkspaceId } from '@kay-am/types';
-import type { ProviderId } from '@kay-am/types';
+import type { OverrideSettings, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface OverrideRow {

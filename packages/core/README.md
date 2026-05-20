@@ -1,6 +1,6 @@
-# @kay-am/core
+# @goodboy/core
 
-Business logic for kAY.am. Provider adapters, routing, sessions, skills.
+Business logic for Goodboy. Provider adapters, routing, sessions, skills.
 
 Pure TypeScript — no React, no Tauri, no DOM. Runs in any JS runtime.
 

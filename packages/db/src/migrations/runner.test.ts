@@ -13,8 +13,8 @@ import type {
   WorkflowId,
   Workspace,
   WorkspaceId,
-} from '@kay-am/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@kay-am/types';
+} from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';

@@ -8,7 +8,7 @@ import type {
   ProviderUsage,
   TurnEvent,
   TurnRequest,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { computeCursorCostUsd } from './cost';
 import { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './models';
 import { parseCursorStreamLine } from './parser';

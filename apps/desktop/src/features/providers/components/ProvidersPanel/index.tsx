@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Code2, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, cn } from '@kay-am/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import type {
   ProviderConnectionState,
   ProviderInfo,
@@ -102,7 +102,7 @@ export function ProvidersPanel() {
         <Info size={11} aria-hidden className="mt-0.5 shrink-0" />
         <span>
           Sign in once via each provider's CLI (e.g. run{' '}
-          <code className="rounded bg-muted px-1">claude</code> in a terminal). kay-am picks up the
+          <code className="rounded bg-muted px-1">claude</code> in a terminal). Goodboy picks up the
           credentials.
         </span>
       </div>

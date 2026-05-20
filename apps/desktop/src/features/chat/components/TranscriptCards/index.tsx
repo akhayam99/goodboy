@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
-import { CopyButton, Markdown, cn } from '@kay-am/ui';
-import type { AgentId, SessionId } from '@kay-am/types';
+import { CopyButton, Markdown, cn } from '@goodboy/ui';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';

@@ -85,7 +85,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { ProviderInfo } from '../../features/providers/providers';
 import type { AppState, AppActions } from '../../store/store';
-import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 
 type AppStore = AppState & AppActions;

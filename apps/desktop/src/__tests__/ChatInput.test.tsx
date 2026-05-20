@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { IsoDateTime, ProviderRunId, Session } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
 // Module mocks — hoisted before imports that transitively pull the mocked modules.
 // vi.hoisted keeps shared refs alive across the hoisting reorder.
@@ -69,7 +69,7 @@ vi.mock('../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-vi.mock('@kay-am/core', () => ({
+vi.mock('@goodboy/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
   getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
   PROVIDER_CAPABILITIES: {
@@ -194,7 +194,7 @@ describe('ChatInput — input wiring', () => {
 
   it('provider override persists across sends (regression for bug D)', async () => {
     // Pre-populate localStorage: user previously picked cursor for this session.
-    localStorage.setItem('kay-am:provider:session-1', 'cursor');
+    localStorage.setItem('goodboy:provider:session-1', 'cursor');
 
     const user = userEvent.setup();
     render(
@@ -214,6 +214,6 @@ describe('ChatInput — input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
     // After send, the selected provider must still be cursor (not reset to anthropic).
-    expect(localStorage.getItem('kay-am:provider:session-1')).toBe('cursor');
+    expect(localStorage.getItem('goodboy:provider:session-1')).toBe('cursor');
   });
 });

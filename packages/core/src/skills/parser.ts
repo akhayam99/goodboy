@@ -1,4 +1,4 @@
-import type { SkillFrontmatter } from '@kay-am/types';
+import type { SkillFrontmatter } from '@goodboy/types';
 
 export class SkillParseError extends Error {
   constructor(reason: string) {

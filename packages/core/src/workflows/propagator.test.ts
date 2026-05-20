@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ContextSlot, IsoDateTime } from '@kay-am/types';
+import type { ContextSlot, IsoDateTime } from '@goodboy/types';
 import { WorkflowPropagator } from './propagator';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;

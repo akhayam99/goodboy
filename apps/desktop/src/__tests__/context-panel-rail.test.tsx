@@ -62,7 +62,7 @@ vi.mock('../store', () => ({
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Session, SessionId, WorkspaceId } from '@kay-am/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextPanel } from '../features/context/components/ContextPanel';
 
 afterEach(cleanup);

@@ -1,5 +1,5 @@
 {
-  "name": "@kay-am/db",
+  "name": "@goodboy/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@kay-am/types": "workspace:*"
+    "@goodboy/types": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

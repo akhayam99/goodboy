@@ -13,7 +13,7 @@ import type {
   WorkflowId,
   ProviderRunId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 // Module mocks — hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
@@ -61,7 +61,7 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

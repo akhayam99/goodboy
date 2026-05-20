@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { cn } from '@kay-am/ui';
-import type { AgentId, ProviderRunId, SessionId } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 

@@ -6,7 +6,7 @@ import type {
   RoutingDecision,
   SessionProviderPreference,
   TurnProviderOverride,
-} from '@kay-am/types';
+} from '@goodboy/types';
 
 export type ResolveProviderInput = {
   sessionPreference: SessionProviderPreference;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Button, Textarea, cn } from '@kay-am/ui';
-import type { ProviderId, WorkspaceId } from '@kay-am/types';
-import type { WorkspaceInitScript } from '@kay-am/db';
+import { Button, Textarea, cn } from '@goodboy/ui';
+import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceInitScript } from '@goodboy/db';
 import { ChevronDown, ChevronUp, Loader2, RotateCcw, Save, Trash2, Wand2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';

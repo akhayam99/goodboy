@@ -1,6 +1,6 @@
 # Provider Integration Guide
 
-kAY.am orchestrates AI sessions through your locally installed CLI tools. This guide covers how to install, connect, and manage each supported provider.
+Goodboy orchestrates AI sessions through your locally installed CLI tools. This guide covers how to install, connect, and manage each supported provider.
 
 ---
 
@@ -22,7 +22,7 @@ Verify: `claude --version`
 claude /login
 ```
 
-kAY.am opens an external terminal for the OAuth flow. A browser window will open to complete login.
+Goodboy opens an external terminal for the OAuth flow. A browser window will open to complete login.
 
 ### Disconnect
 
@@ -32,7 +32,7 @@ claude /logout
 
 ### Subscription tier
 
-Requires **Claude Max** (or Claude Pro). kAY.am uses your subscription cap — not an API token. API-key-only accounts are not supported for orchestration turns.
+Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap — not an API token. API-key-only accounts are not supported for orchestration turns.
 
 ### Summarizer model
 
@@ -48,7 +48,7 @@ Requires **Claude Max** (or Claude Pro). kAY.am uses your subscription cap — n
 curl https://cursor.com/install -fsS | bash
 ```
 
-Installs `cursor-agent` to `~/.local/bin/`. kAY.am invokes the CLI as `cursor-agent` (not `cursor`, which is the IDE binary).
+Installs `cursor-agent` to `~/.local/bin/`. Goodboy invokes the CLI as `cursor-agent` (not `cursor`, which is the IDE binary).
 
 Docs: <https://docs.cursor.com/en/cli/installation>
 
@@ -60,7 +60,7 @@ Verify: `cursor-agent --version`
 cursor-agent login
 ```
 
-kAY.am opens an external terminal for the OAuth flow.
+Goodboy opens an external terminal for the OAuth flow.
 
 ### Disconnect
 
@@ -70,11 +70,11 @@ cursor-agent logout
 
 ### Subscription tier
 
-Requires **Cursor Pro**. kAY.am routes turns through Cursor's subscription-based model cap.
+Requires **Cursor Pro**. Goodboy routes turns through Cursor's subscription-based model cap.
 
 ### Default models
 
-Cursor surfaces 50+ aliases via `cursor-agent models`. kAY.am exposes a curated subset:
+Cursor surfaces 50+ aliases via `cursor-agent models`. Goodboy exposes a curated subset:
 
 - **Turn**: `composer-2`, `gpt-5.5-high`, `gpt-5.5-medium`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium`, `gpt-5.3-codex`.
 - **Cheap**: `composer-2-fast` (default), `auto`.
@@ -99,7 +99,7 @@ Verify: `codex --version`
 codex login
 ```
 
-kAY.am opens an external terminal for the OAuth flow.
+Goodboy opens an external terminal for the OAuth flow.
 
 ### Disconnect
 
@@ -109,7 +109,7 @@ codex logout
 
 ### Subscription tier
 
-Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_API_KEY` env var. kAY.am uses whichever auth the local `codex` CLI is configured with.
+Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_API_KEY` env var. Goodboy uses whichever auth the local `codex` CLI is configured with.
 
 ### Default models
 
@@ -120,22 +120,22 @@ Per <https://developers.openai.com/codex/models> (May 2026):
 
 ### Turn spawn args
 
-kAY.am spawns codex non-interactively:
+Goodboy spawns codex non-interactively:
 
 ```
 codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
 ```
 
-In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode — kAY.am uses `exec` for headless JSONL streaming.
+In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode — Goodboy uses `exec` for headless JSONL streaming.
 
 ### Non-TTY auth quirk
 
-codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so kAY.am explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix — rebuild from `feat/providers-overhaul`.
+codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so Goodboy explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix — rebuild from `feat/providers-overhaul`.
 
 ### Debugging
 
 ```bash
-KAYAM_DEBUG_CODEX=1 pnpm tauri dev
+GOODBOY_DEBUG_CODEX=1 pnpm tauri dev
 ```
 
 The terminal prints `[codex-debug] auth cmd: …`, the raw stdout/stderr from the auth subprocess, and for every codex turn it prints the full spawn args + exit code + stderr tail. Use this when the providers panel says one thing and the terminal says another.
@@ -145,7 +145,7 @@ The terminal prints `[codex-debug] auth cmd: …`, the raw stdout/stderr from th
 Confirm end-to-end auth + spawn work against the real binary:
 
 ```bash
-KAYAM_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
+GOODBOY_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
 ```
 
 Skipped by default; opt in when you want to verify a fresh install.
@@ -154,7 +154,7 @@ Skipped by default; opt in when you want to verify a fresh install.
 
 ## Multi-account
 
-A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in kAY.am targets one active identity per provider.
+A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in Goodboy targets one active identity per provider.
 
 The **providers panel** (Settings → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session — the displayed identity is the account that will be billed for every turn.
 
@@ -173,14 +173,14 @@ The **providers panel** (Settings → Providers) shows the currently authenticat
 
 ### CLI not detected (PATH issue)
 
-kAY.am detects provider binaries via `$PATH`. If a CLI is installed but the providers panel shows it as missing:
+Goodboy detects provider binaries via `$PATH`. If a CLI is installed but the providers panel shows it as missing:
 
 1. Find the install path — e.g. `which claude` or `npm root -g`.
 2. Add the directory to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
    ```bash
    export PATH="/path/to/bin:$PATH"
    ```
-3. Restart your shell, then relaunch kAY.am.
+3. Restart your shell, then relaunch Goodboy.
 
 ### OAuth callback failure
 
@@ -188,11 +188,11 @@ The login flow opens a system terminal and a browser. If the browser does not op
 
 1. Run the login command manually in a terminal (e.g. `claude /login`).
 2. Complete the flow there.
-3. Return to kAY.am and click **refresh** — the identity should populate.
+3. Return to Goodboy and click **refresh** — the identity should populate.
 
 ### Subscription rate-limit errors
 
-kAY.am uses the subscription cap of your CLI. When the cap is hit, the CLI returns an error and the session stalls. Wait for the cap to reset — typically 5 hours for Claude Max. Note: the summarizer runs once per session compaction, so each compaction counts against your cap alongside the primary turn.
+Goodboy uses the subscription cap of your CLI. When the cap is hit, the CLI returns an error and the session stalls. Wait for the cap to reset — typically 5 hours for Claude Max. Note: the summarizer runs once per session compaction, so each compaction counts against your cap alongside the primary turn.
 
 ### Wrong account connected
 

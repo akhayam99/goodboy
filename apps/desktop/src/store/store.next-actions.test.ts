@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@kay-am/types';
-import type { NextAction } from '@kay-am/core';
+import type { SessionId } from '@goodboy/types';
+import type { NextAction } from '@goodboy/core';
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -81,12 +81,12 @@ vi.mock('../features/providers/provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@kay-am/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@kay-am/core')>();
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@goodboy/core')>();
   return { ...original };
 });
 
-vi.mock('@kay-am/db', () => ({
+vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
   insertProviderRun: vi.fn(),

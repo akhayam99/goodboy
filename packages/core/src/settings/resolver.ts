@@ -1,4 +1,4 @@
-import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@kay-am/types';
+import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodboy/types';
 
 export type ResolveSettingsInput = {
   readonly global: GlobalSettings;

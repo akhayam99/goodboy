@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { ProviderRunId } from '@kay-am/types';
-import { Button, Dialog } from '@kay-am/ui';
+import type { ProviderRunId } from '@goodboy/types';
+import { Button, Dialog } from '@goodboy/ui';
 
 // Sentinel used when the user chooses to skip resolution for a file.
 // The consumer (onResolve) receives picks[file] === SKIP_SENTINEL for skipped files.

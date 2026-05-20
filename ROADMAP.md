@@ -1,4 +1,4 @@
-# kAY.am — Roadmap
+# Goodboy — Roadmap
 
 Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues live there.
 
@@ -9,7 +9,7 @@ Local-first AI workspace orchestrator. This roadmap tracks the path from bootstr
 Non-negotiable choices that frame the product. Numbers preserved for cross-references.
 
 1. **Provider integration via headless CLI spawn** — `claude -p "<prompt>" --output-format stream-json --working-dir <worktree>`. The user's existing subscription (Claude Max, Cursor Pro, ChatGPT Pro) is consumed via the official provider CLI. Anthropic / OpenAI / Cursor SDKs are explicitly NOT used — they require per-token billing and would defeat the "spend less" mission.
-2. **kAY.am owns the conversation** — history lives in our SQLite, not in `~/.claude/projects/`. Every turn is reconstructed from the synthetic context plus the new user message; we never rely on `--resume`. This is what makes context portable across providers.
+2. **Goodboy owns the conversation** — history lives in our SQLite, not in `~/.claude/projects/`. Every turn is reconstructed from the synthetic context plus the new user message; we never rely on `--resume`. This is what makes context portable across providers.
 3. **Synthetic context = hybrid structured slots** — fixed slots (`goal`, `files_touched`, `decisions`, `open_questions`, `last_output_summary`), editable by hand at any time, auto-updated post-turn by a cheap summarizer (active provider's cheap-tier model via CLI — no separate API key required, runs against the user's existing subscription).
 4. **Isolation = git worktree per session** — branch prefix configurable per workspace (default `kay`). Worktree is the sandbox in which agents operate.
 5. **Provider scope, phased** — v0.1 shipped with Claude only behind a stable adapter interface; v0.2 added Cursor + Codex together to stress-test the contract on two new adapters at once.
@@ -23,7 +23,7 @@ Non-negotiable choices that frame the product. Numbers preserved for cross-refer
 
 ### v0.1 — MVP
 
-Single-provider session with synthetic context and live telemetry. End-to-end Claude session inside a kAY.am-managed worktree.
+Single-provider session with synthetic context and live telemetry. End-to-end Claude session inside a Goodboy-managed worktree.
 
 [v0.1 milestone](https://github.com/akhayam99/kay-am/milestone/1)
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ContextSlot, IsoDateTime, ProviderRunId, TurnEvent } from '@kay-am/types';
+import type { ContextSlot, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 
 const NOW = '2026-05-11T00:00:00.000Z' as IsoDateTime;

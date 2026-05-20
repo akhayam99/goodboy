@@ -14,8 +14,8 @@ import type {
   ProviderRunId,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
-import type { ProviderId } from '@kay-am/types';
+} from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 
 interface RawPhaseDefinitionRow {
   readonly id: string;

@@ -1,5 +1,5 @@
 import { Ban, CheckCheck, Construction, Hourglass, type LucideIcon } from 'lucide-react';
-import type { SessionUserStatus } from '@kay-am/types';
+import type { SessionUserStatus } from '@goodboy/types';
 
 export const SESSION_STATUS_ORDER: ReadonlyArray<SessionUserStatus> = [
   'wip',

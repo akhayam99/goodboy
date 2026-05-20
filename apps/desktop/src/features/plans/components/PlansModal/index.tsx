@@ -9,8 +9,8 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { Dialog, Markdown, Textarea, cn } from '@kay-am/ui';
-import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@kay-am/types';
+import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui';
+import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
@@ -139,7 +139,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
   const consumptions = selected ? (planConsumptions[selected.id] ?? []) : [];
   const creatorAgent = selected ? agents.find((a) => a.id === selected.agentId) : null;
   const creatorDeleted = selected ? !creatorAgent : false;
-  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : '';
+  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown puppy') : '';
 
   return (
     <Dialog
@@ -203,7 +203,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                       onClick={() => {
                         if (creatorDeleted) {
                           window.alert(
-                            `agent "${selectedAgentName}" has been deleted and can no longer be opened.`,
+                            `puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
                           );
                           return;
                         }
@@ -217,7 +217,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                           : 'text-foreground hover:underline',
                       )}
                       title={
-                        creatorDeleted ? 'agent deleted, click for details' : 'open creator agent'
+                        creatorDeleted ? 'puppy deleted, click for details' : 'open creator puppy'
                       }
                     >
                       {selectedAgentName}
@@ -243,7 +243,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                           onClick={() => {
                             if (isDeleted) {
                               window.alert(
-                                `agent "${displayName}" has been deleted and can no longer be opened.`,
+                                `puppy "${displayName}" has been deleted and can no longer be opened.`,
                               );
                               return;
                             }
@@ -256,7 +256,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                               ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
                               : 'text-foreground hover:underline',
                           )}
-                          title={isDeleted ? 'agent deleted, click for details' : 'open agent'}
+                          title={isDeleted ? 'puppy deleted, click for details' : 'open puppy'}
                         >
                           {displayName}
                         </button>
@@ -288,7 +288,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                         ? 'click again to confirm retrigger'
                         : selected.status === 'consumed'
                           ? 'plan already consumed. click to retrigger (asks for confirmation)'
-                          : 'spawn new agent to execute this plan'
+                          : 'spawn new puppy to execute this plan'
                     }
                   >
                     {spawning ? (

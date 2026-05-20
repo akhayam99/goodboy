@@ -1,11 +1,11 @@
 # Conventions — Root
 
-Foundational rules for the kAY.am monorepo. Each workspace has its own `CONVENTIONS.md` for stack-specific rules.
+Foundational rules for the Goodboy monorepo. Each workspace has its own `CONVENTIONS.md` for stack-specific rules.
 
 ## Monorepo structure
 
 ```
-kay-am/
+goodboy/
 ├── apps/
 │   └── desktop/        # Tauri 2 desktop app
 ├── packages/
@@ -152,7 +152,7 @@ All must pass. No green-on-warning.
 
 Each workspace MUST have:
 
-- `package.json` with `"name": "@kay-am/<workspace>"`.
+- `package.json` with `"name": "@goodboy/<workspace>"`.
 - `tsconfig.json` extending root `tsconfig.base.json`.
 - `CONVENTIONS.md` covering stack-specific rules.
 - `README.md` with purpose + public API surface.

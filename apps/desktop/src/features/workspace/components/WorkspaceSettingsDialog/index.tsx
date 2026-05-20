@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { WorkspaceId } from '@kay-am/types';
-import { Button, Dialog, cn } from '@kay-am/ui';
+import type { WorkspaceId } from '@goodboy/types';
+import { Button, Dialog, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Check,
@@ -198,7 +198,7 @@ export function WorkspaceSettingsDialog({
             <SectionShell
               icon={<Zap size={14} aria-hidden className="text-primary" />}
               title="Skills"
-              subtitle="Reusable system-prompt fragments and tool kits that every agent in this workspace can opt into."
+              subtitle="Reusable system-prompt fragments and tool kits that every puppy in this workspace can opt into."
             >
               <SkillsPanel workspaceId={workspaceId} />
             </SectionShell>
@@ -218,7 +218,7 @@ export function WorkspaceSettingsDialog({
             <SectionShell
               icon={<GitBranch size={14} aria-hidden className="text-primary" />}
               title="Workflows"
-              subtitle="Multi-agent blueprints offered when creating a session. Each step spawns its own agent in order."
+              subtitle="Multi-puppy blueprints offered when creating a session. Each step spawns its own puppy in order."
               beta
             >
               <PhasesPanel workspaceId={workspaceId} />

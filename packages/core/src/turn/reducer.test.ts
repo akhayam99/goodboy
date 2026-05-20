@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId, TurnState, TurnEvent } from '@kay-am/types';
+import type { IsoDateTime, ProviderRunId, TurnState, TurnEvent } from '@goodboy/types';
 import { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './reducer';
 
 const at = '2026-05-07T00:00:00.000Z' as IsoDateTime;

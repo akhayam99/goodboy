@@ -1,4 +1,9 @@
-import type { IsoDateTime, ParallelMergeStrategy, AgentStatus, ProviderRunId } from '@kay-am/types';
+import type {
+  IsoDateTime,
+  ParallelMergeStrategy,
+  AgentStatus,
+  ProviderRunId,
+} from '@goodboy/types';
 
 export interface RunFileTouches {
   runId: ProviderRunId;

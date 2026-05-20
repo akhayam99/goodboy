@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrDetail, PullRequestState } from '@kay-am/types';
+import type { PrDetail, PullRequestState } from '@goodboy/types';
 import { pickSmartTab } from '../features/github/components/Card';
 
 function makePr(overrides: Partial<PullRequestState> = {}): PullRequestState {

@@ -5,8 +5,8 @@ import {
   parseCursorStreamLine,
   parseCodexJsonLine,
   type ParseContext,
-} from '@kay-am/core';
-import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@kay-am/types';
+} from '@goodboy/core';
+import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
 
 // Each provider emits its own stream-json schema; the wrong parser silently
 // returns zero events and the store reports "provider exited without a response".

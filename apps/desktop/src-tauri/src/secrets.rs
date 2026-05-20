@@ -1,7 +1,7 @@
 use keyring::Entry;
 use thiserror::Error;
 
-const SERVICE: &str = "am.kay.desktop";
+const SERVICE: &str = "com.goodboy.desktop";
 
 #[derive(Debug, Error)]
 pub enum SecretError {

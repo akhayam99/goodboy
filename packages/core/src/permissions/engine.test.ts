@@ -7,7 +7,7 @@ import type {
   PermissionRequestId,
   SessionId,
   WorkspaceId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import { PermissionEngine } from './engine';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;

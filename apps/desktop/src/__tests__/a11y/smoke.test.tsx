@@ -84,7 +84,7 @@ vi.mock('../../shared/lib/editor', () => ({
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import type { WorkspaceId } from '@kay-am/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { runA11yCheck } from './utils';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';

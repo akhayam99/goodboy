@@ -4,7 +4,7 @@ import type {
   ParallelGroupId,
   ParallelMergeStrategy,
   SessionId,
-} from '@kay-am/types';
+} from '@goodboy/types';
 import type { Database } from '../client';
 
 interface ParallelGroupRow {
