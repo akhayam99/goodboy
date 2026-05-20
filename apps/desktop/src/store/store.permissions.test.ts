@@ -155,7 +155,6 @@ function buildSession(): Session {
     permissionMode: 'bypassPermissions',
     autoRun: false,
     titleUserEdited: false,
-    skipInit: false,
     userStatus: 'wip',
     createdAt: now,
     updatedAt: now,

@@ -10,6 +10,7 @@ mod planner;
 mod workflows;
 mod providers;
 mod repo;
+mod scripts;
 mod secrets;
 mod settings_overrides;
 mod skills;
@@ -100,6 +101,7 @@ pub fn run() {
       skills::skill_delete,
       skills::skill_rescan,
       skills::skill_run_script,
+      scripts::workspace_script_run,
       workflows::workflow_list,
       workflows::workflow_get,
       workflows::workflow_upsert,

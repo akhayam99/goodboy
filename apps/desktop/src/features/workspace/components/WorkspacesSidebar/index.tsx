@@ -22,7 +22,6 @@ import {
   Sun,
   Trash2,
   Check,
-  Terminal,
 } from 'lucide-react';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
@@ -81,6 +80,7 @@ import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
+import { RunScriptControl } from '../../../scripts';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
 import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
@@ -674,22 +674,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
-  const initAgent = useMemo(
-    () =>
-      sorted.find((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) === 'init') ??
-      null,
-    [sorted, agentKindOverride],
-  );
-  const nonInitSorted = useMemo(
-    () =>
-      sorted.filter((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) !== 'init'),
-    [sorted, agentKindOverride],
-  );
-  const workflowAgents = useMemo(
-    () => nonInitSorted.filter((r) => r.stepId != null),
-    [nonInitSorted],
-  );
-  const adHocAgents = useMemo(() => nonInitSorted.filter((r) => r.stepId == null), [nonInitSorted]);
+  const workflowAgents = useMemo(() => sorted.filter((r) => r.stepId != null), [sorted]);
+  const adHocAgents = useMemo(() => sorted.filter((r) => r.stepId == null), [sorted]);
   const actionableStepId = useMemo(() => {
     if (!workflow) return null;
     return pickNextWorkflowStep(workflow, sorted)?.id ?? null;
@@ -842,45 +828,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   return (
     <section className="mt-2 flex flex-col px-2 pb-3">
-      {initAgent ? (
-        <>
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <Terminal size={11} aria-hidden className="text-muted-foreground" />
-              Init
-            </span>
-            <span className="truncate text-2xs text-muted-foreground/70">
-              {initAgent.status === 'completed' ? 'done' : initAgent.status}
-            </span>
-          </header>
-          <div className="flex flex-col gap-1 pl-2">
-            <WorkflowStepRow
-              run={initAgent}
-              kind={agentKindOverride[initAgent.id] ?? 'init'}
-              resolvedModel={
-                agentModelOverride[initAgent.id] ??
-                initAgent.modelOverride ??
-                AGENT_KIND_DEFAULTS.init.model
-              }
-              isActionable={false}
-              isBlocked={false}
-              isSelected={initAgent.id === selectedAgentId}
-              isEditing={false}
-              telemetry={latestTelemetryByAgentId.get(initAgent.id) ?? null}
-              aggregate={aggregatesByAgentId.get(initAgent.id) ?? null}
-              turns={turnsByAgentId.get(initAgent.id) ?? 0}
-              turnsLoading={initAgent.id === selectedAgentId && loading.transcript}
-              onStart={() => undefined}
-              onSelect={() => onPickAgent(initAgent.id)}
-              onRenameStart={() => undefined}
-              onRenameCommit={() => undefined}
-              onRenameCancel={() => undefined}
-            />
-          </div>
-        </>
-      ) : null}
       {!workflow ? (
-        <div className={cn('flex flex-col gap-1.5', initAgent && 'mt-6')}>
+        <div className="flex flex-col gap-1.5">
           <header className="flex items-center justify-between gap-2 pb-1.5">
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
@@ -899,9 +848,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : null}
       {workflow && workflowAgents.length > 0 ? (
         <>
-          <header
-            className={cn('flex items-center justify-between gap-2 pb-1.5', initAgent && 'mt-6')}
-          >
+          <header className="flex items-center justify-between gap-2 pb-1.5">
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
               Workflow
@@ -945,7 +892,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       <header
         className={cn(
           'flex items-center justify-between gap-2 pb-1.5',
-          ((workflow && workflowAgents.length > 0) || initAgent || !workflow) && 'mt-6',
+          ((workflow && workflowAgents.length > 0) || !workflow) && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>
@@ -985,8 +932,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-      <div className="pl-2">
+      <div className="flex flex-col gap-1 pl-2">
         <SpawnAgentControl sessionId={task.id} />
+        <RunScriptControl workspaceId={task.workspaceId} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
       <StartWorkflowDialog
@@ -1078,7 +1026,6 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               by role
             </div>
             {[...AGENT_KIND_ORDER]
-              .filter((k) => k !== 'init')
               .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
               .map((kind) => {
                 const meta = AGENT_KIND_META[kind];

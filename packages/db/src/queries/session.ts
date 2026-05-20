@@ -31,7 +31,6 @@ interface SessionRow {
   effort: string | null;
   model_override: string | null;
   provider_override: string | null;
-  skip_init: number;
   user_status: string;
   created_at: number;
   updated_at: number;
@@ -92,7 +91,6 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
-    skipInit: row.skip_init !== 0,
     ...(row.archived_at != null && {
       archivedAt: new Date(row.archived_at).toISOString() as IsoDateTime,
     }),
@@ -155,8 +153,8 @@ export async function insertSession(db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, title_user_edited, skip_init, user_status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, title_user_edited, user_status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -170,7 +168,6 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       session.currentStepOrdinal ?? null,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
-      session.skipInit ? 1 : 0,
       session.userStatus,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
@@ -212,19 +209,6 @@ export async function updateSessionUserStatus(
 ): Promise<void> {
   await db.execute('UPDATE sessions SET user_status = ?, updated_at = ? WHERE id = ?', [
     status,
-    Date.parse(updatedAt),
-    id,
-  ]);
-}
-
-export async function updateSessionSkipInit(
-  db: Database,
-  id: SessionId,
-  skipInit: boolean,
-  updatedAt: IsoDateTime,
-): Promise<void> {
-  await db.execute('UPDATE sessions SET skip_init = ?, updated_at = ? WHERE id = ?', [
-    skipInit ? 1 : 0,
     Date.parse(updatedAt),
     id,
   ]);

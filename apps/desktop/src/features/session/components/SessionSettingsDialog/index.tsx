@@ -11,14 +11,13 @@ import {
   GitBranch,
   Loader2,
   Settings2,
-  Terminal,
   Trash2,
   Zap,
 } from 'lucide-react';
 import type { SessionId } from '@kay-am/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
@@ -64,10 +63,6 @@ export function SessionSettingsDialog({
   const workspace = useAppStore((s) =>
     session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
   );
-  const hasInitScript = useAppStore((s) =>
-    session ? s.workspaceInitScripts[session.workspaceId] != null : false,
-  );
-  const updateSessionSkipInit = useAppStore((s) => s.updateSessionSkipInit);
   const { showToast } = useToast();
 
   const [active, setActive] = useState<Section>('general');
@@ -270,9 +265,6 @@ export function SessionSettingsDialog({
               branch={branch}
               workspaceReady={!!workspace}
               busy={busy}
-              hasInitScript={hasInitScript}
-              skipInit={session.skipInit ?? false}
-              onToggleInit={(enabled) => void updateSessionSkipInit(sessionId, !enabled)}
               branchEditOpen={branchEditOpen}
               setBranchEditOpen={setBranchEditOpen}
               branchMode={branchMode}
@@ -373,9 +365,6 @@ interface GeneralSectionProps {
   readonly branch: string | null;
   readonly workspaceReady: boolean;
   readonly busy: boolean;
-  readonly hasInitScript: boolean;
-  readonly skipInit: boolean;
-  readonly onToggleInit: (enabled: boolean) => void;
   readonly branchEditOpen: boolean;
   readonly setBranchEditOpen: (v: boolean) => void;
   readonly branchMode: 'existing' | 'new';
@@ -401,9 +390,6 @@ function GeneralSection(props: GeneralSectionProps) {
     branch,
     workspaceReady,
     busy,
-    hasInitScript,
-    skipInit,
-    onToggleInit,
     branchEditOpen,
     setBranchEditOpen,
     branchMode,
@@ -588,32 +574,6 @@ function GeneralSection(props: GeneralSectionProps) {
           <span className="font-medium text-foreground">{providerLabel}</span>
         </span>
       </Field>
-
-      {/* Init script — only when workspace has one */}
-      {WORKSPACE_FEATURES.initScript && hasInitScript ? (
-        <Field
-          label="Init script"
-          hint="When enabled, a setup agent runs the workspace init script before the first agent fires."
-        >
-          <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2.5 text-xs">
-            <input
-              type="checkbox"
-              checked={!skipInit}
-              onChange={(e) => onToggleInit(e.target.checked)}
-              className="mt-0.5 accent-primary"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <Terminal size={11} aria-hidden className="text-muted-foreground" />
-                Run workspace init script
-              </span>
-              <span className="text-muted-foreground">
-                Useful for installing deps, hydrating env files, etc.
-              </span>
-            </span>
-          </label>
-        </Field>
-      ) : null}
     </div>
   );
 }

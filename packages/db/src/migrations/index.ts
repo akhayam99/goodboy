@@ -32,6 +32,7 @@ import { m031RenameSoftDeletePersist } from './m031-rename-soft-delete-persist';
 import { m032SessionUserStatus } from './m032-session-user-status';
 import { m033WorkspaceInitScripts } from './m033-workspace-init-scripts';
 import { m034WorkspaceDisconnectedAt } from './m034-workspace-disconnected-at';
+import { m035WorkspaceScripts } from './m035-workspace-scripts';
 
 export interface Migration {
   readonly version: number;
@@ -73,4 +74,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 32, sql: m032SessionUserStatus },
   { version: 33, sql: m033WorkspaceInitScripts },
   { version: 34, sql: m034WorkspaceDisconnectedAt },
+  { version: 35, sql: m035WorkspaceScripts },
 ];

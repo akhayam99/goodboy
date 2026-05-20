@@ -57,12 +57,10 @@ import {
   updateSessionWorkflow,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
-  updateSessionSkipInit,
   updateSessionState,
-  getLatestInitScript,
-  insertInitScript,
-  deleteInitScript,
-  listInitScriptHistory,
+  listWorkspaceScripts,
+  upsertWorkspaceScript,
+  deleteWorkspaceScript,
   upsertContextSlot,
   type Notification,
   type NotificationKind,
@@ -117,6 +115,8 @@ import type {
   TurnProviderOverride,
   Workspace,
   WorkspaceId,
+  WorkspaceScript,
+  WorkspaceScriptId,
   GhTokenStatus,
   PullRequestState,
   LinkedIssue,
@@ -150,7 +150,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../features/settings/settings';
-import { AGENT_FEATURES, MAX_WORKSPACES, WORKSPACE_FEATURES } from '../shared/lib/features';
+import { AGENT_FEATURES, MAX_WORKSPACES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
   runTurn,
@@ -172,6 +172,7 @@ import {
   resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../features/skills/skills';
+import { invokeScriptRun, type ScriptRunResult } from '../features/scripts/scripts';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -287,7 +288,7 @@ export interface AppState {
   readonly budgetAlerts: ReadonlyArray<BudgetAlert>;
   readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
-  readonly workspaceInitScripts: Readonly<Record<WorkspaceId, string | null>>;
+  readonly workspaceScripts: Readonly<Record<WorkspaceId, ReadonlyArray<WorkspaceScript>>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -407,8 +408,6 @@ export interface AppActions {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
-    skipInit?: boolean;
-    initContentOverride?: string;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -453,13 +452,15 @@ export interface AppActions {
   saveSkill(input: SkillUpsertArgs): Promise<void>;
   deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
-  loadInitScript(workspaceId: WorkspaceId): Promise<void>;
-  saveInitScript(workspaceId: WorkspaceId, content: string): Promise<void>;
-  loadInitScriptHistory(
-    workspaceId: WorkspaceId,
-  ): Promise<ReadonlyArray<import('@kay-am/db').WorkspaceInitScript>>;
-  deleteInitScriptEntry(id: string, workspaceId: WorkspaceId): Promise<void>;
-  updateSessionSkipInit(sessionId: SessionId, skipInit: boolean): Promise<void>;
+  loadScripts(workspaceId: WorkspaceId): Promise<void>;
+  saveScript(input: {
+    workspaceId: WorkspaceId;
+    id?: WorkspaceScriptId;
+    name: string;
+    body: string;
+  }): Promise<void>;
+  deleteScript(scriptId: WorkspaceScriptId, workspaceId: WorkspaceId): Promise<void>;
+  runScript(scriptId: WorkspaceScriptId): Promise<ScriptRunResult>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -591,7 +592,7 @@ const initialState: AppState = {
   providerSpendBreakdown: [],
   budgetAlerts: [],
   skills: {},
-  workspaceInitScripts: {},
+  workspaceScripts: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
@@ -1642,8 +1643,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
-    skipInit: skipInitOverride,
-    initContentOverride,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -1672,7 +1671,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(workflowId !== undefined ? { workflowId } : {}),
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
-      skipInit: skipInitOverride ?? false,
       userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
@@ -1758,25 +1756,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       prespawnedRuns = [];
     }
 
-    let initAgentId: AgentId | null = null;
-    const initScriptContent = WORKSPACE_FEATURES.initScript
-      ? initContentOverride?.trim() || get().workspaceInitScripts[workspaceId] || null
-      : null;
-    const shouldSkipInit = skipInitOverride ?? session.skipInit;
-    if (initScriptContent && !shouldSkipInit) {
-      const initAgent = await invokePhaseRunInsert({
-        sessionId: session.id,
-        ordinal: -1,
-        name: 'init',
-        status: 'pending',
-        kind: 'init',
-      });
-      agentModelOverrides[initAgent.id] = AGENT_KIND_DEFAULTS.init.model;
-      agentKindOverrides[initAgent.id] = 'init';
-      initAgentId = initAgent.id as AgentId;
-      prespawnedRuns = [initAgent, ...prespawnedRuns];
-    }
-
     const firstAgent = prespawnedRuns[0] ?? null;
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
@@ -1814,9 +1793,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
-    if (initAgentId && initScriptContent) {
-      void get().sendTurn({ sessionId: session.id, content: initScriptContent });
-    } else if (firstStepPromptPrefix.length > 0) {
+    if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
     } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: goalText });
@@ -2713,33 +2690,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }));
         void get().refreshUnreadWorkspaces();
 
-        const kindOverride = get().agentKindOverride[resolvedAgentId];
-        if (kindOverride === 'init') {
-          const runs = get().sessionPhaseRuns[sessionId] ?? [];
-          const nextAgent = runs.find((r) => r.id !== resolvedAgentId && r.status === 'pending');
-          if (nextAgent) {
-            void get().selectAgent(sessionId, nextAgent.id as AgentId);
-            const ws = get().sessions.find((s) => s.id === sessionId);
-            const wfId = ws?.workflowId;
-            if (wfId) {
-              const templates = get().phaseTemplates[ws!.workspaceId] ?? [];
-              const wf = templates.find((t) => t.id === wfId);
-              const firstStep = wf
-                ? [...wf.steps].sort((a, b) => a.ordinal - b.ordinal)[0]
-                : undefined;
-              if (firstStep?.promptPrefix) {
-                void get().sendTurn({ sessionId, content: firstStep.promptPrefix });
-              }
-            } else {
-              const goalText = ws?.goal.trim() ?? '';
-              if (goalText.length > 0) {
-                void get().sendTurn({ sessionId, content: goalText });
-              }
-            }
-          }
-        } else {
-          void get().maybeAutoAdvanceWorkflow(sessionId);
-        }
+        void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn — agent stays `running`. It was activated and has
         // context; reverting to `pending` would re-surface the "force spawn"
@@ -3180,48 +3131,43 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
   },
 
-  loadInitScript: async (workspaceId) => {
-    const latest = await getLatestInitScript(tauriDatabase, workspaceId);
+  loadScripts: async (workspaceId) => {
+    const scripts = await listWorkspaceScripts(tauriDatabase, workspaceId);
     set((state) => ({
-      workspaceInitScripts: {
-        ...state.workspaceInitScripts,
-        [workspaceId]: latest?.content ?? null,
-      },
+      workspaceScripts: { ...state.workspaceScripts, [workspaceId]: scripts },
     }));
   },
 
-  saveInitScript: async (workspaceId, content) => {
-    await insertInitScript(tauriDatabase, {
-      id: crypto.randomUUID(),
-      workspaceId,
-      content,
-    });
-    set((state) => ({
-      workspaceInitScripts: { ...state.workspaceInitScripts, [workspaceId]: content },
-    }));
-  },
-
-  loadInitScriptHistory: async (workspaceId) => {
-    return listInitScriptHistory(tauriDatabase, workspaceId);
-  },
-
-  deleteInitScriptEntry: async (id, workspaceId) => {
-    await deleteInitScript(tauriDatabase, id);
-    const latest = await getLatestInitScript(tauriDatabase, workspaceId);
-    set((state) => ({
-      workspaceInitScripts: {
-        ...state.workspaceInitScripts,
-        [workspaceId]: latest?.content ?? null,
-      },
-    }));
-  },
-
-  updateSessionSkipInit: async (sessionId, skipInit) => {
+  saveScript: async ({ workspaceId, id, name, body }) => {
     const now = new Date().toISOString() as IsoDateTime;
-    await updateSessionSkipInit(tauriDatabase, sessionId, skipInit, now);
+    const existing = id
+      ? (get().workspaceScripts[workspaceId] ?? []).find((s) => s.id === id)
+      : undefined;
+    const script: WorkspaceScript = {
+      id: id ?? (crypto.randomUUID() as WorkspaceScriptId),
+      workspaceId,
+      name,
+      body,
+      sortOrder: existing?.sortOrder ?? get().workspaceScripts[workspaceId]?.length ?? 0,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await upsertWorkspaceScript(tauriDatabase, script);
+    await get().loadScripts(workspaceId);
+  },
+
+  deleteScript: async (scriptId, workspaceId) => {
+    await deleteWorkspaceScript(tauriDatabase, scriptId);
     set((state) => ({
-      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, skipInit } : s)),
+      workspaceScripts: {
+        ...state.workspaceScripts,
+        [workspaceId]: (state.workspaceScripts[workspaceId] ?? []).filter((s) => s.id !== scriptId),
+      },
     }));
+  },
+
+  runScript: async (scriptId) => {
+    return invokeScriptRun(scriptId);
   },
 
   loadPhaseTemplates: async (workspaceId) => {
