@@ -1,33 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Button, Input, Textarea, cn } from '@goodboy/ui';
-import type { WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Loader2,
-  Pencil,
-  Play,
-  Plus,
-  Trash2,
-  X,
-} from 'lucide-react';
+import type { WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
+import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import type { ScriptRunResult, ScriptRunStatus } from '../../scripts';
 
 interface ScriptsPanelProps {
   readonly workspaceId: WorkspaceId;
 }
-
-interface RunState {
-  readonly status: ScriptRunStatus;
-  readonly result: ScriptRunResult | null;
-  readonly outputOpen: boolean;
-}
-
-const IDLE_RUN: RunState = { status: 'idle', result: null, outputOpen: false };
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 
@@ -36,43 +16,23 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
   const loadScripts = useAppStore((s) => s.loadScripts);
   const saveScript = useAppStore((s) => s.saveScript);
   const deleteScript = useAppStore((s) => s.deleteScript);
-  const runScript = useAppStore((s) => s.runScript);
 
-  const [runState, setRunState] = useState<Record<string, RunState>>({});
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadScripts(workspaceId);
   }, [workspaceId, loadScripts]);
 
-  const patchRun = useCallback((id: string, next: Partial<RunState>) => {
-    setRunState((prev) => ({ ...prev, [id]: { ...(prev[id] ?? IDLE_RUN), ...next } }));
-  }, []);
-
-  const onRun = useCallback(
-    async (script: WorkspaceScript) => {
-      patchRun(script.id, { status: 'pending', result: null });
-      try {
-        const result = await runScript(script.id);
-        patchRun(script.id, {
-          status: result.exitCode === 0 ? 'ok' : 'error',
-          result,
-          outputOpen: result.exitCode !== 0,
-        });
-      } catch (err) {
-        patchRun(script.id, {
-          status: 'error',
-          result: { stdout: '', stderr: formatError(err), exitCode: -1 },
-          outputOpen: true,
-        });
-      }
-    },
-    [patchRun, runScript],
-  );
-
-  const onCopy = useCallback((body: string) => {
-    void navigator.clipboard.writeText(body).catch(() => undefined);
+  const onCopy = useCallback((id: string, body: string) => {
+    void navigator.clipboard
+      .writeText(body)
+      .then(() => {
+        setCopiedId(id);
+        window.setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1200);
+      })
+      .catch(() => undefined);
   }, []);
 
   const onSaveDraft = useCallback(async () => {
@@ -109,7 +69,7 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Shell scripts you run by hand. cwd is the workspace root.
+          Shell scripts you run by hand from inside a session. cwd is the session worktree.
         </p>
         <Button
           variant="ghost"
@@ -130,9 +90,8 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
         </p>
       ) : null}
 
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {list.map((script) => {
-          const run = runState[script.id] ?? IDLE_RUN;
           const isEditing = draft?.id === script.id;
           if (isEditing && draft) {
             return (
@@ -150,28 +109,24 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
             );
           }
           return (
-            <li key={script.id} className="rounded-md border border-border-soft bg-background">
-              <div className="flex items-center gap-2 px-2.5 py-2">
-                <StatusDot status={run.status} />
-                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+            <li
+              key={script.id}
+              className="overflow-hidden rounded-md border border-border-soft bg-background"
+            >
+              <div className="flex items-center gap-2 px-3 py-2">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {script.name}
                 </span>
                 <RowAction
                   icon={
-                    run.status === 'pending' ? (
-                      <Loader2 size={13} className="animate-spin" aria-hidden />
+                    copiedId === script.id ? (
+                      <Check size={13} aria-hidden className="text-success" />
                     ) : (
-                      <Play size={13} aria-hidden />
+                      <Copy size={13} aria-hidden />
                     )
                   }
-                  label="run script"
-                  disabled={run.status === 'pending' || draft !== null}
-                  onClick={() => void onRun(script)}
-                />
-                <RowAction
-                  icon={<Copy size={13} aria-hidden />}
                   label="copy script"
-                  onClick={() => onCopy(script.body)}
+                  onClick={() => onCopy(script.id, script.body)}
                 />
                 <RowAction
                   icon={<Pencil size={13} aria-hidden />}
@@ -187,34 +142,9 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
                   onClick={() => void onDelete(script.id)}
                 />
               </div>
-              {run.result ? (
-                <div className="border-t border-border-soft">
-                  <button
-                    type="button"
-                    onClick={() => patchRun(script.id, { outputOpen: !run.outputOpen })}
-                    className="flex w-full items-center gap-1.5 px-2.5 py-1 text-2xs text-muted-foreground hover:text-foreground"
-                  >
-                    {run.outputOpen ? (
-                      <ChevronUp size={11} aria-hidden />
-                    ) : (
-                      <ChevronDown size={11} aria-hidden />
-                    )}
-                    output · exit {run.result.exitCode}
-                  </button>
-                  {run.outputOpen ? (
-                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle px-2.5 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
-                      {run.result.stdout}
-                      {run.result.stderr ? (
-                        <span className="text-danger">
-                          {run.result.stdout ? '\n' : ''}
-                          {run.result.stderr}
-                        </span>
-                      ) : null}
-                      {!run.result.stdout && !run.result.stderr ? '(no output)' : null}
-                    </pre>
-                  ) : null}
-                </div>
-              ) : null}
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
+                {script.body}
+              </pre>
             </li>
           );
         })}
@@ -235,21 +165,6 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
       </ul>
     </div>
   );
-}
-
-function StatusDot({ status }: { status: ScriptRunStatus }) {
-  if (status === 'pending') {
-    return (
-      <Loader2 size={13} className="shrink-0 animate-spin text-muted-foreground" aria-hidden />
-    );
-  }
-  if (status === 'ok') {
-    return <Check size={13} className="shrink-0 text-success" aria-label="last run ok" />;
-  }
-  if (status === 'error') {
-    return <X size={13} className="shrink-0 text-danger" aria-label="last run failed" />;
-  }
-  return <span className="size-[7px] shrink-0 rounded-full bg-border" aria-hidden />;
 }
 
 function RowAction({
@@ -306,11 +221,11 @@ function ScriptEditor({
         value={draft.body}
         onChange={(e) => setDraft({ ...draft, body: e.target.value })}
         placeholder={'#!/bin/bash\ncp ../main/.env .env'}
-        className="min-h-[120px] resize-y font-mono text-xs"
+        className="min-h-[160px] resize-y font-mono text-xs"
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"
-        rows={6}
+        rows={8}
       />
       <div className="flex justify-end gap-1.5">
         <Button variant="ghost" size="sm" onClick={onCancel}>

@@ -79,7 +79,6 @@ import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
-import { RunScriptControl } from '../../../scripts';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
 import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
@@ -944,7 +943,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
       <div className="flex flex-col gap-1 pl-2">
         <SpawnAgentControl sessionId={task.id} />
-        <RunScriptControl workspaceId={task.workspaceId} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
       <StartWorkflowDialog

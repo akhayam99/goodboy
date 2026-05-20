@@ -119,9 +119,9 @@ export function WorkspaceSettingsDialog({
       title="Workspace settings"
       description={workspaceName}
       size="xl"
-      className="w-[52rem] max-w-[95vw]"
+      className="w-[64rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
-      fixedHeightClass="h-[560px]"
+      fixedHeightClass="h-[640px]"
       fullScreenOnSmall
       footer={
         <div className="flex w-full items-center gap-2">

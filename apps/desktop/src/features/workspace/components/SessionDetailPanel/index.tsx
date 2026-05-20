@@ -37,6 +37,7 @@ import {
 } from '../../../../store';
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
 import { OpenInEditorIconButton } from '../../../session/components/OpenInEditorIconButton';
+import { RunScriptControl } from '../../../scripts';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { DiffViewerDialog } from '../../../permissions/components/DiffViewerDialog';
@@ -164,6 +165,7 @@ export function SessionDetailPanel({
           </button>
         ) : null}
         <OpenInEditorIconButton worktreePath={worktreePath} />
+        <RunScriptControl workspaceId={session.workspaceId} />
         <AutoRunToggle session={session} onToggle={setSessionAutoRun} />
         <button
           type="button"

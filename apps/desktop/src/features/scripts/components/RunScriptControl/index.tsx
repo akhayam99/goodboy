@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
-import { Check, ChevronDown, ChevronUp, Code2, Loader2, Play, Terminal, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, Play, Terminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunResult, ScriptRunStatus } from '../../scripts';
@@ -13,9 +13,7 @@ interface RunScriptControlProps {
 
 interface PopoverAnchor {
   readonly left: number;
-  readonly top: number | null;
-  readonly bottom: number | null;
-  readonly direction: 'up' | 'down';
+  readonly top: number;
 }
 
 interface RunState {
@@ -25,11 +23,6 @@ interface RunState {
 
 const IDLE: RunState = { status: 'idle', result: null };
 
-/**
- * Session-level entry point for workspace scripts. Mirrors `SpawnAgentControl`:
- * a trigger that opens a right-anchored popover, flipped up or down to stay on
- * screen. Run-only — script CRUD lives in workspace settings.
- */
 export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
@@ -41,7 +34,6 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
   const runScript = useAppStore((s) => s.runScript);
 
   const [runState, setRunState] = useState<Record<string, RunState>>({});
-  const [codeOpen, setCodeOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -50,14 +42,7 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
-    const left = rect.right + 4;
-    if (direction === 'down') {
-      return { left, top: rect.top, bottom: null, direction };
-    }
-    return { left, top: null, bottom: window.innerHeight - rect.bottom, direction };
+    return { left: rect.left, top: rect.bottom + 4 };
   }, []);
 
   useEffect(() => {
@@ -121,58 +106,27 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
           <div
             ref={menuRef}
             role="menu"
-            style={{
-              position: 'fixed',
-              left: anchor.left,
-              ...(anchor.top !== null ? { top: anchor.top } : {}),
-              ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
-            }}
-            className="z-50 max-h-[60vh] w-80 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+            style={{ position: 'fixed', left: anchor.left, top: anchor.top }}
+            className="z-50 max-h-[60vh] w-96 overflow-y-auto rounded-md bg-elevated py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
           >
-            <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
-              workspace scripts
+            <div className="px-3 pb-1.5 pt-1 text-2xs uppercase tracking-wide text-muted-foreground/70">
+              scripts
             </div>
             {list.length === 0 ? (
-              <p className="px-2.5 py-3 text-2xs text-muted-foreground">
+              <p className="px-3 py-3 text-2xs text-muted-foreground">
                 No scripts. Add them in workspace settings.
               </p>
             ) : (
-              list.map((script) => {
-                const run = runState[script.id] ?? IDLE;
-                const showCode = codeOpen[script.id] ?? false;
-                return (
-                  <div key={script.id}>
-                    <div className="flex items-center gap-2 px-2.5 py-1.5">
-                      <StatusDot status={run.status} />
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => void onRun(script)}
-                        disabled={run.status === 'pending'}
-                        className="flex min-w-0 flex-1 items-center gap-1.5 text-left transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Play size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-                        <span className="truncate font-medium text-foreground">{script.name}</span>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="show script code"
-                        title="show code"
-                        onClick={() => setCodeOpen((prev) => ({ ...prev, [script.id]: !showCode }))}
-                        className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-                      >
-                        <Code2 size={12} aria-hidden />
-                      </button>
-                    </div>
-                    {showCode ? (
-                      <pre className="mx-2.5 mb-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background px-2 py-1.5 font-mono text-2xs leading-relaxed text-foreground/80">
-                        {script.body}
-                      </pre>
-                    ) : null}
-                    {run.result ? <ScriptOutput result={run.result} scriptId={script.id} /> : null}
-                  </div>
-                );
-              })
+              <ul className="flex flex-col px-1.5">
+                {list.map((script) => {
+                  const run = runState[script.id] ?? IDLE;
+                  return (
+                    <li key={script.id}>
+                      <ScriptRow script={script} run={run} onRun={() => void onRun(script)} />
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>,
           document.body,
@@ -180,42 +134,91 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
       : null;
 
   return (
-    <div className="relative mt-1">
+    <>
       <button
         ref={triggerRef}
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        title="run workspace script"
+        aria-label="run workspace script"
         aria-haspopup="menu"
         aria-expanded={open}
+        className="shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
       >
         <Terminal size={13} aria-hidden />
-        Run script
       </button>
       {menu}
+    </>
+  );
+}
+
+interface ScriptRowProps {
+  readonly script: WorkspaceScript;
+  readonly run: RunState;
+  readonly onRun: () => void;
+}
+
+function ScriptRow({ script, run, onRun }: ScriptRowProps) {
+  const isPending = run.status === 'pending';
+  const preview = script.body.trim().split('\n')[0] ?? '';
+  return (
+    <div className="rounded">
+      <button
+        type="button"
+        role="menuitem"
+        onClick={onRun}
+        disabled={isPending}
+        className={cn(
+          'group flex w-full items-center gap-2.5 rounded px-2 py-2 text-left transition-colors',
+          'hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60',
+        )}
+      >
+        <StatusDot status={run.status} />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate font-medium text-foreground">{script.name}</span>
+          <span className="truncate font-mono text-2xs text-muted-foreground/80">{preview}</span>
+        </div>
+        {isPending ? (
+          <Loader2 size={13} className="shrink-0 animate-spin text-muted-foreground" aria-hidden />
+        ) : (
+          <Play
+            size={13}
+            aria-hidden
+            className="shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary"
+          />
+        )}
+      </button>
+      {run.result ? <ScriptOutput result={run.result} scriptId={script.id} /> : null}
     </div>
   );
 }
 
 function StatusDot({ status }: { status: ScriptRunStatus }) {
-  if (status === 'pending') {
+  if (status === 'ok') {
     return (
-      <Loader2 size={12} className="shrink-0 animate-spin text-muted-foreground" aria-hidden />
+      <span
+        className="size-2 shrink-0 rounded-full bg-success"
+        aria-label="last run ok"
+        role="img"
+      />
     );
   }
-  if (status === 'ok') {
-    return <Check size={12} className="shrink-0 text-success" aria-label="last run ok" />;
-  }
   if (status === 'error') {
-    return <X size={12} className="shrink-0 text-danger" aria-label="last run failed" />;
+    return (
+      <span
+        className="size-2 shrink-0 rounded-full bg-danger"
+        aria-label="last run failed"
+        role="img"
+      />
+    );
   }
-  return <span className="size-1.5 shrink-0 rounded-full bg-border" aria-hidden />;
+  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
 }
 
 function ScriptOutput({ result, scriptId }: { result: ScriptRunResult; scriptId: string }) {
   const [open, setOpen] = useState(result.exitCode !== 0);
   return (
-    <div className="mx-2.5 mb-1">
+    <div className="mx-2 mb-1.5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
