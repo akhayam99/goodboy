@@ -66,7 +66,9 @@ export function NotificationCenter() {
       const el = triggerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const desiredLeft = rect.right - DROPDOWN_WIDTH;
+      // Center on the trigger; clamp so the popover stays inside the viewport.
+      const centerX = rect.left + rect.width / 2;
+      const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
       const spaceBelow = window.innerHeight - rect.bottom;
@@ -110,8 +112,13 @@ export function NotificationCenter() {
         >
           <Bell size={14} aria-hidden />
           {unread > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-2xs font-bold leading-none text-warning-foreground">
-              {unread > 9 ? '9+' : unread}
+            <span
+              className={cn(
+                'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
+                unread > 9 ? 'text-[9px]' : 'text-2xs',
+              )}
+            >
+              {unread > 99 ? '99+' : unread}
             </span>
           )}
         </button>

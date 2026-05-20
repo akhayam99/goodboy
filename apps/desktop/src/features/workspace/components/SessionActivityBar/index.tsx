@@ -11,7 +11,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { cn, ScrollArea } from '@goodboy/ui';
-import type { PullRequestStateKind, Session, SessionId, TurnState } from '@goodboy/types';
+import type { PullRequestStateKind, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
 
@@ -130,9 +130,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
   onClick,
 }: SessionActivityItemProps) {
   const hasUnread = useSessionHasUnread(session.id as SessionId);
-  const showUnreadPing = hasUnread && !isActive;
-  const dot = useSessionDot(session.state, showUnreadPing);
-  const hasDot = dot !== null;
+  const isPending = hasUnread && !isActive;
+  const isRunning = session.state.kind === 'running';
+  const isErrored = session.state.kind === 'error';
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -145,33 +145,20 @@ const SessionActivityItem = memo(function SessionActivityItem({
       onClick={onClick}
       title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
-        'flex w-full flex-col items-center gap-1 rounded px-1 py-2 text-center transition-colors',
+        'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
         isActive
-          ? 'bg-muted text-foreground shadow-sm'
-          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground',
+          ? 'border-border bg-muted text-foreground shadow-sm'
+          : isPending
+            ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
+            : isRunning
+              ? 'border-info/50 bg-info/5 text-foreground hover:bg-info/10'
+              : isErrored
+                ? 'border-danger/40 bg-danger/5 text-foreground hover:bg-danger/10'
+                : 'border-transparent text-foreground/70 hover:bg-muted/50 hover:text-foreground',
         dimmed && 'opacity-50',
       )}
     >
       <span className="flex items-center gap-1">
-        {hasDot ? (
-          <span className="relative inline-flex h-2 w-2 shrink-0">
-            {dot.ping ? (
-              <span
-                className={cn(
-                  'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
-                  dot.pingColor,
-                )}
-              />
-            ) : null}
-            <span
-              className={cn(
-                'relative inline-block h-2 w-2 rounded-full',
-                dot.color,
-                dot.softPulse && 'animate-soft-pulse',
-              )}
-            />
-          </span>
-        ) : null}
         <span className={cn('shrink-0', statusEntry.className)}>
           <StatusIcon size={10} aria-hidden />
         </span>
@@ -183,26 +170,3 @@ const SessionActivityItem = memo(function SessionActivityItem({
     </button>
   );
 });
-
-interface SessionDot {
-  readonly color: string;
-  readonly ping: boolean;
-  readonly pingColor: string;
-  readonly softPulse: boolean;
-}
-
-function useSessionDot(state: TurnState, hasUnread: boolean): SessionDot | null {
-  // Idle / success / "nothing happening" states render no dot. The status
-  // icons next to the dot already convey state when meaningful; a muted
-  // grey blob added no information.
-  if (state.kind === 'running') {
-    return { color: 'bg-info', ping: true, pingColor: 'bg-info', softPulse: false };
-  }
-  if (hasUnread) {
-    return { color: 'bg-warning', ping: false, pingColor: '', softPulse: true };
-  }
-  if (state.kind === 'error') {
-    return { color: 'bg-danger', ping: false, pingColor: '', softPulse: false };
-  }
-  return null;
-}

@@ -12,7 +12,7 @@ interface RunScriptControlProps {
 }
 
 interface PopoverAnchor {
-  readonly left: number;
+  readonly centerX: number;
   readonly top: number;
 }
 
@@ -42,7 +42,7 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    return { left: rect.left, top: rect.bottom + 4 };
+    return { centerX: rect.left + rect.width / 2, top: rect.bottom + 4 };
   }, []);
 
   useEffect(() => {
@@ -106,7 +106,12 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
           <Popover
             innerRef={menuRef}
             role="menu"
-            style={{ position: 'fixed', left: anchor.left, top: anchor.top }}
+            style={{
+              position: 'fixed',
+              left: anchor.centerX,
+              top: anchor.top,
+              transform: 'translateX(-50%)',
+            }}
             className="z-50 max-h-[60vh] w-96 overflow-y-auto py-1.5"
           >
             <div className="px-3 pb-1.5 pt-1 text-2xs uppercase tracking-wide text-muted-foreground/70">
