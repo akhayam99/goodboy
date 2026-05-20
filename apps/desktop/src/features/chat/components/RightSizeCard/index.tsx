@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@kay-am/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
+import { NudgeCard } from '../NudgeCard';
 
 export interface RightSizeCardProps {
   readonly currentModel: string;
@@ -17,55 +18,41 @@ export function RightSizeCard({
   onKeepCurrent,
   onChangeModel,
 }: RightSizeCardProps) {
-  const suggestBtnRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    suggestBtnRef.current?.focus();
-  }, []);
-
   return (
-    <section
-      className="rounded border border-info/40 bg-info/10 px-2.5 py-2 text-[11px]"
-      data-testid="right-size-card"
-      aria-label="model right-sizing suggestion"
-    >
-      <p className="mb-2 text-foreground">
-        This looks light. Run with{' '}
-        <span className={cn('font-semibold', TIER_TEXT[modelTier(suggestedModel)])}>
-          {modelLabel(suggestedModel)}
-        </span>{' '}
-        instead of{' '}
-        <span className={cn('font-semibold', TIER_TEXT[modelTier(currentModel)])}>
-          {modelLabel(currentModel)}
-        </span>
-        ?
-      </p>
-      <div className="flex gap-2">
-        <button
-          ref={suggestBtnRef}
-          type="button"
-          onClick={onUseSuggested}
-          className="rounded bg-info px-2 py-0.5 text-[10px] font-semibold text-info-foreground hover:opacity-90"
-          data-testid="right-size-use-suggested"
-        >
-          Use {modelLabel(suggestedModel)}
-        </button>
-        <button
-          type="button"
-          onClick={onKeepCurrent}
-          className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
-          data-testid="right-size-keep-current"
-        >
-          Keep {modelLabel(currentModel)}
-        </button>
-        <button
-          type="button"
-          onClick={onChangeModel}
-          className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
-          data-testid="right-size-change-model"
-        >
-          Change model…
-        </button>
-      </div>
-    </section>
+    <NudgeCard
+      severity="info"
+      icon={<Sparkles size={12} aria-hidden />}
+      ariaLabel="model right-sizing suggestion"
+      testId="right-size-card"
+      autoFocusPrimary
+      title={
+        <>
+          This looks light. Run with{' '}
+          <span className={cn('font-semibold', TIER_TEXT[modelTier(suggestedModel)])}>
+            {modelLabel(suggestedModel)}
+          </span>{' '}
+          instead of{' '}
+          <span className={cn('font-semibold', TIER_TEXT[modelTier(currentModel)])}>
+            {modelLabel(currentModel)}
+          </span>
+          ?
+        </>
+      }
+      primary={{
+        label: `Use ${modelLabel(suggestedModel)}`,
+        onClick: onUseSuggested,
+        testId: 'right-size-use-suggested',
+      }}
+      secondary={{
+        label: `Keep ${modelLabel(currentModel)}`,
+        onClick: onKeepCurrent,
+        testId: 'right-size-keep-current',
+      }}
+      tertiary={{
+        label: 'Change model…',
+        onClick: onChangeModel,
+        testId: 'right-size-change-model',
+      }}
+    />
   );
 }
