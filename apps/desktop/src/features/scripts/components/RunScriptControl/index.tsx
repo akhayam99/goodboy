@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@kay-am/ui';
-import type { WorkspaceId, WorkspaceScript } from '@kay-am/types';
+import { cn } from '@goodboy/ui';
+import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
 import { Check, ChevronDown, ChevronUp, Code2, Loader2, Play, Terminal, X } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';

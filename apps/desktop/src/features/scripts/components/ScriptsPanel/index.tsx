@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Button, Input, Textarea, cn } from '@kay-am/ui';
-import type { WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@kay-am/types';
+import { Button, Input, Textarea, cn } from '@goodboy/ui';
+import type { WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import {
   Check,
   ChevronDown,

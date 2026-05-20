@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceScriptId } from '@kay-am/types';
+import type { WorkspaceScriptId } from '@goodboy/types';
 
 /** Result of running a workspace script. Mirrors the Rust `ScriptRunResult`. */
 export interface ScriptRunResult {
