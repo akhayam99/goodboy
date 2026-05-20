@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Activity,
   ClipboardList,
-  List,
   BookOpen,
   type LucideIcon,
 } from 'lucide-react';
@@ -716,7 +715,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const loading = useSessionLoading(sessionId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [focusPlanId, setFocusPlanId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadSessionPlans(sessionId);
@@ -728,10 +727,14 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const latest = plans[plans.length - 1];
   if (!latest) return null;
   const latestIndex = plans.length;
-  const Chevron = expanded ? ChevronDown : ChevronRight;
+
+  const openModal = (planId: string) => {
+    setFocusPlanId(planId);
+    setModalOpen(true);
+  };
 
   return (
-    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 ring-border-soft transition-colors">
+    <section className="flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 ring-border-soft">
       <div className="flex items-center gap-2">
         <span
           aria-hidden
@@ -750,31 +753,13 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
             Step-by-step plans queued for this session
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          title={expanded ? 'Collapse' : 'Expand'}
-          aria-expanded={expanded}
-          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
-        >
-          <Chevron size={11} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          title={`View all plans (${plans.length})`}
-          aria-label={`view all plans (${plans.length})`}
-          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
-        >
-          <List size={11} aria-hidden />
-        </button>
       </div>
 
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 rounded text-left transition-colors hover:bg-foreground/5"
-        title={expanded ? 'Collapse plan' : 'Expand plan'}
+        onClick={() => openModal(latest.id)}
+        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-foreground/5"
+        title={`open plan ${latestIndex} — ${latest.title}`}
       >
         <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
           plan {latestIndex}
@@ -790,20 +775,11 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
         </span>
       </button>
 
-      {expanded ? (
-        <div
-          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-3 text-left leading-relaxed [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
-          style={{ scrollbarGutter: 'stable' }}
-        >
-          <Markdown text={latest.bodyMd} className="text-[13px] text-foreground" />
-        </div>
-      ) : null}
-
       <PlansModal
         sessionId={sessionId}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        initialPlanId={latest.id}
+        initialPlanId={focusPlanId ?? latest.id}
       />
     </section>
   );

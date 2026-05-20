@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FolderOpen } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Popover } from '@goodboy/ui';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
@@ -88,9 +88,9 @@ export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonP
         <FolderOpen size={13} aria-hidden />
       </button>
       {open && hasMultiple ? (
-        <div
+        <Popover
           role="menu"
-          className="absolute left-1/2 top-full z-30 mt-1 min-w-[160px] -translate-x-1/2 rounded-md border border-border bg-subtle py-1 text-xs shadow-lg"
+          className="absolute left-1/2 top-full z-30 mt-1 min-w-[160px] -translate-x-1/2 py-1"
         >
           {detectedEditors.map((ed) => (
             <button
@@ -104,7 +104,7 @@ export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonP
               <span className="flex-1 truncate">{ed.label}</span>
             </button>
           ))}
-        </div>
+        </Popover>
       ) : null}
     </div>
   );

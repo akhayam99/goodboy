@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, Popover } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
 import { Loader2, Play, ScrollText, Terminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
@@ -103,11 +103,11 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
   const menu =
     open && anchor
       ? createPortal(
-          <div
-            ref={menuRef}
+          <Popover
+            innerRef={menuRef}
             role="menu"
             style={{ position: 'fixed', left: anchor.left, top: anchor.top }}
-            className="z-50 max-h-[60vh] w-96 overflow-y-auto rounded-md bg-elevated py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
+            className="z-50 max-h-[60vh] w-96 overflow-y-auto py-1.5"
           >
             <div className="px-3 pb-1.5 pt-1 text-2xs uppercase tracking-wide text-muted-foreground/70">
               scripts
@@ -135,7 +135,7 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
                 })}
               </ul>
             )}
-          </div>,
+          </Popover>,
           document.body,
         )
       : null;

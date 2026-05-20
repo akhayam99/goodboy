@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Divider, Input, ScrollArea, cn } from '@goodboy/ui';
+import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -1046,8 +1046,8 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const menu =
     open && anchor
       ? createPortal(
-          <div
-            ref={menuRef}
+          <Popover
+            innerRef={menuRef}
             role="menu"
             style={{
               position: 'fixed',
@@ -1055,7 +1055,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               ...(anchor.top !== null ? { top: anchor.top } : {}),
               ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
             }}
-            className="z-50 w-80 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+            className="z-50 w-80 max-h-72 overflow-y-auto py-1"
           >
             <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
               by role
@@ -1082,7 +1082,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
                   </button>
                 );
               })}
-          </div>,
+          </Popover>,
           document.body,
         )
       : null;

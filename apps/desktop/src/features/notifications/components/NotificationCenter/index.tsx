@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, X, Trash2 } from 'lucide-react';
-import { Divider, Tooltip, cn } from '@goodboy/ui';
+import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
 
@@ -121,8 +121,8 @@ export function NotificationCenter() {
         ? createPortal(
             <>
               <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
-              <div
-                className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-subtle shadow-lg"
+              <Popover
+                className="fixed z-40 w-80"
                 style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
                 <header className="flex items-center justify-between px-3 py-2">
@@ -164,7 +164,7 @@ export function NotificationCenter() {
                     ))}
                   </ul>
                 )}
-              </div>
+              </Popover>
             </>,
             document.body,
           )
