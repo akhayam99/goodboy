@@ -9,6 +9,8 @@ export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';
 export type { DialogProps, DialogSize } from './components/Dialog';
+export { Divider } from './components/Divider';
+export type { DividerProps } from './components/Divider';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';

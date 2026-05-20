@@ -116,7 +116,7 @@ function WorkspaceCard({
   return (
     <div
       className={cn(
-        'group relative flex shrink-0 items-center rounded border text-xs font-medium transition-colors',
+        'flex shrink-0 items-center rounded border text-xs font-medium transition-colors',
         isActive
           ? 'border-primary bg-primary/5 text-foreground'
           : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
@@ -124,18 +124,18 @@ function WorkspaceCard({
       title={workspace.name}
       data-tauri-drag-region="false"
     >
-      {hasUnread && !isActive && (
-        <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-          <span className="relative inline-block h-2 w-2 rounded-full bg-warning" />
-        </span>
-      )}
       <button
         type="button"
         onClick={onSelect}
         data-tauri-drag-region="false"
         className="flex items-center gap-1.5 py-1.5 pl-2.5 pr-1"
       >
+        {hasUnread && !isActive && (
+          <span className="relative inline-flex h-2 w-2 shrink-0" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+            <span className="relative inline-block h-2 w-2 rounded-full bg-warning" />
+          </span>
+        )}
         <span className="max-w-[100px] truncate">{workspace.name}</span>
       </button>
       <button

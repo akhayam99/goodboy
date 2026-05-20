@@ -15,7 +15,7 @@ import {
   BookOpen,
   type LucideIcon,
 } from 'lucide-react';
-import { ScrollArea, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
+import { Divider, ScrollArea, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
   ContextSlot,
@@ -198,7 +198,8 @@ export function ContextPanel({
           </div>
         )}
 
-        <div className="shrink-0 border-t border-border-soft bg-subtle/30 px-4 py-3">
+        <Divider />
+        <div className="shrink-0 bg-subtle/30 px-4 py-3">
           <ul className="flex flex-col">
             <SlotRow
               sessionId={session.id}
@@ -444,7 +445,7 @@ function SlotRow({
   return (
     <li
       className={cn(
-        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 transition-colors',
+        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 transition-colors',
         accentRing,
       )}
     >
@@ -748,7 +749,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-subtle/50 p-3 ring-1 ring-border-soft transition-colors">
+    <section className="group relative flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 ring-border-soft transition-colors">
       <div className="flex items-center gap-2">
         <span
           aria-hidden

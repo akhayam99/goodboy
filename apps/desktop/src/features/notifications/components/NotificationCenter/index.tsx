@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, X, Trash2 } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { Divider, Tooltip, cn } from '@goodboy/ui';
 import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
 
@@ -125,7 +125,7 @@ export function NotificationCenter() {
                 className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-subtle shadow-lg"
                 style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
-                <header className="flex items-center justify-between border-b border-border-soft px-3 py-2">
+                <header className="flex items-center justify-between px-3 py-2">
                   <span className="text-xs font-semibold text-foreground">notifications</span>
                   <div className="flex items-center gap-2">
                     {notifications.length > 0 && (
@@ -152,7 +152,7 @@ export function NotificationCenter() {
                     </Tooltip>
                   </div>
                 </header>
-
+                <Divider />
                 {notifications.length === 0 ? (
                   <p className="px-3 py-4 text-center text-xs text-muted-foreground">
                     no notifications
