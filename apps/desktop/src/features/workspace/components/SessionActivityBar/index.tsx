@@ -5,7 +5,6 @@ import {
   GitPullRequest,
   GitPullRequestClosed,
   GitPullRequestDraft,
-  Inbox,
   MessagesSquare,
   Minus,
   Plus,
@@ -51,7 +50,7 @@ export function SessionActivityBar({
     <div className="flex h-full w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1 px-1.5 py-1.5">
-          <span className="mb-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="mb-1 mt-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             <MessagesSquare size={10} aria-hidden className="text-info" />
             Sessions
           </span>
@@ -84,21 +83,23 @@ export function SessionActivityBar({
         </div>
       </ScrollArea>
 
-      {/* archive toggle — single button at bottom */}
+      {/* archive toggle — single button at bottom; label stays fixed,
+          colour signals whether the archived view is currently open. */}
       <div className="shrink-0 p-1.5">
         <button
           type="button"
           onClick={() => setTab(isArchivedView ? 'active' : 'archived')}
+          aria-pressed={isArchivedView}
           className={cn(
-            'flex w-full items-center justify-center gap-1.5 rounded py-1.5 text-2xs font-medium transition-colors',
+            'flex w-full items-center justify-center gap-1.5 rounded border py-1.5 text-2xs font-medium transition-colors',
             isArchivedView
-              ? 'bg-foreground/10 text-foreground'
-              : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+              ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15'
+              : 'border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
           )}
-          title={isArchivedView ? 'show active sessions' : 'show archived sessions'}
+          title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
         >
-          {isArchivedView ? <Inbox size={11} aria-hidden /> : <Archive size={11} aria-hidden />}
-          <span>{isArchivedView ? 'Active' : 'Archive'}</span>
+          <Archive size={11} aria-hidden />
+          <span>Archived</span>
         </button>
       </div>
     </div>
