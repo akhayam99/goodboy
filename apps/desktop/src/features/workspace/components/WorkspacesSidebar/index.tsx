@@ -142,6 +142,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
+      <Divider />
+
       {/* unified master-detail card — sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
@@ -207,6 +209,8 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
         )}
       </div>
+
+      <Divider />
 
       {/* sidebar footer — logo + controls */}
       <div className="flex shrink-0 items-center px-2.5 py-2">
