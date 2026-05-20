@@ -22,8 +22,10 @@ export {
   SLOT_KEYS,
   SLOT_LABELS,
   assertSlotKey,
+  assessPlanReadiness,
   autoPopulateContext,
   extractFilesTouched,
+  extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
   isSlotKey,
@@ -33,7 +35,10 @@ export {
   type AutoPopulateInput,
   type AutoPopulateResult,
   type ContextEngineDeps,
+  type ExtractedHandoff,
   type ExtractedPlan,
+  type PlanReadinessInput,
+  type PlanReadinessResult,
   type SlotKey,
 } from './context';
 

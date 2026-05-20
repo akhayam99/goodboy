@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@kay-am/types';
 import {
+  assessPlanReadiness,
   extractFilesTouched,
+  extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
   mergeIntoSlot,
@@ -176,5 +178,75 @@ describe('mergeIntoSlot', () => {
 
   it('treats whitespace-only as duplicate when stripped', () => {
     expect(mergeIntoSlot('foo', ['  foo  '])).toBe('foo');
+  });
+});
+
+describe('extractHandoff', () => {
+  it('returns null when no marker is present', () => {
+    expect(extractHandoff('just chat text')).toBeNull();
+  });
+
+  it('parses self-closing marker with quoted reason', () => {
+    const text = 'plan emitted. <<handoff kind=implementer reason="plan ready" plan=abc>>';
+    expect(extractHandoff(text)).toEqual({
+      kind: 'implementer',
+      reason: 'plan ready',
+      planId: 'abc',
+    });
+  });
+
+  it('parses without a plan attribute', () => {
+    const text = '<<handoff kind=debugger reason="error reproduced">>';
+    expect(extractHandoff(text)).toEqual({
+      kind: 'debugger',
+      reason: 'error reproduced',
+      planId: null,
+    });
+  });
+
+  it('rejects unknown kinds', () => {
+    const text = '<<handoff kind=hacker reason=yo>>';
+    expect(extractHandoff(text)).toBeNull();
+  });
+
+  it('returns the last marker when multiple appear', () => {
+    const text =
+      '<<handoff kind=scout reason="early">> ... <<handoff kind=implementer reason="final">>';
+    expect(extractHandoff(text)?.kind).toBe('implementer');
+  });
+});
+
+describe('assessPlanReadiness', () => {
+  const body = '1. step one\n2. step two';
+
+  it('marks ready when body has multiple steps and no open questions', () => {
+    expect(
+      assessPlanReadiness({ planBody: body, assistantText: `<<plan>>${body}<</plan>>` }),
+    ).toEqual({ ready: true, reason: null });
+  });
+
+  it('rejects when body has TODO', () => {
+    const b = '1. step one\n2. TODO refine';
+    expect(assessPlanReadiness({ planBody: b, assistantText: '' }).reason).toBe(
+      'incomplete-markers',
+    );
+  });
+
+  it('rejects when body has only one step', () => {
+    expect(assessPlanReadiness({ planBody: '1. only step', assistantText: '' }).reason).toBe(
+      'too-few-steps',
+    );
+  });
+
+  it('rejects when assistant text outside plan asks an open question', () => {
+    const text = `<<plan>>${body}<</plan>>\n\nvuoi che continui?`;
+    expect(assessPlanReadiness({ planBody: body, assistantText: text }).reason).toBe(
+      'has-open-question',
+    );
+  });
+
+  it('does not count open-question phrases that appear inside the plan body', () => {
+    const text = `<<plan>>${body}\n\nshould i clarify before step 2?<</plan>>`;
+    expect(assessPlanReadiness({ planBody: body, assistantText: text }).ready).toBe(true);
   });
 });
