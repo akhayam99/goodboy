@@ -18,6 +18,9 @@ import type {
   TurnProviderOverride,
 } from '@kay-am/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@kay-am/core';
+import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@kay-am/db';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import type { IsoDateTime } from '@kay-am/types';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -36,8 +39,16 @@ import { ProviderUsagePill } from '../ProviderUsagePill';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from '../RightSizeCard';
+import { NudgeCard } from '../NudgeCard';
+import { ClipboardCheck } from 'lucide-react';
 import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import {
+  AGENT_KIND_META,
+  inferAgentKindFromName,
+  type AgentKind,
+} from '../../../session/agent-kind';
+import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -198,6 +209,20 @@ function toastMessageForAlert(alert: BudgetAlert): string {
 export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null);
+  const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
+  const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const agentKindOverride = useAppStore((s) =>
+    selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
+  );
+  const selectedAgentName = useAppStore((s) => {
+    if (!selectedAgentId) return null;
+    const runs = s.sessionPhaseRuns[session.id] ?? [];
+    return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
+  });
+  const activeAgentKind: AgentKind | null =
+    agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
@@ -267,6 +292,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [queued, setQueued] = useState<QueuedTurn | null>(null);
   const [rightSizePending, setRightSizePending] = useState<string | null>(null);
   const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
+  interface ScopePending {
+    readonly content: string;
+    readonly mismatch: ScopeMismatch;
+  }
+  const [scopePending, setScopePending] = useState<ScopePending | null>(null);
+  const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
   const canSend = !providerDisconnected && value.trim().length > 0;
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
@@ -394,6 +425,33 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setError(null);
     setLastFailedTurn(null);
 
+    if (!isRunning && scopePending === null && activeAgentKind !== null && !session.workflowId) {
+      const mismatch = detectScopeMismatch(content, activeAgentKind);
+      if (mismatch) {
+        const id = crypto.randomUUID();
+        try {
+          await insertNudgeEvent(tauriDatabase, {
+            id,
+            ts: new Date().toISOString() as IsoDateTime,
+            kind: 'scope-mismatch',
+            contextJson: JSON.stringify({
+              sessionId: session.id,
+              agentKind: activeAgentKind,
+              mismatchKind: mismatch.kind,
+              suggested: mismatch.suggestedAgentKind,
+            }),
+            outcome: null,
+            outcomeTs: null,
+          });
+        } catch {
+          // telemetry is best-effort
+        }
+        setScopeNudgeEventId(id);
+        setScopePending({ content, mismatch });
+        return;
+      }
+    }
+
     if (allowOverride && !isRunning && rightSizeSuggested !== null && rightSizePending === null) {
       setRightSizePending(content);
       return;
@@ -401,6 +459,49 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
     setValue('');
     await sendWith(content, null);
+  };
+
+  const recordScopeOutcome = async (outcome: NudgeOutcome) => {
+    if (!scopeNudgeEventId) return;
+    try {
+      await updateNudgeEventOutcome(
+        tauriDatabase,
+        scopeNudgeEventId,
+        outcome,
+        new Date().toISOString() as IsoDateTime,
+      );
+    } catch {
+      // best-effort
+    }
+    setScopeNudgeEventId(null);
+  };
+
+  const onScopeSpawn = async () => {
+    if (!scopePending) return;
+    const target = scopePending.mismatch.suggestedAgentKind;
+    const content = scopePending.content;
+    setScopePending(null);
+    setValue(content);
+    await recordScopeOutcome('accepted');
+    try {
+      await spawnAgent(session.id, { kindOverride: target });
+    } catch {
+      // ignore — user will see standard error path elsewhere
+    }
+  };
+
+  const onScopeSendAnyway = async () => {
+    if (!scopePending) return;
+    const content = scopePending.content;
+    setScopePending(null);
+    setValue('');
+    await recordScopeOutcome('overridden');
+    await sendWith(content, null);
+  };
+
+  const onScopeDismiss = async () => {
+    setScopePending(null);
+    await recordScopeOutcome('dismissed');
   };
 
   const onUseSuggested = async () => {
@@ -463,6 +564,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
     setRightSizePending(null);
     setRightSizeDismissed(false);
+    setScopePending(null);
+    setScopeNudgeEventId(null);
   }, [selectedAgentId]);
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
@@ -523,6 +626,66 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onUseSuggested={() => void onUseSuggested()}
             onKeepCurrent={() => void onKeepCurrent()}
             onChangeModel={onChangeModel}
+          />
+        ) : null}
+        {scopePending !== null && activeAgentKind !== null ? (
+          <NudgeCard
+            severity="warning"
+            ariaLabel="scope mismatch suggestion"
+            testId="scope-mismatch-nudge"
+            title={
+              <>
+                you're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
+                this request fits{' '}
+                <strong>
+                  {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}
+                </strong>{' '}
+                better.
+              </>
+            }
+            body={
+              <>
+                spawn a{' '}
+                {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}{' '}
+                agent, or send anyway.
+              </>
+            }
+            primary={{
+              label: `spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
+              onClick: () => void onScopeSpawn(),
+              testId: 'scope-mismatch-spawn',
+            }}
+            secondary={{
+              label: 'send anyway',
+              onClick: () => void onScopeSendAnyway(),
+              testId: 'scope-mismatch-override',
+            }}
+            onDismiss={() => void onScopeDismiss()}
+          />
+        ) : null}
+        {sessionNudge?.kind === 'plan-ready' && !session.workflowId ? (
+          <NudgeCard
+            severity="success"
+            ariaLabel="plan ready to implement"
+            testId="plan-ready-nudge"
+            icon={<ClipboardCheck size={12} aria-hidden />}
+            title={
+              <>
+                Plan looks ready: <strong>{sessionNudge.planTitle}</strong>. Spawn an implementer to
+                execute it?
+              </>
+            }
+            primary={{
+              label: 'Spawn implementer',
+              onClick: () => void acceptSessionNudgeHandoff(session.id),
+              testId: 'plan-ready-accept',
+            }}
+            secondary={{
+              label: 'Not now',
+              onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
+              testId: 'plan-ready-dismiss',
+            }}
+            onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
           />
         ) : null}
         <div

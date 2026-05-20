@@ -19,10 +19,16 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentModelOverride: Record<string, never>;
+    agentKindOverride: Record<string, never>;
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
+    sessionNudges: Record<string, null>;
+    sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
     setAgentDraft: (agentId: string, value: string) => void;
     clearAgentDraft: (agentId: string) => void;
+    dismissSessionNudge: () => Promise<void>;
+    acceptSessionNudgeHandoff: () => Promise<void>;
+    spawnAgent: () => Promise<void>;
   }
   const store = create<S>((set) => ({
     sendTurn: send,
@@ -37,8 +43,11 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
     agentModelOverride: {},
+    agentKindOverride: {},
     agentRunHistory: {},
     agentDraft: {},
+    sessionNudges: {},
+    sessionPhaseRuns: {},
     setAgentDraft: (agentId, value) =>
       set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
     clearAgentDraft: (agentId) =>
@@ -48,6 +57,9 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
         delete next[agentId];
         return { agentDraft: next };
       }),
+    dismissSessionNudge: async () => undefined,
+    acceptSessionNudgeHandoff: async () => undefined,
+    spawnAgent: async () => undefined,
   }));
   return { sendTurnMock: send, cancelCurrentTurnMock: cancel, mockStore: store };
 });
