@@ -36,9 +36,11 @@ import {
   Terminal,
   Zap,
   ZapOff,
+  OctagonX,
 } from 'lucide-react';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
+import { AbortWorkflowDialog } from '../../../session/components/AbortWorkflowDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { ProvidersChip } from '../../../../features/providers/components/ProvidersChip';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
@@ -1457,6 +1459,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
+  const [abortDialogOpen, setAbortDialogOpen] = useState(false);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const initAgent = useMemo(
@@ -1670,16 +1673,40 @@ function AgentsSection({ task }: AgentsSectionProps) {
             className={cn('flex items-center justify-between gap-2 pb-1.5', initAgent && 'mt-6')}
           >
             <span className={SECTION_LABEL}>
-              <Layers size={11} aria-hidden className="text-primary" />
+              <Layers
+                size={11}
+                aria-hidden
+                className={task.workflowAborted ? 'text-muted-foreground/50' : 'text-primary'}
+              />
               Workflow
+              {task.workflowAborted ? (
+                <span className="text-2xs font-normal text-danger/70">(aborted)</span>
+              ) : null}
             </span>
-            <span className="truncate text-2xs text-muted-foreground/70">
-              {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
+            <span className="flex items-center gap-1.5">
+              <span className="truncate text-2xs text-muted-foreground/70">
+                {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
+              </span>
+              {!task.workflowAborted &&
+              task.state.kind !== 'ended' &&
+              workflowAgents.some((r) => r.status === 'pending' || r.status === 'running') ? (
+                <button
+                  type="button"
+                  onClick={() => setAbortDialogOpen(true)}
+                  title="Abort workflow"
+                  className="rounded p-0.5 text-muted-foreground/50 hover:bg-danger/10 hover:text-danger"
+                >
+                  <OctagonX size={12} />
+                </button>
+              ) : null}
             </span>
           </header>
           <div className="flex flex-col gap-1 pl-2">
             {workflowAgents.map((run) => {
-              const isActionable = run.stepId === actionableStepId && run.status === 'pending';
+              const isActionable =
+                !task.workflowAborted &&
+                run.stepId === actionableStepId &&
+                run.status === 'pending';
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
               const resolvedModel =
                 agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
@@ -1706,6 +1733,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
               );
             })}
           </div>
+          <AbortWorkflowDialog
+            session={task}
+            open={abortDialogOpen}
+            onClose={() => setAbortDialogOpen(false)}
+          />
         </>
       ) : null}
 

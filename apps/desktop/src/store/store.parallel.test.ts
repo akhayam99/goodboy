@@ -172,6 +172,7 @@ function buildSession(): Session {
     autoRun: false,
     titleUserEdited: false,
     skipInit: false,
+    workflowAborted: false,
     userStatus: 'wip',
     workflowId: TEMPLATE_ID,
     createdAt: now,

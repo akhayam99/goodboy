@@ -217,6 +217,11 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   });
   const agentKind = agentState?.kind ?? session.state.kind;
   const isEnded = agentKind === 'ended';
+  const selectedAgent = useAppStore((s) => {
+    if (!selectedAgentId) return null;
+    return (s.sessionPhaseRuns[session.id] ?? []).find((r) => r.id === selectedAgentId) ?? null;
+  });
+  const isWorkflowReadOnly = !!session.workflowAborted && selectedAgent?.stepId != null;
   const lastItem = items[items.length - 1];
   const isThinking =
     agentKind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
@@ -340,9 +345,11 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
           onResolve={onMergeResolve}
           onCancel={() => setMergeDialogOpen(false)}
         />
-        {isEnded ? (
+        {isEnded || isWorkflowReadOnly ? (
           <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            session ended — no further turns. branch preserved.
+            {isEnded
+              ? 'session ended — no further turns. branch preserved.'
+              : 'workflow aborted — agent is read-only. spawn a custom agent to continue.'}
           </div>
         ) : (
           <ChatInput
@@ -481,9 +488,11 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
           </button>
         ) : null}
       </div>
-      {isEnded ? (
+      {isEnded || isWorkflowReadOnly ? (
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          session ended — no further turns. branch preserved.
+          {isEnded
+            ? 'session ended — no further turns. branch preserved.'
+            : 'workflow aborted — agent is read-only. spawn a custom agent to continue.'}
         </div>
       ) : (
         <ChatInput

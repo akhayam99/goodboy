@@ -155,6 +155,7 @@ function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
     autoRun: false,
     titleUserEdited: false,
     skipInit: false,
+    workflowAborted: false,
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,

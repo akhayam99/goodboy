@@ -156,6 +156,7 @@ function buildSession(): Session {
     autoRun: false,
     titleUserEdited: false,
     skipInit: false,
+    workflowAborted: false,
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,

@@ -49,6 +49,7 @@ export type Session = Readonly<{
   autoRun: boolean;
   titleUserEdited: boolean;
   skipInit: boolean;
+  workflowAborted: boolean;
   userStatus: SessionUserStatus;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;

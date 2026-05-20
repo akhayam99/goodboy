@@ -17,6 +17,7 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionSkipInit,
+  updateSessionWorkflowAborted,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   getSessionById,

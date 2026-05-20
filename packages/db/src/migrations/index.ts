@@ -31,6 +31,7 @@ import { m030PlanConsumptions } from './m030-plan-consumptions';
 import { m031RenameSoftDeletePersist } from './m031-rename-soft-delete-persist';
 import { m032SessionUserStatus } from './m032-session-user-status';
 import { m033WorkspaceInitScripts } from './m033-workspace-init-scripts';
+import { m034WorkflowAborted } from './m034-workflow-aborted';
 
 export interface Migration {
   readonly version: number;
@@ -71,4 +72,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 31, sql: m031RenameSoftDeletePersist },
   { version: 32, sql: m032SessionUserStatus },
   { version: 33, sql: m033WorkspaceInitScripts },
+  { version: 34, sql: m034WorkflowAborted },
 ];

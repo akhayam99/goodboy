@@ -106,6 +106,7 @@ function makeSession() {
     autoRun: false,
     titleUserEdited: false,
     skipInit: false,
+    workflowAborted: false,
     userStatus: 'wip' as const,
     createdAt: NOW,
     updatedAt: NOW,

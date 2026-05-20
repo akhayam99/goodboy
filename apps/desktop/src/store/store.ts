@@ -55,6 +55,7 @@ import {
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   updateSessionSkipInit,
+  updateSessionWorkflowAborted,
   updateSessionState,
   getLatestInitScript,
   insertInitScript,
@@ -412,6 +413,7 @@ export interface AppActions {
   ): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
+  abortWorkflow(sessionId: SessionId): Promise<void>;
   activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
@@ -1654,6 +1656,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
       skipInit: skipInitOverride ?? false,
+      workflowAborted: false,
       userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
@@ -1920,6 +1923,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
       throw new Error('no agent selected — spawn one before sending a turn');
+    }
+
+    if (session.workflowAborted) {
+      const activeAgent = (before.sessionPhaseRuns[sessionId] ?? []).find(
+        (r) => r.id === activeAgentId,
+      );
+      if (activeAgent?.stepId) {
+        throw new Error('workflow aborted — agent is read-only');
+      }
     }
 
     const userTurnText = content;
@@ -3704,6 +3716,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  abortWorkflow: async (sessionId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session?.workflowId || session.workflowAborted) return;
+
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateSessionWorkflowAborted(tauriDatabase, sessionId, true, now);
+
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const pendingWorkflow = runs.filter((r) => r.stepId != null && r.status === 'pending');
+    for (const agent of pendingWorkflow) {
+      await invokePhaseRunUpdateStatus(agent.id, { status: 'skipped', completedAt: now });
+    }
+
+    const refreshedRuns = await invokePhaseRunList(sessionId);
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, workflowAborted: true, updatedAt: now } : s,
+      ),
+      sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+    }));
+  },
+
   activateWorkflowAgent: async (sessionId, agentId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -3711,6 +3745,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || !session.workflowId) throw new Error('session has no workflow');
+    if (session.workflowAborted) return;
 
     const template = (get().phaseTemplates[session.workspaceId] ?? []).find(
       (t) => t.id === session.workflowId,
@@ -3750,6 +3785,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
     if (!session || !session.autoRun || !session.workflowId) return;
+    if (session.workflowAborted) return;
     const template = (state.phaseTemplates[session.workspaceId] ?? []).find(
       (t) => t.id === session.workflowId,
     );
