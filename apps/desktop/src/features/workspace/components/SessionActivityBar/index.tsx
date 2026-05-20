@@ -132,6 +132,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const hasUnread = useSessionHasUnread(session.id as SessionId);
   const showUnreadPing = hasUnread && !isActive;
   const dot = useSessionDot(session.state, showUnreadPing);
+  const hasDot = dot !== null;
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -152,17 +153,25 @@ const SessionActivityItem = memo(function SessionActivityItem({
       )}
     >
       <span className="flex items-center gap-1">
-        <span className="relative inline-flex h-2 w-2 shrink-0">
-          {dot.ping && (
+        {hasDot ? (
+          <span className="relative inline-flex h-2 w-2 shrink-0">
+            {dot.ping ? (
+              <span
+                className={cn(
+                  'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
+                  dot.pingColor,
+                )}
+              />
+            ) : null}
             <span
               className={cn(
-                'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
-                dot.pingColor,
+                'relative inline-block h-2 w-2 rounded-full',
+                dot.color,
+                dot.softPulse && 'animate-soft-pulse',
               )}
             />
-          )}
-          <span className={cn('relative inline-block h-2 w-2 rounded-full', dot.color)} />
-        </span>
+          </span>
+        ) : null}
         <span className={cn('shrink-0', statusEntry.className)}>
           <StatusIcon size={10} aria-hidden />
         </span>
@@ -175,21 +184,25 @@ const SessionActivityItem = memo(function SessionActivityItem({
   );
 });
 
-function useSessionDot(
-  state: TurnState,
-  hasUnread: boolean,
-): { color: string; ping: boolean; pingColor: string } {
+interface SessionDot {
+  readonly color: string;
+  readonly ping: boolean;
+  readonly pingColor: string;
+  readonly softPulse: boolean;
+}
+
+function useSessionDot(state: TurnState, hasUnread: boolean): SessionDot | null {
+  // Idle / success / "nothing happening" states render no dot. The status
+  // icons next to the dot already convey state when meaningful; a muted
+  // grey blob added no information.
   if (state.kind === 'running') {
-    return { color: 'bg-info', ping: true, pingColor: 'bg-info' };
+    return { color: 'bg-info', ping: true, pingColor: 'bg-info', softPulse: false };
   }
   if (hasUnread) {
-    return { color: 'bg-warning', ping: true, pingColor: 'bg-warning' };
+    return { color: 'bg-warning', ping: false, pingColor: '', softPulse: true };
   }
   if (state.kind === 'error') {
-    return { color: 'bg-danger', ping: false, pingColor: '' };
+    return { color: 'bg-danger', ping: false, pingColor: '', softPulse: false };
   }
-  if (state.kind === 'ended') {
-    return { color: 'bg-muted-foreground', ping: false, pingColor: '' };
-  }
-  return { color: 'bg-muted-foreground/30', ping: false, pingColor: '' };
+  return null;
 }

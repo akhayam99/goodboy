@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn, Divider } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
-import { ChevronRight, Loader2, Play, Terminal } from 'lucide-react';
+import { Loader2, Play, ScrollText, Terminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunResult, ScriptRunStatus } from '../../scripts';
@@ -202,15 +202,17 @@ function ScriptRow({ script, run, onRun }: ScriptRowProps) {
             type="button"
             onClick={() => setOutputOpen((v) => !v)}
             aria-expanded={outputOpen}
+            aria-pressed={outputOpen}
             aria-controls={`script-out-${script.id}`}
             title={outputOpen ? 'hide output' : 'show output'}
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className={cn(
+              'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
+              outputOpen
+                ? 'bg-primary/15 text-primary ring-1 ring-primary/30 ring-inset'
+                : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+            )}
           >
-            <ChevronRight
-              size={13}
-              aria-hidden
-              className={cn('transition-transform', outputOpen && 'rotate-90')}
-            />
+            <ScrollText size={13} aria-hidden />
           </button>
         ) : null}
         {isPending ? (

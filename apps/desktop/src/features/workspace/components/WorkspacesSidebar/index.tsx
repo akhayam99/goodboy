@@ -22,6 +22,7 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
+import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
@@ -283,6 +284,29 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         sessionId={(currentSession?.id as SessionId) ?? null}
       />
     </div>
+  );
+}
+
+function WorkflowKindBadge({ workflow }: { workflow: Workflow }) {
+  const presetName = useMemo(() => {
+    const needle = workflow.name.trim().toLowerCase();
+    if (!needle) return null;
+    const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
+    return match?.name.toLowerCase() ?? null;
+  }, [workflow.name]);
+
+  const label = presetName ?? 'custom';
+  const isPreset = presetName !== null;
+  return (
+    <span
+      title={isPreset ? `${label} preset` : 'custom workflow'}
+      className={cn(
+        'min-w-0 max-w-[8rem] truncate rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+        isPreset ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+      )}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -857,14 +881,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : null}
       {workflow && workflowAgents.length > 0 ? (
         <>
-          <header className="flex items-center justify-between gap-2 pb-1.5">
+          <header className="flex items-center gap-2 pb-1.5">
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
               Workflow
             </span>
-            <span className="truncate text-2xs text-muted-foreground/70">
-              {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
+            <WorkflowKindBadge workflow={workflow} />
+            <span className="shrink-0 text-2xs text-muted-foreground/70">
+              · {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
             </span>
+            <span className="flex-1" />
+            <AutoRunToggle session={task} />
           </header>
           <div className="flex flex-col gap-1 pl-2">
             {workflowAgents.map((run) => {
