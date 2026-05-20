@@ -64,9 +64,12 @@ import {
   deleteInitScript,
   listInitScriptHistory,
   upsertContextSlot,
+  insertNudgeEvent,
   type Notification,
   type NotificationKind,
   type NotificationSeverity,
+  type NudgeEvent,
+  type NudgeKind,
   type TelemetrySummary,
 } from '@goodboy/db';
 import type {
@@ -124,10 +127,13 @@ import type {
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
+  assessPlanReadiness,
   computeCostUsd,
   computeCodexCostUsd,
   computeCursorCostUsd,
+  extractHandoff,
   extractPlanFromMarker,
+  type ExtractedHandoff,
 } from '@goodboy/core';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
 import {
@@ -218,6 +224,7 @@ import {
 import { slotsForKind } from '../features/providers/slot-routing';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 import { createNotificationsSlice } from './slices/notifications.slice';
+import { createNudgesSlice } from './slices/nudges.slice';
 import { createPlansSlice } from './slices/plans.slice';
 import { createBudgetSlice, buildProviderSpendBreakdown } from './slices/budget.slice';
 import { createSkillsSlice } from './slices/skills.slice';
@@ -243,6 +250,23 @@ export interface SystemAlert {
   readonly message: string;
   readonly createdAt: string;
 }
+
+export type SessionNudge =
+  | {
+      readonly kind: 'plan-ready';
+      readonly id: string;
+      readonly agentId: AgentId;
+      readonly planId: PlanId | null;
+      readonly planTitle: string;
+    }
+  | {
+      readonly kind: 'handoff-suggested';
+      readonly id: string;
+      readonly agentId: AgentId;
+      readonly targetKind: AgentKind;
+      readonly reason: string;
+      readonly planId: PlanId | null;
+    };
 
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 import type { ProviderSpendEntry } from './slices/budget.slice';
@@ -325,6 +349,12 @@ export interface AppState {
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
+  /**
+   * Per-session pending nudges surfaced to the chat input area. Cleared on
+   * dismiss or when the user acts on the suggestion. Not persisted across
+   * app restarts on purpose — nudges expire with the session lifetime.
+   */
+  readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   /**
    * Per-session loading flags. Each block (agents, transcript, telemetry,
    * slots, plans, summary) starts true on session switch and is flipped off
@@ -557,6 +587,8 @@ export interface AppActions {
   abandonPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   loadConsumptionsForPlan(planId: PlanId): Promise<void>;
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
+  dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
+  acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -617,6 +649,7 @@ const initialState: AppState = {
   diffComments: {},
   notifications: [],
   sessionPlans: {},
+  sessionNudges: {},
   planConsumptions: {},
   sessionLoading: {},
 };
@@ -917,10 +950,10 @@ async function capturePlanFromTurn(
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
-): Promise<void> {
+): Promise<PlanWithCount | null> {
   try {
     const extracted = extractPlanFromMarker(assistantText);
-    if (!extracted) return;
+    if (!extracted) return null;
     await invokeUpsertPlan({
       sessionId,
       agentId,
@@ -931,10 +964,98 @@ async function capturePlanFromTurn(
     set((state) => ({
       sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
     }));
+    return (
+      refreshed.find((p) => p.title === extracted.title && p.bodyMd === extracted.bodyMd) ??
+      refreshed[0] ??
+      null
+    );
   } catch (err) {
     if (import.meta.env.DEV) {
       console.warn(`[plan-capture] failed for session ${sessionId}: ${formatError(err)}`);
     }
+    return null;
+  }
+}
+
+async function recordNudgeShown(
+  kind: NudgeKind,
+  context: Record<string, unknown>,
+): Promise<string> {
+  const id = crypto.randomUUID();
+  const event: NudgeEvent = {
+    id,
+    ts: new Date().toISOString() as IsoDateTime,
+    kind,
+    contextJson: JSON.stringify(context),
+    outcome: null,
+    outcomeTs: null,
+  };
+  try {
+    await insertNudgeEvent(tauriDatabase, event);
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn(`[nudge-event] insert failed: ${formatError(err)}`);
+    }
+  }
+  return id;
+}
+
+async function emitTurnNudges(
+  set: SetFn,
+  get: () => AppStore,
+  sessionId: SessionId,
+  agentId: AgentId,
+  assistantText: string,
+  capturedPlan: PlanWithCount | null,
+): Promise<void> {
+  const session = get().sessions.find((s) => s.id === sessionId);
+  if (!session) return;
+  const inWorkflow = session.workflowId !== null && session.workflowId !== undefined;
+
+  let nextNudge: SessionNudge | null = null;
+
+  const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
+  if (handoff && !inWorkflow) {
+    const id = await recordNudgeShown('handoff-suggested', {
+      sessionId,
+      agentId,
+      targetKind: handoff.kind,
+      reason: handoff.reason,
+      planId: handoff.planId,
+    });
+    nextNudge = {
+      kind: 'handoff-suggested',
+      id,
+      agentId,
+      targetKind: handoff.kind,
+      reason: handoff.reason,
+      planId: (handoff.planId as PlanId | null) ?? null,
+    };
+  } else if (capturedPlan && !inWorkflow) {
+    const readiness = assessPlanReadiness({
+      planBody: capturedPlan.bodyMd,
+      assistantText,
+    });
+    if (readiness.ready) {
+      const id = await recordNudgeShown('plan-ready', {
+        sessionId,
+        agentId,
+        planId: capturedPlan.id,
+      });
+      nextNudge = {
+        kind: 'plan-ready',
+        id,
+        agentId,
+        planId: capturedPlan.id,
+        planTitle: capturedPlan.title,
+      };
+    }
+  }
+
+  if (nextNudge !== null) {
+    set((state) => ({
+      sessionNudges: { ...state.sessionNudges, [sessionId]: nextNudge },
+    }));
   }
 }
 
@@ -1095,6 +1216,7 @@ let hydratePromise: Promise<void> | null = null;
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createNotificationsSlice(set, get),
+  ...createNudgesSlice(set, get),
   ...createPlansSlice(set, get),
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
@@ -2825,7 +2947,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
-      void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText);
+      void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText).then((plan) =>
+        emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, plan),
+      );
       const driftViolations = detectDrift({
         agentKind: earlyAgentKind,
         assistantText,

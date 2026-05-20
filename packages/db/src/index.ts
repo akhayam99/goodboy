@@ -138,6 +138,15 @@ export {
   type NotificationSeverity,
 } from './queries/notification';
 export {
+  insertNudgeEvent,
+  updateNudgeEventOutcome,
+  listNudgeEvents,
+  type ListNudgeEventsOptions,
+  type NudgeEvent,
+  type NudgeKind,
+  type NudgeOutcome,
+} from './queries/nudge-event';
+export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,

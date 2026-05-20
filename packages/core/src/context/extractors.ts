@@ -1,4 +1,5 @@
 import type { TurnEvent } from '@goodboy/types';
+import type { AgentKindLabel } from '../first-turn-classifier';
 
 // Extractors that turn raw turn output into ContextPanel updates. Each
 // exported fn is pure — caller persists via the ContextEngine. Split kept
@@ -24,6 +25,8 @@ const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
 const QUESTION_RE = /<<ctx-question>>([\s\S]*?)<<\/ctx-question>>/g;
 const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
 const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
+const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
+const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
 
 /**
  * Pull agent-emitted markers out of an assistant turn's full text. Agents
@@ -88,6 +91,97 @@ function parsePlanBody(raw: string): ExtractedPlan | null {
   let bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
   if (bodyMd.length === 0) bodyMd = title;
   return { title, bodyMd };
+}
+
+const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
+  'init',
+  'planner',
+  'scout',
+  'implementer',
+  'debugger',
+  'tester',
+  'docs',
+  'reviewer',
+  'generic',
+]);
+
+export interface ExtractedHandoff {
+  readonly kind: AgentKindLabel;
+  readonly reason: string;
+  readonly planId: string | null;
+}
+
+/**
+ * Parse the last `<<handoff kind=... reason="..." plan=...>>` marker out of an
+ * assistant turn. Agents emit it when they consider their scope done and want
+ * to suggest the next agent. Self-closing format. Unknown kinds are rejected.
+ */
+export function extractHandoff(assistantText: string): ExtractedHandoff | null {
+  HANDOFF_RE.lastIndex = 0;
+  let last: ExtractedHandoff | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = HANDOFF_RE.exec(assistantText)) !== null) {
+    const inner = m[1] ?? '';
+    const attrs = parseHandoffAttrs(inner);
+    const kindRaw = attrs.kind?.toLowerCase() ?? '';
+    if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) continue;
+    last = {
+      kind: kindRaw as AgentKindLabel,
+      reason: attrs.reason?.trim() ?? '',
+      planId: attrs.plan?.trim() || null,
+    };
+  }
+  return last;
+}
+
+function parseHandoffAttrs(inner: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  HANDOFF_ATTR_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = HANDOFF_ATTR_RE.exec(inner)) !== null) {
+    const key = (m[1] ?? '').toLowerCase();
+    const value = m[2] ?? m[3] ?? m[4] ?? '';
+    if (key.length > 0) out[key] = value;
+  }
+  return out;
+}
+
+const PLAN_OPEN_QUESTION_RE =
+  /\b(vuoi che|ti torna|che ne dici|should i|let me know|do you want|shall i|wdyt|preferisci)\b/i;
+const PLAN_INCOMPLETE_RE = /\b(TODO|TBD|FIXME|\?\?)\b/i;
+const PLAN_STEP_RE = /^\s*(?:\d+[.)]|[-*])\s+\S/m;
+
+export interface PlanReadinessInput {
+  readonly planBody: string;
+  readonly assistantText: string;
+}
+
+export interface PlanReadinessResult {
+  readonly ready: boolean;
+  readonly reason: 'has-open-question' | 'incomplete-markers' | 'too-few-steps' | null;
+}
+
+/**
+ * Heuristic check for whether a freshly emitted plan looks complete enough to
+ * justify suggesting the implementer agent. Conservative on purpose — false
+ * positives mean noisy nudges. Three rejections:
+ *   - body contains TODO / TBD / FIXME / ??
+ *   - body has fewer than 2 bulleted/numbered steps
+ *   - assistant text outside the plan block asks an open question
+ */
+export function assessPlanReadiness(input: PlanReadinessInput): PlanReadinessResult {
+  if (PLAN_INCOMPLETE_RE.test(input.planBody)) {
+    return { ready: false, reason: 'incomplete-markers' };
+  }
+  const stepLines = input.planBody.split('\n').filter((line) => PLAN_STEP_RE.test(line));
+  if (stepLines.length < 2) {
+    return { ready: false, reason: 'too-few-steps' };
+  }
+  const outsidePlan = input.assistantText.replace(PLAN_RE, '').trim();
+  if (PLAN_OPEN_QUESTION_RE.test(outsidePlan)) {
+    return { ready: false, reason: 'has-open-question' };
+  }
+  return { ready: true, reason: null };
 }
 
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
