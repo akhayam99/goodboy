@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@goodboy/ui';
+import { cn, Divider } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
-import { ChevronDown, ChevronUp, Loader2, Play, Terminal } from 'lucide-react';
+import { ChevronRight, Loader2, Play, Terminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunResult, ScriptRunStatus } from '../../scripts';
@@ -118,12 +118,19 @@ export function RunScriptControl({ workspaceId }: RunScriptControlProps) {
               </p>
             ) : (
               <ul className="flex flex-col px-1.5">
-                {list.map((script) => {
+                {list.map((script, i) => {
                   const run = runState[script.id] ?? IDLE;
                   return (
-                    <li key={script.id}>
-                      <ScriptRow script={script} run={run} onRun={() => void onRun(script)} />
-                    </li>
+                    <Fragment key={script.id}>
+                      {i > 0 ? (
+                        <li aria-hidden className="px-1.5">
+                          <Divider />
+                        </li>
+                      ) : null}
+                      <li>
+                        <ScriptRow script={script} run={run} onRun={() => void onRun(script)} />
+                      </li>
+                    </Fragment>
                   );
                 })}
               </ul>
@@ -161,34 +168,81 @@ interface ScriptRowProps {
 function ScriptRow({ script, run, onRun }: ScriptRowProps) {
   const isPending = run.status === 'pending';
   const preview = script.body.trim().split('\n')[0] ?? '';
+  const hasOutput = run.result !== null;
+  // Default the disclosure open on a failed run — the user almost always
+  // wants to see why it failed. Successful runs stay collapsed.
+  const [outputOpen, setOutputOpen] = useState(false);
+  const prevResultRef = useRef(run.result);
+  if (run.result !== prevResultRef.current) {
+    prevResultRef.current = run.result;
+    setOutputOpen(run.result !== null && run.result.exitCode !== 0);
+  }
+
   return (
-    <div className="rounded">
-      <button
-        type="button"
-        role="menuitem"
-        onClick={onRun}
-        disabled={isPending}
-        className={cn(
-          'group flex w-full items-center gap-2.5 rounded px-2 py-2 text-left transition-colors',
-          'hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60',
-        )}
-      >
+    <div
+      className={cn(
+        'group flex flex-col rounded transition-colors',
+        !isPending && 'hover:bg-muted/60',
+      )}
+    >
+      <div className="flex items-center gap-2 px-2 py-2">
         <StatusDot status={run.status} />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <button
+          type="button"
+          role="menuitem"
+          onClick={onRun}
+          disabled={isPending}
+          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <span className="truncate font-medium text-foreground">{script.name}</span>
           <span className="truncate font-mono text-2xs text-muted-foreground/80">{preview}</span>
-        </div>
+        </button>
+        {hasOutput ? (
+          <button
+            type="button"
+            onClick={() => setOutputOpen((v) => !v)}
+            aria-expanded={outputOpen}
+            aria-controls={`script-out-${script.id}`}
+            title={outputOpen ? 'hide output' : 'show output'}
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <ChevronRight
+              size={13}
+              aria-hidden
+              className={cn('transition-transform', outputOpen && 'rotate-90')}
+            />
+          </button>
+        ) : null}
         {isPending ? (
           <Loader2 size={13} className="shrink-0 animate-spin text-muted-foreground" aria-hidden />
         ) : (
-          <Play
-            size={13}
-            aria-hidden
-            className="shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary"
-          />
+          <button
+            type="button"
+            onClick={onRun}
+            title="run script"
+            aria-label="run script"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground"
+          >
+            <Play size={13} aria-hidden />
+          </button>
         )}
-      </button>
-      {run.result ? <ScriptOutput result={run.result} scriptId={script.id} /> : null}
+      </div>
+      {hasOutput && outputOpen ? (
+        <pre
+          id={`script-out-${script.id}`}
+          className="mx-2 mb-2 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background px-2 py-1.5 font-mono text-2xs leading-relaxed text-foreground/80"
+        >
+          <span className="block text-muted-foreground/70">exit {run.result!.exitCode}</span>
+          {run.result!.stdout}
+          {run.result!.stderr ? (
+            <span className="text-danger">
+              {run.result!.stdout ? '\n' : ''}
+              {run.result!.stderr}
+            </span>
+          ) : null}
+          {!run.result!.stdout && !run.result!.stderr ? '(no output)' : null}
+        </pre>
+      ) : null}
     </div>
   );
 }
@@ -213,36 +267,4 @@ function StatusDot({ status }: { status: ScriptRunStatus }) {
     );
   }
   return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
-}
-
-function ScriptOutput({ result, scriptId }: { result: ScriptRunResult; scriptId: string }) {
-  const [open, setOpen] = useState(result.exitCode !== 0);
-  return (
-    <div className="mx-2 mb-1.5">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-controls={`script-out-${scriptId}`}
-        className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
-      >
-        {open ? <ChevronUp size={10} aria-hidden /> : <ChevronDown size={10} aria-hidden />}
-        output · exit {result.exitCode}
-      </button>
-      {open ? (
-        <pre
-          id={`script-out-${scriptId}`}
-          className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background px-2 py-1.5 font-mono text-2xs leading-relaxed text-foreground/80"
-        >
-          {result.stdout}
-          {result.stderr ? (
-            <span className="text-danger">
-              {result.stdout ? '\n' : ''}
-              {result.stderr}
-            </span>
-          ) : null}
-          {!result.stdout && !result.stderr ? '(no output)' : null}
-        </pre>
-      ) : null}
-    </div>
-  );
 }
