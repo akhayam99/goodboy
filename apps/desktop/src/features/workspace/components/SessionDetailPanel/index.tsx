@@ -45,7 +45,6 @@ import { worktreeStatus } from '../../../worktree/worktree';
 interface SessionDetailPanelProps {
   session: Session;
   onOpenSessionSettings: () => void;
-  onOpenGithubDetails?: () => void;
   /**
    * When provided, renders a "+ New session" affordance in the header. The
    * sidebar passes this only when the activity bar is collapsed (1 session
@@ -57,12 +56,10 @@ interface SessionDetailPanelProps {
 export function SessionDetailPanel({
   session,
   onOpenSessionSettings,
-  onOpenGithubDetails,
   onNewSession,
 }: SessionDetailPanelProps) {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
@@ -110,13 +107,6 @@ export function SessionDetailPanel({
     }
   };
 
-  const pr = github?.pr ?? null;
-  // Without a resolved branch we can't even kick off a fetch — fall through to
-  // the "no PR yet" empty state instead of pinning the card to "loading…".
-  const prLoading = branch
-    ? !github || github.loading || (github.fetchedAt === null && !github.error)
-    : false;
-
   return (
     <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
       {/* header row — user tick · title · settings */}
@@ -161,6 +151,7 @@ export function SessionDetailPanel({
             <span>New session</span>
           </button>
         ) : null}
+        <SessionCostChip sessionId={session.id as SessionId} />
         <OpenInEditorIconButton worktreePath={worktreePath} />
         <RunScriptControl workspaceId={session.workspaceId} />
         <button
@@ -173,23 +164,6 @@ export function SessionDetailPanel({
           <Settings2 size={13} aria-hidden />
         </button>
       </div>
-
-      {/* subtitle row: branch (click to copy) + refresh github */}
-      {branch && (
-        <div className="flex items-center gap-1">
-          <BranchChip branch={branch} />
-          <span className="flex-1" />
-          <GithubRefreshButton sessionId={session.id as SessionId} />
-        </div>
-      )}
-
-      {/* github card */}
-      <GithubCard
-        pr={pr}
-        loading={prLoading}
-        detail={github?.detail ?? null}
-        onOpenDetails={onOpenGithubDetails}
-      />
     </div>
   );
 }
@@ -271,7 +245,10 @@ function GithubRefreshButton({ sessionId }: { sessionId: SessionId }) {
   const detailLoading = useAppStore((s) => s.sessionGithub[sessionId]?.detailLoading ?? false);
   const spinning = loading || detailLoading;
 
-  const onRefresh = () => {
+  const onRefresh = (e: React.MouseEvent) => {
+    // Stop propagation so clicking refresh doesn't also fire the parent
+    // GithubCard 'open details' handler.
+    e.stopPropagation();
     void refreshSessionPr(sessionId, { force: true }).then(() =>
       refreshSessionPrDetail(sessionId, { force: true }),
     );
@@ -303,13 +280,14 @@ const PR_ICON_MAP: Record<
 };
 
 interface GithubCardProps {
+  sessionId: SessionId;
   pr: { number: number; state: PullRequestStateKind; url: string } | null;
   loading: boolean;
   detail: import('@goodboy/types').PrDetail | null;
   onOpenDetails?: () => void;
 }
 
-function GithubCard({ pr, loading, detail, onOpenDetails }: GithubCardProps) {
+function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCardProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs text-muted-foreground">
@@ -324,6 +302,8 @@ function GithubCard({ pr, loading, detail, onOpenDetails }: GithubCardProps) {
       <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs">
         <GitPullRequest size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <span className="text-muted-foreground">no PR yet</span>
+        <span className="ml-auto" />
+        <GithubRefreshButton sessionId={sessionId} />
       </div>
     );
   }
@@ -353,9 +333,12 @@ function GithubCard({ pr, loading, detail, onOpenDetails }: GithubCardProps) {
         <MessageSquare size={10} aria-hidden />
         <span className="tabular-nums">{unresolvedComments}</span>
       </span>
-      <span className="ml-auto flex items-center gap-0.5 text-2xs text-muted-foreground/60 transition-colors group-hover:text-foreground">
-        <span>details</span>
-        <ChevronRight size={11} aria-hidden />
+      <span className="ml-auto flex items-center gap-1">
+        <GithubRefreshButton sessionId={sessionId} />
+        <span className="inline-flex items-center gap-0.5 text-2xs text-muted-foreground/60 transition-colors group-hover:text-foreground">
+          <span>details</span>
+          <ChevronRight size={11} aria-hidden />
+        </span>
       </span>
     </button>
   );
@@ -378,14 +361,23 @@ function computeCiState(checks: ReadonlyArray<import('@goodboy/types').PrCheckRu
   return 'none';
 }
 
-interface SessionFilesTouchedFooterProps {
+interface SessionMetaFooterProps {
   session: Session;
+  onOpenGithubDetails?: () => void;
 }
 
-export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooterProps) {
+export function SessionMetaFooter({ session, onOpenGithubDetails }: SessionMetaFooterProps) {
   const loading = useSessionLoading(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
+  const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
+  const pr = github?.pr ?? null;
+  // Branch needed to even kick off a fetch — fall through to "no PR yet"
+  // instead of pinning the card to "loading…".
+  const prLoading = branch
+    ? !github || github.loading || (github.fetchedAt === null && !github.error)
+    : false;
   const filesTouched = useFilesTouched(session.id);
   const diffComments = useDiffComments(session.id);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
@@ -440,84 +432,90 @@ export function SessionFilesTouchedFooter({ session }: SessionFilesTouchedFooter
     return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
   }, [gitStatus, filesTouchedCount]);
 
-  if (filesTouchedCount === 0 && (loading.transcript || loading.agents)) {
-    return (
-      <div className="flex shrink-0 items-center gap-3 px-3 py-2">
-        <SessionCostChip sessionId={session.id} />
-        <div
-          role="status"
-          aria-label="loading files touched"
-          className="flex flex-1 items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1"
-        >
-          <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
-          <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
-        </div>
-      </div>
-    );
-  }
+  const isFilesLoading = filesTouchedCount === 0 && (loading.transcript || loading.agents);
+
+  const filesButton = isFilesLoading ? (
+    <div
+      role="status"
+      aria-label="loading files touched"
+      className="flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5"
+    >
+      <div className="h-2.5 w-2.5 animate-pulse rounded-sm bg-muted" />
+      <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => {
+        setFilesDiffJumpToNotes(false);
+        setFilesDiffOpen(true);
+      }}
+      disabled={!workingDir}
+      className={cn(
+        'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+        !workingDir
+          ? 'cursor-not-allowed text-muted-foreground/50'
+          : filesTouchedCount === 0
+            ? 'border border-border-soft text-muted-foreground hover:bg-foreground/10 hover:text-foreground'
+            : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
+      )}
+      title={filesTooltip}
+    >
+      <span className="inline-flex min-w-0 items-center gap-1.5">
+        <FileEdit size={11} aria-hidden />
+        <span className="truncate">
+          {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
+        </span>
+        {openNotesCount > 0 ? (
+          <>
+            <span aria-hidden className="opacity-40">
+              ·
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFilesDiffJumpToNotes(true);
+                setFilesDiffOpen(true);
+              }}
+              className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
+              title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
+            >
+              {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
+            </button>
+          </>
+        ) : null}
+      </span>
+      <span className="inline-flex shrink-0 items-center gap-1.5">
+        {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
+          <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
+            {filesTouched.additions > 0 ? (
+              <span className="text-success">+{filesTouched.additions}</span>
+            ) : null}
+            {filesTouched.deletions > 0 ? (
+              <span className="text-danger">−{filesTouched.deletions}</span>
+            ) : null}
+          </span>
+        ) : null}
+        <span aria-hidden className="opacity-60">
+          ↗
+        </span>
+      </span>
+    </button>
+  );
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-3 px-3 py-2">
-        <SessionCostChip sessionId={session.id} />
-        <button
-          type="button"
-          onClick={() => {
-            setFilesDiffJumpToNotes(false);
-            setFilesDiffOpen(true);
-          }}
-          disabled={!workingDir}
-          className={cn(
-            'flex flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-            !workingDir
-              ? 'cursor-not-allowed text-muted-foreground/50'
-              : filesTouchedCount === 0
-                ? 'border border-border-soft text-muted-foreground hover:bg-foreground/10 hover:text-foreground'
-                : 'border border-info/20 bg-info/5 text-info hover:bg-info/10',
-          )}
-          title={filesTooltip}
-        >
-          <span className="inline-flex min-w-0 items-center gap-1.5">
-            <FileEdit size={11} aria-hidden />
-            <span className="truncate">
-              {filesTouchedCount} file{filesTouchedCount === 1 ? '' : 's'} touched
-            </span>
-            {openNotesCount > 0 ? (
-              <>
-                <span aria-hidden className="opacity-40">
-                  ·
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFilesDiffJumpToNotes(true);
-                    setFilesDiffOpen(true);
-                  }}
-                  className="shrink-0 rounded-sm px-1 text-warning hover:bg-warning/10"
-                  title={`jump to ${openNotesCount} open note${openNotesCount === 1 ? '' : 's'}`}
-                >
-                  {openNotesCount} note{openNotesCount === 1 ? '' : 's'}
-                </button>
-              </>
-            ) : null}
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-1.5">
-            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
-                {filesTouched.additions > 0 ? (
-                  <span className="text-success">+{filesTouched.additions}</span>
-                ) : null}
-                {filesTouched.deletions > 0 ? (
-                  <span className="text-danger">−{filesTouched.deletions}</span>
-                ) : null}
-              </span>
-            ) : null}
-            <span aria-hidden className="opacity-60">
-              ↗
-            </span>
-          </span>
-        </button>
+      <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-3 pt-2">
+        {branch ? <BranchChip branch={branch} /> : null}
+        {filesButton}
+        <GithubCard
+          sessionId={session.id as SessionId}
+          pr={pr}
+          loading={prLoading}
+          detail={github?.detail ?? null}
+          onOpenDetails={onOpenGithubDetails}
+        />
       </div>
 
       <DiffViewerDialog

@@ -81,7 +81,7 @@ import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
-import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
+import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
@@ -186,14 +186,16 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <SessionDetailPanel
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
-                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
                         onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
                       <NextSuggestionsPlaceholder />
-                      <SessionFilesTouchedFooter session={currentSession} />
+                      <SessionMetaFooter
+                        session={currentSession}
+                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                      />
                     </>
                   ) : (
                     <NoSessionSelectedEmpty
