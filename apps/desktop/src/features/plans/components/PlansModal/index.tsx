@@ -141,6 +141,48 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
   const creatorDeleted = selected ? !creatorAgent : false;
   const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown puppy') : '';
 
+  const planList = (
+    <ul className="flex w-full flex-col gap-1 overflow-y-auto">
+      {plans.length === 0 ? (
+        <li className="py-2 text-xs text-muted-foreground">no plans yet</li>
+      ) : (
+        plans.map((plan, idx) => {
+          const isSel = plan.id === selectedId;
+          return (
+            <li key={plan.id}>
+              <button
+                type="button"
+                onClick={() => handleSelectPlan(plan.id)}
+                className={cn(
+                  'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left',
+                  isSel ? 'bg-muted' : 'hover:bg-muted/40',
+                )}
+              >
+                <div className="flex w-full items-center gap-1.5">
+                  <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
+                    plan {idx + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
+                      PLAN_STATUS_STYLE[plan.status],
+                    )}
+                  >
+                    {plan.status}
+                  </span>
+                </div>
+                <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {fmtTimestamp(plan.createdAt)}
+                </span>
+              </button>
+            </li>
+          );
+        })
+      )}
+    </ul>
+  );
+
   return (
     <Dialog
       open={open}
@@ -149,252 +191,214 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
       size="xl"
       fixedHeightClass="h-[92vh] max-w-[1400px]"
       className="w-[92vw] max-w-[1400px]"
+      panel={planList}
+      panelWidthClass="w-72"
+      panelClassName="px-3 py-4"
     >
-      <div className="flex h-full min-h-0 gap-3">
-        <ul className="w-72 shrink-0 overflow-y-auto border-r border-border pr-3">
-          {plans.length === 0 ? (
-            <li className="py-2 text-xs text-muted-foreground">no plans yet</li>
-          ) : (
-            plans.map((plan, idx) => {
-              const isSel = plan.id === selectedId;
-              return (
-                <li key={plan.id}>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {selected ? (
+          <>
+            <div className="flex items-start gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-2xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
+                  <span>created by</span>
                   <button
                     type="button"
-                    onClick={() => handleSelectPlan(plan.id)}
-                    className={cn(
-                      'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left',
-                      isSel ? 'bg-muted' : 'hover:bg-muted/40',
-                    )}
-                  >
-                    <div className="flex w-full items-center gap-1.5">
-                      <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-                        plan {idx + 1}
-                      </span>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
-                          PLAN_STATUS_STYLE[plan.status],
-                        )}
-                      >
-                        {plan.status}
-                      </span>
-                    </div>
-                    <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {fmtTimestamp(plan.createdAt)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })
-          )}
-        </ul>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {selected ? (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-2xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
-                    <span>created by</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (creatorDeleted) {
-                          window.alert(
-                            `puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
-                          );
-                          return;
-                        }
-                        void selectAgent(sessionId, selected.agentId);
-                        handleClose();
-                      }}
-                      className={cn(
-                        'truncate font-medium underline-offset-2',
-                        creatorDeleted
-                          ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                          : 'text-foreground hover:underline',
-                      )}
-                      title={
-                        creatorDeleted ? 'puppy deleted, click for details' : 'open creator puppy'
+                    onClick={() => {
+                      if (creatorDeleted) {
+                        window.alert(
+                          `puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
+                        );
+                        return;
                       }
-                    >
-                      {selectedAgentName}
-                    </button>
-                    {creatorDeleted ? (
-                      <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                        deleted
-                      </span>
-                    ) : null}
-                    <span aria-hidden>·</span>
-                    <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
-                  </div>
-                  {consumptions.map((c) => {
-                    const ag = agents.find((a) => a.id === c.agentId);
-                    const isDeleted = !ag;
-                    const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
-                    return (
-                      <div key={c.id} className="flex items-center gap-1.5">
-                        <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
-                        <span>consumed by</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isDeleted) {
-                              window.alert(
-                                `puppy "${displayName}" has been deleted and can no longer be opened.`,
-                              );
-                              return;
-                            }
-                            void selectAgent(sessionId, c.agentId);
-                            handleClose();
-                          }}
-                          className={cn(
-                            'truncate font-medium underline-offset-2',
-                            isDeleted
-                              ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                              : 'text-foreground hover:underline',
-                          )}
-                          title={isDeleted ? 'puppy deleted, click for details' : 'open puppy'}
-                        >
-                          {displayName}
-                        </button>
-                        {isDeleted ? (
-                          <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                            deleted
-                          </span>
-                        ) : null}
-                        <span aria-hidden>·</span>
-                        <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => void handleTrigger()}
-                    disabled={spawning}
+                      void selectAgent(sessionId, selected.agentId);
+                      handleClose();
+                    }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition',
-                      retriggerArmed
-                        ? 'animate-pulse bg-danger text-danger-foreground hover:bg-danger/90'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/90',
-                      spawning && 'cursor-not-allowed opacity-60',
+                      'truncate font-medium underline-offset-2',
+                      creatorDeleted
+                        ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
+                        : 'text-foreground hover:underline',
                     )}
                     title={
-                      retriggerArmed
-                        ? 'click again to confirm retrigger'
-                        : selected.status === 'consumed'
-                          ? 'plan already consumed. click to retrigger (asks for confirmation)'
-                          : 'spawn new puppy to execute this plan'
+                      creatorDeleted ? 'puppy deleted, click for details' : 'open creator puppy'
                     }
                   >
-                    {spawning ? (
-                      <Loader2 size={12} aria-hidden className="animate-spin" />
-                    ) : retriggerArmed ? (
-                      <AlertTriangle size={12} aria-hidden />
-                    ) : (
-                      <Play size={12} aria-hidden className="fill-current" />
-                    )}
-                    {retriggerArmed
-                      ? 'already consumed. click again to confirm'
-                      : selected.status === 'consumed'
-                        ? 'retrigger plan'
-                        : 'trigger plan'}
+                    {selectedAgentName}
                   </button>
-                  {selected.status === 'active' ? (
-                    <button
-                      type="button"
-                      onClick={() => void abandonPlan(sessionId, selected.id)}
-                      className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      abandon
-                    </button>
-                  ) : null}
-                  <div className="mx-0.5 h-5 w-px bg-border-soft" aria-hidden />
-                  <div
-                    role="tablist"
-                    aria-label="content mode"
-                    className="inline-flex items-center rounded-md border border-border-soft p-0.5"
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={mode === 'preview'}
-                      onClick={() => {
-                        if (mode === 'edit') commitEdit();
-                        setMode('preview');
-                      }}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                        mode === 'preview'
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                      title="preview rendered markdown"
-                    >
-                      <Eye size={11} aria-hidden />
-                      preview
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={mode === 'edit'}
-                      onClick={() => setMode('edit')}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                        mode === 'edit'
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                      title="edit markdown source"
-                    >
-                      <Pencil size={11} aria-hidden />
-                      edit
-                    </button>
-                  </div>
-                  {selected.status === 'consumed' ? (
-                    <span
-                      className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                      title="consumed plans cannot be deleted"
-                      aria-label="consumed plans cannot be deleted"
-                    >
-                      <Trash2 size={13} aria-hidden />
+                  {creatorDeleted ? (
+                    <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                      deleted
                     </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(selected)}
-                      title="delete plan"
-                      aria-label="delete plan"
-                      className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                    >
-                      <Trash2 size={13} aria-hidden />
-                    </button>
-                  )}
+                  ) : null}
+                  <span aria-hidden>·</span>
+                  <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
                 </div>
+                {consumptions.map((c) => {
+                  const ag = agents.find((a) => a.id === c.agentId);
+                  const isDeleted = !ag;
+                  const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
+                  return (
+                    <div key={c.id} className="flex items-center gap-1.5">
+                      <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
+                      <span>consumed by</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isDeleted) {
+                            window.alert(
+                              `puppy "${displayName}" has been deleted and can no longer be opened.`,
+                            );
+                            return;
+                          }
+                          void selectAgent(sessionId, c.agentId);
+                          handleClose();
+                        }}
+                        className={cn(
+                          'truncate font-medium underline-offset-2',
+                          isDeleted
+                            ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
+                            : 'text-foreground hover:underline',
+                        )}
+                        title={isDeleted ? 'puppy deleted, click for details' : 'open puppy'}
+                      >
+                        {displayName}
+                      </button>
+                      {isDeleted ? (
+                        <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                          deleted
+                        </span>
+                      ) : null}
+                      <span aria-hidden>·</span>
+                      <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border-soft p-2">
-                {mode === 'edit' ? (
-                  <Textarea
-                    autoFocus
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    className="h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-xs shadow-none focus-visible:shadow-none focus-visible:ring-0"
-                  />
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => void handleTrigger()}
+                  disabled={spawning}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition',
+                    retriggerArmed
+                      ? 'animate-pulse bg-danger text-danger-foreground hover:bg-danger/90'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90',
+                    spawning && 'cursor-not-allowed opacity-60',
+                  )}
+                  title={
+                    retriggerArmed
+                      ? 'click again to confirm retrigger'
+                      : selected.status === 'consumed'
+                        ? 'plan already consumed. click to retrigger (asks for confirmation)'
+                        : 'spawn new puppy to execute this plan'
+                  }
+                >
+                  {spawning ? (
+                    <Loader2 size={12} aria-hidden className="animate-spin" />
+                  ) : retriggerArmed ? (
+                    <AlertTriangle size={12} aria-hidden />
+                  ) : (
+                    <Play size={12} aria-hidden className="fill-current" />
+                  )}
+                  {retriggerArmed
+                    ? 'already consumed. click again to confirm'
+                    : selected.status === 'consumed'
+                      ? 'retrigger plan'
+                      : 'trigger plan'}
+                </button>
+                {selected.status === 'active' ? (
+                  <button
+                    type="button"
+                    onClick={() => void abandonPlan(sessionId, selected.id)}
+                    className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  >
+                    abandon
+                  </button>
+                ) : null}
+                <div className="mx-0.5 h-5 w-px bg-border-soft" aria-hidden />
+                <div
+                  role="tablist"
+                  aria-label="content mode"
+                  className="inline-flex items-center rounded-md border border-border-soft p-0.5"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'preview'}
+                    onClick={() => {
+                      if (mode === 'edit') commitEdit();
+                      setMode('preview');
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
+                      mode === 'preview'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                    title="preview rendered markdown"
+                  >
+                    <Eye size={11} aria-hidden />
+                    preview
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'edit'}
+                    onClick={() => setMode('edit')}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
+                      mode === 'edit'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                    title="edit markdown source"
+                  >
+                    <Pencil size={11} aria-hidden />
+                    edit
+                  </button>
+                </div>
+                {selected.status === 'consumed' ? (
+                  <span
+                    className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                    title="consumed plans cannot be deleted"
+                    aria-label="consumed plans cannot be deleted"
+                  >
+                    <Trash2 size={13} aria-hidden />
+                  </span>
                 ) : (
-                  <Markdown text={selected.bodyMd} className="text-xs" />
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(selected)}
+                    title="delete plan"
+                    aria-label="delete plan"
+                    className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                  >
+                    <Trash2 size={13} aria-hidden />
+                  </button>
                 )}
               </div>
-            </>
-          ) : (
-            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-              no plan selected
             </div>
-          )}
-        </div>
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border-soft p-2">
+              {mode === 'edit' ? (
+                <Textarea
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  className="h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-xs shadow-none focus-visible:shadow-none focus-visible:ring-0"
+                />
+              ) : (
+                <Markdown text={selected.bodyMd} className="text-xs" />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+            no plan selected
+          </div>
+        )}
       </div>
     </Dialog>
   );
