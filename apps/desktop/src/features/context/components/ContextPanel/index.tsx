@@ -199,13 +199,7 @@ export function ContextPanel({
 
 function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-2 rounded-md px-2.5 py-2 bg-subtle',
-        emphasis ? 'gap-2.5' : 'gap-1.5',
-      )}
-      aria-hidden
-    >
+    <div className={cn('flex flex-col', emphasis ? 'gap-2.5' : 'gap-1.5')} aria-hidden>
       <div
         className={cn(
           'animate-pulse rounded bg-muted/70',
