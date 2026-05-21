@@ -417,12 +417,21 @@ function SlotRow({
     ? 'ring-border-soft/30'
     : (meta?.accentRingWhenNonEmpty ?? 'ring-border-soft');
 
+  // Cards with multi-line content that are currently expanded should share
+  // the panel height equally so a long decisions list can't push goal off-
+  // screen or paint over its sibling. Collapsed, empty, and single-line
+  // cards stay at content height. flex-1 + basis-0 makes the share equal
+  // regardless of natural content size; min-h-0 + overflow-hidden lets the
+  // inner scroller take over when content exceeds the share.
+  const expanded = !singleLine && hasValue && (!collapsible || !collapsed);
+
   return (
     <li
       className={cn(
         'group relative flex min-h-0 flex-col gap-2 rounded-lg p-3 ring-1 transition-colors',
         inactive ? 'bg-transparent' : 'bg-muted/40',
         ringClass,
+        expanded ? 'flex-1 basis-0 overflow-hidden' : 'flex-none',
       )}
     >
       <div className="flex items-center gap-2">
