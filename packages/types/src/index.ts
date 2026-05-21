@@ -24,6 +24,8 @@ export type {
   ContextSlotHistoryEntry,
   LinearIntegrationConfig,
   Session,
+  SessionExternalTask,
+  SessionExternalTaskProvider,
   SessionUserStatus,
   TurnState,
   Workspace,

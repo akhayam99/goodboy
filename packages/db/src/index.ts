@@ -23,6 +23,11 @@ export {
   deleteWorkspaceIntegration,
 } from './queries/workspace-integration';
 export {
+  setSessionExternalTask,
+  getSessionExternalTask,
+  removeSessionExternalTask,
+} from './queries/session-external-task';
+export {
   insertSession,
   updateSessionState,
   updateSessionPermissionMode,

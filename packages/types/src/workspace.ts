@@ -91,10 +91,22 @@ export type WorkspaceScript = Readonly<{
 
 export type WorkspaceIntegrationProvider = 'linear';
 
+/**
+ * Snapshot of the connected Linear account + workspace, cached locally so
+ * "issues assigned to me" and URL building work without an extra /viewer
+ * roundtrip on every fetch.
+ */
 export type LinearIntegrationConfig = Readonly<{
-  teamId: string;
-  teamName: string;
-  defaultProjectId?: string;
+  /** URL slug of the Linear workspace, e.g. "serenis" → linear.app/serenis/... */
+  workspaceUrlKey: string;
+  /** Linear user id of the connected user. Used to filter "assigned to me". */
+  viewerUserId: string;
+  /** Display name of the connected user. Cached for UI. */
+  viewerName: string;
+  /** Optional team filter. When omitted, issues come from all teams. */
+  teamId?: string;
+  /** Display name of the team. Cached for UI. */
+  teamName?: string;
 }>;
 
 export type WorkspaceIntegration = Readonly<{
@@ -109,4 +121,25 @@ export type WorkspaceIntegration = Readonly<{
   credentialKey: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+}>;
+
+/**
+ * 1:1 link between a session and an external task (Linear issue today).
+ * Lets us navigate from a session back to its source issue, snapshot title
+ * for offline display, and pre-fill the goal at session creation.
+ */
+export type SessionExternalTaskProvider = 'linear';
+
+export type SessionExternalTask = Readonly<{
+  sessionId: SessionId;
+  provider: SessionExternalTaskProvider;
+  /** Internal Linear ID (UUID-like). Used for API calls. */
+  externalId: string;
+  /** Human-readable identifier, e.g. "SER-123". Used for display. */
+  identifier: string;
+  /** Direct URL into Linear, e.g. linear.app/serenis/issue/SER-123. */
+  url: string;
+  /** Snapshot of the issue title at link time. Refreshed on demand. */
+  title: string;
+  createdAt: IsoDateTime;
 }>;
