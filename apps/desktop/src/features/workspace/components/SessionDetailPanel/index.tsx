@@ -385,7 +385,7 @@ interface GithubCardProps {
 function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCardProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-2xs text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 text-2xs text-muted-foreground">
         <Loader2 size={11} aria-hidden className="animate-spin" />
         <span>loading github…</span>
       </div>
@@ -394,7 +394,7 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
 
   if (!pr) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-2xs">
+      <div className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 text-2xs">
         <GitPullRequest size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <span className="text-muted-foreground">no PR yet</span>
         <span className="ml-auto" />
@@ -415,7 +415,7 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
       type="button"
       onClick={onOpenDetails}
       disabled={!onOpenDetails}
-      className="group flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-muted/40"
+      className="group flex items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 text-left text-foreground/80 transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-default disabled:hover:border-border-soft disabled:hover:bg-muted/30"
     >
       <span className={cn('inline-flex items-center gap-1 text-2xs font-medium', entry?.className)}>
         <StateIcon size={12} aria-hidden />
