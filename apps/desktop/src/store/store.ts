@@ -23,6 +23,7 @@ import {
   insertMessage,
   insertProviderRun,
   insertSession,
+  setSessionExternalTask,
   insertSessionWorktree,
   insertTelemetry,
   insertTurnEventsBatch,
@@ -521,6 +522,18 @@ export interface AppActions {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
+    /**
+     * Optional Linear issue to link to the new session. Stored in the
+     * session_external_tasks table for navigation back to Linear, status
+     * sync, etc. Set by the new-session dialog when the user picks an
+     * issue from the autocomplete.
+     */
+    linearIssue?: {
+      externalId: string;
+      identifier: string;
+      url: string;
+      title: string;
+    };
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -2001,6 +2014,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
+    linearIssue,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -2035,6 +2049,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
+    if (linearIssue) {
+      try {
+        await setSessionExternalTask(tauriDatabase, {
+          sessionId: session.id,
+          provider: 'linear',
+          externalId: linearIssue.externalId,
+          identifier: linearIssue.identifier,
+          url: linearIssue.url,
+          title: linearIssue.title,
+          createdAt: now,
+        });
+      } catch {
+        // non-fatal: session is usable without the issue link
+      }
+    }
     await insertSessionWorktree(tauriDatabase, {
       id: crypto.randomUUID(),
       sessionId: session.id,
