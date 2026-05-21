@@ -197,6 +197,7 @@ export {
   parseLinkedIssuesFromBody,
   parseUnifiedDiff,
   resolvePrForBranch,
+  resolveReviewThread,
   runJson as ghRunJson,
   type GetPrInput,
   type GhDetectResult,
@@ -205,6 +206,7 @@ export {
   type GhRunner,
   type PrCacheDeps,
   type PrCacheStore,
+  type ResolvedThread,
 } from './github';
 
 export {
