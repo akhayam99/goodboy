@@ -6,6 +6,7 @@ import {
   Check,
   FolderCode,
   GitBranch,
+  Link2,
   Loader2,
   Terminal,
   Unplug,
@@ -15,6 +16,7 @@ import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/config-selects';
+import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -29,11 +31,12 @@ interface WorkspaceSettingsDialogProps {
   initialSection?: string;
 }
 
-type Section = 'general' | 'skills' | 'scripts' | 'phases' | 'danger';
+type Section = 'general' | 'integrations' | 'skills' | 'scripts' | 'phases' | 'danger';
 
 function isSection(value: string | undefined): value is Section {
   return (
     value === 'general' ||
+    value === 'integrations' ||
     value === 'skills' ||
     value === 'scripts' ||
     value === 'phases' ||
@@ -131,6 +134,7 @@ export function WorkspaceSettingsDialog({
 
   const navItems: ReadonlyArray<NavItem> = [
     { id: 'general', label: 'General', icon: <FolderCode size={13} aria-hidden /> },
+    { id: 'integrations', label: 'Integrations', icon: <Link2 size={13} aria-hidden /> },
     ...(WORKSPACE_FEATURES.skills
       ? ([{ id: 'skills', label: 'Skills', icon: <Zap size={13} aria-hidden /> }] as const)
       : []),
@@ -224,6 +228,16 @@ export function WorkspaceSettingsDialog({
             setVerbosity={setVerbosity}
             busy={saveState === 'saving'}
           />
+        ) : null}
+
+        {active === 'integrations' ? (
+          <SectionShell
+            icon={<Link2 size={14} aria-hidden className="text-primary" />}
+            title="Integrations"
+            subtitle="Connect external task managers so new sessions can pull issues assigned to you and auto-fill the goal."
+          >
+            <IntegrationsPanel workspaceId={workspaceId} />
+          </SectionShell>
         ) : null}
 
         {active === 'skills' ? (
@@ -395,6 +409,45 @@ function GeneralSection({
           <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={busy} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Section: Integrations                                                 */
+/* ──────────────────────────────────────────────────────────────────── */
+
+function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
+  const integrations = useAppStore((s) => s.workspaceIntegrations[workspaceId] ?? []);
+  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
+  const [linearOpen, setLinearOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border-soft bg-subtle/30 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#5e6ad2] text-xs font-bold text-white">
+            L
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-foreground">Linear</span>
+            <span className="text-2xs text-muted-foreground">
+              {linear
+                ? `Connected as ${linear.config.viewerName} · linear.app/${linear.config.workspaceUrlKey}`
+                : 'Pull issues assigned to you and auto-fill session goals.'}
+            </span>
+          </div>
+        </div>
+        <Button variant={linear ? 'ghost' : 'primary'} onClick={() => setLinearOpen(true)}>
+          {linear ? 'Manage' : 'Connect'}
+        </Button>
+      </div>
+
+      <ConnectLinearDialog
+        workspaceId={workspaceId}
+        open={linearOpen}
+        onClose={() => setLinearOpen(false)}
+      />
     </div>
   );
 }

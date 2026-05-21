@@ -140,6 +140,7 @@ import type {
   TurnProviderOverride,
   Workspace,
   WorkspaceId,
+  WorkspaceIntegration,
   WorkspaceScript,
   WorkspaceScriptId,
   GhTokenStatus,
@@ -270,8 +271,10 @@ import { createBudgetSlice, buildProviderSpendBreakdown } from './slices/budget.
 import { createSkillsSlice } from './slices/skills.slice';
 import { createDiffCommentsSlice } from './slices/diff-comments.slice';
 import { createGithubSlice } from './slices/github.slice';
+import { createIntegrationsSlice } from './slices/integrations.slice';
 import { createSidebarSlice } from './slices/sidebar.slice';
 import { createSessionViewSlice } from './slices/session-view.slice';
+import type { LinearViewer } from '../features/integrations/linear/client';
 
 export type BootPhase =
   | 'pending'
@@ -321,6 +324,9 @@ function toRelPath(absPath: string, workingDir: string): string {
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly workspaceIntegrations: Readonly<
+    Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
+  >;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
   // Archived sessions, loaded lazily per workspace when the user opens the
@@ -496,6 +502,14 @@ export interface AppActions {
   refreshProviders(): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
+  loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
+  connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
+  setLinearTeam(
+    workspaceId: WorkspaceId,
+    teamId: string | null,
+    teamName: string | null,
+  ): Promise<void>;
+  disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -703,6 +717,7 @@ export type AppStore = AppState & AppActions;
 
 const initialState: AppState = {
   workspaces: [],
+  workspaceIntegrations: {},
   currentWorkspaceId: null,
   sessions: [],
   archivedSessions: {},
@@ -1354,6 +1369,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
+  ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),
 
@@ -1415,6 +1431,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set({ bootPhase: 'loading-workspaces' });
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
+        // Hydrate integrations cache for every active workspace so the
+        // "Linear connected" badge + new-session issue picker work without
+        // a roundtrip on first interaction.
+        await Promise.all(
+          workspaces.map((w) =>
+            get()
+              .loadIntegrations(w.id)
+              .catch(() => {}),
+          ),
+        );
 
         set({ bootPhase: 'restoring-session' });
         const lastWorkspaceId =
@@ -3482,6 +3508,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
       delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
       set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
+      // Bring back any persisted integration settings (Linear team, etc.).
+      // Token in the OS keychain also survives disconnect, so the user is
+      // back online with Linear in one click.
+      await get()
+        .loadIntegrations(reactivated.id)
+        .catch(() => {});
       // Refresh side caches owned by this workspace; sessions hydrate lazily
       // via setCurrentWorkspace when the user actually picks it.
       try {
