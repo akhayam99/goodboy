@@ -25,11 +25,12 @@ export function AutoRunToggle({ session }: AutoRunToggleProps) {
     : session.autoRun
       ? 'autorun on'
       : 'autorun off';
+  const on = hasWorkflow && session.autoRun;
   const cls = !hasWorkflow
-    ? 'border-transparent text-muted-foreground/25 cursor-not-allowed'
-    : session.autoRun
-      ? 'border-danger/40 bg-danger/10 text-danger hover:bg-danger/15'
-      : 'border-border-soft text-muted-foreground/70 hover:border-border hover:bg-foreground/5 hover:text-foreground';
+    ? 'text-muted-foreground/25 cursor-not-allowed'
+    : on
+      ? 'bg-danger/10 text-danger hover:bg-danger/15'
+      : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground';
 
   return (
     <button
@@ -41,18 +42,25 @@ export function AutoRunToggle({ session }: AutoRunToggleProps) {
       }}
       title={tooltip}
       aria-label={ariaLabel}
-      aria-pressed={hasWorkflow && session.autoRun}
+      aria-pressed={on}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors',
+        // Fixed height so the row never reflows vertically when the label
+        // appears. Width grows leftward into the row as 'auto' fades in.
+        'inline-flex h-6 shrink-0 items-center justify-end rounded-md px-1 transition-colors',
         cls,
       )}
     >
-      <span>auto</span>
-      {hasWorkflow && session.autoRun ? (
-        <Zap size={11} aria-hidden />
-      ) : (
-        <ZapOff size={11} aria-hidden />
-      )}
+      <span
+        aria-hidden
+        className={cn(
+          'overflow-hidden whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide',
+          'transition-[max-width,opacity,margin] duration-200 ease-out',
+          on ? 'mr-1 max-w-[2.5rem] opacity-100' : 'mr-0 max-w-0 opacity-0',
+        )}
+      >
+        auto
+      </span>
+      {on ? <Zap size={13} aria-hidden /> : <ZapOff size={13} aria-hidden />}
     </button>
   );
 }
