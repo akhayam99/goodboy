@@ -3656,12 +3656,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
     const refreshed = await invokePhaseRunList(sessionId);
     set((s) => {
+      // Clear selection — never auto-pick a sibling. Picking a 'fallback'
+      // dumps the user into a chat they didn't ask for; the empty-state
+      // 'pick_agent' scenario already covers the no-selection case and is
+      // explicit about what they can do next.
       const wasSelected = s.selectedAgentId[sessionId] === agentId;
       const nextSelected = { ...s.selectedAgentId };
       if (wasSelected) {
-        const fallback = refreshed[0]?.id ?? null;
-        if (fallback) nextSelected[sessionId] = fallback;
-        else delete nextSelected[sessionId];
+        delete nextSelected[sessionId];
       }
       const nextTurnState = { ...s.agentTurnState };
       delete nextTurnState[agentId];
