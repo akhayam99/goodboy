@@ -4,14 +4,24 @@ import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
+export interface ToastAction {
+  readonly label: string;
+  readonly onClick: () => void | Promise<void>;
+}
+
 export interface ToastItem {
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;
+  readonly action?: ToastAction;
+}
+
+export interface ToastOptions {
+  readonly action?: ToastAction;
 }
 
 interface ToastContextValue {
-  showToast: (kind: ToastKind, message: string) => void;
+  showToast: (kind: ToastKind, message: string, options?: ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -25,11 +35,14 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
 
-  const showToast = useCallback((kind: ToastKind, message: string) => {
+  const showToast = useCallback((kind: ToastKind, message: string, options?: ToastOptions) => {
     const id = crypto.randomUUID();
     const formatted =
       message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message;
-    setToasts((prev) => [...prev, { id, kind, message: formatted }]);
+    setToasts((prev) => [
+      ...prev,
+      { id, kind, message: formatted, ...(options?.action && { action: options.action }) },
+    ]);
   }, []);
 
   const dismiss = useCallback((id: string) => {
@@ -110,6 +123,22 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
       role="alert"
     >
       <span className="flex-1 text-xs leading-snug">{toast.message}</span>
+      {toast.action ? (
+        <button
+          type="button"
+          onClick={() => {
+            const result = toast.action?.onClick();
+            // Dismiss immediately on action click — the user has decided.
+            // If onClick returns a promise we still dismiss now; failures
+            // surface via a new toast.
+            void result;
+            onDismiss(toast.id);
+          }}
+          className="shrink-0 rounded-full bg-current/10 px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide opacity-90 hover:opacity-100"
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
       <button
         type="button"
         className="mt-0.5 shrink-0 opacity-60 hover:opacity-100"

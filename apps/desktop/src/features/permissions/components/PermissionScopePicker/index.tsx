@@ -40,6 +40,7 @@ export function PermissionScopePicker({
   onResolved,
 }: PermissionScopePickerProps) {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
+  const revokePermissionRule = useAppStore((s) => s.revokePermissionRule);
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -47,8 +48,36 @@ export function PermissionScopePicker({
     if (busy) return;
     setBusy(true);
     try {
-      await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
-      showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope]);
+      const rule = await resolvePermissionRequest({
+        sessionId,
+        agentId,
+        toolUseId,
+        toolName,
+        runId,
+        scope,
+      });
+      // Volatile / deny paths don't get an undo handle. Once is volatile by
+      // design and deny rules tend to be intentional — pulling them back
+      // would re-open the request silently. Surface a plain success toast
+      // there, but for the three persistent allow scopes give the user 5
+      // seconds to walk it back.
+      if (rule && (scope === 'global' || scope === 'workspace' || scope === 'session')) {
+        showToast('success', SCOPE_TOAST[scope], {
+          action: {
+            label: 'undo',
+            onClick: async () => {
+              try {
+                await revokePermissionRule(rule.id);
+                showToast('info', 'rule revoked');
+              } catch (err) {
+                showToast('error', err instanceof Error ? err.message : 'failed to revoke rule');
+              }
+            },
+          },
+        });
+      } else {
+        showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope]);
+      }
       onResolved();
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : 'failed to resolve permission');
