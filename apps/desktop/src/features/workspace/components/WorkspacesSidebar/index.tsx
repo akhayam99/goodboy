@@ -27,6 +27,7 @@ import {
   Check,
 } from 'lucide-react';
 import { BrainDumpPopover } from '../../../brain-dump/components/BrainDumpPopover';
+import { IdeasBacklogDialog } from '../../../brain-dump/components/IdeasBacklogDialog';
 import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
@@ -127,6 +128,7 @@ export function WorkspacesSidebar({
   const [guideOpen, setGuideOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
+  const [backlogOpen, setBacklogOpen] = useState(false);
   const brainDumpAnchorRef = useRef<HTMLButtonElement | null>(null);
   const loadIdeasForWorkspace = useAppStore((s) => s.loadIdeasForWorkspace);
   const recoverPendingRephrases = useAppStore((s) => s.recoverPendingRephrases);
@@ -294,13 +296,20 @@ export function WorkspacesSidebar({
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
       {currentWorkspace ? (
-        <BrainDumpPopover
-          open={brainDumpOpen}
-          anchorRef={brainDumpAnchorRef}
-          workspaceId={currentWorkspace.id}
-          onClose={() => setBrainDumpOpen(false)}
-          onOpenBacklog={() => undefined}
-        />
+        <>
+          <BrainDumpPopover
+            open={brainDumpOpen}
+            anchorRef={brainDumpAnchorRef}
+            workspaceId={currentWorkspace.id}
+            onClose={() => setBrainDumpOpen(false)}
+            onOpenBacklog={() => setBacklogOpen(true)}
+          />
+          <IdeasBacklogDialog
+            open={backlogOpen}
+            onClose={() => setBacklogOpen(false)}
+            workspaceId={currentWorkspace.id}
+          />
+        </>
       ) : null}
       {currentWorkspace ? (
         <NewSessionDialog
