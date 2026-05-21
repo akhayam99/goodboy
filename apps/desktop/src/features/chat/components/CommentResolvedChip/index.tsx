@@ -63,18 +63,20 @@ export function CommentResolvedChip({ assistantText, sessionId }: CommentResolve
         <GitCommit size={9} aria-hidden />
         {shaShort}
       </span>
-      <span className="text-muted-foreground/80">resolve the review conversation on github?</span>
+      <span className="text-muted-foreground/80">
+        mark this review conversation as solved on github?
+      </span>
       <div className="ml-auto flex items-center gap-1">
         <button
           type="button"
           onClick={() => void onResolve()}
           disabled={busy}
           data-testid="comment-resolved-confirm"
-          aria-label="Resolve conversation"
+          aria-label="Mark as Solved"
           className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-semibold text-success-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? <Loader2 size={9} aria-hidden className="animate-spin" /> : null}
-          Resolve conversation
+          Mark as Solved
         </button>
         <button
           type="button"
