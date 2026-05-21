@@ -91,7 +91,9 @@ import type {
   PermissionDecisionKind,
   PermissionRequest,
   PermissionRequestId,
+  PermissionAuditEntry,
   PermissionRule,
+  PermissionRuleId,
   PlanConsumption,
   PlanId,
   PlanStatus,
@@ -196,13 +198,16 @@ import {
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
+  invokePermissionRuleDelete,
   invokePermissionAuditInsert,
+  invokePermissionAuditList,
   invokeAuditRetryEnqueue,
   invokeAuditRetryDrain,
   invokeAuditRetryUpdate,
   invokeAuditRetryDelete,
   type AuditRetryEntry,
   type PermissionAuditInsertPayload,
+  type PermissionAuditQueryArgs,
 } from '../features/permissions/permissions';
 import {
   invokePhaseTemplateList,
@@ -597,7 +602,15 @@ export interface AppActions {
     toolName: string;
     runId: ProviderRunId;
     scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
-  }): Promise<void>;
+  }): Promise<PermissionRule | null>;
+  loadPermissionRules(args: {
+    workspaceId?: WorkspaceId;
+    sessionId?: SessionId;
+  }): Promise<ReadonlyArray<PermissionRule>>;
+  revokePermissionRule(id: PermissionRuleId): Promise<void>;
+  loadPermissionAuditLog(
+    args: PermissionAuditQueryArgs,
+  ): Promise<ReadonlyArray<PermissionAuditEntry>>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
   addDiffComment(
@@ -4057,9 +4070,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   resolvePermissionRequest: async ({ sessionId, agentId, toolUseId, toolName, runId, scope }) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) return null;
     const now = new Date().toISOString() as IsoDateTime;
 
+    let createdRule: PermissionRule | null = null;
     if (scope === 'once') {
       set((state) => ({
         volatilePermissionAllows: new Set([...state.volatilePermissionAllows, toolUseId]),
@@ -4067,7 +4081,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else {
       const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
       const ruleScope = scope === 'deny' ? 'session' : scope;
-      await invokePermissionRuleUpsert({
+      createdRule = await invokePermissionRuleUpsert({
         scope: ruleScope,
         ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
         ...(ruleScope === 'session' ? { sessionId } : {}),
@@ -4082,10 +4096,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
       runId,
       toolUseId,
       decision: scope === 'deny' ? 'deny' : 'allow',
-      ruleId: null,
+      ruleId: createdRule?.id ?? null,
       decidedBy: 'user',
       at: now,
     });
+    return createdRule;
+  },
+
+  loadPermissionRules: async ({ workspaceId, sessionId }) => {
+    // Compose scope queries the caller actually cares about. Global is always
+    // surfaced; workspace/session are queried only when their id is known so
+    // dialog consumers don't accidentally read cross-workspace rules.
+    const queries: Array<Promise<ReadonlyArray<PermissionRule>>> = [
+      invokePermissionRuleList({ scope: 'global' }),
+    ];
+    if (workspaceId) queries.push(invokePermissionRuleList({ scope: 'workspace', workspaceId }));
+    if (sessionId) queries.push(invokePermissionRuleList({ scope: 'session', sessionId }));
+    const buckets = await Promise.all(queries);
+    return buckets.flat();
+  },
+
+  revokePermissionRule: async (id) => {
+    await invokePermissionRuleDelete(id);
+  },
+
+  loadPermissionAuditLog: async (args) => {
+    return invokePermissionAuditList(args);
   },
 
   clearSessionNextActions: (sessionId) => {

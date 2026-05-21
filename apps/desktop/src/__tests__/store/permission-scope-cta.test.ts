@@ -11,10 +11,15 @@ vi.mock('../../turn', () => ({
 
 const permissionRuleUpsertSpy = vi.fn();
 
+const permissionRuleDeleteSpy = vi.fn(async () => undefined);
+
 vi.mock('../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionRuleUpsert: (...args: unknown[]) => permissionRuleUpsertSpy(...args),
+  invokePermissionRuleGet: vi.fn(async () => null),
+  invokePermissionRuleDelete: (id: string) => permissionRuleDeleteSpy(id),
   invokePermissionAuditInsert: vi.fn(async () => undefined),
+  invokePermissionAuditList: vi.fn(async () => []),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
   invokeAuditRetryDrain: vi.fn(async () => []),
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
@@ -233,6 +238,23 @@ describe('resolvePermissionRequest', () => {
     expect(arg.scope).toBe('session');
     expect(arg.decision).toBe('deny');
     expect(arg.sessionId).toBe(SESSION_ID);
+  });
+
+  it('returns the created rule for non-volatile scopes (used by undo toast)', async () => {
+    const rule = await call(useAppStore.getState(), 'session');
+    expect(rule).not.toBeNull();
+    expect(rule?.id).toBe('rule-new');
+  });
+
+  it('returns null when scope is once (no rule persisted)', async () => {
+    const rule = await call(useAppStore.getState(), 'once');
+    expect(rule).toBeNull();
+  });
+
+  it('revokePermissionRule proxies invokePermissionRuleDelete with the id', async () => {
+    permissionRuleDeleteSpy.mockClear();
+    await useAppStore.getState().revokePermissionRule('rule-xyz' as never);
+    expect(permissionRuleDeleteSpy).toHaveBeenCalledWith('rule-xyz');
   });
 
   it('each scope appends a permission_decision TurnEvent', async () => {
