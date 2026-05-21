@@ -66,6 +66,25 @@ export async function getSessionExternalTask(
   return row ? toDomain(row) : null;
 }
 
+/**
+ * Return every external task linked to a session in this workspace. Joins
+ * session_external_tasks with sessions so the caller can hydrate the whole
+ * cache in one round-trip on workspace switch.
+ */
+export async function listExternalTasksForWorkspace(
+  db: Database,
+  workspaceId: string,
+): Promise<ReadonlyArray<SessionExternalTask>> {
+  const rows = await db.select<SessionExternalTaskRow>(
+    `SELECT t.session_id, t.provider, t.external_id, t.identifier, t.url, t.title, t.created_at
+       FROM session_external_tasks t
+       INNER JOIN sessions s ON s.id = t.session_id
+      WHERE s.workspace_id = ?`,
+    [workspaceId],
+  );
+  return rows.map(toDomain);
+}
+
 export async function removeSessionExternalTask(db: Database, sessionId: SessionId): Promise<void> {
   await db.execute('DELETE FROM session_external_tasks WHERE session_id = ?', [sessionId]);
 }

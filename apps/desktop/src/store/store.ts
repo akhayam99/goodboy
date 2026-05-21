@@ -24,6 +24,7 @@ import {
   insertProviderRun,
   insertSession,
   setSessionExternalTask,
+  listExternalTasksForWorkspace,
   insertSessionWorktree,
   insertTelemetry,
   insertTurnEventsBatch,
@@ -139,6 +140,7 @@ import type {
   TelemetryRecordId,
   TurnEvent,
   TurnProviderOverride,
+  SessionExternalTask,
   Workspace,
   WorkspaceId,
   WorkspaceIntegration,
@@ -328,6 +330,12 @@ export interface AppState {
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
+  /**
+   * Per-session external task (Linear issue) snapshot. Hydrated on workspace
+   * switch and refreshed when createSession links a fresh issue. Used by the
+   * UI to show an "open in Linear" badge in the session header.
+   */
+  readonly sessionExternalTasks: Readonly<Record<SessionId, SessionExternalTask>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
   // Archived sessions, loaded lazily per workspace when the user opens the
@@ -731,6 +739,7 @@ export type AppStore = AppState & AppActions;
 const initialState: AppState = {
   workspaces: [],
   workspaceIntegrations: {},
+  sessionExternalTasks: {},
   currentWorkspaceId: null,
   sessions: [],
   archivedSessions: {},
@@ -1578,14 +1587,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }),
       );
       // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
-      // trips through the Rust `Mutex<Connection>`.
+      // trips through the Rust `Mutex<Connection>`. External-task hydration
+      // piggy-backs on the same batch — single query for the whole workspace.
       const sessionIds = sessions.map((s) => s.id);
-      const [worktreesBySession, agentsBySession] = await Promise.all([
+      const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
         // Unread indicators on workspace- and session-rows derive from each
         // agent's `lastFinishedAt` vs `lastViewedAt` columns, so the full
         // agent set has to be in memory before the sidebar can paint dots.
         listAgentsForSessions(tauriDatabase, sessionIds),
+        listExternalTasksForWorkspace(tauriDatabase, id),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
@@ -1604,6 +1615,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
       }
+      const externalTasksMap: Record<string, SessionExternalTask> = {};
+      for (const task of externalTasks) externalTasksMap[task.sessionId] = task;
       // First paint commit — sidebar can render the rail right now.
       set((state) => ({
         sessions,
@@ -1611,6 +1624,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
+        sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));
       // eslint-disable-next-line no-console
       console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
@@ -2049,19 +2063,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
+    let externalTask: SessionExternalTask | null = null;
     if (linearIssue) {
+      externalTask = {
+        sessionId: session.id,
+        provider: 'linear',
+        externalId: linearIssue.externalId,
+        identifier: linearIssue.identifier,
+        url: linearIssue.url,
+        title: linearIssue.title,
+        createdAt: now,
+      };
       try {
-        await setSessionExternalTask(tauriDatabase, {
-          sessionId: session.id,
-          provider: 'linear',
-          externalId: linearIssue.externalId,
-          identifier: linearIssue.identifier,
-          url: linearIssue.url,
-          title: linearIssue.title,
-          createdAt: now,
-        });
+        await setSessionExternalTask(tauriDatabase, externalTask);
       } catch {
         // non-fatal: session is usable without the issue link
+        externalTask = null;
       }
     }
     await insertSessionWorktree(tauriDatabase, {
@@ -2165,6 +2182,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
+      sessionExternalTasks: externalTask
+        ? { ...state.sessionExternalTasks, [session.id]: externalTask }
+        : state.sessionExternalTasks,
       sessionWorktrees: {
         ...state.sessionWorktrees,
         [session.id]: [worktree.worktreePath],

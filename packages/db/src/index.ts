@@ -25,6 +25,7 @@ export {
 export {
   setSessionExternalTask,
   getSessionExternalTask,
+  listExternalTasksForWorkspace,
   removeSessionExternalTask,
 } from './queries/session-external-task';
 export {
