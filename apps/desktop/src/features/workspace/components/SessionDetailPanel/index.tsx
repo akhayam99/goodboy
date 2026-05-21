@@ -504,11 +504,11 @@ export function SessionMetaFooter({ session, onOpenGithubDetails }: SessionMetaF
   return (
     <>
       <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-3 pt-2">
-        <div className="flex justify-end">
-          <SessionCostChip sessionId={session.id as SessionId} />
-        </div>
         {branch ? <BranchChip branch={branch} /> : null}
-        {filesButton}
+        <div className="flex items-center gap-2">
+          <SessionCostChip sessionId={session.id as SessionId} />
+          <div className="min-w-0 flex-1">{filesButton}</div>
+        </div>
         <GithubCard
           sessionId={session.id as SessionId}
           pr={pr}
