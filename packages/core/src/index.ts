@@ -124,6 +124,22 @@ export {
 } from './summarizer';
 
 export {
+  BrainDumpParseError,
+  BrainDumpSpawnError,
+  Clusterizer,
+  Rephraser,
+  type ClusterIdeaInput,
+  type ClusterizeInput,
+  type ClusterizeOutput,
+  type ClusterizerDeps,
+  type IdeaCluster,
+  type RephraseInput,
+  type RephraseOutput,
+  type RephraserDeps,
+  type WorkspaceContext as BrainDumpWorkspaceContext,
+} from './brain-dump';
+
+export {
   buildStepPrompt,
   currentStep,
   findReusableAgent,
