@@ -117,7 +117,7 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
       }
     >
       <div className="flex h-full min-h-0 gap-3">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
+        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-3">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const count = countFor(item.id, detail);
@@ -144,7 +144,14 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
             );
           })}
         </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto pr-3" style={{ scrollbarGutter: 'stable' }}>
+        <div
+          aria-hidden
+          className="my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+        />
+        <div
+          className="min-w-0 flex-1 overflow-y-auto pl-1 pr-3"
+          style={{ scrollbarGutter: 'stable' }}
+        >
           {detailLoading && !detail ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               <Loader2 size={14} aria-hidden className="mr-2 animate-spin" /> loading…
@@ -260,8 +267,9 @@ function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
     <ul className="flex flex-col gap-2">
       {reviews.map((r) => {
         const chip = REVIEW_CHIP[r.state];
+        const body = r.body.trim();
         return (
-          <li key={r.id} className="rounded-md border border-border-soft px-3 py-2">
+          <li key={r.id} className="rounded-md border border-border-soft bg-muted/30 px-3 py-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold">{r.author}</span>
               <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', chip.className)}>
@@ -273,8 +281,10 @@ function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
                 </span>
               )}
             </div>
-            {r.body && (
-              <p className="mt-1.5 whitespace-pre-wrap text-xs text-muted-foreground">{r.body}</p>
+            {body && (
+              <div className="mt-1.5 text-xs text-muted-foreground [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+                <Markdown text={body} />
+              </div>
             )}
           </li>
         );
@@ -587,10 +597,9 @@ function CommentThreadCard({
   return (
     <article
       className={cn(
-        'group rounded-md border bg-background px-2.5 py-2 transition-colors',
+        'group rounded-md border bg-muted/30 px-2.5 py-2 transition-colors',
         status === 'open-review' && 'border-warning/30 hover:border-warning/50',
         status === 'resolved' && 'border-border-soft opacity-70',
-        status === 'issue' && 'border-border-soft hover:border-border',
       )}
     >
       <header className="flex items-center gap-2">
