@@ -18,7 +18,7 @@ import {
   Sparkles,
   XCircle,
 } from 'lucide-react';
-import { Dialog, cn } from '@goodboy/ui';
+import { Dialog, Markdown, cn } from '@goodboy/ui';
 import type {
   PrCheckConclusion,
   PrCheckRun,
@@ -89,7 +89,8 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
       onClose={onClose}
       title={title}
       size="xl"
-      fixedHeightClass="h-[600px]"
+      fixedHeightClass="h-[min(85vh,820px)]"
+      className="w-[min(1180px,94vw)] max-w-[1180px]"
       bodyClassName="px-4 py-3"
       footer={
         <div className="flex items-center justify-between gap-2 w-full">
@@ -143,7 +144,7 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
             );
           })}
         </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="min-w-0 flex-1 overflow-y-auto pr-3" style={{ scrollbarGutter: 'stable' }}>
           {detailLoading && !detail ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               <Loader2 size={14} aria-hidden className="mr-2 animate-spin" /> loading…
@@ -174,7 +175,16 @@ function countFor(tab: TabKey, detail: PrDetail | null): number | null {
   if (!detail) return null;
   if (tab === 'ci') return detail.checks.length;
   if (tab === 'reviews') return detail.reviews.length;
-  return detail.comments.length;
+  // The comments tab only renders review threads (the resolvable ones), so
+  // mirror that in the nav badge — counting raw comments would advertise a
+  // number the user can't reach.
+  const seenThread = new Set<string>();
+  for (const c of detail.comments) {
+    if (c.source !== 'review') continue;
+    const tid = c.threadId ?? c.id;
+    seenThread.add(tid);
+  }
+  return seenThread.size;
 }
 
 // --- CI ---
@@ -335,19 +345,23 @@ function CommentsPane({ comments, pr, sessionId, onClose }: CommentsPaneProps) {
   const [showResolved, setShowResolved] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
-  const threads = useMemo(() => groupThreads(comments), [comments]);
+  // Only review threads (the ones with a 'resolve conversation' affordance
+  // on github) make sense in this tab. Plain issue comments don't carry a
+  // thread id and can't be resolved from here — they belong on github proper.
+  const threads = useMemo(
+    () => groupThreads(comments).filter((t) => t.head.source === 'review'),
+    [comments],
+  );
 
   const counts = useMemo(() => {
     let open = 0;
-    let issue = 0;
     let resolved = 0;
     for (const t of threads) {
       const s = threadStatus(t);
       if (s === 'open-review') open += 1;
-      else if (s === 'issue') issue += 1;
-      else resolved += 1;
+      else if (s === 'resolved') resolved += 1;
     }
-    return { open, issue, resolved };
+    return { open, resolved };
   }, [threads]);
 
   const visible = useMemo(() => {
@@ -399,7 +413,7 @@ function CommentsPane({ comments, pr, sessionId, onClose }: CommentsPaneProps) {
     return <EmptyState icon={MessageSquare} text="no comments yet" />;
   }
 
-  const allResolved = counts.open === 0 && counts.issue === 0 && counts.resolved > 0;
+  const allResolved = counts.open === 0 && counts.resolved > 0;
 
   return (
     <div className="flex h-full flex-col gap-2.5">
@@ -452,7 +466,7 @@ function CommentsHeader({
   filterActive,
   onToggleFilter,
 }: {
-  counts: { open: number; issue: number; resolved: number };
+  counts: { open: number; resolved: number };
   filterActive: boolean;
   onToggleFilter: () => void;
 }) {
@@ -465,7 +479,6 @@ function CommentsHeader({
           label="needs resolve"
           count={counts.open}
         />
-        {counts.issue > 0 ? <CountChip tone="muted" label="general" count={counts.issue} /> : null}
         {counts.resolved > 0 ? (
           <CountChip tone="success" label="resolved" count={counts.resolved} />
         ) : null}
@@ -635,21 +648,59 @@ function CommentThreadCard({
           </span>
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={onToggle}
-        title={expanded ? 'collapse' : 'expand'}
-        className={cn(
-          'mt-1.5 block w-full text-left text-xs text-foreground/90 transition-colors hover:text-foreground',
-          expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
-        )}
-      >
-        {head.body.trim() || <span className="italic text-muted-foreground/70">(empty)</span>}
-      </button>
+      <CommentBody body={head.body} expanded={expanded} onToggle={onToggle} />
       {replies.length > 0 ? (
         <RepliesBlock replies={replies} expanded={expanded} onToggle={onToggle} />
       ) : null}
     </article>
+  );
+}
+
+interface CommentBodyProps {
+  body: string;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+/**
+ * Comment body renderer. Collapsed → plain-text snippet clipped to two lines
+ * (a button: click to expand, no markdown noise). Expanded → full markdown so
+ * the prose, code fences, lists, and inline links the user wrote on github
+ * actually read like the original. The toggle button moves to a small
+ * 'show less' affordance so links inside the markdown stay clickable without
+ * accidentally collapsing the card.
+ */
+function CommentBody({ body, expanded, onToggle }: CommentBodyProps) {
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return <p className="mt-1.5 text-xs italic text-muted-foreground/70">(empty)</p>;
+  }
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        title="expand"
+        className="mt-1.5 block w-full whitespace-pre-wrap break-words text-left text-xs text-foreground/85 transition-colors line-clamp-2 hover:text-foreground"
+      >
+        {trimmed}
+      </button>
+    );
+  }
+  return (
+    <div className="mt-1.5 flex flex-col gap-1.5">
+      <div className="text-[13px] text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+        <Markdown text={trimmed} />
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="inline-flex items-center gap-1 self-start text-2xs text-muted-foreground/70 transition-colors hover:text-foreground"
+      >
+        <ChevronDown size={9} aria-hidden className="rotate-180" />
+        show less
+      </button>
+    </div>
   );
 }
 
@@ -709,9 +760,13 @@ function RepliesBlock({
               {formatRelative(Date.now() - new Date(r.createdAt).getTime())}
             </span>
           </div>
-          <p className="whitespace-pre-wrap break-words text-xs text-foreground/85">
-            {r.body.trim() || <span className="italic text-muted-foreground/70">(empty)</span>}
-          </p>
+          {r.body.trim() ? (
+            <div className="text-xs text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+              <Markdown text={r.body.trim()} />
+            </div>
+          ) : (
+            <span className="text-xs italic text-muted-foreground/70">(empty)</span>
+          )}
         </li>
       ))}
     </ul>
