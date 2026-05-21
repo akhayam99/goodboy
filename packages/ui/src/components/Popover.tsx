@@ -26,7 +26,7 @@ export function Popover({ children, className, style, role, ariaLabel, innerRef 
       aria-label={ariaLabel}
       style={style}
       className={cn(
-        'overflow-hidden rounded-md border border-border bg-subtle text-xs shadow-lg',
+        'overflow-hidden rounded-md border border-border bg-muted text-xs shadow-lg',
         className,
       )}
     >
