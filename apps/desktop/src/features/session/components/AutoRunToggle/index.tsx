@@ -26,10 +26,10 @@ export function AutoRunToggle({ session }: AutoRunToggleProps) {
       ? 'autorun on'
       : 'autorun off';
   const cls = !hasWorkflow
-    ? 'text-muted-foreground/25 cursor-not-allowed'
+    ? 'border-transparent text-muted-foreground/25 cursor-not-allowed'
     : session.autoRun
-      ? 'text-danger hover:bg-danger/10'
-      : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground';
+      ? 'border-danger/40 bg-danger/10 text-danger hover:bg-danger/15'
+      : 'border-border-soft text-muted-foreground/70 hover:border-border hover:bg-foreground/5 hover:text-foreground';
 
   return (
     <button
@@ -42,12 +42,16 @@ export function AutoRunToggle({ session }: AutoRunToggleProps) {
       title={tooltip}
       aria-label={ariaLabel}
       aria-pressed={hasWorkflow && session.autoRun}
-      className={cn('shrink-0 rounded p-1 transition-colors', cls)}
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors',
+        cls,
+      )}
     >
+      <span>auto</span>
       {hasWorkflow && session.autoRun ? (
-        <Zap size={13} aria-hidden />
+        <Zap size={11} aria-hidden />
       ) : (
-        <ZapOff size={13} aria-hidden />
+        <ZapOff size={11} aria-hidden />
       )}
     </button>
   );
