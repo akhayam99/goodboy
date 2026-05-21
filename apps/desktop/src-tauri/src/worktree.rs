@@ -328,11 +328,16 @@ pub fn worktree_changed_files(
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
     let user_base = base.unwrap_or_else(|| "main".to_string());
+    // Local ref first, then remote. Must match worktree_diff above —
+    // otherwise the chip count (this fn) and the dialog body (worktree_diff)
+    // can resolve different merge-bases when origin/<base> is stale, and the
+    // counter ends up reporting files from merge commits that the diff
+    // (correctly) treats as already on the base.
     let candidates = [
-        format!("origin/{user_base}"),
         user_base.clone(),
-        "origin/master".to_string(),
+        format!("origin/{user_base}"),
         "master".to_string(),
+        "origin/master".to_string(),
     ];
     let resolved = candidates
         .iter()
