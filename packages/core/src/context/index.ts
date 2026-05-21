@@ -10,12 +10,14 @@ export {
 } from './slots';
 export {
   assessPlanReadiness,
+  extractCommentResolved,
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
   mergeIntoSlot,
   removeFromSlot,
+  type ExtractedCommentResolution,
   type ExtractedHandoff,
   type ExtractedPlan,
   type PlanReadinessInput,

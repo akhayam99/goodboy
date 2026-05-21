@@ -5,7 +5,13 @@ import {
   tauriGhRunner,
   createTauriPrCacheStore,
 } from '../../features/github/github';
-import { getPrForBranch, fetchLinkedIssues, fetchPrDetail, detectRepoSlug } from '@goodboy/core';
+import {
+  detectRepoSlug,
+  fetchLinkedIssues,
+  fetchPrDetail,
+  getPrForBranch,
+  resolveReviewThread,
+} from '@goodboy/core';
 import type { GhTokenStatus, SessionId, IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import { formatError } from '../../shared/lib/errors';
@@ -229,6 +235,27 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
             },
           },
         }));
+      }
+    },
+
+    // Marks a review thread as resolved on github via the graphql mutation and
+    // refreshes the cached PR detail so the comments tab reflects the new state.
+    // Returns true on success so callers (e.g. the comment-resolved chip) can
+    // collapse their CTA on confirmation.
+    resolveGithubThread: async (sessionId: SessionId, threadId: string): Promise<boolean> => {
+      const session = get().sessions.find((s) => s.id === sessionId);
+      if (!session) return false;
+      const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+      try {
+        await resolveReviewThread(tauriGhRunner, threadId, { cwd: workspace?.rootPath });
+        await get().refreshSessionPrDetail(sessionId, { force: true });
+        return true;
+      } catch (err) {
+        void get().emitNotification('error', 'error', 'resolve thread failed', formatError(err), {
+          sessionId,
+          ...(workspace && { workspaceId: workspace.id }),
+        });
+        return false;
       }
     },
 

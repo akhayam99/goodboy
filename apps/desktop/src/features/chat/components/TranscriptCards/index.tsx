@@ -10,6 +10,7 @@ import { PermissionRequestCard } from '../../../../features/permissions/componen
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { HandoffChip } from '../HandoffChip';
+import { CommentResolvedChip } from '../CommentResolvedChip';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -176,10 +177,12 @@ function formatCostUsd(cost: number): string {
 }
 
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
+const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
 
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
   const displayText = text
     .replace(HANDOFF_MARKER_RE, '')
+    .replace(COMMENT_RESOLVED_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   return (
@@ -188,7 +191,12 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
         <CopyButton value={text} label="message" />
       </div>
       <Markdown text={displayText} />
-      {sessionId ? <HandoffChip assistantText={text} sessionId={sessionId} /> : null}
+      {sessionId ? (
+        <>
+          <HandoffChip assistantText={text} sessionId={sessionId} />
+          <CommentResolvedChip assistantText={text} sessionId={sessionId} />
+        </>
+      ) : null}
     </div>
   );
 }

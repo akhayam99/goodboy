@@ -84,6 +84,22 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('#9108');
     expect(args.initialPrompt).toContain('EASY');
     expect(args.initialPrompt).toContain('NON-TRIVIAL');
+    expect(args.initialPrompt).toContain('LOCALLY');
+    expect(args.initialPrompt).toContain('Never run `git push`');
+  });
+
+  it('embeds the resolution marker template when the review thread id is known', () => {
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRT_42' }), PR);
+    expect(args.initialPrompt).toContain('<<comment-resolved threadId="PRT_42"');
+    expect(args.initialPrompt).toContain('comment-resolved');
+  });
+
+  it('omits the resolution marker when no review thread id is available', () => {
+    const args = buildCommentAgentArgs(
+      makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
+      PR,
+    );
+    expect(args.initialPrompt).not.toContain('comment-resolved');
   });
 
   it('builds args with debugger kind when the issue comment smells like a bug', () => {
@@ -106,5 +122,7 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('a/b.ts:7');
     expect(args.initialPrompt).toContain('EASY');
     expect(args.initialPrompt).toContain('NON-TRIVIAL');
+    expect(args.initialPrompt).toContain('LOCALLY');
+    expect(args.initialPrompt).toContain('Never run `git push`');
   });
 });

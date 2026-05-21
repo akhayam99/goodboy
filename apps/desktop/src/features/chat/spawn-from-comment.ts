@@ -40,16 +40,30 @@ export function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): str
   lines.push('');
   lines.push('Before committing, classify your change:');
   lines.push(
-    'EASY (auto-commit+push): rename, typo, formatting, import fix, small one-liner, adjusting a literal/constant.',
+    'EASY: rename, typo, formatting, import fix, small one-liner, adjusting a literal/constant.',
   );
   lines.push(
-    'NON-TRIVIAL (stop and ask): structural rework, new/deleted files, multi-file refactor, architecture change, anything you are uncertain about.',
+    'NON-TRIVIAL: structural rework, new/deleted files, multi-file refactor, architecture change, anything you are uncertain about.',
   );
   lines.push('');
-  lines.push('If EASY: commit and push immediately.');
+  lines.push('Commit policy:');
+  lines.push('- If EASY: commit the change LOCALLY only. Do NOT push.');
   lines.push(
-    'If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing.',
+    '- If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing locally. Do NOT push.',
   );
+  lines.push('- Never run `git push` from this agent. The user pushes when they are ready.');
+  if (c.source === 'review' && c.threadId) {
+    lines.push('');
+    lines.push(
+      `After committing locally, emit this self-closing marker on its own line so the chat can offer a one-click action to mark the review thread resolved on github:`,
+    );
+    lines.push(
+      `  <<comment-resolved threadId="${c.threadId}" commit="<full sha of the commit you just made>">>`,
+    );
+    lines.push(
+      'Replace `<full sha...>` with the actual sha from `git rev-parse HEAD`. Emit the marker once, after the commit succeeds. If you did not end up committing (NON-TRIVIAL still pending confirmation), do not emit it.',
+    );
+  }
   return lines.join('\n');
 }
 
@@ -108,16 +122,18 @@ export function buildReviewChangesAgentArgs(
   lines.push('');
   lines.push('Before committing, classify the overall change:');
   lines.push(
-    'EASY (auto-commit+push): all fixes are renames, typos, formatting, import fixes, small one-liners, adjusting literals/constants.',
+    'EASY: all fixes are renames, typos, formatting, import fixes, small one-liners, adjusting literals/constants.',
   );
   lines.push(
-    'NON-TRIVIAL (stop and ask): any fix involves structural rework, new/deleted files, multi-file refactor, architecture change, or anything you are uncertain about.',
+    'NON-TRIVIAL: any fix involves structural rework, new/deleted files, multi-file refactor, architecture change, or anything you are uncertain about.',
   );
   lines.push('');
-  lines.push('If EASY: commit and push immediately.');
+  lines.push('Commit policy:');
+  lines.push('- If EASY: commit the changes LOCALLY only. Do NOT push.');
   lines.push(
-    'If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing.',
+    '- If NON-TRIVIAL: stop. Show a short summary of what you changed and why, then ask "Can I commit?" and wait for confirmation before committing locally. Do NOT push.',
   );
+  lines.push('- Never run `git push` from this agent. The user pushes when they are ready.');
   return {
     name: truncate(`resolve: address review changes on #${pr.number}`, TITLE_MAX),
     kind: 'implementer',

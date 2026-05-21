@@ -145,6 +145,38 @@ function parseHandoffAttrs(inner: string): Record<string, string> {
   return out;
 }
 
+const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^>]+?)>>/g;
+
+export interface ExtractedCommentResolution {
+  readonly threadId: string;
+  readonly commitSha: string;
+}
+
+/**
+ * Parse a `<<comment-resolved threadId="..." commit="<sha>">>` marker out of an
+ * assistant turn. Comment-resolution agents emit it after they apply the fix
+ * and create a local commit, so the chat surface can offer a one-click action
+ * that marks the underlying review thread resolved on github.
+ *
+ * Self-closing. If multiple markers exist (rare — the agent should emit one
+ * after committing), the last one wins. Returns null if no well-formed marker
+ * is present.
+ */
+export function extractCommentResolved(assistantText: string): ExtractedCommentResolution | null {
+  COMMENT_RESOLVED_RE.lastIndex = 0;
+  let last: ExtractedCommentResolution | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = COMMENT_RESOLVED_RE.exec(assistantText)) !== null) {
+    const inner = m[1] ?? '';
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const commitSha = (attrs.commit ?? attrs.sha ?? '').trim();
+    if (threadId.length === 0 || commitSha.length === 0) continue;
+    last = { threadId, commitSha };
+  }
+  return last;
+}
+
 const PLAN_OPEN_QUESTION_RE =
   /\b(vuoi che|ti torna|che ne dici|should i|let me know|do you want|shall i|wdyt|preferisci)\b/i;
 const PLAN_INCOMPLETE_RE = /\b(TODO|TBD|FIXME|\?\?)\b/i;
