@@ -171,9 +171,16 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* top — always-on slots that summarize the session state */}
+        {/* top — always-on slots that summarize the session state.
+            The outer wrapper holds the scroll: cards size to their own
+            content so a tall expanded slot never crowds a short sibling,
+            and any overflow scrolls the whole column instead of forcing
+            an inner scrollbar per card. */}
         <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pb-3">
-          <ul className="flex min-h-0 flex-1 flex-col gap-2.5">
+          <ul
+            className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
+            style={{ scrollbarGutter: 'stable' }}
+          >
             {visibleSlotKeys.map((key) => {
               const slot = slotsByKey.get(key);
               return (
@@ -417,21 +424,12 @@ function SlotRow({
     ? 'ring-border-soft/30'
     : (meta?.accentRingWhenNonEmpty ?? 'ring-border-soft');
 
-  // Cards with multi-line content that are currently expanded should share
-  // the panel height equally so a long decisions list can't push goal off-
-  // screen or paint over its sibling. Collapsed, empty, and single-line
-  // cards stay at content height. flex-1 + basis-0 makes the share equal
-  // regardless of natural content size; min-h-0 + overflow-hidden lets the
-  // inner scroller take over when content exceeds the share.
-  const expanded = !singleLine && hasValue && (!collapsible || !collapsed);
-
   return (
     <li
       className={cn(
-        'group relative flex min-h-0 flex-col gap-2 rounded-lg p-3 ring-1 transition-colors',
+        'group relative flex flex-none flex-col gap-2 rounded-lg p-3 ring-1 transition-colors',
         inactive ? 'bg-transparent' : 'bg-muted/40',
         ringClass,
-        expanded ? 'flex-1 basis-0 overflow-hidden' : 'flex-none',
       )}
     >
       <div className="flex items-center gap-2">
@@ -562,10 +560,9 @@ function SlotRow({
             }
           }}
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded pr-3 text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
+            'rounded text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
             isSummarizing ? 'cursor-default' : 'cursor-text',
           )}
-          style={{ scrollbarGutter: 'stable' }}
         >
           <Markdown text={value} className="text-[13px] text-foreground" />
         </div>
@@ -578,11 +575,10 @@ function SlotRow({
           }}
           disabled={isSummarizing}
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words rounded pr-3 text-left leading-relaxed transition-colors',
+            'whitespace-pre-wrap break-words rounded text-left leading-relaxed transition-colors',
             isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/5',
             meta?.emphasis ? 'text-sm font-medium' : 'text-xs',
           )}
-          style={{ scrollbarGutter: 'stable' }}
         >
           {value}
         </button>
