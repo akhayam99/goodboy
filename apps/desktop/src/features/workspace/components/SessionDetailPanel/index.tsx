@@ -175,10 +175,10 @@ function BranchChip({ branch }: { branch: string }) {
       onClick={() => void onCopy()}
       title="click to copy branch name"
       className={cn(
-        'group -mx-1 flex items-center gap-1.5 rounded px-1 py-0.5 text-2xs transition-colors',
+        'group inline-flex min-w-0 max-w-full shrink items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-2xs transition-colors',
         copied
-          ? 'text-success'
-          : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+          ? 'border-success/30 bg-success/10 text-success'
+          : 'border-border-soft bg-muted/30 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground',
       )}
     >
       {copied ? (
@@ -187,10 +187,10 @@ function BranchChip({ branch }: { branch: string }) {
         <GitBranch
           size={10}
           aria-hidden
-          className="shrink-0 text-muted-foreground/60 group-hover:text-foreground"
+          className="shrink-0 text-muted-foreground group-hover:text-foreground"
         />
       )}
-      <span className="truncate font-mono">{branch}</span>
+      <span className="truncate">{branch}</span>
     </button>
   );
 }
