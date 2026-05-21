@@ -209,4 +209,10 @@ describe('boundary systemPrompts', () => {
   it('generic prompt has no restrictions', () => {
     expect(AGENT_KIND_DEFAULTS['generic'].systemPrompt).toContain('no role restrictions');
   });
+
+  it('debugger prompt requires repro + root-cause before patching', () => {
+    const prompt = AGENT_KIND_DEFAULTS['debugger'].systemPrompt!;
+    expect(prompt).toMatch(/root-cause/);
+    expect(prompt).toMatch(/repro/);
+  });
 });
