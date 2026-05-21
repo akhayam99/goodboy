@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
+  extractCommentResolved,
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
@@ -213,6 +214,42 @@ describe('extractHandoff', () => {
     const text =
       '<<handoff kind=scout reason="early">> ... <<handoff kind=implementer reason="final">>';
     expect(extractHandoff(text)?.kind).toBe('implementer');
+  });
+});
+
+describe('extractCommentResolved', () => {
+  it('returns null when no marker is present', () => {
+    expect(extractCommentResolved('all done, committed locally')).toBeNull();
+  });
+
+  it('parses threadId and commit attributes', () => {
+    const text = 'fix applied. <<comment-resolved threadId="PRT_42" commit=a1b2c3d>>';
+    expect(extractCommentResolved(text)).toEqual({
+      threadId: 'PRT_42',
+      commitSha: 'a1b2c3d',
+    });
+  });
+
+  it('accepts sha as an alias for commit', () => {
+    const text = '<<comment-resolved threadId="PRT_1" sha="abc123">>';
+    expect(extractCommentResolved(text)).toEqual({
+      threadId: 'PRT_1',
+      commitSha: 'abc123',
+    });
+  });
+
+  it('rejects markers missing one of the required attributes', () => {
+    expect(extractCommentResolved('<<comment-resolved threadId="PRT_1">>')).toBeNull();
+    expect(extractCommentResolved('<<comment-resolved commit="abc">>')).toBeNull();
+  });
+
+  it('returns the last well-formed marker when multiple appear', () => {
+    const text =
+      '<<comment-resolved threadId="PRT_1" commit="aaa">> ... <<comment-resolved threadId="PRT_2" commit="bbb">>';
+    expect(extractCommentResolved(text)).toEqual({
+      threadId: 'PRT_2',
+      commitSha: 'bbb',
+    });
   });
 });
 

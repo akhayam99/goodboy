@@ -96,6 +96,7 @@ describe('fetchPrDetail', () => {
     expect(detail.comments[1]!.path).toBe('src/foo.ts');
     expect(detail.comments[1]!.line).toBe(42);
     expect(detail.comments[1]!.resolved).toBe(false);
+    expect(detail.comments[1]!.threadId).toBe('PRT_1');
   });
 
   it('propagates resolved status and reply threading from review threads', async () => {

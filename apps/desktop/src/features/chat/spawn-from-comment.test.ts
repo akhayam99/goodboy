@@ -4,7 +4,6 @@ import {
   buildCommentAgentArgs,
   buildCommentAgentTitle,
   buildReviewChangesAgentArgs,
-  inferAgentKindFromComment,
 } from './spawn-from-comment';
 
 const PR: PullRequestState = {
@@ -57,44 +56,46 @@ describe('spawn-from-comment', () => {
     ).toBe('resolve: alice comment');
   });
 
-  it('infers implementer for review with path', () => {
-    expect(inferAgentKindFromComment(makeComment())).toBe('implementer');
-  });
-
-  it('infers debugger for issue comments containing bug keywords', () => {
-    expect(
-      inferAgentKindFromComment(
-        makeComment({
-          source: 'issue',
-          path: undefined,
-          line: undefined,
-          body: 'this crashes when X',
-        }),
-      ),
-    ).toBe('debugger');
-  });
-
-  it('builds args with sonnet implementer for review comments', () => {
+  it('builds args as a resolver agent with sonnet defaults', () => {
     const args = buildCommentAgentArgs(makeComment(), PR);
     expect(args.name).toBe('resolve: alice on foo.ts:42');
+    expect(args.kind).toBe('resolver');
     expect(args.effort).toBe('medium');
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');
     expect(args.initialPrompt).toContain('#9108');
-    expect(args.initialPrompt).toContain('EASY');
-    expect(args.initialPrompt).toContain('NON-TRIVIAL');
   });
 
-  it('aggregates open comments for fix-all', () => {
+  it('keeps issue comments on the resolver kind', () => {
+    const args = buildCommentAgentArgs(
+      makeComment({ source: 'issue', path: undefined, line: undefined, body: 'this crashes' }),
+      PR,
+    );
+    expect(args.kind).toBe('resolver');
+  });
+
+  it('passes the review thread id into the kickoff when present', () => {
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRT_42' }), PR);
+    expect(args.initialPrompt).toContain('PRT_42');
+  });
+
+  it('omits any thread-id hint when the comment has none', () => {
+    const args = buildCommentAgentArgs(
+      makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
+      PR,
+    );
+    expect(args.initialPrompt).not.toContain('thread id');
+  });
+
+  it('aggregates open comments for fix-all as a resolver agent', () => {
     const args = buildReviewChangesAgentArgs(PR, [
       makeComment({ id: 'r1', author: 'bob', body: 'rename foo' }),
       makeComment({ id: 'r2', author: 'eve', path: 'a/b.ts', line: 7, body: 'extract' }),
     ]);
     expect(args.name).toContain('#9108');
+    expect(args.kind).toBe('resolver');
     expect(args.initialPrompt).toContain('bob');
     expect(args.initialPrompt).toContain('eve');
     expect(args.initialPrompt).toContain('a/b.ts:7');
-    expect(args.initialPrompt).toContain('EASY');
-    expect(args.initialPrompt).toContain('NON-TRIVIAL');
   });
 });

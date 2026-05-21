@@ -581,6 +581,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
             selectedKind === 'debugger' ? 'Try: "reproduce: <stack trace>"' : null,
             selectedKind === 'tester' ? 'Try: "write tests for X"' : null,
             selectedKind === 'reviewer' ? 'Try: "review the current diff"' : null,
+            selectedKind === 'resolver' ? 'Spawned automatically by the resolve UI.' : null,
             '⌘↵ to send',
           ].filter((x): x is string => Boolean(x)),
         };
@@ -725,6 +726,12 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
     iconClass: 'text-orange-400',
     ringBg: 'bg-orange-400/10',
     pulseBg: 'bg-orange-400/15',
+  },
+  resolver: {
+    Icon: Sparkles,
+    iconClass: 'text-lime-400',
+    ringBg: 'bg-lime-400/10',
+    pulseBg: 'bg-lime-400/15',
   },
 };
 

@@ -61,8 +61,15 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
       }));
     },
 
+    // Force the spawned agent to be an implementer so spawnAgent injects the
+    // plan body into the kickoff prompt. Without kindOverride the agent
+    // defaults to 'generic' and the plan section is silently dropped (the
+    // implementer branch in spawnAgent is the only one that builds it).
     runPlan: async (sessionId: SessionId, planId: PlanId) => {
-      await get().spawnAgent(sessionId, { triggeredPlanId: planId });
+      await get().spawnAgent(sessionId, {
+        triggeredPlanId: planId,
+        kindOverride: 'implementer',
+      });
     },
   };
 }

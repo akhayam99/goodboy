@@ -109,6 +109,10 @@ export interface PrComment {
   resolved?: boolean;
   // GraphQL node id of the parent comment, if this is a reply.
   inReplyToId?: string;
+  // GraphQL node id of the review thread this comment belongs to.
+  // Required by the resolveReviewThread mutation. Always undefined
+  // for issue comments.
+  threadId?: string;
 }
 
 export type PrReviewState =

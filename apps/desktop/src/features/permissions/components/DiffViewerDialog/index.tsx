@@ -485,14 +485,18 @@ export function DiffViewerDialog({
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
-      const defaults = AGENT_KIND_DEFAULTS.reviewer;
+      // Resolver is the right kind for "fix these local diff notes": it
+      // commits locally, never pushes, and is scoped to the comment(s) in
+      // the kickoff. Reviewer would only describe the fix, not apply it.
+      const defaults = AGENT_KIND_DEFAULTS.resolver;
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
-      const name = `review notes (${fileCount}F/${openComments.length}N)`;
+      const name = `resolve notes (${fileCount}F/${openComments.length}N)`;
       const idsToConsume = openComments.map((c) => c.id);
       const agentId = await spawnAgent(sessionId, {
         name,
         model: defaults.model,
         effort: defaults.effort,
+        kindOverride: 'resolver',
       });
       try {
         await consumeDiffComments(sessionId, idsToConsume, agentId);

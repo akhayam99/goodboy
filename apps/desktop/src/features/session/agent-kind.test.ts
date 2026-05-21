@@ -18,6 +18,7 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'tester',
   'reviewer',
   'docs',
+  'resolver',
   'generic',
 ];
 
@@ -59,10 +60,36 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('implementer / debugger / reviewer / tester → sonnet, medium effort', () => {
-    for (const kind of ['implementer', 'debugger', 'reviewer', 'tester'] as AgentKind[]) {
+  it('implementer / debugger / reviewer / tester / resolver → sonnet, medium effort', () => {
+    for (const kind of [
+      'implementer',
+      'debugger',
+      'reviewer',
+      'tester',
+      'resolver',
+    ] as AgentKind[]) {
       expect(AGENT_KIND_DEFAULTS[kind].effort).toBe('medium');
       expect(AGENT_KIND_DEFAULTS[kind].model).toMatch(/sonnet/i);
+    }
+  });
+
+  it('resolver is hidden from the manual spawn menu', () => {
+    expect(AGENT_KIND_DEFAULTS.resolver.visible).toBe(false);
+  });
+
+  it('only resolver is marked hidden today', () => {
+    const allKinds: ReadonlyArray<AgentKind> = [
+      'scout',
+      'planner',
+      'implementer',
+      'debugger',
+      'tester',
+      'reviewer',
+      'docs',
+      'generic',
+    ];
+    for (const kind of allKinds) {
+      expect(AGENT_KIND_DEFAULTS[kind].visible).not.toBe(false);
     }
   });
 
@@ -143,6 +170,8 @@ describe('inferAgentKindFromName', () => {
     ['Verify', 'reviewer'],
     ['Test', 'tester'],
     ['Write docs', 'docs'],
+    ['resolve: alice on foo.ts:42', 'resolver'],
+    ['Resolver', 'resolver'],
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
     expect(inferAgentKindFromName(name)).toBe(expected);
