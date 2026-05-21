@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
-import { CopyButton, Divider, Markdown, cn } from '@goodboy/ui';
+import { CopyButton, Markdown, cn } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -82,7 +82,7 @@ function TranscriptCardImpl({
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
     case 'done':
-      return <Divider />;
+      return null;
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
