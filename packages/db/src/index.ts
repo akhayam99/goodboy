@@ -9,12 +9,19 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
+  listDisconnectedWorkspaces,
   findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
   touchWorkspaceLastAccessed,
   deleteWorkspace,
 } from './queries/workspace';
+export {
+  upsertWorkspaceIntegration,
+  listIntegrationsForWorkspace,
+  getWorkspaceIntegration,
+  deleteWorkspaceIntegration,
+} from './queries/workspace-integration';
 export {
   insertSession,
   updateSessionState,

@@ -4,6 +4,7 @@ import type {
   SessionId,
   WorkflowId,
   WorkspaceId,
+  WorkspaceIntegrationId,
   WorkspaceScriptId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
@@ -84,6 +85,28 @@ export type WorkspaceScript = Readonly<{
   name: string;
   body: string;
   sortOrder: number;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}>;
+
+export type WorkspaceIntegrationProvider = 'linear';
+
+export type LinearIntegrationConfig = Readonly<{
+  teamId: string;
+  teamName: string;
+  defaultProjectId?: string;
+}>;
+
+export type WorkspaceIntegration = Readonly<{
+  id: WorkspaceIntegrationId;
+  workspaceId: WorkspaceId;
+  provider: WorkspaceIntegrationProvider;
+  config: LinearIntegrationConfig;
+  /**
+   * Key used to retrieve the provider API token from Tauri's credential store.
+   * Format: `goodboy.workspace.<workspaceId>.<provider>`
+   */
+  credentialKey: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

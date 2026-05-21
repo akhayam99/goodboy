@@ -14,6 +14,7 @@ export type {
   TelemetryRecordId,
   WorkflowId,
   WorkspaceId,
+  WorkspaceIntegrationId,
   WorkspaceScriptId,
 } from './ids';
 export type { OpenQuestion, OpenQuestionStatus } from './open-question';
@@ -21,10 +22,13 @@ export type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
+  LinearIntegrationConfig,
   Session,
   SessionUserStatus,
   TurnState,
   Workspace,
+  WorkspaceIntegration,
+  WorkspaceIntegrationProvider,
   WorkspaceScript,
 } from './workspace';
 export type { AttachmentInput, Message, MessageAttachment, MessageRole } from './message';
