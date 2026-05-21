@@ -727,6 +727,12 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
     ringBg: 'bg-orange-400/10',
     pulseBg: 'bg-orange-400/15',
   },
+  resolver: {
+    Icon: Sparkles,
+    iconClass: 'text-lime-400',
+    ringBg: 'bg-lime-400/10',
+    pulseBg: 'bg-lime-400/15',
+  },
 };
 
 interface EmptyCopy {
