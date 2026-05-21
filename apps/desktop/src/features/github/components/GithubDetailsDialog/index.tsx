@@ -290,6 +290,17 @@ const REVIEW_CHIP: Record<PrReviewState, { className: string; label: string }> =
  * a snapshot view only the reviewer's most recent stance matters; the
  * scrolling history of approvals/comments is noise on a panel this small.
  */
+// Order reviewers float in the list by stance: approvers first (lowest
+// friction), then change-requesters (highest signal), then commenters,
+// then the soft states. Within a group, newest first.
+const REVIEW_STATE_PRIORITY: Record<PrReviewState, number> = {
+  approved: 0,
+  changes_requested: 1,
+  commented: 2,
+  dismissed: 3,
+  pending: 4,
+};
+
 function latestReviewsByAuthor(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview> {
   const latest = new Map<string, PrReview>();
   for (const r of [...reviews].sort((a, b) =>
@@ -297,7 +308,11 @@ function latestReviewsByAuthor(reviews: ReadonlyArray<PrReview>): ReadonlyArray<
   )) {
     latest.set(r.author, r);
   }
-  return [...latest.values()];
+  return [...latest.values()].sort((a, b) => {
+    const p = REVIEW_STATE_PRIORITY[a.state] - REVIEW_STATE_PRIORITY[b.state];
+    if (p !== 0) return p;
+    return (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '');
+  });
 }
 
 function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
@@ -335,8 +350,8 @@ function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
               )}
             </div>
             {body && (
-              <div className="mt-1.5 text-xs text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
-                <Markdown text={body} />
+              <div className="mt-1.5 text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+                <Markdown text={body} className="text-xs leading-relaxed" />
               </div>
             )}
           </li>
@@ -751,8 +766,8 @@ function CommentBody({ body, expanded, onToggle }: CommentBodyProps) {
   }
   return (
     <div className="mt-1.5 flex flex-col gap-1.5">
-      <div className="text-[13px] text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
-        <Markdown text={trimmed} />
+      <div className="text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+        <Markdown text={trimmed} className="text-[13px] leading-relaxed" />
       </div>
       <button
         type="button"
@@ -823,8 +838,8 @@ function RepliesBlock({
             </span>
           </div>
           {r.body.trim() ? (
-            <div className="text-xs text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
-              <Markdown text={r.body.trim()} />
+            <div className="text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+              <Markdown text={r.body.trim()} className="text-xs leading-relaxed" />
             </div>
           ) : (
             <span className="text-xs italic text-muted-foreground/70">(empty)</span>
