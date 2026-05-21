@@ -10,6 +10,9 @@ export const AGENT_KIND_SLOTS: Partial<Record<AgentKind, ReadonlyArray<SlotKey>>
   reviewer: ['goal', 'files_touched', 'last_output_summary'],
   scout: ['goal', 'last_output_summary'],
   docs: ['goal', 'last_output_summary'],
+  // resolver is comment-scoped: the kickoff carries everything it needs
+  // (PR + author + body + thread id), so session-wide slots add noise.
+  resolver: ['files_touched'],
 };
 
 export function slotsForKind(kind: AgentKind): ReadonlyArray<SlotKey> | undefined {

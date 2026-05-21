@@ -581,6 +581,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
             selectedKind === 'debugger' ? 'Try: "reproduce: <stack trace>"' : null,
             selectedKind === 'tester' ? 'Try: "write tests for X"' : null,
             selectedKind === 'reviewer' ? 'Try: "review the current diff"' : null,
+            selectedKind === 'resolver' ? 'Spawned automatically by the resolve UI.' : null,
             '⌘↵ to send',
           ].filter((x): x is string => Boolean(x)),
         };

@@ -6,6 +6,7 @@ export type AgentKindLabel =
   | 'tester'
   | 'docs'
   | 'reviewer'
+  | 'resolver'
   | 'generic';
 
 // First-match-wins ordering. Patterns are case-insensitive whole-word.

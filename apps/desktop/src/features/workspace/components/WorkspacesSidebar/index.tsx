@@ -1129,6 +1129,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               by role
             </div>
             {[...AGENT_KIND_ORDER]
+              .filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false)
               .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
               .map((kind) => {
                 const meta = AGENT_KIND_META[kind];
