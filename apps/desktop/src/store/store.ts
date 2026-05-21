@@ -13,6 +13,7 @@ import {
   turnReducer,
   Summarizer,
   type ClaudeFlagSet,
+  type ClusterizeOutput,
   type FileConflict,
   type NextAction,
   type SlotKey,
@@ -91,6 +92,8 @@ import type {
   PermissionDecisionKind,
   PermissionRequest,
   PermissionRequestId,
+  IdeaBacklog,
+  IdeaBacklogId,
   PermissionAuditEntry,
   PermissionRule,
   PermissionRuleId,
@@ -251,6 +254,7 @@ import { createBudgetSlice, buildProviderSpendBreakdown } from './slices/budget.
 import { createSkillsSlice } from './slices/skills.slice';
 import { createDiffCommentsSlice } from './slices/diff-comments.slice';
 import { createGithubSlice } from './slices/github.slice';
+import { createBrainDumpSlice } from './slices/brain-dump.slice';
 import { createSidebarSlice } from './slices/sidebar.slice';
 import { createSessionViewSlice } from './slices/session-view.slice';
 
@@ -364,6 +368,12 @@ export interface AppState {
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
+  readonly ideas: Readonly<Record<WorkspaceId, ReadonlyArray<IdeaBacklog>>>;
+  readonly ideasLoading: Readonly<Record<WorkspaceId, boolean>>;
+  readonly rephrasingIdeaIds: ReadonlySet<IdeaBacklogId>;
+  readonly clusterPreview: ClusterizeOutput | null;
+  readonly clusterizing: boolean;
+  readonly clusterError: string | null;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
@@ -611,6 +621,17 @@ export interface AppActions {
   loadPermissionAuditLog(
     args: PermissionAuditQueryArgs,
   ): Promise<ReadonlyArray<PermissionAuditEntry>>;
+  loadIdeasForWorkspace(workspaceId: WorkspaceId): Promise<void>;
+  submitBrainDump(workspaceId: WorkspaceId, rawText: string): Promise<IdeaBacklogId>;
+  deleteIdea(id: IdeaBacklogId): Promise<void>;
+  retryRephrase(id: IdeaBacklogId): Promise<void>;
+  runClusterer(workspaceId: WorkspaceId): Promise<void>;
+  dismissClusterPreview(): void;
+  spawnFromCluster(
+    cluster: import('@goodboy/core').IdeaCluster,
+    args: { workspaceId: WorkspaceId; sessionGoal?: string },
+  ): Promise<void>;
+  recoverPendingRephrases(workspaceId: WorkspaceId): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
   addDiffComment(
@@ -708,6 +729,12 @@ const initialState: AppState = {
   sidebarProviderFilter: [],
   githubStatus: null,
   sessionGithub: {},
+  ideas: {},
+  ideasLoading: {},
+  rephrasingIdeaIds: new Set<IdeaBacklogId>(),
+  clusterPreview: null,
+  clusterizing: false,
+  clusterError: null,
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentKindOverride: {},
@@ -1306,6 +1333,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
+  ...createBrainDumpSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),
 
