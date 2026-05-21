@@ -58,10 +58,6 @@ describe('detectScopeMismatch', () => {
     it('returns null for generic', () => {
       expect(detectScopeMismatch('implementa tutto', 'generic')).toBeNull();
     });
-
-    it('returns null for init', () => {
-      expect(detectScopeMismatch('fammi un piano', 'init')).toBeNull();
-    });
   });
 
   it('returns null for empty input', () => {

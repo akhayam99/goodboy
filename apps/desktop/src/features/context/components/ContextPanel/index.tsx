@@ -22,6 +22,7 @@ import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
+  PlanId,
   PlanStatus,
   PlanWithCount,
   Session,
@@ -771,7 +772,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   const loading = useSessionLoading(sessionId);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [modalOpen, setModalOpen] = useState(false);
-  const [focusPlanId, setFocusPlanId] = useState<string | null>(null);
+  const [focusPlanId, setFocusPlanId] = useState<PlanId | null>(null);
 
   useEffect(() => {
     void loadSessionPlans(sessionId);
@@ -784,7 +785,7 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   if (!latest) return null;
   const latestIndex = plans.length;
 
-  const openModal = (planId: string) => {
+  const openModal = (planId: PlanId) => {
     setFocusPlanId(planId);
     setModalOpen(true);
   };
