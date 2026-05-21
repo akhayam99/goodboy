@@ -413,6 +413,13 @@ export interface SummarizerSessionStatus {
     readonly outputTokens: number;
     readonly estimatedCostUsd: number;
   } | null;
+  // Inputs of the most recent (or in-flight) run. Retained on the 'error'
+  // branch so the UI can re-trigger the same summarization; cleared on
+  // 'idle' (success) so a stale retry can't fire after we've moved on.
+  readonly lastAttempt: {
+    readonly turnInput: string;
+    readonly turnOutput: string;
+  } | null;
 }
 
 export interface AppActions {
@@ -463,6 +470,7 @@ export interface AppActions {
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
+  retrySummarizer(sessionId: SessionId): void;
   endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
@@ -585,7 +593,7 @@ export interface AppActions {
     bodyMd: string,
   ): Promise<void>;
   deletePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
-  abandonPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
+  restorePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   loadConsumptionsForPlan(planId: PlanId): Promise<void>;
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
@@ -779,6 +787,7 @@ async function runSummarizer(
           lastUpdate: prev?.lastUpdate ?? null,
           error: null,
           lastUsage: prev?.lastUsage ?? null,
+          lastAttempt: { turnInput, turnOutput },
         },
       },
     };
@@ -890,6 +899,7 @@ async function runSummarizer(
             outputTokens: result.usage.outputTokens,
             estimatedCostUsd: result.usage.estimatedCostUsd,
           },
+          lastAttempt: null,
         },
       },
       sessionNextActions: { ...state.sessionNextActions, [sessionId]: result.nextActions },
@@ -914,6 +924,7 @@ async function runSummarizer(
             lastUpdate: now(),
             error: message,
             lastUsage: prev?.lastUsage ?? null,
+            lastAttempt: prev?.lastAttempt ?? { turnInput, turnOutput },
           },
         },
       };
@@ -2638,8 +2649,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    if (provider !== 'anthropic' && kindSystemPrompt) {
-      resolvedPrompt = `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n${resolvedPrompt}`;
+    // Worktree scope guard — claude/cursor/codex all accept absolute paths
+    // in their Write/Edit tools and won't refuse to write outside cwd. The
+    // session lives in an isolated git worktree (under
+    // <repo>/.goodboy/worktrees/...) and edits MUST stay inside it,
+    // otherwise the agent ends up mutating the user's parent checkout.
+    // Observed: a fresh agent created `<repo>/docs/...` instead of
+    // `<worktree>/docs/...` because nothing in the prompt scoped it.
+    const scopeGuard = [
+      '[worktree-scope]',
+      `You are operating inside an isolated git worktree at: ${workingDir}`,
+      'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
+      'NEVER write to absolute paths that exit this directory — especially not to the parent project checkout.',
+      'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
+      '[/worktree-scope]',
+    ].join('\n');
+    const fullSystemPrompt = kindSystemPrompt ? `${scopeGuard}\n\n${kindSystemPrompt}` : scopeGuard;
+
+    if (provider !== 'anthropic') {
+      resolvedPrompt = `${scopeGuard}\n\n${
+        kindSystemPrompt ? `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n` : ''
+      }${resolvedPrompt}`;
     }
 
     try {
@@ -2651,7 +2681,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
-        ...(kindSystemPrompt !== undefined && { systemPrompt: kindSystemPrompt }),
+        systemPrompt: fullSystemPrompt,
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, sessionId, event);
@@ -2968,6 +2998,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
     await updateSessionState(tauriDatabase, sessionId, idleState, now).catch(() => undefined);
     applySessionUpdate(set, sessionId, idleState, cancelAgentId ?? undefined);
+  },
+
+  retrySummarizer: (sessionId) => {
+    const status = get().summarizerStatus[sessionId];
+    if (!status || status.status === 'running') return;
+    if (!status.lastAttempt) return;
+    enqueueSummarizer(
+      set,
+      get,
+      sessionId,
+      status.lastAttempt.turnInput,
+      status.lastAttempt.turnOutput,
+    );
   },
 
   refreshWorkspaceSummary: async (workspaceId) => {
