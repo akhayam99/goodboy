@@ -36,7 +36,7 @@ export function CommentResolvedChip({ assistantText, sessionId }: CommentResolve
     return (
       <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">
         <CheckCheck size={11} aria-hidden />
-        <span>thread closed on github</span>
+        <span>conversation resolved</span>
         <span className="text-muted-foreground/70">·</span>
         <GitCommit size={10} aria-hidden className="text-muted-foreground/80" />
         <span className="font-mono text-muted-foreground/80">{shaShort}</span>
@@ -63,24 +63,25 @@ export function CommentResolvedChip({ assistantText, sessionId }: CommentResolve
         <GitCommit size={9} aria-hidden />
         {shaShort}
       </span>
-      <span className="text-muted-foreground/80">close the review thread on github?</span>
+      <span className="text-muted-foreground/80">resolve the review conversation on github?</span>
       <div className="ml-auto flex items-center gap-1">
         <button
           type="button"
           onClick={() => void onResolve()}
           disabled={busy}
           data-testid="comment-resolved-confirm"
+          aria-label="Resolve conversation"
           className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-semibold text-success-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? <Loader2 size={9} aria-hidden className="animate-spin" /> : null}
-          close on github
+          Resolve conversation
         </button>
         <button
           type="button"
           onClick={() => setState({ kind: 'dismissed' })}
           disabled={busy}
-          title="keep the thread open on github"
-          aria-label="keep the thread open on github"
+          title="keep the conversation open on github"
+          aria-label="keep the conversation open on github"
           className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           <X size={10} aria-hidden />
