@@ -1,5 +1,6 @@
 export type {
   AgentId,
+  IdeaBacklogId,
   IsoDateTime,
   MessageId,
   ParallelAgentId,
@@ -118,6 +119,7 @@ export type {
   PlanStatus,
   PlanWithCount,
 } from './plan';
+export type { IdeaBacklog, IdeaBacklogStatus } from './ideas-backlog';
 export type {
   PersistedSessionViewPrefs,
   SessionGroupKey,

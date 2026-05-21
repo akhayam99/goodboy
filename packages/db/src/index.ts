@@ -161,3 +161,13 @@ export {
   upsertWorkspaceScript,
   deleteWorkspaceScript,
 } from './queries/workspace-script';
+export {
+  insertIdea,
+  updateIdeaRephrase,
+  updateIdeaFailed,
+  markIdeaSpawned,
+  deleteIdea,
+  listIdeasForWorkspace,
+  listRawIdeas,
+  type InsertIdeaInput,
+} from './queries/ideas-backlog';
