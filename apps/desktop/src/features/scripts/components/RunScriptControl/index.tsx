@@ -188,7 +188,7 @@ function ScriptRow({ script, run, onRun }: ScriptRowProps) {
       className={cn(
         'group flex flex-col rounded border border-transparent transition-colors',
         !isPending && 'hover:bg-muted/60',
-        // Same border-spinner language used on running puppies / workflow
+        // Same border-spinner language used on running agents / workflow
         // steps: the row itself is the activity signal, no extra spinner
         // icon needed and the play affordance is locked while it runs.
         isPending && 'spin-border spin-border-info',

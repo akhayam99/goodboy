@@ -26,7 +26,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_4_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and puppies from the session panel afterwards.
+          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
         </p>
       </div>
       <button
@@ -103,7 +103,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — puppies lean on it for context.
+                What this session should accomplish. Be specific — agents lean on it for context.
               </p>
             </div>
           </header>
@@ -1016,7 +1016,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
             class="text-xs leading-relaxed text-muted-foreground"
             id="_r_1_-desc"
           >
-            How Goodboy, sessions, puppies, and CLI providers fit together.
+            How Goodboy, sessions, agents, and CLI providers fit together.
           </p>
         </div>
         <button
@@ -1221,7 +1221,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                 />
               </svg>
               <span>
-                Puppies
+                Agents
               </span>
             </button>
             <button
@@ -1350,7 +1350,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                 <p
                   class="max-w-3xl text-sm leading-relaxed text-muted-foreground"
                 >
-                  Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple puppies in parallel against your repo — with audit logs and structured workflows.
+                  Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.
                 </p>
               </div>
               <div
@@ -1531,12 +1531,12 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                     <span
                       class="text-sm font-semibold text-foreground"
                     >
-                      Puppy
+                      Agent
                     </span>
                     <span
                       class="text-xs leading-relaxed text-muted-foreground"
                     >
-                      One provider/CLI invocation inside a session. A session may host several puppies (planning, coding, review…).
+                      One provider/CLI invocation inside a session. A session may host several agents (planning, coding, review…).
                     </span>
                   </button>
                   <button
@@ -1572,7 +1572,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                     <span
                       class="text-xs leading-relaxed text-muted-foreground"
                     >
-                      A single user → assistant exchange inside a puppy. Tools called inside count as the same turn.
+                      A single user → assistant exchange inside a agent. Tools called inside count as the same turn.
                     </span>
                   </button>
                 </div>
@@ -2112,7 +2112,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_5_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and puppies from the session panel afterwards.
+          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
         </p>
       </div>
       <button
@@ -2189,7 +2189,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — puppies lean on it for context.
+                What this session should accomplish. Be specific — agents lean on it for context.
               </p>
             </div>
           </header>

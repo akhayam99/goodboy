@@ -253,7 +253,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       open={open}
       onClose={onClose}
       title="New session"
-      description="Creates a worktree on a fresh branch. Configure workflow and puppies from the session panel afterwards."
+      description="Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards."
       size="lg"
       footer={
         <div className="flex w-full items-center gap-2">
@@ -279,7 +279,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
           title="Goal"
-          subtitle="What this session should accomplish. Be specific — puppies lean on it for context."
+          subtitle="What this session should accomplish. Be specific — agents lean on it for context."
         >
           <Textarea
             value={goal}

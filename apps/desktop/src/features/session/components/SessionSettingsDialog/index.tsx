@@ -413,13 +413,13 @@ function GeneralSection(props: GeneralSectionProps) {
       <SectionHeader
         icon={<Settings2 size={14} aria-hidden className="text-primary" />}
         title="General"
-        subtitle="Identity and infrastructure for this session. The goal text the puppy actually reads lives in the right-hand context panel."
+        subtitle="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
       />
 
       {/* Name */}
       <Field
         label="Name"
-        hint="Display name in the sidebar. Renaming doesn't change what the puppy sees."
+        hint="Display name in the sidebar. Renaming doesn't change what the agent sees."
       >
         <div className="flex gap-2">
           <Input

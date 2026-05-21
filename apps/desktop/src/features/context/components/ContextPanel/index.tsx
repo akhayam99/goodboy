@@ -279,7 +279,7 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: HelpCircle,
     iconClass: 'text-warning',
     iconChipBg: 'bg-warning/10 ring-warning/20',
-    description: 'Things the puppy still needs clarified',
+    description: 'Things the agent still needs clarified',
     accentRingWhenNonEmpty: 'ring-warning/60',
     emptyLabel: 'No open questions',
     emptyCta: '',
@@ -876,8 +876,8 @@ function PlansEmpty() {
         </div>
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground/70">
-        No plans yet. Spawn a <span className="font-medium text-foreground">Plan</span> puppy and
-        ask it to map the work — its output lands here, ready to feed an Implement puppy.
+        No plans yet. Spawn a <span className="font-medium text-foreground">Plan</span> agent and
+        ask it to map the work — its output lands here, ready to feed an Implement agent.
       </p>
     </section>
   );

@@ -22,15 +22,7 @@ interface GuideDialogProps {
   onClose: () => void;
 }
 
-type Section =
-  | 'overview'
-  | 'session'
-  | 'turn'
-  | 'tools'
-  | 'tokens'
-  | 'puppies'
-  | 'tips'
-  | 'legenda';
+type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 interface NavItem {
   readonly id: Section;
@@ -44,7 +36,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'turn', label: 'Turns', icon: <MessagesSquare size={13} aria-hidden /> },
   { id: 'tools', label: 'Tools', icon: <Wrench size={13} aria-hidden /> },
   { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={13} aria-hidden /> },
-  { id: 'puppies', label: 'Puppies', icon: <DogMascot size={13} /> },
+  { id: 'agents', label: 'Agents', icon: <DogMascot size={13} /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
 ];
@@ -57,7 +49,7 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
       open={open}
       onClose={onClose}
       title="Getting started"
-      description="How Goodboy, sessions, puppies, and CLI providers fit together."
+      description="How Goodboy, sessions, agents, and CLI providers fit together."
       size="xl"
       className="w-[64rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
@@ -108,8 +100,8 @@ function Content({ section, onJump }: { section: Section; onJump: (s: Section) =
       return <ToolsSection />;
     case 'tokens':
       return <TokensSection />;
-    case 'puppies':
-      return <PuppiesSection />;
+    case 'agents':
+      return <AgentsSection />;
     case 'tips':
       return <TipsSection />;
     case 'legenda':
@@ -129,8 +121,8 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
         title="What is Goodboy?"
         subtitle={
           SESSION_FEATURES.budget
-            ? 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple puppies in parallel against your repo — with budget caps, audit logs, and structured workflows.'
-            : 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple puppies in parallel against your repo — with audit logs and structured workflows.'
+            ? 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with budget caps, audit logs, and structured workflows.'
+            : 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.'
         }
         accent="primary"
       />
@@ -161,15 +153,15 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
           <ConceptCard
             icon={<DogMascot size={14} />}
             tone="warning"
-            label="Puppy"
-            body="One provider/CLI invocation inside a session. A session may host several puppies (planning, coding, review…)."
-            onClick={() => onJump('puppies')}
+            label="Agent"
+            body="One provider/CLI invocation inside a session. A session may host several agents (planning, coding, review…)."
+            onClick={() => onJump('agents')}
           />
           <ConceptCard
             icon={<MessageSquare size={14} aria-hidden />}
             tone="info"
             label="Turn"
-            body="A single user → assistant exchange inside a puppy. Tools called inside count as the same turn."
+            body="A single user → assistant exchange inside an agent. Tools called inside count as the same turn."
             onClick={() => onJump('turn')}
           />
         </div>
@@ -232,7 +224,7 @@ function SessionsSection() {
             },
             {
               term: 'Context bloat',
-              desc: 'Context window getting close to full → start fresh. Transferring the relevant decisions takes seconds; fighting a saturated puppy costs more.',
+              desc: 'Context window getting close to full → start fresh. Transferring the relevant decisions takes seconds; fighting a saturated agent costs more.',
             },
             {
               term: 'Parallel exploration',
@@ -275,7 +267,7 @@ function TurnsSection() {
             },
             {
               term: 'tools inside a turn',
-              desc: 'When the puppy calls grep, edit, run, etc., those are part of the same turn — not separate ones.',
+              desc: 'When the agent calls grep, edit, run, etc., those are part of the same turn — not separate ones.',
             },
             {
               term: 'queueing',
@@ -300,7 +292,7 @@ function ToolsSection() {
       <SectionHeader
         icon={<Wrench size={14} aria-hidden className="text-warning" />}
         title="Tools"
-        subtitle="Actions the puppy takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
+        subtitle="Actions the agent takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
         accent="warning"
       />
 
@@ -367,8 +359,8 @@ function TokensSection() {
       <Block title="Context window">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Each model has a hard ceiling on how many tokens fit in one call (Opus 4.7 1M, Sonnet 4.6
-          / Haiku 4.5 200k, gpt-4o 128k). The bar under each puppy shows how full the current
-          context is. Above 75% → the puppy starts forgetting; consider summarizing or starting a
+          / Haiku 4.5 200k, gpt-4o 128k). The bar under each agent shows how full the current
+          context is. Above 75% → the agent starts forgetting; consider summarizing or starting a
           new session.
         </p>
       </Block>
@@ -400,34 +392,34 @@ function TokensSection() {
   );
 }
 
-function PuppiesSection() {
+function AgentsSection() {
   return (
     <div className="flex flex-col gap-7">
       <SectionHeader
         icon={<DogMascot size={14} className="text-warning" />}
-        title="Puppies"
-        subtitle="One provider invocation inside a session. A session can host multiple puppies, same provider or different ones."
+        title="Agents"
+        subtitle="One provider invocation inside a session. A session can host multiple agents, same provider or different ones."
         accent="warning"
       />
 
-      <Block title="Why multiple puppies per session">
+      <Block title="Why multiple agents per session">
         <DefinitionList
           rows={[
             {
               term: 'Role separation',
-              desc: 'Spawn a planning puppy on Opus, then a coding puppy on Sonnet. Each keeps its own transcript.',
+              desc: 'Spawn a planning agent on Opus, then a coding agent on Sonnet. Each keeps its own transcript.',
               icon: <Workflow size={11} aria-hidden />,
               tone: 'primary',
             },
             {
               term: 'Workflow steps',
-              desc: 'A workflow defines ordered steps (plan → implement → done). Each step spawns a puppy with its own model + system prompt.',
+              desc: 'A workflow defines ordered steps (plan → implement → done). Each step spawns an agent with its own model + system prompt.',
               icon: <ArrowRight size={11} aria-hidden />,
               tone: 'success',
             },
             {
               term: 'Parallel exploration',
-              desc: 'Two puppies on the same goal, diff their results, pick the better diff at merge time.',
+              desc: 'Two agents on the same goal, diff their results, pick the better diff at merge time.',
               icon: <Sparkles size={11} aria-hidden />,
               tone: 'info',
             },
@@ -435,10 +427,10 @@ function PuppiesSection() {
         />
       </Block>
 
-      <Block title="Reading the puppy row">
+      <Block title="Reading the agent row">
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/50 p-4 text-xs">
           <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Second line of each puppy
+            Second line of each agent
           </span>
           <div className="flex flex-wrap items-center gap-2 font-mono text-foreground">
             <Chip tone="primary">model</Chip>
@@ -468,7 +460,7 @@ function TipsSection() {
     },
     {
       title: 'Set a soft cap',
-      body: 'Even a generous one. It forces a pause before a runaway puppy burns $20 on a bad assumption.',
+      body: 'Even a generous one. It forces a pause before a runaway agent burns $20 on a bad assumption.',
     },
     {
       title: 'Use cheap models for navigation',
@@ -476,7 +468,7 @@ function TipsSection() {
     },
     {
       title: "Queue, don't cancel",
-      body: "If the puppy is mid-tool and you have a follow-up, type it: it'll queue. Cancelling mid-turn loses the partial work.",
+      body: "If the agent is mid-tool and you have a follow-up, type it: it'll queue. Cancelling mid-turn loses the partial work.",
     },
     {
       title: 'Archive freely',
@@ -525,7 +517,7 @@ function LegendSection() {
         accent="primary"
       />
 
-      <LegendBlock title="Puppy status — workflow steps">
+      <LegendBlock title="Agent status — workflow steps">
         <LegendaGrid
           rows={[
             { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },

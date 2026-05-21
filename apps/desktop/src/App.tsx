@@ -400,7 +400,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Sessions</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Switch workspaces, manage sessions, track puppies and workflow progress.
+          Switch workspaces, manage sessions, track agents and workflow progress.
         </p>
       </div>
 
@@ -410,7 +410,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Chat</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Talk to your puppies, send instructions, and watch execution unfold in real time.
+          Talk to your agents, send instructions, and watch execution unfold in real time.
         </p>
       </div>
 

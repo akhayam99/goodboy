@@ -311,7 +311,7 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
 }
 
 /**
- * Inline follow-up CTA rendered directly above the generic 'Spawn puppy'
+ * Inline follow-up CTA rendered directly above the generic 'Spawn agent'
  * trigger when the session has an active plan ready to execute. The pitch is:
  * before the user picks any role from the spawn menu, the plan already
  * implies the answer — so offer it one click away.
@@ -372,7 +372,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
       disabled={spawning}
       data-testid="plan-ready-suggestion"
       title={latest.title}
-      aria-label={`unleash a puppy to execute the plan: ${latest.title}`}
+      aria-label={`spawn an implementer agent to execute the plan: ${latest.title}`}
       className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
@@ -391,7 +391,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
             ·
           </span>
           <span className="font-normal normal-case tracking-normal text-muted-foreground">
-            unleash a puppy
+            spawn implementer
           </span>
         </span>
         <span className="line-clamp-2 text-xs text-foreground/90">{latest.title}</span>
@@ -1010,7 +1010,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       >
         <span className={SECTION_LABEL}>
           <DogMascot size={14} className="shrink-0 text-success" />
-          Puppies
+          Agents
         </span>
       </header>
       {workflow ? (
@@ -1019,7 +1019,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         ) : null
       ) : sorted.length === 0 ? (
         loading.agents ? (
-          <ul role="status" aria-label="loading puppies" className="flex flex-col gap-1 pl-2">
+          <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
               <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
@@ -1029,7 +1029,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </ul>
         ) : (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No puppies yet. Spawn one below.
+            No agents yet. Spawn one below.
           </p>
         )
       ) : (
@@ -1167,7 +1167,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        Spawn puppy
+        Spawn agent
       </button>
       {menu}
     </div>
@@ -1311,7 +1311,7 @@ function WorkflowStepRow({
       ? 'next workflow step. gated by open questions / summarizer (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `puppy ${run.ordinal + 1}: ${run.status}`;
+        : `agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -1362,7 +1362,7 @@ function WorkflowStepRow({
               }}
               onBlur={() => onRenameCommit(draft)}
               className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
-              aria-label="rename puppy"
+              aria-label="rename agent"
             />
           ) : (
             <span className="truncate font-semibold">{run.name}</span>
@@ -1472,9 +1472,9 @@ function AgentRow({
 }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `puppy ${run.ordinal + 1}`,
+    `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
-    isSelected ? 'selected: chat shows this puppy' : 'click to switch chat to this puppy',
+    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1529,7 +1529,7 @@ function AgentRow({
         </span>
         <AgentKindChip
           kind={kind}
-          title={`puppy ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
         {isEditing ? (
           <input
@@ -1550,7 +1550,7 @@ function AgentRow({
             }}
             onBlur={() => onRenameCommit(draft)}
             className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
-            aria-label="rename puppy"
+            aria-label="rename agent"
           />
         ) : (
           <span
@@ -1597,8 +1597,8 @@ function AgentRow({
                   setConfirmingDelete(true);
                 }}
                 className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
-                title="delete puppy (double-click row to rename)"
-                aria-label="delete puppy"
+                title="delete agent (double-click row to rename)"
+                aria-label="delete agent"
               >
                 <Trash2 size={11} aria-hidden />
               </button>
@@ -1666,7 +1666,7 @@ function AgentLifetime({ run }: { run: Agent }) {
     return (
       <span
         className="font-mono text-muted-foreground/60"
-        title="puppy spawned but has not run yet"
+        title="agent spawned but has not run yet"
       >
         0
       </span>
