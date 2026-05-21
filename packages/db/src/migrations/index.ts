@@ -34,6 +34,7 @@ import { m033WorkspaceInitScripts } from './m033-workspace-init-scripts';
 import { m034WorkspaceDisconnectedAt } from './m034-workspace-disconnected-at';
 import { m035NudgeEvents } from './m035-nudge-events';
 import { m036WorkspaceScripts } from './m036-workspace-scripts';
+import { m037PlanDiscardedStatus } from './m037-plan-discarded-status';
 
 export interface Migration {
   readonly version: number;
@@ -77,4 +78,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 34, sql: m034WorkspaceDisconnectedAt },
   { version: 35, sql: m035NudgeEvents },
   { version: 36, sql: m036WorkspaceScripts },
+  { version: 37, sql: m037PlanDiscardedStatus },
 ];

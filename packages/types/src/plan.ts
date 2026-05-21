@@ -2,7 +2,7 @@ import type { AgentId, IsoDateTime, SessionId } from './ids';
 
 export type PlanId = string & { readonly __brand: 'PlanId' };
 
-export type PlanStatus = 'active' | 'consumed' | 'superseded';
+export type PlanStatus = 'active' | 'consumed' | 'superseded' | 'discarded';
 
 export type Plan = Readonly<{
   id: PlanId;

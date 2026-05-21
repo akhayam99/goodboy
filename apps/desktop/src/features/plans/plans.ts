@@ -10,7 +10,6 @@ import type {
 } from '@goodboy/types';
 import {
   addPlanConsumption as dbAddPlanConsumption,
-  deletePlan as dbDeletePlan,
   listConsumptionsForPlan as dbListConsumptionsForPlan,
   listPlansForSession as dbListPlansForSession,
   updatePlanBody as dbUpdatePlanBody,
@@ -49,10 +48,6 @@ export async function setPlanStatus(id: PlanId, status: PlanStatus): Promise<voi
 
 export async function setPlanBody(id: PlanId, title: string, bodyMd: string): Promise<void> {
   await dbUpdatePlanBody(tauriDatabase, id, title, bodyMd);
-}
-
-export async function deletePlan(id: PlanId): Promise<void> {
-  await dbDeletePlan(tauriDatabase, id);
 }
 
 export async function addPlanConsumption(
