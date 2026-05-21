@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Check,
   CheckCheck,
+  ChevronDown,
+  ChevronRight,
   CircleSlash,
   Clock,
   ExternalLink,
+  FileCode2,
+  Filter,
   Loader2,
   MessageSquare,
+  MessageSquareReply,
   MinusCircle,
   RefreshCw,
+  Sparkles,
   XCircle,
 } from 'lucide-react';
 import { Dialog, cn } from '@goodboy/ui';
@@ -25,6 +31,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
+import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
 
 type TabKey = 'ci' | 'reviews' | 'comments';
 
@@ -150,7 +157,12 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
           ) : tab === 'reviews' ? (
             <ReviewsPane reviews={detail?.reviews ?? []} />
           ) : (
-            <CommentsPane comments={detail?.comments ?? []} />
+            <CommentsPane
+              comments={detail?.comments ?? []}
+              pr={pr}
+              sessionId={sessionId}
+              onClose={onClose}
+            />
           )}
         </div>
       </div>
@@ -263,70 +275,473 @@ function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
 
 // --- Comments ---
 
-function CommentsPane({ comments }: { comments: ReadonlyArray<PrComment> }) {
-  const grouped = useMemo(() => {
-    const open = comments.filter((c) => c.source !== 'review' || c.resolved === false);
-    const resolved = comments.filter((c) => c.source === 'review' && c.resolved === true);
-    return { open, resolved };
-  }, [comments]);
+interface CommentThread {
+  readonly head: PrComment;
+  readonly replies: ReadonlyArray<PrComment>;
+}
+
+function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
+  const byId = new Map<string, PrComment>();
+  for (const c of comments) byId.set(c.id, c);
+  const heads: Array<PrComment> = [];
+  const repliesByHead = new Map<string, Array<PrComment>>();
+  for (const c of comments) {
+    if (c.source === 'review' && c.inReplyToId && byId.has(c.inReplyToId)) {
+      const arr = repliesByHead.get(c.inReplyToId) ?? [];
+      arr.push(c);
+      repliesByHead.set(c.inReplyToId, arr);
+    } else {
+      heads.push(c);
+    }
+  }
+  return heads.map((head) => ({
+    head,
+    replies: (repliesByHead.get(head.id) ?? []).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    ),
+  }));
+}
+
+type ThreadStatus = 'open-review' | 'issue' | 'resolved';
+
+function threadStatus(t: CommentThread): ThreadStatus {
+  if (t.head.source === 'review') return t.head.resolved ? 'resolved' : 'open-review';
+  return 'issue';
+}
+
+function threadPriority(t: CommentThread): number {
+  const s = threadStatus(t);
+  if (s === 'open-review') return 0;
+  if (s === 'issue') return 1;
+  return 2;
+}
+
+function isBot(author: string): boolean {
+  return author.endsWith('[bot]') || author.endsWith('-bot');
+}
+
+interface CommentsPaneProps {
+  comments: ReadonlyArray<PrComment>;
+  pr: PullRequestState;
+  sessionId: SessionId | null;
+  onClose: () => void;
+}
+
+function CommentsPane({ comments, pr, sessionId, onClose }: CommentsPaneProps) {
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const [filterNeedsResolve, setFilterNeedsResolve] = useState(false);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const [showResolved, setShowResolved] = useState(false);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  const threads = useMemo(() => groupThreads(comments), [comments]);
+
+  const counts = useMemo(() => {
+    let open = 0;
+    let issue = 0;
+    let resolved = 0;
+    for (const t of threads) {
+      const s = threadStatus(t);
+      if (s === 'open-review') open += 1;
+      else if (s === 'issue') issue += 1;
+      else resolved += 1;
+    }
+    return { open, issue, resolved };
+  }, [threads]);
+
+  const visible = useMemo(() => {
+    const pred = (t: CommentThread): boolean => {
+      const s = threadStatus(t);
+      if (filterNeedsResolve) return s === 'open-review';
+      if (s === 'resolved') return showResolved;
+      return true;
+    };
+    return [...threads].filter(pred).sort((a, b) => {
+      const p = threadPriority(a) - threadPriority(b);
+      if (p !== 0) return p;
+      return b.head.createdAt.localeCompare(a.head.createdAt);
+    });
+  }, [threads, filterNeedsResolve, showResolved]);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleResolve = useCallback(
+    async (c: PrComment) => {
+      if (!sessionId || resolvingId !== null) return;
+      setResolvingId(c.id);
+      try {
+        const args = buildCommentAgentArgs(c, pr);
+        const agentId = await spawnAgent(sessionId, {
+          name: args.name,
+          model: args.model,
+          effort: args.effort,
+          initialPrompt: args.initialPrompt,
+          kindOverride: args.kind,
+        });
+        await selectAgent(sessionId, agentId);
+        onClose();
+      } finally {
+        setResolvingId(null);
+      }
+    },
+    [sessionId, resolvingId, pr, spawnAgent, selectAgent, onClose],
+  );
 
   if (comments.length === 0) {
     return <EmptyState icon={MessageSquare} text="no comments yet" />;
   }
+
+  const allResolved = counts.open === 0 && counts.issue === 0 && counts.resolved > 0;
+
   return (
-    <div className="flex flex-col gap-3">
-      {grouped.open.length > 0 && <CommentList title="Open" items={grouped.open} />}
-      {grouped.resolved.length > 0 && (
-        <CommentList title="Resolved" items={grouped.resolved} dimmed />
+    <div className="flex h-full flex-col gap-2.5">
+      <CommentsHeader
+        counts={counts}
+        filterActive={filterNeedsResolve}
+        onToggleFilter={() => setFilterNeedsResolve((v) => !v)}
+      />
+      {visible.length === 0 ? (
+        allResolved && !showResolved ? (
+          <AllResolvedRow count={counts.resolved} onShow={() => setShowResolved(true)} />
+        ) : filterNeedsResolve ? (
+          <FilterEmptyRow onClear={() => setFilterNeedsResolve(false)} />
+        ) : null
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {visible.map((t) => (
+            <li key={t.head.id}>
+              <CommentThreadCard
+                thread={t}
+                expanded={expanded.has(t.head.id)}
+                onToggle={() => toggleExpand(t.head.id)}
+                onResolve={sessionId ? () => void handleResolve(t.head) : undefined}
+                resolving={resolvingId === t.head.id}
+              />
+            </li>
+          ))}
+        </ul>
       )}
+      {!filterNeedsResolve && counts.resolved > 0 && !allResolved ? (
+        <button
+          type="button"
+          onClick={() => setShowResolved((v) => !v)}
+          className="inline-flex w-fit items-center gap-1 self-start rounded text-2xs text-muted-foreground/80 hover:text-foreground"
+        >
+          <ChevronRight
+            size={10}
+            aria-hidden
+            className={cn('transition-transform', showResolved && 'rotate-90')}
+          />
+          {showResolved ? `hide ${counts.resolved} resolved` : `show ${counts.resolved} resolved`}
+        </button>
+      ) : null}
     </div>
   );
 }
 
-function CommentList({
-  title,
-  items,
-  dimmed,
+function CommentsHeader({
+  counts,
+  filterActive,
+  onToggleFilter,
 }: {
-  title: string;
-  items: ReadonlyArray<PrComment>;
-  dimmed?: boolean;
+  counts: { open: number; issue: number; resolved: number };
+  filterActive: boolean;
+  onToggleFilter: () => void;
 }) {
+  const totalActionable = counts.open;
   return (
-    <section>
-      <h3 className="mb-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        {title} <span className="tabular-nums">({items.length})</span>
-      </h3>
-      <ul className={cn('flex flex-col gap-2', dimmed && 'opacity-60')}>
-        {items.map((c) => (
-          <li key={c.id} className="rounded-md border border-border-soft px-3 py-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold">{c.author}</span>
-              {c.source === 'review' && c.path && (
-                <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
-                  {c.path}
-                  {c.line ? `:${c.line}` : ''}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => void openUrl(c.url)}
-                className="ml-auto text-muted-foreground/60 hover:text-foreground"
-                title="open on github"
-                aria-label="open comment on github"
-              >
-                <ExternalLink size={11} aria-hidden />
-              </button>
-            </div>
-            <p className="mt-1.5 whitespace-pre-wrap text-xs text-muted-foreground">{c.body}</p>
-            <span className="mt-1 block text-2xs text-muted-foreground/50">
-              {formatDate(c.createdAt)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="flex items-center justify-between gap-2 border-b border-border-soft pb-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <CountChip
+          tone={totalActionable > 0 ? 'warning' : 'muted'}
+          label="needs resolve"
+          count={counts.open}
+        />
+        {counts.issue > 0 ? <CountChip tone="muted" label="general" count={counts.issue} /> : null}
+        {counts.resolved > 0 ? (
+          <CountChip tone="success" label="resolved" count={counts.resolved} />
+        ) : null}
+      </div>
+      {counts.open > 0 || filterActive ? (
+        <button
+          type="button"
+          onClick={onToggleFilter}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-medium transition-colors',
+            filterActive
+              ? 'border-warning/50 bg-warning/15 text-warning'
+              : 'border-border-soft text-muted-foreground hover:border-border hover:text-foreground',
+          )}
+          aria-pressed={filterActive}
+          title="show only review comments that still need a fix"
+        >
+          <Filter size={10} aria-hidden />
+          needs resolve
+        </button>
+      ) : null}
+    </div>
   );
+}
+
+function CountChip({
+  tone,
+  label,
+  count,
+}: {
+  tone: 'warning' | 'muted' | 'success';
+  label: string;
+  count: number;
+}) {
+  const toneClass =
+    tone === 'warning'
+      ? 'bg-warning/10 text-warning'
+      : tone === 'success'
+        ? 'bg-success/10 text-success'
+        : 'bg-muted/50 text-muted-foreground';
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium',
+        toneClass,
+      )}
+    >
+      <span className="tabular-nums">{count}</span>
+      <span className="opacity-80">{label}</span>
+    </span>
+  );
+}
+
+function AllResolvedRow({ count, onShow }: { count: number; onShow: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-success/30 bg-success/5 px-4 py-6 text-center">
+      <CheckCheck size={18} aria-hidden className="text-success" />
+      <span className="text-xs font-medium text-foreground">all review comments resolved</span>
+      <button
+        type="button"
+        onClick={onShow}
+        className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        show {count} resolved
+      </button>
+    </div>
+  );
+}
+
+function FilterEmptyRow({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-border-soft bg-subtle/40 px-4 py-6 text-center">
+      <Filter size={16} aria-hidden className="text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">no open review comments</span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        clear filter
+      </button>
+    </div>
+  );
+}
+
+interface CommentThreadCardProps {
+  thread: CommentThread;
+  expanded: boolean;
+  onToggle: () => void;
+  onResolve?: () => void;
+  resolving: boolean;
+}
+
+function CommentThreadCard({
+  thread,
+  expanded,
+  onToggle,
+  onResolve,
+  resolving,
+}: CommentThreadCardProps) {
+  const { head, replies } = thread;
+  const status = threadStatus(thread);
+  const bot = isBot(head.author);
+  const showResolveButton = status === 'open-review' && onResolve;
+
+  return (
+    <article
+      className={cn(
+        'group rounded-md border bg-background px-2.5 py-2 transition-colors',
+        status === 'open-review' && 'border-warning/30 hover:border-warning/50',
+        status === 'resolved' && 'border-border-soft opacity-70',
+        status === 'issue' && 'border-border-soft hover:border-border',
+      )}
+    >
+      <header className="flex items-center gap-2">
+        <StatusDot status={status} />
+        <Avatar url={head.authorAvatarUrl} alt={head.author} />
+        <span className="truncate text-xs font-semibold text-foreground">{head.author}</span>
+        {bot ? (
+          <span className="rounded bg-info/10 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-info">
+            bot
+          </span>
+        ) : null}
+        <span className="text-2xs text-muted-foreground/60">
+          {formatRelative(Date.now() - new Date(head.createdAt).getTime())}
+        </span>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {showResolveButton ? (
+            <button
+              type="button"
+              onClick={onResolve}
+              disabled={resolving}
+              title="spawn an implementer agent to address this comment"
+              aria-label="resolve this comment"
+              className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {resolving ? (
+                <Loader2 size={10} aria-hidden className="animate-spin" />
+              ) : (
+                <Sparkles size={10} aria-hidden />
+              )}
+              resolve
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void openUrl(head.url)}
+            title="open comment on github"
+            aria-label="open comment on github"
+            className="rounded p-1 text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+          >
+            <ExternalLink size={10} aria-hidden />
+          </button>
+        </div>
+      </header>
+      {head.path ? (
+        <button
+          type="button"
+          onClick={() => void openUrl(head.url)}
+          title={`${head.path}${head.line ? ':' + head.line : ''} — open on github`}
+          className="mt-1 inline-flex items-center gap-1 self-start rounded bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <FileCode2 size={9} aria-hidden />
+          <span className="truncate">
+            {head.path}
+            {head.line ? `:${head.line}` : ''}
+          </span>
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={onToggle}
+        title={expanded ? 'collapse' : 'expand'}
+        className={cn(
+          'mt-1.5 block w-full text-left text-xs text-foreground/90 transition-colors hover:text-foreground',
+          expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
+        )}
+      >
+        {head.body.trim() || <span className="italic text-muted-foreground/70">(empty)</span>}
+      </button>
+      {replies.length > 0 ? (
+        <RepliesBlock replies={replies} expanded={expanded} onToggle={onToggle} />
+      ) : null}
+    </article>
+  );
+}
+
+function StatusDot({ status }: { status: ThreadStatus }) {
+  if (status === 'resolved') {
+    return <CheckCheck size={11} aria-hidden className="shrink-0 text-success" />;
+  }
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'inline-flex h-2 w-2 shrink-0 rounded-full',
+        status === 'open-review' ? 'bg-warning' : 'bg-muted-foreground/50',
+      )}
+      title={status === 'open-review' ? 'open review comment' : 'general comment'}
+    />
+  );
+}
+
+function RepliesBlock({
+  replies,
+  expanded,
+  onToggle,
+}: {
+  replies: ReadonlyArray<PrComment>;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="mt-1.5 inline-flex items-center gap-1 self-start rounded text-2xs text-muted-foreground/80 hover:text-foreground"
+      >
+        <MessageSquareReply size={10} aria-hidden />
+        <span>
+          {replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
+        </span>
+        <ChevronDown size={9} aria-hidden />
+      </button>
+    );
+  }
+  return (
+    <ul className="mt-1.5 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
+      {replies.map((r) => (
+        <li key={r.id} className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <Avatar url={r.authorAvatarUrl} alt={r.author} />
+            <span className="text-2xs font-medium text-foreground">{r.author}</span>
+            {isBot(r.author) ? (
+              <span className="rounded bg-info/10 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-info">
+                bot
+              </span>
+            ) : null}
+            <span className="text-2xs text-muted-foreground/60">
+              {formatRelative(Date.now() - new Date(r.createdAt).getTime())}
+            </span>
+          </div>
+          <p className="whitespace-pre-wrap break-words text-xs text-foreground/85">
+            {r.body.trim() || <span className="italic text-muted-foreground/70">(empty)</span>}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Avatar({ url, alt }: { url: string | null; alt: string }) {
+  if (!url) {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-muted-foreground"
+      >
+        {alt.slice(0, 1).toUpperCase()}
+      </span>
+    );
+  }
+  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />;
+}
+
+function formatRelative(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  const s = Math.round(ms / 1_000);
+  if (s < 45) return 'just now';
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
 }
 
 // --- helpers ---

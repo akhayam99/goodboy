@@ -65,6 +65,7 @@ export function inferAgentKindFromComment(c: PrComment): AgentKind {
 
 export interface CommentAgentArgs {
   readonly name: string;
+  readonly kind: AgentKind;
   readonly model: string;
   readonly effort: 'low' | 'medium' | 'high';
   readonly initialPrompt: string;
@@ -75,6 +76,7 @@ export function buildCommentAgentArgs(c: PrComment, pr: PullRequestState): Comme
   const defaults = AGENT_KIND_DEFAULTS[kind];
   return {
     name: buildCommentAgentTitle(c),
+    kind,
     model: defaults.model,
     effort: defaults.effort,
     initialPrompt: buildCommentAgentPrompt(c, pr),
@@ -118,6 +120,7 @@ export function buildReviewChangesAgentArgs(
   );
   return {
     name: truncate(`resolve: address review changes on #${pr.number}`, TITLE_MAX),
+    kind: 'implementer',
     model: defaults.model,
     effort: defaults.effort,
     initialPrompt: lines.join('\n'),

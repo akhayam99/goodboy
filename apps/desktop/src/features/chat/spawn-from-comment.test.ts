@@ -77,6 +77,7 @@ describe('spawn-from-comment', () => {
   it('builds args with sonnet implementer for review comments', () => {
     const args = buildCommentAgentArgs(makeComment(), PR);
     expect(args.name).toBe('resolve: alice on foo.ts:42');
+    expect(args.kind).toBe('implementer');
     expect(args.effort).toBe('medium');
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');
@@ -85,12 +86,21 @@ describe('spawn-from-comment', () => {
     expect(args.initialPrompt).toContain('NON-TRIVIAL');
   });
 
+  it('builds args with debugger kind when the issue comment smells like a bug', () => {
+    const args = buildCommentAgentArgs(
+      makeComment({ source: 'issue', path: undefined, line: undefined, body: 'this crashes' }),
+      PR,
+    );
+    expect(args.kind).toBe('debugger');
+  });
+
   it('aggregates open comments for fix-all', () => {
     const args = buildReviewChangesAgentArgs(PR, [
       makeComment({ id: 'r1', author: 'bob', body: 'rename foo' }),
       makeComment({ id: 'r2', author: 'eve', path: 'a/b.ts', line: 7, body: 'extract' }),
     ]);
     expect(args.name).toContain('#9108');
+    expect(args.kind).toBe('implementer');
     expect(args.initialPrompt).toContain('bob');
     expect(args.initialPrompt).toContain('eve');
     expect(args.initialPrompt).toContain('a/b.ts:7');
