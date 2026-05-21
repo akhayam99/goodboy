@@ -62,6 +62,7 @@ const IDLE_STATUS: SummarizerSessionStatus = {
   lastUpdate: null,
   error: null,
   lastUsage: null,
+  lastAttempt: null,
 };
 
 export const useSummarizerStatus = (sessionId: SessionId | null): SummarizerSessionStatus =>

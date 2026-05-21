@@ -9,12 +9,17 @@ export {
   type SlotKey,
 } from './slots';
 export {
+  assessPlanReadiness,
   extractFilesTouched,
+  extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
   mergeIntoSlot,
   removeFromSlot,
+  type ExtractedHandoff,
   type ExtractedPlan,
+  type PlanReadinessInput,
+  type PlanReadinessResult,
 } from './extractors';
 export {
   autoPopulateContext,

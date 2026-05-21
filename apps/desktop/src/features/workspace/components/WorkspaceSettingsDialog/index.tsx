@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
-import { InitScriptPanel } from '../../../../features/init';
+import { ScriptsPanel } from '../../../../features/scripts';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -26,7 +26,7 @@ interface WorkspaceSettingsDialogProps {
   onClose: () => void;
 }
 
-type Section = 'general' | 'skills' | 'init' | 'phases' | 'danger';
+type Section = 'general' | 'skills' | 'scripts' | 'phases' | 'danger';
 
 interface NavItem {
   readonly id: Section;
@@ -102,9 +102,7 @@ export function WorkspaceSettingsDialog({
     ...(WORKSPACE_FEATURES.skills
       ? ([{ id: 'skills', label: 'Skills', icon: <Zap size={13} aria-hidden /> }] as const)
       : []),
-    ...(WORKSPACE_FEATURES.initScript
-      ? ([{ id: 'init', label: 'Init', icon: <Terminal size={13} aria-hidden /> }] as const)
-      : []),
+    { id: 'scripts', label: 'Scripts', icon: <Terminal size={13} aria-hidden /> },
     { id: 'phases', label: 'Workflows', icon: <GitBranch size={13} aria-hidden />, beta: true },
     {
       id: 'danger',
@@ -121,10 +119,36 @@ export function WorkspaceSettingsDialog({
       title="Workspace settings"
       description={workspaceName}
       size="xl"
-      className="w-[52rem] max-w-[95vw]"
+      className="w-[64rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
-      fixedHeightClass="h-[560px]"
+      fixedHeightClass="h-[640px]"
       fullScreenOnSmall
+      panel={
+        <>
+          {navItems
+            .filter((i) => i.tone !== 'danger')
+            .map((item) => (
+              <NavButton
+                key={item.id}
+                item={item}
+                active={active === item.id}
+                onClick={() => setActive(item.id)}
+              />
+            ))}
+          <div className="mt-auto">
+            {navItems
+              .filter((i) => i.tone === 'danger')
+              .map((item) => (
+                <NavButton
+                  key={item.id}
+                  item={item}
+                  active={active === item.id}
+                  onClick={() => setActive(item.id)}
+                />
+              ))}
+          </div>
+        </>
+      }
       footer={
         <div className="flex w-full items-center gap-2">
           <div className="flex-1 truncate">
@@ -159,81 +183,54 @@ export function WorkspaceSettingsDialog({
         </div>
       }
     >
-      <div className="flex h-full min-h-0">
-        <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border-soft bg-subtle/40 px-3 py-5">
-          {navItems
-            .filter((i) => i.tone !== 'danger')
-            .map((item) => (
-              <NavButton
-                key={item.id}
-                item={item}
-                active={active === item.id}
-                onClick={() => setActive(item.id)}
-              />
-            ))}
-          <div className="mt-auto">
-            {navItems
-              .filter((i) => i.tone === 'danger')
-              .map((item) => (
-                <NavButton
-                  key={item.id}
-                  item={item}
-                  active={active === item.id}
-                  onClick={() => setActive(item.id)}
-                />
-              ))}
-          </div>
-        </nav>
+      <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
+        {active === 'general' ? (
+          <GeneralSection
+            branchPrefix={branchPrefix}
+            setBranchPrefix={setBranchPrefix}
+            busy={saveState === 'saving'}
+          />
+        ) : null}
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-          {active === 'general' ? (
-            <GeneralSection
-              branchPrefix={branchPrefix}
-              setBranchPrefix={setBranchPrefix}
-              busy={saveState === 'saving'}
-            />
-          ) : null}
+        {active === 'skills' ? (
+          <SectionShell
+            icon={<Zap size={14} aria-hidden className="text-primary" />}
+            title="Skills"
+            subtitle="Reusable system-prompt fragments and tool kits that every puppy in this workspace can opt into."
+          >
+            <SkillsPanel workspaceId={workspaceId} />
+          </SectionShell>
+        ) : null}
 
-          {active === 'skills' ? (
-            <SectionShell
-              icon={<Zap size={14} aria-hidden className="text-primary" />}
-              title="Skills"
-              subtitle="Reusable system-prompt fragments and tool kits that every puppy in this workspace can opt into."
-            >
-              <SkillsPanel workspaceId={workspaceId} />
-            </SectionShell>
-          ) : null}
+        {active === 'scripts' ? (
+          <SectionShell
+            icon={<Terminal size={14} aria-hidden className="text-primary" />}
+            title="Scripts"
+            subtitle="User-defined shell scripts you run by hand — copy env files, install deps, build. No agent, no tokens spent."
+          >
+            <ScriptsPanel workspaceId={workspaceId} />
+          </SectionShell>
+        ) : null}
 
-          {active === 'init' ? (
-            <SectionShell
-              icon={<Terminal size={14} aria-hidden className="text-primary" />}
-              title="Init script"
-              subtitle="Shell snippet that runs once when a new session's worktree is created — install deps, hydrate env, warm caches."
-            >
-              <InitScriptPanel workspaceId={workspaceId} />
-            </SectionShell>
-          ) : null}
+        {active === 'phases' ? (
+          <SectionShell
+            icon={<GitBranch size={14} aria-hidden className="text-primary" />}
+            title="Workflows"
+            subtitle="Multi-puppy blueprints offered when creating a session. Each step spawns its own puppy in order."
+            beta
+          >
+            <PhasesPanel workspaceId={workspaceId} />
+          </SectionShell>
+        ) : null}
 
-          {active === 'phases' ? (
-            <SectionShell
-              icon={<GitBranch size={14} aria-hidden className="text-primary" />}
-              title="Workflows"
-              subtitle="Multi-puppy blueprints offered when creating a session. Each step spawns its own puppy in order."
-              beta
-            >
-              <PhasesPanel workspaceId={workspaceId} />
-            </SectionShell>
-          ) : null}
-
-          {active === 'danger' ? (
-            <DangerSection
-              confirmDisconnect={confirmDisconnect}
-              setConfirmDisconnect={setConfirmDisconnect}
-              disconnecting={disconnecting}
-              onDisconnect={() => void onDisconnect()}
-            />
-          ) : null}
-        </div>
+        {active === 'danger' ? (
+          <DangerSection
+            confirmDisconnect={confirmDisconnect}
+            setConfirmDisconnect={setConfirmDisconnect}
+            disconnecting={disconnecting}
+            onDisconnect={() => void onDisconnect()}
+          />
+        ) : null}
       </div>
     </Dialog>
   );

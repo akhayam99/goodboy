@@ -504,7 +504,13 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     }
     case 'hr':
-      return <hr key={key} className="my-2 border-border" />;
+      return (
+        <div
+          key={key}
+          role="separator"
+          className="my-2 h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        />
+      );
     case 'list':
       if (block.ordered) {
         return (

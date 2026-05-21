@@ -265,6 +265,7 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
       description="Configure providers, editor, and workspace defaults."
       size="xl"
       fixedHeightClass="h-[640px]"
+      bodyClassName="px-0 py-0 gap-0"
       fullScreenOnSmall
       footer={
         <>
@@ -282,9 +283,8 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
           ) : null}
         </>
       }
-    >
-      <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto pr-2">
+      panel={
+        <>
           {NAV_ITEMS.filter((item) => item.id !== 'initialization').map((item) => (
             <button
               key={item.id}
@@ -318,9 +318,11 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               </button>
             ))}
           </div>
-        </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4">{renderContent()}</div>
-      </div>
+        </>
+      }
+      panelWidthClass="w-44"
+    >
+      <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">{renderContent()}</div>
 
       <ImportConfigDialog
         open={importDialogOpen}

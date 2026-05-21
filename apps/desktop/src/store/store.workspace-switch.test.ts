@@ -126,7 +126,6 @@ function buildIdleSession(id: SessionId, wsId: WorkspaceId): Session {
     permissionMode: 'bypassPermissions',
     autoRun: false,
     titleUserEdited: false,
-    skipInit: false,
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
@@ -144,7 +143,6 @@ function buildRunningSession(id: SessionId, wsId: WorkspaceId, runId: ProviderRu
     permissionMode: 'bypassPermissions',
     autoRun: false,
     titleUserEdited: false,
-    skipInit: false,
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
@@ -181,7 +179,13 @@ describe('setCurrentWorkspace — session-scoped state cleanup', () => {
       sessionPhaseRuns: { [SESSION_IDLE]: [] },
       sessionBudgets: { [SESSION_IDLE]: { softCapUsd: 10 } as never },
       summarizerStatus: {
-        [SESSION_IDLE]: { status: 'idle', lastUpdate: null, error: null, lastUsage: null },
+        [SESSION_IDLE]: {
+          status: 'idle',
+          lastUpdate: null,
+          error: null,
+          lastUsage: null,
+          lastAttempt: null,
+        },
       },
       budgetAlerts: [{ id: 'alert-1' } as never],
     });

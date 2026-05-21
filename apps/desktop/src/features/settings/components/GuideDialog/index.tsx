@@ -525,7 +525,7 @@ function LegendSection() {
         accent="primary"
       />
 
-      <LegendBlock title="Status dots — sessions & puppies">
+      <LegendBlock title="Puppy status — workflow steps">
         <LegendaGrid
           rows={[
             { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
@@ -536,6 +536,33 @@ function LegendSection() {
               dot: 'bg-muted-foreground/30',
               label: 'skipped',
               desc: 'bypassed by workflow logic',
+            },
+          ]}
+        />
+      </LegendBlock>
+
+      <LegendBlock title="Session & workspace cards — border signals">
+        <LegendaGrid
+          rows={[
+            {
+              dot: 'bg-warning animate-soft-pulse',
+              label: 'pending attention',
+              desc: 'amber pulse — agent replied or workspace has unread activity',
+            },
+            {
+              dot: 'bg-info',
+              label: 'running',
+              desc: 'info border — a turn is active in this session',
+            },
+            {
+              dot: 'bg-danger',
+              label: 'errored',
+              desc: 'danger border — the last turn ended with an error',
+            },
+            {
+              dot: 'bg-transparent ring-1 ring-border-soft',
+              label: 'idle',
+              desc: 'no border accent — nothing needs your attention',
             },
           ]}
         />

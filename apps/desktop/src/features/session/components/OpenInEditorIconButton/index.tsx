@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, FolderOpen } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { FolderOpen } from 'lucide-react';
+import { cn, Popover } from '@goodboy/ui';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
-import {
-  DEFAULT_EDITOR_BINARY,
-  SETTING_DEFAULT_EDITOR,
-  SETTING_EDITOR_BINARY,
-} from '../../../../features/settings/settings';
-import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
+import { useAppStore } from '../../../../store';
 
 interface OpenInEditorIconButtonProps {
   readonly worktreePath: string | null;
@@ -17,22 +12,16 @@ interface OpenInEditorIconButtonProps {
 
 /**
  * Compact icon-only "open this session's worktree in an external editor"
- * affordance. Intended for header chrome (e.g. the session detail panel)
- * where space is tight and a labelled button would clash. Click behaviour:
+ * affordance for header chrome. Click behaviour:
  * - 0 editors detected → disabled
  * - 1 editor → opens directly
- * - 2+ editors → opens a small popover. Last picked editor is remembered.
+ * - 2+ editors → opens a centered popover; picking an entry triggers the
+ *   launch immediately (no remembered default, no select state — every
+ *   pick is just a one-shot action).
  */
 export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonProps) {
   const detectedEditors = useAppStore((s) => s.detectedEditors);
-  const globalEditorBinary = useAppStore(
-    (s) => s.settings[SETTING_EDITOR_BINARY] ?? DEFAULT_EDITOR_BINARY,
-  );
-  const savedDefault = useAppStore((s) => s.settings[SETTING_DEFAULT_EDITOR] ?? null);
-  const saveSetting = useAppStore((s) => s.saveSetting);
   const { showToast } = useToast();
-
-  const resolvedDefault = savedDefault ?? globalEditorBinary;
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,9 +42,6 @@ export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonP
     setOpen(false);
     try {
       await openInEditor(worktreePath, binary);
-      if (binary !== resolvedDefault) {
-        await saveSetting(SETTING_DEFAULT_EDITOR, binary);
-      }
     } catch (err) {
       showToast('error', `couldn't open editor: ${formatError(err)}`);
     }
@@ -102,36 +88,23 @@ export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonP
         <FolderOpen size={13} aria-hidden />
       </button>
       {open && hasMultiple ? (
-        <div
+        <Popover
           role="menu"
-          className="absolute right-0 top-full z-30 mt-1 min-w-[160px] rounded-md border border-border bg-subtle py-1 text-xs shadow-lg"
+          className="absolute left-1/2 top-full z-30 mt-1 min-w-[160px] -translate-x-1/2 py-1"
         >
-          {detectedEditors.map((ed) => {
-            const active = ed.binary === resolvedDefault;
-            return (
-              <button
-                key={ed.binary}
-                type="button"
-                role="menuitem"
-                onClick={() => void launch(ed.binary)}
-                className={cn(
-                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left motion-safe:transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                <FolderOpen
-                  size={11}
-                  aria-hidden
-                  className={active ? 'text-primary' : 'text-muted-foreground/60'}
-                />
-                <span className="flex-1 truncate">{ed.label}</span>
-                {active ? <Check size={11} className="text-primary" aria-hidden /> : null}
-              </button>
-            );
-          })}
-        </div>
+          {detectedEditors.map((ed) => (
+            <button
+              key={ed.binary}
+              type="button"
+              role="menuitem"
+              onClick={() => void launch(ed.binary)}
+              className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <FolderOpen size={11} aria-hidden className="text-muted-foreground/60" />
+              <span className="flex-1 truncate">{ed.label}</span>
+            </button>
+          ))}
+        </Popover>
       ) : null}
     </div>
   );

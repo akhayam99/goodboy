@@ -40,8 +40,8 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const atCap = workspaces.length >= MAX_WORKSPACES;
 
   return (
-    <div className="shrink-0 px-2 py-1.5" data-tauri-drag-region="false">
-      <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+    <div className="shrink-0 px-3 py-3" data-tauri-drag-region="false">
+      <span className="mb-2 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <FolderOpen size={11} aria-hidden className="text-primary" />
         Workspaces
         <span
@@ -113,23 +113,21 @@ function WorkspaceCard({
 }) {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
 
+  const showUnread = hasUnread && !isActive;
+
   return (
     <div
       className={cn(
-        'group relative flex shrink-0 items-center rounded border text-xs font-medium transition-colors',
+        'flex shrink-0 items-center rounded border text-xs font-medium transition-colors',
         isActive
           ? 'border-primary bg-primary/5 text-foreground'
-          : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
+          : showUnread
+            ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
+            : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
       )}
-      title={workspace.name}
+      title={showUnread ? `${workspace.name} — new activity` : workspace.name}
       data-tauri-drag-region="false"
     >
-      {hasUnread && !isActive && (
-        <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-          <span className="relative inline-block h-2 w-2 rounded-full bg-warning" />
-        </span>
-      )}
       <button
         type="button"
         onClick={onSelect}

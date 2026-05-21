@@ -20,7 +20,6 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionWorkflow,
-  updateSessionSkipInit,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   getSessionById,
@@ -138,6 +137,15 @@ export {
   type NotificationSeverity,
 } from './queries/notification';
 export {
+  insertNudgeEvent,
+  updateNudgeEventOutcome,
+  listNudgeEvents,
+  type ListNudgeEventsOptions,
+  type NudgeEvent,
+  type NudgeKind,
+  type NudgeOutcome,
+} from './queries/nudge-event';
+export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,
@@ -149,9 +157,7 @@ export {
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
-  insertInitScript,
-  getLatestInitScript,
-  deleteInitScript,
-  listInitScriptHistory,
-  type WorkspaceInitScript,
-} from './queries/workspace-init-script';
+  listWorkspaceScripts,
+  upsertWorkspaceScript,
+  deleteWorkspaceScript,
+} from './queries/workspace-script';

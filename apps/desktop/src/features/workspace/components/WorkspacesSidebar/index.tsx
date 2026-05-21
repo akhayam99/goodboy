@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, ScrollArea, cn } from '@goodboy/ui';
+import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -21,8 +21,8 @@ import {
   Sun,
   Trash2,
   Check,
-  Terminal,
 } from 'lucide-react';
+import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
@@ -32,7 +32,6 @@ import { DogMascot } from '../../../../shared/components/DogMascot';
 import type {
   Agent,
   AgentId,
-  AgentStatus,
   Session,
   SessionId,
   Step,
@@ -81,7 +80,7 @@ import { useThemeStore } from '../../../../shared/lib/theme';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
-import { SessionDetailPanel, SessionFilesTouchedFooter } from '../SessionDetailPanel';
+import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
@@ -142,21 +141,24 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
-      {/* activity bar + detail panel */}
+      <Divider />
+
+      {/* unified master-detail card — sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
             const totalSessions = activeSessions.length + archivedSessions.length;
             const hasAnySession = totalSessions > 0;
             // The activity bar only makes sense as a switcher. With a single
-            // session the user never switches — collapse it and expose the
-            // "new session" action inside the detail panel header instead.
+            // session the user never switches — collapse the rail and expose
+            // the "new session" action inside the detail header instead.
             const showActivityBar = totalSessions > 1;
             return (
-              <>
+              <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
+                {/* sessions rail — same surface as the detail, split only by the divider */}
                 <div
                   className={cn(
-                    'overflow-hidden transition-[width] duration-300 ease-out',
+                    'shrink-0 overflow-hidden transition-[width] duration-300 ease-out',
                     showActivityBar ? 'w-28' : 'w-0',
                   )}
                   aria-hidden={!showActivityBar}
@@ -169,25 +171,33 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     onNewSession={() => setNewSessionOpen(true)}
                   />
                 </div>
-                <div
-                  className={cn(
-                    'mr-1.5 mt-1.5 mb-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background transition-[margin-left] duration-300 ease-out dark:bg-muted',
-                    showActivityBar ? 'ml-0' : 'ml-1.5',
-                  )}
-                >
+                {/* Inset hairline divider — centered between rail content
+                    (px-1.5) and detail content (px-3). The rail-side gap is
+                    rail's pr-1.5 (6px) + divider's ml-1.5 (6px) = 12px; the
+                    detail-side gap is detail's px-3 (12px). Symmetric. */}
+                {showActivityBar ? (
+                  <div
+                    aria-hidden
+                    className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+                  />
+                ) : null}
+                {/* selected-session detail */}
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
                       <SessionDetailPanel
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
-                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
                         onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
                       <NextSuggestionsPlaceholder />
-                      <SessionFilesTouchedFooter session={currentSession} />
+                      <SessionMetaFooter
+                        session={currentSession}
+                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
+                      />
                     </>
                   ) : (
                     <NoSessionSelectedEmpty
@@ -196,7 +206,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     />
                   )}
                 </div>
-              </>
+              </div>
             );
           })()
         ) : (
@@ -204,8 +214,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         )}
       </div>
 
+      <Divider />
+
       {/* sidebar footer — logo + controls */}
-      <div className="flex shrink-0 items-center px-2.5 py-2">
+      <div className="flex shrink-0 items-center px-2.5 py-3">
         <SidebarLogo />
         <div className="flex-1" />
         <div className="flex items-center gap-0.5">
@@ -279,13 +291,36 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   );
 }
 
+function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
+  const presetName = useMemo(() => {
+    const needle = workflow.name.trim().toLowerCase();
+    if (!needle) return null;
+    const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
+    return match?.name.toLowerCase() ?? null;
+  }, [workflow.name]);
+
+  const label = presetName ?? 'custom';
+  const isPreset = presetName !== null;
+  return (
+    <span
+      title={isPreset ? `${label} preset` : 'custom workflow'}
+      className="min-w-0 max-w-[8rem] truncate text-2xs text-muted-foreground/70"
+    >
+      {label}
+    </span>
+  );
+}
+
 function NextSuggestionsPlaceholder() {
   return (
-    <div
-      className="shrink-0 border-t border-border-soft px-3 py-1.5 text-2xs italic text-muted-foreground/60"
-      title="next-action suggestions are coming back in a future update"
-    >
-      Next suggestions will be re-added soon.
+    <div className="shrink-0">
+      <Divider />
+      <p
+        className="px-3 py-1.5 text-2xs italic text-muted-foreground/60"
+        title="next-action suggestions are coming back in a future update"
+      >
+        Next suggestions will be re-added soon.
+      </p>
     </div>
   );
 }
@@ -673,22 +708,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
-  const initAgent = useMemo(
-    () =>
-      sorted.find((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) === 'init') ??
-      null,
-    [sorted, agentKindOverride],
-  );
-  const nonInitSorted = useMemo(
-    () =>
-      sorted.filter((r) => (agentKindOverride[r.id] ?? inferAgentKindFromName(r.name)) !== 'init'),
-    [sorted, agentKindOverride],
-  );
-  const workflowAgents = useMemo(
-    () => nonInitSorted.filter((r) => r.stepId != null),
-    [nonInitSorted],
-  );
-  const adHocAgents = useMemo(() => nonInitSorted.filter((r) => r.stepId == null), [nonInitSorted]);
+  const workflowAgents = useMemo(() => sorted.filter((r) => r.stepId != null), [sorted]);
+  const adHocAgents = useMemo(() => sorted.filter((r) => r.stepId == null), [sorted]);
   const actionableStepId = useMemo(() => {
     if (!workflow) return null;
     return pickNextWorkflowStep(workflow, sorted)?.id ?? null;
@@ -812,7 +833,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
   };
 
-  const renderAdHocRow = (run: Agent) => {
+  const renderAdHocRow = (run: Agent, index: number) => {
     const kind = resolveAgentKind(
       run.name,
       firstUserTextByAgentId.get(run.id) ?? null,
@@ -823,6 +844,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         key={run.id}
         run={run}
         kind={kind}
+        index={index}
         telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
         aggregate={aggregatesByAgentId.get(run.id) ?? null}
         turns={turnsByAgentId.get(run.id) ?? 0}
@@ -840,46 +862,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   return (
-    <section className="mt-2 flex flex-col px-2 pb-3">
-      {initAgent ? (
-        <>
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <Terminal size={11} aria-hidden className="text-muted-foreground" />
-              Init
-            </span>
-            <span className="truncate text-2xs text-muted-foreground/70">
-              {initAgent.status === 'completed' ? 'done' : initAgent.status}
-            </span>
-          </header>
-          <div className="flex flex-col gap-1 pl-2">
-            <WorkflowStepRow
-              run={initAgent}
-              kind={agentKindOverride[initAgent.id] ?? 'init'}
-              resolvedModel={
-                agentModelOverride[initAgent.id] ??
-                initAgent.modelOverride ??
-                AGENT_KIND_DEFAULTS.init.model
-              }
-              isActionable={false}
-              isBlocked={false}
-              isSelected={initAgent.id === selectedAgentId}
-              isEditing={false}
-              telemetry={latestTelemetryByAgentId.get(initAgent.id) ?? null}
-              aggregate={aggregatesByAgentId.get(initAgent.id) ?? null}
-              turns={turnsByAgentId.get(initAgent.id) ?? 0}
-              turnsLoading={initAgent.id === selectedAgentId && loading.transcript}
-              onStart={() => undefined}
-              onSelect={() => onPickAgent(initAgent.id)}
-              onRenameStart={() => undefined}
-              onRenameCommit={() => undefined}
-              onRenameCancel={() => undefined}
-            />
-          </div>
-        </>
-      ) : null}
+    <section className="mt-2 flex flex-col px-3 pb-3">
       {!workflow ? (
-        <div className={cn('flex flex-col gap-1.5', initAgent && 'mt-6')}>
+        <div className="flex flex-col gap-1.5">
           <header className="flex items-center justify-between gap-2 pb-1.5">
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
@@ -898,19 +883,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : null}
       {workflow && workflowAgents.length > 0 ? (
         <>
-          <header
-            className={cn('flex items-center justify-between gap-2 pb-1.5', initAgent && 'mt-6')}
-          >
+          <header className="flex items-center gap-2 pb-1.5">
             <span className={SECTION_LABEL}>
               <Layers size={11} aria-hidden className="text-primary" />
               Workflow
             </span>
-            <span className="truncate text-2xs text-muted-foreground/70">
-              {workflowAgents.length} step{workflowAgents.length === 1 ? '' : 's'}
-            </span>
+            <span className="flex-1" />
+            <WorkflowKindLabel workflow={workflow} />
+            <AutoRunToggle session={task} />
           </header>
           <div className="flex flex-col gap-1 pl-2">
-            {workflowAgents.map((run) => {
+            {workflowAgents.map((run, index) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
               const resolvedModel =
@@ -920,6 +903,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                   key={run.id}
                   run={run}
                   kind={kind}
+                  index={index}
                   resolvedModel={resolvedModel}
                   isActionable={isActionable}
                   isBlocked={isActionable && actionBlocked}
@@ -943,22 +927,13 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
       <header
         className={cn(
-          'flex items-center justify-between gap-2 pb-1.5',
-          ((workflow && workflowAgents.length > 0) || initAgent || !workflow) && 'mt-6',
+          'flex items-center gap-2 pb-1.5',
+          ((workflow && workflowAgents.length > 0) || !workflow) && 'mt-6',
         )}
       >
         <span className={SECTION_LABEL}>
           <DogMascot size={14} className="shrink-0 text-success" />
           Puppies
-        </span>
-        <span className="truncate text-2xs text-muted-foreground/70">
-          {workflow
-            ? adHocAgents.length === 0
-              ? 'none'
-              : `${adHocAgents.length} ${adHocAgents.length === 1 ? 'puppy' : 'puppies'}`
-            : sorted.length === 0
-              ? 'none yet'
-              : `${sorted.length} ${sorted.length === 1 ? 'puppy' : 'puppies'}`}
         </span>
       </header>
       {workflow ? (
@@ -984,7 +959,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
       {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
-      <div className="pl-2">
+      <div className="flex flex-col gap-1 pl-2">
         <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
@@ -1062,8 +1037,8 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const menu =
     open && anchor
       ? createPortal(
-          <div
-            ref={menuRef}
+          <Popover
+            innerRef={menuRef}
             role="menu"
             style={{
               position: 'fixed',
@@ -1071,13 +1046,12 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               ...(anchor.top !== null ? { top: anchor.top } : {}),
               ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
             }}
-            className="z-50 w-80 max-h-72 overflow-y-auto rounded bg-subtle py-1 text-xs shadow-lg ring-1 ring-border-soft"
+            className="z-50 w-80 max-h-72 overflow-y-auto py-1"
           >
             <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
               by role
             </div>
             {[...AGENT_KIND_ORDER]
-              .filter((k) => k !== 'init')
               .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
               .map((kind) => {
                 const meta = AGENT_KIND_META[kind];
@@ -1099,7 +1073,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
                   </button>
                 );
               })}
-          </div>,
+          </Popover>,
           document.body,
         )
       : null;
@@ -1125,7 +1099,6 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
 function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
   const plans = useSessionPlans(sessionId);
   const runPlan = useAppStore((s) => s.runPlan);
-  const abandonPlan = useAppStore((s) => s.abandonPlan);
   const [spawning, setSpawning] = useState(false);
   const latest = plans[plans.length - 1];
   if (!latest || latest.status !== 'active') return null;
@@ -1144,53 +1117,36 @@ function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
     <div className="mt-2 flex flex-col gap-1 pl-2">
       <div className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
         <ClipboardList size={11} aria-hidden className="text-primary" />
-        active plan
+        Active plan
       </div>
       <span className="truncate text-xs text-foreground" title={latest.title}>
         {latest.title}
       </span>
-      <div className="flex gap-1.5">
-        <button
-          type="button"
-          onClick={() => void handleTrigger()}
-          disabled={spawning}
-          className={cn(
-            'inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
-            spawning && 'cursor-not-allowed opacity-60',
-          )}
-          title="spawn new puppy to execute this plan"
-        >
-          {spawning ? (
-            <Loader2 size={11} aria-hidden className="animate-spin" />
-          ) : (
-            <Play size={11} aria-hidden />
-          )}
-          trigger plan
-        </button>
-        <button
-          type="button"
-          onClick={() => void abandonPlan(sessionId, latest.id)}
-          className="rounded border border-border-soft px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          title="mark plan as superseded; next plan emitted starts a new logical plan"
-        >
-          abandon
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => void handleTrigger()}
+        disabled={spawning}
+        className={cn(
+          'inline-flex items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
+          spawning && 'cursor-not-allowed opacity-60',
+        )}
+        title="Spawn new puppy to execute this plan"
+      >
+        {spawning ? (
+          <Loader2 size={11} aria-hidden className="animate-spin" />
+        ) : (
+          <Play size={11} aria-hidden />
+        )}
+        Start
+      </button>
     </div>
   );
 }
 
-const AGENT_STATUS_TONE: Record<AgentStatus, string> = {
-  pending: 'bg-muted-foreground/40',
-  running: 'bg-info',
-  completed: 'bg-success',
-  failed: 'bg-danger',
-  skipped: 'bg-muted-foreground/20',
-};
-
 interface WorkflowStepRowProps {
   readonly run: Agent;
   readonly kind: AgentKind;
+  readonly index: number;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly isBlocked: boolean;
@@ -1210,6 +1166,7 @@ interface WorkflowStepRowProps {
 function WorkflowStepRow({
   run,
   kind,
+  index,
   resolvedModel,
   isActionable,
   isBlocked,
@@ -1251,18 +1208,28 @@ function WorkflowStepRow({
 
   const ROW_BASE =
     'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
-  const containerClass = isStartable
-    ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
-    : isActionable && isBlocked
-      ? `${ROW_BASE} border-warning/50 bg-warning/10 text-foreground transition-colors hover:border-warning hover:bg-warning/15 cursor-pointer`
-      : isPendingFuture
-        ? `${ROW_BASE} border-transparent text-muted-foreground/40`
-        : cn(
-            `${ROW_BASE} transition-colors cursor-pointer`,
-            isSelected
-              ? 'border-border bg-muted text-foreground'
-              : 'border-border-soft/50 bg-subtle/50 text-foreground/80 hover:border-border hover:bg-muted/50',
-          );
+  // Border telegraphs the live state. running wins over everything else
+  // (the conic-info sweep is the most attention-grabbing); the blocked
+  // step pulses warning to say "I'm waiting on you"; otherwise the
+  // base tone wins.
+  const isRunning = run.status === 'running';
+  const containerClass = isRunning
+    ? cn(
+        `${ROW_BASE} spin-border spin-border-info border-transparent transition-colors cursor-pointer`,
+        isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
+      )
+    : isStartable
+      ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
+      : isActionable && isBlocked
+        ? `${ROW_BASE} animate-border-pulse border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
+        : isPendingFuture
+          ? `${ROW_BASE} border-transparent text-muted-foreground/40`
+          : cn(
+              `${ROW_BASE} transition-colors cursor-pointer`,
+              isSelected
+                ? 'border-border bg-elevated text-foreground'
+                : 'border-border-soft/50 bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/60',
+            );
 
   const renderStatusIcon = () => {
     if (isStartable) {
@@ -1282,7 +1249,10 @@ function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
+      // Status icon left empty on running — the conic spin-border around
+      // the row carries that signal now, no need to double-flag with the
+      // little inline spinner.
+      return null;
     }
     if (run.status === 'completed') {
       return (
@@ -1331,6 +1301,15 @@ function WorkflowStepRow({
         className={containerClass}
       >
         <span className="flex min-w-0 items-center gap-1.5">
+          <span
+            aria-hidden
+            className={cn(
+              'w-4 shrink-0 text-right text-2xs tabular-nums',
+              isPendingFuture ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
+            )}
+          >
+            {index + 1}.
+          </span>
           {renderStatusIcon()}
           <AgentKindChip kind={kind} muted={isPendingFuture} />
           {isEditing ? (
@@ -1428,6 +1407,7 @@ function WorkflowStepRow({
 interface AgentRowProps {
   readonly run: Agent;
   readonly kind: AgentKind;
+  readonly index: number;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
@@ -1445,6 +1425,7 @@ interface AgentRowProps {
 function AgentRow({
   run,
   kind,
+  index,
   telemetry,
   aggregate,
   turns,
@@ -1494,13 +1475,27 @@ function AgentRow({
         }
       }}
       className={cn(
-        'group rounded transition-colors',
+        'group rounded border transition-colors',
         isEditing ? '' : 'cursor-pointer',
-        isSelected ? 'bg-muted' : 'hover:bg-muted/60',
-        agentHasUnread(run, isSelected && isTaskActive) && 'ring-1 ring-inset ring-warning/70',
+        isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
+        // State signal lives on the border — never on the dot, never on
+        // the content. running > unread > selected > idle.
+        run.status === 'running'
+          ? 'spin-border spin-border-info border-transparent'
+          : agentHasUnread(run, isSelected && isTaskActive)
+            ? 'animate-border-pulse border-warning/70'
+            : isSelected
+              ? 'border-border'
+              : 'border-transparent',
       )}
     >
       <div className="flex items-center gap-2 px-2 py-1.5" title={titleParts.join('\n')}>
+        <span
+          aria-hidden
+          className="w-4 shrink-0 text-right text-2xs tabular-nums text-muted-foreground/60"
+        >
+          {index + 1}.
+        </span>
         <AgentKindChip
           kind={kind}
           title={`puppy ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
@@ -1563,21 +1558,6 @@ function AgentRow({
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
                 <AgentLifetime run={run} />
-              </span>
-              <span
-                aria-hidden
-                className="relative inline-flex h-1.5 w-1.5 shrink-0 group-hover:hidden"
-                title={`status: ${run.status}`}
-              >
-                {run.status === 'running' && (
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-60" />
-                )}
-                <span
-                  className={cn(
-                    'relative inline-block h-1.5 w-1.5 rounded-full',
-                    AGENT_STATUS_TONE[run.status],
-                  )}
-                />
               </span>
               <button
                 type="button"

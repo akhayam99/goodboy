@@ -1,5 +1,6 @@
 import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { Divider } from './Divider';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -34,8 +35,19 @@ export interface DialogProps {
    * layouts like diff viewers with their own internal toolbars.
    */
   bodyClassName?: string;
-  /** When false, removes the bottom border under the header. Default: true. */
+  /** When false, removes the divider under the header. Default: true. */
   headerBordered?: boolean;
+  /**
+   * Optional left panel (nav, side actions, etc.) rendered alongside the
+   * main body. When present, a vertical gradient divider separates it from
+   * the content. Use this for any modal that wants a sidebar layout — it
+   * keeps Header / Panel / Body / Footer consistent across the app.
+   */
+  panel?: ReactNode;
+  /** Tailwind width class for the panel, defaults to `w-48`. */
+  panelWidthClass?: string;
+  /** Override the panel wrapper classes. Default: `flex flex-col gap-0.5 bg-subtle/40 px-3 py-5`. */
+  panelClassName?: string;
 }
 
 const SIZE: Record<DialogSize, string> = {
@@ -74,6 +86,9 @@ export function Dialog({
   fixedHeightClass,
   bodyClassName,
   headerBordered = true,
+  panel,
+  panelWidthClass = 'w-48',
+  panelClassName,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
@@ -140,50 +155,74 @@ export function Dialog({
         )}
       >
         {title || description || showClose ? (
-          <header
+          <>
+            <header className="flex shrink-0 items-start justify-between gap-4 px-6 py-4">
+              <div className="flex min-w-0 flex-col gap-1">
+                {title ? (
+                  <h2 id={titleId} className="text-sm font-semibold tracking-tight text-foreground">
+                    {title}
+                  </h2>
+                ) : null}
+                {description ? (
+                  <p id={descId} className="text-xs leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
+                ) : null}
+              </div>
+              {showClose ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="close"
+                  className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <span aria-hidden className="text-base leading-none">
+                    ×
+                  </span>
+                </button>
+              ) : null}
+            </header>
+            {headerBordered ? <Divider /> : null}
+          </>
+        ) : null}
+        {panel ? (
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <div
+              className={cn(
+                'flex shrink-0 flex-col gap-0.5 px-3 py-5',
+                panelWidthClass,
+                panelClassName,
+              )}
+            >
+              {panel}
+            </div>
+            <Divider orientation="vertical" />
+            <div
+              className={cn(
+                'flex min-w-0 flex-1 flex-col overflow-y-auto text-sm',
+                bodyClassName ?? 'gap-4 px-6 py-5',
+              )}
+            >
+              {children}
+            </div>
+          </div>
+        ) : (
+          <div
             className={cn(
-              'flex shrink-0 items-start justify-between gap-4 px-6 py-4',
-              headerBordered && 'border-b border-border-soft',
+              'flex min-h-0 flex-1 flex-col overflow-y-auto text-sm',
+              bodyClassName ?? 'gap-4 px-6 py-5',
             )}
           >
-            <div className="flex min-w-0 flex-col gap-1">
-              {title ? (
-                <h2 id={titleId} className="text-sm font-semibold tracking-tight text-foreground">
-                  {title}
-                </h2>
-              ) : null}
-              {description ? (
-                <p id={descId} className="text-xs leading-relaxed text-muted-foreground">
-                  {description}
-                </p>
-              ) : null}
-            </div>
-            {showClose ? (
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="close"
-                className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <span aria-hidden className="text-base leading-none">
-                  ×
-                </span>
-              </button>
-            ) : null}
-          </header>
-        ) : null}
-        <div
-          className={cn(
-            'flex min-h-0 flex-1 flex-col overflow-y-auto text-sm',
-            bodyClassName ?? 'gap-4 px-6 py-5',
-          )}
-        >
-          {children}
-        </div>
+            {children}
+          </div>
+        )}
         {footer ? (
-          <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3">
-            {footer}
-          </footer>
+          <>
+            <Divider />
+            <footer className="flex shrink-0 items-center justify-end gap-2 px-6 py-3">
+              {footer}
+            </footer>
+          </>
         ) : null}
       </div>
     </dialog>

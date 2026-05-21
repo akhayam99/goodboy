@@ -5,13 +5,12 @@ import {
   GitPullRequest,
   GitPullRequestClosed,
   GitPullRequestDraft,
-  Inbox,
   MessagesSquare,
   Minus,
   Plus,
 } from 'lucide-react';
 import { cn, ScrollArea } from '@goodboy/ui';
-import type { PullRequestStateKind, Session, SessionId, TurnState } from '@goodboy/types';
+import type { PullRequestStateKind, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
 
@@ -51,7 +50,7 @@ export function SessionActivityBar({
     <div className="flex h-full w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1 px-1.5 py-1.5">
-          <span className="mb-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="mb-1 mt-1 flex items-center justify-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             <MessagesSquare size={10} aria-hidden className="text-info" />
             Sessions
           </span>
@@ -68,7 +67,7 @@ export function SessionActivityBar({
             <button
               type="button"
               onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/40 hover:text-foreground"
+              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/40 py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
               title="new session"
               aria-label="create new session"
             >
@@ -84,21 +83,23 @@ export function SessionActivityBar({
         </div>
       </ScrollArea>
 
-      {/* archive toggle — single button at bottom */}
+      {/* archive toggle — single button at bottom; label stays fixed,
+          colour signals whether the archived view is currently open. */}
       <div className="shrink-0 p-1.5">
         <button
           type="button"
           onClick={() => setTab(isArchivedView ? 'active' : 'archived')}
+          aria-pressed={isArchivedView}
           className={cn(
-            'flex w-full items-center justify-center gap-1.5 rounded py-1.5 text-2xs font-medium transition-colors',
+            'flex w-full items-center justify-center gap-1.5 rounded border py-1.5 text-2xs font-medium transition-colors',
             isArchivedView
-              ? 'bg-foreground/10 text-foreground'
-              : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+              ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15'
+              : 'border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
           )}
-          title={isArchivedView ? 'show active sessions' : 'show archived sessions'}
+          title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
         >
-          {isArchivedView ? <Inbox size={11} aria-hidden /> : <Archive size={11} aria-hidden />}
-          <span>{isArchivedView ? 'Active' : 'Archive'}</span>
+          <Archive size={11} aria-hidden />
+          <span>Archived</span>
         </button>
       </div>
     </div>
@@ -130,8 +131,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
   onClick,
 }: SessionActivityItemProps) {
   const hasUnread = useSessionHasUnread(session.id as SessionId);
-  const showUnreadPing = hasUnread && !isActive;
-  const dot = useSessionDot(session.state, showUnreadPing);
+  const isPending = hasUnread && !isActive;
+  const isRunning = session.state.kind === 'running';
+  const isErrored = session.state.kind === 'error';
+  const isAutoMode = session.autoRun === true;
+  const spinBorder = isRunning ? (isAutoMode ? 'spin-border-danger' : 'spin-border-info') : null;
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -144,25 +148,28 @@ const SessionActivityItem = memo(function SessionActivityItem({
       onClick={onClick}
       title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
-        'flex w-full flex-col items-center gap-1 rounded px-1 py-2 text-center transition-colors',
+        'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
+        // base surface — selected vs unselected
         isActive
-          ? 'bg-background text-foreground shadow-sm dark:bg-muted'
-          : 'text-foreground/70 hover:bg-background/50 hover:text-foreground',
+          ? 'bg-elevated text-foreground shadow-sm'
+          : 'bg-muted/40 text-foreground/70 hover:bg-muted/60 hover:text-foreground',
+        // State border — only when the session is NOT the active one.
+        // Once you're sitting inside the session the badges/spinners up
+        // top become redundant; the active tile collapses back to a
+        // plain selected border so the rail doesn't double-shout.
+        isActive
+          ? 'border-border'
+          : isRunning
+            ? cn('spin-border border-transparent', spinBorder)
+            : isPending
+              ? 'animate-border-pulse border-warning/70'
+              : isErrored
+                ? 'border-danger/40'
+                : 'border-transparent',
         dimmed && 'opacity-50',
       )}
     >
       <span className="flex items-center gap-1">
-        <span className="relative inline-flex h-2 w-2 shrink-0">
-          {dot.ping && (
-            <span
-              className={cn(
-                'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
-                dot.pingColor,
-              )}
-            />
-          )}
-          <span className={cn('relative inline-block h-2 w-2 rounded-full', dot.color)} />
-        </span>
         <span className={cn('shrink-0', statusEntry.className)}>
           <StatusIcon size={10} aria-hidden />
         </span>
@@ -174,22 +181,3 @@ const SessionActivityItem = memo(function SessionActivityItem({
     </button>
   );
 });
-
-function useSessionDot(
-  state: TurnState,
-  hasUnread: boolean,
-): { color: string; ping: boolean; pingColor: string } {
-  if (state.kind === 'running') {
-    return { color: 'bg-info', ping: true, pingColor: 'bg-info' };
-  }
-  if (hasUnread) {
-    return { color: 'bg-warning', ping: true, pingColor: 'bg-warning' };
-  }
-  if (state.kind === 'error') {
-    return { color: 'bg-danger', ping: false, pingColor: '' };
-  }
-  if (state.kind === 'ended') {
-    return { color: 'bg-muted-foreground', ping: false, pingColor: '' };
-  }
-  return { color: 'bg-muted-foreground/30', ping: false, pingColor: '' };
-}

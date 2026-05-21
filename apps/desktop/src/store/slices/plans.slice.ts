@@ -1,5 +1,4 @@
 import {
-  deletePlan as invokeDeletePlan,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
   setPlanBody as invokeSetPlanBody,
@@ -36,16 +35,19 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
       }));
     },
 
+    // Soft delete: status flips to 'discarded'. The row stays in the DB so
+    // the user can restore it with a second click. Hard deletion lives at
+    // the DB query layer for admin use only.
     deletePlan: async (sessionId: SessionId, planId: PlanId) => {
-      await invokeDeletePlan(planId);
+      await invokeSetPlanStatus(planId, 'discarded');
       const refreshed = await invokeListPlansForSession(sessionId);
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
       }));
     },
 
-    abandonPlan: async (sessionId: SessionId, planId: PlanId) => {
-      await invokeSetPlanStatus(planId, 'superseded');
+    restorePlan: async (sessionId: SessionId, planId: PlanId) => {
+      await invokeSetPlanStatus(planId, 'active');
       const refreshed = await invokeListPlansForSession(sessionId);
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },

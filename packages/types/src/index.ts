@@ -13,6 +13,7 @@ export type {
   TelemetryRecordId,
   WorkflowId,
   WorkspaceId,
+  WorkspaceScriptId,
 } from './ids';
 export type {
   ContextSlot,
@@ -22,6 +23,7 @@ export type {
   SessionUserStatus,
   TurnState,
   Workspace,
+  WorkspaceScript,
 } from './workspace';
 export type { Message, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';

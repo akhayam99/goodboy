@@ -1,4 +1,11 @@
-import type { IsoDateTime, ProviderRunId, SessionId, WorkflowId, WorkspaceId } from './ids';
+import type {
+  IsoDateTime,
+  ProviderRunId,
+  SessionId,
+  WorkflowId,
+  WorkspaceId,
+  WorkspaceScriptId,
+} from './ids';
 import type { SessionProviderPreference } from './provider-preference';
 import type { ClaudePermissionMode } from './permission';
 
@@ -54,7 +61,6 @@ export type Session = Readonly<{
   currentStepOrdinal?: number;
   autoRun: boolean;
   titleUserEdited: boolean;
-  skipInit: boolean;
   userStatus: SessionUserStatus;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
@@ -66,9 +72,16 @@ export type Session = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceInitScript = Readonly<{
-  id: string;
+/**
+ * A user-defined shell script attached to a workspace. Run manually by the
+ * user from the Scripts panel — never executed by an agent.
+ */
+export type WorkspaceScript = Readonly<{
+  id: WorkspaceScriptId;
   workspaceId: WorkspaceId;
-  content: string;
+  name: string;
+  body: string;
+  sortOrder: number;
   createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
 }>;

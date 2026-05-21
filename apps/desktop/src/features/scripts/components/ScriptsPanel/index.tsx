@@ -1,0 +1,241 @@
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Button, Input, Textarea, cn } from '@goodboy/ui';
+import type { WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
+import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
+import { formatError } from '../../../../shared/lib/errors';
+import { useAppStore } from '../../../../store';
+
+interface ScriptsPanelProps {
+  readonly workspaceId: WorkspaceId;
+}
+
+type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
+
+export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
+  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
+  const loadScripts = useAppStore((s) => s.loadScripts);
+  const saveScript = useAppStore((s) => s.saveScript);
+  const deleteScript = useAppStore((s) => s.deleteScript);
+
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadScripts(workspaceId);
+  }, [workspaceId, loadScripts]);
+
+  const onCopy = useCallback((id: string, body: string) => {
+    void navigator.clipboard
+      .writeText(body)
+      .then(() => {
+        setCopiedId(id);
+        window.setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1200);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const onSaveDraft = useCallback(async () => {
+    if (!draft) return;
+    const name = draft.name.trim();
+    const body = draft.body.trim();
+    if (!name || !body) {
+      setError('name and script body are required');
+      return;
+    }
+    setError(null);
+    try {
+      await saveScript({ workspaceId, id: draft.id ?? undefined, name, body });
+      setDraft(null);
+    } catch (err) {
+      setError(formatError(err));
+    }
+  }, [draft, saveScript, workspaceId]);
+
+  const onDelete = useCallback(
+    async (id: WorkspaceScriptId) => {
+      try {
+        await deleteScript(id, workspaceId);
+      } catch (err) {
+        setError(formatError(err));
+      }
+    },
+    [deleteScript, workspaceId],
+  );
+
+  const list = scripts ?? [];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Shell scripts you run by hand from inside a session. cwd is the session worktree.
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDraft({ id: null, name: '', body: '' })}
+          disabled={draft !== null}
+        >
+          <Plus size={13} aria-hidden />
+          New script
+        </Button>
+      </div>
+
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+
+      {list.length === 0 && draft === null ? (
+        <p className="rounded-md border border-dashed border-border-soft px-3 py-6 text-center text-xs text-muted-foreground">
+          No scripts yet. Create one — e.g. <code className="font-mono">copy environments</code>.
+        </p>
+      ) : null}
+
+      <ul className="flex flex-col gap-2">
+        {list.map((script) => {
+          const isEditing = draft?.id === script.id;
+          if (isEditing && draft) {
+            return (
+              <li key={script.id}>
+                <ScriptEditor
+                  draft={draft}
+                  setDraft={setDraft}
+                  onSave={() => void onSaveDraft()}
+                  onCancel={() => {
+                    setDraft(null);
+                    setError(null);
+                  }}
+                />
+              </li>
+            );
+          }
+          return (
+            <li
+              key={script.id}
+              className="overflow-hidden rounded-md border border-border-soft bg-background"
+            >
+              <div className="flex items-center gap-2 px-3 py-2">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  {script.name}
+                </span>
+                <RowAction
+                  icon={
+                    copiedId === script.id ? (
+                      <Check size={13} aria-hidden className="text-success" />
+                    ) : (
+                      <Copy size={13} aria-hidden />
+                    )
+                  }
+                  label="copy script"
+                  onClick={() => onCopy(script.id, script.body)}
+                />
+                <RowAction
+                  icon={<Pencil size={13} aria-hidden />}
+                  label="edit script"
+                  disabled={draft !== null}
+                  onClick={() => setDraft({ id: script.id, name: script.name, body: script.body })}
+                />
+                <RowAction
+                  icon={<Trash2 size={13} aria-hidden />}
+                  label="delete script"
+                  tone="danger"
+                  disabled={draft !== null}
+                  onClick={() => void onDelete(script.id)}
+                />
+              </div>
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
+                {script.body}
+              </pre>
+            </li>
+          );
+        })}
+
+        {draft && draft.id === null ? (
+          <li>
+            <ScriptEditor
+              draft={draft}
+              setDraft={setDraft}
+              onSave={() => void onSaveDraft()}
+              onCancel={() => {
+                setDraft(null);
+                setError(null);
+              }}
+            />
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
+
+function RowAction({
+  icon,
+  label,
+  onClick,
+  disabled,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: 'danger';
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'flex size-6 items-center justify-center rounded text-muted-foreground transition-colors',
+        'hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
+        tone === 'danger' && 'hover:bg-danger/10 hover:text-danger',
+      )}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function ScriptEditor({
+  draft,
+  setDraft,
+  onSave,
+  onCancel,
+}: {
+  draft: Draft;
+  setDraft: (d: Draft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-primary/40 bg-subtle/50 p-2.5">
+      <Input
+        value={draft.name}
+        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+        placeholder="script name — e.g. copy environments"
+        autoFocus
+      />
+      <Textarea
+        value={draft.body}
+        onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+        placeholder={'#!/bin/bash\ncp ../main/.env .env'}
+        className="min-h-[160px] resize-y font-mono text-xs"
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="off"
+        rows={8}
+      />
+      <div className="flex justify-end gap-1.5">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={onSave}>
+          <Check size={13} aria-hidden />
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}

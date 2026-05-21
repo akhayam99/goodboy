@@ -255,7 +255,7 @@ function buildUserPrompt(input: SummarizeInput): string {
 }
 
 function parseDelta(raw: string): ContextSlotDelta {
-  const stripped = stripCodeFences(raw);
+  const stripped = extractJson(raw);
   let parsed: unknown;
   try {
     parsed = JSON.parse(stripped);
@@ -287,7 +287,71 @@ function parseDelta(raw: string): ContextSlotDelta {
   return { upserts };
 }
 
-function stripCodeFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
-  return (fenced?.[1] ?? raw).trim();
+/**
+ * Pull the JSON object out of a model response that might be wrapped in any
+ * of these shapes:
+ *   1. Pure JSON: `{...}`
+ *   2. Whole response is a fenced block: ```json\n{...}\n```
+ *   3. JSON inside a fenced block with surrounding prose
+ *   4. Prose preamble followed by a bare `{...}` object
+ *
+ * Falls back to the trimmed input so a non-JSON response still hits the
+ * `JSON.parse` path and surfaces a structured `SummarizerParseError`.
+ *
+ * Real failure observed: model preambles like "Sometimes I get stuck..."
+ * followed by the JSON would slip past the strict edge-anchored fence
+ * regex and crash with "Unexpected identifier 'stuck'".
+ */
+function extractJson(raw: string): string {
+  const trimmed = raw.trim();
+
+  const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed);
+  if (edgeFence?.[1]) return edgeFence[1].trim();
+
+  const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
+  if (innerFence?.[1]) return innerFence[1].trim();
+
+  const balanced = extractBalancedJsonObject(trimmed);
+  if (balanced !== null) return balanced;
+
+  return trimmed;
+}
+
+/**
+ * Walk the string from the first `{` while tracking string-literal state so
+ * braces nested inside JSON string values don't desync the depth counter.
+ * Returns the substring from that `{` through its matching `}` if balanced,
+ * otherwise null.
+ */
+function extractBalancedJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
 }

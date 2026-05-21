@@ -17,7 +17,6 @@ import {
   ScanEye,
   Sparkles,
   Telescope,
-  Wrench,
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { DogSniff } from '../../../../shared/components/DogSniff';
@@ -27,7 +26,7 @@ import {
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
 import type { AgentId, ProviderRunId, Session } from '@goodboy/types';
-import { cn, Skeleton } from '@goodboy/ui';
+import { cn, Divider, Skeleton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
 import {
   detectParallelRunIds,
@@ -439,9 +438,21 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     toolishKinds.has(item.kind) &&
                     (toolishKinds.has(prev.kind) || prev.kind === 'assistant_text');
                   const node: React.ReactNode[] = [];
+                  let isTurnBreak = false;
                   if (item.kind === 'user_text') {
                     const day = dayKey(item.at);
-                    if (day !== lastDay) {
+                    const dayChanged = day !== lastDay;
+                    // Divider marks the boundary between turns; on a day change
+                    // the date pill already separates them, so skip it there.
+                    if (idx > 0 && !dayChanged) {
+                      isTurnBreak = true;
+                      node.push(
+                        <li key={`turn-${item.key}`} className="my-4">
+                          <Divider />
+                        </li>,
+                      );
+                    }
+                    if (dayChanged) {
                       node.push(
                         <li key={`day-${day}-${idx}`} className="my-4 flex justify-center">
                           <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
@@ -455,6 +466,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                   const itemSpacing = (() => {
                     if (tightToTool) return 'mt-0.5';
                     if (idx === 0) return '';
+                    if (isTurnBreak) return '';
                     return 'mt-4';
                   })();
                   node.push(
@@ -670,12 +682,6 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
     iconClass: 'text-rose-400',
     ringBg: 'bg-rose-400/10',
     pulseBg: 'bg-rose-400/15',
-  },
-  init: {
-    Icon: Wrench,
-    iconClass: 'text-slate-400',
-    ringBg: 'bg-slate-400/10',
-    pulseBg: 'bg-slate-400/15',
   },
   scout: {
     Icon: Telescope,

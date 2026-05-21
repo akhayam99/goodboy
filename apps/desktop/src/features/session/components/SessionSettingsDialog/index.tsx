@@ -1,24 +1,22 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Dialog, Input, cn } from '@goodboy/ui';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Button, Dialog, Divider, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Archive,
   ArchiveRestore,
-  Check,
   ChevronDown,
   ChevronUp,
   DollarSign,
   GitBranch,
   Loader2,
   Settings2,
-  Terminal,
   Trash2,
   Zap,
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
@@ -34,14 +32,7 @@ interface SessionSettingsDialogProps {
   onUnarchive: () => void;
 }
 
-type Section = 'general' | 'budget' | 'danger';
-
-interface NavItem {
-  readonly id: Section;
-  readonly label: string;
-  readonly icon: ReactNode;
-  readonly tone?: 'danger';
-}
+const DELETE_ARM_TIMEOUT_MS = 4000;
 
 export function SessionSettingsDialog({
   sessionId,
@@ -64,16 +55,12 @@ export function SessionSettingsDialog({
   const workspace = useAppStore((s) =>
     session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
   );
-  const hasInitScript = useAppStore((s) =>
-    session ? s.workspaceInitScripts[session.workspaceId] != null : false,
-  );
-  const updateSessionSkipInit = useAppStore((s) => s.updateSessionSkipInit);
   const { showToast } = useToast();
 
-  const [active, setActive] = useState<Section>('general');
   const [goalDraft, setGoalDraft] = useState('');
   const [capDraft, setCapDraft] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteArmed, setDeleteArmed] = useState(false);
+  const deleteArmTimer = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -86,13 +73,30 @@ export function SessionSettingsDialog({
 
   useEffect(() => {
     if (!open) return;
-    setActive('general');
     setError(null);
     setBusy(false);
-    setConfirmDelete(false);
+    setDeleteArmed(false);
     setBranchEditOpen(false);
     void loadSessionBudget(sessionId);
   }, [open, sessionId, loadSessionBudget]);
+
+  useEffect(() => {
+    return () => {
+      if (deleteArmTimer.current !== null) {
+        window.clearTimeout(deleteArmTimer.current);
+        deleteArmTimer.current = null;
+      }
+    };
+  }, []);
+
+  const armDelete = () => {
+    setDeleteArmed(true);
+    if (deleteArmTimer.current !== null) window.clearTimeout(deleteArmTimer.current);
+    deleteArmTimer.current = window.setTimeout(() => {
+      setDeleteArmed(false);
+      deleteArmTimer.current = null;
+    }, DELETE_ARM_TIMEOUT_MS);
+  };
 
   useEffect(() => {
     if (!branchEditOpen || !workspace?.rootPath) return;
@@ -117,14 +121,6 @@ export function SessionSettingsDialog({
 
   const isActiveSession = sessionSummary !== null;
   const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0;
-
-  const navItems: ReadonlyArray<NavItem> = [
-    { id: 'general', label: 'General', icon: <Settings2 size={13} aria-hidden /> },
-    ...(SESSION_FEATURES.budget
-      ? ([{ id: 'budget', label: 'Budget', icon: <DollarSign size={13} aria-hidden /> }] as const)
-      : []),
-    { id: 'danger', label: 'Danger zone', icon: <Trash2 size={13} aria-hidden />, tone: 'danger' },
-  ];
 
   const onSaveGoal = async () => {
     const trimmed = goalDraft.trim();
@@ -201,6 +197,29 @@ export function SessionSettingsDialog({
     }
   };
 
+  const onDeleteClick = () => {
+    if (!deleteArmed) {
+      armDelete();
+      return;
+    }
+    if (deleteArmTimer.current !== null) {
+      window.clearTimeout(deleteArmTimer.current);
+      deleteArmTimer.current = null;
+    }
+    void onDelete();
+  };
+
+  const onArchiveClick = () => {
+    if (deleteArmTimer.current !== null) {
+      window.clearTimeout(deleteArmTimer.current);
+      deleteArmTimer.current = null;
+    }
+    setDeleteArmed(false);
+    if (archived) onUnarchive();
+    else onArchive();
+    onClose();
+  };
+
   const onDelete = async () => {
     setBusy(true);
     setError(null);
@@ -220,84 +239,102 @@ export function SessionSettingsDialog({
       title="Session settings"
       description={session.goal}
       size="xl"
-      className="w-[64rem] max-w-[95vw]"
+      className="w-[56rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
+      fixedHeightClass="h-[640px]"
       fullScreenOnSmall
       footer={
         <div className="flex w-full items-center gap-2">
-          <div className="flex-1">
-            {error ? <span className="text-xs text-danger">{error}</span> : null}
-          </div>
+          <Button
+            variant={deleteArmed ? 'danger' : 'ghost'}
+            onClick={onDeleteClick}
+            disabled={busy}
+            className={cn(
+              'gap-1.5',
+              !deleteArmed && 'text-danger/80 hover:bg-danger/10 hover:text-danger',
+              deleteArmed && 'animate-pulse',
+            )}
+            title={
+              deleteArmed
+                ? 'click again to confirm — this cannot be undone'
+                : 'delete session (worktree, transcripts, branch)'
+            }
+          >
+            {busy ? (
+              <Loader2 size={13} className="animate-spin" aria-hidden />
+            ) : deleteArmed ? (
+              <AlertTriangle size={13} aria-hidden />
+            ) : (
+              <Trash2 size={13} aria-hidden />
+            )}
+            {deleteArmed ? 'click again to confirm' : 'Delete'}
+          </Button>
+          {deleteArmed && !archived ? (
+            <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+              <Archive size={11} aria-hidden className="text-warning" />
+              not sure? archive instead — reversible, keeps history.
+            </span>
+          ) : (
+            <div className="flex-1">
+              {error ? <span className="text-xs text-danger">{error}</span> : null}
+            </div>
+          )}
+          <div className="flex-1" />
+          <Button variant="secondary" onClick={onArchiveClick} disabled={busy}>
+            {archived ? (
+              <>
+                <ArchiveRestore size={13} aria-hidden className="mr-1.5" />
+                Unarchive
+              </>
+            ) : (
+              <>
+                <Archive size={13} aria-hidden className="mr-1.5" />
+                Archive
+              </>
+            )}
+          </Button>
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
         </div>
       }
     >
-      <div className="flex h-full min-h-0">
-        <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border-soft bg-subtle/40 px-3 py-5">
-          {navItems
-            .filter((i) => i.tone !== 'danger')
-            .map((item) => (
-              <NavButton
-                key={item.id}
-                item={item}
-                active={active === item.id}
-                onClick={() => setActive(item.id)}
-              />
-            ))}
-          <div className="mt-auto">
-            {navItems
-              .filter((i) => i.tone === 'danger')
-              .map((item) => (
-                <NavButton
-                  key={item.id}
-                  item={item}
-                  active={active === item.id}
-                  onClick={() => setActive(item.id)}
-                />
-              ))}
-          </div>
-        </nav>
-
-        <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-          {active === 'general' ? (
-            <GeneralSection
-              session={session}
-              goalDraft={goalDraft}
-              setGoalDraft={setGoalDraft}
-              onSaveGoal={onSaveGoal}
-              branch={branch}
-              workspaceReady={!!workspace}
-              busy={busy}
-              hasInitScript={hasInitScript}
-              skipInit={session.skipInit ?? false}
-              onToggleInit={(enabled) => void updateSessionSkipInit(sessionId, !enabled)}
-              branchEditOpen={branchEditOpen}
-              setBranchEditOpen={setBranchEditOpen}
-              branchMode={branchMode}
-              setBranchMode={(m) => {
-                setBranchMode(m);
-                setBranchTarget('');
-                setConfirmReuse(false);
-              }}
-              branchTarget={branchTarget}
-              setBranchTarget={(v) => {
-                setBranchTarget(v);
-                setConfirmReuse(false);
-              }}
-              branches={branches}
-              branchesLoading={branchesLoading}
-              targetNeedsConfirm={targetNeedsConfirm}
-              targetOwnedByOtherSession={targetOwnedByOtherSession}
-              targetInUseElsewhere={targetInUseElsewhere}
-              targetDirty={targetDirty}
-              confirmReuse={confirmReuse}
-              onChangeBranch={onChangeBranch}
-            />
-          ) : null}
-
-          {active === 'budget' ? (
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto px-8 py-6">
+        <GeneralSection
+          session={session}
+          goalDraft={goalDraft}
+          setGoalDraft={setGoalDraft}
+          onSaveGoal={onSaveGoal}
+          branch={branch}
+          workspaceReady={!!workspace}
+          busy={busy}
+          branchEditOpen={branchEditOpen}
+          setBranchEditOpen={setBranchEditOpen}
+          branchMode={branchMode}
+          setBranchMode={(m) => {
+            setBranchMode(m);
+            setBranchTarget('');
+            setConfirmReuse(false);
+          }}
+          branchTarget={branchTarget}
+          setBranchTarget={(v) => {
+            setBranchTarget(v);
+            setConfirmReuse(false);
+          }}
+          branches={branches}
+          branchesLoading={branchesLoading}
+          targetNeedsConfirm={targetNeedsConfirm}
+          targetOwnedByOtherSession={targetOwnedByOtherSession}
+          targetInUseElsewhere={targetInUseElsewhere}
+          targetDirty={targetDirty}
+          confirmReuse={confirmReuse}
+          onChangeBranch={onChangeBranch}
+        />
+        {SESSION_FEATURES.budget ? (
+          <>
+            <div className="my-6">
+              <Divider />
+            </div>
             <BudgetSection
               capDraft={capDraft}
               setCapDraft={setCapDraft}
@@ -306,58 +343,10 @@ export function SessionSettingsDialog({
               softCapUsd={budget?.softCapUsd ?? null}
               spent={spent}
             />
-          ) : null}
-
-          {active === 'danger' ? (
-            <DangerSection
-              archived={archived}
-              onArchive={onArchive}
-              onUnarchive={onUnarchive}
-              onClose={onClose}
-              confirmDelete={confirmDelete}
-              setConfirmDelete={setConfirmDelete}
-              onDelete={() => void onDelete()}
-              busy={busy}
-            />
-          ) : null}
-        </div>
+          </>
+        ) : null}
       </div>
     </Dialog>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Nav button                                                            */
-/* ──────────────────────────────────────────────────────────────────── */
-
-function NavButton({
-  item,
-  active,
-  onClick,
-}: {
-  item: NavItem;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const danger = item.tone === 'danger';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
-        active
-          ? danger
-            ? 'bg-danger/10 font-medium text-danger before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-danger'
-            : 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
-          : danger
-            ? 'text-danger/70 hover:bg-danger/5 hover:text-danger'
-            : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
-      )}
-    >
-      {item.icon}
-      <span className="flex-1">{item.label}</span>
-    </button>
   );
 }
 
@@ -373,9 +362,6 @@ interface GeneralSectionProps {
   readonly branch: string | null;
   readonly workspaceReady: boolean;
   readonly busy: boolean;
-  readonly hasInitScript: boolean;
-  readonly skipInit: boolean;
-  readonly onToggleInit: (enabled: boolean) => void;
   readonly branchEditOpen: boolean;
   readonly setBranchEditOpen: (v: boolean) => void;
   readonly branchMode: 'existing' | 'new';
@@ -401,9 +387,6 @@ function GeneralSection(props: GeneralSectionProps) {
     branch,
     workspaceReady,
     busy,
-    hasInitScript,
-    skipInit,
-    onToggleInit,
     branchEditOpen,
     setBranchEditOpen,
     branchMode,
@@ -588,32 +571,6 @@ function GeneralSection(props: GeneralSectionProps) {
           <span className="font-medium text-foreground">{providerLabel}</span>
         </span>
       </Field>
-
-      {/* Init script — only when workspace has one */}
-      {WORKSPACE_FEATURES.initScript && hasInitScript ? (
-        <Field
-          label="Init script"
-          hint="When enabled, a setup puppy runs the workspace init script before the first puppy fires."
-        >
-          <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border-soft bg-background px-3 py-2.5 text-xs">
-            <input
-              type="checkbox"
-              checked={!skipInit}
-              onChange={(e) => onToggleInit(e.target.checked)}
-              className="mt-0.5 accent-primary"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <Terminal size={11} aria-hidden className="text-muted-foreground" />
-                Run workspace init script
-              </span>
-              <span className="text-muted-foreground">
-                Useful for installing deps, hydrating env files, etc.
-              </span>
-            </span>
-          </label>
-        </Field>
-      ) : null}
     </div>
   );
 }
@@ -690,156 +647,6 @@ function BudgetSection({
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Danger zone                                                  */
-/* ──────────────────────────────────────────────────────────────────── */
-
-interface DangerSectionProps {
-  readonly archived: boolean;
-  readonly onArchive: () => void;
-  readonly onUnarchive: () => void;
-  readonly onClose: () => void;
-  readonly confirmDelete: boolean;
-  readonly setConfirmDelete: (v: boolean) => void;
-  readonly onDelete: () => void;
-  readonly busy: boolean;
-}
-
-function DangerSection({
-  archived,
-  onArchive,
-  onUnarchive,
-  onClose,
-  confirmDelete,
-  setConfirmDelete,
-  onDelete,
-  busy,
-}: DangerSectionProps) {
-  return (
-    <div className="flex flex-col gap-7">
-      <SectionHeader
-        icon={<AlertTriangle size={14} aria-hidden className="text-danger" />}
-        title="Danger zone"
-        subtitle="Archive to step away gracefully. Delete only if you're sure — it nukes the worktree, transcripts, and the branch."
-        tone="danger"
-      />
-
-      {/* Archive row */}
-      <div className="flex items-start justify-between gap-4 rounded-lg border border-border-soft bg-background p-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-            {archived ? (
-              <ArchiveRestore size={12} aria-hidden className="text-muted-foreground" />
-            ) : (
-              <Archive size={12} aria-hidden className="text-muted-foreground" />
-            )}
-            {archived ? 'Unarchive session' : 'Archive session'}
-          </div>
-          <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-            {archived
-              ? 'Restore this session to the active list. Worktree stays untouched.'
-              : 'Hide from the active list, keep history and worktree intact. Reversible.'}
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            if (archived) onUnarchive();
-            else onArchive();
-            onClose();
-          }}
-          disabled={busy}
-        >
-          {archived ? (
-            <>
-              <ArchiveRestore size={13} aria-hidden className="mr-1.5" />
-              Unarchive
-            </>
-          ) : (
-            <>
-              <Archive size={13} aria-hidden className="mr-1.5" />
-              Archive
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Delete row */}
-      <div
-        className={cn(
-          'flex flex-col gap-3 rounded-lg border p-4 transition-colors',
-          confirmDelete ? 'border-danger/50 bg-danger/5' : 'border-border-soft bg-background',
-        )}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <Trash2 size={12} aria-hidden className="text-danger" />
-              Delete session
-            </div>
-            <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-              Removes worktree, transcripts, audit logs, and the branch. Cannot be undone.
-            </p>
-          </div>
-          {!confirmDelete ? (
-            <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
-              <Trash2 size={13} aria-hidden className="mr-1.5" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-
-        {confirmDelete ? (
-          <>
-            <div className="flex items-start gap-2 rounded-md bg-warning/10 px-3 py-2 text-2xs text-warning">
-              <Archive size={12} aria-hidden className="mt-px shrink-0" />
-              <span>Consider archiving instead — keeps history and is reversible.</span>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmDelete(false)}
-                disabled={busy}
-              >
-                Cancel
-              </Button>
-              {!archived ? (
-                <Button
-                  variant="warning"
-                  size="sm"
-                  onClick={() => {
-                    onArchive();
-                    setConfirmDelete(false);
-                    onClose();
-                  }}
-                  disabled={busy}
-                >
-                  <Archive size={12} aria-hidden className="mr-1.5" />
-                  Archive instead
-                </Button>
-              ) : null}
-              <Button variant="danger" size="sm" onClick={onDelete} disabled={busy}>
-                {busy ? (
-                  <>
-                    <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
-                    Deleting…
-                  </>
-                ) : (
-                  <>
-                    <Check size={12} aria-hidden className="mr-1.5" />
-                    Confirm delete
-                  </>
-                )}
-              </Button>
-            </div>
-          </>
-        ) : null}
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
-import { CopyButton, Markdown, cn } from '@goodboy/ui';
+import { CopyButton, Divider, Markdown, cn } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -9,6 +9,7 @@ import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { displayPath } from '../../../../shared/utils/display-path';
+import { HandoffChip } from '../HandoffChip';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -37,7 +38,7 @@ function TranscriptCardImpl({
     case 'user_text':
       return <UserText text={item.text} at={item.at} />;
     case 'assistant_text':
-      return <AssistantText text={item.text} />;
+      return <AssistantText text={item.text} sessionId={sessionId} />;
     case 'tool_call':
       return <ToolCall item={item} />;
     case 'file_edit':
@@ -80,7 +81,7 @@ function TranscriptCardImpl({
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
     case 'done':
-      return <hr className="border-border" />;
+      return <Divider />;
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
@@ -174,13 +175,20 @@ function formatCostUsd(cost: number): string {
   return `$${cost.toFixed(2)}`;
 }
 
-function AssistantText({ text }: { text: string }) {
+const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
+
+function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
+  const displayText = text
+    .replace(HANDOFF_MARKER_RE, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   return (
     <div className="group relative text-[13px]">
       <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
         <CopyButton value={text} label="message" />
       </div>
-      <Markdown text={text} />
+      <Markdown text={displayText} />
+      {sessionId ? <HandoffChip assistantText={text} sessionId={sessionId} /> : null}
     </div>
   );
 }

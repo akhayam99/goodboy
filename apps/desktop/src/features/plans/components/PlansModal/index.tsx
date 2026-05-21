@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  ArchiveRestore,
   CheckCircle2,
   Eye,
   Loader2,
   Pencil,
   Play,
+  RotateCw,
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui';
+import { Dialog, Divider, Markdown, Textarea, cn } from '@goodboy/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 
@@ -17,6 +19,14 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   active: 'bg-warning/10 text-warning',
   consumed: 'bg-info/10 text-info',
   superseded: 'bg-muted text-muted-foreground',
+  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
+};
+
+const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
+  active: 'Active',
+  consumed: 'Consumed',
+  superseded: 'Superseded',
+  discarded: 'Discarded',
 };
 
 interface PlansModalProps {
@@ -35,8 +45,8 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
   const loadConsumptionsForPlan = useAppStore((s) => s.loadConsumptionsForPlan);
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const deletePlan = useAppStore((s) => s.deletePlan);
+  const restorePlan = useAppStore((s) => s.restorePlan);
   const runPlan = useAppStore((s) => s.runPlan);
-  const abandonPlan = useAppStore((s) => s.abandonPlan);
   const selectAgent = useAppStore((s) => s.selectAgent);
 
   const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
@@ -81,6 +91,13 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
   useEffect(() => {
     if (selected && mode === 'preview') setDraft(planToSource(selected));
   }, [selected, mode]);
+
+  // Discarded plans are frozen — force preview, segmented control is
+  // disabled below. If the user was editing when the plan got discarded
+  // (or selected a discarded one), drop back to preview.
+  useEffect(() => {
+    if (selected?.status === 'discarded' && mode === 'edit') setMode('preview');
+  }, [selected?.status, mode]);
 
   const commitEdit = useCallback(() => {
     if (!selected) return;
@@ -127,19 +144,68 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
     }
   };
 
-  const handleDelete = (plan: PlanWithCount) => {
-    if (!window.confirm(`delete plan "${plan.title}"? this cannot be undone.`)) return;
-    const remaining = plans.filter((p) => p.id !== plan.id);
+  // Soft delete — flips the plan to 'discarded' (status only, row stays).
+  // If the user happens to be mid-edit, commit the draft first so their
+  // typing isn't lost on restore. Selection stays on the plan: it's still
+  // visible in the list (dimmed) so the user can immediately undo.
+  const handleDiscard = (plan: PlanWithCount) => {
+    if (mode === 'edit') commitEdit();
+    setMode('preview');
     void deletePlan(sessionId, plan.id);
-    if (selectedId === plan.id) {
-      setSelectedId(remaining[remaining.length - 1]?.id ?? null);
-    }
+  };
+
+  const handleRestore = (plan: PlanWithCount) => {
+    void restorePlan(sessionId, plan.id);
   };
 
   const consumptions = selected ? (planConsumptions[selected.id] ?? []) : [];
   const creatorAgent = selected ? agents.find((a) => a.id === selected.agentId) : null;
   const creatorDeleted = selected ? !creatorAgent : false;
   const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown puppy') : '';
+
+  const planList = (
+    <ul className="flex w-full flex-col gap-1 overflow-y-auto">
+      {plans.length === 0 ? (
+        <li className="py-2 text-xs text-muted-foreground">No plans yet</li>
+      ) : (
+        plans.map((plan, idx) => {
+          const isSel = plan.id === selectedId;
+          const isDiscarded = plan.status === 'discarded';
+          return (
+            <li key={plan.id}>
+              <button
+                type="button"
+                onClick={() => handleSelectPlan(plan.id)}
+                className={cn(
+                  'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                  isSel ? 'bg-muted' : 'hover:bg-muted/40',
+                  isDiscarded && 'opacity-60',
+                )}
+              >
+                <div className="flex w-full items-center justify-between gap-1.5">
+                  <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
+                    Plan {idx + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
+                      PLAN_STATUS_STYLE[plan.status],
+                    )}
+                  >
+                    {PLAN_STATUS_LABEL[plan.status]}
+                  </span>
+                </div>
+                <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {fmtTimestamp(plan.createdAt)}
+                </span>
+              </button>
+            </li>
+          );
+        })
+      )}
+    </ul>
+  );
 
   return (
     <Dialog
@@ -149,129 +215,147 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
       size="xl"
       fixedHeightClass="h-[92vh] max-w-[1400px]"
       className="w-[92vw] max-w-[1400px]"
+      panel={planList}
+      panelWidthClass="w-72"
+      panelClassName="px-3 py-4"
     >
-      <div className="flex h-full min-h-0 gap-3">
-        <ul className="w-72 shrink-0 overflow-y-auto border-r border-border pr-3">
-          {plans.length === 0 ? (
-            <li className="py-2 text-xs text-muted-foreground">no plans yet</li>
-          ) : (
-            plans.map((plan, idx) => {
-              const isSel = plan.id === selectedId;
-              return (
-                <li key={plan.id}>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        {selected ? (
+          <>
+            <div className="flex shrink-0 items-start gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-2xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
+                  <span>Created by</span>
                   <button
                     type="button"
-                    onClick={() => handleSelectPlan(plan.id)}
-                    className={cn(
-                      'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left',
-                      isSel ? 'bg-muted' : 'hover:bg-muted/40',
-                    )}
-                  >
-                    <div className="flex w-full items-center gap-1.5">
-                      <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-                        plan {idx + 1}
-                      </span>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
-                          PLAN_STATUS_STYLE[plan.status],
-                        )}
-                      >
-                        {plan.status}
-                      </span>
-                    </div>
-                    <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {fmtTimestamp(plan.createdAt)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })
-          )}
-        </ul>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {selected ? (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-2xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
-                    <span>created by</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (creatorDeleted) {
-                          window.alert(
-                            `puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
-                          );
-                          return;
-                        }
-                        void selectAgent(sessionId, selected.agentId);
-                        handleClose();
-                      }}
-                      className={cn(
-                        'truncate font-medium underline-offset-2',
-                        creatorDeleted
-                          ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                          : 'text-foreground hover:underline',
-                      )}
-                      title={
-                        creatorDeleted ? 'puppy deleted, click for details' : 'open creator puppy'
+                    onClick={() => {
+                      if (creatorDeleted) {
+                        window.alert(
+                          `Puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
+                        );
+                        return;
                       }
-                    >
-                      {selectedAgentName}
-                    </button>
-                    {creatorDeleted ? (
-                      <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                        deleted
-                      </span>
-                    ) : null}
-                    <span aria-hidden>·</span>
-                    <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
-                  </div>
-                  {consumptions.map((c) => {
-                    const ag = agents.find((a) => a.id === c.agentId);
-                    const isDeleted = !ag;
-                    const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
-                    return (
-                      <div key={c.id} className="flex items-center gap-1.5">
-                        <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
-                        <span>consumed by</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isDeleted) {
-                              window.alert(
-                                `puppy "${displayName}" has been deleted and can no longer be opened.`,
-                              );
-                              return;
-                            }
-                            void selectAgent(sessionId, c.agentId);
-                            handleClose();
-                          }}
-                          className={cn(
-                            'truncate font-medium underline-offset-2',
-                            isDeleted
-                              ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                              : 'text-foreground hover:underline',
-                          )}
-                          title={isDeleted ? 'puppy deleted, click for details' : 'open puppy'}
-                        >
-                          {displayName}
-                        </button>
-                        {isDeleted ? (
-                          <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                            deleted
-                          </span>
-                        ) : null}
-                        <span aria-hidden>·</span>
-                        <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
-                      </div>
-                    );
-                  })}
+                      void selectAgent(sessionId, selected.agentId);
+                      handleClose();
+                    }}
+                    className={cn(
+                      'truncate font-medium underline-offset-2',
+                      creatorDeleted
+                        ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
+                        : 'text-foreground hover:underline',
+                    )}
+                    title={
+                      creatorDeleted ? 'Puppy deleted, click for details' : 'Open creator puppy'
+                    }
+                  >
+                    {selectedAgentName}
+                  </button>
+                  {creatorDeleted ? (
+                    <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                      Deleted
+                    </span>
+                  ) : null}
+                  <span aria-hidden>·</span>
+                  <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
                 </div>
-                <div className="flex shrink-0 items-center gap-1.5">
+                {consumptions.map((c) => {
+                  const ag = agents.find((a) => a.id === c.agentId);
+                  const isDeleted = !ag;
+                  const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
+                  return (
+                    <div key={c.id} className="flex items-center gap-1.5">
+                      <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
+                      <span>Consumed by</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isDeleted) {
+                            window.alert(
+                              `Puppy "${displayName}" has been deleted and can no longer be opened.`,
+                            );
+                            return;
+                          }
+                          void selectAgent(sessionId, c.agentId);
+                          handleClose();
+                        }}
+                        className={cn(
+                          'truncate font-medium underline-offset-2',
+                          isDeleted
+                            ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
+                            : 'text-foreground hover:underline',
+                        )}
+                        title={isDeleted ? 'Puppy deleted, click for details' : 'Open puppy'}
+                      >
+                        {displayName}
+                      </button>
+                      {isDeleted ? (
+                        <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                          Deleted
+                        </span>
+                      ) : null}
+                      <span aria-hidden>·</span>
+                      <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Actions, left-to-right: segmented control → trigger → delete/restore.
+                  Order intentionally inverted vs. older builds: the destructive
+                  action sits at the far right so it's predictable to find. */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                <div
+                  role="tablist"
+                  aria-label="Content mode"
+                  className={cn(
+                    'inline-flex items-center rounded-md border border-border-soft p-0.5',
+                    selected.status === 'discarded' && 'opacity-50',
+                  )}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'preview'}
+                    onClick={() => {
+                      if (mode === 'edit') commitEdit();
+                      setMode('preview');
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
+                      mode === 'preview'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                    title="Preview rendered markdown"
+                  >
+                    <Eye size={11} aria-hidden />
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'edit'}
+                    disabled={selected.status === 'discarded'}
+                    onClick={() => setMode('edit')}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
+                      mode === 'edit'
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                      selected.status === 'discarded' &&
+                        'cursor-not-allowed hover:text-muted-foreground',
+                    )}
+                    title={
+                      selected.status === 'discarded'
+                        ? 'Discarded plans cannot be edited — restore first'
+                        : 'Edit markdown source'
+                    }
+                  >
+                    <Pencil size={11} aria-hidden />
+                    Edit
+                  </button>
+                </div>
+                {selected.status !== 'discarded' ? (
                   <button
                     type="button"
                     onClick={() => void handleTrigger()}
@@ -285,98 +369,79 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                     )}
                     title={
                       retriggerArmed
-                        ? 'click again to confirm retrigger'
-                        : selected.status === 'consumed'
-                          ? 'plan already consumed. click to retrigger (asks for confirmation)'
-                          : 'spawn new puppy to execute this plan'
+                        ? 'Already consumed — click again to confirm and spawn a fresh puppy'
+                        : selected.status === 'consumed' || selected.status === 'superseded'
+                          ? 'Plan already ran — click to replay (asks for confirmation)'
+                          : 'Spawn new puppy to execute this plan'
                     }
                   >
                     {spawning ? (
                       <Loader2 size={12} aria-hidden className="animate-spin" />
                     ) : retriggerArmed ? (
                       <AlertTriangle size={12} aria-hidden />
-                    ) : (
+                    ) : selected.status === 'active' ? (
                       <Play size={12} aria-hidden className="fill-current" />
+                    ) : (
+                      <RotateCw size={12} aria-hidden />
                     )}
                     {retriggerArmed
-                      ? 'already consumed. click again to confirm'
-                      : selected.status === 'consumed'
-                        ? 'retrigger plan'
-                        : 'trigger plan'}
+                      ? 'Already consumed — click again to confirm'
+                      : selected.status === 'active'
+                        ? 'Start'
+                        : 'Replay'}
                   </button>
-                  {selected.status === 'active' ? (
-                    <button
-                      type="button"
-                      onClick={() => void abandonPlan(sessionId, selected.id)}
-                      className="rounded-md border border-border-soft px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      abandon
-                    </button>
-                  ) : null}
-                  <div className="mx-0.5 h-5 w-px bg-border-soft" aria-hidden />
-                  <div
-                    role="tablist"
-                    aria-label="content mode"
-                    className="inline-flex items-center rounded-md border border-border-soft p-0.5"
+                ) : null}
+                {selected.status === 'consumed' ? (
+                  <span
+                    className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                    title="Consumed plans cannot be deleted"
+                    aria-label="Consumed plans cannot be deleted"
                   >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={mode === 'preview'}
-                      onClick={() => {
-                        if (mode === 'edit') commitEdit();
-                        setMode('preview');
-                      }}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                        mode === 'preview'
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                      title="preview rendered markdown"
-                    >
-                      <Eye size={11} aria-hidden />
-                      preview
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={mode === 'edit'}
-                      onClick={() => setMode('edit')}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                        mode === 'edit'
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                      title="edit markdown source"
-                    >
-                      <Pencil size={11} aria-hidden />
-                      edit
-                    </button>
-                  </div>
-                  {selected.status === 'consumed' ? (
-                    <span
-                      className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                      title="consumed plans cannot be deleted"
-                      aria-label="consumed plans cannot be deleted"
-                    >
-                      <Trash2 size={13} aria-hidden />
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(selected)}
-                      title="delete plan"
-                      aria-label="delete plan"
-                      className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                    >
-                      <Trash2 size={13} aria-hidden />
-                    </button>
-                  )}
-                </div>
+                    <Trash2 size={13} aria-hidden />
+                  </span>
+                ) : selected.status === 'discarded' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(selected)}
+                    title="Restore plan"
+                    aria-label="Restore plan"
+                    className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                  >
+                    <ArchiveRestore size={13} aria-hidden />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleDiscard(selected)}
+                    title="Delete plan (soft delete — click restore to recover)"
+                    aria-label="Delete plan"
+                    className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                  >
+                    <Trash2 size={13} aria-hidden />
+                  </button>
+                )}
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border-soft p-2">
+            </div>
+            {/* Scroll container: only the body scrolls — header/actions above
+                stay anchored. Top/bottom gradients fade content into the
+                dialog bg, same trick used by the chat transcript. Border
+                only in edit mode where the textarea needs a visible field. */}
+            {/* Hairline separator between sticky header (created by + actions)
+                and the scrollable body, with breathing room on both sides
+                so the divider doesn't kiss the content. The fade gradients
+                below kick in further down once the body starts scrolling. */}
+            <div className="shrink-0 py-2">
+              <Divider />
+            </div>
+            <div className="relative min-h-0 flex-1">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-background to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-background to-transparent" />
+              <div
+                className={cn(
+                  'h-full overflow-y-auto',
+                  mode === 'edit' && 'rounded-md border border-border-soft p-2',
+                )}
+              >
                 {mode === 'edit' ? (
                   <Textarea
                     autoFocus
@@ -388,13 +453,13 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                   <Markdown text={selected.bodyMd} className="text-xs" />
                 )}
               </div>
-            </>
-          ) : (
-            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-              no plan selected
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+            No plan selected
+          </div>
+        )}
       </div>
     </Dialog>
   );

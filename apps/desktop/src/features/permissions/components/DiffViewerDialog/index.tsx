@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState, useCallback, useRef } from 'rea
 import {
   ArrowUpRight,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
@@ -114,14 +115,25 @@ function loadDiffForView(worktreePath: string, view: DiffView): Promise<string> 
 }
 
 function emptyStateLabel(view: DiffView, isGitAware: boolean): string {
-  if (!isGitAware) return 'no diff available';
+  if (!isGitAware) return 'No diff available';
   if (view.kind === 'working') {
-    if (view.scope === 'staged') return 'no staged changes';
-    if (view.scope === 'unstaged') return 'no unstaged changes';
-    return 'working tree clean';
+    if (view.scope === 'staged') return 'No staged changes';
+    if (view.scope === 'unstaged') return 'No unstaged changes';
+    return 'Working tree clean';
   }
-  if (view.kind === 'commit') return 'this commit is empty';
-  return 'branch matches main';
+  if (view.kind === 'commit') return 'This commit is empty';
+  return 'Branch matches main';
+}
+
+function emptyStateBlurb(view: DiffView, isGitAware: boolean): string | null {
+  if (!isGitAware) return null;
+  if (view.kind === 'working') {
+    if (view.scope === 'staged') return 'Nothing has been staged for the next commit yet.';
+    if (view.scope === 'unstaged') return 'No uncommitted edits in the working tree.';
+    return 'No uncommitted edits and nothing staged.';
+  }
+  if (view.kind === 'commit') return 'No file changes were recorded for this commit.';
+  return 'Every commit on this branch is already reachable from main — nothing extra to review.';
 }
 
 const LINE_PREFIX: Record<DiffHunkLine['kind'], string> = {
@@ -592,13 +604,28 @@ export function DiffViewerDialog({
               {error}
             </div>
           ) : files.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
-              <span className="text-foreground/80">{emptyStateLabel(view, isGitAware)}</span>
-              {isGitAware ? (
-                <span className="text-[11px] text-muted-foreground/70">
-                  use the selector above to switch view
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+              <span
+                aria-hidden
+                className="flex size-14 items-center justify-center rounded-full bg-success/10 ring-1 ring-success/20"
+              >
+                <CheckCircle2 size={26} className="text-success" />
+              </span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-sm font-medium text-foreground">
+                  {emptyStateLabel(view, isGitAware)}
                 </span>
-              ) : null}
+                {emptyStateBlurb(view, isGitAware) ? (
+                  <span className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                    {emptyStateBlurb(view, isGitAware)}
+                  </span>
+                ) : null}
+                {isGitAware ? (
+                  <span className="mt-1.5 text-[11px] text-muted-foreground/60">
+                    Use the selector above to switch view.
+                  </span>
+                ) : null}
+              </div>
             </div>
           ) : (
             <>

@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, X, Trash2 } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
+import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
+import { Fragment } from 'react';
 import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
 
@@ -66,7 +67,9 @@ export function NotificationCenter() {
       const el = triggerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const desiredLeft = rect.right - DROPDOWN_WIDTH;
+      // Center on the trigger; clamp so the popover stays inside the viewport.
+      const centerX = rect.left + rect.width / 2;
+      const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
       const spaceBelow = window.innerHeight - rect.bottom;
@@ -110,8 +113,13 @@ export function NotificationCenter() {
         >
           <Bell size={14} aria-hidden />
           {unread > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-2xs font-bold leading-none text-warning-foreground">
-              {unread > 9 ? '9+' : unread}
+            <span
+              className={cn(
+                'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
+                unread > 9 ? 'text-[9px]' : 'text-2xs',
+              )}
+            >
+              {unread > 99 ? '99+' : unread}
             </span>
           )}
         </button>
@@ -121,50 +129,55 @@ export function NotificationCenter() {
         ? createPortal(
             <>
               <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
-              <div
-                className="fixed z-40 w-80 overflow-hidden rounded-lg border border-border bg-subtle shadow-lg"
+              <Popover
+                className="fixed z-40 w-80"
                 style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
-                <header className="flex items-center justify-between border-b border-border-soft px-3 py-2">
-                  <span className="text-xs font-semibold text-foreground">notifications</span>
-                  <div className="flex items-center gap-2">
-                    {notifications.length > 0 && (
-                      <Tooltip content="clear all" side="left">
-                        <button
-                          type="button"
-                          onClick={() => void clearNotifications()}
-                          className="text-muted-foreground hover:text-danger"
-                          aria-label="clear all notifications"
-                        >
-                          <Trash2 size={12} aria-hidden />
-                        </button>
-                      </Tooltip>
-                    )}
-                    <Tooltip content="close" side="left">
-                      <button
-                        type="button"
-                        onClick={() => setOpen(false)}
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label="close notifications"
-                      >
-                        <X size={13} aria-hidden />
-                      </button>
-                    </Tooltip>
-                  </div>
+                <header className="flex items-center justify-between gap-2 px-3 py-2">
+                  <span className="text-xs font-semibold text-foreground">
+                    {notifications.length}{' '}
+                    {notifications.length === 1 ? 'Notification' : 'Notifications'}
+                  </span>
+                  {notifications.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => void clearNotifications()}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+                      aria-label="clean up all notifications"
+                      title="Clear all notifications"
+                    >
+                      <Trash2 size={11} aria-hidden />
+                      Clean up
+                    </button>
+                  ) : null}
                 </header>
-
+                <Divider />
                 {notifications.length === 0 ? (
                   <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-                    no notifications
+                    No notifications
                   </p>
                 ) : (
-                  <ul className="max-h-80 overflow-y-auto divide-y divide-border-soft">
-                    {notifications.map((n) => (
-                      <NotificationItem key={n.id} notification={n} />
-                    ))}
-                  </ul>
+                  // Same scroll-shadow pattern used in chat/plans: top/bottom
+                  // gradients fade content into the popover bg as items
+                  // scroll past the edge.
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-muted to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-muted to-transparent" />
+                    <ul className="max-h-80 overflow-y-auto">
+                      {notifications.map((n, i) => (
+                        <Fragment key={n.id}>
+                          {i > 0 ? (
+                            <li aria-hidden className="px-3">
+                              <Divider />
+                            </li>
+                          ) : null}
+                          <NotificationItem notification={n} />
+                        </Fragment>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-              </div>
+              </Popover>
             </>,
             document.body,
           )
