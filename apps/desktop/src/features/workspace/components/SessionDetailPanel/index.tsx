@@ -247,11 +247,12 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
       return;
     }
 
-    // Always use 2 decimals during the animation so the digit grid is stable;
-    // the static label collapses '$0' separately when nothing is spent.
-    const toLabel = `$${toCost.toFixed(2)}`;
-    const fromLabel = `$${fromCost.toFixed(2)}`;
-
+    // Interpolate the numeric value directly and re-format on every frame.
+    // The previous slot-machine roller spun each digit through extra full
+    // 0-9 cycles, so a small bump like $0.99 → $1.05 briefly painted
+    // $9.XX mid-animation. Value-space interpolation can never show a
+    // number outside [fromCost, toCost], so the chip reads as a real
+    // counter regardless of direction.
     setAnimating(true);
     const duration = 1100;
     const start = performance.now();
@@ -259,7 +260,9 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const t = Math.min(1, elapsed / duration);
-      setDisplayLabel(rollDigits(fromLabel, toLabel, t));
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = fromCost + (toCost - fromCost) * eased;
+      setDisplayLabel(current === 0 ? '$0' : `$${current.toFixed(2)}`);
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
@@ -294,43 +297,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
       <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
   );
-}
-
-/**
- * Slot-machine digit roll, right-to-left wave. Rightmost positions spin
- * through extra full 0-9 cycles before locking onto the target digit; each
- * step left strips one cycle. All digits settle at t=1 with an easeOut so
- * the motion decelerates into the final value.
- */
-function rollDigits(fromLabel: string, toLabel: string, t: number): string {
-  // Pad from with leading zeros (after the '$') if the target grew a digit.
-  const fromAligned =
-    fromLabel.length < toLabel.length
-      ? '$' + '0'.repeat(toLabel.length - fromLabel.length) + fromLabel.slice(1)
-      : fromLabel;
-  const eased = 1 - Math.pow(1 - t, 3);
-
-  const chars: string[] = new Array(toLabel.length);
-  let posFromRight = 0;
-  for (let i = toLabel.length - 1; i >= 0; i--) {
-    const tc = toLabel.charCodeAt(i);
-    if (tc >= 48 && tc <= 57) {
-      const toDigit = tc - 48;
-      const fc = fromAligned.charCodeAt(i);
-      const fromDigit = fc >= 48 && fc <= 57 ? fc - 48 : 0;
-      // Extra full rotations stack on the rightmost digits and fade out
-      // moving left. The leftmost positions just walk old → new directly.
-      const extraCycles = Math.max(0, 3 - posFromRight);
-      const directDelta = (toDigit - fromDigit + 10) % 10;
-      const totalDelta = directDelta + extraCycles * 10;
-      const advanced = Math.floor(totalDelta * eased);
-      chars[i] = String((fromDigit + advanced) % 10);
-      posFromRight++;
-    } else {
-      chars[i] = toLabel[i] as string;
-    }
-  }
-  return chars.join('');
 }
 
 function GithubRefreshButton({ sessionId }: { sessionId: SessionId }) {
