@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
+  AlertTriangle,
+  ArrowUpRight,
   PanelRightClose,
   PanelRightOpen,
   History,
   RotateCcw,
+  RotateCw,
   ChevronRight,
   ChevronDown,
   Target,
@@ -127,7 +130,16 @@ export function ContextPanel({
         </button>
       </div>
 
-      <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', collapsed && 'hidden')}>
+      <div
+        className={cn(
+          'flex h-full min-h-0 flex-col overflow-hidden rounded-lg',
+          collapsed && 'hidden',
+          // Spin-info border ring while the summarizer is running — same
+          // visual language as a running session card. Replaces the per-slot
+          // skeletons: content stays readable, click-to-edit is frozen below.
+          summarizer.status === 'running' && 'spin-border spin-border-info',
+        )}
+      >
         <div className="shrink-0 flex flex-col gap-4 px-4 pt-4 pb-2">
           <header className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -136,10 +148,12 @@ export function ContextPanel({
             </span>
             <div className="flex items-center gap-1">
               <SummarizerBadge
+                sessionId={session.id}
                 status={summarizer.status}
                 lastUpdate={summarizer.lastUpdate}
                 error={summarizer.error}
                 totals={summarizerTotals}
+                canRetry={summarizer.lastAttempt !== null}
               />
               {onCollapse ? (
                 <button
@@ -197,31 +211,6 @@ export function ContextPanel({
   );
 }
 
-function SlotSkeleton({ emphasis }: { emphasis?: boolean }) {
-  return (
-    <div className={cn('flex flex-col', emphasis ? 'gap-2.5' : 'gap-1.5')} aria-hidden>
-      <div
-        className={cn(
-          'animate-pulse rounded bg-muted/70',
-          emphasis ? 'h-3.5 w-3/4' : 'h-2.5 w-4/5',
-        )}
-      />
-      <div
-        className={cn(
-          'animate-pulse rounded bg-muted/70',
-          emphasis ? 'h-3.5 w-full' : 'h-2.5 w-full',
-        )}
-      />
-      <div
-        className={cn(
-          'animate-pulse rounded bg-muted/70',
-          emphasis ? 'h-3.5 w-1/2' : 'h-2.5 w-2/3',
-        )}
-      />
-    </div>
-  );
-}
-
 function SlotRowSkeleton({ slotKey }: { slotKey: SlotKey }) {
   return (
     <li role="status" aria-label={`loading ${slotKey}`} className="flex flex-col gap-2">
@@ -255,6 +244,10 @@ interface SlotMeta {
   readonly collapsible?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
+  // Read-only slots can't be hand-edited by the user. When empty the row
+  // collapses to an inactive label (no CTA, no click) and switches to the
+  // canvas bg so it visually recedes vs. the live slots.
+  readonly readOnly?: boolean;
 }
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
@@ -281,7 +274,8 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     description: 'Things the puppy still needs clarified',
     accentRingWhenNonEmpty: 'ring-warning/60',
     emptyLabel: 'No open questions',
-    emptyCta: 'Add a question to ask the user',
+    emptyCta: '',
+    readOnly: true,
   },
   decisions: {
     icon: CheckCheck,
@@ -414,14 +408,20 @@ function SlotRow({
     </button>
   ) : null;
 
-  const accentRing =
-    hasValue && meta?.accentRingWhenNonEmpty ? meta.accentRingWhenNonEmpty : 'ring-border-soft';
+  // Empty slot → blends into the panel bg (no surface). Slot with content →
+  // a step brighter so it reads as "active / has signal." Same rule for every
+  // slot regardless of read-only — emptiness is the only switch.
+  const inactive = !hasValue;
+  const ringClass = inactive
+    ? 'ring-border-soft/30'
+    : (meta?.accentRingWhenNonEmpty ?? 'ring-border-soft');
 
   return (
     <li
       className={cn(
-        'group relative flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 transition-colors',
-        accentRing,
+        'group relative flex min-h-0 flex-col gap-2 rounded-lg p-3 ring-1 transition-colors',
+        inactive ? 'bg-transparent' : 'bg-muted/40',
+        ringClass,
       )}
     >
       <div className="flex items-center gap-2">
@@ -451,16 +451,21 @@ function SlotRow({
             </span>
           ) : null}
         </div>
+        {/* History first, then chevron at the far right. The history button
+            stays hidden until we already have entries in cache — listing it
+            without loading would force a per-slot fetch on every render. */}
+        {history.length > 0 ? (
+          <button
+            type="button"
+            onClick={openHistory}
+            title="View history"
+            aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
+            className="shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <History size={11} aria-hidden />
+          </button>
+        ) : null}
         {headerToggle}
-        <button
-          type="button"
-          onClick={openHistory}
-          title="View history"
-          aria-label={`view history for ${SLOT_LABELS[slotKey]}`}
-          className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100"
-        >
-          <History size={11} aria-hidden />
-        </button>
       </div>
 
       {editing ? (
@@ -484,25 +489,41 @@ function SlotRow({
           autoGrow
           maxRows={16}
         />
-      ) : isSummarizing ? (
-        <SlotSkeleton emphasis={meta?.emphasis} />
       ) : !hasValue ? (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex flex-col items-start gap-0.5 rounded text-left text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
-        >
-          <span>{meta?.emptyLabel ?? 'Empty'}</span>
-          <span className="text-[10px] text-muted-foreground/40 underline-offset-2 group-hover:underline">
-            {meta?.emptyCta ?? 'Click to edit'}
-          </span>
-        </button>
+        meta?.readOnly ? (
+          <span className="text-xs text-muted-foreground/50">{meta.emptyLabel}</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (isSummarizing) return;
+              setEditing(true);
+            }}
+            disabled={isSummarizing}
+            className={cn(
+              'flex flex-col items-start gap-0.5 rounded text-left text-xs text-muted-foreground/60 transition-colors',
+              isSummarizing ? 'cursor-default' : 'hover:text-foreground',
+            )}
+          >
+            <span>{meta?.emptyLabel ?? 'Empty'}</span>
+            <span className="text-[10px] text-muted-foreground/40 underline-offset-2 group-hover:underline">
+              {meta?.emptyCta ?? 'Click to edit'}
+            </span>
+          </button>
+        )
       ) : singleLine ? (
         <button
           type="button"
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            if (isSummarizing) return;
+            setEditing(true);
+          }}
+          disabled={isSummarizing}
           title={value}
-          className="cursor-text rounded text-left text-sm font-medium leading-snug text-foreground transition-colors hover:bg-foreground/5"
+          className={cn(
+            'rounded text-left text-sm font-medium leading-snug text-foreground transition-colors',
+            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/5',
+          )}
         >
           {value}
         </button>
@@ -517,16 +538,23 @@ function SlotRow({
         </button>
       ) : renderAsMarkdown ? (
         <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setEditing(true)}
+          role={isSummarizing ? undefined : 'button'}
+          tabIndex={isSummarizing ? -1 : 0}
+          onClick={() => {
+            if (isSummarizing) return;
+            setEditing(true);
+          }}
           onKeyDown={(e) => {
+            if (isSummarizing) return;
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditing(true);
             }
           }}
-          className="min-h-0 flex-1 cursor-text overflow-y-auto overflow-x-hidden rounded pr-3 text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all"
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded pr-3 text-left leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
+            isSummarizing ? 'cursor-default' : 'cursor-text',
+          )}
           style={{ scrollbarGutter: 'stable' }}
         >
           <Markdown text={value} className="text-[13px] text-foreground" />
@@ -534,9 +562,14 @@ function SlotRow({
       ) : (
         <button
           type="button"
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            if (isSummarizing) return;
+            setEditing(true);
+          }}
+          disabled={isSummarizing}
           className={cn(
-            'min-h-0 flex-1 cursor-text overflow-y-auto whitespace-pre-wrap break-words rounded pr-3 text-left leading-relaxed transition-colors hover:bg-foreground/5',
+            'min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words rounded pr-3 text-left leading-relaxed transition-colors',
+            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/5',
             meta?.emphasis ? 'text-sm font-medium' : 'text-xs',
           )}
           style={{ scrollbarGutter: 'stable' }}
@@ -636,11 +669,14 @@ function formatRelative(iso: string): string {
 }
 
 function SummarizerBadge({
+  sessionId,
   status,
   lastUpdate,
   error,
   totals,
+  canRetry,
 }: {
+  sessionId: SessionId;
   status: SummarizerStatusKind;
   lastUpdate: string | null;
   error: string | null;
@@ -650,58 +686,84 @@ function SummarizerBadge({
     readonly estimatedCostUsd: number;
     readonly count: number;
   };
+  canRetry: boolean;
 }) {
-  if (status === 'idle') {
-    const tooltip =
-      totals.count === 0
-        ? 'summarizer has not run yet'
-        : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+  const retrySummarizer = useAppStore((s) => s.retrySummarizer);
+  const [retrying, setRetrying] = useState(false);
+
+  // Reset the retry-spin once the run actually kicks off — the store flips
+  // status to 'running' synchronously, but the icon-only spin is what tells
+  // the user their click was registered.
+  useEffect(() => {
+    if (status !== 'error') setRetrying(false);
+  }, [status]);
+
+  const costTooltip =
+    totals.count === 0
+      ? 'summarizer has not run yet'
+      : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+
+  const costPill = (
+    <span
+      title={costTooltip}
+      className="rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground"
+    >
+      Σ ${totals.estimatedCostUsd.toFixed(4)}
+    </span>
+  );
+
+  // Running state: no chip. The spin-border around the whole context panel
+  // already says "summarizing"; the cost pill stays put so the eye sees a
+  // single stable number that will then animate when the run completes.
+  if (status === 'running') {
+    return costPill;
+  }
+
+  if (status === 'error') {
+    const errorTitle = error ? `cannot summarize · ${error}` : 'cannot summarize';
     return (
-      <span
-        title={tooltip}
-        className="rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground"
-      >
-        Σ ${totals.estimatedCostUsd.toFixed(4)}
+      <span className="flex items-center gap-1">
+        {costPill}
+        <button
+          type="button"
+          onClick={() => {
+            if (!canRetry || retrying) return;
+            setRetrying(true);
+            retrySummarizer(sessionId);
+          }}
+          disabled={!canRetry}
+          title={canRetry ? `${errorTitle} — click to retry` : errorTitle}
+          aria-label={canRetry ? 'retry summarizer' : 'summarizer failed'}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-2xs uppercase tracking-wide text-danger transition-colors',
+            canRetry
+              ? 'hover:bg-danger/15 hover:text-danger-foreground/90'
+              : 'cursor-not-allowed opacity-70',
+          )}
+        >
+          <AlertTriangle size={10} aria-hidden />
+          Cannot summarize
+          <RotateCw size={10} aria-hidden className={cn('shrink-0', retrying && 'animate-spin')} />
+        </button>
       </span>
     );
   }
-  const styles: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
-    running: 'bg-info/10 text-info',
-    error: 'bg-danger/10 text-danger',
-  };
-  const labels: Record<Exclude<SummarizerStatusKind, 'idle'>, string> = {
-    running: 'summarizing…',
-    error: 'error',
-  };
-  const tooltip = (() => {
-    if (status === 'error' && error) return `last error: ${error}`;
-    if (lastUpdate) return `last update: ${lastUpdate}`;
-    return 'summarizer running; input is not blocked';
-  })();
-  return (
-    <span
-      title={tooltip}
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide',
-        styles[status],
-      )}
-    >
-      {status === 'running' ? (
-        <span className="flex gap-0.5" aria-hidden>
-          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:0ms]" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:150ms]" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-info [animation-delay:300ms]" />
-        </span>
-      ) : null}
-      {labels[status]}
-    </span>
-  );
+
+  return costPill;
 }
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   active: 'bg-warning/10 text-warning',
   consumed: 'bg-info/10 text-info',
   superseded: 'bg-muted text-muted-foreground',
+  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
+};
+
+const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
+  active: 'Active',
+  consumed: 'Consumed',
+  superseded: 'Superseded',
+  discarded: 'Discarded',
 };
 
 function PlansSection({ sessionId }: { sessionId: SessionId }) {
@@ -728,44 +790,53 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
   };
 
   return (
-    <section className="flex min-h-0 flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 ring-border-soft">
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
-        >
-          <ClipboardList size={11} className="text-primary" aria-hidden />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
-            <span>Plans</span>
-            <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
-              · {plans.length} total
-            </span>
-          </span>
-          <span className="text-[10px] leading-tight text-muted-foreground/60">
-            Step-by-step plans queued for this session
-          </span>
-        </div>
-      </div>
-
+    <>
       <button
         type="button"
         onClick={() => openModal(latest.id)}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-foreground/5"
-        title={`open plan ${latestIndex} — ${latest.title}`}
+        title={`Open plan ${latestIndex} — ${latest.title}`}
+        className="group relative flex min-h-0 w-full flex-col gap-2 rounded-lg bg-muted/40 p-3 text-left ring-1 ring-border-soft transition-colors hover:bg-muted/60"
       >
-        <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
-          plan {latestIndex}
-        </span>
-        <span className="truncate text-xs font-medium text-foreground">{latest.title}</span>
-        <span
-          className={cn(
-            'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-            PLAN_STATUS_STYLE[latest.status],
-          )}
-        >
-          {latest.status}
+        {/* Affordance arrow — signals "opens a modal" without using a
+            chevron (which would imply expand-in-place). Top-right corner. */}
+        <ArrowUpRight
+          size={12}
+          aria-hidden
+          className="absolute right-2 top-2 text-muted-foreground/40 transition-colors group-hover:text-foreground"
+        />
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
+          >
+            <ClipboardList size={11} className="text-primary" aria-hidden />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+              <span>Plans</span>
+              <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
+                · {plans.length} total
+              </span>
+            </span>
+            <span className="text-[10px] leading-tight text-muted-foreground/60">
+              Step-by-step plans queued for this session
+            </span>
+          </div>
+        </div>
+
+        <span className="flex items-center gap-1.5 rounded-md px-2 py-1.5">
+          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
+            plan {latestIndex}
+          </span>
+          <span className="truncate text-xs font-medium text-foreground">{latest.title}</span>
+          <span
+            className={cn(
+              'ml-auto inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+              PLAN_STATUS_STYLE[latest.status],
+            )}
+          >
+            {PLAN_STATUS_LABEL[latest.status]}
+          </span>
         </span>
       </button>
 
@@ -775,13 +846,13 @@ function PlansSection({ sessionId }: { sessionId: SessionId }) {
         onClose={() => setModalOpen(false)}
         initialPlanId={focusPlanId ?? latest.id}
       />
-    </section>
+    </>
   );
 }
 
 function PlansEmpty() {
   return (
-    <section className="flex flex-col gap-2 rounded-lg bg-elevated p-3 ring-1 ring-border-soft">
+    <section className="flex flex-col gap-2 rounded-lg bg-transparent p-3 ring-1 ring-border-soft/30">
       <div className="flex items-center gap-2">
         <span
           aria-hidden
