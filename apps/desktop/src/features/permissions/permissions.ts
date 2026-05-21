@@ -135,6 +135,40 @@ export async function invokePermissionRuleUpsert(
   return rowToPermissionRule(row);
 }
 
+export async function invokePermissionRuleGet(
+  id: PermissionRuleId,
+): Promise<PermissionRule | null> {
+  const row = await invoke<RawPermissionRuleRow | null>('permission_rule_get', { id });
+  return row ? rowToPermissionRule(row) : null;
+}
+
+export async function invokePermissionRuleDelete(id: PermissionRuleId): Promise<void> {
+  return invoke<void>('permission_rule_delete', { id });
+}
+
+export interface PermissionAuditQueryArgs {
+  readonly sessionId?: SessionId;
+  readonly workspaceId?: WorkspaceId;
+  readonly fromAt?: IsoDateTime;
+  readonly toAt?: IsoDateTime;
+  readonly limit?: number;
+}
+
+export async function invokePermissionAuditList(
+  args: PermissionAuditQueryArgs = {},
+): Promise<ReadonlyArray<PermissionAuditEntry>> {
+  const rows = await invoke<RawPermissionAuditRow[]>('permission_audit_list', {
+    input: {
+      sessionId: args.sessionId ?? null,
+      workspaceId: args.workspaceId ?? null,
+      fromAt: args.fromAt ?? null,
+      toAt: args.toAt ?? null,
+      limit: args.limit ?? null,
+    },
+  });
+  return rows.map(rowToAuditEntry);
+}
+
 // Permission audit commands (#177).
 export async function invokePermissionAuditInsert(
   input: PermissionAuditInsertPayload,
