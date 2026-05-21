@@ -5,7 +5,6 @@ import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodbo
 import {
   AlertTriangle,
   ArrowRight,
-  ClipboardList,
   Clock,
   DollarSign,
   FolderPlus,
@@ -194,7 +193,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
-                      <PlanReadySuggestion task={currentSession} />
                       <SessionMetaFooter
                         session={currentSession}
                         onOpenGithubDetails={() => setGithubDetailsOpen(true)}
@@ -313,12 +311,16 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
 }
 
 /**
- * Footer-area nudge that proposes spawning an implementer when there is an
- * active plan and nothing more pressing is in the way:
+ * Inline follow-up CTA rendered directly above the generic 'Spawn puppy'
+ * trigger when the session has an active plan ready to execute. The pitch is:
+ * before the user picks any role from the spawn menu, the plan already
+ * implies the answer — so offer it one click away.
+ *
+ * Visibility guards:
  *   - latest plan status is 'active' (a 'consumed' plan already has an
- *     implementer attached to it; no need to suggest again)
+ *     implementer attached; no need to suggest again)
  *   - no open questions on the session (the user owes the agent an answer
- *     first; surfacing a spawn CTA on top of that is noise)
+ *     first; a spawn CTA on top would be noise)
  *   - if the session has a workflow whose next un-spawned step is itself an
  *     implementer, defer to WorkflowNextStepCta — two CTAs for the same
  *     action would compete
@@ -364,37 +366,42 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   };
 
   return (
-    <div className="shrink-0">
-      <Divider />
-      <div className="px-3 py-2">
-        <button
-          type="button"
-          onClick={() => void onSpawn()}
-          disabled={spawning}
-          data-testid="plan-ready-suggestion"
-          title={latest.title}
-          aria-label={`spawn implementer puppy for plan: ${latest.title}`}
-          className="group flex w-full items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-left text-xs text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {spawning ? (
-            <Loader2 size={12} aria-hidden className="shrink-0 animate-spin" />
-          ) : (
-            <Sparkles size={12} aria-hidden className="shrink-0" />
-          )}
-          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-            <span className="text-2xs font-medium uppercase tracking-wide opacity-80">
-              plan ready
-            </span>
-            <span className="w-full truncate text-foreground/85">{latest.title}</span>
+    <button
+      type="button"
+      onClick={() => void onSpawn()}
+      disabled={spawning}
+      data-testid="plan-ready-suggestion"
+      title={latest.title}
+      aria-label={`spawn implementer puppy for plan: ${latest.title}`}
+      className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <span
+        className={cn(
+          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary',
+          spawning && 'animate-pulse',
+        )}
+        aria-hidden
+      >
+        {spawning ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <span>plan ready</span>
+          <span aria-hidden className="opacity-40">
+            ·
           </span>
-          <ArrowRight
-            size={11}
-            aria-hidden
-            className="shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100"
-          />
-        </button>
-      </div>
-    </div>
+          <span className="font-normal normal-case tracking-normal text-muted-foreground">
+            spawn implementer
+          </span>
+        </span>
+        <span className="line-clamp-2 text-xs text-foreground/90">{latest.title}</span>
+      </span>
+      <ArrowRight
+        size={12}
+        aria-hidden
+        className="mt-0.5 shrink-0 text-primary/70 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+      />
+    </button>
   );
 }
 
@@ -746,9 +753,6 @@ interface AgentsSectionProps {
 
 function AgentsSection({ task }: AgentsSectionProps) {
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
-  const plansForTask = useSessionPlans(task.id);
-  const latestPlan = plansForTask[plansForTask.length - 1];
-  const hasActivePlan = !!latestPlan && latestPlan.status === 'active';
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -1031,8 +1035,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
       ) : (
         <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
       )}
-      {hasActivePlan ? null : <ActivePlanCta sessionId={task.id} />}
       <div className="flex flex-col gap-1 pl-2">
+        <PlanReadySuggestion task={task} />
         <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
@@ -1165,53 +1169,6 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         Spawn puppy
       </button>
       {menu}
-    </div>
-  );
-}
-
-function ActivePlanCta({ sessionId }: { sessionId: SessionId }) {
-  const plans = useSessionPlans(sessionId);
-  const runPlan = useAppStore((s) => s.runPlan);
-  const [spawning, setSpawning] = useState(false);
-  const latest = plans[plans.length - 1];
-  if (!latest || latest.status !== 'active') return null;
-
-  const handleTrigger = async () => {
-    if (spawning) return;
-    setSpawning(true);
-    try {
-      await runPlan(sessionId, latest.id);
-    } finally {
-      setSpawning(false);
-    }
-  };
-
-  return (
-    <div className="mt-2 flex flex-col gap-1 pl-2">
-      <div className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
-        <ClipboardList size={11} aria-hidden className="text-primary" />
-        Active plan
-      </div>
-      <span className="truncate text-xs text-foreground" title={latest.title}>
-        {latest.title}
-      </span>
-      <button
-        type="button"
-        onClick={() => void handleTrigger()}
-        disabled={spawning}
-        className={cn(
-          'inline-flex items-center justify-center gap-1.5 rounded border border-primary/30 bg-primary/5 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10',
-          spawning && 'cursor-not-allowed opacity-60',
-        )}
-        title="Spawn new puppy to execute this plan"
-      >
-        {spawning ? (
-          <Loader2 size={11} aria-hidden className="animate-spin" />
-        ) : (
-          <Play size={11} aria-hidden />
-        )}
-        Start
-      </button>
     </div>
   );
 }
