@@ -10,12 +10,14 @@ import {
   ExternalLink,
   FileCode2,
   Filter,
+  ListChecks,
   Loader2,
   MessageSquare,
   MessageSquareReply,
   MinusCircle,
   RefreshCw,
   Sparkles,
+  UserCheck,
   XCircle,
 } from 'lucide-react';
 import { Dialog, Markdown, cn } from '@goodboy/ui';
@@ -36,8 +38,8 @@ import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
 type TabKey = 'ci' | 'reviews' | 'comments';
 
 const NAV_ITEMS: ReadonlyArray<{ id: TabKey; label: string; icon: React.ElementType }> = [
-  { id: 'ci', label: 'CI Checks', icon: CheckCheck },
-  { id: 'reviews', label: 'Reviews', icon: MessageSquare },
+  { id: 'ci', label: 'CI Checks', icon: ListChecks },
+  { id: 'reviews', label: 'Reviews', icon: UserCheck },
   { id: 'comments', label: 'Comments', icon: MessageSquare },
 ];
 
@@ -181,10 +183,15 @@ export function GithubDetailsDialog({ open, onClose, sessionId }: GithubDetailsD
 function countFor(tab: TabKey, detail: PrDetail | null): number | null {
   if (!detail) return null;
   if (tab === 'ci') return detail.checks.length;
-  if (tab === 'reviews') return detail.reviews.length;
-  // The comments tab only renders review threads (the resolvable ones), so
-  // mirror that in the nav badge — counting raw comments would advertise a
-  // number the user can't reach.
+  // Both reviews and comments tabs collapse their raw lists before render
+  // (latest-per-author for reviews, one-per-thread for comments). Mirror
+  // those collapses in the nav badge so the count matches what the user
+  // will actually see when they open the tab.
+  if (tab === 'reviews') {
+    const seenAuthor = new Set<string>();
+    for (const r of detail.reviews) seenAuthor.add(r.author);
+    return seenAuthor.size;
+  }
   const seenThread = new Set<string>();
   for (const c of detail.comments) {
     if (c.source !== 'review') continue;
@@ -209,6 +216,19 @@ const CHECK_ICON: Record<PrCheckConclusion, { icon: React.ElementType; className
   unknown: { icon: AlertCircle, className: 'text-muted-foreground' },
 };
 
+const CHECK_CHIP: Record<PrCheckConclusion, string> = {
+  success: 'bg-success/15 text-success',
+  failure: 'bg-danger/15 text-danger',
+  timed_out: 'bg-danger/15 text-danger',
+  pending: 'bg-warning/15 text-warning',
+  action_required: 'bg-warning/15 text-warning',
+  neutral: 'bg-muted text-muted-foreground',
+  cancelled: 'bg-muted text-muted-foreground',
+  stale: 'bg-muted text-muted-foreground',
+  skipped: 'bg-muted text-muted-foreground',
+  unknown: 'bg-muted text-muted-foreground',
+};
+
 function CiPane({ checks, pr }: { checks: ReadonlyArray<PrCheckRun>; pr: PullRequestState }) {
   if (checks.length === 0) {
     return (
@@ -219,7 +239,7 @@ function CiPane({ checks, pr }: { checks: ReadonlyArray<PrCheckRun>; pr: PullReq
     );
   }
   return (
-    <ul className="flex flex-col gap-0.5">
+    <ul className="flex flex-col gap-1">
       {checks.map((c) => {
         const entry = CHECK_ICON[c.conclusion];
         const Icon = entry.icon;
@@ -229,18 +249,23 @@ function CiPane({ checks, pr }: { checks: ReadonlyArray<PrCheckRun>; pr: PullReq
               type="button"
               onClick={c.detailsUrl ? () => void openUrl(c.detailsUrl as string) : undefined}
               disabled={!c.detailsUrl}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-transparent"
+              className="flex w-full items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-muted/30"
             >
               <Icon size={13} aria-hidden className={cn('shrink-0', entry.className)} />
               <span className="min-w-0 flex-1 truncate font-mono">{c.name}</span>
-              <span className="shrink-0 text-2xs uppercase tracking-wider text-muted-foreground">
-                {c.conclusion.replace('_', ' ')}
-              </span>
               {c.durationMs != null && (
                 <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/60">
                   {formatDuration(c.durationMs)}
                 </span>
               )}
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide',
+                  CHECK_CHIP[c.conclusion],
+                )}
+              >
+                {c.conclusion.replace('_', ' ')}
+              </span>
             </button>
           </li>
         );
@@ -259,30 +284,58 @@ const REVIEW_CHIP: Record<PrReviewState, { className: string; label: string }> =
   pending: { className: 'bg-warning/15 text-warning', label: 'pending' },
 };
 
+/**
+ * Dedup the review list down to the latest entry per author. github keeps
+ * every review event (commented → changes_requested → approved …) but for
+ * a snapshot view only the reviewer's most recent stance matters; the
+ * scrolling history of approvals/comments is noise on a panel this small.
+ */
+function latestReviewsByAuthor(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview> {
+  const latest = new Map<string, PrReview>();
+  for (const r of [...reviews].sort((a, b) =>
+    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
+  )) {
+    latest.set(r.author, r);
+  }
+  return [...latest.values()];
+}
+
 function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
-  if (reviews.length === 0) {
-    return <EmptyState icon={MessageSquare} text="no reviews yet" />;
+  const latest = useMemo(() => latestReviewsByAuthor(reviews), [reviews]);
+  if (latest.length === 0) {
+    return <EmptyState icon={UserCheck} text="no reviews yet" />;
   }
   return (
-    <ul className="flex flex-col gap-2">
-      {reviews.map((r) => {
+    <ul className="flex flex-col gap-1.5">
+      {latest.map((r) => {
         const chip = REVIEW_CHIP[r.state];
         const body = r.body.trim();
+        const bot = isBot(r.author);
         return (
-          <li key={r.id} className="rounded-md border border-border-soft bg-muted/30 px-3 py-2">
+          <li key={r.id} className="rounded-md border border-border-soft bg-muted/30 px-2.5 py-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold">{r.author}</span>
-              <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', chip.className)}>
+              <span className="truncate text-xs font-semibold text-foreground">{r.author}</span>
+              {bot ? (
+                <span className="rounded bg-info/10 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-info">
+                  bot
+                </span>
+              ) : null}
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide',
+                  chip.className,
+                )}
+              >
                 {chip.label}
               </span>
               {r.submittedAt && (
                 <span className="ml-auto text-2xs text-muted-foreground/60">
-                  {formatDate(r.submittedAt)}
+                  {formatRelative(Date.now() - new Date(r.submittedAt).getTime())}
                 </span>
               )}
             </div>
             {body && (
-              <div className="mt-1.5 text-xs text-muted-foreground [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+              <div className="mt-1.5 text-xs text-foreground/85 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
                 <Markdown text={body} />
               </div>
             )}
@@ -825,16 +878,4 @@ function formatDuration(ms: number): string {
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
   return `${m}m ${s % 60}s`;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return d.toLocaleDateString();
 }
