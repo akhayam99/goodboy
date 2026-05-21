@@ -16,6 +16,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
   Play,
   Plus,
   Settings,
@@ -25,6 +26,7 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
+import { BrainDumpPopover } from '../../../brain-dump/components/BrainDumpPopover';
 import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
@@ -124,6 +126,16 @@ export function WorkspacesSidebar({
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [brainDumpOpen, setBrainDumpOpen] = useState(false);
+  const brainDumpAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const loadIdeasForWorkspace = useAppStore((s) => s.loadIdeasForWorkspace);
+  const recoverPendingRephrases = useAppStore((s) => s.recoverPendingRephrases);
+
+  useEffect(() => {
+    if (!currentWorkspace?.id) return;
+    void loadIdeasForWorkspace(currentWorkspace.id);
+    void recoverPendingRephrases(currentWorkspace.id);
+  }, [currentWorkspace?.id, loadIdeasForWorkspace, recoverPendingRephrases]);
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -217,6 +229,18 @@ export function WorkspacesSidebar({
         <div className="flex-1" />
         <OnboardingChip />
         <div className="flex items-center gap-0.5">
+          {currentWorkspace ? (
+            <button
+              ref={brainDumpAnchorRef}
+              type="button"
+              onClick={() => setBrainDumpOpen((v) => !v)}
+              title="brain dump — capture an idea"
+              aria-label="open brain dump"
+              className={FOOTER_ICON_BTN}
+            >
+              <Pencil size={14} aria-hidden />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onToggleCollapse}
@@ -269,6 +293,15 @@ export function WorkspacesSidebar({
       <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
+      {currentWorkspace ? (
+        <BrainDumpPopover
+          open={brainDumpOpen}
+          anchorRef={brainDumpAnchorRef}
+          workspaceId={currentWorkspace.id}
+          onClose={() => setBrainDumpOpen(false)}
+          onOpenBacklog={() => undefined}
+        />
+      ) : null}
       {currentWorkspace ? (
         <NewSessionDialog
           open={newSessionOpen}
