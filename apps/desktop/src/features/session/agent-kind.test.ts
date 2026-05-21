@@ -215,4 +215,11 @@ describe('boundary systemPrompts', () => {
     expect(prompt).toMatch(/root-cause/);
     expect(prompt).toMatch(/repro/);
   });
+
+  it('resolver prompt teaches both closure markers and forbids emitting both', () => {
+    const prompt = AGENT_KIND_DEFAULTS['resolver'].systemPrompt!;
+    expect(prompt).toContain('<<comment-resolved');
+    expect(prompt).toContain('<<comment-dismissed');
+    expect(prompt).toMatch(/never both/i);
+  });
 });

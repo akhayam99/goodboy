@@ -10,7 +10,7 @@ import { PermissionRequestCard } from '../../../../features/permissions/componen
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { HandoffChip } from '../HandoffChip';
-import { CommentResolvedChip } from '../CommentResolvedChip';
+import { CommentClosureChip } from '../CommentClosureChip';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -178,23 +178,27 @@ function formatCostUsd(cost: number): string {
 
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
 const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
+const COMMENT_DISMISSED_MARKER_RE = /<<comment-dismissed\s+[^>]+?>>/g;
 
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
   const displayText = text
     .replace(HANDOFF_MARKER_RE, '')
     .replace(COMMENT_RESOLVED_MARKER_RE, '')
+    .replace(COMMENT_DISMISSED_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  // The comment-resolved chip lives in the top-right of its own row and
-  // hovers a primary action. The hover-only copy button positioned at the
-  // same corner of the assistant bubble crashes into that primary action
-  // on short messages — and copying the marker prose isn't useful anyway.
-  // Hide copy when the marker is present.
-  const hasCommentResolvedMarker = COMMENT_RESOLVED_MARKER_RE.test(text);
+  // The closure chip lives in the top-right of its own row and hovers a
+  // primary action. The hover-only copy button positioned at the same
+  // corner of the assistant bubble crashes into that primary action on
+  // short messages — and copying the marker prose isn't useful anyway.
+  // Hide copy when either closure marker is present.
+  const hasClosureMarker =
+    COMMENT_RESOLVED_MARKER_RE.test(text) || COMMENT_DISMISSED_MARKER_RE.test(text);
   COMMENT_RESOLVED_MARKER_RE.lastIndex = 0;
+  COMMENT_DISMISSED_MARKER_RE.lastIndex = 0;
   return (
     <div className="group relative text-[13px]">
-      {hasCommentResolvedMarker ? null : (
+      {hasClosureMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
           <CopyButton value={text} label="message" />
         </div>
@@ -203,7 +207,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
       {sessionId ? (
         <>
           <HandoffChip assistantText={text} sessionId={sessionId} />
-          <CommentResolvedChip assistantText={text} sessionId={sessionId} />
+          <CommentClosureChip assistantText={text} sessionId={sessionId} />
         </>
       ) : null}
     </div>
