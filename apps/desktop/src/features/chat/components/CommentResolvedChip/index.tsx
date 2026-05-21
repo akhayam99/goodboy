@@ -47,7 +47,9 @@ export function CommentResolvedChip({ assistantText, sessionId }: CommentResolve
   const onResolve = async () => {
     if (state.kind === 'resolving') return;
     setState({ kind: 'resolving' });
-    const ok = await resolveGithubThread(sessionId, marker.threadId);
+    const ok = await resolveGithubThread(sessionId, marker.threadId, {
+      commitSha: marker.commitSha,
+    });
     setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
   };
 

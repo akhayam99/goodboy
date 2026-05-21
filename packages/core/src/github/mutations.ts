@@ -7,6 +7,12 @@ const RESOLVE_REVIEW_THREAD_MUTATION = `mutation($threadId:ID!){
   }
 }`;
 
+const ADD_THREAD_REPLY_MUTATION = `mutation($threadId:ID!,$body:String!){
+  addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId,body:$body}){
+    comment{ id url }
+  }
+}`;
+
 interface RawResolveReviewThreadResponse {
   data?: {
     resolveReviewThread?: {
@@ -55,4 +61,59 @@ export async function resolveReviewThread(
     throw new GhCliError('resolveReviewThread returned no thread', JSON.stringify(raw), 1);
   }
   return { id: thread.id, isResolved: thread.isResolved };
+}
+
+interface RawAddThreadReplyResponse {
+  data?: {
+    addPullRequestReviewThreadReply?: {
+      comment?: { id: string; url: string } | null;
+    } | null;
+  };
+  errors?: ReadonlyArray<{ message: string }>;
+}
+
+export interface PostedThreadReply {
+  readonly id: string;
+  readonly url: string;
+}
+
+/**
+ * Posts a reply onto an existing review thread via the
+ * `addPullRequestReviewThreadReply` GraphQL mutation. Use this right before
+ * `resolveReviewThread` when you want the resolution to carry a human
+ * message (e.g. linking the commit that fixed the issue) instead of
+ * silently flipping the thread to resolved.
+ *
+ * Body is passed as a graphql variable so newlines and markdown survive
+ * the shell hop intact — no need to escape on the caller side.
+ */
+export async function addReviewThreadReply(
+  runner: GhRunner,
+  threadId: string,
+  body: string,
+  opts: { cwd?: string } = {},
+): Promise<PostedThreadReply> {
+  const raw = await runJson<RawAddThreadReplyResponse>(
+    runner,
+    [
+      'api',
+      'graphql',
+      '-f',
+      `query=${ADD_THREAD_REPLY_MUTATION}`,
+      '-F',
+      `threadId=${threadId}`,
+      '-f',
+      `body=${body}`,
+    ],
+    opts,
+  );
+  if (raw.errors && raw.errors.length > 0) {
+    const first = raw.errors[0]?.message ?? 'unknown graphql error';
+    throw new GhCliError(`addReviewThreadReply failed: ${first}`, first, 1);
+  }
+  const comment = raw.data?.addPullRequestReviewThreadReply?.comment;
+  if (!comment) {
+    throw new GhCliError('addReviewThreadReply returned no comment', JSON.stringify(raw), 1);
+  }
+  return { id: comment.id, url: comment.url };
 }

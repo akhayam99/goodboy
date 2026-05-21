@@ -21,7 +21,12 @@ export { fetchPrDiff, parseUnifiedDiff } from './diff';
 
 export { fetchPrDetail } from './details';
 
-export { resolveReviewThread, type ResolvedThread } from './mutations';
+export {
+  addReviewThreadReply,
+  resolveReviewThread,
+  type PostedThreadReply,
+  type ResolvedThread,
+} from './mutations';
 
 export {
   DEFAULT_PR_CACHE_TTL_MS,

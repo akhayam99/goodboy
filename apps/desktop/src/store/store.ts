@@ -548,7 +548,11 @@ export interface AppActions {
   clearGithubToken(): Promise<void>;
   refreshSessionPr(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
   refreshSessionPrDetail(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
-  resolveGithubThread(sessionId: SessionId, threadId: string): Promise<boolean>;
+  resolveGithubThread(
+    sessionId: SessionId,
+    threadId: string,
+    closure?: { commitSha?: string; reason?: string },
+  ): Promise<boolean>;
   createPrForSession(sessionId: SessionId): Promise<void>;
   clearSessionNextActions(sessionId: SessionId): void;
   resolvePermissionRequest(input: {

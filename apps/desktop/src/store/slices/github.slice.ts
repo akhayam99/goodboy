@@ -6,6 +6,7 @@ import {
   createTauriPrCacheStore,
 } from '../../features/github/github';
 import {
+  addReviewThreadReply,
   detectRepoSlug,
   fetchLinkedIssues,
   fetchPrDetail,
@@ -19,6 +20,38 @@ import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
 type GetFn = () => AppStore;
+
+/**
+ * Build the markdown body the agent leaves on the review thread when the
+ * user clicks "close on github". Two shapes:
+ *   - commit-backed closure → `Resolved in [\`abc1234\`](commit url)`. We
+ *     derive the commit url from the PR url so the link points at the
+ *     same repo/branch the user is reviewing.
+ *   - free-text closure (e.g. "not applicable") → posts the reason as-is
+ *     prefixed with "Closing:".
+ * Returns null when there is no closure context so the caller falls back
+ * to a silent resolve.
+ */
+function buildResolutionReplyBody(
+  closure: { commitSha?: string; reason?: string } | undefined,
+  prUrl: string | null,
+): string | null {
+  if (!closure) return null;
+  const sha = closure.commitSha?.trim();
+  if (sha && sha.length > 0) {
+    const short = sha.slice(0, 7);
+    const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
+    if (commitUrl && commitUrl !== prUrl) {
+      return `Resolved in [\`${short}\`](${commitUrl}).`;
+    }
+    return `Resolved in \`${short}\`.`;
+  }
+  const reason = closure.reason?.trim();
+  if (reason && reason.length > 0) {
+    return `Closing: ${reason}`;
+  }
+  return null;
+}
 
 export function createGithubSlice(set: SetFn, get: GetFn) {
   return {
@@ -238,15 +271,28 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
       }
     },
 
-    // Marks a review thread as resolved on github via the graphql mutation and
-    // refreshes the cached PR detail so the comments tab reflects the new state.
-    // Returns true on success so callers (e.g. the comment-resolved chip) can
-    // collapse their CTA on confirmation.
-    resolveGithubThread: async (sessionId: SessionId, threadId: string): Promise<boolean> => {
+    // Closes a review thread on github with a contextual reply, then flips the
+    // thread to resolved. The reply is built from the optional `closure`
+    // payload — a commit sha turns into `Resolved in [<short>](commit url)`,
+    // a free-text reason posts that verbatim. Without a closure the thread is
+    // resolved silently (back-compat for any caller that still hits the bare
+    // form). Returns true on success so the chip can collapse its CTA.
+    resolveGithubThread: async (
+      sessionId: SessionId,
+      threadId: string,
+      closure?: { commitSha?: string; reason?: string },
+    ): Promise<boolean> => {
       const session = get().sessions.find((s) => s.id === sessionId);
       if (!session) return false;
       const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+      const pr = get().sessionGithub[sessionId]?.pr ?? null;
+      const replyBody = buildResolutionReplyBody(closure, pr?.url ?? null);
       try {
+        if (replyBody) {
+          await addReviewThreadReply(tauriGhRunner, threadId, replyBody, {
+            cwd: workspace?.rootPath,
+          });
+        }
         await resolveReviewThread(tauriGhRunner, threadId, { cwd: workspace?.rootPath });
         await get().refreshSessionPrDetail(sessionId, { force: true });
         return true;
