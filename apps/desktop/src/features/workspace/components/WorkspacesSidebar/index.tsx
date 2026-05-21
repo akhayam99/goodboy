@@ -18,6 +18,7 @@ import {
   Play,
   Plus,
   Settings,
+  Sparkles,
   Sun,
   Trash2,
   Check,
@@ -193,7 +194,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
-                      <NextSuggestionsPlaceholder />
+                      <PlanReadySuggestion task={currentSession} />
                       <SessionMetaFooter
                         session={currentSession}
                         onOpenGithubDetails={() => setGithubDetailsOpen(true)}
@@ -311,16 +312,88 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
   );
 }
 
-function NextSuggestionsPlaceholder() {
+/**
+ * Footer-area nudge that proposes spawning an implementer when there is an
+ * active plan and nothing more pressing is in the way:
+ *   - latest plan status is 'active' (a 'consumed' plan already has an
+ *     implementer attached to it; no need to suggest again)
+ *   - no open questions on the session (the user owes the agent an answer
+ *     first; surfacing a spawn CTA on top of that is noise)
+ *   - if the session has a workflow whose next un-spawned step is itself an
+ *     implementer, defer to WorkflowNextStepCta — two CTAs for the same
+ *     action would compete
+ *
+ * Click goes through the store's runPlan, which (since the runPlan fix in
+ * this branch) seeds an implementer agent with the plan body as kickoff.
+ */
+function PlanReadySuggestion({ task }: { task: Session }) {
+  const plans = useSessionPlans(task.id);
+  const slots = useSessionSlots(task.id);
+  const phaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
+  );
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const runPlan = useAppStore((s) => s.runPlan);
+  const [spawning, setSpawning] = useState(false);
+
+  const latest = plans[plans.length - 1];
+  if (!latest || latest.status !== 'active') return null;
+
+  const hasOpenQuestions =
+    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
+  if (hasOpenQuestions) return null;
+
+  if (task.workflowId) {
+    const workflow = phaseTemplates.find((t) => t.id === task.workflowId);
+    if (workflow) {
+      const nextStep = pickNextWorkflowStep(workflow, phaseRuns);
+      if (nextStep && inferAgentKindFromName(nextStep.name) === 'implementer') return null;
+    }
+  }
+
+  const onSpawn = async () => {
+    if (spawning) return;
+    setSpawning(true);
+    try {
+      await runPlan(task.id, latest.id);
+    } finally {
+      setSpawning(false);
+    }
+  };
+
   return (
     <div className="shrink-0">
       <Divider />
-      <p
-        className="px-3 py-1.5 text-2xs italic text-muted-foreground/60"
-        title="next-action suggestions are coming back in a future update"
-      >
-        Next suggestions will be re-added soon.
-      </p>
+      <div className="px-3 py-2">
+        <button
+          type="button"
+          onClick={() => void onSpawn()}
+          disabled={spawning}
+          data-testid="plan-ready-suggestion"
+          title={latest.title}
+          aria-label={`spawn implementer puppy for plan: ${latest.title}`}
+          className="group flex w-full items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-left text-xs text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {spawning ? (
+            <Loader2 size={12} aria-hidden className="shrink-0 animate-spin" />
+          ) : (
+            <Sparkles size={12} aria-hidden className="shrink-0" />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+            <span className="text-2xs font-medium uppercase tracking-wide opacity-80">
+              plan ready
+            </span>
+            <span className="w-full truncate text-foreground/85">{latest.title}</span>
+          </span>
+          <ArrowRight
+            size={11}
+            aria-hidden
+            className="shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100"
+          />
+        </button>
+      </div>
     </div>
   );
 }
