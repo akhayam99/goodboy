@@ -149,19 +149,22 @@ const SessionActivityItem = memo(function SessionActivityItem({
       title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
+        // base surface — selected vs unselected
         isActive
-          ? 'border-border bg-muted text-foreground shadow-sm'
-          : isRunning
-            ? cn(
-                'spin-border border-transparent text-foreground',
-                spinBorder,
-                isAutoMode ? 'bg-danger/5 hover:bg-danger/10' : 'bg-info/5 hover:bg-info/10',
-              )
-            : isPending
-              ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
-              : isErrored
-                ? 'border-danger/40 bg-danger/5 text-foreground hover:bg-danger/10'
-                : 'border-transparent text-foreground/70 hover:bg-muted/50 hover:text-foreground',
+          ? 'bg-muted text-foreground shadow-sm'
+          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground',
+        // state border — applies whether the session is active or not,
+        // so the running / pending signals stay visible when you're
+        // sitting inside the session itself
+        isRunning
+          ? cn('spin-border border-transparent', spinBorder)
+          : isPending
+            ? 'animate-soft-pulse border-warning/70'
+            : isErrored
+              ? 'border-danger/40'
+              : isActive
+                ? 'border-border'
+                : 'border-transparent',
         dimmed && 'opacity-50',
       )}
     >
