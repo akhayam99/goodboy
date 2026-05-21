@@ -11,7 +11,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
     class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -42,6 +42,11 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
         </span>
       </button>
     </header>
+    <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
     <div
       class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
@@ -255,8 +260,13 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
         </section>
       </div>
     </div>
+    <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
     <footer
-      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
         class="flex w-full items-center gap-2"
@@ -469,11 +479,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     class="shrink-0"
   >
     <div
-      class="shrink-0 px-2 py-1.5"
+      class="shrink-0 px-3 py-3"
       data-tauri-drag-region="false"
     >
       <span
-        class="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+        class="mb-2 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
       >
         <svg
           aria-hidden="true"
@@ -537,6 +547,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       </div>
     </div>
   </div>
+  <div
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
   <div
     class="flex min-h-0 flex-1"
   >
@@ -622,7 +637,12 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     </div>
   </div>
   <div
-    class="flex shrink-0 items-center px-2.5 py-2"
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
+  <div
+    class="flex shrink-0 items-center px-2.5 py-3"
   >
     <span
       class="flex items-center gap-1.5"
@@ -846,7 +866,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -877,6 +897,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </span>
         </button>
       </header>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <div
         class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
       >
@@ -943,8 +968,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </div>
         </div>
       </div>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <footer
-        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+        class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
       >
         <button
           class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
@@ -971,7 +1001,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="flex min-h-0 flex-col h-[720px] max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none w-[64rem] max-w-[95vw]"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -1002,6 +1032,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </span>
         </button>
       </header>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <div
         class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm px-0 py-0 gap-0"
       >
@@ -1546,8 +1581,13 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </div>
         </div>
       </div>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <footer
-        class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+        class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
       >
         <button
           class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
@@ -1566,7 +1606,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -1591,6 +1631,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </span>
         </button>
       </header>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <div
         class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
       >
@@ -1677,7 +1722,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
       class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
     >
       <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
@@ -1702,6 +1747,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           </span>
         </button>
       </header>
+      <div
+        aria-orientation="horizontal"
+        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+        role="separator"
+      />
       <div
         class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
       >
@@ -1962,7 +2012,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
     class="flex flex-col max-h-[85vh] min-h-[16rem] w-[24rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -1994,6 +2044,11 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       </button>
     </header>
     <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
+    <div
       class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
       <div
@@ -2006,8 +2061,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
         </span>
       </div>
     </div>
+    <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
     <footer
-      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
@@ -2037,7 +2097,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
     class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
   >
     <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-soft"
+      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
     >
       <div
         class="flex min-w-0 flex-col gap-1"
@@ -2068,6 +2128,11 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         </span>
       </button>
     </header>
+    <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
     <div
       class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
@@ -2281,8 +2346,13 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
         </section>
       </div>
     </div>
+    <div
+      aria-orientation="horizontal"
+      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+      role="separator"
+    />
     <footer
-      class="flex shrink-0 items-center justify-end gap-2 border-t border-border-soft bg-subtle px-6 py-3"
+      class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
         class="flex w-full items-center gap-2"
