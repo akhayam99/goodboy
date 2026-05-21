@@ -372,7 +372,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
       disabled={spawning}
       data-testid="plan-ready-suggestion"
       title={latest.title}
-      aria-label={`spawn implementer puppy for plan: ${latest.title}`}
+      aria-label={`unleash a puppy to execute the plan: ${latest.title}`}
       className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
@@ -391,7 +391,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
             ·
           </span>
           <span className="font-normal normal-case tracking-normal text-muted-foreground">
-            spawn implementer
+            unleash a puppy
           </span>
         </span>
         <span className="line-clamp-2 text-xs text-foreground/90">{latest.title}</span>
