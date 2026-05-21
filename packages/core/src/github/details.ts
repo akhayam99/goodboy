@@ -234,6 +234,7 @@ async function fetchReviewThreads(
           inReplyToId: c.replyTo?.id
             ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined)
             : undefined,
+          threadId: t.id,
         });
       }
     }
