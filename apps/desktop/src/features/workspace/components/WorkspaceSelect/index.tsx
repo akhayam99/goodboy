@@ -40,8 +40,8 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   const atCap = workspaces.length >= MAX_WORKSPACES;
 
   return (
-    <div className="shrink-0 px-2 py-1.5" data-tauri-drag-region="false">
-      <span className="mb-1 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+    <div className="shrink-0 px-3 py-3" data-tauri-drag-region="false">
+      <span className="mb-2 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <FolderOpen size={11} aria-hidden className="text-primary" />
         Workspaces
         <span

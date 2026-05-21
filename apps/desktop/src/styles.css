@@ -59,6 +59,14 @@
     50% { opacity: 0.45; }
   }
 
+  /* Border-only pulse — anima il border-color, lascia il contenuto stabile.
+     Usato sulle session card in pending: il bordo respira giallo per
+     attirare l'occhio, ma il testo resta leggibile a opacità piena. */
+  @keyframes border-pulse {
+    0%, 100% { border-color: oklch(from var(--color-warning) l c h / 0.75); }
+    50%      { border-color: oklch(from var(--color-warning) l c h / 0.2); }
+  }
+
   @keyframes spin-border {
     to { --spin-angle: 360deg; }
   }
@@ -237,6 +245,39 @@ dialog[open]::backdrop {
 
 .spin-border-info  { --spin-border-color: var(--color-info); }
 .spin-border-danger { --spin-border-color: var(--color-danger); }
+
+.animate-border-pulse {
+  animation: border-pulse 2.8s ease-in-out infinite;
+}
+
+/* Slot-machine cost chip — outer success-tinted halo + a brief inner lift that
+   sells the "the meter just ticked" moment. Paired in JS with a per-digit roll
+   so the glow peaks while the numbers are still settling, then fades as they
+   lock in. Duration must match the JS roll (1100ms). */
+@keyframes cost-chip-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 oklch(from var(--color-success) l c h / 0),
+      0 0 0 0 oklch(from var(--color-success) l c h / 0);
+    background-color: oklch(from var(--color-success) l c h / 0.10);
+  }
+  25% {
+    box-shadow:
+      0 0 0 2px oklch(from var(--color-success) l c h / 0.45),
+      0 0 14px 2px oklch(from var(--color-success) l c h / 0.55);
+    background-color: oklch(from var(--color-success) l c h / 0.22);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 oklch(from var(--color-success) l c h / 0),
+      0 0 0 0 oklch(from var(--color-success) l c h / 0);
+    background-color: oklch(from var(--color-success) l c h / 0.10);
+  }
+}
+
+.cost-chip-pulse {
+  animation: cost-chip-pulse 1100ms cubic-bezier(0.2, 0, 0, 1);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

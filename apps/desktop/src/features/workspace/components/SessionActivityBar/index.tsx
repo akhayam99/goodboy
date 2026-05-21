@@ -67,7 +67,7 @@ export function SessionActivityBar({
             <button
               type="button"
               onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/40 hover:text-foreground"
+              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/40 py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
               title="new session"
               aria-label="create new session"
             >
@@ -151,19 +151,20 @@ const SessionActivityItem = memo(function SessionActivityItem({
         'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
         // base surface — selected vs unselected
         isActive
-          ? 'bg-muted text-foreground shadow-sm'
-          : 'text-foreground/70 hover:bg-muted/50 hover:text-foreground',
-        // state border — applies whether the session is active or not,
-        // so the running / pending signals stay visible when you're
-        // sitting inside the session itself
-        isRunning
-          ? cn('spin-border border-transparent', spinBorder)
-          : isPending
-            ? 'animate-soft-pulse border-warning/70'
-            : isErrored
-              ? 'border-danger/40'
-              : isActive
-                ? 'border-border'
+          ? 'bg-elevated text-foreground shadow-sm'
+          : 'bg-muted/40 text-foreground/70 hover:bg-muted/60 hover:text-foreground',
+        // State border — only when the session is NOT the active one.
+        // Once you're sitting inside the session the badges/spinners up
+        // top become redundant; the active tile collapses back to a
+        // plain selected border so the rail doesn't double-shout.
+        isActive
+          ? 'border-border'
+          : isRunning
+            ? cn('spin-border border-transparent', spinBorder)
+            : isPending
+              ? 'animate-border-pulse border-warning/70'
+              : isErrored
+                ? 'border-danger/40'
                 : 'border-transparent',
         dimmed && 'opacity-50',
       )}

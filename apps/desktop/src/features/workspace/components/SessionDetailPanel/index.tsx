@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   ChevronRight,
@@ -208,20 +208,129 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
     }
     return sum;
   }, [telemetry]);
-  const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
+  const finalLabel = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
+
+  const [displayLabel, setDisplayLabel] = useState(finalLabel);
+  const [animating, setAnimating] = useState(false);
+  const prevCostRef = useRef(sessionCost);
+  const prevSessionIdRef = useRef(sessionId);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Session switch — snap, don't animate stale → fresh transition.
+    if (prevSessionIdRef.current !== sessionId) {
+      prevSessionIdRef.current = sessionId;
+      prevCostRef.current = sessionCost;
+      setDisplayLabel(finalLabel);
+      setAnimating(false);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+    if (prevCostRef.current === sessionCost) {
+      setDisplayLabel(finalLabel);
+      return;
+    }
+    const fromCost = prevCostRef.current;
+    const toCost = sessionCost;
+    prevCostRef.current = toCost;
+
+    // Respect reduced motion: snap to final, no roll, no glow.
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setDisplayLabel(finalLabel);
+      setAnimating(false);
+      return;
+    }
+
+    // Always use 2 decimals during the animation so the digit grid is stable;
+    // the static label collapses '$0' separately when nothing is spent.
+    const toLabel = `$${toCost.toFixed(2)}`;
+    const fromLabel = `$${fromCost.toFixed(2)}`;
+
+    setAnimating(true);
+    const duration = 1100;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / duration);
+      setDisplayLabel(rollDigits(fromLabel, toLabel, t));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        rafRef.current = null;
+        setDisplayLabel(finalLabel);
+        setAnimating(false);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [sessionCost, sessionId, finalLabel]);
+
   return (
     <>
       <button
         type="button"
         onClick={() => setPricingOpen(true)}
-        title={`Estimated cost for this session: ${label} (excluding summarizer) — click for spend breakdown`}
-        className="inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15"
+        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer) — click for spend breakdown`}
+        className={cn(
+          'inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15',
+          animating && 'cost-chip-pulse',
+        )}
       >
-        {label}
+        {displayLabel}
       </button>
       <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
   );
+}
+
+/**
+ * Slot-machine digit roll, right-to-left wave. Rightmost positions spin
+ * through extra full 0-9 cycles before locking onto the target digit; each
+ * step left strips one cycle. All digits settle at t=1 with an easeOut so
+ * the motion decelerates into the final value.
+ */
+function rollDigits(fromLabel: string, toLabel: string, t: number): string {
+  // Pad from with leading zeros (after the '$') if the target grew a digit.
+  const fromAligned =
+    fromLabel.length < toLabel.length
+      ? '$' + '0'.repeat(toLabel.length - fromLabel.length) + fromLabel.slice(1)
+      : fromLabel;
+  const eased = 1 - Math.pow(1 - t, 3);
+
+  const chars: string[] = new Array(toLabel.length);
+  let posFromRight = 0;
+  for (let i = toLabel.length - 1; i >= 0; i--) {
+    const tc = toLabel.charCodeAt(i);
+    if (tc >= 48 && tc <= 57) {
+      const toDigit = tc - 48;
+      const fc = fromAligned.charCodeAt(i);
+      const fromDigit = fc >= 48 && fc <= 57 ? fc - 48 : 0;
+      // Extra full rotations stack on the rightmost digits and fade out
+      // moving left. The leftmost positions just walk old → new directly.
+      const extraCycles = Math.max(0, 3 - posFromRight);
+      const directDelta = (toDigit - fromDigit + 10) % 10;
+      const totalDelta = directDelta + extraCycles * 10;
+      const advanced = Math.floor(totalDelta * eased);
+      chars[i] = String((fromDigit + advanced) % 10);
+      posFromRight++;
+    } else {
+      chars[i] = toLabel[i] as string;
+    }
+  }
+  return chars.join('');
 }
 
 function GithubRefreshButton({ sessionId }: { sessionId: SessionId }) {
@@ -276,7 +385,7 @@ interface GithubCardProps {
 function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCardProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-2xs text-muted-foreground">
         <Loader2 size={11} aria-hidden className="animate-spin" />
         <span>loading github…</span>
       </div>
@@ -285,7 +394,7 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
 
   if (!pr) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-2xs">
+      <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-2xs">
         <GitPullRequest size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
         <span className="text-muted-foreground">no PR yet</span>
         <span className="ml-auto" />
@@ -306,7 +415,7 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
       type="button"
       onClick={onOpenDetails}
       disabled={!onOpenDetails}
-      className="group flex items-center gap-2 rounded-md bg-subtle/50 px-2.5 py-1.5 text-left transition-colors hover:bg-subtle disabled:cursor-default disabled:hover:bg-subtle/50"
+      className="group flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-muted/40"
     >
       <span className={cn('inline-flex items-center gap-1 text-2xs font-medium', entry?.className)}>
         <StateIcon size={12} aria-hidden />

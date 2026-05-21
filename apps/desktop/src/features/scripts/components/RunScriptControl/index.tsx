@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn, Divider, Popover } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScript } from '@goodboy/types';
-import { Loader2, Play, ScrollText, Terminal } from 'lucide-react';
+import { Play, ScrollText, Terminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunResult, ScriptRunStatus } from '../../scripts';
@@ -186,8 +186,12 @@ function ScriptRow({ script, run, onRun }: ScriptRowProps) {
   return (
     <div
       className={cn(
-        'group flex flex-col rounded transition-colors',
+        'group flex flex-col rounded border border-transparent transition-colors',
         !isPending && 'hover:bg-muted/60',
+        // Same border-spinner language used on running puppies / workflow
+        // steps: the row itself is the activity signal, no extra spinner
+        // icon needed and the play affordance is locked while it runs.
+        isPending && 'spin-border spin-border-info',
       )}
     >
       <div className="flex items-center gap-2 px-2 py-2">
@@ -220,19 +224,16 @@ function ScriptRow({ script, run, onRun }: ScriptRowProps) {
             <ScrollText size={13} aria-hidden />
           </button>
         ) : null}
-        {isPending ? (
-          <Loader2 size={13} className="shrink-0 animate-spin text-muted-foreground" aria-hidden />
-        ) : (
-          <button
-            type="button"
-            onClick={onRun}
-            title="run script"
-            aria-label="run script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground"
-          >
-            <Play size={13} aria-hidden />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={isPending}
+          title={isPending ? 'script running…' : 'run script'}
+          aria-label="run script"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground/50 group-hover:text-muted-foreground"
+        >
+          <Play size={13} aria-hidden />
+        </button>
       </div>
       {hasOutput && outputOpen ? (
         <pre
