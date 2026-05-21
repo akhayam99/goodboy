@@ -10,9 +10,11 @@ import {
   GitBranch,
   Loader2,
   Settings2,
+  ShieldCheck,
   Trash2,
   Zap,
 } from 'lucide-react';
+import { PermissionRulesDialog } from '../../../permissions/components/PermissionRulesDialog';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
@@ -63,6 +65,9 @@ export function SessionSettingsDialog({
   const deleteArmTimer = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [permissionRulesOpen, setPermissionRulesOpen] = useState(false);
+  const [activeRuleCount, setActiveRuleCount] = useState<number | null>(null);
+  const loadPermissionRules = useAppStore((s) => s.loadPermissionRules);
 
   const [branchEditOpen, setBranchEditOpen] = useState(false);
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing');
@@ -78,7 +83,18 @@ export function SessionSettingsDialog({
     setDeleteArmed(false);
     setBranchEditOpen(false);
     void loadSessionBudget(sessionId);
-  }, [open, sessionId, loadSessionBudget]);
+    void (async () => {
+      try {
+        const rules = await loadPermissionRules({
+          workspaceId: session?.workspaceId,
+          sessionId,
+        });
+        setActiveRuleCount(rules.length);
+      } catch {
+        setActiveRuleCount(null);
+      }
+    })();
+  }, [open, sessionId, loadSessionBudget, loadPermissionRules, session?.workspaceId]);
 
   useEffect(() => {
     return () => {
@@ -345,8 +361,57 @@ export function SessionSettingsDialog({
             />
           </>
         ) : null}
+        <div className="my-6">
+          <Divider />
+        </div>
+        <PermissionsSection
+          activeRuleCount={activeRuleCount}
+          onOpenManager={() => setPermissionRulesOpen(true)}
+        />
       </div>
+      <PermissionRulesDialog
+        open={permissionRulesOpen}
+        onClose={() => setPermissionRulesOpen(false)}
+        sessionId={sessionId}
+        workspaceId={session.workspaceId}
+      />
     </Dialog>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Section: Permissions                                                  */
+/* ──────────────────────────────────────────────────────────────────── */
+
+interface PermissionsSectionProps {
+  readonly activeRuleCount: number | null;
+  readonly onOpenManager: () => void;
+}
+
+function PermissionsSection({ activeRuleCount, onOpenManager }: PermissionsSectionProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <SectionHeader
+        icon={<ShieldCheck size={14} aria-hidden className="text-primary" />}
+        title="Permissions"
+        subtitle="manage allow/deny rules that apply across sessions"
+      />
+      <div className="flex items-center justify-between rounded-md border border-border bg-muted/10 px-3 py-2">
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-foreground">
+            {activeRuleCount === null
+              ? '—'
+              : `${activeRuleCount} rule${activeRuleCount === 1 ? '' : 's'} active`}
+          </span>
+          <span className="text-2xs text-muted-foreground">
+            global, workspace, and session scopes
+          </span>
+        </div>
+        <Button variant="secondary" onClick={onOpenManager}>
+          Manage rules
+        </Button>
+      </div>
+    </div>
   );
 }
 
