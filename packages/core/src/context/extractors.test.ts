@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
+  extractCommentDismissed,
   extractCommentResolved,
   extractFilesTouched,
   extractHandoff,
@@ -250,6 +251,51 @@ describe('extractCommentResolved', () => {
       threadId: 'PRT_2',
       commitSha: 'bbb',
     });
+  });
+});
+
+describe('extractCommentDismissed', () => {
+  it('returns null when no marker is present', () => {
+    expect(extractCommentDismissed('skipping this comment, not relevant')).toBeNull();
+  });
+
+  it('parses threadId and reason attributes', () => {
+    const text = '<<comment-dismissed threadId="PRT_42" reason="off-topic for this PR">>';
+    expect(extractCommentDismissed(text)).toEqual({
+      threadId: 'PRT_42',
+      reason: 'off-topic for this PR',
+    });
+  });
+
+  it('accepts thread as an alias for threadId', () => {
+    const text = '<<comment-dismissed thread="PRT_9" reason="wontfix">>';
+    expect(extractCommentDismissed(text)).toEqual({
+      threadId: 'PRT_9',
+      reason: 'wontfix',
+    });
+  });
+
+  it('rejects markers missing one of the required attributes', () => {
+    expect(extractCommentDismissed('<<comment-dismissed threadId="PRT_1">>')).toBeNull();
+    expect(extractCommentDismissed('<<comment-dismissed reason="x">>')).toBeNull();
+    expect(
+      extractCommentDismissed('<<comment-dismissed threadId="PRT_1" reason="   ">>'),
+    ).toBeNull();
+  });
+
+  it('returns the last well-formed marker when multiple appear', () => {
+    const text =
+      '<<comment-dismissed threadId="PRT_1" reason="first">> ... <<comment-dismissed threadId="PRT_2" reason="second">>';
+    expect(extractCommentDismissed(text)).toEqual({
+      threadId: 'PRT_2',
+      reason: 'second',
+    });
+  });
+
+  it('does not leak lastIndex across calls', () => {
+    const text = '<<comment-dismissed threadId="PRT_X" reason="repeat me">>';
+    expect(extractCommentDismissed(text)).toEqual({ threadId: 'PRT_X', reason: 'repeat me' });
+    expect(extractCommentDismissed(text)).toEqual({ threadId: 'PRT_X', reason: 'repeat me' });
   });
 });
 

@@ -177,6 +177,38 @@ export function extractCommentResolved(assistantText: string): ExtractedCommentR
   return last;
 }
 
+const COMMENT_DISMISSED_RE = /<<comment-dismissed\s+([^>]+?)>>/g;
+
+export interface ExtractedCommentDismissal {
+  readonly threadId: string;
+  readonly reason: string;
+}
+
+/**
+ * Parse a `<<comment-dismissed threadId="..." reason="...">>` marker out of an
+ * assistant turn. Resolver agents emit it when they decide a review comment is
+ * not actionable (off-topic, wontfix, out of scope, already-fixed) so the chat
+ * surface can offer a one-click action that closes the underlying review
+ * thread on github with the reason posted as a reply.
+ *
+ * Self-closing. Last marker wins if multiple present. Returns null if no
+ * well-formed marker is present (both threadId and reason are required).
+ */
+export function extractCommentDismissed(assistantText: string): ExtractedCommentDismissal | null {
+  COMMENT_DISMISSED_RE.lastIndex = 0;
+  let last: ExtractedCommentDismissal | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = COMMENT_DISMISSED_RE.exec(assistantText)) !== null) {
+    const inner = m[1] ?? '';
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const reason = (attrs.reason ?? '').trim();
+    if (threadId.length === 0 || reason.length === 0) continue;
+    last = { threadId, reason };
+  }
+  return last;
+}
+
 const PLAN_OPEN_QUESTION_RE =
   /\b(vuoi che|ti torna|che ne dici|should i|let me know|do you want|shall i|wdyt|preferisci)\b/i;
 const PLAN_INCOMPLETE_RE = /\b(TODO|TBD|FIXME|\?\?)\b/i;
