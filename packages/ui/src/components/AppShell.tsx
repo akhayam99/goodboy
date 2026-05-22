@@ -206,7 +206,7 @@ export function AppShell({
       >
         {hasLeftSidebar ? (
           <aside
-            className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-sm bg-subtle shadow-md"
+            className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[6px] bg-subtle shadow-md"
             style={{ gridArea: 'left' }}
           >
             {leftSidebar}
@@ -255,7 +255,7 @@ export function AppShell({
               'flex min-h-0 min-w-0 flex-col overflow-hidden transition-[margin,background-color,border-radius,box-shadow] duration-200 ease-out',
               rightSidebarCollapsed
                 ? 'mr-3 mt-3 bg-background'
-                : 'm-3 rounded-sm bg-subtle shadow-md',
+                : 'm-3 rounded-[6px] bg-subtle shadow-md',
             )}
             style={{ gridArea: 'right' }}
           >
