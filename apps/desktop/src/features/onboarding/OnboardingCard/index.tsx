@@ -1,31 +1,49 @@
-import { Check, X } from 'lucide-react';
+import { Check, Sparkles, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { ONBOARDING_STEPS, dismiss, type OnboardingStepId } from '../onboarding-store';
-import { useOnboardingProgress } from '../use-onboarding-progress';
+import {
+  ONBOARDING_STEPS,
+  collapse,
+  finish,
+  reopen,
+  type OnboardingStepId,
+} from '../onboarding-store';
+import { useOnboardingProgress, type OnboardingProgress } from '../use-onboarding-progress';
 
 /**
- * GitHub-style progressive checklist. Renders in the EmptyState chat
- * surface as a pinned card top-right. Auto-detects completions from
- * store events (workspace added, first session, first agent, first
- * plan). Skip + Dismiss kill it permanently.
+ * Progressive setup checklist. Floats top-right of the chat area. The X
+ * collapses it to the sidebar chip (reopenable) — it is not a permanent
+ * dismiss. When all six steps land it swaps to a one-time wrap-up; closing
+ * that retires onboarding for good. Per plan section G.
  */
 export function OnboardingCard() {
   const progress = useOnboardingProgress();
 
-  if (progress.dismissed) return null;
-  if (progress.isDone) return null;
+  if (progress.finished) return null;
+  // Collapsed hides the checklist — but a freshly-completed run still earns
+  // its wrap-up, so the completed state ignores the collapsed flag.
+  if (!progress.isDone && progress.collapsed) return null;
 
   return (
-    <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-xl border border-border-soft bg-elevated/80 p-3 shadow-md backdrop-blur-sm">
+    <div className="pointer-events-none absolute right-4 top-14 z-20">
+      <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-[6px] border border-border-soft bg-elevated/80 p-3 shadow-md backdrop-blur-sm">
+        {progress.isDone ? <CompletedBody /> : <ChecklistBody progress={progress} />}
+      </div>
+    </div>
+  );
+}
+
+function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
+  return (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
           Goodboy setup
         </span>
         <button
           type="button"
-          onClick={() => dismiss()}
-          title="dismiss onboarding"
-          aria-label="dismiss onboarding"
+          onClick={() => collapse()}
+          title="hide — reopen from the sidebar"
+          aria-label="hide onboarding checklist"
           className="rounded-sm p-0.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
@@ -45,7 +63,39 @@ export function OnboardingCard() {
       <p className="text-[10px] leading-snug text-muted-foreground/60">
         {progress.completedCount} of {progress.totalCount} steps done.
       </p>
-    </div>
+    </>
+  );
+}
+
+function CompletedBody() {
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-success">
+          <Sparkles size={11} aria-hidden />
+          Setup complete
+        </span>
+        <button
+          type="button"
+          onClick={() => finish()}
+          title="dismiss"
+          aria-label="dismiss onboarding"
+          className="rounded-sm p-0.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          <X size={11} aria-hidden />
+        </button>
+      </div>
+      <p className="text-[11px] leading-snug text-muted-foreground/80">
+        Nice — you've got the hang of Goodboy. That was the last step.
+      </p>
+      <button
+        type="button"
+        onClick={() => finish()}
+        className="self-start rounded-md bg-primary px-2 py-1 text-2xs font-semibold text-primary-foreground transition-colors hover:brightness-110"
+      >
+        Done
+      </button>
+    </>
   );
 }
 
@@ -80,26 +130,32 @@ function StepRow({ title, why, done }: StepRowProps) {
 }
 
 /**
- * Compact 1-line variant — appears in the sidebar footer once the user
- * has at least one session. A whisper, not a stack.
+ * Compact dotted progress chip — onboarding's permanent home in the sidebar
+ * footer. Visible until onboarding is finished; click reopens the checklist
+ * card. Six dots fill as steps land.
  */
-export function OnboardingChip({ onOpen }: { onOpen?: () => void }) {
+export function OnboardingChip() {
   const progress = useOnboardingProgress();
-  if (progress.dismissed) return null;
-  if (progress.isDone) return null;
-  if (progress.completedCount === 0) return null;
+  if (progress.finished) return null;
 
   return (
     <button
       type="button"
-      onClick={onOpen}
-      title="onboarding progress"
-      className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+      onClick={() => reopen()}
+      title={`Setup — ${progress.completedCount} of ${progress.totalCount} done`}
+      aria-label="open onboarding checklist"
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 transition-colors hover:border-border"
     >
-      <span className="inline-flex size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
-      <span>
-        {progress.completedCount}/{progress.totalCount} setup
-      </span>
+      {ONBOARDING_STEPS.map((step, i) => (
+        <span
+          key={step.id}
+          aria-hidden
+          className={cn(
+            'size-1.5 rounded-full transition-colors',
+            i < progress.completedCount ? 'bg-primary' : 'bg-border',
+          )}
+        />
+      ))}
     </button>
   );
 }

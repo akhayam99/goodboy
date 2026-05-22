@@ -225,25 +225,30 @@ export function App() {
           ) : undefined
         }
         main={
-          error ? (
-            <p className="p-6 text-sm text-danger">init error: {error}</p>
-          ) : currentSession ? (
-            <div className="relative h-full w-full">
-              {deferredRenderedIds.map((id) => (
-                <KeepAliveChatPanel
-                  key={id}
-                  sessionId={id}
-                  isActive={id === deferredActiveId}
-                  onRequestEnd={onRequestEnd}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              hasWorkspace={Boolean(currentWorkspace)}
-              onAddWorkspace={() => setAddWorkspaceOpen(true)}
-            />
-          )
+          <div className="relative h-full w-full">
+            {error ? (
+              <p className="p-6 text-sm text-danger">init error: {error}</p>
+            ) : currentSession ? (
+              <div className="relative h-full w-full">
+                {deferredRenderedIds.map((id) => (
+                  <KeepAliveChatPanel
+                    key={id}
+                    sessionId={id}
+                    isActive={id === deferredActiveId}
+                    onRequestEnd={onRequestEnd}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                hasWorkspace={Boolean(currentWorkspace)}
+                onAddWorkspace={() => setAddWorkspaceOpen(true)}
+              />
+            )}
+            {/* Onboarding checklist floats top-right of the chat area —
+                app-level so the sidebar chip can summon it from anywhere. */}
+            <OnboardingCard />
+          </div>
         }
         rightSidebar={
           currentSession ? (
@@ -370,9 +375,6 @@ function EmptyState({
         }}
         aria-hidden
       />
-      <div className="pointer-events-none absolute right-4 top-4">
-        <OnboardingCard />
-      </div>
       <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
         <EmptyStateLogo />
         <div className="flex flex-col gap-2.5">

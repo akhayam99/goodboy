@@ -43,7 +43,8 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
 ];
 
 const STORAGE_KEY = 'goodboy:onboarding-progress';
-const DISMISS_KEY = 'goodboy:onboarding-dismissed';
+const COLLAPSE_KEY = 'goodboy:onboarding-collapsed';
+const FINISHED_KEY = 'goodboy:onboarding-finished';
 
 interface PersistedProgress {
   readonly completed: ReadonlyArray<OnboardingStepId>;
@@ -90,17 +91,46 @@ export function markStepComplete(id: OnboardingStepId): void {
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }
 
-export function isDismissed(): boolean {
+function readFlag(key: string): boolean {
   if (typeof localStorage === 'undefined') return false;
-  return localStorage.getItem(DISMISS_KEY) === '1';
+  return localStorage.getItem(key) === '1';
 }
 
-export function dismiss(): void {
+function writeFlag(key: string, on: boolean): void {
   if (typeof localStorage === 'undefined') return;
   try {
-    localStorage.setItem(DISMISS_KEY, '1');
+    if (on) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
     window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
   } catch {
-    // ignore
+    // localStorage full / unavailable — ignore
   }
+}
+
+/**
+ * The checklist card is collapsed to the sidebar chip. Unlike a permanent
+ * dismiss this is reversible — clicking the chip reopens it.
+ */
+export function isCollapsed(): boolean {
+  return readFlag(COLLAPSE_KEY);
+}
+
+export function collapse(): void {
+  writeFlag(COLLAPSE_KEY, true);
+}
+
+export function reopen(): void {
+  writeFlag(COLLAPSE_KEY, false);
+}
+
+/**
+ * All steps done and the user acknowledged the wrap-up — onboarding is gone
+ * for good (card + chip). Completing the six steps is the only other exit.
+ */
+export function isFinished(): boolean {
+  return readFlag(FINISHED_KEY);
+}
+
+export function finish(): void {
+  writeFlag(FINISHED_KEY, true);
 }

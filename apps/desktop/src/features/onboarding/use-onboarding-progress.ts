@@ -3,7 +3,8 @@ import { useAppStore, useCurrentSession, useWorkspaces } from '../../store';
 import {
   ONBOARDING_STEPS,
   getCompleted,
-  isDismissed,
+  isCollapsed,
+  isFinished,
   markStepComplete,
   type OnboardingStepId,
 } from './onboarding-store';
@@ -18,7 +19,10 @@ export interface OnboardingProgress {
   readonly completedCount: number;
   readonly totalCount: number;
   readonly completed: ReadonlySet<OnboardingStepId>;
-  readonly dismissed: boolean;
+  /** Card collapsed to the chip — reopenable, not a permanent dismiss. */
+  readonly collapsed: boolean;
+  /** Wrap-up acknowledged — onboarding gone for good. */
+  readonly finished: boolean;
   readonly isDone: boolean;
 }
 
@@ -39,7 +43,8 @@ export function useOnboardingProgress(): OnboardingProgress {
   }, []);
 
   const persistedCompleted = useMemo(() => new Set(getCompleted()), [tick]);
-  const dismissed = useMemo(() => isDismissed(), [tick]);
+  const collapsed = useMemo(() => isCollapsed(), [tick]);
+  const finished = useMemo(() => isFinished(), [tick]);
 
   // Auto-detect completions from store state. These mark the persisted
   // store so the chip stays consistent after reload.
@@ -74,7 +79,8 @@ export function useOnboardingProgress(): OnboardingProgress {
     completedCount,
     totalCount,
     completed: persistedCompleted,
-    dismissed,
+    collapsed,
+    finished,
     isDone: completedCount >= totalCount,
   };
 }

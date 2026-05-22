@@ -223,8 +223,8 @@ export function WorkspacesSidebar({
       {/* sidebar footer — logo + onboarding chip + controls */}
       <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
-        <OnboardingChip onOpen={() => setGuideOpen(true)} />
         <div className="flex-1" />
+        <OnboardingChip />
         <div className="flex items-center gap-0.5">
           <button
             type="button"
