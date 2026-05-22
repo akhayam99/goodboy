@@ -56,6 +56,8 @@ type SummarizerStatusKind = 'idle' | 'running' | 'error';
 const ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
+type PanelTab = 'context' | 'plans';
+
 export function ContextPanel({
   session,
   collapsed = false,
@@ -70,6 +72,8 @@ export function ContextPanel({
   const sessionTelemetry = useAppStore(
     (s) => s.sessionTelemetry[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
+  const plans = useSessionPlans(session.id);
+  const [tab, setTab] = useState<PanelTab>('context');
 
   const summarizerTotals = useMemo(() => {
     let inputTokens = 0;
@@ -92,8 +96,8 @@ export function ContextPanel({
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
   );
 
-  // open_questions is pinned in a sticky footer; goal/decisions/last_output_summary
-  // remain inline in the scroll area.
+  // open_questions is pinned in a sticky footer (visible across both tabs);
+  // goal/decisions/last_output_summary live in the Context tab.
   const visibleSlotKeys = useMemo(
     () =>
       SLOT_KEYS.filter((k) => k !== 'files_touched' && k !== 'open_questions').sort((a, b) => {
@@ -106,6 +110,10 @@ export function ContextPanel({
       }),
     [],
   );
+
+  // Count badges on the tab strip — at-a-glance counts beat hunting through.
+  const plansBadge = plans.length > 0 ? plans.length : null;
+  const hasActivePlan = plans.some((p) => p.status === 'active');
 
   return (
     <>
@@ -141,13 +149,16 @@ export function ContextPanel({
           summarizer.status === 'running' && 'spin-border spin-border-info',
         )}
       >
-        <div className="shrink-0 flex flex-col gap-4 px-4 pt-4 pb-2">
-          <header className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              <BookOpen size={11} aria-hidden className="text-accent" />
-              Context
-            </span>
-            <div className="flex items-center gap-1">
+        <div className="shrink-0 flex flex-col gap-0 px-3 pt-3 pb-0">
+          <header className="flex items-center justify-between gap-1 px-1 pb-2">
+            <TabStrip
+              tab={tab}
+              onPick={setTab}
+              plansBadge={plansBadge}
+              plansWarning={hasActivePlan}
+              summarizerRunning={summarizer.status === 'running'}
+            />
+            <div className="flex shrink-0 items-center gap-1">
               <SummarizerBadge
                 sessionId={session.id}
                 status={summarizer.status}
@@ -171,36 +182,39 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* top — always-on slots that summarize the session state.
-            The outer wrapper holds the scroll: cards size to their own
-            content so a tall expanded slot never crowds a short sibling,
-            and any overflow scrolls the whole column instead of forcing
-            an inner scrollbar per card. */}
+        {/* Tab content — Context (slots) or Plans (full list). Open Questions
+            is pinned across both via the sticky footer below. */}
         <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pb-3">
-          <ul
-            className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
-            style={{ scrollbarGutter: 'stable' }}
-          >
-            {visibleSlotKeys.map((key) => {
-              const slot = slotsByKey.get(key);
-              return (
-                <SlotRow
-                  key={key}
-                  sessionId={session.id}
-                  slotKey={key}
-                  slot={slot}
-                  loading={loading.slots}
-                  isSummarizing={summarizer.status === 'running'}
-                  onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                />
-              );
-            })}
-          </ul>
+          {tab === 'context' ? (
+            <ul
+              className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
+              style={{ scrollbarGutter: 'stable' }}
+            >
+              {visibleSlotKeys.map((key) => {
+                const slot = slotsByKey.get(key);
+                return (
+                  <SlotRow
+                    key={key}
+                    sessionId={session.id}
+                    slotKey={key}
+                    slot={slot}
+                    loading={loading.slots}
+                    isSummarizing={summarizer.status === 'running'}
+                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                  />
+                );
+              })}
+            </ul>
+          ) : (
+            <PlansTabContent sessionId={session.id} />
+          )}
         </div>
 
         <Divider />
 
-        {/* bottom — pinned sections that may be empty: questions first, plans second */}
+        {/* Sticky footer — Open Questions across both tabs. The one slot
+            that's *actionable for the user, not the agent* — keeping it
+            visible always solves the "I forgot the agent asked something". */}
         <div className="flex shrink-0 flex-col gap-2.5 bg-subtle/30 px-4 py-3">
           <ul className="flex flex-col">
             <SlotRow
@@ -212,9 +226,160 @@ export function ContextPanel({
               onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
             />
           </ul>
-          <PlansSection sessionId={session.id} />
         </div>
       </div>
+    </>
+  );
+}
+
+interface TabStripProps {
+  readonly tab: PanelTab;
+  readonly onPick: (next: PanelTab) => void;
+  readonly plansBadge: number | null;
+  readonly plansWarning: boolean;
+  readonly summarizerRunning: boolean;
+}
+
+function TabStrip({ tab, onPick, plansBadge, plansWarning, summarizerRunning }: TabStripProps) {
+  return (
+    <div role="tablist" aria-label="context panel tabs" className="flex items-center gap-0.5">
+      <TabButton
+        active={tab === 'context'}
+        onClick={() => onPick('context')}
+        icon={<BookOpen size={11} aria-hidden />}
+        label="Context"
+        accentDot={summarizerRunning ? 'bg-info' : null}
+      />
+      <TabButton
+        active={tab === 'plans'}
+        onClick={() => onPick('plans')}
+        icon={<ClipboardList size={11} aria-hidden />}
+        label="Plans"
+        badge={plansBadge}
+        accentDot={plansWarning ? 'bg-warning' : null}
+      />
+    </div>
+  );
+}
+
+interface TabButtonProps {
+  readonly active: boolean;
+  readonly onClick: () => void;
+  readonly icon: React.ReactNode;
+  readonly label: string;
+  readonly badge?: number | null;
+  readonly accentDot?: string | null;
+}
+
+function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButtonProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold uppercase tracking-[0.06em] transition-colors',
+        active
+          ? 'bg-background text-foreground shadow-sm'
+          : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+      {badge !== null && badge !== undefined ? (
+        <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium tracking-normal text-muted-foreground">
+          {badge}
+        </span>
+      ) : null}
+      {accentDot ? (
+        <span aria-hidden className={cn('ml-0.5 size-1.5 rounded-full', accentDot)} />
+      ) : null}
+    </button>
+  );
+}
+
+function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
+  const plans = useSessionPlans(sessionId);
+  const loading = useSessionLoading(sessionId);
+  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [focusPlanId, setFocusPlanId] = useState<PlanId | null>(null);
+
+  useEffect(() => {
+    void loadSessionPlans(sessionId);
+  }, [sessionId, loadSessionPlans]);
+
+  if (plans.length === 0 && loading.plans) {
+    return (
+      <div className="flex flex-col gap-2 py-1">
+        <PlansSkeleton />
+      </div>
+    );
+  }
+  if (plans.length === 0) {
+    return <PlansEmpty />;
+  }
+
+  const openModal = (planId: PlanId) => {
+    setFocusPlanId(planId);
+    setModalOpen(true);
+  };
+
+  return (
+    <>
+      <ul
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
+        style={{ scrollbarGutter: 'stable' }}
+      >
+        {plans.map((plan, idx) => (
+          <li key={plan.id}>
+            <button
+              type="button"
+              onClick={() => openModal(plan.id)}
+              title={`Open plan ${idx + 1} — ${plan.title}`}
+              className="group flex w-full items-start gap-2 rounded-lg bg-muted/30 p-2.5 text-left ring-1 ring-border-soft transition-colors hover:bg-muted/60"
+            >
+              <span
+                aria-hidden
+                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
+              >
+                <ClipboardList size={11} className="text-primary" aria-hidden />
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
+                    plan {idx + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+                      PLAN_STATUS_STYLE[plan.status],
+                    )}
+                  >
+                    {PLAN_STATUS_LABEL[plan.status]}
+                  </span>
+                </div>
+                <span className="line-clamp-2 text-xs font-medium text-foreground">
+                  {plan.title}
+                </span>
+              </div>
+              <ArrowUpRight
+                size={11}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-foreground"
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <PlansModal
+        sessionId={sessionId}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialPlanId={focusPlanId ?? plans[plans.length - 1]?.id}
+      />
     </>
   );
 }
@@ -771,90 +936,6 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   superseded: 'Superseded',
   discarded: 'Discarded',
 };
-
-function PlansSection({ sessionId }: { sessionId: SessionId }) {
-  const plans = useSessionPlans(sessionId);
-  const loading = useSessionLoading(sessionId);
-  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [focusPlanId, setFocusPlanId] = useState<PlanId | null>(null);
-
-  useEffect(() => {
-    void loadSessionPlans(sessionId);
-  }, [sessionId, loadSessionPlans]);
-
-  if (plans.length === 0 && loading.plans) return <PlansSkeleton />;
-  if (plans.length === 0) return <PlansEmpty />;
-
-  const latest = plans[plans.length - 1];
-  if (!latest) return null;
-  const latestIndex = plans.length;
-
-  const openModal = (planId: PlanId) => {
-    setFocusPlanId(planId);
-    setModalOpen(true);
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => openModal(latest.id)}
-        title={`Open plan ${latestIndex} — ${latest.title}`}
-        className="group relative flex min-h-0 w-full flex-col gap-2 rounded-lg bg-muted/40 p-3 text-left ring-1 ring-border-soft transition-colors hover:bg-muted/60"
-      >
-        {/* Affordance arrow — signals "opens a modal" without using a
-            chevron (which would imply expand-in-place). Top-right corner. */}
-        <ArrowUpRight
-          size={12}
-          aria-hidden
-          className="absolute right-2 top-2 text-muted-foreground/40 transition-colors group-hover:text-foreground"
-        />
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
-          >
-            <ClipboardList size={11} className="text-primary" aria-hidden />
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="flex items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
-              <span>Plans</span>
-              <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/60">
-                · {plans.length} total
-              </span>
-            </span>
-            <span className="text-[10px] leading-tight text-muted-foreground/60">
-              Step-by-step plans queued for this session
-            </span>
-          </div>
-        </div>
-
-        <span className="flex items-center gap-1.5 rounded-md px-2 py-1.5">
-          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
-            plan {latestIndex}
-          </span>
-          <span className="truncate text-xs font-medium text-foreground">{latest.title}</span>
-          <span
-            className={cn(
-              'ml-auto inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-              PLAN_STATUS_STYLE[latest.status],
-            )}
-          >
-            {PLAN_STATUS_LABEL[latest.status]}
-          </span>
-        </span>
-      </button>
-
-      <PlansModal
-        sessionId={sessionId}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialPlanId={focusPlanId ?? latest.id}
-      />
-    </>
-  );
-}
 
 function PlansEmpty() {
   return (
