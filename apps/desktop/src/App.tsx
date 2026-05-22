@@ -14,6 +14,8 @@ import {
   AddWorkspaceDialog,
 } from './features/workspace/components/WorkspacesSidebar';
 import { DogMascot } from './shared/components/DogMascot';
+import { OnboardingCard } from './features/onboarding/OnboardingCard';
+import { markStepComplete } from './features/onboarding/onboarding-store';
 import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
@@ -149,7 +151,10 @@ export function App() {
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
-  useKeyboardShortcut('cmd+k', () => setPaletteOpen(true));
+  useKeyboardShortcut('cmd+k', () => {
+    setPaletteOpen(true);
+    markStepComplete('palette');
+  });
 
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
@@ -335,6 +340,9 @@ function EmptyState({
         }}
         aria-hidden
       />
+      <div className="pointer-events-none absolute right-4 top-4">
+        <OnboardingCard />
+      </div>
       <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
         <EmptyStateLogo />
         <div className="flex flex-col gap-2.5">

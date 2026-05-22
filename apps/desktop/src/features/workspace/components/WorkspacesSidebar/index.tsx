@@ -29,6 +29,7 @@ import { NotificationCenter } from '../../../../features/notifications/component
 import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
   AgentId,
@@ -203,9 +204,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
       <Divider />
 
-      {/* sidebar footer — logo + controls */}
-      <div className="flex shrink-0 items-center px-2.5 py-3">
+      {/* sidebar footer — logo + onboarding chip + controls */}
+      <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
+        <OnboardingChip onOpen={() => setGuideOpen(true)} />
         <div className="flex-1" />
         <div className="flex items-center gap-0.5">
           <button
