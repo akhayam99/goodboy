@@ -78,6 +78,12 @@ pub struct CreateArgs {
     /// to derive the worktree directory name.
     #[serde(rename = "existingBranch", default)]
     pub existing_branch: Option<String>,
+    /// Base branch to cut a new branch from. Defaults to `main`. The branch is
+    /// always cut from `origin/<base>` (not the local copy) so a stale local
+    /// `main` cannot leak unrelated commits into the new branch. Ignored when
+    /// `existing_branch` is set.
+    #[serde(rename = "baseBranch", default)]
+    pub base_branch: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -186,6 +192,19 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
             ],
         )?;
     } else {
+        // Cut from `origin/<base>`, not the local checkout, so a stale or
+        // dirty local `main` cannot leak unrelated commits into the new
+        // branch. We fetch first (best-effort, tolerates offline) and then
+        // resolve the actual base ref to use.
+        let base = args
+            .base_branch
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("main")
+            .to_string();
+        try_fetch_origin(&repo_path, &base);
+        let base_ref = resolve_origin_base(&repo_path, &base)?;
         git(
             &repo_path,
             &[
@@ -194,6 +213,7 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
                 "-b",
                 &branch_name,
                 worktree_path.to_string_lossy().as_ref(),
+                &base_ref,
             ],
         )?;
     }
@@ -293,13 +313,16 @@ pub fn worktree_diff(
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
     let user_base = base.unwrap_or_else(|| "main".to_string());
-    let candidates = [user_base.clone(), format!("origin/{user_base}")];
+    // Prefer `origin/<base>` so the diff reflects what GitHub will show on the
+    // PR. The local copy of `<base>` is checked only as a fallback for repos
+    // where `origin/<base>` doesn't exist (e.g. fresh clone without fetch).
+    let candidates = [format!("origin/{user_base}"), user_base.clone()];
     let resolved = candidates
         .iter()
         .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
         .map(|s| s.trim().to_string())
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
+            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
         })?;
     git(p, &["diff", &resolved])
 }
@@ -328,23 +351,23 @@ pub fn worktree_changed_files(
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
     let user_base = base.unwrap_or_else(|| "main".to_string());
-    // Local ref first, then remote. Must match worktree_diff above —
-    // otherwise the chip count (this fn) and the dialog body (worktree_diff)
-    // can resolve different merge-bases when origin/<base> is stale, and the
-    // counter ends up reporting files from merge commits that the diff
-    // (correctly) treats as already on the base.
+    // `origin/<base>` first so the count matches what GitHub will show on the
+    // PR (target = origin/main on the server). The local ref and master
+    // variants are fallbacks for unusual setups. Must match the order in
+    // `worktree_diff` above — otherwise the chip count and the dialog body
+    // can resolve different merge-bases and disagree.
     let candidates = [
-        user_base.clone(),
         format!("origin/{user_base}"),
-        "master".to_string(),
+        user_base.clone(),
         "origin/master".to_string(),
+        "master".to_string(),
     ];
     let resolved = candidates
         .iter()
         .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
         .map(|s| s.trim().to_string())
         .ok_or_else(|| WorktreeError::Git {
-            message: format!("cannot resolve merge-base against {user_base} or origin/{user_base}"),
+            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
         })?;
     let numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
     let mut additions: u32 = 0;
@@ -671,6 +694,45 @@ fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeE
     // block worktree creation.
     let _ = std::fs::write(&gitignore, next);
     Ok(())
+}
+
+/// Best-effort fetch of `origin/<base>`. Silently swallows errors so that
+/// offline sessions or repos without an `origin` remote still let the user
+/// create a worktree — they just fall back to whatever `origin/<base>` already
+/// points at locally (or to the local branch as a last resort).
+fn try_fetch_origin(repo_path: &Path, base: &str) {
+    let _ = git(repo_path, &["fetch", "origin", base]);
+}
+
+/// Resolve the ref to cut a new branch from. Prefers `origin/<base>` so the
+/// new branch never inherits commits that exist only on the local copy of the
+/// base branch. Falls back to `origin/master` if base is "main" and only
+/// `master` exists on the remote, then to the local branch as a last resort.
+/// Errors only when none of those refs exist.
+fn resolve_origin_base(repo_path: &Path, base: &str) -> Result<String, WorktreeError> {
+    let mut candidates: Vec<String> = vec![format!("origin/{base}")];
+    if base == "main" {
+        candidates.push("origin/master".to_string());
+    } else if base == "master" {
+        candidates.push("origin/main".to_string());
+    }
+    candidates.push(base.to_string());
+    if base == "main" {
+        candidates.push("master".to_string());
+    } else if base == "master" {
+        candidates.push("main".to_string());
+    }
+    for cand in &candidates {
+        if git(repo_path, &["rev-parse", "--verify", "--quiet", cand]).is_ok() {
+            return Ok(cand.clone());
+        }
+    }
+    Err(WorktreeError::Git {
+        message: format!(
+            "cannot find base ref: tried {}",
+            candidates.join(", ")
+        ),
+    })
 }
 
 fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
