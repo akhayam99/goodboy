@@ -149,20 +149,14 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           (() => {
             const totalSessions = activeSessions.length + archivedSessions.length;
             const hasAnySession = totalSessions > 0;
-            // The activity bar only makes sense as a switcher. With a single
-            // session the user never switches — collapse the rail and expose
-            // the "new session" action inside the detail header instead.
-            const showActivityBar = totalSessions > 1;
             return (
               <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                {/* sessions rail — same surface as the detail, split only by the divider */}
-                <div
-                  className={cn(
-                    'shrink-0 overflow-hidden transition-[width] duration-300 ease-out',
-                    showActivityBar ? 'w-28' : 'w-0',
-                  )}
-                  aria-hidden={!showActivityBar}
-                >
+                {/* Sessions rail — always visible while a workspace is current.
+                    Earlier builds collapsed it when totalSessions <= 1, which
+                    moved the "new session" affordance into the detail header.
+                    That morphing made it hard to teach; now the rail is the
+                    single home for session navigation and creation. */}
+                <div className="w-28 shrink-0 overflow-hidden">
                   <SessionActivityBar
                     sessions={activeSessions}
                     archivedSessions={archivedSessions}
@@ -171,16 +165,11 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     onNewSession={() => setNewSessionOpen(true)}
                   />
                 </div>
-                {/* Inset hairline divider — centered between rail content
-                    (px-1.5) and detail content (px-3). The rail-side gap is
-                    rail's pr-1.5 (6px) + divider's ml-1.5 (6px) = 12px; the
-                    detail-side gap is detail's px-3 (12px). Symmetric. */}
-                {showActivityBar ? (
-                  <div
-                    aria-hidden
-                    className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
-                  />
-                ) : null}
+                {/* Inset hairline divider between rail and detail. */}
+                <div
+                  aria-hidden
+                  className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+                />
                 {/* selected-session detail */}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
@@ -188,7 +177,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <SessionDetailPanel
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
-                        onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />

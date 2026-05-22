@@ -49,6 +49,21 @@ export function SessionActivityBar({
             <MessagesSquare size={10} aria-hidden className="text-info" />
             Sessions
           </span>
+          {/* "New session" lives at the top — never moves, always discoverable.
+              Hidden in the archived view because creating from a filter would
+              flip the user back to active anyway. */}
+          {!isArchivedView && (
+            <button
+              type="button"
+              onClick={onNewSession}
+              className="mb-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/30 py-2 text-[10px] font-medium text-muted-foreground/80 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
+              title="new session"
+              aria-label="create new session"
+            >
+              <Plus size={12} aria-hidden />
+              <span>New</span>
+            </button>
+          )}
           {displayList.map((session) => (
             <SessionActivityItem
               key={session.id}
@@ -58,17 +73,10 @@ export function SessionActivityBar({
               onClick={() => onSelectSession(session.id as SessionId)}
             />
           ))}
-          {!isArchivedView && (
-            <button
-              type="button"
-              onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/40 py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
-              title="new session"
-              aria-label="create new session"
-            >
-              <Plus size={12} aria-hidden />
-              <span>New</span>
-            </button>
+          {!isArchivedView && displayList.length === 0 && (
+            <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
+              No sessions yet.
+            </p>
           )}
           {isArchivedView && sortedArchived.length === 0 && (
             <p className="px-1 py-3 text-center text-[10px] text-muted-foreground/50">
