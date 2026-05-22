@@ -7,7 +7,7 @@ editor or terminal, it commands them. Run agents against your repos, keep them
 aware of the work through a context they all share, route them across Claude,
 Cursor, and Codex, and watch the cost as it accrues.
 
-![Goodboy — a refactor workflow running across scout, plan, implement, and verify steps](docs/screenshot.png)
+<img width="3456" height="2170" alt="CleanShot 2026-05-22 at 08 34 25@2x" src="https://github.com/user-attachments/assets/8c588610-e60e-40b3-ad20-12d4ba56219b" />
 
 ## What it does
 
