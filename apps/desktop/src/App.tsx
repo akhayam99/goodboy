@@ -74,6 +74,11 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState(
+    () =>
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem('goodboy:left-sidebar-collapsed') === '1',
+  );
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -153,11 +158,21 @@ export function App() {
     setPaletteOpen(true);
     markStepComplete('palette');
   }, []);
+  const toggleLeftSidebar = useCallback(() => {
+    setLeftCollapsed((v) => {
+      const next = !v;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0');
+      }
+      return next;
+    });
+  }, []);
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
+  useKeyboardShortcut('cmd+b', toggleLeftSidebar);
 
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
@@ -194,9 +209,15 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
+        leftSidebarCollapsed={leftCollapsed}
         leftSidebar={
           hasWorkspaces ? (
-            <WorkspacesSidebar onOpenSettings={openSettings} onOpenPalette={openPalette} />
+            <WorkspacesSidebar
+              onOpenSettings={openSettings}
+              onOpenPalette={openPalette}
+              collapsed={leftCollapsed}
+              onToggleCollapse={toggleLeftSidebar}
+            />
           ) : undefined
         }
         main={

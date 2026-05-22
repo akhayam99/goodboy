@@ -14,6 +14,8 @@ import {
   Loader2,
   MessagesSquare,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Play,
   Plus,
   Settings,
@@ -87,6 +89,8 @@ import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
+  collapsed?: boolean;
+  onToggleCollapse: () => void;
 }
 
 const FOOTER_ICON_BTN =
@@ -97,7 +101,12 @@ const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
 
-export function WorkspacesSidebar({ onOpenSettings, onOpenPalette }: WorkspacesSidebarProps) {
+export function WorkspacesSidebar({
+  onOpenSettings,
+  onOpenPalette,
+  collapsed = false,
+  onToggleCollapse,
+}: WorkspacesSidebarProps) {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -134,6 +143,10 @@ export function WorkspacesSidebar({ onOpenSettings, onOpenPalette }: WorkspacesS
   const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
+
+  if (collapsed) {
+    return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -215,6 +228,15 @@ export function WorkspacesSidebar({ onOpenSettings, onOpenPalette }: WorkspacesS
         <div className="flex items-center gap-0.5">
           <button
             type="button"
+            onClick={onToggleCollapse}
+            title="collapse sidebar (⌘B)"
+            aria-label="collapse sidebar"
+            className={FOOTER_ICON_BTN}
+          >
+            <PanelLeftClose size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
             onClick={() => setPricingOpen(true)}
             title="open spend & pricing"
             aria-label="open spend and pricing"
@@ -274,6 +296,25 @@ export function WorkspacesSidebar({ onOpenSettings, onOpenPalette }: WorkspacesS
           onUnarchive={() => unarchive(currentSession.id as SessionId)}
         />
       ) : null}
+    </div>
+  );
+}
+
+// Collapsed left sidebar — a minimal rail (just an expand affordance), the
+// left-side mirror of the ContextPanel's collapsed state. The rail width is
+// fixed by AppShell's LEFT_RAIL_WIDTH.
+function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center pt-3">
+      <button
+        type="button"
+        onClick={onExpand}
+        title="expand sidebar (⌘B)"
+        aria-label="expand sidebar"
+        className={FOOTER_ICON_BTN}
+      >
+        <PanelLeftOpen size={16} aria-hidden />
+      </button>
     </div>
   );
 }
