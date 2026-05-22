@@ -96,16 +96,17 @@ export function App() {
     return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
 
-  // Prevent macOS from exiting native fullscreen on ESC: preventDefault at
-  // the capture phase marks the event handled in WKWebView before it reaches
-  // the native responder chain. But a modal <dialog> closes on ESC through
-  // that same default action — so while one is open we must let ESC through,
-  // or the modal can never be dismissed with the keyboard.
+  // ESC on macOS exits native fullscreen — never wanted. preventDefault at the
+  // capture phase blocks it (the event is marked handled in WKWebView before
+  // it reaches the native responder chain). That same call also cancels a
+  // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
+  // dialog ourselves — ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (document.querySelector('dialog[open]')) return;
       e.preventDefault();
+      const dialogs = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
+      dialogs[dialogs.length - 1]?.close();
     };
     document.addEventListener('keydown', onEsc, { capture: true });
     return () => document.removeEventListener('keydown', onEsc, { capture: true });
