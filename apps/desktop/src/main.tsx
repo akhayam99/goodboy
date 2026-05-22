@@ -3,10 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './app/components/ErrorBoundary';
 import { bootstrapTheme } from './shared/lib/theme';
-import { migrateLegacyStorageKeys } from './shared/lib/storage-keys';
 import './styles.css';
 
-migrateLegacyStorageKeys();
 bootstrapTheme();
 
 const container = document.getElementById('root');
