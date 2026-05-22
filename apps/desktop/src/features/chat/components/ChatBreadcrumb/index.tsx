@@ -58,7 +58,7 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
 
   return (
     <div
-      className="m-2 flex h-8 shrink-0 items-center gap-1.5 rounded-sm border border-border-soft bg-subtle/30 px-3 text-2xs"
+      className="m-2 flex h-8 shrink-0 items-center gap-1.5 rounded-[6px] border border-border-soft bg-subtle/30 px-3 text-2xs"
       role="navigation"
       aria-label="chat breadcrumb"
     >

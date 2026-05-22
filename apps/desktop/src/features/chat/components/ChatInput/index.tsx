@@ -711,7 +711,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         ) : null}
         <SuggestionStack items={suggestions} />
         <div
-          className="flex flex-col rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
+          className="flex flex-col rounded-[6px] bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
           <div className="relative" ref={wrapperRef}>

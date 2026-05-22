@@ -182,7 +182,7 @@ export function ContextPanel({
 
       <div
         className={cn(
-          'flex h-full min-h-0 flex-col overflow-hidden rounded-sm',
+          'flex h-full min-h-0 flex-col overflow-hidden rounded-[6px]',
           collapsed && 'hidden',
           // Spin-info border ring while the summarizer is running — same
           // visual language as a running session card. Replaces the per-slot
