@@ -85,7 +85,11 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
           )}
         </div>
         <OpenInEditorIconButton worktreePath={worktreePath} />
-        <RunScriptControl workspaceId={session.workspaceId} />
+        <RunScriptControl
+          sessionId={session.id as SessionId}
+          workspaceId={session.workspaceId}
+          worktreePath={worktreePath}
+        />
         <button
           type="button"
           onClick={onOpenSessionSettings}

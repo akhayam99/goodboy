@@ -16,6 +16,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     providers: ReadonlyArray<{ id: string; connection: string }>;
     skills: Record<string, never>;
     workspaceScripts: Record<string, never>;
+    sessionWorktrees: Record<string, ReadonlyArray<string>>;
     providerSpendBreakdown: ReadonlyArray<never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
@@ -48,6 +49,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     ],
     skills: {},
     workspaceScripts: {},
+    sessionWorktrees: {},
     providerSpendBreakdown: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},

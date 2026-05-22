@@ -256,6 +256,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
   );
   const runScript = useAppStore((s) => s.runScript);
+  const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const workspaceWorkflows = useAppStore(
     useShallow((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY),
@@ -368,12 +369,16 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   const onPickScript = useCallback(
     async (script: WorkspaceScript) => {
+      if (!sessionWorktree) {
+        showToast('warning', `${script.name} — open a session worktree to run scripts`);
+        return;
+      }
       const seq = ++runSeqRef.current;
       setValue('');
       setShowPopover(false);
       setScriptResult({ script, status: 'pending', result: null });
       try {
-        const result = await runScript(script.id);
+        const result = await runScript(session.id, script.id, sessionWorktree);
         if (runSeqRef.current !== seq) return;
         setScriptResult({
           script,
@@ -389,7 +394,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         });
       }
     },
-    [runScript, setValue],
+    [runScript, setValue, session.id, sessionWorktree, showToast],
   );
 
   const onPickSkill = useCallback(
