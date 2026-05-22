@@ -29,6 +29,7 @@ pub fn run() {
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
   let turn_registry = turn::TurnRegistry::new();
+  let script_registry = scripts::ScriptRegistry::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -37,6 +38,7 @@ pub fn run() {
     .manage(cursor_state)
     .manage(codex_state)
     .manage(turn_registry)
+    .manage(script_registry)
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -102,6 +104,7 @@ pub fn run() {
       skills::skill_rescan,
       skills::skill_run_script,
       scripts::workspace_script_run,
+      scripts::workspace_script_cancel,
       workflows::workflow_list,
       workflows::workflow_get,
       workflows::workflow_upsert,

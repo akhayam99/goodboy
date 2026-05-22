@@ -15,6 +15,7 @@ import {
   type AgentKind,
 } from '../../agent-kind';
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
+import { useToast } from '../../../../app/components/Toast';
 
 /**
  * Categorized palette with a prefix-routed grammar — the Raycast / Linear
@@ -108,6 +109,11 @@ export function CommandPalette({
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Agent>;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const runScript = useAppStore((s) => s.runScript);
+  const sessionWorktree = useAppStore((s) =>
+    currentSession ? (s.sessionWorktrees[currentSession.id]?.[0] ?? null) : null,
+  );
+  const { showToast } = useToast();
 
   const parsed = useMemo(() => parseQuery(query), [query]);
 
@@ -192,11 +198,18 @@ export function CommandPalette({
         sublabel: 'workspace script',
         group: 'script',
         onSelect: () => {
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-workspace-settings', {
-              detail: { section: 'scripts' },
-            }),
-          );
+          if (!currentSession || !sessionWorktree) {
+            showToast('warning', `${sc.name} — open a session worktree to run scripts`);
+            return;
+          }
+          void runScript(currentSession.id, sc.id, sessionWorktree).then((result) => {
+            showToast(
+              result.exitCode === 0 ? 'success' : 'error',
+              result.exitCode === 0
+                ? `${sc.name} — done`
+                : `${sc.name} — exited ${result.exitCode}`,
+            );
+          });
         },
       });
     }
@@ -240,6 +253,9 @@ export function CommandPalette({
     workflows,
     scripts,
     currentSession,
+    sessionWorktree,
+    runScript,
+    showToast,
     agentKindOverride,
     setCurrentWorkspace,
     setCurrentSession,
