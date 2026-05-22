@@ -3,7 +3,7 @@
  * localStorage so completion is monotonic — once a step lands as done,
  * it stays done across reloads. Per plan section G.
  */
-export type OnboardingStepId = 'workspace' | 'session' | 'agent' | 'plan' | 'skill' | 'palette';
+export type OnboardingStepId = 'workspace' | 'session' | 'agent' | 'plan' | 'palette';
 
 export const ONBOARDING_STEPS: ReadonlyArray<{
   readonly id: OnboardingStepId;
@@ -31,14 +31,9 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
     why: 'Spawn a planner — it emits a structured plan you can hand off to an implementer.',
   },
   {
-    id: 'skill',
-    title: 'Try a skill',
-    why: 'Skills are reusable prompt blocks. Type / in the chat input to invoke one.',
-  },
-  {
     id: 'palette',
     title: 'Open the command palette',
-    why: '⌘K. Navigate workspaces, sessions, agents, skills — everything from one input.',
+    why: '⌘K. Navigate workspaces, sessions, and agents — everything from one input.',
   },
 ];
 
@@ -62,8 +57,7 @@ function readPersisted(): PersistedProgress {
     return {
       completed: completed.filter(
         (x): x is OnboardingStepId =>
-          typeof x === 'string' &&
-          ['workspace', 'session', 'agent', 'plan', 'skill', 'palette'].includes(x),
+          typeof x === 'string' && ['workspace', 'session', 'agent', 'plan', 'palette'].includes(x),
       ),
     };
   } catch {
