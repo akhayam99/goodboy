@@ -82,7 +82,6 @@ import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
-import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -133,7 +132,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
-  const [githubDetailsOpen, setGithubDetailsOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -182,10 +180,7 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
-                      <SessionMetaFooter
-                        session={currentSession}
-                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
-                      />
+                      <SessionMetaFooter session={currentSession} />
                     </>
                   ) : (
                     <NoSessionSelectedEmpty
@@ -271,11 +266,6 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onUnarchive={() => unarchive(currentSession.id as SessionId)}
         />
       ) : null}
-      <GithubDetailsDialog
-        open={githubDetailsOpen}
-        onClose={() => setGithubDetailsOpen(false)}
-        sessionId={(currentSession?.id as SessionId) ?? null}
-      />
     </div>
   );
 }
