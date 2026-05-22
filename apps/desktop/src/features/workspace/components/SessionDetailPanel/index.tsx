@@ -5,11 +5,8 @@ import {
   Clock,
   FileEdit,
   GitBranch,
-  GitMerge,
   GitPullRequest,
   GitPullRequestArrow,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
   Loader2,
   MessageSquare,
   Plus,
@@ -18,6 +15,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
 import type {
   PullRequestStateKind,
   Session,
@@ -329,17 +327,6 @@ function GithubRefreshButton({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
-const PR_ICON_MAP: Record<
-  PullRequestStateKind,
-  { icon: React.ElementType; label: string; className: string }
-> = {
-  draft: { icon: GitPullRequestDraft, label: 'draft', className: 'text-muted-foreground' },
-  open: { icon: GitPullRequest, label: 'in review', className: 'text-success' },
-  approved: { icon: GitPullRequestArrow, label: 'approved', className: 'text-success' },
-  merged: { icon: GitMerge, label: 'merged', className: 'text-merged' },
-  closed: { icon: GitPullRequestClosed, label: 'closed', className: 'text-danger' },
-};
-
 interface GithubCardProps {
   sessionId: SessionId;
   pr: { number: number; state: PullRequestStateKind; url: string } | null;
@@ -369,8 +356,6 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
     );
   }
 
-  const entry = PR_ICON_MAP[pr.state];
-  const StateIcon = entry?.icon ?? GitPullRequest;
   const unresolvedComments = (detail?.comments ?? []).filter(
     (c) => c.source !== 'review' || c.resolved === false,
   ).length;
@@ -383,10 +368,7 @@ function GithubCard({ sessionId, pr, loading, detail, onOpenDetails }: GithubCar
       disabled={!onOpenDetails}
       className="group flex items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 text-left text-foreground/80 transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-default disabled:hover:border-border-soft disabled:hover:bg-muted/30"
     >
-      <span className={cn('inline-flex items-center gap-1 text-2xs font-medium', entry?.className)}>
-        <StateIcon size={12} aria-hidden />
-        <span>#{pr.number}</span>
-      </span>
+      <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
       <span className="text-2xs text-muted-foreground/40">·</span>
       <CiBadge state={ciState} />
       <span className="text-2xs text-muted-foreground/40">·</span>

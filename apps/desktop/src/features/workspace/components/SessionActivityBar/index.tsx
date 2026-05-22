@@ -1,18 +1,13 @@
 import { memo, useMemo, useState } from 'react';
-import {
-  Archive,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  MessagesSquare,
-  Minus,
-  Plus,
-} from 'lucide-react';
+import { Archive, MessagesSquare, Plus } from 'lucide-react';
 import { cn, ScrollArea } from '@goodboy/ui';
-import type { PullRequestStateKind, Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
+import {
+  PullRequestChip,
+  pullRequestMeta,
+} from '../../../../features/github/components/PullRequestChip';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -113,17 +108,6 @@ interface SessionActivityItemProps {
   onClick: () => void;
 }
 
-const PR_ICON_MAP: Record<
-  PullRequestStateKind,
-  { icon: React.ElementType; label: string; className: string }
-> = {
-  draft: { icon: GitPullRequestDraft, label: 'draft', className: 'text-muted-foreground' },
-  open: { icon: GitPullRequest, label: 'in review', className: 'text-success' },
-  approved: { icon: GitPullRequest, label: 'approved', className: 'text-success' },
-  merged: { icon: GitMerge, label: 'merged', className: 'text-merged' },
-  closed: { icon: GitPullRequestClosed, label: 'closed', className: 'text-danger' },
-};
-
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
   isActive,
@@ -139,14 +123,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
-  const prEntry = prState ? PR_ICON_MAP[prState] : null;
-  const PrIcon = prEntry?.icon ?? Minus;
+  const prMeta = prState ? pullRequestMeta(prState) : null;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
+      title={`${session.goal} · ${statusEntry.label}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
         // base surface — selected vs unselected
@@ -173,9 +156,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
         <span className={cn('shrink-0', statusEntry.className)}>
           <StatusIcon size={10} aria-hidden />
         </span>
-        <span className={cn('shrink-0', prEntry?.className ?? 'text-muted-foreground/30')}>
-          <PrIcon size={10} aria-hidden />
-        </span>
+        {prState ? (
+          <PullRequestChip state={prState} variant="icon" iconSize={10} />
+        ) : (
+          <span className="inline-flex size-2.5 shrink-0" aria-hidden />
+        )}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
     </button>
