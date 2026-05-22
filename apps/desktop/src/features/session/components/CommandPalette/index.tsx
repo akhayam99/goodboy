@@ -217,7 +217,7 @@ export function CommandPalette({
         group: 'workflow',
         onSelect: () => {
           window.dispatchEvent(
-            new CustomEvent('goodboy:open-settings', {
+            new CustomEvent('goodboy:open-workspace-settings', {
               detail: { section: 'phases' },
             }),
           );
@@ -234,7 +234,7 @@ export function CommandPalette({
         group: 'script',
         onSelect: () => {
           window.dispatchEvent(
-            new CustomEvent('goodboy:open-settings', {
+            new CustomEvent('goodboy:open-workspace-settings', {
               detail: { section: 'scripts' },
             }),
           );

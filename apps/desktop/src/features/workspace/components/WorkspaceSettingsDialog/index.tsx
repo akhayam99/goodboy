@@ -24,9 +24,21 @@ interface WorkspaceSettingsDialogProps {
   workspaceName: string;
   open: boolean;
   onClose: () => void;
+  /** Tab to open on — e.g. deep-linked from the command palette. */
+  initialSection?: string;
 }
 
 type Section = 'general' | 'skills' | 'scripts' | 'phases' | 'danger';
+
+function isSection(value: string | undefined): value is Section {
+  return (
+    value === 'general' ||
+    value === 'skills' ||
+    value === 'scripts' ||
+    value === 'phases' ||
+    value === 'danger'
+  );
+}
 
 interface NavItem {
   readonly id: Section;
@@ -41,6 +53,7 @@ export function WorkspaceSettingsDialog({
   workspaceName,
   open,
   onClose,
+  initialSection,
 }: WorkspaceSettingsDialogProps) {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -56,7 +69,7 @@ export function WorkspaceSettingsDialog({
 
   useEffect(() => {
     if (!open) return;
-    setActive('general');
+    setActive(isSection(initialSection) ? initialSection : 'general');
     setSaveState('idle');
     setError(null);
     setConfirmDisconnect(false);
@@ -66,7 +79,7 @@ export function WorkspaceSettingsDialog({
       setBranchPrefix(value);
       setSavedBranchPrefix(value);
     });
-  }, [open, workspaceId, loadSetting]);
+  }, [open, workspaceId, loadSetting, initialSection]);
 
   const onDisconnect = async () => {
     setDisconnecting(true);

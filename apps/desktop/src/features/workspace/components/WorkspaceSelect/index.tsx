@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FolderOpen, Plus, Settings } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
@@ -30,11 +30,28 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
   // dropping the open call.
   const [settingsTarget, setSettingsTarget] = useState<WorkspaceTarget | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<string | undefined>(undefined);
 
   const openSettings = (target: WorkspaceTarget) => {
     setSettingsTarget(target);
+    setSettingsSection(undefined);
     setSettingsOpen(true);
   };
+
+  // Deep-link into per-workspace settings from elsewhere (e.g. the command
+  // palette selecting a workflow or script). Always targets the current
+  // workspace — the palette only lists the current workspace's items.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (!currentWorkspace) return;
+      const detail = (e as CustomEvent<{ section?: string }>).detail;
+      setSettingsTarget({ id: currentWorkspace.id, name: currentWorkspace.name });
+      setSettingsSection(detail?.section);
+      setSettingsOpen(true);
+    };
+    window.addEventListener('goodboy:open-workspace-settings', handler);
+    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
+  }, [currentWorkspace]);
 
   const sorted = [...workspaces].sort((a, b) => a.name.localeCompare(b.name));
   const atCap = workspaces.length >= MAX_WORKSPACES;
@@ -94,6 +111,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           workspaceName={settingsTarget.name}
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
+          initialSection={settingsSection}
         />
       ) : null}
     </div>
