@@ -62,7 +62,7 @@ export function QuickActionsPopover({
             <li
               key={item.id}
               className={`flex cursor-pointer flex-col gap-0.5 px-3 py-2 ${
-                i === activeIndex ? 'bg-accent' : 'hover:bg-accent/50'
+                i === activeIndex ? 'bg-muted' : 'hover:bg-muted/50'
               }`}
               onMouseEnter={() => setActiveIndex(i)}
               onMouseDown={(e) => {

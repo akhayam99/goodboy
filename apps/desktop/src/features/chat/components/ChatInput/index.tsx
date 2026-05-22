@@ -72,13 +72,9 @@ const RUNNING_KINDS = new Set(['starting', 'running']);
 // so the message sends normally.
 const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
-// Idle-state composer placeholder, rotated to teach the prefix grammar.
-const CHAT_TIPS: ReadonlyArray<string> = [
-  'Message Claude. Shift + Enter for a new line.',
-  'Type $ to run a workspace script.',
-  'Type @ to switch or spawn an agent.',
-  'Type ~ to start a workflow.',
-];
+// Idle-state composer placeholder — shows the whole prefix grammar at once
+// so the user is taught every quick-action up front, not over time.
+const CHAT_PLACEHOLDER = 'Message Claude — $ scripts · ~ workflows · @ agents';
 
 const EFFORT_STORAGE_PREFIX = STORAGE_PREFIXES.effort;
 const MODEL_STORAGE_PREFIX = STORAGE_PREFIXES.model;
@@ -301,7 +297,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
   const [scriptResult, setScriptResult] = useState<ScriptResultState | null>(null);
-  const [tipIndex, setTipIndex] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const runSeqRef = useRef(0);
 
@@ -743,15 +738,6 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setScriptResult(null);
   }, [session.id]);
 
-  // Rotate the idle placeholder to teach the prefix grammar.
-  useEffect(() => {
-    if (providerDisconnected || isRunning) return;
-    const id = setInterval(() => {
-      setTipIndex((i) => (i + 1) % CHAT_TIPS.length);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [providerDisconnected, isRunning]);
-
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
       popoverOpen &&
@@ -921,7 +907,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                     ? queued
                       ? 'Message queued. Type to replace.'
                       : 'Turn running. Type to queue next message.'
-                    : (CHAT_TIPS[tipIndex] ?? 'Message Claude.')
+                    : CHAT_PLACEHOLDER
               }
               disabled={providerDisconnected}
               autoGrow
