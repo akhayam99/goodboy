@@ -135,7 +135,13 @@ describe('a11y smoke — BootSplash', () => {
 
 describe('a11y smoke — WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
-    const { container } = render(<WorkspacesSidebar onOpenSettings={vi.fn()} />);
+    const { container } = render(
+      <WorkspacesSidebar
+        onOpenSettings={vi.fn()}
+        onOpenPalette={vi.fn()}
+        onToggleCollapse={vi.fn()}
+      />,
+    );
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });
