@@ -11,18 +11,17 @@ off, it has broken one of them.
 ## The editorial line
 
 Goodboy is a professional developer tool and should read as one: intentional,
-dense without being noisy, fast, opinionated. The dog is the brand's warmth —
-it belongs on the splash screen, the onboarding hero, and the marketing site.
-It does not belong in the product's vocabulary.
+dense without being noisy, fast, opinionated.
 
-Pick one register and let the other supply texture. The engineered register
-wins inside the app; the playful register wins outside it.
+Playfulness has a place — the splash screen, onboarding, the marketing site.
+The working surface does not: inside the app, copy and UI stay plain and
+functional. One register per surface; let the other supply only texture.
 
 ## Voice & copy
 
-- **"Agent", never "puppy".** "Spawn an agent", never "unleash". The domain
-  language — agent, session, workspace, workflow, plan — is the only language
-  in-app.
+- **Speak the domain language.** Agent, session, workspace, workflow, plan —
+  the interface uses these words consistently and doesn't coin synonyms or
+  aliases for them.
 - **English only.** Code, copy, commits, docs.
 - **Terse and direct.** Labels are nouns or verbs, not sentences. Help text
   earns its place or is cut. No exclamation marks, no cheerleading.
