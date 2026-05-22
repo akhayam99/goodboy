@@ -95,7 +95,7 @@ import { SettingsDialog } from '../../features/settings/components/SettingsDialo
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { StatusBar } from '../../app/components/StatusBar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { QuickActionsPopover } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
@@ -170,10 +170,15 @@ describe('a11y smoke — SkillsPanel', () => {
   });
 });
 
-describe('a11y smoke — SlashCommandPopover', () => {
-  it('no violations (no skills / empty items)', async () => {
+describe('a11y smoke — QuickActionsPopover', () => {
+  it('no violations (empty items)', async () => {
     const { container } = render(
-      <SlashCommandPopover items={[]} query="" onSelect={vi.fn()} onDismiss={vi.fn()} />,
+      <QuickActionsPopover
+        items={[]}
+        emptyHint="no scripts"
+        onSelect={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
     );
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);

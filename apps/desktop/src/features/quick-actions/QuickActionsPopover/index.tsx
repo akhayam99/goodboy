@@ -1,47 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
+import type { QuickActionItem } from '../types';
 
-interface SkillItem {
-  readonly name: string;
-  readonly description: string;
-}
-
-interface SlashCommandPopoverProps {
-  readonly items: ReadonlyArray<SkillItem>;
-  readonly query: string;
-  readonly onSelect: (name: string) => void;
+interface QuickActionsPopoverProps {
+  readonly items: ReadonlyArray<QuickActionItem>;
+  readonly emptyHint: string;
+  readonly onSelect: (item: QuickActionItem) => void;
   readonly onDismiss: () => void;
 }
 
-function fuzzyMatch(name: string, query: string): boolean {
-  return name.toLowerCase().includes(query.toLowerCase());
-}
-
-export function SlashCommandPopover({
+/**
+ * Generic prefix-action picker rendered inline above the composer. Renders
+ * whatever `QuickActionItem[]` it is handed and reports the chosen one —
+ * the behavior lives in `item.perform`, not here.
+ */
+export function QuickActionsPopover({
   items,
-  query,
+  emptyHint,
   onSelect,
   onDismiss,
-}: SlashCommandPopoverProps) {
-  const filtered = items.filter((item) => fuzzyMatch(item.name, query));
+}: QuickActionsPopoverProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [query]);
+  }, [items]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+        setActiveIndex((i) => Math.min(i + 1, items.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIndex((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        const item = filtered[activeIndex];
-        if (item) onSelect(item.name);
+        const item = items[activeIndex];
+        if (item) onSelect(item);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onDismiss();
@@ -49,7 +45,7 @@ export function SlashCommandPopover({
     };
     window.addEventListener('keydown', handler, { capture: true });
     return () => window.removeEventListener('keydown', handler, { capture: true });
-  }, [filtered, activeIndex, onSelect, onDismiss]);
+  }, [items, activeIndex, onSelect, onDismiss]);
 
   useEffect(() => {
     const el = listRef.current?.children[activeIndex] as HTMLElement | undefined;
@@ -58,25 +54,25 @@ export function SlashCommandPopover({
 
   return (
     <div className="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md">
-      {filtered.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">no skills. create one in settings</p>
+      {items.length === 0 ? (
+        <p className="px-3 py-2 text-xs text-muted-foreground">{emptyHint}</p>
       ) : (
         <ul ref={listRef} className="max-h-48 overflow-y-auto py-1">
-          {filtered.map((item, i) => (
+          {items.map((item, i) => (
             <li
-              key={item.name}
+              key={item.id}
               className={`flex cursor-pointer flex-col gap-0.5 px-3 py-2 ${
                 i === activeIndex ? 'bg-accent' : 'hover:bg-accent/50'
               }`}
               onMouseEnter={() => setActiveIndex(i)}
               onMouseDown={(e) => {
                 e.preventDefault();
-                onSelect(item.name);
+                onSelect(item);
               }}
             >
-              <span className="text-xs font-medium text-foreground">/{item.name}</span>
-              {item.description ? (
-                <span className="text-xs text-muted-foreground">{item.description}</span>
+              <span className="truncate text-xs font-medium text-foreground">{item.label}</span>
+              {item.sublabel ? (
+                <span className="truncate text-2xs text-muted-foreground">{item.sublabel}</span>
               ) : null}
             </li>
           ))}

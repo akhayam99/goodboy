@@ -103,7 +103,7 @@ import { BootSplash } from '../../app/components/BootSplash';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { QuickActionsPopover } from '../../features/quick-actions';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
@@ -153,9 +153,14 @@ describe('snapshot — empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('SlashCommandPopover: no skills / empty items', () => {
+  it('QuickActionsPopover: no skills / empty items', () => {
     const { container } = render(
-      <SlashCommandPopover items={[]} query="" onSelect={vi.fn()} onDismiss={vi.fn()} />,
+      <QuickActionsPopover
+        items={[]}
+        emptyHint="no skills. create one in settings"
+        onSelect={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
     );
     expect(container.firstChild).toMatchSnapshot();
   });
