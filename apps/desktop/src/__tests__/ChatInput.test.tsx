@@ -15,6 +15,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     cancelCurrentTurn: typeof cancel;
     providers: ReadonlyArray<{ id: string; connection: string }>;
     skills: Record<string, never>;
+    workspaceScripts: Record<string, never>;
     providerSpendBreakdown: ReadonlyArray<never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
@@ -24,11 +25,18 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     agentDraft: Record<string, string>;
     sessionNudges: Record<string, null>;
     sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
+    phaseTemplates: Record<string, never>;
     setAgentDraft: (agentId: string, value: string) => void;
     clearAgentDraft: (agentId: string) => void;
     dismissSessionNudge: () => Promise<void>;
     acceptSessionNudgeHandoff: () => Promise<void>;
     spawnAgent: () => Promise<void>;
+    runScript: () => Promise<{ stdout: string; stderr: string; exitCode: number }>;
+    loadScripts: () => Promise<void>;
+    selectAgent: () => Promise<void>;
+    attachWorkflowToSession: () => Promise<void>;
+    loadPhaseTemplates: () => Promise<void>;
+    loadPhaseRunsForSession: () => Promise<void>;
   }
   const store = create<S>((set) => ({
     sendTurn: send,
@@ -39,6 +47,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
       { id: 'codex', connection: 'connected' },
     ],
     skills: {},
+    workspaceScripts: {},
     providerSpendBreakdown: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
@@ -48,6 +57,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     agentDraft: {},
     sessionNudges: {},
     sessionPhaseRuns: {},
+    phaseTemplates: {},
     setAgentDraft: (agentId, value) =>
       set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
     clearAgentDraft: (agentId) =>
@@ -60,6 +70,12 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     dismissSessionNudge: async () => undefined,
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
+    runScript: async () => ({ stdout: '', stderr: '', exitCode: 0 }),
+    loadScripts: async () => undefined,
+    selectAgent: async () => undefined,
+    attachWorkflowToSession: async () => undefined,
+    loadPhaseTemplates: async () => undefined,
+    loadPhaseRunsForSession: async () => undefined,
   }));
   return { sendTurnMock: send, cancelCurrentTurnMock: cancel, mockStore: store };
 });

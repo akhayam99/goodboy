@@ -10,13 +10,17 @@ import {
 import { Send, Square, X } from 'lucide-react';
 import { Divider, Textarea } from '@goodboy/ui';
 import type {
+  Agent,
   AgentId,
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
   Session,
   SessionId,
+  Skill,
   TurnProviderOverride,
+  Workflow,
+  WorkspaceScript,
 } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
 import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
@@ -27,7 +31,17 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, type ToastKind } from '../../../../app/components/Toast';
-import { SlashCommandPopover } from '../SlashCommandPopover';
+import {
+  QuickActionsPopover,
+  ScriptResultRow,
+  buildAgentActions,
+  buildScriptActions,
+  buildSkillActions,
+  buildWorkflowActions,
+  parseQuery,
+  type QuickActionItem,
+  type ScriptResultState,
+} from '../../../quick-actions';
 import {
   type VerbosityLevel,
   readVerbosity,
@@ -53,7 +67,14 @@ import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-misma
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
-const SLASH_MODE_RE = /^\s*\/[a-z0-9-]*$/;
+// Prefix-mode trigger for the in-chat quick-actions popover: a leading
+// $ / ~ @ followed by a single space-free token. A space closes the popover
+// so the message sends normally.
+const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
+
+// Idle-state composer placeholder — shows the whole prefix grammar at once
+// so the user is taught every quick-action up front, not over time.
+const CHAT_PLACEHOLDER = 'Message Claude — $ scripts · ~ workflows · @ agents';
 
 const EFFORT_STORAGE_PREFIX = STORAGE_PREFIXES.effort;
 const MODEL_STORAGE_PREFIX = STORAGE_PREFIXES.model;
@@ -231,6 +252,21 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const workspaceSkills = useAppStore(
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );
+  const workspaceScripts = useAppStore(
+    useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
+  );
+  const runScript = useAppStore((s) => s.runScript);
+  const loadScripts = useAppStore((s) => s.loadScripts);
+  const workspaceWorkflows = useAppStore(
+    useShallow((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY),
+  ) as ReadonlyArray<Workflow>;
+  const sessionAgents = useAppStore(
+    useShallow((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
+  ) as ReadonlyArray<Agent>;
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
+  const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
+  const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
 
   const { showToast } = useToast();
   const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
@@ -260,10 +296,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
   const [showPopover, setShowPopover] = useState(false);
+  const [scriptResult, setScriptResult] = useState<ScriptResultState | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const runSeqRef = useRef(0);
 
-  const slashQuery = SLASH_MODE_RE.test(value) ? value.trimStart().slice(1) : null;
-  const isSlashMode = slashQuery !== null;
+  const parsed = useMemo(() => parseQuery(value), [value]);
+  const inPrefixMode = CHAT_PREFIX_RE.test(value);
 
   const selectedAgentState = useAppStore((s) =>
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
@@ -325,17 +363,132 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   const onValueChange = (next: string) => {
     setValue(next);
-    setShowPopover(SLASH_MODE_RE.test(next));
+    setShowPopover(CHAT_PREFIX_RE.test(next));
   };
 
-  const onSkillSelect = useCallback(
-    (name: string) => {
-      setValue(`/${name} `);
+  const onPickScript = useCallback(
+    async (script: WorkspaceScript) => {
+      const seq = ++runSeqRef.current;
+      setValue('');
+      setShowPopover(false);
+      setScriptResult({ script, status: 'pending', result: null });
+      try {
+        const result = await runScript(script.id);
+        if (runSeqRef.current !== seq) return;
+        setScriptResult({
+          script,
+          status: result.exitCode === 0 ? 'ok' : 'error',
+          result,
+        });
+      } catch (err) {
+        if (runSeqRef.current !== seq) return;
+        setScriptResult({
+          script,
+          status: 'error',
+          result: { stdout: '', stderr: formatError(err), exitCode: -1 },
+        });
+      }
+    },
+    [runScript, setValue],
+  );
+
+  const onPickSkill = useCallback(
+    (skill: Skill) => {
+      setValue(`/${skill.name} `);
       setShowPopover(false);
       wrapperRef.current?.querySelector('textarea')?.focus();
     },
     [setValue],
   );
+
+  const onPickWorkflow = useCallback(
+    async (workflow: Workflow) => {
+      setValue('');
+      setShowPopover(false);
+      try {
+        await attachWorkflowToSession(session.id, workflow.id);
+        showToast('success', `workflow "${workflow.name}" started`);
+      } catch (err) {
+        showToast('error', formatError(err));
+      }
+    },
+    [attachWorkflowToSession, session.id, showToast, setValue],
+  );
+
+  const onSwitchAgent = useCallback(
+    (agent: Agent) => {
+      setValue('');
+      setShowPopover(false);
+      void selectAgent(session.id, agent.id);
+    },
+    [selectAgent, session.id, setValue],
+  );
+
+  const onSpawnAgent = useCallback(async () => {
+    setValue('');
+    setShowPopover(false);
+    try {
+      await spawnAgent(session.id, {});
+      showToast('success', 'new agent spawned');
+    } catch (err) {
+      showToast('error', formatError(err));
+    }
+  }, [spawnAgent, session.id, showToast, setValue]);
+
+  const quickItems = useMemo<ReadonlyArray<QuickActionItem> | null>(() => {
+    const symbol = parsed.prefix?.symbol;
+    if (symbol === '$') {
+      return buildScriptActions(workspaceScripts, (script) => void onPickScript(script));
+    }
+    if (symbol === '~') {
+      if (session.workflowId) return [];
+      return buildWorkflowActions(workspaceWorkflows, (workflow) => void onPickWorkflow(workflow));
+    }
+    if (symbol === '@') {
+      return buildAgentActions(sessionAgents, onSwitchAgent, () => void onSpawnAgent());
+    }
+    if (symbol === '/' && WORKSPACE_FEATURES.skills) {
+      return buildSkillActions(workspaceSkills, onPickSkill);
+    }
+    return null;
+  }, [
+    parsed.prefix,
+    session.workflowId,
+    workspaceScripts,
+    workspaceWorkflows,
+    sessionAgents,
+    workspaceSkills,
+    onPickScript,
+    onPickWorkflow,
+    onSwitchAgent,
+    onSpawnAgent,
+    onPickSkill,
+  ]);
+
+  const filteredQuickItems = useMemo<ReadonlyArray<QuickActionItem>>(() => {
+    if (!quickItems) return EMPTY_ARRAY;
+    const q = parsed.query.toLowerCase();
+    if (q.length === 0) return quickItems;
+    return quickItems.filter(
+      (it) =>
+        it.label.toLowerCase().includes(q) || (it.sublabel?.toLowerCase().includes(q) ?? false),
+    );
+  }, [quickItems, parsed.query]);
+
+  const popoverOpen = showPopover && inPrefixMode && quickItems !== null;
+  const quickEmptyHint =
+    parsed.prefix?.symbol === '$'
+      ? 'no scripts. add them in workspace settings.'
+      : parsed.prefix?.symbol === '~'
+        ? session.workflowId
+          ? 'this session already has a workflow.'
+          : 'no workflows. create one in workspace settings.'
+        : parsed.prefix?.symbol === '@'
+          ? 'no agents in this session.'
+          : 'no skills. create one in settings.';
+
+  const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
+  const dismissPopover = useCallback(() => setShowPopover(false), []);
 
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
@@ -568,15 +721,32 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setScopeNudgeEventId(null);
   }, [selectedAgentId]);
 
+  // Load workspace scripts + workflows so the `$` and `~` quick-actions can
+  // list them.
+  useEffect(() => {
+    void loadScripts(session.workspaceId);
+    void loadPhaseTemplates(session.workspaceId);
+  }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
+
+  // Load this session's agents so the `@` quick-action can list them.
+  useEffect(() => {
+    void loadPhaseRunsForSession(session.id);
+  }, [session.id, loadPhaseRunsForSession]);
+
+  // Script results are session-scoped — drop them when the session changes.
+  useEffect(() => {
+    setScriptResult(null);
+  }, [session.id]);
+
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
-      showPopover &&
+      popoverOpen &&
       (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Tab')
     ) {
       event.preventDefault();
       return;
     }
-    if (event.key === 'Enter' && !event.shiftKey && !showPopover) {
+    if (event.key === 'Enter' && !event.shiftKey && !popoverOpen) {
       event.preventDefault();
       void onSend();
     }
@@ -710,17 +880,20 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           />
         ) : null}
         <SuggestionStack items={suggestions} />
+        {scriptResult ? (
+          <ScriptResultRow state={scriptResult} onDismiss={() => setScriptResult(null)} />
+        ) : null}
         <div
           className="flex flex-col rounded-[6px] bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
           <div className="relative" ref={wrapperRef}>
-            {WORKSPACE_FEATURES.skills && showPopover && isSlashMode ? (
-              <SlashCommandPopover
-                items={workspaceSkills}
-                query={slashQuery}
-                onSelect={onSkillSelect}
-                onDismiss={() => setShowPopover(false)}
+            {popoverOpen ? (
+              <QuickActionsPopover
+                items={filteredQuickItems}
+                emptyHint={quickEmptyHint}
+                onSelect={onQuickActionSelect}
+                onDismiss={dismissPopover}
               />
             ) : null}
             <Textarea
@@ -734,7 +907,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                     ? queued
                       ? 'Message queued. Type to replace.'
                       : 'Turn running. Type to queue next message.'
-                    : 'Message Claude. Shift+enter for newline.'
+                    : CHAT_PLACEHOLDER
               }
               disabled={providerDisconnected}
               autoGrow

@@ -14,22 +14,14 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../agent-kind';
+import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 
 /**
  * Categorized palette with a prefix-routed grammar — the Raycast / Linear
  * model. Empty input shows all sources; typing a prefix (@ # : / ~ $ ?)
  * scopes the result list to one source. Plan section A.2.
  */
-type PaletteGroup =
-  | 'recents'
-  | 'workspace'
-  | 'session'
-  | 'agent'
-  | 'skill'
-  | 'workflow'
-  | 'script'
-  | 'action'
-  | 'help';
+type PaletteGroup = QuickActionGroup | 'recents';
 
 interface PaletteItem {
   readonly id: string;
@@ -40,23 +32,6 @@ interface PaletteItem {
   readonly icon?: string;
   readonly onSelect: () => void;
 }
-
-interface PrefixMeta {
-  readonly symbol: string;
-  readonly hint: string;
-  readonly group: PaletteGroup;
-}
-
-const PREFIXES: ReadonlyArray<PrefixMeta> = [
-  { symbol: '@', hint: 'agents in current session', group: 'agent' },
-  { symbol: '#', hint: 'sessions', group: 'session' },
-  { symbol: ':', hint: 'workspaces', group: 'workspace' },
-  { symbol: '/', hint: 'skills', group: 'skill' },
-  { symbol: '~', hint: 'workflows', group: 'workflow' },
-  { symbol: '$', hint: 'scripts', group: 'script' },
-  { symbol: '>', hint: 'actions', group: 'action' },
-  { symbol: '?', hint: 'help & shortcuts', group: 'help' },
-];
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
   recents: 'Recents',
@@ -81,22 +56,6 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'action',
   'help',
 ];
-
-interface ParsedQuery {
-  readonly prefix: PrefixMeta | null;
-  readonly query: string;
-}
-
-function parseQuery(raw: string): ParsedQuery {
-  const trimmed = raw.trimStart();
-  if (trimmed.length === 0) return { prefix: null, query: '' };
-  const ch = trimmed[0]!;
-  const meta = PREFIXES.find((p) => p.symbol === ch);
-  if (meta) {
-    return { prefix: meta, query: trimmed.slice(1).trim() };
-  }
-  return { prefix: null, query: trimmed };
-}
 
 function fuzzyScore(query: string, text: string): number {
   if (query.length === 0) return 1;

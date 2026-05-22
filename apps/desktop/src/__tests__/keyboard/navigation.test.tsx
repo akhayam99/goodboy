@@ -76,7 +76,7 @@ import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
-import { SlashCommandPopover } from '../../features/chat/components/SlashCommandPopover';
+import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
 afterEach(cleanup);
@@ -197,47 +197,62 @@ describe('keyboard — NewSessionDialog', () => {
   });
 });
 
-describe('keyboard — SlashCommandPopover arrow / tab navigation', () => {
-  const items = [
-    { name: 'review', description: 'code review' },
-    { name: 'test', description: 'run tests' },
-    { name: 'deploy', description: 'deploy to env' },
+describe('keyboard — QuickActionsPopover arrow / tab navigation', () => {
+  const items: ReadonlyArray<QuickActionItem> = [
+    { id: 'review', label: 'review', sublabel: 'code review', group: 'skill', perform: vi.fn() },
+    { id: 'test', label: 'test', sublabel: 'run tests', group: 'skill', perform: vi.fn() },
+    { id: 'deploy', label: 'deploy', sublabel: 'deploy to env', group: 'skill', perform: vi.fn() },
   ];
 
   it('ArrowDown advances active index and calls onSelect with Enter', () => {
     const onSelect = vi.fn();
-    render(<SlashCommandPopover items={items} query="" onSelect={onSelect} onDismiss={vi.fn()} />);
+    render(
+      <QuickActionsPopover items={items} emptyHint="" onSelect={onSelect} onDismiss={vi.fn()} />,
+    );
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     fireEvent.keyDown(window, { key: 'Enter' });
     // After one ArrowDown from index 0, active is 1 → 'test'
-    expect(onSelect).toHaveBeenCalledWith('test');
+    expect(onSelect).toHaveBeenCalledWith(items[1]);
   });
 
   it('ArrowUp wraps active index back (stays at 0 from 0)', () => {
     const onSelect = vi.fn();
-    render(<SlashCommandPopover items={items} query="" onSelect={onSelect} onDismiss={vi.fn()} />);
+    render(
+      <QuickActionsPopover items={items} emptyHint="" onSelect={onSelect} onDismiss={vi.fn()} />,
+    );
     fireEvent.keyDown(window, { key: 'ArrowUp' });
     fireEvent.keyDown(window, { key: 'Enter' });
     // ArrowUp from 0 stays at 0 → 'review'
-    expect(onSelect).toHaveBeenCalledWith('review');
+    expect(onSelect).toHaveBeenCalledWith(items[0]);
   });
 
   it('Tab key selects the active item', () => {
     const onSelect = vi.fn();
-    render(<SlashCommandPopover items={items} query="" onSelect={onSelect} onDismiss={vi.fn()} />);
+    render(
+      <QuickActionsPopover items={items} emptyHint="" onSelect={onSelect} onDismiss={vi.fn()} />,
+    );
     fireEvent.keyDown(window, { key: 'Tab' });
-    expect(onSelect).toHaveBeenCalledWith('review');
+    expect(onSelect).toHaveBeenCalledWith(items[0]);
   });
 
   it('Escape calls onDismiss', () => {
     const onDismiss = vi.fn();
-    render(<SlashCommandPopover items={items} query="" onSelect={vi.fn()} onDismiss={onDismiss} />);
+    render(
+      <QuickActionsPopover items={items} emptyHint="" onSelect={vi.fn()} onDismiss={onDismiss} />,
+    );
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
-  it('renders empty state when no items match query', () => {
-    render(<SlashCommandPopover items={[]} query="xyz" onSelect={vi.fn()} onDismiss={vi.fn()} />);
-    expect(screen.getByText(/no skills/i)).toBeDefined();
+  it('renders empty hint when there are no items', () => {
+    render(
+      <QuickActionsPopover
+        items={[]}
+        emptyHint="nothing here"
+        onSelect={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/nothing here/i)).toBeDefined();
   });
 });
