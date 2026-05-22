@@ -17,7 +17,7 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
 export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
   {
     generic: {
-      label: 'Puppy',
+      label: 'Agent',
       hint: 'Can do whatever you want, no restrictions',
       persona: 'max',
     },
@@ -107,7 +107,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   generic: {
     bg: 'bg-rose-400',
     fg: 'text-rose-400',
-    label: 'puppy',
+    label: 'agent',
   },
 };
 
@@ -123,7 +123,7 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt?: string;
     // When false, the kind is spawnable only programmatically (by other
     // UI surfaces, e.g. the PR resolve flow) and is hidden from the manual
-    // "Spawn puppy" menu. Defaults to visible.
+    // "Spawn agent" menu. Defaults to visible.
     visible?: boolean;
   }
 > = {
@@ -222,7 +222,7 @@ export function inferAgentKindFromName(name: string): AgentKind {
 /**
  * Resolve the chip's display kind. Override (explicit user pick) wins,
  * else name-based inference, else first-turn classification. Conservative —
- * when nothing matches, stays `generic` (chip shows "puppy").
+ * when nothing matches, stays `generic` (chip shows "agent").
  */
 export function resolveAgentKind(
   name: string,

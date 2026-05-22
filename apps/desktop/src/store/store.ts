@@ -1665,7 +1665,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             } else if (agent.status === 'failed') {
               seededTurnState[agent.id] = {
                 kind: 'error',
-                message: 'puppy failed',
+                message: 'agent failed',
                 failedAt: agent.completedAt ?? (new Date().toISOString() as IsoDateTime),
               };
             } else {
@@ -1879,7 +1879,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const fallback = await invokePhaseRunInsert({
           sessionId: session.id,
           ordinal: 0,
-          name: 'puppy 1',
+          name: 'agent 1',
           status: 'pending',
         });
         prespawnedRuns = [fallback];
@@ -2064,7 +2064,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
-      throw new Error('no puppy selected. spawn one before sending a turn');
+      throw new Error('no agent selected. spawn one before sending a turn');
     }
 
     const userTurnText = content;
@@ -2968,14 +2968,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (isFirstTurn) {
         const sessionForTitle = get().sessions.find((s) => s.id === sessionId);
         const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
-        // Only auto-rename puppies whose name still matches the default
-        // `puppy N` pattern (or the legacy `agent N`) — workflow-step names
+        // Only auto-rename agents whose name still matches the default
+        // `agent N` pattern (or the legacy `puppy N`) — workflow-step names
         // and user edits stay.
         const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find(
           (r) => r.id === activeAgentId,
         );
         const agentNameEditable = agentRecord
-          ? /^(puppy|agent) \d+$/i.test(agentRecord.name)
+          ? /^(agent|puppy) \d+$/i.test(agentRecord.name)
           : false;
         if (sessionForTitle && (titleEditable || agentNameEditable)) {
           void generateAutoTitle(
@@ -3515,7 +3515,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     if (!resolvedName) {
       const existing = state.sessionPhaseRuns[sessionId] ?? [];
-      resolvedName = `puppy ${existing.length + 1}`;
+      resolvedName = `agent ${existing.length + 1}`;
     }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
@@ -3634,7 +3634,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   //   2. Drop every per-agent map entry. Leaving `agentTurnState[agentId]`
   //      and friends behind is both a memory leak and a foot-gun: if the
   //      same id ever gets re-issued (or, more realistically, if a selector
-  //      iterates all agent state) we surface ghosts of a deleted puppy.
+  //      iterates all agent state) we surface ghosts of a deleted agent.
   //   3. Only then remove the DB row and re-pick the selected agent.
   deleteAgent: async (sessionId, agentId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -3993,7 +3993,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activateWorkflowAgent: async (sessionId, agentId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
-    if (!agent || !agent.stepId) throw new Error('puppy not found or not a workflow puppy');
+    if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
 
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || !session.workflowId) throw new Error('session has no workflow');
@@ -4080,7 +4080,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     void get().emitNotification(
       'agent-auto-spawn',
       'info',
-      `puppy auto-spawned: ${nextPendingAgent.name}`,
+      `agent auto-spawned: ${nextPendingAgent.name}`,
       undefined,
       { sessionId },
     );

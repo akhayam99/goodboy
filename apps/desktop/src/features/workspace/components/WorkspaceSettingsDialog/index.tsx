@@ -24,9 +24,21 @@ interface WorkspaceSettingsDialogProps {
   workspaceName: string;
   open: boolean;
   onClose: () => void;
+  /** Tab to open on — e.g. deep-linked from the command palette. */
+  initialSection?: string;
 }
 
 type Section = 'general' | 'skills' | 'scripts' | 'phases' | 'danger';
+
+function isSection(value: string | undefined): value is Section {
+  return (
+    value === 'general' ||
+    value === 'skills' ||
+    value === 'scripts' ||
+    value === 'phases' ||
+    value === 'danger'
+  );
+}
 
 interface NavItem {
   readonly id: Section;
@@ -41,6 +53,7 @@ export function WorkspaceSettingsDialog({
   workspaceName,
   open,
   onClose,
+  initialSection,
 }: WorkspaceSettingsDialogProps) {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -56,7 +69,7 @@ export function WorkspaceSettingsDialog({
 
   useEffect(() => {
     if (!open) return;
-    setActive('general');
+    setActive(isSection(initialSection) ? initialSection : 'general');
     setSaveState('idle');
     setError(null);
     setConfirmDisconnect(false);
@@ -66,7 +79,7 @@ export function WorkspaceSettingsDialog({
       setBranchPrefix(value);
       setSavedBranchPrefix(value);
     });
-  }, [open, workspaceId, loadSetting]);
+  }, [open, workspaceId, loadSetting, initialSection]);
 
   const onDisconnect = async () => {
     setDisconnecting(true);
@@ -196,7 +209,7 @@ export function WorkspaceSettingsDialog({
           <SectionShell
             icon={<Zap size={14} aria-hidden className="text-primary" />}
             title="Skills"
-            subtitle="Reusable system-prompt fragments and tool kits that every puppy in this workspace can opt into."
+            subtitle="Reusable system-prompt fragments and tool kits that every agent in this workspace can opt into."
           >
             <SkillsPanel workspaceId={workspaceId} />
           </SectionShell>
@@ -216,7 +229,7 @@ export function WorkspaceSettingsDialog({
           <SectionShell
             icon={<GitBranch size={14} aria-hidden className="text-primary" />}
             title="Workflows"
-            subtitle="Multi-puppy blueprints offered when creating a session. Each step spawns its own puppy in order."
+            subtitle="Multi-agent blueprints offered when creating a session. Each step spawns its own agent in order."
             beta
           >
             <PhasesPanel workspaceId={workspaceId} />

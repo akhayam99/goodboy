@@ -1,0 +1,136 @@
+import {
+  Check,
+  GitMerge,
+  GitPullRequest,
+  GitPullRequestClosed,
+  GitPullRequestDraft,
+} from 'lucide-react';
+import { cn } from '@goodboy/ui';
+import type { PullRequestStateKind } from '@goodboy/types';
+
+interface PrStateMeta {
+  readonly icon: React.ElementType;
+  readonly label: string;
+  readonly textClass: string;
+  readonly bgClass: string;
+}
+
+// Single source of truth for PR-state visual language. The activity rail
+// renders icon-only; the GithubCard renders icon + #number; the right-panel
+// GitHub tab and status-bar signal render the full badge with label word.
+// Colors lift from existing tokens (success/merged/danger/muted) so there's
+// no new palette work — see plan §H.5.
+const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
+  draft: {
+    icon: GitPullRequestDraft,
+    label: 'Draft',
+    textClass: 'text-muted-foreground',
+    bgClass: 'bg-muted/40',
+  },
+  open: {
+    icon: GitPullRequest,
+    label: 'In review',
+    textClass: 'text-success',
+    bgClass: 'bg-success/12',
+  },
+  approved: {
+    icon: Check,
+    label: 'Approved',
+    textClass: 'text-success',
+    bgClass: 'bg-success/18',
+  },
+  merged: {
+    icon: GitMerge,
+    label: 'Merged',
+    textClass: 'text-merged',
+    bgClass: 'bg-[oklch(from_var(--color-merged)_l_c_h_/_0.15)]',
+  },
+  closed: {
+    icon: GitPullRequestClosed,
+    label: 'Closed',
+    textClass: 'text-danger',
+    bgClass: 'bg-danger/10',
+  },
+};
+
+export function pullRequestMeta(state: PullRequestStateKind): PrStateMeta {
+  return PR_META[state];
+}
+
+type Variant = 'icon' | 'compact' | 'badge';
+
+interface PullRequestChipProps {
+  readonly state: PullRequestStateKind;
+  /**
+   * - `icon` — single 10–12px icon, no text. Use when space is tight (sidebar rail).
+   * - `compact` — icon + #number, no label word. Use in dense rows.
+   * - `badge` — colored chip with icon + label word (+ optional #number). The
+   *   richest variant — use in headers, status bar, inbox entries.
+   */
+  readonly variant?: Variant;
+  readonly number?: number;
+  readonly iconSize?: number;
+  readonly className?: string;
+}
+
+export function PullRequestChip({
+  state,
+  variant = 'icon',
+  number,
+  iconSize,
+  className,
+}: PullRequestChipProps) {
+  const meta = PR_META[state];
+  const Icon = meta.icon;
+
+  if (variant === 'icon') {
+    return (
+      <span
+        title={meta.label + (number !== undefined ? ` · #${number}` : '')}
+        aria-label={meta.label + (number !== undefined ? ` (#${number})` : '')}
+        className={cn('inline-flex shrink-0', meta.textClass, className)}
+      >
+        <Icon size={iconSize ?? 10} aria-hidden />
+      </span>
+    );
+  }
+
+  if (variant === 'compact') {
+    return (
+      <span
+        title={meta.label}
+        className={cn(
+          'inline-flex items-center gap-1 text-2xs font-medium',
+          meta.textClass,
+          className,
+        )}
+      >
+        <Icon size={iconSize ?? 12} aria-hidden />
+        {number !== undefined ? <span>#{number}</span> : null}
+      </span>
+    );
+  }
+
+  // badge: full colored chip with label word
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em]',
+        meta.textClass,
+        meta.bgClass,
+        className,
+      )}
+    >
+      <Icon size={iconSize ?? 10} aria-hidden />
+      <span>{meta.label}</span>
+      {number !== undefined ? (
+        <>
+          <span aria-hidden className="opacity-40">
+            ·
+          </span>
+          <span className="normal-case tracking-normal">#{number}</span>
+        </>
+      ) : null}
+    </span>
+  );
+}

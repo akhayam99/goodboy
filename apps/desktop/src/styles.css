@@ -47,6 +47,22 @@
   --text-lg: 17px;
   --text-xl: 20px;
 
+  /* Density grade — name three opinionated triplets so siblings agree on
+     font-size + gap + padding instead of drifting independently. Apply via
+     `var(--density-<grade>-*)` from component CSS. The sidebar lives at
+     `compact`, right-panel content at `cozy`, transcript prose at
+     `comfortable`. Tool-call / system rows in the transcript may opt down to
+     `cozy` to read as devtool while prose stays conversational. */
+  --density-compact-text: var(--text-2xs);
+  --density-compact-gap: 0.375rem;     /* 6px */
+  --density-compact-pad: 0.5rem;        /* 8px */
+  --density-cozy-text: var(--text-xs);
+  --density-cozy-gap: 0.625rem;         /* 10px */
+  --density-cozy-pad: 0.75rem;          /* 12px */
+  --density-comfortable-text: var(--text-sm);
+  --density-comfortable-gap: 0.875rem;  /* 14px */
+  --density-comfortable-pad: 1rem;      /* 16px */
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -69,6 +85,21 @@
 
   @keyframes spin-border {
     to { --spin-angle: 360deg; }
+  }
+
+  /* Tab / panel content swap — a quick fade + 2px rise so the new content
+     arrives instead of snapping in. Gated by motion-safe at the call site. */
+  --animate-fade-in: fade-in 120ms cubic-bezier(0.2, 0, 0, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Dark shadows — subtle drop + faint inner highlight to lift cards on dark bg. */

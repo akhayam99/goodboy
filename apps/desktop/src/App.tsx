@@ -7,13 +7,14 @@ import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
-import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
 import { ToastProvider } from './app/components/Toast';
 import {
   WorkspacesSidebar,
   AddWorkspaceDialog,
 } from './features/workspace/components/WorkspacesSidebar';
 import { DogMascot } from './shared/components/DogMascot';
+import { OnboardingCard } from './features/onboarding/OnboardingCard';
+import { markStepComplete } from './features/onboarding/onboarding-store';
 import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
 import {
@@ -68,9 +69,14 @@ export function App() {
     undefined,
   );
   const [endOpen, setEndOpen] = useState(false);
-  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState(
+    () =>
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem('goodboy:left-sidebar-collapsed') === '1',
+  );
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -90,14 +96,17 @@ export function App() {
     return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
 
-  // Prevent macOS from exiting native fullscreen on ESC. Calling
-  // preventDefault at the capture phase marks the event as handled in
-  // WKWebView before it reaches the native responder chain. Dialogs and
-  // dropdowns still receive the keydown and close normally via their own
-  // listeners.
+  // ESC on macOS exits native fullscreen — never wanted. preventDefault at the
+  // capture phase blocks it (the event is marked handled in WKWebView before
+  // it reaches the native responder chain). That same call also cancels a
+  // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
+  // dialog ourselves — ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') e.preventDefault();
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      const dialogs = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
+      dialogs[dialogs.length - 1]?.close();
     };
     document.addEventListener('keydown', onEsc, { capture: true });
     return () => document.removeEventListener('keydown', onEsc, { capture: true });
@@ -144,12 +153,30 @@ export function App() {
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
-  const openShortcutHelp = useCallback(() => setShortcutHelpOpen(true), []);
+  const openShortcutHelp = useCallback(() => {
+    setSettingsInitialSection('shortcuts');
+    setSettingsOpen(true);
+  }, []);
+  const openPalette = useCallback((prefix = '') => {
+    setPalettePrefix(prefix);
+    setPaletteOpen(true);
+    markStepComplete('palette');
+  }, []);
+  const toggleLeftSidebar = useCallback(() => {
+    setLeftCollapsed((v) => {
+      const next = !v;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0');
+      }
+      return next;
+    });
+  }, []);
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
-  useKeyboardShortcut('cmd+k', () => setPaletteOpen(true));
+  useKeyboardShortcut('cmd+k', () => openPalette());
+  useKeyboardShortcut('cmd+b', toggleLeftSidebar);
 
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
@@ -186,29 +213,42 @@ export function App() {
   return (
     <ToastProvider>
       <AppShell
+        leftSidebarCollapsed={leftCollapsed}
         leftSidebar={
-          hasWorkspaces ? <WorkspacesSidebar onOpenSettings={openSettings} /> : undefined
+          hasWorkspaces ? (
+            <WorkspacesSidebar
+              onOpenSettings={openSettings}
+              onOpenPalette={openPalette}
+              collapsed={leftCollapsed}
+              onToggleCollapse={toggleLeftSidebar}
+            />
+          ) : undefined
         }
         main={
-          error ? (
-            <p className="p-6 text-sm text-danger">init error: {error}</p>
-          ) : currentSession ? (
-            <div className="relative h-full w-full">
-              {deferredRenderedIds.map((id) => (
-                <KeepAliveChatPanel
-                  key={id}
-                  sessionId={id}
-                  isActive={id === deferredActiveId}
-                  onRequestEnd={onRequestEnd}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              hasWorkspace={Boolean(currentWorkspace)}
-              onAddWorkspace={() => setAddWorkspaceOpen(true)}
-            />
-          )
+          <div className="relative h-full w-full">
+            {error ? (
+              <p className="p-6 text-sm text-danger">init error: {error}</p>
+            ) : currentSession ? (
+              <div className="relative h-full w-full">
+                {deferredRenderedIds.map((id) => (
+                  <KeepAliveChatPanel
+                    key={id}
+                    sessionId={id}
+                    isActive={id === deferredActiveId}
+                    onRequestEnd={onRequestEnd}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                hasWorkspace={Boolean(currentWorkspace)}
+                onAddWorkspace={() => setAddWorkspaceOpen(true)}
+              />
+            )}
+            {/* Onboarding checklist floats top-right of the chat area —
+                app-level so the sidebar chip can summon it from anywhere. */}
+            <OnboardingCard />
+          </div>
         }
         rightSidebar={
           currentSession ? (
@@ -241,9 +281,9 @@ export function App() {
         }}
         initialSection={settingsInitialSection}
       />
-      <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       {paletteOpen ? (
         <CommandPalette
+          initialQuery={palettePrefix}
           onClose={() => setPaletteOpen(false)}
           onOpenSettings={() => {
             setSettingsOpen(true);
@@ -251,7 +291,7 @@ export function App() {
           }}
           onNewSession={() => setPaletteOpen(false)}
           onOpenShortcutHelp={() => {
-            setShortcutHelpOpen(true);
+            openShortcutHelp();
             setPaletteOpen(false);
           }}
         />
@@ -400,7 +440,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Sessions</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Switch workspaces, manage sessions, track puppies and workflow progress.
+          Switch workspaces, manage sessions, track agents and workflow progress.
         </p>
       </div>
 
@@ -410,7 +450,7 @@ function AppLayoutPreview() {
         </div>
         <span className="text-xs font-semibold text-muted-foreground">Chat</span>
         <p className="text-2xs leading-relaxed text-muted-foreground/50">
-          Talk to your puppies, send instructions, and watch execution unfold in real time.
+          Talk to your agents, send instructions, and watch execution unfold in real time.
         </p>
       </div>
 

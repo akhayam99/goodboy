@@ -656,8 +656,8 @@ function CommentThreadRow({
               <button
                 type="button"
                 onClick={onSpawn}
-                title="spawn puppy to resolve this comment"
-                aria-label="spawn puppy to resolve this comment"
+                title="spawn agent to resolve this comment"
+                aria-label="spawn agent to resolve this comment"
                 className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-[10px] font-medium text-accent transition-colors hover:bg-accent/15"
               >
                 <Sparkles size={9} aria-hidden />
@@ -750,7 +750,7 @@ function ReviewPane({
           type="button"
           onClick={onSpawnFromReviewChanges}
           className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/10"
-          title="spawn puppy to resolve all requested changes"
+          title="spawn agent to resolve all requested changes"
         >
           <Sparkles size={10} aria-hidden />
           resolve all requested changes

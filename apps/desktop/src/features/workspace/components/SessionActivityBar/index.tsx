@@ -1,18 +1,14 @@
 import { memo, useMemo, useState } from 'react';
-import {
-  Archive,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  MessagesSquare,
-  Minus,
-  Plus,
-} from 'lucide-react';
+import { Archive, MessagesSquare, Plus } from 'lucide-react';
 import { cn, ScrollArea } from '@goodboy/ui';
-import type { PullRequestStateKind, Session, SessionId } from '@goodboy/types';
-import { useAppStore, useSessionHasUnread } from '../../../../store';
+import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
+import { CostBadge } from '../../../../features/providers/components/CostBadge';
+import {
+  PullRequestChip,
+  pullRequestMeta,
+} from '../../../../features/github/components/PullRequestChip';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -54,6 +50,21 @@ export function SessionActivityBar({
             <MessagesSquare size={10} aria-hidden className="text-info" />
             Sessions
           </span>
+          {/* "New session" lives at the top — never moves, always discoverable.
+              Hidden in the archived view because creating from a filter would
+              flip the user back to active anyway. */}
+          {!isArchivedView && (
+            <button
+              type="button"
+              onClick={onNewSession}
+              className="mb-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/30 py-2 text-[10px] font-medium text-muted-foreground/80 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
+              title="new session"
+              aria-label="create new session"
+            >
+              <Plus size={12} aria-hidden />
+              <span>New</span>
+            </button>
+          )}
           {displayList.map((session) => (
             <SessionActivityItem
               key={session.id}
@@ -63,17 +74,10 @@ export function SessionActivityBar({
               onClick={() => onSelectSession(session.id as SessionId)}
             />
           ))}
-          {!isArchivedView && (
-            <button
-              type="button"
-              onClick={onNewSession}
-              className="mt-0.5 flex w-full items-center justify-center gap-1 rounded border border-dashed border-border-soft bg-muted/40 py-2 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:border-foreground/40 hover:bg-muted/60 hover:text-foreground"
-              title="new session"
-              aria-label="create new session"
-            >
-              <Plus size={12} aria-hidden />
-              <span>New</span>
-            </button>
+          {!isArchivedView && displayList.length === 0 && (
+            <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
+              No sessions yet.
+            </p>
           )}
           {isArchivedView && sortedArchived.length === 0 && (
             <p className="px-1 py-3 text-center text-[10px] text-muted-foreground/50">
@@ -113,17 +117,6 @@ interface SessionActivityItemProps {
   onClick: () => void;
 }
 
-const PR_ICON_MAP: Record<
-  PullRequestStateKind,
-  { icon: React.ElementType; label: string; className: string }
-> = {
-  draft: { icon: GitPullRequestDraft, label: 'draft', className: 'text-muted-foreground' },
-  open: { icon: GitPullRequest, label: 'in review', className: 'text-success' },
-  approved: { icon: GitPullRequest, label: 'approved', className: 'text-success' },
-  merged: { icon: GitMerge, label: 'merged', className: 'text-merged' },
-  closed: { icon: GitPullRequestClosed, label: 'closed', className: 'text-danger' },
-};
-
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
   isActive,
@@ -139,14 +132,29 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
-  const prEntry = prState ? PR_ICON_MAP[prState] : null;
-  const PrIcon = prEntry?.icon ?? Minus;
+  const prMeta = prState ? pullRequestMeta(prState) : null;
+
+  // Spend-at-a-glance on the rail tile — summarizer cost is excluded so the
+  // figure matches the SessionCostChip in the detail footer.
+  const telemetry = useAppStore(
+    (s) =>
+      s.sessionTelemetry[session.id as SessionId] ??
+      (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+  const sessionCost = useMemo(() => {
+    let sum = 0;
+    for (const rec of telemetry) {
+      if (rec.kind === 'summarizer') continue;
+      sum += rec.estimatedCostUsd;
+    }
+    return sum;
+  }, [telemetry]);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} · ${statusEntry.label}${prEntry ? ` · PR ${prEntry.label}` : ''}`}
+      title={`${session.goal} · ${statusEntry.label}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
         // base surface — selected vs unselected
@@ -173,11 +181,20 @@ const SessionActivityItem = memo(function SessionActivityItem({
         <span className={cn('shrink-0', statusEntry.className)}>
           <StatusIcon size={10} aria-hidden />
         </span>
-        <span className={cn('shrink-0', prEntry?.className ?? 'text-muted-foreground/30')}>
-          <PrIcon size={10} aria-hidden />
-        </span>
+        {prState ? (
+          <PullRequestChip state={prState} variant="icon" iconSize={10} />
+        ) : (
+          <span className="inline-flex size-2.5 shrink-0" aria-hidden />
+        )}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
+      {sessionCost > 0 ? (
+        <CostBadge
+          value={sessionCost}
+          title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+          className="text-[9px] font-medium text-muted-foreground/55"
+        />
+      ) : null}
     </button>
   );
 });

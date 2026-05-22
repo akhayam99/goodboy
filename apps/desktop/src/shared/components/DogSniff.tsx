@@ -4,7 +4,7 @@ interface DogSniffProps {
   'aria-hidden'?: boolean;
 }
 
-// "Debug puppy" mascot — a dog in a head-down sniffing pose, nosing out a pile
+// "Debug" mascot — a dog in a head-down sniffing pose, nosing out a pile
 // on the ground (the bug) set a small gap apart so the two read as distinct.
 // Single-color (currentColor); the eye is knocked out (evenodd) so the
 // background shows through. Same solid style as DogMascot.

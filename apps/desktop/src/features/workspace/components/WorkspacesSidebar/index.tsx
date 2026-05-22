@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodboy/ui';
@@ -14,11 +14,14 @@ import {
   Loader2,
   MessagesSquare,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Play,
   Plus,
   Settings,
   Sparkles,
   Sun,
+  Terminal,
   Trash2,
   Check,
 } from 'lucide-react';
@@ -29,6 +32,7 @@ import { NotificationCenter } from '../../../../features/notifications/component
 import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
   AgentId,
@@ -81,10 +85,12 @@ import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
-import { GithubDetailsDialog } from '../../../github/components/GithubDetailsDialog';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
+  onOpenPalette: (initialQuery?: string) => void;
+  collapsed?: boolean;
+  onToggleCollapse: () => void;
 }
 
 const FOOTER_ICON_BTN =
@@ -95,7 +101,12 @@ const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
 
-export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
+export function WorkspacesSidebar({
+  onOpenSettings,
+  onOpenPalette,
+  collapsed = false,
+  onToggleCollapse,
+}: WorkspacesSidebarProps) {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -132,7 +143,10 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
   const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
-  const [githubDetailsOpen, setGithubDetailsOpen] = useState(false);
+
+  if (collapsed) {
+    return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -149,20 +163,14 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           (() => {
             const totalSessions = activeSessions.length + archivedSessions.length;
             const hasAnySession = totalSessions > 0;
-            // The activity bar only makes sense as a switcher. With a single
-            // session the user never switches — collapse the rail and expose
-            // the "new session" action inside the detail header instead.
-            const showActivityBar = totalSessions > 1;
             return (
               <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                {/* sessions rail — same surface as the detail, split only by the divider */}
-                <div
-                  className={cn(
-                    'shrink-0 overflow-hidden transition-[width] duration-300 ease-out',
-                    showActivityBar ? 'w-28' : 'w-0',
-                  )}
-                  aria-hidden={!showActivityBar}
-                >
+                {/* Sessions rail — always visible while a workspace is current.
+                    Earlier builds collapsed it when totalSessions <= 1, which
+                    moved the "new session" affordance into the detail header.
+                    That morphing made it hard to teach; now the rail is the
+                    single home for session navigation and creation. */}
+                <div className="w-28 shrink-0 overflow-hidden">
                   <SessionActivityBar
                     sessions={activeSessions}
                     archivedSessions={archivedSessions}
@@ -171,16 +179,11 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                     onNewSession={() => setNewSessionOpen(true)}
                   />
                 </div>
-                {/* Inset hairline divider — centered between rail content
-                    (px-1.5) and detail content (px-3). The rail-side gap is
-                    rail's pr-1.5 (6px) + divider's ml-1.5 (6px) = 12px; the
-                    detail-side gap is detail's px-3 (12px). Symmetric. */}
-                {showActivityBar ? (
-                  <div
-                    aria-hidden
-                    className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
-                  />
-                ) : null}
+                {/* Inset hairline divider between rail and detail. */}
+                <div
+                  aria-hidden
+                  className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+                />
                 {/* selected-session detail */}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
@@ -188,15 +191,11 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
                       <SessionDetailPanel
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
-                        onNewSession={showActivityBar ? undefined : () => setNewSessionOpen(true)}
                       />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
-                      <SessionMetaFooter
-                        session={currentSession}
-                        onOpenGithubDetails={() => setGithubDetailsOpen(true)}
-                      />
+                      <SessionMetaFooter session={currentSession} />
                     </>
                   ) : (
                     <NoSessionSelectedEmpty
@@ -215,11 +214,27 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
       <Divider />
 
-      {/* sidebar footer — logo + controls */}
-      <div className="flex shrink-0 items-center px-2.5 py-3">
+      {/* quick actions — jump straight into the palette pre-scoped to a
+          source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
+      {currentWorkspace ? (
+        <QuickActionsRow onOpenPalette={onOpenPalette} skillsEnabled={WORKSPACE_FEATURES.skills} />
+      ) : null}
+
+      {/* sidebar footer — logo + onboarding chip + controls */}
+      <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
         <div className="flex-1" />
+        <OnboardingChip />
         <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            title="collapse sidebar (⌘B)"
+            aria-label="collapse sidebar"
+            className={FOOTER_ICON_BTN}
+          >
+            <PanelLeftClose size={14} aria-hidden />
+          </button>
           <button
             type="button"
             onClick={() => setPricingOpen(true)}
@@ -281,12 +296,82 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
           onUnarchive={() => unarchive(currentSession.id as SessionId)}
         />
       ) : null}
-      <GithubDetailsDialog
-        open={githubDetailsOpen}
-        onClose={() => setGithubDetailsOpen(false)}
-        sessionId={(currentSession?.id as SessionId) ?? null}
+    </div>
+  );
+}
+
+// Collapsed left sidebar — a minimal rail (just an expand affordance), the
+// left-side mirror of the ContextPanel's collapsed state. The rail width is
+// fixed by AppShell's LEFT_RAIL_WIDTH.
+function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
+  // Logo pinned top, expand control pinned bottom — the expand button holds
+  // the same bottom slot it occupies in the expanded sidebar's footer, so it
+  // doesn't jump when the rail toggles.
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-between py-3">
+      <DogMascot size={18} className="shrink-0 text-foreground" />
+      <button
+        type="button"
+        onClick={onExpand}
+        title="expand sidebar (⌘B)"
+        aria-label="expand sidebar"
+        className={FOOTER_ICON_BTN}
+      >
+        <PanelLeftOpen size={16} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function QuickActionsRow({
+  onOpenPalette,
+  skillsEnabled,
+}: {
+  onOpenPalette: (initialQuery?: string) => void;
+  skillsEnabled: boolean;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1 px-2.5 pt-2">
+      {skillsEnabled ? (
+        <QuickAction
+          icon={<Sparkles size={12} aria-hidden />}
+          label="Skills"
+          onClick={() => onOpenPalette('/')}
+        />
+      ) : null}
+      <QuickAction
+        icon={<Layers size={12} aria-hidden />}
+        label="Workflows"
+        onClick={() => onOpenPalette('~')}
+      />
+      <QuickAction
+        icon={<Terminal size={12} aria-hidden />}
+        label="Scripts"
+        onClick={() => onOpenPalette('$')}
       />
     </div>
+  );
+}
+
+function QuickAction({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`browse ${label.toLowerCase()} in the command palette`}
+      className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-soft bg-muted/30 py-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -311,7 +396,7 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
 }
 
 /**
- * Inline follow-up CTA rendered directly above the generic 'Spawn puppy'
+ * Inline follow-up CTA rendered directly above the generic 'Spawn agent'
  * trigger when the session has an active plan ready to execute. The pitch is:
  * before the user picks any role from the spawn menu, the plan already
  * implies the answer — so offer it one click away.
@@ -372,7 +457,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
       disabled={spawning}
       data-testid="plan-ready-suggestion"
       title={latest.title}
-      aria-label={`unleash a puppy to execute the plan: ${latest.title}`}
+      aria-label={`spawn an implementer agent to execute the plan: ${latest.title}`}
       className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
@@ -391,7 +476,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
             ·
           </span>
           <span className="font-normal normal-case tracking-normal text-muted-foreground">
-            unleash a puppy
+            spawn implementer
           </span>
         </span>
         <span className="line-clamp-2 text-xs text-foreground/90">{latest.title}</span>
@@ -1010,7 +1095,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       >
         <span className={SECTION_LABEL}>
           <DogMascot size={14} className="shrink-0 text-success" />
-          Puppies
+          Agents
         </span>
       </header>
       {workflow ? (
@@ -1019,7 +1104,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         ) : null
       ) : sorted.length === 0 ? (
         loading.agents ? (
-          <ul role="status" aria-label="loading puppies" className="flex flex-col gap-1 pl-2">
+          <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
             {[0, 1].map((i) => (
               <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
@@ -1029,7 +1114,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </ul>
         ) : (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No puppies yet. Spawn one below.
+            No agents yet. Spawn one below.
           </p>
         )
       ) : (
@@ -1167,7 +1252,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        Spawn puppy
+        Spawn agent
       </button>
       {menu}
     </div>
@@ -1311,7 +1396,7 @@ function WorkflowStepRow({
       ? 'next workflow step. gated by open questions / summarizer (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `puppy ${run.ordinal + 1}: ${run.status}`;
+        : `agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -1362,7 +1447,7 @@ function WorkflowStepRow({
               }}
               onBlur={() => onRenameCommit(draft)}
               className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
-              aria-label="rename puppy"
+              aria-label="rename agent"
             />
           ) : (
             <span className="truncate font-semibold">{run.name}</span>
@@ -1472,9 +1557,9 @@ function AgentRow({
 }: AgentRowProps) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
-    `puppy ${run.ordinal + 1}`,
+    `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
-    isSelected ? 'selected: chat shows this puppy' : 'click to switch chat to this puppy',
+    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
     telemetry ? `model: ${telemetry.model}` : null,
     total !== null
@@ -1529,7 +1614,7 @@ function AgentRow({
         </span>
         <AgentKindChip
           kind={kind}
-          title={`puppy ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
         {isEditing ? (
           <input
@@ -1550,7 +1635,7 @@ function AgentRow({
             }}
             onBlur={() => onRenameCommit(draft)}
             className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
-            aria-label="rename puppy"
+            aria-label="rename agent"
           />
         ) : (
           <span
@@ -1597,8 +1682,8 @@ function AgentRow({
                   setConfirmingDelete(true);
                 }}
                 className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
-                title="delete puppy (double-click row to rename)"
-                aria-label="delete puppy"
+                title="delete agent (double-click row to rename)"
+                aria-label="delete agent"
               >
                 <Trash2 size={11} aria-hidden />
               </button>
@@ -1666,7 +1751,7 @@ function AgentLifetime({ run }: { run: Agent }) {
     return (
       <span
         className="font-mono text-muted-foreground/60"
-        title="puppy spawned but has not run yet"
+        title="agent spawned but has not run yet"
       >
         0
       </span>

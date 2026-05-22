@@ -161,7 +161,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
   const consumptions = selected ? (planConsumptions[selected.id] ?? []) : [];
   const creatorAgent = selected ? agents.find((a) => a.id === selected.agentId) : null;
   const creatorDeleted = selected ? !creatorAgent : false;
-  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown puppy') : '';
+  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : '';
 
   const planList = (
     <ul className="flex w-full flex-col gap-1 overflow-y-auto">
@@ -232,7 +232,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                     onClick={() => {
                       if (creatorDeleted) {
                         window.alert(
-                          `Puppy "${selectedAgentName}" has been deleted and can no longer be opened.`,
+                          `Agent "${selectedAgentName}" has been deleted and can no longer be opened.`,
                         );
                         return;
                       }
@@ -246,7 +246,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                         : 'text-foreground hover:underline',
                     )}
                     title={
-                      creatorDeleted ? 'Puppy deleted, click for details' : 'Open creator puppy'
+                      creatorDeleted ? 'Agent deleted, click for details' : 'Open creator agent'
                     }
                   >
                     {selectedAgentName}
@@ -272,7 +272,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                         onClick={() => {
                           if (isDeleted) {
                             window.alert(
-                              `Puppy "${displayName}" has been deleted and can no longer be opened.`,
+                              `Agent "${displayName}" has been deleted and can no longer be opened.`,
                             );
                             return;
                           }
@@ -285,7 +285,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                             ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
                             : 'text-foreground hover:underline',
                         )}
-                        title={isDeleted ? 'Puppy deleted, click for details' : 'Open puppy'}
+                        title={isDeleted ? 'Agent deleted, click for details' : 'Open agent'}
                       >
                         {displayName}
                       </button>
@@ -369,10 +369,10 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                     )}
                     title={
                       retriggerArmed
-                        ? 'Already consumed — click again to confirm and spawn a fresh puppy'
+                        ? 'Already consumed — click again to confirm and spawn a fresh agent'
                         : selected.status === 'consumed' || selected.status === 'superseded'
                           ? 'Plan already ran — click to replay (asks for confirmation)'
-                          : 'Spawn new puppy to execute this plan'
+                          : 'Spawn new agent to execute this plan'
                     }
                   >
                     {spawning ? (
