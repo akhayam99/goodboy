@@ -182,7 +182,7 @@ export function ContextPanel({
 
       <div
         className={cn(
-          'flex h-full min-h-0 flex-col overflow-hidden rounded-lg',
+          'flex h-full min-h-0 flex-col overflow-hidden rounded-sm',
           collapsed && 'hidden',
           // Spin-info border ring while the summarizer is running — same
           // visual language as a running session card. Replaces the per-slot
@@ -227,34 +227,36 @@ export function ContextPanel({
 
         {/* Tab content — Context / Plans / Files / GitHub. Open Questions is
             pinned across every tab via the sticky footer below. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pb-3">
-          {tab === 'context' ? (
-            <ul
-              className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
-              style={{ scrollbarGutter: 'stable' }}
-            >
-              {visibleSlotKeys.map((key) => {
-                const slot = slotsByKey.get(key);
-                return (
-                  <SlotRow
-                    key={key}
-                    sessionId={session.id}
-                    slotKey={key}
-                    slot={slot}
-                    loading={loading.slots}
-                    isSummarizing={summarizer.status === 'running'}
-                    onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                  />
-                );
-              })}
-            </ul>
-          ) : tab === 'plans' ? (
-            <PlansTabContent sessionId={session.id} />
-          ) : tab === 'files' ? (
-            <FilesTabContent sessionId={session.id} workingDir={workingDir} />
-          ) : (
-            <GithubTabContent sessionId={session.id} branch={branch} />
-          )}
+        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
+          <div key={tab} className="flex min-h-0 flex-1 flex-col motion-safe:animate-fade-in">
+            {tab === 'context' ? (
+              <ul
+                className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
+                style={{ scrollbarGutter: 'stable' }}
+              >
+                {visibleSlotKeys.map((key) => {
+                  const slot = slotsByKey.get(key);
+                  return (
+                    <SlotRow
+                      key={key}
+                      sessionId={session.id}
+                      slotKey={key}
+                      slot={slot}
+                      loading={loading.slots}
+                      isSummarizing={summarizer.status === 'running'}
+                      onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                    />
+                  );
+                })}
+              </ul>
+            ) : tab === 'plans' ? (
+              <PlansTabContent sessionId={session.id} />
+            ) : tab === 'files' ? (
+              <FilesTabContent sessionId={session.id} workingDir={workingDir} />
+            ) : (
+              <GithubTabContent sessionId={session.id} branch={branch} />
+            )}
+          </div>
         </div>
 
         <Divider />
@@ -412,7 +414,7 @@ function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
   return (
     <>
       <ul
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1"
         style={{ scrollbarGutter: 'stable' }}
       >
         {plans.map((plan, idx) => (
@@ -531,7 +533,7 @@ function FilesTabContent({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1">
       <button
         type="button"
         onClick={() => {
@@ -632,7 +634,7 @@ function GithubTabContent({ sessionId, branch }: { sessionId: SessionId; branch:
   const ciState = computeCiState(detail?.checks ?? []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1">
       {prLoading ? (
         <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground ring-1 ring-border-soft">
           <Loader2 size={12} aria-hidden className="animate-spin" />

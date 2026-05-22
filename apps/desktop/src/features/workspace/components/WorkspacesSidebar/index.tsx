@@ -304,8 +304,12 @@ export function WorkspacesSidebar({
 // left-side mirror of the ContextPanel's collapsed state. The rail width is
 // fixed by AppShell's LEFT_RAIL_WIDTH.
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
+  // Logo pinned top, expand control pinned bottom — the expand button holds
+  // the same bottom slot it occupies in the expanded sidebar's footer, so it
+  // doesn't jump when the rail toggles.
   return (
-    <div className="flex h-full w-full flex-col items-center pt-3">
+    <div className="flex h-full w-full flex-col items-center justify-between py-3">
+      <DogMascot size={18} className="shrink-0 text-foreground" />
       <button
         type="button"
         onClick={onExpand}
