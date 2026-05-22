@@ -9,8 +9,24 @@ export interface ScriptRunResult {
 }
 
 /** Run state for a script row in the Scripts panel. */
-export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error';
+export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error' | 'cancelled';
 
-export async function invokeScriptRun(scriptId: WorkspaceScriptId): Promise<ScriptRunResult> {
-  return invoke<ScriptRunResult>('workspace_script_run', { scriptId });
+/** A tracked script run for one (session, script) pair, held in the store. */
+export interface ScriptRunRecord {
+  readonly status: ScriptRunStatus;
+  readonly result: ScriptRunResult | null;
+  readonly runId: string;
+}
+
+export async function invokeScriptRun(
+  scriptId: WorkspaceScriptId,
+  runId: string,
+  cwd: string,
+): Promise<ScriptRunResult> {
+  return invoke<ScriptRunResult>('workspace_script_run', { scriptId, runId, cwd });
+}
+
+/** Interrupt an in-flight script run. No-op if the run already finished. */
+export async function invokeScriptCancel(runId: string): Promise<void> {
+  return invoke<void>('workspace_script_cancel', { runId });
 }

@@ -178,7 +178,13 @@ import {
   resolveSkillInvocation,
   type SkillUpsertArgs,
 } from '../features/skills/skills';
-import { invokeScriptRun, type ScriptRunResult } from '../features/scripts/scripts';
+import {
+  invokeScriptRun,
+  invokeScriptCancel,
+  type ScriptRunResult,
+  type ScriptRunRecord,
+  type ScriptRunStatus,
+} from '../features/scripts/scripts';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -313,6 +319,9 @@ export interface AppState {
   readonly systemAlerts: ReadonlyArray<SystemAlert>;
   readonly skills: Readonly<Record<WorkspaceId, ReadonlyArray<Skill>>>;
   readonly workspaceScripts: Readonly<Record<WorkspaceId, ReadonlyArray<WorkspaceScript>>>;
+  readonly scriptRuns: Readonly<
+    Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
+  >;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -499,7 +508,12 @@ export interface AppActions {
     body: string;
   }): Promise<void>;
   deleteScript(scriptId: WorkspaceScriptId, workspaceId: WorkspaceId): Promise<void>;
-  runScript(scriptId: WorkspaceScriptId): Promise<ScriptRunResult>;
+  runScript(
+    sessionId: SessionId,
+    scriptId: WorkspaceScriptId,
+    cwd: string,
+  ): Promise<ScriptRunResult>;
+  cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -639,6 +653,7 @@ const initialState: AppState = {
   budgetAlerts: [],
   skills: {},
   workspaceScripts: {},
+  scriptRuns: {},
   phaseTemplates: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
@@ -3381,8 +3396,51 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  runScript: async (scriptId) => {
-    return invokeScriptRun(scriptId);
+  runScript: async (sessionId, scriptId, cwd) => {
+    const runId = crypto.randomUUID();
+
+    const writeRun = (record: ScriptRunRecord) =>
+      set((state) => ({
+        scriptRuns: {
+          ...state.scriptRuns,
+          [sessionId]: { ...state.scriptRuns[sessionId], [scriptId]: record },
+        },
+      }));
+
+    writeRun({ status: 'pending', result: null, runId });
+
+    const settle = (status: ScriptRunStatus, result: ScriptRunResult): ScriptRunResult => {
+      const curr = get().scriptRuns[sessionId]?.[scriptId];
+      // A newer run for this script took the slot — leave it untouched.
+      if (!curr || curr.runId !== runId) return result;
+      // A user cancel wins over the exit code the kill produces.
+      writeRun({
+        status: curr.status === 'cancelled' ? 'cancelled' : status,
+        result,
+        runId,
+      });
+      return result;
+    };
+
+    try {
+      const result = await invokeScriptRun(scriptId, runId, cwd);
+      return settle(result.exitCode === 0 ? 'ok' : 'error', result);
+    } catch (err) {
+      return settle('error', { stdout: '', stderr: formatError(err), exitCode: -1 });
+    }
+  },
+
+  cancelScript: async (sessionId, scriptId) => {
+    const curr = get().scriptRuns[sessionId]?.[scriptId];
+    if (!curr || curr.status !== 'pending') return;
+    const cancelled: ScriptRunRecord = { ...curr, status: 'cancelled' };
+    set((state) => ({
+      scriptRuns: {
+        ...state.scriptRuns,
+        [sessionId]: { ...state.scriptRuns[sessionId], [scriptId]: cancelled },
+      },
+    }));
+    await invokeScriptCancel(curr.runId);
   },
 
   loadPhaseTemplates: async (workspaceId) => {
