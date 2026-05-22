@@ -4,11 +4,9 @@ import { BrainDumpParseError, BrainDumpSpawnError } from './rephraser';
 import { Clusterizer, type ClusterIdeaInput } from './clusterizer';
 
 function makeInvoke(stdout: string, exitCode = 0, stderr = '') {
-  return vi.fn(async (_cmd: string, _args?: unknown) => ({
-    stdout,
-    stderr,
-    exitCode,
-  }));
+  return vi.fn(async <T>(_cmd: string, _args?: Record<string, unknown>): Promise<T> => {
+    return { stdout, stderr, exitCode } as unknown as T;
+  });
 }
 
 function anthropicResponse(payload: unknown): string {

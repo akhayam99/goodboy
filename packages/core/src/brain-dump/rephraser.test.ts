@@ -6,11 +6,9 @@ const W1 = 'w1' as WorkspaceId;
 const W2 = 'w2' as WorkspaceId;
 
 function makeInvoke(stdout: string, exitCode = 0, stderr = '') {
-  return vi.fn(async (_cmd: string, _args?: unknown) => ({
-    stdout,
-    stderr,
-    exitCode,
-  }));
+  return vi.fn(async <T>(_cmd: string, _args?: Record<string, unknown>): Promise<T> => {
+    return { stdout, stderr, exitCode } as unknown as T;
+  });
 }
 
 function anthropicResponse(payload: unknown): string {

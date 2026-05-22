@@ -1,5 +1,5 @@
 import type { IdeaBacklogId, ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { getDefaultTurnModel } from '../providers/capabilities';
 import {
   BrainDumpParseError,
   BrainDumpSpawnError,
@@ -7,11 +7,6 @@ import {
   extractJson,
   type InvokeFn,
 } from './rephraser';
-
-function getStandardModel(providerId: ProviderId): string {
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((m) => m.tier === 'standard')?.id ?? caps.models[0]!.id;
-}
 
 function getDefaultBinary(providerId: ProviderId): string {
   switch (providerId) {
@@ -83,7 +78,7 @@ export class Clusterizer {
   constructor(deps: ClusterizerDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = getStandardModel(deps.providerId);
+    this.model = getDefaultTurnModel(deps.providerId);
     this.invokeFn = deps.invokeFn;
   }
 
