@@ -113,6 +113,8 @@ export interface CommandPaletteProps {
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;
+  /** Pre-fills the input — e.g. a prefix like '/' opened from a quick-action. */
+  initialQuery?: string;
 }
 
 export function CommandPalette({
@@ -120,8 +122,9 @@ export function CommandPalette({
   onOpenSettings,
   onNewSession,
   onOpenShortcutHelp,
+  initialQuery = '',
 }: CommandPaletteProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);

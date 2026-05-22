@@ -72,6 +72,7 @@ export function App() {
   const [endOpen, setEndOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState<boolean>(false);
   const [contextHydratedFor, setContextHydratedFor] = useState<SessionId | null>(null);
@@ -147,14 +148,16 @@ export function App() {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
   const openShortcutHelp = useCallback(() => setShortcutHelpOpen(true), []);
+  const openPalette = useCallback((prefix = '') => {
+    setPalettePrefix(prefix);
+    setPaletteOpen(true);
+    markStepComplete('palette');
+  }, []);
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
-  useKeyboardShortcut('cmd+k', () => {
-    setPaletteOpen(true);
-    markStepComplete('palette');
-  });
+  useKeyboardShortcut('cmd+k', () => openPalette());
 
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
@@ -192,7 +195,9 @@ export function App() {
     <ToastProvider>
       <AppShell
         leftSidebar={
-          hasWorkspaces ? <WorkspacesSidebar onOpenSettings={openSettings} /> : undefined
+          hasWorkspaces ? (
+            <WorkspacesSidebar onOpenSettings={openSettings} onOpenPalette={openPalette} />
+          ) : undefined
         }
         main={
           error ? (
@@ -249,6 +254,7 @@ export function App() {
       <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       {paletteOpen ? (
         <CommandPalette
+          initialQuery={palettePrefix}
           onClose={() => setPaletteOpen(false)}
           onOpenSettings={() => {
             setSettingsOpen(true);

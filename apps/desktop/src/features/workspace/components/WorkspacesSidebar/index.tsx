@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodboy/ui';
@@ -19,6 +19,7 @@ import {
   Settings,
   Sparkles,
   Sun,
+  Terminal,
   Trash2,
   Check,
 } from 'lucide-react';
@@ -85,6 +86,7 @@ import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
+  onOpenPalette: (initialQuery?: string) => void;
 }
 
 const FOOTER_ICON_BTN =
@@ -95,7 +97,7 @@ const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
 
-export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
+export function WorkspacesSidebar({ onOpenSettings, onOpenPalette }: WorkspacesSidebarProps) {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -199,6 +201,12 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
 
       <Divider />
 
+      {/* quick actions — jump straight into the palette pre-scoped to a
+          source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
+      {currentWorkspace ? (
+        <QuickActionsRow onOpenPalette={onOpenPalette} skillsEnabled={WORKSPACE_FEATURES.skills} />
+      ) : null}
+
       {/* sidebar footer — logo + onboarding chip + controls */}
       <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
@@ -267,6 +275,58 @@ export function WorkspacesSidebar({ onOpenSettings }: WorkspacesSidebarProps) {
         />
       ) : null}
     </div>
+  );
+}
+
+function QuickActionsRow({
+  onOpenPalette,
+  skillsEnabled,
+}: {
+  onOpenPalette: (initialQuery?: string) => void;
+  skillsEnabled: boolean;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1 px-2.5 pt-2">
+      {skillsEnabled ? (
+        <QuickAction
+          icon={<Sparkles size={12} aria-hidden />}
+          label="Skills"
+          onClick={() => onOpenPalette('/')}
+        />
+      ) : null}
+      <QuickAction
+        icon={<Layers size={12} aria-hidden />}
+        label="Workflows"
+        onClick={() => onOpenPalette('~')}
+      />
+      <QuickAction
+        icon={<Terminal size={12} aria-hidden />}
+        label="Scripts"
+        onClick={() => onOpenPalette('$')}
+      />
+    </div>
+  );
+}
+
+function QuickAction({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`browse ${label.toLowerCase()} in the command palette`}
+      className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-soft bg-muted/30 py-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
