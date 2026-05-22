@@ -1,9 +1,10 @@
 import { memo, useMemo, useState } from 'react';
 import { Archive, MessagesSquare, Plus } from 'lucide-react';
 import { cn, ScrollArea } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore, useSessionHasUnread } from '../../../../store';
+import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore, useSessionHasUnread } from '../../../../store';
 import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
+import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   PullRequestChip,
   pullRequestMeta,
@@ -133,6 +134,22 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
   const prMeta = prState ? pullRequestMeta(prState) : null;
 
+  // Spend-at-a-glance on the rail tile — summarizer cost is excluded so the
+  // figure matches the SessionCostChip in the detail footer.
+  const telemetry = useAppStore(
+    (s) =>
+      s.sessionTelemetry[session.id as SessionId] ??
+      (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+  const sessionCost = useMemo(() => {
+    let sum = 0;
+    for (const rec of telemetry) {
+      if (rec.kind === 'summarizer') continue;
+      sum += rec.estimatedCostUsd;
+    }
+    return sum;
+  }, [telemetry]);
+
   return (
     <button
       type="button"
@@ -171,6 +188,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
         )}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
+      {sessionCost > 0 ? (
+        <CostBadge
+          value={sessionCost}
+          title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+          className="text-[9px] font-medium text-muted-foreground/55"
+        />
+      ) : null}
     </button>
   );
 });
