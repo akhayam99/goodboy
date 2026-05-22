@@ -212,7 +212,17 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   // empty shell first on session switch and treat the card list as low-priority.
   // Pairs with React.memo on TranscriptCard — together they make session swaps
   // feel instant even with hundreds of turns in history.
-  const deferredItems = useDeferredValue(items);
+  // Tag the deferred value with its agent id: useDeferredValue keeps returning
+  // the previous agent's array for a render or more after a switch — without
+  // the tag the list below would paint the wrong agent's transcript. While it
+  // lags (`transcriptStale`) we render the skeleton instead.
+  const taggedItems = useMemo(
+    () => ({ agentId: selectedAgentId, items }),
+    [selectedAgentId, items],
+  );
+  const deferredTagged = useDeferredValue(taggedItems);
+  const transcriptStale = deferredTagged.agentId !== selectedAgentId;
+  const deferredItems = deferredTagged.items;
   const loading = useSessionLoading(session.id);
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
@@ -395,8 +405,8 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
           className="flex-1 overflow-y-auto px-10 py-6"
           style={{ scrollbarGutter: 'stable' }}
         >
-          {items.length === 0 ? (
-            loading.transcript ? (
+          {transcriptStale || deferredItems.length === 0 ? (
+            loading.transcript || transcriptStale ? (
               <TranscriptSkeleton />
             ) : isProviderDisconnected ? (
               <div className="flex h-full items-center justify-center">
