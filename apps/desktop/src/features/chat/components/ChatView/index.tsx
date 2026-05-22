@@ -228,6 +228,19 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const markAgentViewed = useAppStore((s) => s.markAgentViewed);
+  const selectedAgentLastFinishedAt = useAppStore((s) =>
+    selectedAgentId
+      ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastFinishedAt ??
+        null)
+      : null,
+  );
+  const selectedAgentLastViewedAt = useAppStore((s) =>
+    selectedAgentId
+      ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastViewedAt ??
+        null)
+      : null,
+  );
 
   // Lazy transcript load: only fires when this view is the active one. With
   // keep-alive, hidden ChatView instances stay mounted but must not preload
@@ -236,6 +249,24 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     if (!isActive || !selectedAgentId || transcriptCached) return;
     void selectAgent(session.id, selectedAgentId);
   }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
+
+  // Passive viewed-stamping: covers cases where the user watches an agent
+  // finish in place, or revisits a session whose transcript is already cached.
+  // selectAgent only fires on click/load, missing those two paths.
+  useEffect(() => {
+    if (!isActive || !selectedAgentId || !selectedAgentLastFinishedAt) return;
+    if (selectedAgentLastViewedAt && selectedAgentLastViewedAt >= selectedAgentLastFinishedAt)
+      return;
+    void markAgentViewed(session.id, selectedAgentId);
+  }, [
+    isActive,
+    selectedAgentId,
+    selectedAgentLastFinishedAt,
+    selectedAgentLastViewedAt,
+    markAgentViewed,
+    session.id,
+  ]);
+
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
