@@ -462,7 +462,7 @@ exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
 </div>
 `;
 
-exports[`snapshot — empty states > SlashCommandPopover: no skills / empty items 1`] = `
+exports[`snapshot — empty states > QuickActionsPopover: no skills / empty items 1`] = `
 <div
   class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
 >
