@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { Send, Square, X } from 'lucide-react';
 import { Divider, Textarea } from '@goodboy/ui';
@@ -607,6 +608,96 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     }
   }, [rightSizePending, rightSizeSuggested]);
 
+  // Priority-ranked suggestions, folded into one stack so a pile of nudges
+  // can't shove the composer below the fold (plan §D.1). Order: plan-ready >
+  // scope-mismatch > right-size. RoutingIndicator stays outside — it's a
+  // status line, not an action card.
+  const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
+  if (sessionNudge?.kind === 'plan-ready' && !session.workflowId) {
+    suggestions.push({
+      key: 'plan-ready',
+      node: (
+        <NudgeCard
+          severity="success"
+          ariaLabel="plan ready to implement"
+          testId="plan-ready-nudge"
+          icon={<ClipboardCheck size={12} aria-hidden />}
+          title={
+            <>
+              Plan looks ready: <strong>{sessionNudge.planTitle}</strong>. Spawn an implementer to
+              execute it?
+            </>
+          }
+          primary={{
+            label: 'Spawn implementer',
+            onClick: () => void acceptSessionNudgeHandoff(session.id),
+            testId: 'plan-ready-accept',
+          }}
+          secondary={{
+            label: 'Not now',
+            onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
+            testId: 'plan-ready-dismiss',
+          }}
+          onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
+        />
+      ),
+    });
+  }
+  if (scopePending !== null && activeAgentKind !== null) {
+    suggestions.push({
+      key: 'scope',
+      node: (
+        <NudgeCard
+          severity="warning"
+          ariaLabel="scope mismatch suggestion"
+          testId="scope-mismatch-nudge"
+          title={
+            <>
+              you're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
+              this request fits{' '}
+              <strong>
+                {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}
+              </strong>{' '}
+              better.
+            </>
+          }
+          body={
+            <>
+              spawn a{' '}
+              {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()} agent,
+              or send anyway.
+            </>
+          }
+          primary={{
+            label: `spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
+            onClick: () => void onScopeSpawn(),
+            testId: 'scope-mismatch-spawn',
+          }}
+          secondary={{
+            label: 'send anyway',
+            onClick: () => void onScopeSendAnyway(),
+            testId: 'scope-mismatch-override',
+          }}
+          onDismiss={() => void onScopeDismiss()}
+        />
+      ),
+    });
+  }
+  if (rightSizePending !== null && rightSizeSuggested !== null) {
+    suggestions.push({
+      key: 'right-size',
+      node: (
+        <RightSizeCard
+          currentModel={effectiveModel}
+          suggestedModel={rightSizeSuggested}
+          onUseSuggested={() => void onUseSuggested()}
+          onKeepCurrent={() => void onKeepCurrent()}
+          onChangeModel={onChangeModel}
+        />
+      ),
+    });
+  }
+
   return (
     <div className="px-10 pb-4 pt-2">
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
@@ -618,75 +709,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         ) : null}
-        {rightSizePending !== null && rightSizeSuggested !== null ? (
-          <RightSizeCard
-            currentModel={effectiveModel}
-            suggestedModel={rightSizeSuggested}
-            onUseSuggested={() => void onUseSuggested()}
-            onKeepCurrent={() => void onKeepCurrent()}
-            onChangeModel={onChangeModel}
-          />
-        ) : null}
-        {scopePending !== null && activeAgentKind !== null ? (
-          <NudgeCard
-            severity="warning"
-            ariaLabel="scope mismatch suggestion"
-            testId="scope-mismatch-nudge"
-            title={
-              <>
-                you're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
-                this request fits{' '}
-                <strong>
-                  {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}
-                </strong>{' '}
-                better.
-              </>
-            }
-            body={
-              <>
-                spawn a{' '}
-                {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}{' '}
-                agent, or send anyway.
-              </>
-            }
-            primary={{
-              label: `spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
-              onClick: () => void onScopeSpawn(),
-              testId: 'scope-mismatch-spawn',
-            }}
-            secondary={{
-              label: 'send anyway',
-              onClick: () => void onScopeSendAnyway(),
-              testId: 'scope-mismatch-override',
-            }}
-            onDismiss={() => void onScopeDismiss()}
-          />
-        ) : null}
-        {sessionNudge?.kind === 'plan-ready' && !session.workflowId ? (
-          <NudgeCard
-            severity="success"
-            ariaLabel="plan ready to implement"
-            testId="plan-ready-nudge"
-            icon={<ClipboardCheck size={12} aria-hidden />}
-            title={
-              <>
-                Plan looks ready: <strong>{sessionNudge.planTitle}</strong>. Spawn an implementer to
-                execute it?
-              </>
-            }
-            primary={{
-              label: 'Spawn implementer',
-              onClick: () => void acceptSessionNudgeHandoff(session.id),
-              testId: 'plan-ready-accept',
-            }}
-            secondary={{
-              label: 'Not now',
-              onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
-              testId: 'plan-ready-dismiss',
-            }}
-            onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
-          />
-        ) : null}
+        <SuggestionStack items={suggestions} />
         <div
           className="flex flex-col rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
@@ -801,6 +824,38 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+// Renders the top-priority suggestion; any others fold behind a counter so
+// the stack never grows tall enough to push the composer below the fold.
+function SuggestionStack({
+  items,
+}: {
+  items: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (items.length === 0) return null;
+  const [top, ...rest] = items;
+  if (!top) return null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {top.node}
+      {expanded ? rest.map((it) => <div key={it.key}>{it.node}</div>) : null}
+      {rest.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          {expanded
+            ? 'show fewer suggestions'
+            : `+${rest.length} more suggestion${rest.length === 1 ? '' : 's'}`}
+        </button>
+      ) : null}
     </div>
   );
 }
