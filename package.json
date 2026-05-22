@@ -7,7 +7,7 @@
   "author": "Amin Khayam <amin@khayam.dev>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/akhayam99/kay-am.git"
+    "url": "https://github.com/akhayam99/goodboy.git"
   },
   "engines": {
     "node": ">=20",
