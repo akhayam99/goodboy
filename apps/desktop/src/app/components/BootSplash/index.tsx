@@ -4,7 +4,7 @@ import { openUrl } from '../../../shared/lib/editor';
 import { DogMascot } from '../../../shared/components/DogMascot';
 
 const GITHUB_NEW_ISSUE_URL =
-  'https://github.com/kay-am/kay-am/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
 
 interface BootSplashProps {
   phase: BootPhase;

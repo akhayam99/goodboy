@@ -25,43 +25,43 @@ Non-negotiable choices that frame the product. Numbers preserved for cross-refer
 
 Single-provider session with synthetic context and live telemetry. End-to-end Claude session inside a Goodboy-managed worktree.
 
-[v0.1 milestone](https://github.com/akhayam99/kay-am/milestone/1)
+[v0.1 milestone](https://github.com/akhayam99/goodboy/milestone/1)
 
 ### v0.2 — Multi-provider
 
 Cursor + Codex adapters, capability matrix, provider connection UX, summarizer migrated to active-provider CLI.
 
-[v0.2 milestone](https://github.com/akhayam99/kay-am/milestone/2)
+[v0.2 milestone](https://github.com/akhayam99/goodboy/milestone/2)
 
 ### v0.3 — Budget & routing
 
 Per-provider monthly cap, per-session soft cap, automatic fallback when cap hit, threshold alerts, routing engine wired into turn flow.
 
-[v0.3 milestone](https://github.com/akhayam99/kay-am/milestone/3)
+[v0.3 milestone](https://github.com/akhayam99/goodboy/milestone/3)
 
 ### v0.4 — Multi-agent sequential
 
 Declared phases inside a session. Each phase spawns its own agent; synthetic context flows between phases.
 
-[v0.4 milestone](https://github.com/akhayam99/kay-am/milestone/4)
+[v0.4 milestone](https://github.com/akhayam99/goodboy/milestone/4)
 
 ### v0.5 — Skills
 
 Local skill registry (markdown + scripts), slash-command invocation from chat, executable across providers.
 
-[v0.5 milestone](https://github.com/akhayam99/kay-am/milestone/5)
+[v0.5 milestone](https://github.com/akhayam99/goodboy/milestone/5)
 
 ### v0.6 — Permission proxy
 
 Tool-call interception via static rules + audit for Claude. `--dangerously-skip-permissions` removed.
 
-[v0.6 milestone](https://github.com/akhayam99/kay-am/milestone/6)
+[v0.6 milestone](https://github.com/akhayam99/goodboy/milestone/6)
 
 ### v0.7 — Multi-agent parallel
 
 Multiple agents inside a single session on throwaway worktrees, coordinating via shared context. Fan-out / fan-in with merge conflict UI.
 
-[v0.7 milestone](https://github.com/akhayam99/kay-am/milestone/7)
+[v0.7 milestone](https://github.com/akhayam99/goodboy/milestone/7)
 
 ### pre-1.0 — UX polish
 
@@ -147,7 +147,7 @@ Signed binary distribution and everything needed for a public launch.
 - Cursor + Codex permission proxy parity (currently Claude-only)
 - Command palette (⌘K) polish
 
-[v1.0 milestone](https://github.com/akhayam99/kay-am/milestone/8)
+[v1.0 milestone](https://github.com/akhayam99/goodboy/milestone/8)
 
 ---
 

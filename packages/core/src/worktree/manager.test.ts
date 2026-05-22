@@ -6,7 +6,7 @@ import { git } from './git';
 import { createWorktree, listWorktrees, removeWorktree, WorktreeError } from './manager';
 
 async function initRepo(): Promise<string> {
-  const dir = await realpath(await mkdtemp(path.join(tmpdir(), 'kayam-wt-')));
+  const dir = await realpath(await mkdtemp(path.join(tmpdir(), 'goodboy-wt-')));
   const repo = path.join(dir, 'demo');
   await git(dir, ['init', '--initial-branch=main', repo]);
   await git(repo, ['config', 'user.email', 'test@example.com']);
@@ -57,7 +57,7 @@ describe('worktree manager', () => {
   });
 
   it('honors a custom parent dir', async () => {
-    const custom = await realpath(await mkdtemp(path.join(tmpdir(), 'kayam-wt-parent-')));
+    const custom = await realpath(await mkdtemp(path.join(tmpdir(), 'goodboy-wt-parent-')));
     const created = await createWorktree({
       repoPath,
       branchPrefix: 'kay',
