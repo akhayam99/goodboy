@@ -7,7 +7,6 @@ import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
-import { ShortcutHelpDialog } from './features/settings/components/ShortcutHelpDialog';
 import { ToastProvider } from './app/components/Toast';
 import {
   WorkspacesSidebar,
@@ -70,7 +69,6 @@ export function App() {
     undefined,
   );
   const [endOpen, setEndOpen] = useState(false);
-  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
@@ -152,7 +150,10 @@ export function App() {
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
-  const openShortcutHelp = useCallback(() => setShortcutHelpOpen(true), []);
+  const openShortcutHelp = useCallback(() => {
+    setSettingsInitialSection('shortcuts');
+    setSettingsOpen(true);
+  }, []);
   const openPalette = useCallback((prefix = '') => {
     setPalettePrefix(prefix);
     setPaletteOpen(true);
@@ -272,7 +273,6 @@ export function App() {
         }}
         initialSection={settingsInitialSection}
       />
-      <ShortcutHelpDialog open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}
@@ -283,7 +283,7 @@ export function App() {
           }}
           onNewSession={() => setPaletteOpen(false)}
           onOpenShortcutHelp={() => {
-            setShortcutHelpOpen(true);
+            openShortcutHelp();
             setPaletteOpen(false);
           }}
         />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Cpu, DollarSign, FileDown, FolderCode, Link2, Trash2 } from 'lucide-react';
-import { Button, Dialog, Input } from '@goodboy/ui';
+import { Cpu, DollarSign, FileDown, FolderCode, Keyboard, Link2, Trash2 } from 'lucide-react';
+import { Button, Dialog, Input, KbdPill } from '@goodboy/ui';
 import { ProvidersPanel } from '../../../../features/providers/components/ProvidersPanel';
 import { BudgetRulesPanel } from '../../../../features/budget/components/BudgetRulesPanel';
 import { GithubPanel } from '../../../../features/github/components/Panel';
@@ -22,7 +22,14 @@ interface SettingsDialogProps {
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-type NavSection = 'app' | 'providers' | 'budget' | 'integrations' | 'initialization' | 'advanced';
+type NavSection =
+  | 'app'
+  | 'shortcuts'
+  | 'providers'
+  | 'budget'
+  | 'integrations'
+  | 'initialization'
+  | 'advanced';
 
 interface NavItem {
   id: NavSection;
@@ -35,6 +42,7 @@ interface NavItem {
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
+  { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} aria-hidden /> },
   { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
   ...(SESSION_FEATURES.budget
     ? [
@@ -54,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 function isNavSection(value: string | undefined): value is NavSection {
   return (
     value === 'app' ||
+    value === 'shortcuts' ||
     value === 'providers' ||
     value === 'budget' ||
     value === 'integrations' ||
@@ -61,6 +70,15 @@ function isNavSection(value: string | undefined): value is NavSection {
     value === 'advanced'
   );
 }
+
+const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
+  { combo: ['⌘', ','], label: 'open settings' },
+  { combo: ['⌘', 'K'], label: 'command palette' },
+  { combo: ['⌘', 'B'], label: 'toggle sidebar' },
+  { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
+  { combo: ['⌘', '.'], label: 'end current session' },
+  { combo: ['Esc'], label: 'close dialog / cancel' },
+];
 
 function BetaChip() {
   return (
@@ -172,6 +190,27 @@ export function SettingsDialog({ open, onClose, initialSection }: SettingsDialog
               Workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
               next to each workspace row.
             </p>
+          </div>
+        );
+      case 'shortcuts':
+        return (
+          <div className="flex flex-col gap-4">
+            <SectionHeading>Keyboard shortcuts</SectionHeading>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Global shortcuts active anywhere in Goodboy.
+            </p>
+            <ul className="flex flex-col divide-y divide-border-soft">
+              {SHORTCUTS.map((s) => (
+                <li key={s.label} className="flex items-center justify-between py-2 text-xs">
+                  <span className="text-foreground">{s.label}</span>
+                  <span className="flex items-center gap-0.5">
+                    {s.combo.map((k) => (
+                      <KbdPill key={k}>{k}</KbdPill>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         );
       case 'providers':
