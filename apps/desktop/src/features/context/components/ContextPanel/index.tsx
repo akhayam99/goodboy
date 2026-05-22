@@ -364,7 +364,7 @@ function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButton
       title={label}
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold uppercase tracking-[0.06em] transition-colors',
+        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold uppercase leading-none tracking-[0.06em] transition-colors',
         active
           ? 'bg-background text-foreground shadow-sm'
           : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
