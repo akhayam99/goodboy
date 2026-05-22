@@ -2,8 +2,8 @@
 
 exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
-  aria-describedby="_r_4_-desc"
-  aria-labelledby="_r_4_-title"
+  aria-describedby="_r_3_-desc"
+  aria-labelledby="_r_3_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -18,13 +18,13 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_4_-title"
+          id="_r_3_-title"
         >
           New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_4_-desc"
+          id="_r_3_-desc"
         >
           Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
         </p>
@@ -642,7 +642,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     role="separator"
   />
   <div
-    class="flex shrink-0 items-center px-2.5 py-3"
+    class="flex shrink-0 items-center gap-1.5 px-2.5 py-3"
   >
     <span
       class="flex items-center gap-1.5"
@@ -675,9 +675,70 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     <div
       class="flex-1"
     />
+    <button
+      aria-label="open onboarding checklist"
+      class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 transition-colors hover:border-border"
+      title="Setup — 0 of 5 done"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="size-1.5 rounded-full transition-colors bg-border"
+      />
+      <span
+        aria-hidden="true"
+        class="size-1.5 rounded-full transition-colors bg-border"
+      />
+      <span
+        aria-hidden="true"
+        class="size-1.5 rounded-full transition-colors bg-border"
+      />
+      <span
+        aria-hidden="true"
+        class="size-1.5 rounded-full transition-colors bg-border"
+      />
+      <span
+        aria-hidden="true"
+        class="size-1.5 rounded-full transition-colors bg-border"
+      />
+    </button>
     <div
       class="flex items-center gap-0.5"
     >
+      <button
+        aria-label="collapse sidebar"
+        class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+        title="collapse sidebar (⌘B)"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-panel-left-close"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M9 3v18"
+          />
+          <path
+            d="m16 15-3-3 3-3"
+          />
+        </svg>
+      </button>
       <button
         aria-label="open spend and pricing"
         class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
@@ -1572,7 +1633,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
                     <span
                       class="text-xs leading-relaxed text-muted-foreground"
                     >
-                      A single user → assistant exchange inside a agent. Tools called inside count as the same turn.
+                      A single user → assistant exchange inside an agent. Tools called inside count as the same turn.
                     </span>
                   </button>
                 </div>
@@ -1711,55 +1772,6 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
             </div>
           </section>
         </div>
-      </div>
-    </div>
-  </dialog>
-  <dialog
-    aria-labelledby="_r_3_-title"
-    class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  >
-    <div
-      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
-    >
-      <header
-        class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
-      >
-        <div
-          class="flex min-w-0 flex-col gap-1"
-        >
-          <h2
-            class="text-sm font-semibold tracking-tight text-foreground"
-            id="_r_3_-title"
-          >
-            GitHub
-          </h2>
-        </div>
-        <button
-          aria-label="close"
-          class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="text-base leading-none"
-          >
-            ×
-          </span>
-        </button>
-      </header>
-      <div
-        aria-orientation="horizontal"
-        class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-        role="separator"
-      />
-      <div
-        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
-      >
-        <p
-          class="px-3 py-6 text-center text-sm text-muted-foreground"
-        >
-          no pull request linked
-        </p>
       </div>
     </div>
   </dialog>
@@ -2003,8 +2015,8 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
 
 exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 <dialog
-  aria-describedby="_r_6_-desc"
-  aria-labelledby="_r_6_-title"
+  aria-describedby="_r_5_-desc"
+  aria-labelledby="_r_5_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -2019,13 +2031,13 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_6_-title"
+          id="_r_5_-title"
         >
           End session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_6_-desc"
+          id="_r_5_-desc"
         >
           The worktree directory will be removed. The branch is preserved for manual merge.
         </p>
@@ -2088,8 +2100,8 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 
 exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
 <dialog
-  aria-describedby="_r_5_-desc"
-  aria-labelledby="_r_5_-title"
+  aria-describedby="_r_4_-desc"
+  aria-labelledby="_r_4_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -2104,13 +2116,13 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_5_-title"
+          id="_r_4_-title"
         >
           New session
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_5_-desc"
+          id="_r_4_-desc"
         >
           Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
         </p>
