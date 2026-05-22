@@ -91,6 +91,18 @@ function slugifyLive(input: string): string {
     .replace(/-+$/, '');
 }
 
+// Live sanitizer for the hand-typed branch slug. Unlike slugifyLive (which
+// derives a slug from the prose goal) this preserves the user's casing — an
+// uppercase branch stays uppercase. Any run of spaces or disallowed chars
+// collapses to a single dash so e.g. ten spaces yield one dash.
+function sanitizeBranchSlug(input: string): string {
+  return input
+    .replace(/[^a-zA-Z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '')
+    .slice(0, SLUG_MAX_LEN);
+}
+
 function sanitizePrefix(input: string): string {
   return input
     .toLowerCase()
@@ -314,12 +326,15 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
                   <Input
                     value={branchSlug}
                     onChange={(e) => {
-                      setBranchSlug(e.target.value);
+                      setBranchSlug(sanitizeBranchSlug(e.target.value));
                       setSlugTouched(true);
                     }}
                     placeholder="branch-slug"
                     className="h-8 flex-1 font-mono text-sm"
                     disabled={busy}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                     aria-label="Branch slug"
                   />
                 )}
