@@ -524,6 +524,7 @@ export interface AppActions {
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
   spawnAgent(
     sessionId: SessionId,
     args: {
@@ -3577,6 +3578,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
       throw err;
     }
+  },
+
+  markAgentViewed: async (sessionId, agentId) => {
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agent = runs.find((r) => r.id === agentId);
+    if (!agent?.lastFinishedAt) return;
+    if (agent.lastViewedAt && agent.lastViewedAt >= agent.lastFinishedAt) return;
+
+    const stampedAt = new Date().toISOString() as IsoDateTime;
+    set((state) => ({
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((r) =>
+          r.id === agentId ? { ...r, lastViewedAt: stampedAt } : r,
+        ),
+      },
+    }));
+    void invokeSessionMarkViewed(agentId, stampedAt).catch(() => undefined);
+    void get().refreshUnreadWorkspaces();
   },
 
   spawnAgent: async (sessionId, args) => {
