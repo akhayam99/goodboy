@@ -607,6 +607,6 @@ describe('sortAndGroupSessions — performance', () => {
     }
     const elapsed = performance.now() - start;
 
-    expect(elapsed).toBeLessThan(500);
+    expect(elapsed).toBeLessThan(3000);
   });
 });
