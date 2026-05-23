@@ -18,4 +18,5 @@ export const STORAGE_PREFIXES = {
   agentModel: `${PREFIX}agent-model:`,
   agentProvider: `${PREFIX}agent-provider:`,
   diffView: `${PREFIX}diff-view:`,
+  sessionView: `${PREFIX}session-view:`,
 } as const;

@@ -113,6 +113,14 @@ export type {
   PlanWithCount,
 } from './plan';
 export type {
+  PersistedSessionViewPrefs,
+  SessionGroupKey,
+  SessionPrGroup,
+  SessionSortKey,
+  SessionUserStatusGroup,
+  SessionViewPrefs,
+} from './session-view';
+export type {
   DiffHunk,
   DiffHunkLine,
   FileDiff,

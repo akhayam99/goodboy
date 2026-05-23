@@ -8,6 +8,7 @@ import type {
   PlanWithCount,
   Session,
   SessionId,
+  SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
@@ -18,6 +19,38 @@ import {
   type SessionLoadingFlags,
   type SummarizerSessionStatus,
 } from './store';
+import { sortAndGroupSessions, type GroupedSessions } from './slices/session-view.slice';
+
+export type { GroupedSessions };
+
+const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'none' };
+
+export function useSessionViewPrefs(workspaceId: WorkspaceId | null): SessionViewPrefs {
+  const prefs = useAppStore((s) =>
+    workspaceId ? (s.sessionViewPrefs[workspaceId] ?? null) : null,
+  );
+  const getSessionViewPrefs = useAppStore((s) => s.getSessionViewPrefs);
+
+  useEffect(() => {
+    if (workspaceId && prefs === null) {
+      getSessionViewPrefs(workspaceId);
+    }
+  }, [workspaceId, prefs, getSessionViewPrefs]);
+
+  return prefs ?? DEFAULT_SESSION_VIEW_PREFS;
+}
+
+export function useSortedGroupedSessions(
+  workspaceId: WorkspaceId | null,
+  sessions: ReadonlyArray<Session>,
+): ReadonlyArray<GroupedSessions> {
+  const prefs = useSessionViewPrefs(workspaceId);
+  const sessionGithub = useAppStore((s) => s.sessionGithub);
+  return useMemo(
+    () => sortAndGroupSessions(sessions, prefs, sessionGithub),
+    [sessions, prefs, sessionGithub],
+  );
+}
 
 const NO_LOADING: SessionLoadingFlags = {
   agents: false,
