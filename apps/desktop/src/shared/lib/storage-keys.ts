@@ -17,4 +17,5 @@ export const STORAGE_PREFIXES = {
   agentProvider: `${PREFIX}agent-provider:`,
   workspaceVerbosity: `${PREFIX}workspace-verbosity:`,
   diffView: `${PREFIX}diff-view:`,
+  sessionView: `${PREFIX}session-view:`,
 } as const;

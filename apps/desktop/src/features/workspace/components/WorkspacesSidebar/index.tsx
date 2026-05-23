@@ -172,6 +172,7 @@ export function WorkspacesSidebar({
                     single home for session navigation and creation. */}
                 <div className="w-28 shrink-0 overflow-hidden">
                   <SessionActivityBar
+                    workspaceId={currentWorkspace.id}
                     sessions={activeSessions}
                     archivedSessions={archivedSessions}
                     currentSessionId={currentSession?.id ?? null}

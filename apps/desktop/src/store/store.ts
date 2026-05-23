@@ -125,6 +125,9 @@ import type {
   PullRequestState,
   LinkedIssue,
   PrDetail,
+  SessionViewPrefs,
+  SessionSortKey,
+  SessionGroupKey,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
@@ -244,6 +247,7 @@ import { createSkillsSlice } from './slices/skills.slice';
 import { createDiffCommentsSlice } from './slices/diff-comments.slice';
 import { createGithubSlice } from './slices/github.slice';
 import { createSidebarSlice } from './slices/sidebar.slice';
+import { createSessionViewSlice } from './slices/session-view.slice';
 
 export type BootPhase =
   | 'pending'
@@ -378,6 +382,7 @@ export interface AppState {
    * without blocking the whole app on a single Promise.all.
    */
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
+  readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
 }
 
 export interface SessionLoadingFlags {
@@ -626,6 +631,9 @@ export interface AppActions {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
+  getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
+  setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
+  setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -690,6 +698,7 @@ const initialState: AppState = {
   sessionNudges: {},
   planConsumptions: {},
   sessionLoading: {},
+  sessionViewPrefs: {},
 };
 
 function mergeSlots(
@@ -1264,6 +1273,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createSidebarSlice(set, get),
+  ...createSessionViewSlice(set, get),
 
   hydrate: async () => {
     if (hydratePromise) return hydratePromise;
