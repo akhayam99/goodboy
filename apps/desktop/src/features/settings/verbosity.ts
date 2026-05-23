@@ -1,4 +1,4 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
 
 export const VERBOSITY_LEVELS = ['brief', 'normal', 'verbose'] as const;
@@ -10,8 +10,7 @@ export const VERBOSITY_LABEL: Record<VerbosityLevel, string> = {
   verbose: 'Verbose',
 };
 
-const STORAGE_PREFIX = STORAGE_PREFIXES.verbosity;
-const DEFAULT_LEVEL: VerbosityLevel = 'normal';
+const WORKSPACE_STORAGE_PREFIX = STORAGE_PREFIXES.workspaceVerbosity;
 
 const LEGACY_MAP: Record<string, VerbosityLevel> = {
   essential: 'brief',
@@ -19,43 +18,24 @@ const LEGACY_MAP: Record<string, VerbosityLevel> = {
   detailed: 'verbose',
 };
 
-export function readVerbosity(sessionId: SessionId): VerbosityLevel {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}${sessionId}`);
-    if (!raw) return DEFAULT_LEVEL;
-    if ((VERBOSITY_LEVELS as ReadonlyArray<string>).includes(raw)) return raw as VerbosityLevel;
-    if (raw in LEGACY_MAP) return LEGACY_MAP[raw]!;
-  } catch {
-    // ignore
-  }
-  return DEFAULT_LEVEL;
-}
-
-export function writeVerbosity(sessionId: SessionId, level: VerbosityLevel): void {
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}${sessionId}`, level);
-  } catch {
-    // ignore
-  }
-}
-
-const AGENT_STORAGE_PREFIX = STORAGE_PREFIXES.agentVerbosity;
-
-export function readAgentVerbosity(agentId: AgentId): VerbosityLevel | null {
-  try {
-    const raw = localStorage.getItem(`${AGENT_STORAGE_PREFIX}${agentId}`);
-    if (!raw) return null;
-    if ((VERBOSITY_LEVELS as ReadonlyArray<string>).includes(raw)) return raw as VerbosityLevel;
-    if (raw in LEGACY_MAP) return LEGACY_MAP[raw]!;
-  } catch {
-    // ignore
-  }
+function normalizeVerbosity(raw: string | null): VerbosityLevel | null {
+  if (!raw) return null;
+  if ((VERBOSITY_LEVELS as ReadonlyArray<string>).includes(raw)) return raw as VerbosityLevel;
+  if (raw in LEGACY_MAP) return LEGACY_MAP[raw]!;
   return null;
 }
 
-export function writeAgentVerbosity(agentId: AgentId, level: VerbosityLevel): void {
+export function readWorkspaceVerbosity(workspaceId: WorkspaceId): VerbosityLevel | null {
   try {
-    localStorage.setItem(`${AGENT_STORAGE_PREFIX}${agentId}`, level);
+    return normalizeVerbosity(localStorage.getItem(`${WORKSPACE_STORAGE_PREFIX}${workspaceId}`));
+  } catch {
+    return null;
+  }
+}
+
+export function writeWorkspaceVerbosity(workspaceId: WorkspaceId, level: VerbosityLevel): void {
+  try {
+    localStorage.setItem(`${WORKSPACE_STORAGE_PREFIX}${workspaceId}`, level);
   } catch {
     // ignore
   }

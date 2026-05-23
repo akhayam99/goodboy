@@ -44,10 +44,7 @@ import {
 } from '../../../quick-actions';
 import {
   type VerbosityLevel,
-  readVerbosity,
-  writeVerbosity,
-  readAgentVerbosity,
-  writeAgentVerbosity,
+  readWorkspaceVerbosity,
 } from '../../../../features/settings/verbosity';
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from '../../utils/chat-constants';
 import { ProviderUsagePill } from '../ProviderUsagePill';
@@ -231,6 +228,10 @@ function toastMessageForAlert(alert: BudgetAlert): string {
 export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
+  const workspaceDefaultVerbosity = useAppStore(
+    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
+  );
   const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null);
   const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
@@ -295,7 +296,19 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     readModel(session.id),
   );
   const [effort, setEffortState] = useState<EffortLevel>(() => readEffort(session.id));
-  const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => readVerbosity(session.id));
+  const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => {
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const agentRow = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    return (
+      (agentRow?.verbosity as VerbosityLevel | undefined) ??
+      workspaceDefaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      'normal'
+    );
+  });
   const [showPopover, setShowPopover] = useState(false);
   const [scriptResult, setScriptResult] = useState<ScriptResultState | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -503,8 +516,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   const setVerbosity = (level: VerbosityLevel) => {
     setVerbosityState(level);
-    writeVerbosity(session.id, level);
-    if (selectedAgentId) writeAgentVerbosity(selectedAgentId, level);
+    if (selectedAgentId) void storeSetAgentVerbosity(session.id, selectedAgentId, level);
   };
 
   const setSelectedProvider = (id: ProviderId | null) => {
@@ -707,13 +719,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       writeAgentProvider(outgoingAgentId, currentProviderRef.current);
       writeAgentModel(outgoingAgentId, currentModelRef.current);
       writeAgentEffort(outgoingAgentId, currentEffortRef.current);
-      writeAgentVerbosity(outgoingAgentId, currentVerbosityRef.current);
     }
 
     const restoredProvider = selectedAgentId !== null ? readAgentProvider(selectedAgentId) : null;
     const restoredModel = selectedAgentId !== null ? readAgentModel(selectedAgentId) : null;
     const restoredEffort = selectedAgentId !== null ? readAgentEffort(selectedAgentId) : null;
-    const restoredVerbosity = selectedAgentId !== null ? readAgentVerbosity(selectedAgentId) : null;
+    const restoredAgent =
+      selectedAgentId !== null
+        ? (useAppStore.getState().sessionPhaseRuns[session.id] ?? []).find(
+            (r) => r.id === selectedAgentId,
+          )
+        : null;
+    const restoredVerbosity =
+      (restoredAgent?.verbosity as VerbosityLevel | undefined) ??
+      workspaceDefaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      null;
 
     setSelectedProviderState(restoredProvider);
     setSelectedModelState(restoredModel);
