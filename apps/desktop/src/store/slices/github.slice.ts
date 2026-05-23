@@ -378,7 +378,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     //     them explicitly. The reactive sweep (boot / workspace switch /
     //     new session) still polls them once so PRs created from outside
     //     the app are discovered.
-    sweepGithub: (opts) => {
+    sweepGithub: (opts?: { skipUnknownPr?: boolean }) => {
       if (!get().githubStatus?.available) return;
       const archived = readArchivedSessions();
       const { sessions, sessionBranches, sessionGithub, currentSessionId } = get();
