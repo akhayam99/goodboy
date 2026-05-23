@@ -109,6 +109,7 @@ import type {
   ProviderRun,
   ProviderRunId,
   ResolvedSettings,
+  VerbosityLevel,
   TurnState,
   Skill,
   SkillId,
@@ -164,7 +165,11 @@ import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
 } from '../features/chat/turn';
-import { readVerbosity, verbosityDirective } from '../features/settings/verbosity';
+import {
+  readWorkspaceVerbosity,
+  verbosityDirective,
+  writeWorkspaceVerbosity,
+} from '../features/settings/verbosity';
 import {
   createWorktree,
   removeWorktree,
@@ -206,6 +211,7 @@ import {
   invokeSessionSetProviderSessionId,
   invokeSessionMarkViewed,
   invokeAgentSetKind,
+  invokeAgentSetVerbosity,
   type PhaseTemplateUpsertArgs,
 } from '../features/phases/phases';
 import {
@@ -547,6 +553,7 @@ export interface AppActions {
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
   setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
+  setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
@@ -1468,6 +1475,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
+      void get().loadWorkspaceOverrides(id);
     } else {
       set({ providerSpendBreakdown: [] });
     }
@@ -1541,6 +1549,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // downstream parallel fetch by the IPC round-trip (~5-50ms of dead time).
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
     if (!id) return;
+    void get().loadSessionOverrides(id);
     const perf = (op: string) => {
       const t0 = performance.now();
       return () => {
@@ -1867,6 +1876,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
 
+    // Seed L2 (per-agent) verbosity from the workspace default at insert time
+    // so each new chat starts with the user's workspace setting baked in.
+    const workspaceVerbositySeed =
+      get().workspaceOverrides[workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(workspaceId) ??
+      undefined;
+
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
       const template = templates.find((t) => t.id === workflowId) ?? null;
@@ -1883,6 +1899,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             name: step.name,
             status: 'pending',
             kind,
+            ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           });
           agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
           agentKindOverrides[agent.id] = kind;
@@ -1896,6 +1913,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ordinal: 0,
           name: 'agent 1',
           status: 'pending',
+          ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
         });
         prespawnedRuns = [fallback];
       }
@@ -1908,6 +1926,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         name: agentName,
         status: 'pending',
         kind: firstAgentKind,
+        ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       });
       if (model !== null) agentModelOverrides[singleAgent.id] = model;
       agentKindOverrides[singleAgent.id] = firstAgentKind;
@@ -2627,9 +2646,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    const verbosityHint = verbosityDirective(
-      phaseDefinition?.verbosity ?? readVerbosity(sessionId),
-    );
+    const agentRowForVerbosity =
+      (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === activeAgentId) ?? null;
+    const effectiveVerbosity =
+      phaseDefinition?.verbosity ??
+      agentRowForVerbosity?.verbosity ??
+      get().workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      'normal';
+    const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
     // M4: soft-cap warning. heuristic only — exact tokenization requires wasm.
@@ -3577,6 +3602,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+    const workspaceVerbositySeed =
+      state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      undefined;
     const inserted = await invokePhaseRunInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -3584,6 +3613,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       name: resolvedName,
       status: 'pending',
       ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
+      ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     });
     const refreshed = await invokePhaseRunList(sessionId);
     set((s) => ({
@@ -3803,6 +3833,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set((state) => ({
         workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
       }));
+      if (overrides.defaultVerbosity !== null) {
+        writeWorkspaceVerbosity(workspaceId, overrides.defaultVerbosity);
+      }
     }
   },
 
@@ -3827,6 +3860,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
     }));
+  },
+
+  setAgentVerbosity: async (sessionId, agentId, level) => {
+    await invokeAgentSetVerbosity(agentId, level);
+    set((state) => {
+      const runs = state.sessionPhaseRuns[sessionId] ?? [];
+      return {
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [sessionId]: runs.map((r) => (r.id === agentId ? { ...r, verbosity: level } : r)),
+        },
+      };
+    });
   },
 
   renameTask: async (sessionId, goal) => {
@@ -4155,6 +4201,7 @@ export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettin
       defaultWorkflowId: null,
       defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
       parallelEnabled: AGENT_FEATURES.parallelAgents,
+      defaultVerbosity: 'normal',
     };
 
     const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;

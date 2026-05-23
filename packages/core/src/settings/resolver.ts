@@ -27,5 +27,6 @@ export function resolveSettings(input: ResolveSettingsInput): ResolvedSettings {
     defaultBranchPrefix:
       sess?.defaultBranchPrefix ?? ws?.defaultBranchPrefix ?? g.defaultBranchPrefix,
     parallelEnabled: sess?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
+    defaultVerbosity: sess?.defaultVerbosity ?? ws?.defaultVerbosity ?? g.defaultVerbosity,
   };
 }

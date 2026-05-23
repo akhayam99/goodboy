@@ -114,6 +114,7 @@ pub fn run() {
       workflows::agent_update_status,
       workflows::agent_set_provider_session_id,
       workflows::agent_set_kind,
+      workflows::agent_set_verbosity,
       workflows::agent_mark_viewed,
       workflows::workspaces_with_unread,
       parallel_groups::parallel_group_create,

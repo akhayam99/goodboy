@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -14,6 +14,11 @@ import {
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
+import { VerbositySelect } from '../../../../features/session/components/config-selects';
+import {
+  readWorkspaceVerbosity,
+  writeWorkspaceVerbosity,
+} from '../../../../features/settings/verbosity';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -58,10 +63,14 @@ export function WorkspaceSettingsDialog({
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
+  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
+  const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
 
   const [active, setActive] = useState<Section>('general');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
+  const [verbosity, setVerbosity] = useState<VerbosityLevel>('normal');
+  const [savedVerbosity, setSavedVerbosity] = useState<VerbosityLevel>('normal');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -79,7 +88,11 @@ export function WorkspaceSettingsDialog({
       setBranchPrefix(value);
       setSavedBranchPrefix(value);
     });
-  }, [open, workspaceId, loadSetting, initialSection]);
+    const savedVerbosityValue =
+      wsOverrides?.defaultVerbosity ?? readWorkspaceVerbosity(workspaceId) ?? 'normal';
+    setVerbosity(savedVerbosityValue);
+    setSavedVerbosity(savedVerbosityValue);
+  }, [open, workspaceId, loadSetting, initialSection, wsOverrides]);
 
   const onDisconnect = async () => {
     setDisconnecting(true);
@@ -101,6 +114,16 @@ export function WorkspaceSettingsDialog({
       await saveSetting(settingBranchPrefix(workspaceId), next);
       setSavedBranchPrefix(next);
       setBranchPrefix(next);
+      const mergedOverrides = {
+        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
+        defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
+        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
+        defaultVerbosity: verbosity,
+      };
+      await storeSetWorkspaceOverrides(workspaceId, mergedOverrides);
+      writeWorkspaceVerbosity(workspaceId, verbosity);
+      setSavedVerbosity(verbosity);
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
@@ -109,6 +132,8 @@ export function WorkspaceSettingsDialog({
   };
 
   const branchPrefixDirty = branchPrefix.trim() !== savedBranchPrefix.trim();
+  const verbosityDirty = verbosity !== savedVerbosity;
+  const settingsDirty = branchPrefixDirty || verbosityDirty;
 
   const navItems: ReadonlyArray<NavItem> = [
     { id: 'general', label: 'General', icon: <FolderCode size={13} aria-hidden /> },
@@ -171,7 +196,7 @@ export function WorkspaceSettingsDialog({
               <span className="inline-flex items-center gap-1 text-xs text-success">
                 <Check size={12} aria-hidden /> Saved
               </span>
-            ) : branchPrefixDirty && active === 'general' ? (
+            ) : settingsDirty && active === 'general' ? (
               <span className="text-xs text-muted-foreground">Unsaved changes</span>
             ) : null}
           </div>
@@ -181,7 +206,7 @@ export function WorkspaceSettingsDialog({
           {active === 'general' ? (
             <Button
               onClick={() => void onSave()}
-              disabled={saveState === 'saving' || !branchPrefixDirty}
+              disabled={saveState === 'saving' || !settingsDirty}
             >
               {saveState === 'saving' ? (
                 <>
@@ -201,6 +226,8 @@ export function WorkspaceSettingsDialog({
           <GeneralSection
             branchPrefix={branchPrefix}
             setBranchPrefix={setBranchPrefix}
+            verbosity={verbosity}
+            setVerbosity={setVerbosity}
             busy={saveState === 'saving'}
           />
         ) : null}
@@ -296,10 +323,14 @@ function NavButton({
 function GeneralSection({
   branchPrefix,
   setBranchPrefix,
+  verbosity,
+  setVerbosity,
   busy,
 }: {
   branchPrefix: string;
   setBranchPrefix: (v: string) => void;
+  verbosity: VerbosityLevel;
+  setVerbosity: (v: VerbosityLevel) => void;
   busy: boolean;
 }) {
   const sanitized = (input: string): string =>
@@ -356,6 +387,19 @@ function GeneralSection({
             {branchPrefix.trim() || DEFAULT_BRANCH_PREFIX}/refactor-auth-domain
           </span>
         </p>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/50 p-4">
+        <div className="flex items-center gap-2">
+          <Zap size={13} aria-hidden className="text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">Output verbosity</span>
+        </div>
+        <p className="text-2xs leading-relaxed text-muted-foreground">
+          Default response style for agents in this workspace. Each agent can override per-session.
+        </p>
+        <div className="max-w-xs">
+          <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={busy} />
+        </div>
       </div>
     </div>
   );

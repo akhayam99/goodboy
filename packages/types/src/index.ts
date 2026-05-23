@@ -71,7 +71,13 @@ export type {
   StepTransition,
   Workflow,
 } from './workflow';
-export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
+export type {
+  GlobalSettings,
+  OverrideSettings,
+  ResolvedSettings,
+  SettingsScope,
+  VerbosityLevel,
+} from './settings';
 export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';
 export type {
   ConfigBundle,
