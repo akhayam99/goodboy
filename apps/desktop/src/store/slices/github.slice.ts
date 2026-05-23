@@ -16,6 +16,7 @@ import {
 import type { GhTokenStatus, SessionId, IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import { formatError } from '../../shared/lib/errors';
+import { readArchivedSessions } from '../../shared/lib/archived-sessions';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
@@ -84,7 +85,10 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
       await get().refreshGithubStatus();
     },
 
-    refreshSessionPr: async (sessionId: SessionId, opts?: { force?: boolean }) => {
+    refreshSessionPr: async (
+      sessionId: SessionId,
+      opts?: { force?: boolean; silent?: boolean; retries?: number },
+    ) => {
       // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
       // re-activation) before the first ~1s GitHub round-trip resolves. The
       // existing `loading` flag is the right signal, since this action sets it
@@ -112,72 +116,88 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
           },
         },
       }));
-      try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
-        if (!slug) {
+      // Retry loop. Polling sweeps pass `retries: 1` so a transient gh
+      // failure gets a second chance; everything else defaults to a single
+      // attempt. The `slug === null` branch is a real success (no git repo
+      // for this workspace) and short-circuits without retrying.
+      const maxAttempts = (opts?.retries ?? 0) + 1;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+          if (!slug) {
+            set((state) => ({
+              sessionGithub: {
+                ...state.sessionGithub,
+                [sessionId]: {
+                  pr: null,
+                  linkedIssues: [],
+                  fetchedAt: new Date().toISOString() as IsoDateTime,
+                  loading: false,
+                  error: null,
+                  detail: null,
+                  detailFetchedAt: null,
+                  detailLoading: false,
+                  detailError: null,
+                },
+              },
+            }));
+            return;
+          }
+          const store = createTauriPrCacheStore(tauriDatabase);
+          const pr = await getPrForBranch(
+            { runner: tauriGhRunner, store },
+            { repoSlug: slug, branch, cwd: workspace.rootPath, force: opts?.force === true },
+          );
+          const linked = pr
+            ? await fetchLinkedIssues(tauriGhRunner, slug, pr, { cwd: workspace.rootPath })
+            : [];
           set((state) => ({
             sessionGithub: {
               ...state.sessionGithub,
               [sessionId]: {
-                pr: null,
-                linkedIssues: [],
+                pr,
+                linkedIssues: linked,
                 fetchedAt: new Date().toISOString() as IsoDateTime,
                 loading: false,
                 error: null,
-                detail: null,
-                detailFetchedAt: null,
-                detailLoading: false,
-                detailError: null,
+                detail: state.sessionGithub[sessionId]?.detail ?? null,
+                detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
+                detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
+                detailError: state.sessionGithub[sessionId]?.detailError ?? null,
               },
             },
           }));
           return;
+        } catch (err) {
+          lastErr = err;
         }
-        const store = createTauriPrCacheStore(tauriDatabase);
-        const pr = await getPrForBranch(
-          { runner: tauriGhRunner, store },
-          { repoSlug: slug, branch, cwd: workspace.rootPath, force: opts?.force === true },
-        );
-        const linked = pr
-          ? await fetchLinkedIssues(tauriGhRunner, slug, pr, { cwd: workspace.rootPath })
-          : [];
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr,
-              linkedIssues: linked,
-              fetchedAt: new Date().toISOString() as IsoDateTime,
-              loading: false,
-              error: null,
-              detail: state.sessionGithub[sessionId]?.detail ?? null,
-              detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-              detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
-              detailError: state.sessionGithub[sessionId]?.detailError ?? null,
-            },
-          },
-        }));
-      } catch (err) {
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? null,
-              linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-              fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-              loading: false,
-              error: formatError(err),
-              detail: state.sessionGithub[sessionId]?.detail ?? null,
-              detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-              detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
-              detailError: state.sessionGithub[sessionId]?.detailError ?? null,
-            },
-          },
-        }));
       }
+      // All attempts failed. `silent: true` (polling) suppresses the error
+      // chip — by design the timer-driven path shouldn't paint failures the
+      // user didn't ask for. Explicit refreshes keep the existing UI.
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [sessionId]: {
+            pr: state.sessionGithub[sessionId]?.pr ?? null,
+            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+            loading: false,
+            error: opts?.silent ? null : formatError(lastErr),
+            detail: state.sessionGithub[sessionId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
+            detailLoading: state.sessionGithub[sessionId]?.detailLoading ?? false,
+            detailError: state.sessionGithub[sessionId]?.detailError ?? null,
+          },
+        },
+      }));
     },
 
-    refreshSessionPrDetail: async (sessionId: SessionId, opts?: { force?: boolean }) => {
+    refreshSessionPrDetail: async (
+      sessionId: SessionId,
+      opts?: { force?: boolean; silent?: boolean; retries?: number },
+    ) => {
       const existing = get().sessionGithub[sessionId];
       const pr = existing?.pr ?? null;
       if (!pr) return;
@@ -211,9 +231,35 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
           },
         },
       }));
-      try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
-        if (!slug) {
+      // Retry loop — same shape as `refreshSessionPr`. Polling sweeps pass
+      // `retries: 1` so a transient gh failure gets a second chance.
+      const maxAttempts = (opts?.retries ?? 0) + 1;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+          if (!slug) {
+            set((state) => ({
+              sessionGithub: {
+                ...state.sessionGithub,
+                [sessionId]: {
+                  pr: state.sessionGithub[sessionId]?.pr ?? pr,
+                  linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+                  fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+                  loading: state.sessionGithub[sessionId]?.loading ?? false,
+                  error: state.sessionGithub[sessionId]?.error ?? null,
+                  detail: null,
+                  detailFetchedAt: new Date().toISOString() as IsoDateTime,
+                  detailLoading: false,
+                  detailError: null,
+                },
+              },
+            }));
+            return;
+          }
+          const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
+            cwd: workspace.rootPath,
+          });
           set((state) => ({
             sessionGithub: {
               ...state.sessionGithub,
@@ -223,7 +269,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
                 fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
                 loading: state.sessionGithub[sessionId]?.loading ?? false,
                 error: state.sessionGithub[sessionId]?.error ?? null,
-                detail: null,
+                detail,
                 detailFetchedAt: new Date().toISOString() as IsoDateTime,
                 detailLoading: false,
                 detailError: null,
@@ -231,44 +277,26 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
             },
           }));
           return;
+        } catch (err) {
+          lastErr = err;
         }
-        const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
-          cwd: workspace.rootPath,
-        });
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? pr,
-              linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-              fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-              loading: state.sessionGithub[sessionId]?.loading ?? false,
-              error: state.sessionGithub[sessionId]?.error ?? null,
-              detail,
-              detailFetchedAt: new Date().toISOString() as IsoDateTime,
-              detailLoading: false,
-              detailError: null,
-            },
-          },
-        }));
-      } catch (err) {
-        set((state) => ({
-          sessionGithub: {
-            ...state.sessionGithub,
-            [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? pr,
-              linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
-              fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-              loading: state.sessionGithub[sessionId]?.loading ?? false,
-              error: state.sessionGithub[sessionId]?.error ?? null,
-              detail: state.sessionGithub[sessionId]?.detail ?? null,
-              detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
-              detailLoading: false,
-              detailError: formatError(err),
-            },
-          },
-        }));
       }
+      set((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [sessionId]: {
+            pr: state.sessionGithub[sessionId]?.pr ?? pr,
+            linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
+            fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+            loading: state.sessionGithub[sessionId]?.loading ?? false,
+            error: state.sessionGithub[sessionId]?.error ?? null,
+            detail: state.sessionGithub[sessionId]?.detail ?? null,
+            detailFetchedAt: state.sessionGithub[sessionId]?.detailFetchedAt ?? null,
+            detailLoading: false,
+            detailError: opts?.silent ? null : formatError(lastErr),
+          },
+        },
+      }));
     },
 
     // Closes a review thread on github with a contextual reply, then flips the
@@ -330,6 +358,43 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
         undefined,
         { sessionId, workspaceId: workspace.id },
       );
+    },
+
+    // Interim PR auto-refresh until a GitHub webhook lands. Sweeps every
+    // session held in `state.sessions` (the active workspace's): head for all,
+    // detail for the one whose card is open. Each refresh is silent with one
+    // retry — polling errors don't deserve UI, transient gh failures get a
+    // second chance. No `force` — the 60s/30s caches absorb overlapping
+    // sweep / on-access / manual refreshes.
+    //
+    // Filters:
+    //   - archived sessions → hidden in the sidebar, polling them is waste.
+    //   - terminal PRs (merged/closed) → no new commits, CI, or reviews can
+    //     land. On-access still refreshes them so reopening shows current.
+    //   - `skipUnknownPr` → set by the steady-state interval. Sessions where
+    //     we already learned there's no PR (`pr === null` post-fetch) get
+    //     skipped, since the in-app PR-creation paths (`createPrForSession`
+    //     + the assistant-text URL detector + the summarizer hook) refresh
+    //     them explicitly. The reactive sweep (boot / workspace switch /
+    //     new session) still polls them once so PRs created from outside
+    //     the app are discovered.
+    sweepGithub: (opts) => {
+      if (!get().githubStatus?.available) return;
+      const archived = readArchivedSessions();
+      const { sessions, sessionBranches, sessionGithub, currentSessionId } = get();
+      const subOpts = { silent: true, retries: 1 } as const;
+      for (const session of sessions) {
+        if (archived[session.id]) continue;
+        if (!sessionBranches[session.id]) continue;
+        const cached = sessionGithub[session.id];
+        const pr = cached?.pr;
+        if (pr && (pr.state === 'merged' || pr.state === 'closed')) continue;
+        if (opts?.skipUnknownPr && cached?.fetchedAt && pr === null) continue;
+        const head = get().refreshSessionPr(session.id, subOpts);
+        if (session.id === currentSessionId) {
+          void head.then(() => get().refreshSessionPrDetail(session.id, subOpts));
+        }
+      }
     },
   };
 }

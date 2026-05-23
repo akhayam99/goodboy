@@ -84,6 +84,7 @@ Major sprint bridging v0.7 → v1.0. Shipped in ~2 weeks.
 
 - GitHub panel with PR state, CI checks, comments, review decisions, linked issues (PR #539, #562)
 - Auto-refresh GitHub card when agent creates a PR (PR #547)
+- Periodic PR polling (5 min) plus on-open and on-workspace-switch refresh — interim until a GitHub webhook
 - Diff comment tracking consumed by reviewer agent (PR #557)
 - Git-aware diff view selector in files-touched modal (PR #556)
 
