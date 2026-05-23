@@ -4,6 +4,8 @@ import {
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../features/plans/plans';
+import { pickNextWorkflowStep } from '../../features/workflow/components/WorkflowNextStepCta';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../features/session/agent-kind';
 import type { SessionId, PlanId, PlanStatus } from '@goodboy/types';
 import type { AppStore } from '../store';
 
@@ -65,10 +67,70 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
     // plan body into the kickoff prompt. Without kindOverride the agent
     // defaults to 'generic' and the plan section is silently dropped (the
     // implementer branch in spawnAgent is the only one that builds it).
+    // Inside a workflow, if the next step is itself an implementer slot, we
+    // route the spawn into that slot (stepId) instead of free-spawning.
     runPlan: async (sessionId: SessionId, planId: PlanId) => {
+      const state = get();
+
+      // A: workflow-aware only if session carries a workflowId
+      const session = state.sessions.find((s) => s.id === sessionId);
+      if (!session?.workflowId) {
+        await get().spawnAgent(sessionId, {
+          triggeredPlanId: planId,
+          kindOverride: 'implementer',
+        });
+        return;
+      }
+
+      // B: plan must have been created inside the workflow (creator agent has a stepId)
+      const plan = state.sessionPlans[sessionId]?.find((p) => p.id === planId);
+      const runs = state.sessionPhaseRuns[sessionId] ?? [];
+      const creatorAgent = plan ? runs.find((r) => r.id === plan.agentId) : undefined;
+      if (!creatorAgent?.stepId) {
+        await get().spawnAgent(sessionId, {
+          triggeredPlanId: planId,
+          kindOverride: 'implementer',
+        });
+        return;
+      }
+
+      // C: template must be resolvable (defensive guard)
+      const templates = state.phaseTemplates[session.workspaceId] ?? [];
+      const template = templates.find((t) => t.id === session.workflowId) ?? null;
+      if (!template) {
+        await get().spawnAgent(sessionId, {
+          triggeredPlanId: planId,
+          kindOverride: 'implementer',
+        });
+        return;
+      }
+
+      // D: there must be a next step ready to run
+      const nextStep = pickNextWorkflowStep(template, runs);
+      if (!nextStep) {
+        await get().spawnAgent(sessionId, {
+          triggeredPlanId: planId,
+          kindOverride: 'implementer',
+        });
+        return;
+      }
+
+      // E: next step must be an implementer — don't hijack reviewer/tester/etc.
+      if (inferAgentKindFromName(nextStep.name) !== 'implementer') {
+        await get().spawnAgent(sessionId, {
+          triggeredPlanId: planId,
+          kindOverride: 'implementer',
+        });
+        return;
+      }
+
+      // In-workflow spawn: stepId routes the agent into the workflow slot.
+      // triggeredPlanId → explicit plan injected + consumed by spawnAgent.
+      // No kindOverride: kind resolved by inferAgentKindFromName(step.name).
       await get().spawnAgent(sessionId, {
+        stepId: nextStep.id,
         triggeredPlanId: planId,
-        kindOverride: 'implementer',
+        model: AGENT_KIND_DEFAULTS.implementer.model,
       });
     },
   };
