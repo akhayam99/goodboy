@@ -30,7 +30,7 @@ function makeSession(
     id,
     workspaceId: WS,
     goal: overrides.goal ?? 'default goal',
-    state: { kind: 'idle', lastActivityAt: '2024-01-01T00:00:00.000Z' },
+    state: { kind: 'idle', lastActivityAt: '2024-01-01T00:00:00.000Z' as Session['createdAt'] },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions',
@@ -136,7 +136,7 @@ describe('sortAndGroupSessions — updatedAt sort', () => {
   it('empty input → single empty group', () => {
     const result = sortAndGroupSessions([], prefs, {});
     expect(result).toHaveLength(1);
-    expect(result[0].sessions).toHaveLength(0);
+    expect(result[0]!.sessions).toHaveLength(0);
   });
 });
 
@@ -205,7 +205,7 @@ describe('sortAndGroupSessions — userStatus grouping', () => {
     const a = makeSession(sid(1), { userStatus: 'wip', updatedAt: '2024-01-01T00:00:00.000Z' });
     const b = makeSession(sid(2), { userStatus: 'wip', updatedAt: '2024-01-05T00:00:00.000Z' });
     const result = sortAndGroupSessions([a, b], prefs, {});
-    expect(result[0].sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
+    expect(result[0]!.sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
   });
 
   it('single-status input → one group', () => {
@@ -214,7 +214,7 @@ describe('sortAndGroupSessions — userStatus grouping', () => {
     );
     const result = sortAndGroupSessions(sessions, prefs, {});
     expect(keys(result)).toEqual(['waiting']);
-    expect(result[0].sessions).toHaveLength(3);
+    expect(result[0]!.sessions).toHaveLength(3);
   });
 });
 
@@ -330,7 +330,7 @@ describe('sortAndGroupSessions — pr grouping', () => {
       { id: sid(2), pr: null },
     ]);
     const result = sortAndGroupSessions([a, b], prefs, github);
-    expect(result[0].sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
+    expect(result[0]!.sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
   });
 });
 
@@ -427,7 +427,7 @@ describe('createSessionViewSlice — setSessionSort', () => {
   it('persists to localStorage', () => {
     const { actions } = buildSlice();
     actions.setSessionSort(WS, 'createdAt');
-    const raw = ls.store[storageKey(WS)];
+    const raw = ls.store[storageKey(WS)]!;
     expect(raw).toBeDefined();
     expect(JSON.parse(raw)).toMatchObject({ v: 1, sort: 'createdAt' });
   });
@@ -443,7 +443,7 @@ describe('createSessionViewSlice — setSessionSort', () => {
   it('works even if prefs never hydrated (cold write)', () => {
     const { actions } = buildSlice();
     actions.setSessionSort(WS, 'goal');
-    expect(JSON.parse(ls.store[storageKey(WS)]).sort).toBe('goal');
+    expect(JSON.parse(ls.store[storageKey(WS)]!).sort).toBe('goal');
   });
 });
 
@@ -464,7 +464,7 @@ describe('createSessionViewSlice — setSessionGroup', () => {
   it('persists group to localStorage', () => {
     const { actions } = buildSlice();
     actions.setSessionGroup(WS, 'userStatus');
-    expect(JSON.parse(ls.store[storageKey(WS)]).group).toBe('userStatus');
+    expect(JSON.parse(ls.store[storageKey(WS)]!).group).toBe('userStatus');
   });
 
   it('preserves existing sort when changing group', () => {
@@ -494,7 +494,7 @@ describe('createSessionViewSlice — localStorage fault tolerance', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 99, sort: 'goal', group: 'pr' });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
-    expect(JSON.parse(ls.store[storageKey(WS)])).toMatchObject({
+    expect(JSON.parse(ls.store[storageKey(WS)]!)).toMatchObject({
       v: 1,
       sort: 'updatedAt',
       group: 'none',
@@ -507,7 +507,7 @@ describe('createSessionViewSlice — localStorage fault tolerance', () => {
     const prefs = actions.getSessionViewPrefs(WS);
     expect(prefs.sort).toBe('updatedAt');
     expect(prefs.group).toBe('pr');
-    expect(JSON.parse(ls.store[storageKey(WS)]).sort).toBe('updatedAt');
+    expect(JSON.parse(ls.store[storageKey(WS)]!).sort).toBe('updatedAt');
   });
 
   it('invalid group value → falls back to default group, self-heals', () => {
