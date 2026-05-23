@@ -131,6 +131,34 @@ export function ContextPanel({
 
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
 
+  // Self-heal the branch cache: an agent can `git switch` directly in the
+  // worktree, moving HEAD without going through changeSessionBranch, which
+  // leaves the sidebar footer chip on a stale branch. Read the real branch off
+  // worktree_status and write it back. Re-runs after each turn (summarizer
+  // tick) and on file-count changes — the moments a branch switch is likely.
+  const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
+  useEffect(() => {
+    if (!isActive || !workingDir) return;
+    let cancelled = false;
+    worktreeStatus(workingDir)
+      .then((status) => {
+        if (!cancelled && status.branch) {
+          void reconcileSessionBranch(session.id as SessionId, status.branch);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isActive,
+    workingDir,
+    session.id,
+    filesTouched.count,
+    summarizer.lastUpdate,
+    reconcileSessionBranch,
+  ]);
+
   const slotsByKey = new Map<string, ContextSlot>(
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
   );
