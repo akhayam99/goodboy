@@ -41,7 +41,10 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     goal: 'g',
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
-    providerPreference: { kind: 'auto' } as Session['providerPreference'],
+    providerPreference: {
+      defaultProvider: 'anthropic',
+      allowTurnOverride: true,
+    } as Session['providerPreference'],
     permissionMode: 'default' as Session['permissionMode'],
     workflowId: WF_ID,
     autoRun: false,
