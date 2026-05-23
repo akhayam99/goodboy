@@ -22,7 +22,6 @@ export {
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
-  updateSessionWorkflow,
   getSessionById,
   listSessionsForWorkspace,
   renameSession,

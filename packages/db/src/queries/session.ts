@@ -21,7 +21,6 @@ interface SessionRow {
   provider_default: string;
   provider_allow_override: number;
   permission_mode: string | null;
-  current_step_ordinal: number | null;
   auto_run: number;
   title_user_edited: number;
   archived_at: number | null;
@@ -194,6 +193,16 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       Date.parse(session.updatedAt),
     ],
   );
+  // Mirror workflowIds into session_workflows so eager loaders see them on
+  // the next read. Without this, callers passing a populated Session would
+  // silently drop the attachment.
+  for (const [ordinal, workflowId] of session.workflowIds.entries()) {
+    const stepOrdinal = session.currentStepByWorkflow[workflowId] ?? 0;
+    await db.execute(
+      'INSERT INTO session_workflows (session_id, workflow_id, ordinal, current_step_ordinal) VALUES (?, ?, ?, ?)',
+      [session.id, workflowId, ordinal, stepOrdinal],
+    );
+  }
 }
 
 export async function updateSessionAutoRun(
@@ -259,25 +268,6 @@ export async function updateSessionPermissionMode(
     Date.parse(updatedAt),
     id,
   ]);
-}
-
-// Legacy compat: updates sessions.workflow_id (pre-m038 column) and mirrors
-// into session_workflows so eager-load queries see the entry.
-export async function updateSessionWorkflow(
-  db: Database,
-  sessionId: SessionId,
-  workflowId: WorkflowId,
-  autoRun: boolean,
-  updatedAt: IsoDateTime,
-): Promise<void> {
-  await db.execute(
-    'UPDATE sessions SET workflow_id = ?, auto_run = ?, updated_at = ? WHERE id = ?',
-    [workflowId, autoRun ? 1 : 0, Date.parse(updatedAt), sessionId],
-  );
-  await db.execute(
-    'INSERT OR IGNORE INTO session_workflows (session_id, workflow_id, ordinal, current_step_ordinal) VALUES (?, ?, 0, 0)',
-    [sessionId, workflowId],
-  );
 }
 
 export async function getSessionById(db: Database, id: SessionId): Promise<Session | null> {
