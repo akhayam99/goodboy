@@ -26,6 +26,7 @@ import {
   useWorkspaces,
 } from './store';
 import { refreshPricingTable } from './features/providers/provider-pricing';
+import { useGithubPolling } from './features/github/use-github-polling';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
@@ -85,6 +86,8 @@ export function App() {
     void hydrate();
     void refreshPricingTable();
   }, [hydrate]);
+
+  useGithubPolling();
 
   useEffect(() => {
     const handler = (event: Event) => {

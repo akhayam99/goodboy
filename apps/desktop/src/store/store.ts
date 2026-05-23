@@ -546,8 +546,15 @@ export interface AppActions {
   refreshGithubStatus(): Promise<void>;
   setGithubPat(token: string): Promise<GhTokenStatus>;
   clearGithubToken(): Promise<void>;
-  refreshSessionPr(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
-  refreshSessionPrDetail(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
+  refreshSessionPr(
+    sessionId: SessionId,
+    opts?: { force?: boolean; silent?: boolean; retries?: number },
+  ): Promise<void>;
+  refreshSessionPrDetail(
+    sessionId: SessionId,
+    opts?: { force?: boolean; silent?: boolean; retries?: number },
+  ): Promise<void>;
+  sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
   resolveGithubThread(
     sessionId: SessionId,
     threadId: string,
@@ -836,6 +843,20 @@ async function runSummarizer(
         await upsertContextSlot(tauriDatabase, sessionId, next);
       }),
     );
+
+    // If the summarizer carried a GitHub PR URL into any slot value and we
+    // still have no PR cached for this session, pull the PR state now so the
+    // polling sweep picks it up on its next tick. Complements the same regex
+    // run on raw assistant text post-turn — covers cases where the URL only
+    // surfaces in the summarized context, not in the verbatim turn output.
+    if (
+      !get().sessionGithub[sessionId]?.pr &&
+      result.delta.upserts.some((u) => /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(u.value))
+    ) {
+      void get()
+        .refreshSessionPr(sessionId, { force: true })
+        .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
+    }
 
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
@@ -1557,6 +1578,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         endSummary();
         markDone('summary');
       });
+
+    // GitHub PR: refresh head + detail for the opened session so its context
+    // panel shows fresh CI / review state on every visit. No `force` — the
+    // 60s/30s caches dedupe rapid back-and-forth between sessions.
+    if (get().sessionBranches[id]) {
+      void get()
+        .refreshSessionPr(id)
+        .then(() => get().refreshSessionPrDetail(id));
+    }
 
     // Telemetry
     if (!cached?.telemetry) {

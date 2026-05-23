@@ -81,7 +81,10 @@ import {
 } from '../../../../features/session/components/AgentMetricsBlock';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import {
+  readArchivedSessions,
+  writeArchivedSessions,
+} from '../../../../shared/lib/archived-sessions';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
@@ -117,19 +120,6 @@ export function WorkspacesSidebar({
     },
     [setCurrentSession],
   );
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-
-  const warmedRef = useRef(false);
-  useEffect(() => {
-    if (warmedRef.current || sessions.length === 0) return;
-    warmedRef.current = true;
-    for (const s of sessions) {
-      if (sessionBranches[s.id]) {
-        void refreshSessionPr(s.id as SessionId);
-      }
-    }
-  }, [sessions, sessionBranches, refreshSessionPr]);
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -563,43 +553,17 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
-const ARCHIVED_KEY = STORAGE_KEYS.archivedTasks;
-
-function readArchivedSet(): Record<string, true> {
-  try {
-    const raw = localStorage.getItem(ARCHIVED_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === 'object') {
-      const out: Record<string, true> = {};
-      for (const k of Object.keys(parsed as Record<string, unknown>)) out[k] = true;
-      return out;
-    }
-  } catch {
-    // ignore
-  }
-  return {};
-}
-
-function writeArchivedSet(map: Record<string, true>): void {
-  try {
-    localStorage.setItem(ARCHIVED_KEY, JSON.stringify(map));
-  } catch {
-    // ignore
-  }
-}
-
 function useArchivedSessions(): [
   Record<string, true>,
   (id: SessionId) => void,
   (id: SessionId) => void,
 ] {
-  const [map, setMap] = useState<Record<string, true>>(() => readArchivedSet());
+  const [map, setMap] = useState<Record<string, true>>(() => readArchivedSessions());
   // Stable refs so memoized SessionRow downstream doesn't invalidate.
   const archive = useCallback((id: SessionId) => {
     setMap((prev) => {
       const next = { ...prev, [id]: true as const };
-      writeArchivedSet(next);
+      writeArchivedSessions(next);
       return next;
     });
   }, []);
@@ -607,7 +571,7 @@ function useArchivedSessions(): [
     setMap((prev) => {
       const next = { ...prev };
       delete next[id];
-      writeArchivedSet(next);
+      writeArchivedSessions(next);
       return next;
     });
   }, []);

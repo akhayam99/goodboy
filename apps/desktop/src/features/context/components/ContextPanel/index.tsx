@@ -99,20 +99,12 @@ export function ContextPanel({
   const filesTouched = useFilesTouched(session.id);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
     if (!isActive) return;
     void loadDiffComments(session.id);
   }, [isActive, session.id, loadDiffComments]);
-
-  useEffect(() => {
-    if (!isActive || !branch) return;
-    if (github && github.fetchedAt !== null) return;
-    if (github?.loading) return;
-    void refreshSessionPr(session.id as SessionId);
-  }, [isActive, session.id, branch, github, refreshSessionPr]);
 
   const summarizerTotals = useMemo(() => {
     let inputTokens = 0;
