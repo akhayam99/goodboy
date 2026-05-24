@@ -1,10 +1,10 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-// Codex CLI does not expose token counts in its output stream. Cost is therefore
-// not computable from usage data alone. Users who want cost attribution for Codex
-// can set per-model override prices via providerPricingConfig in app settings;
-// those overrides are applied in the desktop layer before recording telemetry.
-// Default: 0 (unmetered / cost unknown).
+// Codex CLI surfaces input/output/cached tokens via its `--json` stream but
+// never reports cache-write counts, so cacheWrite5m/1h fields are absent here.
+// Cost attribution is opt-in: users may set per-model override prices via
+// providerPricingConfig in app settings; without an override the cost is 0
+// (unmetered).
 export function computeCodexCostUsd(
   usage: ProviderUsage,
   _model: string,

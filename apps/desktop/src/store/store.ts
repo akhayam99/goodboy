@@ -924,11 +924,18 @@ async function runSummarizer(
             id: crypto.randomUUID() as TelemetryRecordId,
             runId: summarizerRunId,
             sessionId,
+            // Summarizer runs at the session level, not on behalf of any one
+            // agent; the counterfactual engine handles null agent rows as
+            // session-level overhead that doesn't get re-attributed.
+            agentId: null,
             kind: 'summarizer',
             provider: providerId,
             model: result.model,
             inputTokens: result.usage.inputTokens,
             outputTokens: result.usage.outputTokens,
+            cachedInputTokens: result.usage.cachedInputTokens,
+            cacheCreation5mTokens: result.usage.cacheCreation5mTokens ?? 0,
+            cacheCreation1hTokens: result.usage.cacheCreation1hTokens ?? 0,
             estimatedCostUsd: result.usage.estimatedCostUsd,
             recordedAt: now(),
           };
@@ -2878,11 +2885,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
             id: crypto.randomUUID() as TelemetryRecordId,
             runId,
             sessionId,
+            agentId: activeAgentId,
             kind: 'turn',
             provider,
             model,
             inputTokens: event.usage.inputTokens,
             outputTokens: event.usage.outputTokens,
+            cachedInputTokens: event.usage.cachedInputTokens,
+            cacheCreation5mTokens: event.usage.cacheCreation5mTokens ?? 0,
+            cacheCreation1hTokens: event.usage.cacheCreation1hTokens ?? 0,
             estimatedCostUsd: cost,
             recordedAt: now(),
           };

@@ -36,6 +36,7 @@ import { m035NudgeEvents } from './m035-nudge-events';
 import { m036WorkspaceScripts } from './m036-workspace-scripts';
 import { m037PlanDiscardedStatus } from './m037-plan-discarded-status';
 import { m038WorkspaceVerbosity } from './m038-workspace-verbosity';
+import { m039TelemetryCacheAndAgent } from './m039-telemetry-cache-and-agent';
 
 export interface Migration {
   readonly version: number;
@@ -81,4 +82,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 36, sql: m036WorkspaceScripts },
   { version: 37, sql: m037PlanDiscardedStatus },
   { version: 38, sql: m038WorkspaceVerbosity },
+  { version: 39, sql: m039TelemetryCacheAndAgent },
 ];

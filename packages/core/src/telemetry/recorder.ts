@@ -7,6 +7,7 @@ import {
   type TelemetrySummary,
 } from '@goodboy/db';
 import type {
+  AgentId,
   IsoDateTime,
   ProviderAdapter,
   ProviderName,
@@ -22,6 +23,10 @@ import type {
 export interface RecordTurnInput {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
+  // Nullable: legacy callers that have not yet been threaded with agent
+  // context still record successfully — the row just won't participate in
+  // per-agent counterfactual analytics.
+  readonly agentId: AgentId | null;
   readonly model: string;
   readonly usage: ProviderUsage;
 }
@@ -29,6 +34,7 @@ export interface RecordTurnInput {
 export interface RecordSummarizerInput {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
+  readonly agentId: AgentId | null;
   readonly model: string;
   readonly usage: ProviderUsage;
   readonly costUsd: number;
@@ -50,6 +56,7 @@ export class TelemetryRecorder {
       kind: 'turn',
       runId: input.runId,
       sessionId: input.sessionId,
+      agentId: input.agentId,
       provider: this.deps.adapter.id,
       model: input.model,
       usage: input.usage,
@@ -62,6 +69,7 @@ export class TelemetryRecorder {
       kind: 'summarizer',
       runId: input.runId,
       sessionId: input.sessionId,
+      agentId: input.agentId,
       provider: this.deps.adapter.id,
       model: input.model,
       usage: input.usage,
@@ -85,6 +93,7 @@ export class TelemetryRecorder {
     kind: TelemetryKind;
     runId: ProviderRunId;
     sessionId: SessionId;
+    agentId: AgentId | null;
     provider: ProviderName;
     model: string;
     usage: ProviderUsage;
@@ -94,11 +103,15 @@ export class TelemetryRecorder {
       id: this.deps.newId(),
       runId: args.runId,
       sessionId: args.sessionId,
+      agentId: args.agentId,
       kind: args.kind,
       provider: args.provider,
       model: args.model,
       inputTokens: args.usage.inputTokens,
       outputTokens: args.usage.outputTokens,
+      cachedInputTokens: args.usage.cachedInputTokens,
+      cacheCreation5mTokens: args.usage.cacheCreation5mTokens ?? 0,
+      cacheCreation1hTokens: args.usage.cacheCreation1hTokens ?? 0,
       estimatedCostUsd: args.costUsd,
       recordedAt: this.deps.now(),
     };

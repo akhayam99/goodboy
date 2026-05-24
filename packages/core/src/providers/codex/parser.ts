@@ -29,6 +29,10 @@ interface UsagePayload {
   readonly cached_input_tokens?: number;
   readonly output_tokens?: number;
   readonly reasoning_output_tokens?: number;
+  // Codex CLI does not currently surface cache writes, but the field is
+  // optional here so future versions (or OpenAI's Responses-API native cache
+  // metering) flow through without a parser change.
+  readonly cache_creation_input_tokens?: number;
 }
 
 interface CommandItem {
@@ -144,6 +148,8 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
     inputTokens,
     outputTokens,
     cachedInputTokens,
+    cacheCreation5mTokens: raw?.cache_creation_input_tokens ?? 0,
+    cacheCreation1hTokens: 0,
     estimatedCostUsd: 0,
   };
 }

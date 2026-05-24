@@ -165,6 +165,8 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           inputTokens: 100,
           outputTokens: 70,
           cachedInputTokens: 30,
+          cacheCreation5mTokens: 0,
+          cacheCreation1hTokens: 0,
           estimatedCostUsd: 0,
         },
         at,

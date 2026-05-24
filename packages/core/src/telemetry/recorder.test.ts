@@ -96,6 +96,7 @@ describe('TelemetryRecorder', () => {
     const record = await recorder.recordTurn({
       runId: 'run_1' as ProviderRunId,
       sessionId: 'sess_1' as SessionId,
+      agentId: null,
       model: 'claude-opus-4-7',
       usage,
     });
@@ -121,12 +122,14 @@ describe('TelemetryRecorder', () => {
     await recorder.recordTurn({
       runId: 'run_1' as ProviderRunId,
       sessionId: 'sess_2' as SessionId,
+      agentId: null,
       model: 'claude-opus-4-7',
       usage,
     });
     await recorder.recordSummarizer({
       runId: 'run_1' as ProviderRunId,
       sessionId: 'sess_2' as SessionId,
+      agentId: null,
       model: 'claude-haiku-4-5',
       usage,
       costUsd: 0.00002,

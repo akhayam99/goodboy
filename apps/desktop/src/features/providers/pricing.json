@@ -1,13 +1,59 @@
 {
-  "version": "2026-05-08",
+  "version": "2026-05-23",
   "anthropic": {
-    "claude-opus-4-7": { "inputPerMtok": 15, "outputPerMtok": 75, "cachedInputPerMtok": 1.5 },
-    "claude-sonnet-4-6": { "inputPerMtok": 3, "outputPerMtok": 15, "cachedInputPerMtok": 0.3 },
-    "claude-haiku-4-5": { "inputPerMtok": 1, "outputPerMtok": 5, "cachedInputPerMtok": 0.1 }
+    "claude-opus-4-7": {
+      "inputPerMtok": 5,
+      "outputPerMtok": 25,
+      "cachedInputPerMtok": 0.5,
+      "cacheWrite5mPerMtok": 6.25,
+      "cacheWrite1hPerMtok": 10
+    },
+    "claude-opus-4-6": {
+      "inputPerMtok": 5,
+      "outputPerMtok": 25,
+      "cachedInputPerMtok": 0.5,
+      "cacheWrite5mPerMtok": 6.25,
+      "cacheWrite1hPerMtok": 10
+    },
+    "claude-sonnet-4-6": {
+      "inputPerMtok": 3,
+      "outputPerMtok": 15,
+      "cachedInputPerMtok": 0.3,
+      "cacheWrite5mPerMtok": 3.75,
+      "cacheWrite1hPerMtok": 6
+    },
+    "claude-sonnet-4-5": {
+      "inputPerMtok": 3,
+      "outputPerMtok": 15,
+      "cachedInputPerMtok": 0.3,
+      "cacheWrite5mPerMtok": 3.75,
+      "cacheWrite1hPerMtok": 6
+    },
+    "claude-haiku-4-5": {
+      "inputPerMtok": 1,
+      "outputPerMtok": 5,
+      "cachedInputPerMtok": 0.1,
+      "cacheWrite5mPerMtok": 1.25,
+      "cacheWrite1hPerMtok": 2
+    }
   },
   "cursor": {},
   "codex": {
-    "codex-latest": { "inputPerMtok": 2.5, "outputPerMtok": 10, "cachedInputPerMtok": 1.25 },
-    "codex-mini-latest": { "inputPerMtok": 1.5, "outputPerMtok": 6, "cachedInputPerMtok": 0.75 }
+    "gpt-5.5": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5.4": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5.4-mini": { "inputPerMtok": 0.25, "outputPerMtok": 2, "cachedInputPerMtok": 0.025 },
+    "gpt-5.4-nano": { "inputPerMtok": 0.05, "outputPerMtok": 0.4, "cachedInputPerMtok": 0.005 },
+    "gpt-5.3-codex": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5.2-codex": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5.2": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5.1-codex-max": { "inputPerMtok": 2.5, "outputPerMtok": 20, "cachedInputPerMtok": 0.25 },
+    "gpt-5.1-codex-mini": {
+      "inputPerMtok": 0.25,
+      "outputPerMtok": 2,
+      "cachedInputPerMtok": 0.025
+    },
+    "gpt-5-codex": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.125 },
+    "gpt-5-pro": { "inputPerMtok": 15, "outputPerMtok": 120, "cachedInputPerMtok": 1.5 }
   }
 }

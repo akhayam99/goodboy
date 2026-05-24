@@ -34,6 +34,8 @@ export interface SummarizerUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheCreation5mTokens: number;
+  readonly cacheCreation1hTokens: number;
   readonly estimatedCostUsd: number;
 }
 
@@ -189,6 +191,7 @@ interface ClaudeJsonResult {
     readonly input_tokens?: number;
     readonly output_tokens?: number;
     readonly cache_read_input_tokens?: number;
+    readonly cache_creation_input_tokens?: number;
   };
   readonly subtype?: string;
   readonly is_error?: boolean;
@@ -222,15 +225,41 @@ function extractClaudeJsonOutput(
   const inputTokens = rawUsage.input_tokens ?? 0;
   const outputTokens = rawUsage.output_tokens ?? 0;
   const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0;
+  const cacheCreation5mTokens = rawUsage.cache_creation_input_tokens ?? 0;
+  const cacheCreation1hTokens = 0;
   const estimatedCostUsd = computeCostUsd(
-    { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
+    {
+      inputTokens,
+      outputTokens,
+      cachedInputTokens,
+      cacheCreation5mTokens,
+      cacheCreation1hTokens,
+      estimatedCostUsd: 0,
+    },
     model,
   );
-  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } };
+  return {
+    text,
+    usage: {
+      inputTokens,
+      outputTokens,
+      cachedInputTokens,
+      cacheCreation5mTokens,
+      cacheCreation1hTokens,
+      estimatedCostUsd,
+    },
+  };
 }
 
 function zeroUsage(): SummarizerUsage {
-  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 };
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedInputTokens: 0,
+    cacheCreation5mTokens: 0,
+    cacheCreation1hTokens: 0,
+    estimatedCostUsd: 0,
+  };
 }
 
 function buildUserPrompt(input: SummarizeInput): string {

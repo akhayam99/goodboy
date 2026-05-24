@@ -87,7 +87,7 @@ describe('Summarizer (CLI-based)', () => {
     expect(binary).toBe('cursor-agent');
     expect(args).toContain('-p');
     expect(args).toContain('--model');
-    expect(args).toContain('composer-2-fast');
+    expect(args).toContain('composer-2.5-fast');
     expect(args).toContain('--force');
   });
 

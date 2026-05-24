@@ -39,15 +39,27 @@ interface UserMessage {
 
 // Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
 // Cursor's stream-json — which is otherwise envelope-compatible — uses camelCase
-// (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
+// (`inputTokens`, `cacheReadTokens`, `cacheWriteTokens`).
 // Accept both forms so the shared parser can serve both adapters.
+//
+// Cache-write split (5m vs 1h TTL): Anthropic reports either a flat
+// `cache_creation_input_tokens` (treated as 5m default) or a nested object
+// `cache_creation: { ephemeral_5m_input_tokens, ephemeral_1h_input_tokens }`
+// when both TTLs were used in the same turn.
+interface NestedCacheCreation {
+  readonly ephemeral_5m_input_tokens?: number;
+  readonly ephemeral_1h_input_tokens?: number;
+}
 interface UsagePayload {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
   readonly cache_read_input_tokens?: number;
+  readonly cache_creation_input_tokens?: number;
+  readonly cache_creation?: NestedCacheCreation;
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
+  readonly cacheWriteTokens?: number;
 }
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
@@ -108,6 +120,15 @@ export function parseAnthropicEnvelopeLine(
       const input = usage.input_tokens ?? usage.inputTokens;
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
+      // Prefer nested split when present (both TTLs used in same turn).
+      // Otherwise fall back to flat `cache_creation_input_tokens` (5m default)
+      // or Cursor's `cacheWriteTokens` (also 5m by convention).
+      const nested = usage.cache_creation;
+      const cacheWrite5m =
+        nested?.ephemeral_5m_input_tokens ??
+        usage.cache_creation_input_tokens ??
+        usage.cacheWriteTokens;
+      const cacheWrite1h = nested?.ephemeral_1h_input_tokens;
       const events: TurnEvent[] = [];
       if (typeof input === 'number' || typeof output === 'number') {
         events.push({
@@ -117,6 +138,8 @@ export function parseAnthropicEnvelopeLine(
             inputTokens: input ?? 0,
             outputTokens: output ?? 0,
             cachedInputTokens: cached ?? 0,
+            cacheCreation5mTokens: cacheWrite5m ?? 0,
+            cacheCreation1hTokens: cacheWrite1h ?? 0,
             estimatedCostUsd: 0,
           },
           at,

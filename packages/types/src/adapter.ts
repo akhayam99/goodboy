@@ -14,6 +14,12 @@ export interface ProviderUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  // Cache-write tokens split by TTL bucket. Anthropic stream-json reports
+  // `cache_creation_input_tokens` (5min default) and `cache_creation.ephemeral_1h_input_tokens`
+  // (1h variant). Codex CLI does not surface cache writes today — these stay 0.
+  // Optional to preserve back-compat with legacy persisted records.
+  readonly cacheCreation5mTokens?: number;
+  readonly cacheCreation1hTokens?: number;
   readonly estimatedCostUsd: number;
 }
 
