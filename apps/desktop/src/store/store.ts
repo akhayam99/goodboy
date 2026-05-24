@@ -95,9 +95,11 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  AttachmentInput,
   GlobalSettings,
   IsoDateTime,
   Message,
+  MessageAttachment,
   MessageId,
   OverrideSettings,
   ParallelAgent,
@@ -184,6 +186,7 @@ import { getCodexPriceOverride, refreshPricingTable } from '../features/provider
 import {
   runTurn,
   cancelTurn,
+  writeAttachment,
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
 } from '../features/chat/turn';
@@ -528,6 +531,7 @@ export interface AppActions {
     sessionId: SessionId;
     agentId?: AgentId;
     content: string;
+    attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
@@ -770,6 +774,20 @@ function mergeSlots(
   const copy = existing.slice();
   copy[idx] = next;
   return copy;
+}
+
+// The provider CLIs have no API content-block channel — images reach the model
+// only as files named in the prompt text. Paths stay worktree-relative so they
+// resolve against the CLI's cwd and never trip the worktree-scope guard.
+function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): string {
+  const list = refs.map((r) => `- ${r.relPath}`).join('\n');
+  return [
+    '[attached-images]',
+    `The user attached ${refs.length} image${refs.length === 1 ? '' : 's'} to this message.`,
+    'Use your Read tool on each path below to view the image:',
+    list,
+    '[/attached-images]',
+  ].join('\n');
 }
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
@@ -2212,7 +2230,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  sendTurn: async ({ sessionId, agentId, content, override, onNewAlerts }) => {
+  sendTurn: async ({ sessionId, agentId, content, attachments, override, onNewAlerts }) => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -2285,6 +2303,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
         return;
       }
+    }
+
+    const attachmentInputs = attachments ?? [];
+    let attachmentRefs: ReadonlyArray<MessageAttachment> = [];
+    if (attachmentInputs.length > 0) {
+      try {
+        attachmentRefs = await Promise.all(
+          attachmentInputs.map(async (a): Promise<MessageAttachment> => {
+            const relPath = await writeAttachment({
+              worktreeDir: workingDir,
+              attachmentId: a.id,
+              fileName: a.fileName,
+              dataBase64: a.dataBase64,
+            });
+            return { id: a.id, kind: 'image', fileName: a.fileName, mimeType: a.mimeType, relPath };
+          }),
+        );
+      } catch (err) {
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'error',
+          runId: crypto.randomUUID() as ProviderRunId,
+          message: `failed to save attachment: ${formatError(err)}`,
+          at: now(),
+        });
+        return;
+      }
+      resolvedPrompt = `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(attachmentRefs)}`;
     }
 
     let phaseDefinition: Step | null = null;
@@ -2477,6 +2522,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         kind: 'user_text',
         runId,
         text: userTurnText,
+        ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
         at: userMessage.createdAt,
       });
 

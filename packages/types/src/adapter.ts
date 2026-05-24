@@ -1,4 +1,5 @@
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
+import type { MessageAttachment } from './message';
 import type { ProviderName } from './provider';
 
 export interface ProviderCapabilities {
@@ -40,7 +41,13 @@ export interface TurnRequest {
 }
 
 export type TurnEvent =
-  | { kind: 'user_text'; runId: ProviderRunId; text: string; at: IsoDateTime }
+  | {
+      kind: 'user_text';
+      runId: ProviderRunId;
+      text: string;
+      attachments?: ReadonlyArray<MessageAttachment>;
+      at: IsoDateTime;
+    }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }
   | {
       kind: 'tool_call_start';

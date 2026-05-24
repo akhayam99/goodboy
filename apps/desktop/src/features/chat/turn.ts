@@ -199,6 +199,39 @@ export async function cancelTurn(runId: ProviderRunId): Promise<void> {
   await invoke('turn_cancel', { runId });
 }
 
+/**
+ * Persists a composer image into `<worktree>/.goodboy/attachments/` and returns
+ * the worktree-relative path the spawned provider CLI reads it from.
+ */
+export async function writeAttachment(args: {
+  readonly worktreeDir: string;
+  readonly attachmentId: string;
+  readonly fileName: string;
+  readonly dataBase64: string;
+}): Promise<string> {
+  return invoke<string>('attachment_write', args);
+}
+
+/** Reads a stored attachment back as a `data:` URL for display in the webview. */
+export async function readAttachment(worktreeDir: string, relPath: string): Promise<string> {
+  return invoke<string>('attachment_read', { worktreeDir, relPath });
+}
+
+export interface DroppedAttachment {
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly dataBase64: string;
+}
+
+/**
+ * Reads a file path the user dropped onto the composer from the OS and returns
+ * its bytes as base64. Image-only on the Rust side; non-image drops surface as
+ * an `UnsupportedMime` error which the caller filters silently.
+ */
+export async function readDroppedAttachment(absPath: string): Promise<DroppedAttachment> {
+  return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
+}
+
 interface ParallelRunSpec {
   readonly runId: ProviderRunId;
   /** Worktree path from C3 worktree helper. */

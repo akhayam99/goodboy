@@ -4,14 +4,18 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  type ChangeEvent as ReactChangeEvent,
+  type ClipboardEvent as ReactClipboardEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { Send, Square, X } from 'lucide-react';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { ImagePlus, Send, Square, X } from 'lucide-react';
 import { Divider, Textarea } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
+  AttachmentInput,
   BudgetAlert,
   BudgetAlertKind,
   ProviderId,
@@ -28,6 +32,7 @@ import { tauriDatabase } from '../../../../shared/lib/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { readDroppedAttachment } from '../../turn';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, type ToastKind } from '../../../../app/components/Toast';
@@ -70,6 +75,49 @@ const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 const CHAT_PLACEHOLDER = 'Message Claude — $ scripts · ~ workflows · @ agents';
 
 const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+const ATTACHMENT_LIMIT = 10;
+
+interface PendingAttachment {
+  readonly id: string;
+  readonly fileName: string;
+  readonly mimeType: string;
+  /** `data:<mime>;base64,<…>` — drives both the composer preview and the send payload. */
+  readonly dataUrl: string;
+}
+
+function extFromMime(mimeType: string): string {
+  const slash = mimeType.indexOf('/');
+  const ext = slash >= 0 ? mimeType.slice(slash + 1) : '';
+  return ext.length > 0 && ext.length <= 5 ? ext : 'png';
+}
+
+function dataUrlToBase64(dataUrl: string): string {
+  const comma = dataUrl.indexOf(',');
+  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('unexpected file reader result'));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function toAttachmentInput(a: PendingAttachment): AttachmentInput {
+  return {
+    id: a.id,
+    fileName: a.fileName,
+    mimeType: a.mimeType,
+    dataBase64: dataUrlToBase64(a.dataUrl),
+  };
+}
 
 function asEffortLevel(v: string | undefined | null): EffortLevel | null {
   return v && EFFORT_LEVELS.includes(v as EffortLevel) ? (v as EffortLevel) : null;
@@ -165,9 +213,14 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const [error, setError] = useState<string | null>(null);
   interface FailedTurn {
     readonly content: string;
+    readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
   }
   const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
+  const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     asProvider(session.providerOverride),
   );
@@ -217,18 +270,24 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   currentVerbosityRef.current = verbosity;
   interface QueuedTurn {
     readonly content: string;
+    readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
   }
   const [queued, setQueued] = useState<QueuedTurn | null>(null);
-  const [rightSizePending, setRightSizePending] = useState<string | null>(null);
+  interface RightSizePending {
+    readonly content: string;
+    readonly attachments: ReadonlyArray<PendingAttachment>;
+  }
+  const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
   const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
   interface ScopePending {
     readonly content: string;
+    readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly mismatch: ScopeMismatch;
   }
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
-  const canSend = !providerDisconnected && value.trim().length > 0;
+  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
 
@@ -387,6 +446,67 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
   const dismissPopover = useCallback(() => setShowPopover(false), []);
 
+  const addFiles = useCallback(
+    async (files: ReadonlyArray<File>) => {
+      const images = files.filter((f) => f.type.startsWith('image/'));
+      if (images.length === 0) return;
+      const accepted: PendingAttachment[] = [];
+      for (const file of images) {
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          showToast('error', `${file.name || 'image'} is over 15MB`);
+          continue;
+        }
+        try {
+          const dataUrl = await readFileAsDataUrl(file);
+          accepted.push({
+            id: crypto.randomUUID(),
+            fileName: file.name || `pasted-image.${extFromMime(file.type)}`,
+            mimeType: file.type,
+            dataUrl,
+          });
+        } catch {
+          showToast('error', `could not read ${file.name || 'image'}`);
+        }
+      }
+      if (accepted.length === 0) return;
+      setAttachments((prev) => {
+        const room = ATTACHMENT_LIMIT - prev.length;
+        if (room <= 0) {
+          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+          return prev;
+        }
+        if (accepted.length > room) {
+          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+        }
+        return [...prev, ...accepted.slice(0, room)];
+      });
+    },
+    [showToast],
+  );
+
+  const removeAttachment = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const onPaste = useCallback(
+    (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
+      const images = Array.from(event.clipboardData.files).filter((f) =>
+        f.type.startsWith('image/'),
+      );
+      if (images.length > 0) {
+        event.preventDefault();
+        void addFiles(images);
+      }
+    },
+    [addFiles],
+  );
+
+  const onFileInputChange = (event: ReactChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    if (files.length > 0) void addFiles(files);
+    event.target.value = '';
+  };
+
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
     void storeSetSessionConfig(session.id, { effort: level });
@@ -430,11 +550,16 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   };
 
   const dispatchTurn = useCallback(
-    async (content: string, override: TurnProviderOverride | undefined) => {
+    async (
+      content: string,
+      atts: ReadonlyArray<PendingAttachment>,
+      override: TurnProviderOverride | undefined,
+    ) => {
       try {
         await sendTurn({
           sessionId: session.id,
           content,
+          ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
           onNewAlerts: (alerts) => {
             if (!SESSION_FEATURES.budget) return;
@@ -446,13 +571,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         setLastFailedTurn(null);
       } catch (err) {
         setError(formatError(err));
-        setLastFailedTurn({ content, override });
+        setLastFailedTurn({ content, attachments: atts, override });
       }
     },
     [sendTurn, session.id, showToast],
   );
 
-  const sendWith = async (content: string, modelOverrideId: string | null) => {
+  const sendWith = async (
+    content: string,
+    atts: ReadonlyArray<PendingAttachment>,
+    modelOverrideId: string | null,
+  ) => {
     const useModel = modelOverrideId ?? (modelChanged ? effectiveModel : null);
     const override: TurnProviderOverride | undefined =
       allowOverride && (providerChanged || useModel !== null)
@@ -463,16 +592,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         : undefined;
 
     if (isRunning) {
-      setQueued({ content, override });
+      setQueued({ content, attachments: atts, override });
       return;
     }
 
-    await dispatchTurn(content, override);
+    await dispatchTurn(content, atts, override);
   };
 
   const onSend = async () => {
     const content = value.trim();
-    if (!content || providerDisconnected) return;
+    const atts = attachments;
+    if ((!content && atts.length === 0) || providerDisconnected) return;
     setError(null);
     setLastFailedTurn(null);
 
@@ -503,18 +633,19 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           // telemetry is best-effort
         }
         setScopeNudgeEventId(id);
-        setScopePending({ content, mismatch });
+        setScopePending({ content, attachments: atts, mismatch });
         return;
       }
     }
 
     if (allowOverride && !isRunning && rightSizeSuggested !== null && rightSizePending === null) {
-      setRightSizePending(content);
+      setRightSizePending({ content, attachments: atts });
       return;
     }
 
     setValue('');
-    await sendWith(content, null);
+    setAttachments([]);
+    await sendWith(content, atts, null);
   };
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
@@ -549,10 +680,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const onScopeSendAnyway = async () => {
     if (!scopePending) return;
     const content = scopePending.content;
+    const atts = scopePending.attachments;
     setScopePending(null);
     setValue('');
+    setAttachments([]);
     await recordScopeOutcome('overridden');
-    await sendWith(content, null);
+    await sendWith(content, atts, null);
   };
 
   const onScopeDismiss = async () => {
@@ -561,23 +694,25 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   };
 
   const onUseSuggested = async () => {
-    const content = rightSizePending;
-    if (content === null) return;
+    const pending = rightSizePending;
+    if (pending === null) return;
     const suggested = rightSizeSuggested;
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
+    setAttachments([]);
     if (suggested !== null) setSelectedModel(suggested);
-    await sendWith(content, suggested);
+    await sendWith(pending.content, pending.attachments, suggested);
   };
 
   const onKeepCurrent = async () => {
-    const content = rightSizePending;
-    if (content === null) return;
+    const pending = rightSizePending;
+    if (pending === null) return;
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
-    await sendWith(content, null);
+    setAttachments([]);
+    await sendWith(pending.content, pending.attachments, null);
   };
 
   const onChangeModel = () => {
@@ -589,11 +724,96 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     const wasRun = wasRunning.current;
     wasRunning.current = isRunning;
     if (wasRun && !isRunning && queued) {
-      const { content, override } = queued;
+      const { content, attachments: queuedAttachments, override } = queued;
       setQueued(null);
-      void dispatchTurn(content, override);
+      void dispatchTurn(content, queuedAttachments, override);
     }
   }, [isRunning, queued, dispatchTurn]);
+
+  // Native drag-drop: Tauri swallows DOM drop events for OS-file drags by
+  // default (dragDropEnabled=true), so we subscribe to the webview's
+  // onDragDropEvent and gate on the composer's bounding rect — the listener
+  // is window-global. Position is in physical pixels; rect is CSS pixels,
+  // hence the DPR divide.
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+
+    const isInsideComposer = (physicalX: number, physicalY: number): boolean => {
+      const el = composerRef.current;
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cssX = physicalX / dpr;
+      const cssY = physicalY / dpr;
+      return cssX >= rect.left && cssX <= rect.right && cssY >= rect.top && cssY <= rect.bottom;
+    };
+
+    void (async () => {
+      try {
+        const off = await getCurrentWebview().onDragDropEvent((event) => {
+          const p = event.payload;
+          if (providerDisconnected) {
+            setIsDragging(false);
+            return;
+          }
+          switch (p.type) {
+            case 'enter':
+            case 'over':
+              setIsDragging(isInsideComposer(p.position.x, p.position.y));
+              break;
+            case 'leave':
+              setIsDragging(false);
+              break;
+            case 'drop': {
+              const inside = isInsideComposer(p.position.x, p.position.y);
+              setIsDragging(false);
+              if (!inside) return;
+              void (async () => {
+                const dropped: PendingAttachment[] = [];
+                for (const path of p.paths) {
+                  try {
+                    const r = await readDroppedAttachment(path);
+                    dropped.push({
+                      id: crypto.randomUUID(),
+                      fileName: r.fileName,
+                      mimeType: r.mimeType,
+                      dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
+                    });
+                  } catch {
+                    // Non-image / oversize drops are silently skipped —
+                    // otherwise a folder drop would spam a toast per child.
+                  }
+                }
+                if (dropped.length === 0) return;
+                setAttachments((prev) => {
+                  const room = ATTACHMENT_LIMIT - prev.length;
+                  if (room <= 0) {
+                    showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+                    return prev;
+                  }
+                  if (dropped.length > room) {
+                    showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+                  }
+                  return [...prev, ...dropped.slice(0, room)];
+                });
+              })();
+              break;
+            }
+          }
+        });
+        if (cancelled) off();
+        else unlisten = off;
+      } catch {
+        // Webview API unavailable in non-Tauri test env — silently no-op.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [providerDisconnected, showToast]);
 
   const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
@@ -626,6 +846,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     if (restoredEffort !== null) setEffortState(restoredEffort);
     if (restoredVerbosity !== null) setVerbosityState(restoredVerbosity);
 
+    setAttachments([]);
     setRightSizePending(null);
     setRightSizeDismissed(false);
     setScopePending(null);
@@ -795,9 +1016,19 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           <ScriptResultRow state={scriptResult} onDismiss={() => setScriptResult(null)} />
         ) : null}
         <div
-          className="flex flex-col rounded-[6px] bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40"
+          ref={composerRef}
+          className={`flex flex-col rounded-[6px] bg-subtle/80 ring-1 transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40 ${
+            isDragging ? 'ring-2 ring-primary/50' : 'ring-border-soft'
+          }`}
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
+          {attachments.length > 0 ? (
+            <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
+              {attachments.map((a) => (
+                <AttachmentChip key={a.id} attachment={a} onRemove={() => removeAttachment(a.id)} />
+              ))}
+            </div>
+          ) : null}
           <div className="relative" ref={wrapperRef}>
             {popoverOpen ? (
               <QuickActionsPopover
@@ -811,6 +1042,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               value={value}
               onChange={(e) => onValueChange(e.target.value)}
               onKeyDown={onKeyDown}
+              onPaste={onPaste}
               placeholder={
                 providerDisconnected
                   ? 'Sign in to send a message.'
@@ -825,7 +1057,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               maxRows={12}
               className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-2 pr-12 text-sm leading-relaxed shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
-            {isRunning && value.trim().length === 0 ? (
+            {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <button
                 type="button"
                 onClick={() => void cancelCurrentTurn(session.id)}
@@ -852,6 +1084,24 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           <div className="flex items-center justify-between gap-2 px-2.5 py-2">
             <div className="flex items-center gap-2">
               <PermissionModePicker session={session} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={providerDisconnected}
+                title="attach images"
+                aria-label="attach images"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ImagePlus size={15} aria-hidden />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={onFileInputChange}
+              />
               {queued ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
                   queued
@@ -860,6 +1110,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                     onClick={() => {
                       setQueued(null);
                       setValue(queued.content);
+                      setAttachments(queued.attachments);
                     }}
                     title="cancel queued message (returns to input)"
                     aria-label="cancel queued message"
@@ -898,7 +1149,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                 type="button"
                 onClick={() => {
                   setError(null);
-                  void dispatchTurn(lastFailedTurn.content, lastFailedTurn.override);
+                  void dispatchTurn(
+                    lastFailedTurn.content,
+                    lastFailedTurn.attachments,
+                    lastFailedTurn.override,
+                  );
                 }}
                 className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
               >
@@ -908,6 +1163,33 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function AttachmentChip({
+  attachment,
+  onRemove,
+}: {
+  readonly attachment: PendingAttachment;
+  readonly onRemove: () => void;
+}) {
+  return (
+    <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
+      <img
+        src={attachment.dataUrl}
+        alt={attachment.fileName}
+        className="h-full w-full object-cover"
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        title={`remove ${attachment.fileName}`}
+        aria-label={`remove ${attachment.fileName}`}
+        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
+      >
+        <X size={10} aria-hidden />
+      </button>
     </div>
   );
 }
