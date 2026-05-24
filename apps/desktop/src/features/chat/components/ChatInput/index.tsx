@@ -48,6 +48,7 @@ import {
 } from '../../../../features/settings/verbosity';
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from '../../utils/chat-constants';
 import { ProviderUsagePill } from '../ProviderUsagePill';
+import { SingleChatEstimateBanner } from '../../../providers/components/SingleChatEstimateBanner';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from '../RightSizeCard';
@@ -906,6 +907,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           />
         ) : null}
         <SuggestionStack items={suggestions} />
+        <SingleChatEstimateBanner />
         {scriptResult ? (
           <ScriptResultRow state={scriptResult} onDismiss={() => setScriptResult(null)} />
         ) : null}
@@ -989,17 +991,25 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               <ProviderUsagePill provider={effectiveProvider} />
               <ModelPicker
                 providers={providerCandidates}
-                models={modelCandidates}
                 provider={effectiveProvider}
                 model={effectiveModel}
                 effort={effort}
                 verbosity={verbosity}
+                thinking={false}
+                fast={false}
                 connectedProviders={connectedProviderIds}
                 disabled={!allowOverride || isRunning}
                 disabledTitle={overrideDisabledTitle}
+                defaultModel={defaultModel}
                 onSelectProvider={onSelectProvider}
                 onSelectModel={onSelectModel}
                 onSelectEffort={setEffort}
+                onSelectThinking={() => {
+                  /* picker resolves new cliId via onSelectModel — no separate state needed */
+                }}
+                onSelectFast={() => {
+                  /* picker resolves new cliId via onSelectModel — no separate state needed */
+                }}
                 onSelectVerbosity={setVerbosity}
               />
             </div>

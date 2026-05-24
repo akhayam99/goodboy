@@ -58,6 +58,16 @@ export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier'
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
+
+export {
+  counterfactualCost,
+  turnRealCost,
+  type CounterfactualOptions,
+  type CounterfactualPerTurn,
+  type CounterfactualResult,
+  type TurnTelemetry,
+} from './cost/counterfactual';
+
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 // registry.ts (node:child_process) is intentionally excluded from this browser-safe barrel.

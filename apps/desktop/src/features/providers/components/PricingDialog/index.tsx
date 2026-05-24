@@ -3,6 +3,7 @@ import { Dialog, cn } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { SingleChatEstimateBanner } from '../SingleChatEstimateBanner';
 
 const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
 const formatTokens = (n: number): string => {
@@ -145,6 +146,8 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
             on summarizer turns this session
           </div>
         ) : null}
+
+        <SingleChatEstimateBanner />
 
         {providerSpendBreakdown.length > 0 ? (
           <section>
