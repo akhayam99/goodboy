@@ -1,0 +1,82 @@
+import type { ModelEntry } from './types';
+
+// Claude Code CLI. Effort is orthogonal — passed via `--effort <level>` flag,
+// not encoded in the model id. `claude-opus-4-7` + effort=`max` together
+// resolve to the same CLI invocation, never a different model id.
+//
+// Source: code.claude.com/docs/en/model-config (May 2026). Aliases (`opus`,
+// `sonnet`, `haiku`, `opusplan`) are NOT exposed in the picker — we always
+// use the explicit versioned ids for stable mapping. Sonnet 4.5 stays selectable
+// even though Anthropic now defaults to 4.6 on the API.
+export const ANTHROPIC_MODELS: ReadonlyArray<ModelEntry> = [
+  {
+    provider: 'anthropic',
+    family: 'claude',
+    subfamily: 'opus',
+    version: '4.7',
+    contextWindow: 1_000_000,
+    tier: 'turn',
+    baseCliId: 'claude-opus-4-7',
+    supportedEfforts: ['low', 'medium', 'high', 'extra-high', 'max'],
+    supportsThinking: false,
+    supportsFast: false,
+    hidden: false,
+    deprecated: false,
+  },
+  {
+    provider: 'anthropic',
+    family: 'claude',
+    subfamily: 'opus',
+    version: '4.6',
+    contextWindow: 200_000,
+    tier: 'turn',
+    baseCliId: 'claude-opus-4-6',
+    supportedEfforts: ['low', 'medium', 'high', 'max'],
+    supportsThinking: false,
+    supportsFast: false,
+    hidden: false,
+    deprecated: false,
+  },
+  {
+    provider: 'anthropic',
+    family: 'claude',
+    subfamily: 'sonnet',
+    version: '4.6',
+    contextWindow: 200_000,
+    tier: 'turn',
+    baseCliId: 'claude-sonnet-4-6',
+    supportedEfforts: ['low', 'medium', 'high', 'max'],
+    supportsThinking: false,
+    supportsFast: false,
+    hidden: false,
+    deprecated: false,
+  },
+  {
+    provider: 'anthropic',
+    family: 'claude',
+    subfamily: 'sonnet',
+    version: '4.5',
+    contextWindow: 200_000,
+    tier: 'turn',
+    baseCliId: 'claude-sonnet-4-5',
+    supportedEfforts: null,
+    supportsThinking: false,
+    supportsFast: false,
+    hidden: false,
+    deprecated: true,
+  },
+  {
+    provider: 'anthropic',
+    family: 'claude',
+    subfamily: 'haiku',
+    version: '4.5',
+    contextWindow: 200_000,
+    tier: 'cheap',
+    baseCliId: 'claude-haiku-4-5',
+    supportedEfforts: null,
+    supportsThinking: false,
+    supportsFast: false,
+    hidden: false,
+    deprecated: false,
+  },
+];

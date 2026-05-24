@@ -68,6 +68,25 @@ export {
   getDefaultTurnModel,
 } from './providers/capabilities';
 
+export {
+  MODEL_CATALOG,
+  ALL_EFFORTS,
+  listEntries,
+  entryByCliId,
+  resolveCursorEntry,
+  listVersions,
+  listEfforts,
+  versionWeight,
+  familyOrder,
+  subfamilyOrder,
+  type EffortLevel,
+  type ModelEntry,
+  type ModelFamily,
+  type ModelSelection,
+  type ModelSubfamily,
+  type ModelTier as CatalogModelTier,
+} from './providers/catalog';
+
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.

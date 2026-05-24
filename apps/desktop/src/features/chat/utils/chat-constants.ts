@@ -13,12 +13,19 @@ export const PROVIDER_TEXT: Record<ProviderId, string> = {
   codex: 'text-[var(--color-provider-codex)]',
 };
 
-export const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
+// Effort taxonomy matches the catalog's EffortLevel (packages/core/.../catalog/types.ts).
+// Order matters: minimal (Codex) → low → medium → high → extra-high → max (Claude Opus).
+// We stay on 'extra-high' (rather than Codex's wire name 'xhigh') to match the
+// existing DB enum in packages/types/workspace.ts — saves a migration.
+export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
 export type EffortLevel = (typeof EFFORT_LEVELS)[number];
 
 const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
 const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
 
+// Legacy helper kept for back-compat with parts of the app that still ask
+// "what efforts does THIS model id support" via regex (sidebar, agent
+// metrics). Picker UX now uses listEfforts() from the catalog instead.
 export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
   if (/claude-opus/i.test(model)) return OPUS_EFFORT;
   if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
@@ -26,6 +33,7 @@ export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | n
 }
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
+  minimal: 'Minimal',
   low: 'Low',
   medium: 'Medium',
   high: 'High',
@@ -34,6 +42,7 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
 };
 
 export const EFFORT_DOT: Record<EffortLevel, string> = {
+  minimal: 'bg-muted',
   low: 'bg-success',
   medium: 'bg-info',
   high: 'bg-warning',
@@ -42,6 +51,7 @@ export const EFFORT_DOT: Record<EffortLevel, string> = {
 };
 
 export const EFFORT_TEXT: Record<EffortLevel, string> = {
+  minimal: 'text-muted-foreground',
   low: 'text-success',
   medium: 'text-info',
   high: 'text-warning',
@@ -89,12 +99,16 @@ export function modelLabel(id: string): string {
   return id;
 }
 
+// Picker family taxonomy. Mirrors the catalog's ModelFamily enum + a few
+// fallback buckets the regex parser uses when an id doesn't match a known
+// pattern (e.g. user-typed manual override).
 export type ModelFamily =
   | 'claude'
   | 'gpt'
   | 'composer'
   | 'cursor-auto'
   | 'gemini'
+  | 'grok'
   | 'codex'
   | 'other';
 
@@ -225,6 +239,7 @@ export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   composer: 'Composer',
   'cursor-auto': 'Auto',
   gemini: 'Gemini',
+  grok: 'Grok',
   codex: 'Codex',
   other: 'Other',
 };
@@ -233,16 +248,33 @@ const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
   sonnet: 'Sonnet',
   opus: 'Opus',
+  composer: 'Composer',
+  gemini: 'Gemini',
+  grok: 'Grok',
+  auto: 'Auto',
+  gpt: 'GPT',
+  'gpt-codex': 'Codex',
+  'gpt-codex-max': 'Codex Max',
+  'gpt-codex-mini': 'Codex Mini',
+  'gpt-codex-spark': 'Codex Spark',
+  'gpt-mini': 'Mini',
+  'gpt-nano': 'Nano',
+  'gpt-pro': 'Pro',
 };
 
 const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
   sonnet: 'mid',
   opus: 'expensive',
+  composer: 'cheap',
+  'gpt-mini': 'cheap',
+  'gpt-nano': 'cheap',
+  'gpt-codex-mini': 'cheap',
+  'gpt-pro': 'expensive',
 };
 
 export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
-  if (family === 'claude' && SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
+  if (SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
   if (family === 'gpt' && subfamily.endsWith('-codex')) {
     return subfamily.replace('-codex', '-Codex');
   }
@@ -250,6 +282,7 @@ export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
 }
 
 export function subfamilyTier(family: ModelFamily, subfamily: string): CostTier {
-  if (family === 'claude' && SUBFAMILY_TIER[subfamily]) return SUBFAMILY_TIER[subfamily];
+  if (SUBFAMILY_TIER[subfamily]) return SUBFAMILY_TIER[subfamily];
+  if (family === 'composer' || family === 'cursor-auto') return 'cheap';
   return 'mid';
 }

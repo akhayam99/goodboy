@@ -103,23 +103,30 @@ vi.mock('../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-vi.mock('@goodboy/core', () => ({
-  buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
-  getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
-  PROVIDER_CAPABILITIES: {
-    anthropic: {
-      models: [{ id: 'claude-3-5-sonnet-latest', tier: 'turn', contextWindow: 200_000 }],
+vi.mock('@goodboy/core', async (importOriginal) => {
+  // Keep the real catalog exports (MODEL_CATALOG, entryByCliId, listEfforts,
+  // pickerGroupsFor, etc.) — only override the few app-level helpers the
+  // ChatInput test cares about.
+  const actual = (await importOriginal()) as typeof import('@goodboy/core');
+  return {
+    ...actual,
+    buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
+    getDefaultTurnModel: () => 'claude-opus-4-7',
+    PROVIDER_CAPABILITIES: {
+      anthropic: {
+        models: [{ id: 'claude-opus-4-7', tier: 'turn', contextWindow: 1_000_000 }],
+      },
+      cursor: { models: [{ id: 'composer-2.5-fast', tier: 'cheap', contextWindow: 200_000 }] },
+      codex: { models: [{ id: 'gpt-5.5', tier: 'turn', contextWindow: 400_000 }] },
     },
-    cursor: { models: [{ id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 }] },
-    codex: { models: [{ id: 'codex-latest', tier: 'turn', contextWindow: 128_000 }] },
-  },
-  resolveProvider: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-3-5-sonnet-latest',
-    reason: 'preference',
-  })),
-  assessTurnWeight: () => 'small',
-}));
+    resolveProvider: vi.fn(async () => ({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-opus-4-7',
+      reason: 'preference',
+    })),
+    assessTurnWeight: () => 'small',
+  };
+});
 
 // Import component AFTER mocks are in place.
 import { ChatInput } from '../features/chat/components/ChatInput';
