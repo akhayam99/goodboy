@@ -16,7 +16,7 @@ import {
 import type { GhTokenStatus, SessionId, IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import { formatError } from '../../shared/lib/errors';
-import { readArchivedSessions } from '../../shared/lib/archived-sessions';
+import { archivedMapFromSessions } from '../../shared/lib/archived-sessions';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
@@ -380,8 +380,8 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     //     the app are discovered.
     sweepGithub: (opts?: { skipUnknownPr?: boolean }) => {
       if (!get().githubStatus?.available) return;
-      const archived = readArchivedSessions();
       const { sessions, sessionBranches, sessionGithub, currentSessionId } = get();
+      const archived = archivedMapFromSessions(sessions);
       const subOpts = { silent: true, retries: 1 } as const;
       for (const session of sessions) {
         if (archived[session.id]) continue;

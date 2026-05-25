@@ -15,10 +15,6 @@ import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
 import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/config-selects';
-import {
-  readWorkspaceVerbosity,
-  writeWorkspaceVerbosity,
-} from '../../../../features/settings/verbosity';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -88,8 +84,7 @@ export function WorkspaceSettingsDialog({
       setBranchPrefix(value);
       setSavedBranchPrefix(value);
     });
-    const savedVerbosityValue =
-      wsOverrides?.defaultVerbosity ?? readWorkspaceVerbosity(workspaceId) ?? 'normal';
+    const savedVerbosityValue = wsOverrides?.defaultVerbosity ?? 'normal';
     setVerbosity(savedVerbosityValue);
     setSavedVerbosity(savedVerbosityValue);
   }, [open, workspaceId, loadSetting, initialSection, wsOverrides]);
@@ -122,7 +117,6 @@ export function WorkspaceSettingsDialog({
         defaultVerbosity: verbosity,
       };
       await storeSetWorkspaceOverrides(workspaceId, mergedOverrides);
-      writeWorkspaceVerbosity(workspaceId, verbosity);
       setSavedVerbosity(verbosity);
       setSaveState('saved');
     } catch (err) {

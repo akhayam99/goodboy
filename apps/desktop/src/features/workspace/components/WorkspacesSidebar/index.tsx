@@ -80,10 +80,7 @@ import {
 } from '../../../../features/session/components/AgentMetricsBlock';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import {
-  readArchivedSessions,
-  writeArchivedSessions,
-} from '../../../../shared/lib/archived-sessions';
+import { archivedMapFromSessions } from '../../../../shared/lib/archived-sessions';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
@@ -127,7 +124,7 @@ export function WorkspacesSidebar({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  const [archivedMap, archive, unarchive] = useArchivedSessions();
+  const [archivedMap, archive, unarchive] = useArchivedSessions(sessions);
   const activeSessions = sessions.filter((s) => !archivedMap[s.id]);
   const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
 
@@ -553,28 +550,24 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
-function useArchivedSessions(): [
-  Record<string, true>,
-  (id: SessionId) => void,
-  (id: SessionId) => void,
-] {
-  const [map, setMap] = useState<Record<string, true>>(() => readArchivedSessions());
-  // Stable refs so memoized SessionRow downstream doesn't invalidate.
-  const archive = useCallback((id: SessionId) => {
-    setMap((prev) => {
-      const next = { ...prev, [id]: true as const };
-      writeArchivedSessions(next);
-      return next;
-    });
-  }, []);
-  const unarchive = useCallback((id: SessionId) => {
-    setMap((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      writeArchivedSessions(next);
-      return next;
-    });
-  }, []);
+function useArchivedSessions(
+  sessions: ReadonlyArray<Session>,
+): [Record<string, true>, (id: SessionId) => void, (id: SessionId) => void] {
+  const archiveTask = useAppStore((s) => s.archiveTask);
+  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
+  const map = useMemo(() => archivedMapFromSessions(sessions), [sessions]);
+  const archive = useCallback(
+    (id: SessionId) => {
+      void archiveTask(id);
+    },
+    [archiveTask],
+  );
+  const unarchive = useCallback(
+    (id: SessionId) => {
+      void unarchiveTask(id);
+    },
+    [unarchiveTask],
+  );
   return [map, archive, unarchive];
 }
 

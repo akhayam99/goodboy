@@ -31,6 +31,8 @@ export {
   restoreSession,
   archiveSession,
   unarchiveSession,
+  updateSessionConfig,
+  type SessionConfigUpdate,
 } from './queries/session';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
@@ -86,6 +88,9 @@ export {
   updateAgentStatus,
   softDeleteAgent,
   restoreAgent,
+  updateAgentConfig,
+  getAgentById,
+  type AgentConfigUpdate,
 } from './queries/agent';
 export {
   insertSessionWorktree,
