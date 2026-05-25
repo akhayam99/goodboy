@@ -1,36 +1,49 @@
 use std::collections::HashMap;
-use std::io::Read;
-use std::process::{Child, Stdio};
+use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use crate::db::{Db, DbError};
 
 // ---------------------------------------------------------------------------
-// Structs
+// PTY run slot
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Serialize)]
-pub struct ScriptRunResult {
-    pub stdout: String,
-    pub stderr: String,
+struct PtyRun {
+    writer: Box<dyn Write + Send>,
+    master: Box<dyn portable_pty::MasterPty + Send>,
+    child: Box<dyn portable_pty::Child + Send + Sync>,
+}
+
+#[derive(Serialize, Clone)]
+struct ScriptOutputPayload {
+    #[serde(rename = "runId")]
+    run_id: String,
+    data: String,
+}
+
+#[derive(Serialize, Clone)]
+struct ScriptExitPayload {
+    #[serde(rename = "runId")]
+    run_id: String,
     #[serde(rename = "exitCode")]
-    pub exit_code: i32,
+    exit_code: i32,
 }
 
 // ---------------------------------------------------------------------------
-// Process registry
+// Registry
 // ---------------------------------------------------------------------------
 
-type ChildSlot = Arc<Mutex<Option<Child>>>;
+type PtySlot = Arc<Mutex<Option<PtyRun>>>;
 
-/// Keeps a kill handle for every in-flight script run, keyed by `run_id`, so
-/// `workspace_script_cancel` can interrupt one. Mirrors `turn::TurnRegistry`.
 #[derive(Default)]
-pub struct ScriptRegistry(pub Arc<Mutex<HashMap<String, ChildSlot>>>);
+pub struct ScriptRegistry(Arc<Mutex<HashMap<String, PtySlot>>>);
 
 impl ScriptRegistry {
     pub fn new() -> Self {
@@ -91,26 +104,23 @@ impl From<DbError> for ScriptError {
 }
 
 // ---------------------------------------------------------------------------
-// Command — run a user-defined workspace script
+// Command — run a workspace script in a pty
 // ---------------------------------------------------------------------------
 
-/// Run a workspace script body via `bash -c`, with cwd set to the caller-
-/// supplied session worktree. Captures stdout/stderr/exit. Never errors on a
-/// non-zero exit — the caller renders the exit code as a status (✓ / ✗).
-///
-/// The child is registered under `run_id` so `workspace_script_cancel` can
-/// kill it. stdout/stderr are drained on separate threads — a chatty script
-/// could otherwise deadlock by filling one pipe buffer while we read the
-/// other — and both reads run with the registry slot unlocked so a concurrent
-/// cancel can lock the slot and land the kill.
+/// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
+/// returns immediately. Output is streamed as `script-output` events (base64
+/// chunks). A `script-exit` event fires when the process exits or is killed.
 #[tauri::command]
 pub async fn workspace_script_run(
+    app: AppHandle,
     state: State<'_, Db>,
     registry: State<'_, ScriptRegistry>,
     script_id: String,
     run_id: String,
     cwd: String,
-) -> Result<ScriptRunResult, ScriptError> {
+    cols: u16,
+    rows: u16,
+) -> Result<(), ScriptError> {
     let body = {
         let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
         conn.query_row(
@@ -121,86 +131,190 @@ pub async fn workspace_script_run(
         .map_err(|_| ScriptError::NotFound(script_id.clone()))?
     };
 
-    let registry = Arc::clone(&registry.0);
+    let registry_arc = Arc::clone(&registry.0);
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut child = crate::path_env::command("bash")
-            .arg("-c")
-            .arg(&body)
-            .current_dir(&cwd)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+        let pty_system = native_pty_system();
+        let pair = pty_system
+            .openpty(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
             .map_err(|e| ScriptError::Io(e.to_string()))?;
 
-        let mut stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| ScriptError::Io("no stdout".to_string()))?;
-        let mut stderr = child
-            .stderr
-            .take()
-            .ok_or_else(|| ScriptError::Io("no stderr".to_string()))?;
+        let mut cmd = CommandBuilder::new("bash");
+        cmd.arg("-c");
+        cmd.arg(&body);
+        cmd.cwd(&cwd);
+        cmd.env("PATH", crate::path_env::resolved_path());
+        cmd.env("TERM", "xterm-256color");
 
-        let slot: ChildSlot = Arc::new(Mutex::new(Some(child)));
-        registry
+        let child = pair
+            .slave
+            .spawn_command(cmd)
+            .map_err(|e| ScriptError::Io(e.to_string()))?;
+        drop(pair.slave);
+
+        let reader = pair
+            .master
+            .try_clone_reader()
+            .map_err(|e| ScriptError::Io(e.to_string()))?;
+        let writer = pair
+            .master
+            .take_writer()
+            .map_err(|e| ScriptError::Io(e.to_string()))?;
+
+        let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
+            writer,
+            master: pair.master,
+            child,
+        })));
+
+        registry_arc
             .lock()
             .map_err(|_| ScriptError::Poisoned)?
             .insert(run_id.clone(), Arc::clone(&slot));
 
-        let stderr_thread = thread::spawn(move || {
-            let mut buf = Vec::new();
-            let _ = stderr.read_to_end(&mut buf);
-            buf
+        let run_id_r = run_id.clone();
+        let app_r = app.clone();
+        let registry_r = Arc::clone(&registry_arc);
+
+        thread::spawn(move || {
+            let mut reader = reader;
+            let mut buf = [0u8; 4096];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => {
+                        let encoded = STANDARD.encode(&buf[..n]);
+                        let _ = app_r.emit(
+                            "script-output",
+                            ScriptOutputPayload {
+                                run_id: run_id_r.clone(),
+                                data: encoded,
+                            },
+                        );
+                    }
+                }
+            }
+
+            let exit_code = {
+                let slot = {
+                    let guard = registry_r.lock().ok();
+                    guard.as_ref().and_then(|m| m.get(&run_id_r).cloned())
+                };
+                if let Some(slot) = slot {
+                    let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
+                    g.as_mut()
+                        .and_then(|r| r.child.wait().ok())
+                        .map(|s| if s.success() { 0_i32 } else { 1_i32 })
+                        .unwrap_or(-1)
+                } else {
+                    -1
+                }
+            };
+
+            let _ = app_r.emit(
+                "script-exit",
+                ScriptExitPayload {
+                    run_id: run_id_r.clone(),
+                    exit_code,
+                },
+            );
+
+            if let Ok(mut map) = registry_r.lock() {
+                map.remove(&run_id_r);
+            }
         });
-        let mut stdout_buf = Vec::new();
-        let _ = stdout.read_to_end(&mut stdout_buf);
-        let stderr_buf = stderr_thread.join().unwrap_or_default();
 
-        // Both pipes are at EOF: the process has exited or is about to, so the
-        // brief slot lock taken to wait can't stall a concurrent cancel.
-        let exit_code = match slot.lock() {
-            Ok(mut guard) => guard
-                .as_mut()
-                .and_then(|c| c.wait().ok())
-                .and_then(|status| status.code())
-                .unwrap_or(-1),
-            Err(_) => -1,
-        };
-        if let Ok(mut map) = registry.lock() {
-            map.remove(&run_id);
-        }
-
-        Ok(ScriptRunResult {
-            stdout: String::from_utf8_lossy(&stdout_buf).to_string(),
-            stderr: String::from_utf8_lossy(&stderr_buf).to_string(),
-            exit_code,
-        })
+        Ok(())
     })
     .await
     .map_err(|e| ScriptError::Io(e.to_string()))?
 }
 
 // ---------------------------------------------------------------------------
+// Command — send keyboard input to a running pty
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn workspace_script_write(
+    registry: State<'_, ScriptRegistry>,
+    run_id: String,
+    data: String,
+) -> Result<(), ScriptError> {
+    let bytes = STANDARD
+        .decode(&data)
+        .map_err(|e| ScriptError::Io(e.to_string()))?;
+
+    let slot = {
+        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
+        map.get(&run_id).cloned()
+    };
+
+    if let Some(slot) = slot {
+        if let Ok(mut guard) = slot.lock() {
+            if let Some(run) = guard.as_mut() {
+                let _ = run.writer.write_all(&bytes);
+            }
+        }
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Command — resize the pty window
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn workspace_script_resize(
+    registry: State<'_, ScriptRegistry>,
+    run_id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<(), ScriptError> {
+    let slot = {
+        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
+        map.get(&run_id).cloned()
+    };
+
+    if let Some(slot) = slot {
+        if let Ok(guard) = slot.lock() {
+            if let Some(run) = guard.as_ref() {
+                let _ = run.master.resize(PtySize {
+                    rows,
+                    cols,
+                    pixel_width: 0,
+                    pixel_height: 0,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Command — interrupt an in-flight workspace script
 // ---------------------------------------------------------------------------
 
-/// Kill the child registered under `run_id`. A run that already finished, or a
-/// never-registered id, is a no-op success — the frontend fires this on a stop
-/// click that can race the run completing on its own.
+/// Removes the run from the registry and kills the pty child. Dropping the
+/// master sends SIGHUP to the entire process group, cleaning up descendants.
 #[tauri::command]
 pub fn workspace_script_cancel(
     registry: State<'_, ScriptRegistry>,
     run_id: String,
 ) -> Result<(), ScriptError> {
     let slot = {
-        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).cloned()
+        let mut map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
+        map.remove(&run_id)
     };
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
-            if let Some(child) = guard.as_mut() {
-                let _ = child.kill();
+            if let Some(mut run) = guard.take() {
+                let _ = run.child.kill();
+                // Dropping `run.master` sends SIGHUP to the pty process group.
             }
         }
     }

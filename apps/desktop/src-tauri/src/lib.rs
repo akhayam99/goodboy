@@ -104,6 +104,8 @@ pub fn run() {
       skills::skill_rescan,
       skills::skill_run_script,
       scripts::workspace_script_run,
+      scripts::workspace_script_write,
+      scripts::workspace_script_resize,
       scripts::workspace_script_cancel,
       workflows::workflow_list,
       workflows::workflow_get,

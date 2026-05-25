@@ -189,6 +189,8 @@ import {
 import {
   invokeScriptRun,
   invokeScriptCancel,
+  listenScriptExit,
+  listenScriptOutput,
   type ScriptRunResult,
   type ScriptRunRecord,
   type ScriptRunStatus,
@@ -523,6 +525,8 @@ export interface AppActions {
     sessionId: SessionId,
     scriptId: WorkspaceScriptId,
     cwd: string,
+    cols?: number,
+    rows?: number,
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
@@ -3462,7 +3466,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  runScript: async (sessionId, scriptId, cwd) => {
+  runScript: async (sessionId, scriptId, cwd, cols = 220, rows = 50) => {
     const runId = crypto.randomUUID();
 
     const writeRun = (record: ScriptRunRecord) =>
@@ -3475,25 +3479,40 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     writeRun({ status: 'pending', result: null, runId });
 
-    const settle = (status: ScriptRunStatus, result: ScriptRunResult): ScriptRunResult => {
+    // Set up the exit listener before spawning so we don't miss a fast exit.
+    let unlistenExit: () => void = () => undefined;
+    let resolveResult!: (r: ScriptRunResult) => void;
+    let rejectResult!: (e: unknown) => void;
+    const resultPromise = new Promise<ScriptRunResult>((res, rej) => {
+      resolveResult = res;
+      rejectResult = rej;
+    });
+
+    unlistenExit = await listenScriptExit((payload) => {
+      if (payload.runId !== runId) return;
+      unlistenExit();
       const curr = get().scriptRuns[sessionId]?.[scriptId];
-      // A newer run for this script took the slot — leave it untouched.
-      if (!curr || curr.runId !== runId) return result;
-      // A user cancel wins over the exit code the kill produces.
+      if (!curr || curr.runId !== runId) return;
+      const result: ScriptRunResult = { stdout: '', stderr: '', exitCode: payload.exitCode };
       writeRun({
-        status: curr.status === 'cancelled' ? 'cancelled' : status,
+        status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
         result,
         runId,
       });
-      return result;
-    };
+      resolveResult(result);
+    });
 
     try {
-      const result = await invokeScriptRun(scriptId, runId, cwd);
-      return settle(result.exitCode === 0 ? 'ok' : 'error', result);
+      await invokeScriptRun(scriptId, runId, cwd, cols, rows);
     } catch (err) {
-      return settle('error', { stdout: '', stderr: formatError(err), exitCode: -1 });
+      unlistenExit();
+      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
+      writeRun({ status: 'error', result, runId });
+      rejectResult(err);
+      return result;
     }
+
+    return resultPromise;
   },
 
   cancelScript: async (sessionId, scriptId) => {
