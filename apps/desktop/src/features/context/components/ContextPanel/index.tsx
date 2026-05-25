@@ -41,6 +41,8 @@ import type {
   TelemetryRecord,
   WorktreeStatus,
 } from '@goodboy/types';
+import { QuestionsTab } from '../QuestionsTab';
+import { useOpenQuestions } from '../QuestionsTab/useOpenQuestions';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
 import { GithubDetailsDialog } from '../../../../features/github/components/GithubDetailsDialog';
@@ -75,7 +77,7 @@ type SummarizerStatusKind = 'idle' | 'running' | 'error';
 const ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-type PanelTab = 'context' | 'plans' | 'files' | 'github' | 'terminal';
+type PanelTab = 'context' | 'plans' | 'questions' | 'files' | 'github' | 'terminal';
 
 export function ContextPanel({
   session,
@@ -93,6 +95,20 @@ export function ContextPanel({
   );
   const plans = useSessionPlans(session.id);
   const [tab, setTab] = useState<PanelTab>('context');
+  const sendTurn = useAppStore((s) => s.sendTurn);
+  const { questions, loadQuestions } = useOpenQuestions();
+
+  useEffect(() => {
+    if (!isActive) return;
+    void loadQuestions(session.id);
+  }, [isActive, session.id, loadQuestions]);
+
+  const onSubmitAnswers = useCallback(
+    async (content: string) => {
+      await sendTurn({ sessionId: session.id, content });
+    },
+    [sendTurn, session.id],
+  );
 
   // Files + GitHub data lifted to the panel so the tab badges stay live
   // regardless of the active tab, and the PR / diff-comment fetches fire
@@ -176,6 +192,7 @@ export function ContextPanel({
   const plansBadge = plans.length > 0 ? plans.length : null;
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const filesBadge = filesTouched.count > 0 ? filesTouched.count : null;
+  const questionsBadge = questions.length > 0 ? questions.length : null;
   const prState = github?.pr?.state ?? null;
   const isTerminalOpen = useAppStore((s) => s.terminalSessions[session.id as SessionId] === 'open');
 
@@ -221,6 +238,7 @@ export function ContextPanel({
               plansBadge={plansBadge}
               plansWarning={hasActivePlan}
               summarizerRunning={summarizer.status === 'running'}
+              questionsBadge={questionsBadge}
               filesBadge={filesBadge}
               prState={prState}
               isTerminalOpen={isTerminalOpen}
@@ -249,7 +267,7 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* Tab content — Context / Plans / Files / GitHub / Terminal. Open
+        {/* Tab content — Context / Plans / Questions / Files / GitHub / Terminal. Open
             Questions is pinned across every tab via the sticky footer below.
             Terminal is always mounted (visibility toggled) so output is not
             lost when the user switches away mid-run. */}
@@ -289,6 +307,8 @@ export function ContextPanel({
                 </ul>
               ) : tab === 'plans' ? (
                 <PlansTabContent sessionId={session.id} />
+              ) : tab === 'questions' ? (
+                <QuestionsTab sessionId={session.id} onSubmit={onSubmitAnswers} />
               ) : tab === 'files' ? (
                 <FilesTabContent sessionId={session.id} workingDir={workingDir} />
               ) : (
@@ -300,21 +320,37 @@ export function ContextPanel({
 
         <Divider />
 
-        {/* Sticky footer — Open Questions across every tab. The one slot
-            that's *actionable for the user, not the agent* — keeping it
-            visible always solves the "I forgot the agent asked something". */}
-        <div className="flex shrink-0 flex-col gap-2.5 bg-subtle/30 px-4 py-3">
-          <ul className="flex flex-col">
-            <SlotRow
-              sessionId={session.id}
-              slotKey="open_questions"
-              slot={slotsByKey.get('open_questions')}
-              loading={loading.slots}
-              isSummarizing={summarizer.status === 'running'}
-              onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
-            />
-          </ul>
-        </div>
+        {/* Sticky footer — always-visible open questions entry point.
+            New-style: compact nav chip opens the Questions tab.
+            Legacy: falls back to the raw ContextSlot row. */}
+        {questions.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setTab('questions')}
+            className="flex shrink-0 items-center justify-between gap-2 border-t border-border-soft/40 bg-warning/5 px-4 py-2.5 text-xs text-warning transition-colors hover:bg-warning/10"
+          >
+            <span className="flex items-center gap-1.5">
+              <HelpCircle size={12} aria-hidden />
+              <span className="font-medium">
+                {questions.length} open question{questions.length !== 1 ? 's' : ''}
+              </span>
+            </span>
+            <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
+          </button>
+        ) : slotsByKey.get('open_questions')?.value ? (
+          <div className="flex shrink-0 flex-col gap-2.5 bg-subtle/30 px-4 py-3">
+            <ul className="flex flex-col">
+              <SlotRow
+                sessionId={session.id}
+                slotKey="open_questions"
+                slot={slotsByKey.get('open_questions')}
+                loading={loading.slots}
+                isSummarizing={summarizer.status === 'running'}
+                onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
+              />
+            </ul>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -326,6 +362,7 @@ interface TabStripProps {
   readonly plansBadge: number | null;
   readonly plansWarning: boolean;
   readonly summarizerRunning: boolean;
+  readonly questionsBadge: number | null;
   readonly filesBadge: number | null;
   readonly prState: PullRequestStateKind | null;
   readonly isTerminalOpen: boolean;
@@ -347,6 +384,7 @@ function TabStrip({
   plansBadge,
   plansWarning,
   summarizerRunning,
+  questionsBadge,
   filesBadge,
   prState,
   isTerminalOpen,
@@ -367,6 +405,14 @@ function TabStrip({
         label="Plans"
         badge={plansBadge}
         accentDot={plansWarning ? 'bg-warning' : null}
+      />
+      <TabButton
+        active={tab === 'questions'}
+        onClick={() => onPick('questions')}
+        icon={<HelpCircle size={11} aria-hidden />}
+        label="Questions"
+        badge={questionsBadge}
+        accentDot={questionsBadge ? 'bg-warning' : null}
       />
       <TabButton
         active={tab === 'files'}

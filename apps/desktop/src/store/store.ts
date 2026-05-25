@@ -78,6 +78,7 @@ import {
   type NudgeKind,
   type TelemetrySummary,
 } from '@goodboy/db';
+import { useOpenQuestions } from '../features/context/components/QuestionsTab/useOpenQuestions';
 import type {
   Agent,
   AgentId,
@@ -2982,6 +2983,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
           set((state) => ({
             sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
           }));
+        }
+        if (result.openQuestionsChanged) {
+          await useOpenQuestions.getState().loadQuestions(sessionId);
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);

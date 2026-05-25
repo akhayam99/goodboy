@@ -167,3 +167,14 @@ export {
   upsertWorkspaceScript,
   deleteWorkspaceScript,
 } from './queries/workspace-script';
+export {
+  insertOpenQuestion,
+  listOpenQuestionsForSession,
+  markOpenQuestionAnswered,
+  markOpenQuestionDismissed,
+  markOpenQuestionsResolvedByText,
+  restoreOpenQuestion,
+  transferOpenQuestionOwnership,
+  type InsertOpenQuestionInput,
+  type InsertOpenQuestionResult,
+} from './queries/open-question';

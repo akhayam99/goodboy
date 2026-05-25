@@ -22,34 +22,58 @@ export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyA
 }
 
 const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
-const QUESTION_RE = /<<ctx-question>>([\s\S]*?)<<\/ctx-question>>/g;
+const QUESTION_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>([\s\S]*?)<<\/ctx-question>>/g;
 const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
 const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
 const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
 const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
+
+export interface ExtractedQuestion {
+  readonly text: string;
+  readonly suggestedAnswers: ReadonlyArray<string>;
+}
 
 /**
  * Pull agent-emitted markers out of an assistant turn's full text. Agents
  * are instructed (via system prompt) to wrap durable observations like:
  *   <<ctx-decision>>switching auth to OAuth2 PKCE<</ctx-decision>>
  *   <<ctx-question>>do we need refresh tokens?<</ctx-question>>
+ *   <<ctx-question suggestions="yes | no | maybe">>bounded question<</ctx-question>>
  *   <<ctx-resolved>>do we need refresh tokens?<</ctx-resolved>>
  *
- * `resolved` removes a previously open question once the user has answered it
- * — same text as the original question (case-insensitive substring match).
- *
- * The marker form is intentionally verbose so the model rarely emits it by
- * accident in casual prose. Whitespace inside is trimmed.
+ * Questions may embed pipe-separated suggested answers via the `suggestions`
+ * attribute. The marker form is intentionally verbose so the model rarely
+ * emits it by accident in casual prose. Whitespace inside is trimmed.
  */
 export function extractMarkers(assistantText: string): {
   readonly decisions: ReadonlyArray<string>;
-  readonly questions: ReadonlyArray<string>;
+  readonly questions: ReadonlyArray<ExtractedQuestion>;
   readonly resolved: ReadonlyArray<string>;
 } {
   const decisions = extractAll(assistantText, DECISION_RE);
-  const questions = extractAll(assistantText, QUESTION_RE);
+  const questions = extractQuestions(assistantText);
   const resolved = extractAll(assistantText, RESOLVED_RE);
   return { decisions, questions, resolved };
+}
+
+function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
+  const out: ExtractedQuestion[] = [];
+  QUESTION_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = QUESTION_RE.exec(text)) !== null) {
+    const suggestionsRaw = (m[1] ?? '').trim();
+    const body = (m[2] ?? '').trim();
+    if (body.length === 0) continue;
+    const suggestedAnswers =
+      suggestionsRaw.length > 0
+        ? suggestionsRaw
+            .split('|')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : [];
+    out.push({ text: body, suggestedAnswers });
+  }
+  return out;
 }
 
 /**

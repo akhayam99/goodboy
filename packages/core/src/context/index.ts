@@ -20,6 +20,7 @@ export {
   type ExtractedCommentResolution,
   type ExtractedHandoff,
   type ExtractedPlan,
+  type ExtractedQuestion,
   type PlanReadinessInput,
   type PlanReadinessResult,
 } from './extractors';

@@ -71,7 +71,23 @@ describe('extractMarkers', () => {
     `;
     const out = extractMarkers(text);
     expect(out.decisions).toEqual(['use sqlite for local persistence', 'tauri 2 over electron']);
-    expect(out.questions).toEqual(['do we need wal mode?']);
+    expect(out.questions).toEqual([{ text: 'do we need wal mode?', suggestedAnswers: [] }]);
+  });
+
+  it('extracts question with suggestions', () => {
+    const text =
+      '<<ctx-question suggestions="yes | no | maybe">>do we need wal mode?<</ctx-question>>';
+    const out = extractMarkers(text);
+    expect(out.questions).toEqual([
+      { text: 'do we need wal mode?', suggestedAnswers: ['yes', 'no', 'maybe'] },
+    ]);
+  });
+
+  it('extracts question without suggestions as empty array', () => {
+    const text = '<<ctx-question>>plain question<</ctx-question>>';
+    expect(extractMarkers(text).questions).toEqual([
+      { text: 'plain question', suggestedAnswers: [] },
+    ]);
   });
 
   it('trims whitespace inside markers', () => {
