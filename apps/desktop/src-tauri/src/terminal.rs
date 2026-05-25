@@ -9,43 +9,41 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::db::{Db, DbError};
-
 // ---------------------------------------------------------------------------
-// PTY run slot
+// PTY session slot
 // ---------------------------------------------------------------------------
 
-struct PtyRun {
+struct TerminalSession {
     writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
     child: Box<dyn portable_pty::Child + Send + Sync>,
 }
 
 #[derive(Serialize, Clone)]
-struct ScriptOutputPayload {
-    #[serde(rename = "runId")]
-    run_id: String,
+struct TerminalOutputPayload {
+    #[serde(rename = "sessionId")]
+    session_id: String,
     data: String,
 }
 
 #[derive(Serialize, Clone)]
-struct ScriptExitPayload {
-    #[serde(rename = "runId")]
-    run_id: String,
+struct TerminalExitPayload {
+    #[serde(rename = "sessionId")]
+    session_id: String,
     #[serde(rename = "exitCode")]
     exit_code: i32,
 }
 
 // ---------------------------------------------------------------------------
-// Registry
+// Registry — one shell per session
 // ---------------------------------------------------------------------------
 
-type PtySlot = Arc<Mutex<Option<PtyRun>>>;
+type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 
 #[derive(Default)]
-pub struct ScriptRegistry(Arc<Mutex<HashMap<String, PtySlot>>>);
+pub struct TerminalRegistry(Arc<Mutex<HashMap<String, SessionSlot>>>);
 
-impl ScriptRegistry {
+impl TerminalRegistry {
     pub fn new() -> Self {
         Self::default()
     }
@@ -56,18 +54,14 @@ impl ScriptRegistry {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, thiserror::Error)]
-pub enum ScriptError {
-    #[error("db error: {0}")]
-    Db(#[from] rusqlite::Error),
-    #[error("db mutex poisoned")]
+pub enum TerminalError {
+    #[error("registry mutex poisoned")]
     Poisoned,
-    #[error("script not found: {0}")]
-    NotFound(String),
     #[error("io error: {0}")]
     Io(String),
 }
 
-impl Serialize for ScriptError {
+impl Serialize for TerminalError {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serde_json::Map::new();
         map.insert(
@@ -82,56 +76,45 @@ impl Serialize for ScriptError {
     }
 }
 
-impl ScriptError {
+impl TerminalError {
     fn kind(&self) -> &'static str {
         match self {
-            ScriptError::Db(_) => "db",
-            ScriptError::Poisoned => "poisoned",
-            ScriptError::NotFound(_) => "not_found",
-            ScriptError::Io(_) => "io",
-        }
-    }
-}
-
-impl From<DbError> for ScriptError {
-    fn from(e: DbError) -> Self {
-        match e {
-            DbError::Sqlite(inner) => ScriptError::Db(inner),
-            DbError::Poisoned => ScriptError::Poisoned,
-            _ => ScriptError::Io(e.to_string()),
+            TerminalError::Poisoned => "poisoned",
+            TerminalError::Io(_) => "io",
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Command — run a workspace script in a pty
+// Command — open (idempotent) an interactive bash session
 // ---------------------------------------------------------------------------
 
-/// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
-/// returns immediately. Output is streamed as `script-output` events (base64
-/// chunks). A `script-exit` event fires when the process exits or is killed.
+/// Spawns `bash -l -i` in a pty keyed by `session_id`. Idempotent: if a live
+/// shell already exists for this session the command is a no-op. Output
+/// streams as `terminal-output` events (base64). `terminal-exit` fires when
+/// the shell dies.
 #[tauri::command]
-pub async fn workspace_script_run(
+pub async fn terminal_open(
     app: AppHandle,
-    state: State<'_, Db>,
-    registry: State<'_, ScriptRegistry>,
-    script_id: String,
-    run_id: String,
-    cwd: String,
+    registry: State<'_, TerminalRegistry>,
+    session_id: String,
+    cwd: Option<String>,
     cols: u16,
     rows: u16,
-) -> Result<(), ScriptError> {
-    let body = {
-        let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        conn.query_row(
-            "SELECT body FROM workspace_scripts WHERE id = ?1 LIMIT 1",
-            rusqlite::params![script_id],
-            |row| row.get::<_, String>(0),
-        )
-        .map_err(|_| ScriptError::NotFound(script_id.clone()))?
-    };
+) -> Result<(), TerminalError> {
+    // Idempotent: if slot exists and child is alive, return.
+    {
+        let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        if let Some(slot) = map.get(&session_id) {
+            let guard = slot.lock().map_err(|_| TerminalError::Poisoned)?;
+            if guard.is_some() {
+                return Ok(());
+            }
+        }
+    }
 
     let registry_arc = Arc::clone(&registry.0);
+    let session_id_clone = session_id.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
         let pty_system = native_pty_system();
@@ -142,31 +125,43 @@ pub async fn workspace_script_run(
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
+            .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("bash");
-        cmd.arg("-c");
-        cmd.arg(&body);
-        cmd.cwd(&cwd);
+        let mut cmd = CommandBuilder::new("/bin/bash");
+        cmd.arg("-l");
+        cmd.arg("-i");
+
+        let effective_cwd = cwd.unwrap_or_else(|| {
+            std::env::var("HOME").unwrap_or_else(|_| "/".to_string())
+        });
+        cmd.cwd(&effective_cwd);
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
+
+        if let Ok(home) = std::env::var("HOME") {
+            cmd.env("HOME", home);
+        }
+        if let Ok(user) = std::env::var("USER") {
+            cmd.env("USER", user);
+        }
+        cmd.env("SHELL", "/bin/bash");
 
         let child = pair
             .slave
             .spawn_command(cmd)
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
+            .map_err(|e| TerminalError::Io(e.to_string()))?;
         drop(pair.slave);
 
         let reader = pair
             .master
             .try_clone_reader()
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
+            .map_err(|e| TerminalError::Io(e.to_string()))?;
         let writer = pair
             .master
             .take_writer()
-            .map_err(|e| ScriptError::Io(e.to_string()))?;
+            .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
+        let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
             writer,
             master: pair.master,
             child,
@@ -174,10 +169,10 @@ pub async fn workspace_script_run(
 
         registry_arc
             .lock()
-            .map_err(|_| ScriptError::Poisoned)?
-            .insert(run_id.clone(), Arc::clone(&slot));
+            .map_err(|_| TerminalError::Poisoned)?
+            .insert(session_id_clone.clone(), Arc::clone(&slot));
 
-        let run_id_r = run_id.clone();
+        let sid = session_id_clone.clone();
         let app_r = app.clone();
         let registry_r = Arc::clone(&registry_arc);
 
@@ -190,9 +185,9 @@ pub async fn workspace_script_run(
                     Ok(n) => {
                         let encoded = STANDARD.encode(&buf[..n]);
                         let _ = app_r.emit(
-                            "script-output",
-                            ScriptOutputPayload {
-                                run_id: run_id_r.clone(),
+                            "terminal-output",
+                            TerminalOutputPayload {
+                                session_id: sid.clone(),
                                 data: encoded,
                             },
                         );
@@ -203,7 +198,7 @@ pub async fn workspace_script_run(
             let exit_code = {
                 let slot = {
                     let guard = registry_r.lock().ok();
-                    guard.as_ref().and_then(|m| m.get(&run_id_r).cloned())
+                    guard.as_ref().and_then(|m| m.get(&sid).cloned())
                 };
                 if let Some(slot) = slot {
                     let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
@@ -217,47 +212,47 @@ pub async fn workspace_script_run(
             };
 
             let _ = app_r.emit(
-                "script-exit",
-                ScriptExitPayload {
-                    run_id: run_id_r.clone(),
+                "terminal-exit",
+                TerminalExitPayload {
+                    session_id: sid.clone(),
                     exit_code,
                 },
             );
 
             if let Ok(mut map) = registry_r.lock() {
-                map.remove(&run_id_r);
+                map.remove(&sid);
             }
         });
 
         Ok(())
     })
     .await
-    .map_err(|e| ScriptError::Io(e.to_string()))?
+    .map_err(|e| TerminalError::Io(e.to_string()))?
 }
 
 // ---------------------------------------------------------------------------
-// Command — send keyboard input to a running pty
+// Command — send keyboard input to a terminal session
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn workspace_script_write(
-    registry: State<'_, ScriptRegistry>,
-    run_id: String,
+pub fn terminal_write(
+    registry: State<'_, TerminalRegistry>,
+    session_id: String,
     data: String,
-) -> Result<(), ScriptError> {
+) -> Result<(), TerminalError> {
     let bytes = STANDARD
         .decode(&data)
-        .map_err(|e| ScriptError::Io(e.to_string()))?;
+        .map_err(|e| TerminalError::Io(e.to_string()))?;
 
     let slot = {
-        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).cloned()
+        let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        map.get(&session_id).cloned()
     };
 
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
-            if let Some(run) = guard.as_mut() {
-                let _ = run.writer.write_all(&bytes);
+            if let Some(session) = guard.as_mut() {
+                let _ = session.writer.write_all(&bytes);
             }
         }
     }
@@ -269,21 +264,21 @@ pub fn workspace_script_write(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn workspace_script_resize(
-    registry: State<'_, ScriptRegistry>,
-    run_id: String,
+pub fn terminal_resize(
+    registry: State<'_, TerminalRegistry>,
+    session_id: String,
     cols: u16,
     rows: u16,
-) -> Result<(), ScriptError> {
+) -> Result<(), TerminalError> {
     let slot = {
-        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.get(&run_id).cloned()
+        let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        map.get(&session_id).cloned()
     };
 
     if let Some(slot) = slot {
         if let Ok(guard) = slot.lock() {
-            if let Some(run) = guard.as_ref() {
-                let _ = run.master.resize(PtySize {
+            if let Some(session) = guard.as_ref() {
+                let _ = session.master.resize(PtySize {
                     rows,
                     cols,
                     pixel_width: 0,
@@ -296,25 +291,25 @@ pub fn workspace_script_resize(
 }
 
 // ---------------------------------------------------------------------------
-// Command — interrupt an in-flight workspace script
+// Command — close/kill a terminal session
 // ---------------------------------------------------------------------------
 
-/// Removes the run from the registry and kills the pty child. Dropping the
-/// master sends SIGHUP to the entire process group, cleaning up descendants.
+/// Kills the shell child and removes it from the registry. Dropping the master
+/// sends SIGHUP to the pty process group, cleaning up descendants.
 #[tauri::command]
-pub fn workspace_script_cancel(
-    registry: State<'_, ScriptRegistry>,
-    run_id: String,
-) -> Result<(), ScriptError> {
+pub fn terminal_close(
+    registry: State<'_, TerminalRegistry>,
+    session_id: String,
+) -> Result<(), TerminalError> {
     let slot = {
-        let mut map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.remove(&run_id)
+        let mut map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        map.remove(&session_id)
     };
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
-            if let Some(mut run) = guard.take() {
-                let _ = run.child.kill();
-                // Dropping `run.master` sends SIGHUP to the pty process group.
+            if let Some(mut session) = guard.take() {
+                let _ = session.child.kill();
+                // Dropping session.master sends SIGHUP to the pty process group.
             }
         }
     }

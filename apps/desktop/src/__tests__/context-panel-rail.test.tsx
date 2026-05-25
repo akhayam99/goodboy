@@ -2,7 +2,7 @@
 // Tests for ContextPanel rail variant (collapsed state) — #318.
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(vi.fn()) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
 vi.mock('@tauri-apps/plugin-sql', () => ({
@@ -30,6 +30,10 @@ vi.mock('../store', () => ({
       spawnAgent: vi.fn(),
       clearSessionNextActions: vi.fn(),
       loadDiffComments: vi.fn().mockResolvedValue(undefined),
+      scriptRuns: {},
+      terminalSessions: {},
+      openTerminal: vi.fn().mockResolvedValue(undefined),
+      closeTerminal: vi.fn().mockResolvedValue(undefined),
       sessionPlans: {},
       sessionPhaseRuns: {},
       loadSessionPlans: vi.fn(),

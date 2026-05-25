@@ -9,6 +9,7 @@ const GLOBAL: GlobalSettings = {
   defaultWorkflowId: null,
   defaultBranchPrefix: 'kay',
   parallelEnabled: false,
+  defaultVerbosity: 'normal',
 };
 
 const NULL_OVERRIDE: OverrideSettings = {
@@ -16,6 +17,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   defaultWorkflowId: null,
   defaultBranchPrefix: null,
   parallelEnabled: null,
+  defaultVerbosity: null,
 };
 
 describe('resolveSettings', () => {
@@ -33,40 +35,46 @@ describe('resolveSettings', () => {
       defaultWorkflowId: 'tpl-1' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
+      defaultVerbosity: 'verbose',
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
     expect(result.defaultWorkflowId).toBe('tpl-1');
     expect(result.defaultBranchPrefix).toBe('ws-prefix');
     expect(result.parallelEnabled).toBe(true);
+    expect(result.defaultVerbosity).toBe('verbose');
   });
 
-  it('null/null/value → session wins', () => {
+  it('null/null/value (session) → session wins for provider/workflow/prefix/parallel; session.defaultVerbosity always null in production', () => {
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
       defaultWorkflowId: 'tpl-2' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
+      defaultVerbosity: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
     expect(result.defaultWorkflowId).toBe('tpl-2');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
     expect(result.parallelEnabled).toBe(true);
+    expect(result.defaultVerbosity).toBe('normal');
   });
 
-  it('null/value/value → session wins over workspace', () => {
+  it('session overrides win over workspace for non-verbosity fields', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
       defaultWorkflowId: 'tpl-ws' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: false,
+      defaultVerbosity: 'verbose',
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
       defaultWorkflowId: 'tpl-sess' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
+      defaultVerbosity: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -77,20 +85,23 @@ describe('resolveSettings', () => {
     expect(result.defaultWorkflowId).toBe('tpl-sess');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
     expect(result.parallelEnabled).toBe(true);
+    expect(result.defaultVerbosity).toBe('verbose');
   });
 
-  it('null/value/null-fields → session null fields fall back to workspace', () => {
+  it('null-fields session falls back to workspace', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
       defaultWorkflowId: null,
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
+      defaultVerbosity: 'verbose',
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
       defaultWorkflowId: null,
       defaultBranchPrefix: null,
       parallelEnabled: null,
+      defaultVerbosity: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -100,6 +111,7 @@ describe('resolveSettings', () => {
     expect(result.defaultProviderId).toBe('cursor');
     expect(result.defaultBranchPrefix).toBe('ws-prefix');
     expect(result.parallelEnabled).toBe(true);
+    expect(result.defaultVerbosity).toBe('verbose');
   });
 
   it('all-null overrides → global used everywhere', () => {
@@ -111,6 +123,7 @@ describe('resolveSettings', () => {
     expect(result.defaultProviderId).toBe('anthropic');
     expect(result.defaultBranchPrefix).toBe('kay');
     expect(result.parallelEnabled).toBe(false);
+    expect(result.defaultVerbosity).toBe('normal');
   });
 
   it('undefined overrides treated same as null overrides', () => {
@@ -130,5 +143,61 @@ describe('resolveSettings', () => {
     };
     const result = resolveSettings({ global: globalWithTemplate });
     expect(result.defaultWorkflowId).toBe('global-tpl');
+  });
+
+  // ─── verbosity-specific resolution ─────────────────────────────────────────
+  //
+  // After m038, session.defaultVerbosity is always null in production
+  // (per-chat verbosity moved to agents.verbosity). Workspace remains L1,
+  // global is the final fallback.
+
+  it('verbosity: global normal when no overrides', () => {
+    const result = resolveSettings({ global: GLOBAL });
+    expect(result.defaultVerbosity).toBe('normal');
+  });
+
+  it('verbosity: workspace brief overrides global normal', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, defaultVerbosity: 'brief' },
+    });
+    expect(result.defaultVerbosity).toBe('brief');
+  });
+
+  it('verbosity: workspace verbose overrides global normal', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, defaultVerbosity: 'verbose' },
+    });
+    expect(result.defaultVerbosity).toBe('verbose');
+  });
+
+  it('verbosity: session.defaultVerbosity always null → workspace wins', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, defaultVerbosity: 'verbose' },
+      sessionOverride: { ...NULL_OVERRIDE, defaultVerbosity: null },
+    });
+    expect(result.defaultVerbosity).toBe('verbose');
+  });
+
+  it('verbosity: session null + workspace null → global', () => {
+    const globalVerbose: GlobalSettings = { ...GLOBAL, defaultVerbosity: 'verbose' };
+    const result = resolveSettings({
+      global: globalVerbose,
+      workspaceOverride: NULL_OVERRIDE,
+      sessionOverride: NULL_OVERRIDE,
+    });
+    expect(result.defaultVerbosity).toBe('verbose');
+  });
+
+  it('verbosity: workspace null falls back to global brief', () => {
+    const globalBrief: GlobalSettings = { ...GLOBAL, defaultVerbosity: 'brief' };
+    const result = resolveSettings({
+      global: globalBrief,
+      workspaceOverride: NULL_OVERRIDE,
+      sessionOverride: NULL_OVERRIDE,
+    });
+    expect(result.defaultVerbosity).toBe('brief');
   });
 });

@@ -15,6 +15,7 @@ mod secrets;
 mod settings_overrides;
 mod skills;
 mod summarize;
+mod terminal;
 mod turn;
 mod worktree;
 
@@ -30,6 +31,7 @@ pub fn run() {
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
   let turn_registry = turn::TurnRegistry::new();
   let script_registry = scripts::ScriptRegistry::new();
+  let terminal_registry = terminal::TerminalRegistry::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -39,6 +41,7 @@ pub fn run() {
     .manage(codex_state)
     .manage(turn_registry)
     .manage(script_registry)
+    .manage(terminal_registry)
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -104,7 +107,13 @@ pub fn run() {
       skills::skill_rescan,
       skills::skill_run_script,
       scripts::workspace_script_run,
+      scripts::workspace_script_write,
+      scripts::workspace_script_resize,
       scripts::workspace_script_cancel,
+      terminal::terminal_open,
+      terminal::terminal_write,
+      terminal::terminal_resize,
+      terminal::terminal_close,
       workflows::workflow_list,
       workflows::workflow_get,
       workflows::workflow_upsert,
@@ -114,6 +123,7 @@ pub fn run() {
       workflows::agent_update_status,
       workflows::agent_set_provider_session_id,
       workflows::agent_set_kind,
+      workflows::agent_set_verbosity,
       workflows::agent_mark_viewed,
       workflows::workspaces_with_unread,
       parallel_groups::parallel_group_create,

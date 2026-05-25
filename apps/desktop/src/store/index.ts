@@ -12,12 +12,15 @@ export {
   useSessionPlans,
   useSessionSlots,
   useSessionNextActions,
+  useSessionViewPrefs,
   useSlotHistory,
   useSessions,
+  useSortedGroupedSessions,
   useSummarizerStatus,
   useSessionHasUnread,
   useWorkspaceHasUnread,
   useWorkspaces,
+  type GroupedSessions,
 } from './selectors';
 export { useTranscript } from './transcript';
 

@@ -9,6 +9,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  VerbosityLevel,
   Workflow,
   WorkflowId,
   ProviderRunId,
@@ -52,6 +53,7 @@ interface RawPhaseRunRow {
   readonly lastFinishedAt: string | null;
   readonly lastViewedAt: string | null;
   readonly kind: string | null;
+  readonly verbosity: string | null;
 }
 
 function rowToDefinition(row: RawPhaseDefinitionRow): Step {
@@ -94,6 +96,7 @@ function rowToPhaseRun(row: RawPhaseRunRow): Agent {
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.kind != null && { kind: row.kind }),
+    ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
   };
 }
 
@@ -162,6 +165,7 @@ export interface PhaseRunInsertArgs {
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
   readonly kind?: string;
+  readonly verbosity?: VerbosityLevel;
 }
 
 export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Agent> {
@@ -178,6 +182,7 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Age
       startedAt: run.startedAt ?? null,
       completedAt: run.completedAt ?? null,
       kind: run.kind ?? null,
+      verbosity: run.verbosity ?? null,
     },
   });
   return rowToPhaseRun(row);
@@ -185,6 +190,13 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Age
 
 export async function invokeAgentSetKind(id: AgentId, kind: string | null): Promise<void> {
   return invoke<void>('agent_set_kind', { id, kind });
+}
+
+export async function invokeAgentSetVerbosity(
+  id: AgentId,
+  verbosity: VerbosityLevel | null,
+): Promise<void> {
+  return invoke<void>('agent_set_verbosity', { id, verbosity });
 }
 
 export interface PhaseRunUpdateFields {

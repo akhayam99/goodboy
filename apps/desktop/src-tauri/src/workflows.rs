@@ -84,6 +84,7 @@ pub struct SessionRow {
     #[serde(rename = "lastViewedAt")]
     pub last_viewed_at: Option<String>,
     pub kind: Option<String>,
+    pub verbosity: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,6 +106,7 @@ pub struct PhaseRunInsertInput {
     #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
     pub kind: Option<String>,
+    pub verbosity: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -433,7 +435,7 @@ pub fn agent_list_for_session(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind
+                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -454,6 +456,7 @@ pub fn agent_list_for_session(
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
             kind: row.get(13)?,
+            verbosity: row.get(14)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -470,8 +473,8 @@ pub fn agent_insert(
     conn.execute(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
-            provider_run_id, output_summary, started_at, completed_at, kind)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            provider_run_id, output_summary, started_at, completed_at, kind, verbosity)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
         rusqlite::params![
             id,
             input.session_id,
@@ -484,6 +487,7 @@ pub fn agent_insert(
             input.started_at,
             input.completed_at,
             input.kind,
+            input.verbosity,
         ],
     )?;
 
@@ -502,6 +506,7 @@ pub fn agent_insert(
         last_finished_at: None,
         last_viewed_at: None,
         kind: input.kind,
+        verbosity: input.verbosity,
     })
 }
 
@@ -542,7 +547,7 @@ pub fn agent_update_status(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind
+                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -563,6 +568,7 @@ pub fn agent_update_status(
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
             kind: row.get(13)?,
+            verbosity: row.get(14)?,
         })
     })?;
     match rows.next() {
@@ -584,6 +590,24 @@ pub fn agent_set_kind(
     let affected = conn.execute(
         "UPDATE agents SET kind = ?2 WHERE id = ?1",
         rusqlite::params![id, kind],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::RunNotFound(id));
+    }
+    Ok(())
+}
+
+// Persists the agent-level verbosity override. NULL = inherit from workspace.
+#[tauri::command]
+pub fn agent_set_verbosity(
+    state: State<'_, Db>,
+    id: String,
+    verbosity: Option<String>,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE agents SET verbosity = ?2 WHERE id = ?1",
+        rusqlite::params![id, verbosity],
     )?;
     if affected == 0 {
         return Err(PhaseError::RunNotFound(id));

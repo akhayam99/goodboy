@@ -71,7 +71,13 @@ export type {
   StepTransition,
   Workflow,
 } from './workflow';
-export type { GlobalSettings, OverrideSettings, ResolvedSettings, SettingsScope } from './settings';
+export type {
+  GlobalSettings,
+  OverrideSettings,
+  ResolvedSettings,
+  SettingsScope,
+  VerbosityLevel,
+} from './settings';
 export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';
 export type {
   ConfigBundle,
@@ -112,6 +118,14 @@ export type {
   PlanStatus,
   PlanWithCount,
 } from './plan';
+export type {
+  PersistedSessionViewPrefs,
+  SessionGroupKey,
+  SessionPrGroup,
+  SessionSortKey,
+  SessionUserStatusGroup,
+  SessionViewPrefs,
+} from './session-view';
 export type {
   DiffHunk,
   DiffHunkLine,

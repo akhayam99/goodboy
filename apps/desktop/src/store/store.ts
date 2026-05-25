@@ -110,6 +110,7 @@ import type {
   ProviderRun,
   ProviderRunId,
   ResolvedSettings,
+  VerbosityLevel,
   TurnState,
   Skill,
   SkillId,
@@ -125,6 +126,9 @@ import type {
   PullRequestState,
   LinkedIssue,
   PrDetail,
+  SessionViewPrefs,
+  SessionSortKey,
+  SessionGroupKey,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
@@ -165,7 +169,11 @@ import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
 } from '../features/chat/turn';
-import { readVerbosity, verbosityDirective } from '../features/settings/verbosity';
+import {
+  readWorkspaceVerbosity,
+  verbosityDirective,
+  writeWorkspaceVerbosity,
+} from '../features/settings/verbosity';
 import {
   createWorktree,
   removeWorktree,
@@ -182,10 +190,13 @@ import {
 import {
   invokeScriptRun,
   invokeScriptCancel,
+  listenScriptExit,
+  listenScriptOutput,
   type ScriptRunResult,
   type ScriptRunRecord,
   type ScriptRunStatus,
 } from '../features/scripts/scripts';
+import { invokeTerminalOpen, invokeTerminalClose } from '../features/terminal/terminal';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -207,6 +218,7 @@ import {
   invokeSessionSetProviderSessionId,
   invokeSessionMarkViewed,
   invokeAgentSetKind,
+  invokeAgentSetVerbosity,
   type PhaseTemplateUpsertArgs,
 } from '../features/phases/phases';
 import {
@@ -239,6 +251,7 @@ import { createSkillsSlice } from './slices/skills.slice';
 import { createDiffCommentsSlice } from './slices/diff-comments.slice';
 import { createGithubSlice } from './slices/github.slice';
 import { createSidebarSlice } from './slices/sidebar.slice';
+import { createSessionViewSlice } from './slices/session-view.slice';
 
 export type BootPhase =
   | 'pending'
@@ -373,6 +386,8 @@ export interface AppState {
    * without blocking the whole app on a single Promise.all.
    */
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
+  readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
+  readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
 }
 
 export interface SessionLoadingFlags {
@@ -460,6 +475,7 @@ export interface AppActions {
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
+  reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,
@@ -512,6 +528,8 @@ export interface AppActions {
     sessionId: SessionId,
     scriptId: WorkspaceScriptId,
     cwd: string,
+    cols?: number,
+    rows?: number,
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
@@ -519,6 +537,7 @@ export interface AppActions {
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
   spawnAgent(
     sessionId: SessionId,
     args: {
@@ -548,6 +567,7 @@ export interface AppActions {
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
   setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
+  setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
@@ -561,8 +581,15 @@ export interface AppActions {
   refreshGithubStatus(): Promise<void>;
   setGithubPat(token: string): Promise<GhTokenStatus>;
   clearGithubToken(): Promise<void>;
-  refreshSessionPr(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
-  refreshSessionPrDetail(sessionId: SessionId, opts?: { force?: boolean }): Promise<void>;
+  refreshSessionPr(
+    sessionId: SessionId,
+    opts?: { force?: boolean; silent?: boolean; retries?: number },
+  ): Promise<void>;
+  refreshSessionPrDetail(
+    sessionId: SessionId,
+    opts?: { force?: boolean; silent?: boolean; retries?: number },
+  ): Promise<void>;
+  sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
   resolveGithubThread(
     sessionId: SessionId,
     threadId: string,
@@ -618,6 +645,11 @@ export interface AppActions {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
+  getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
+  setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
+  setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
+  openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
+  closeTerminal(sessionId: SessionId): Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -682,6 +714,8 @@ const initialState: AppState = {
   sessionNudges: {},
   planConsumptions: {},
   sessionLoading: {},
+  sessionViewPrefs: {},
+  terminalSessions: {},
 };
 
 function mergeSlots(
@@ -852,6 +886,20 @@ async function runSummarizer(
         await upsertContextSlot(tauriDatabase, sessionId, next);
       }),
     );
+
+    // If the summarizer carried a GitHub PR URL into any slot value and we
+    // still have no PR cached for this session, pull the PR state now so the
+    // polling sweep picks it up on its next tick. Complements the same regex
+    // run on raw assistant text post-turn — covers cases where the URL only
+    // surfaces in the summarized context, not in the verbatim turn output.
+    if (
+      !get().sessionGithub[sessionId]?.pr &&
+      result.delta.upserts.some((u) => /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(u.value))
+    ) {
+      void get()
+        .refreshSessionPr(sessionId, { force: true })
+        .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
+    }
 
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
@@ -1256,6 +1304,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createSidebarSlice(set, get),
+  ...createSessionViewSlice(set, get),
 
   hydrate: async () => {
     if (hydratePromise) return hydratePromise;
@@ -1477,6 +1526,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
+      void get().loadWorkspaceOverrides(id);
     } else {
       set({ providerSpendBreakdown: [] });
     }
@@ -1550,6 +1600,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // downstream parallel fetch by the IPC round-trip (~5-50ms of dead time).
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
     if (!id) return;
+    void get().loadSessionOverrides(id);
     const perf = (op: string) => {
       const t0 = performance.now();
       return () => {
@@ -1581,6 +1632,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         endSummary();
         markDone('summary');
       });
+
+    // GitHub PR: refresh head + detail for the opened session so its context
+    // panel shows fresh CI / review state on every visit. No `force` — the
+    // 60s/30s caches dedupe rapid back-and-forth between sessions.
+    if (get().sessionBranches[id]) {
+      void get()
+        .refreshSessionPr(id)
+        .then(() => get().refreshSessionPrDetail(id));
+    }
 
     // Telemetry
     if (!cached?.telemetry) {
@@ -1876,6 +1936,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
 
+    // Seed L2 (per-agent) verbosity from the workspace default at insert time
+    // so each new chat starts with the user's workspace setting baked in.
+    const workspaceVerbositySeed =
+      get().workspaceOverrides[workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(workspaceId) ??
+      undefined;
+
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
       const template = templates.find((t) => t.id === workflowId) ?? null;
@@ -1892,6 +1959,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             name: step.name,
             status: 'pending',
             kind,
+            ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           });
           agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
           agentKindOverrides[agent.id] = kind;
@@ -1905,6 +1973,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ordinal: 0,
           name: 'agent 1',
           status: 'pending',
+          ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
         });
         prespawnedRuns = [fallback];
       }
@@ -1917,6 +1986,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         name: agentName,
         status: 'pending',
         kind: firstAgentKind,
+        ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       });
       if (model !== null) agentModelOverrides[singleAgent.id] = model;
       agentKindOverrides[singleAgent.id] = firstAgentKind;
@@ -1995,9 +2065,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
       createNew,
     });
     await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, target);
-    set((state) => ({
-      sessionBranches: { ...state.sessionBranches, [sessionId]: target },
-    }));
+    set((state) => {
+      // Branch changed → the cached PR/detail belong to the old branch. Drop
+      // the entry so the ContextPanel effect refetches against the new branch.
+      const nextGithub = { ...state.sessionGithub };
+      delete nextGithub[sessionId];
+      return {
+        sessionBranches: { ...state.sessionBranches, [sessionId]: target },
+        sessionGithub: nextGithub,
+      };
+    });
+  },
+
+  reconcileSessionBranch: async (sessionId, observedBranch) => {
+    // Catch the branch cache up to git reality. changeSessionBranch keeps DB +
+    // store in sync, but an agent running `git switch` directly in the worktree
+    // shell bypasses it — HEAD moves while sessionBranches stays frozen.
+    const trimmed = observedBranch.trim();
+    if (!trimmed) return;
+    if (get().sessionBranches[sessionId] === trimmed) return;
+    const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
+    const primary = worktrees[0];
+    if (!primary) return;
+    if (primary.branch !== trimmed) {
+      await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, trimmed);
+    }
+    set((state) => {
+      // Branch moved → drop the stale PR cache so the ContextPanel effect
+      // refetches for the new branch (same as changeSessionBranch).
+      const nextGithub = { ...state.sessionGithub };
+      delete nextGithub[sessionId];
+      return {
+        sessionBranches: { ...state.sessionBranches, [sessionId]: trimmed },
+        sessionGithub: nextGithub,
+      };
+    });
   },
 
   loadTranscript: async (agentId, sessionId) => {
@@ -2636,9 +2738,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    const verbosityHint = verbosityDirective(
-      phaseDefinition?.verbosity ?? readVerbosity(sessionId),
-    );
+    const agentRowForVerbosity =
+      (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === activeAgentId) ?? null;
+    const effectiveVerbosity =
+      phaseDefinition?.verbosity ??
+      agentRowForVerbosity?.verbosity ??
+      get().workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      'normal';
+    const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
     // M4: soft-cap warning. heuristic only — exact tokenization requires wasm.
@@ -3286,6 +3394,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }),
         ),
       );
+      // Best-effort: kill terminal shells for all sessions in this workspace.
+      const termSessions = state.sessions.filter(
+        (s) => state.terminalSessions[s.id as SessionId] === 'open',
+      );
+      void Promise.all(
+        termSessions.map((s) => invokeTerminalClose(s.id as SessionId).catch(() => undefined)),
+      );
     }
 
     const now = new Date().toISOString() as IsoDateTime;
@@ -3317,6 +3432,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionNextActions: {},
             budgetAlerts: [],
             unknownPayloadCounts: {},
+            terminalSessions: {},
           }
         : {}),
     }));
@@ -3373,7 +3489,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  runScript: async (sessionId, scriptId, cwd) => {
+  runScript: async (sessionId, scriptId, cwd, cols = 220, rows = 50) => {
     const runId = crypto.randomUUID();
 
     const writeRun = (record: ScriptRunRecord) =>
@@ -3386,25 +3502,62 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     writeRun({ status: 'pending', result: null, runId });
 
-    const settle = (status: ScriptRunStatus, result: ScriptRunResult): ScriptRunResult => {
+    // Set up the exit listener before spawning so we don't miss a fast exit.
+    let unlistenExit: () => void = () => undefined;
+    let unlistenOutput: () => void = () => undefined;
+    let resolveResult!: (r: ScriptRunResult) => void;
+    let rejectResult!: (e: unknown) => void;
+    const resultPromise = new Promise<ScriptRunResult>((res, rej) => {
+      resolveResult = res;
+      rejectResult = rej;
+    });
+
+    const STDOUT_CAP = 64 * 1024;
+    // eslint-disable-next-line no-control-regex
+    const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+    let stdoutBuf = '';
+    let truncated = false;
+
+    unlistenOutput = await listenScriptOutput((payload) => {
+      if (payload.runId !== runId) return;
+      if (truncated) return;
+      const chunk = atob(payload.data);
+      if (stdoutBuf.length + chunk.length > STDOUT_CAP) {
+        stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14));
+        truncated = true;
+      } else {
+        stdoutBuf += chunk;
+      }
+    });
+
+    unlistenExit = await listenScriptExit((payload) => {
+      if (payload.runId !== runId) return;
+      unlistenExit();
+      unlistenOutput();
       const curr = get().scriptRuns[sessionId]?.[scriptId];
-      // A newer run for this script took the slot — leave it untouched.
-      if (!curr || curr.runId !== runId) return result;
-      // A user cancel wins over the exit code the kill produces.
+      if (!curr || curr.runId !== runId) return;
+      const stdout = stdoutBuf.replace(ANSI_RE, '');
+      const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
       writeRun({
-        status: curr.status === 'cancelled' ? 'cancelled' : status,
+        status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
         result,
         runId,
       });
-      return result;
-    };
+      resolveResult(result);
+    });
 
     try {
-      const result = await invokeScriptRun(scriptId, runId, cwd);
-      return settle(result.exitCode === 0 ? 'ok' : 'error', result);
+      await invokeScriptRun(scriptId, runId, cwd, cols, rows);
     } catch (err) {
-      return settle('error', { stdout: '', stderr: formatError(err), exitCode: -1 });
+      unlistenExit();
+      unlistenOutput();
+      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
+      writeRun({ status: 'error', result, runId });
+      rejectResult(err);
+      return result;
     }
+
+    return resultPromise;
   },
 
   cancelScript: async (sessionId, scriptId) => {
@@ -3564,6 +3717,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  markAgentViewed: async (sessionId, agentId) => {
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agent = runs.find((r) => r.id === agentId);
+    if (!agent?.lastFinishedAt) return;
+    if (agent.lastViewedAt && agent.lastViewedAt >= agent.lastFinishedAt) return;
+
+    const stampedAt = new Date().toISOString() as IsoDateTime;
+    set((state) => ({
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((r) =>
+          r.id === agentId ? { ...r, lastViewedAt: stampedAt } : r,
+        ),
+      },
+    }));
+    void invokeSessionMarkViewed(agentId, stampedAt).catch(() => undefined);
+    void get().refreshUnreadWorkspaces();
+  },
+
   spawnAgent: async (sessionId, args) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
@@ -3587,6 +3759,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+    const workspaceVerbositySeed =
+      state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      readWorkspaceVerbosity(session.workspaceId) ??
+      undefined;
     const inserted = await invokePhaseRunInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -3594,6 +3770,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       name: resolvedName,
       status: 'pending',
       ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
+      ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     });
     const refreshed = await invokePhaseRunList(sessionId);
     set((s) => ({
@@ -3813,6 +3990,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set((state) => ({
         workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
       }));
+      if (overrides.defaultVerbosity !== null) {
+        writeWorkspaceVerbosity(workspaceId, overrides.defaultVerbosity);
+      }
     }
   },
 
@@ -3837,6 +4017,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => ({
       sessionOverrides: { ...state.sessionOverrides, [sessionId]: overrides },
     }));
+  },
+
+  setAgentVerbosity: async (sessionId, agentId, level) => {
+    await invokeAgentSetVerbosity(agentId, level);
+    set((state) => {
+      const runs = state.sessionPhaseRuns[sessionId] ?? [];
+      return {
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [sessionId]: runs.map((r) => (r.id === agentId ? { ...r, verbosity: level } : r)),
+        },
+      };
+    });
   },
 
   renameTask: async (sessionId, goal) => {
@@ -4153,6 +4346,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       { sessionId },
     );
   },
+
+  openTerminal: async (sessionId, cwd, cols, rows) => {
+    await invokeTerminalOpen(sessionId, cwd, cols, rows);
+    set((s) => ({ terminalSessions: { ...s.terminalSessions, [sessionId]: 'open' } }));
+  },
+
+  closeTerminal: async (sessionId) => {
+    await invokeTerminalClose(sessionId);
+    set((s) => ({ terminalSessions: { ...s.terminalSessions, [sessionId]: 'closed' } }));
+  },
 }));
 
 export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {
@@ -4165,6 +4368,7 @@ export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettin
       defaultWorkflowId: null,
       defaultBranchPrefix: DEFAULT_BRANCH_PREFIX,
       parallelEnabled: AGENT_FEATURES.parallelAgents,
+      defaultVerbosity: 'normal',
     };
 
     const workspaceOverride = workspaceId ? (state.workspaceOverrides[workspaceId] ?? null) : null;

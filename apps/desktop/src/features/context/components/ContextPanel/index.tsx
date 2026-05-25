@@ -22,6 +22,7 @@ import {
   Activity,
   ClipboardList,
   BookOpen,
+  SquareTerminal,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
@@ -45,6 +46,7 @@ import { PullRequestChip } from '../../../../features/github/components/PullRequ
 import { GithubDetailsDialog } from '../../../../features/github/components/GithubDetailsDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
+import { TerminalPanel } from '../../../../features/scripts/components/TerminalPanel';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -73,7 +75,7 @@ type SummarizerStatusKind = 'idle' | 'running' | 'error';
 const ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-type PanelTab = 'context' | 'plans' | 'files' | 'github';
+type PanelTab = 'context' | 'plans' | 'files' | 'github' | 'terminal';
 
 export function ContextPanel({
   session,
@@ -99,20 +101,12 @@ export function ContextPanel({
   const filesTouched = useFilesTouched(session.id);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
     if (!isActive) return;
     void loadDiffComments(session.id);
   }, [isActive, session.id, loadDiffComments]);
-
-  useEffect(() => {
-    if (!isActive || !branch) return;
-    if (github && github.fetchedAt !== null) return;
-    if (github?.loading) return;
-    void refreshSessionPr(session.id as SessionId);
-  }, [isActive, session.id, branch, github, refreshSessionPr]);
 
   const summarizerTotals = useMemo(() => {
     let inputTokens = 0;
@@ -130,6 +124,34 @@ export function ContextPanel({
   }, [sessionTelemetry]);
 
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+
+  // Self-heal the branch cache: an agent can `git switch` directly in the
+  // worktree, moving HEAD without going through changeSessionBranch, which
+  // leaves the sidebar footer chip on a stale branch. Read the real branch off
+  // worktree_status and write it back. Re-runs after each turn (summarizer
+  // tick) and on file-count changes — the moments a branch switch is likely.
+  const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
+  useEffect(() => {
+    if (!isActive || !workingDir) return;
+    let cancelled = false;
+    worktreeStatus(workingDir)
+      .then((status) => {
+        if (!cancelled && status.branch) {
+          void reconcileSessionBranch(session.id as SessionId, status.branch);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isActive,
+    workingDir,
+    session.id,
+    filesTouched.count,
+    summarizer.lastUpdate,
+    reconcileSessionBranch,
+  ]);
 
   const slotsByKey = new Map<string, ContextSlot>(
     slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
@@ -155,6 +177,7 @@ export function ContextPanel({
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const filesBadge = filesTouched.count > 0 ? filesTouched.count : null;
   const prState = github?.pr?.state ?? null;
+  const isTerminalOpen = useAppStore((s) => s.terminalSessions[session.id as SessionId] === 'open');
 
   return (
     <>
@@ -200,6 +223,7 @@ export function ContextPanel({
               summarizerRunning={summarizer.status === 'running'}
               filesBadge={filesBadge}
               prState={prState}
+              isTerminalOpen={isTerminalOpen}
             />
             <div className="flex shrink-0 items-center gap-1">
               <SummarizerBadge
@@ -225,38 +249,53 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* Tab content — Context / Plans / Files / GitHub. Open Questions is
-            pinned across every tab via the sticky footer below. */}
-        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
-          <div key={tab} className="flex min-h-0 flex-1 flex-col motion-safe:animate-fade-in">
-            {tab === 'context' ? (
-              <ul
-                className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
-                style={{ scrollbarGutter: 'stable' }}
-              >
-                {visibleSlotKeys.map((key) => {
-                  const slot = slotsByKey.get(key);
-                  return (
-                    <SlotRow
-                      key={key}
-                      sessionId={session.id}
-                      slotKey={key}
-                      slot={slot}
-                      loading={loading.slots}
-                      isSummarizing={summarizer.status === 'running'}
-                      onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                    />
-                  );
-                })}
-              </ul>
-            ) : tab === 'plans' ? (
-              <PlansTabContent sessionId={session.id} />
-            ) : tab === 'files' ? (
-              <FilesTabContent sessionId={session.id} workingDir={workingDir} />
-            ) : (
-              <GithubTabContent sessionId={session.id} branch={branch} />
+        {/* Tab content — Context / Plans / Files / GitHub / Terminal. Open
+            Questions is pinned across every tab via the sticky footer below.
+            Terminal is always mounted (visibility toggled) so output is not
+            lost when the user switches away mid-run. */}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={cn(
+              'absolute inset-0 flex flex-col',
+              tab !== 'terminal' && 'invisible pointer-events-none',
             )}
+          >
+            <TerminalPanel sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
+          {tab !== 'terminal' ? (
+            <div
+              key={tab}
+              className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2 motion-safe:animate-fade-in"
+            >
+              {tab === 'context' ? (
+                <ul
+                  className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
+                  style={{ scrollbarGutter: 'stable' }}
+                >
+                  {visibleSlotKeys.map((key) => {
+                    const slot = slotsByKey.get(key);
+                    return (
+                      <SlotRow
+                        key={key}
+                        sessionId={session.id}
+                        slotKey={key}
+                        slot={slot}
+                        loading={loading.slots}
+                        isSummarizing={summarizer.status === 'running'}
+                        onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                      />
+                    );
+                  })}
+                </ul>
+              ) : tab === 'plans' ? (
+                <PlansTabContent sessionId={session.id} />
+              ) : tab === 'files' ? (
+                <FilesTabContent sessionId={session.id} workingDir={workingDir} />
+              ) : (
+                <GithubTabContent sessionId={session.id} branch={branch} />
+              )}
+            </div>
+          ) : null}
         </div>
 
         <Divider />
@@ -289,6 +328,7 @@ interface TabStripProps {
   readonly summarizerRunning: boolean;
   readonly filesBadge: number | null;
   readonly prState: PullRequestStateKind | null;
+  readonly isTerminalOpen: boolean;
 }
 
 // PR state → tab-strip dot colour. Keeps GitHub status legible at a glance
@@ -309,6 +349,7 @@ function TabStrip({
   summarizerRunning,
   filesBadge,
   prState,
+  isTerminalOpen,
 }: TabStripProps) {
   return (
     <div role="tablist" aria-label="context panel tabs" className="flex items-center gap-0.5">
@@ -340,6 +381,13 @@ function TabStrip({
         icon={<GitPullRequest size={11} aria-hidden />}
         label="GitHub"
         accentDot={prState ? PR_TAB_DOT[prState] : null}
+      />
+      <TabButton
+        active={tab === 'terminal'}
+        onClick={() => onPick('terminal')}
+        icon={<SquareTerminal size={11} aria-hidden />}
+        label="Terminal"
+        accentDot={isTerminalOpen ? 'bg-info' : null}
       />
     </div>
   );

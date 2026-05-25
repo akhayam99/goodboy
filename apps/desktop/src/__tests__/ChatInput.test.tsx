@@ -13,6 +13,8 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
   interface S {
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
+    setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>;
+    workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
     skills: Record<string, never>;
     workspaceScripts: Record<string, never>;
@@ -42,6 +44,8 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
   const store = create<S>((set) => ({
     sendTurn: send,
     cancelCurrentTurn: cancel,
+    setAgentVerbosity: async () => undefined,
+    workspaceOverrides: {},
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'cursor', connection: 'connected' },
