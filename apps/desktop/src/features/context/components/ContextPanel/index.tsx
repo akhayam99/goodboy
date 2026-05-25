@@ -177,10 +177,7 @@ export function ContextPanel({
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const filesBadge = filesTouched.count > 0 ? filesTouched.count : null;
   const prState = github?.pr?.state ?? null;
-  const scriptRuns = useAppStore((s) => s.scriptRuns[session.id]);
-  const isScriptRunning = scriptRuns
-    ? Object.values(scriptRuns).some((r) => r.status === 'pending')
-    : false;
+  const isTerminalOpen = useAppStore((s) => s.terminalSessions[session.id as SessionId] === 'open');
 
   return (
     <>
@@ -226,7 +223,7 @@ export function ContextPanel({
               summarizerRunning={summarizer.status === 'running'}
               filesBadge={filesBadge}
               prState={prState}
-              isScriptRunning={isScriptRunning}
+              isTerminalOpen={isTerminalOpen}
             />
             <div className="flex shrink-0 items-center gap-1">
               <SummarizerBadge
@@ -263,7 +260,7 @@ export function ContextPanel({
               tab !== 'terminal' && 'invisible pointer-events-none',
             )}
           >
-            <TerminalPanel sessionId={session.id} isActive={tab === 'terminal'} />
+            <TerminalPanel sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
           {tab !== 'terminal' ? (
             <div
@@ -331,7 +328,7 @@ interface TabStripProps {
   readonly summarizerRunning: boolean;
   readonly filesBadge: number | null;
   readonly prState: PullRequestStateKind | null;
-  readonly isScriptRunning: boolean;
+  readonly isTerminalOpen: boolean;
 }
 
 // PR state → tab-strip dot colour. Keeps GitHub status legible at a glance
@@ -352,7 +349,7 @@ function TabStrip({
   summarizerRunning,
   filesBadge,
   prState,
-  isScriptRunning,
+  isTerminalOpen,
 }: TabStripProps) {
   return (
     <div role="tablist" aria-label="context panel tabs" className="flex items-center gap-0.5">
@@ -390,7 +387,7 @@ function TabStrip({
         onClick={() => onPick('terminal')}
         icon={<SquareTerminal size={11} aria-hidden />}
         label="Terminal"
-        accentDot={isScriptRunning ? 'bg-info' : null}
+        accentDot={isTerminalOpen ? 'bg-info' : null}
       />
     </div>
   );

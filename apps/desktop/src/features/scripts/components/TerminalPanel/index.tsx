@@ -1,14 +1,67 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { useCallback, useEffect, useRef } from 'react';
+import { Terminal, type ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import { RotateCcw } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { invokeScriptResize, invokeScriptWrite, listenScriptOutput } from '../../scripts';
+import { useThemeStore } from '../../../../shared/lib/theme';
+import {
+  invokeTerminalWrite,
+  invokeTerminalResize,
+  listenTerminalOutput,
+  listenTerminalExit,
+} from '../../../terminal/terminal';
 
 // Persists terminal output across tab switches and remounts, keyed by sessionId.
 const outputCache = new Map<SessionId, Uint8Array[]>();
 const MAX_CACHE_CHUNKS = 500;
+
+const LIGHT_THEME: ITheme = {
+  background: '#f8f8f8',
+  foreground: '#1a1a2e',
+  cursor: '#4078f2',
+  selectionBackground: '#4078f230',
+  black: '#383a42',
+  red: '#e45649',
+  green: '#50a14f',
+  yellow: '#c18401',
+  blue: '#4078f2',
+  magenta: '#a626a4',
+  cyan: '#0184bc',
+  white: '#fafafa',
+  brightBlack: '#696c77',
+  brightRed: '#e45649',
+  brightGreen: '#50a14f',
+  brightYellow: '#986801',
+  brightBlue: '#4078f2',
+  brightMagenta: '#a626a4',
+  brightCyan: '#0184bc',
+  brightWhite: '#ffffff',
+};
+
+const DARK_THEME: ITheme = {
+  background: '#1a1a1f',
+  foreground: '#e6e6e6',
+  cursor: '#8ab4f8',
+  selectionBackground: '#8ab4f840',
+  black: '#3c3c3c',
+  red: '#ff7b72',
+  green: '#7ee787',
+  yellow: '#f0c674',
+  blue: '#8ab4f8',
+  magenta: '#d2a8ff',
+  cyan: '#79c0ff',
+  white: '#d0d0d0',
+  brightBlack: '#6e7681',
+  brightRed: '#ffa198',
+  brightGreen: '#7ee787',
+  brightYellow: '#ffd66e',
+  brightBlue: '#8ab4f8',
+  brightMagenta: '#d2a8ff',
+  brightCyan: '#79c0ff',
+  brightWhite: '#ffffff',
+};
 
 function base64ToBytes(b64: string): Uint8Array {
   const binary = atob(b64);
@@ -31,25 +84,34 @@ function stringToBase64(s: string): string {
 interface TerminalPanelProps {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
+  readonly cwd: string | null;
 }
 
-export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
+export function TerminalPanel({ sessionId, isActive, cwd }: TerminalPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
 
-  const scriptRuns = useAppStore((s) => s.scriptRuns[sessionId]);
+  const openTerminal = useAppStore((s) => s.openTerminal);
+  const closeTerminal = useAppStore((s) => s.closeTerminal);
+  const theme = useThemeStore((s) => s.theme);
 
-  // Refs updated each render so event listener closures always see current values.
-  const sessionRunIdsRef = useRef(new Set<string>());
-  const activeRunIdRef = useRef<string | null>(null);
-
-  const runEntries = useMemo(() => Object.values(scriptRuns ?? {}), [scriptRuns]);
-  sessionRunIdsRef.current = useMemo(() => new Set(runEntries.map((r) => r.runId)), [runEntries]);
-  activeRunIdRef.current = useMemo(
-    () => runEntries.find((r) => r.status === 'pending')?.runId ?? null,
-    [runEntries],
-  );
+  // Restart: kill the shell, clear cached output + xterm buffer, spawn a fresh shell.
+  const handleRestart = useCallback(async () => {
+    const term = termRef.current;
+    try {
+      await closeTerminal(sessionId);
+    } catch {
+      // best-effort
+    }
+    outputCache.delete(sessionId);
+    if (term) {
+      term.reset();
+      const cols = term.cols;
+      const rows = term.rows;
+      await openTerminal(sessionId, cwd, cols, rows);
+    }
+  }, [sessionId, cwd, closeTerminal, openTerminal]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -61,28 +123,7 @@ export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
       lineHeight: 1.4,
-      theme: {
-        background: '#f8f8f8',
-        foreground: '#1a1a2e',
-        cursor: '#4078f2',
-        selectionBackground: '#4078f230',
-        black: '#383a42',
-        red: '#e45649',
-        green: '#50a14f',
-        yellow: '#c18401',
-        blue: '#4078f2',
-        magenta: '#a626a4',
-        cyan: '#0184bc',
-        white: '#fafafa',
-        brightBlack: '#696c77',
-        brightRed: '#e45649',
-        brightGreen: '#50a14f',
-        brightYellow: '#986801',
-        brightBlue: '#4078f2',
-        brightMagenta: '#a626a4',
-        brightCyan: '#0184bc',
-        brightWhite: '#ffffff',
-      },
+      theme: theme === 'dark' ? DARK_THEME : LIGHT_THEME,
     });
 
     const fitAddon = new FitAddon();
@@ -100,16 +141,15 @@ export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
     }
 
     const dataDisposable = term.onData((data) => {
-      const runId = activeRunIdRef.current;
-      if (!runId) return;
-      void invokeScriptWrite(runId, stringToBase64(data));
+      void invokeTerminalWrite(sessionId, stringToBase64(data));
     });
 
-    let unlisten: (() => void) | null = null;
+    let unlistenOutput: (() => void) | null = null;
+    let unlistenExit: (() => void) | null = null;
     let mounted = true;
 
-    listenScriptOutput((payload) => {
-      if (!sessionRunIdsRef.current.has(payload.runId)) return;
+    listenTerminalOutput((payload) => {
+      if (payload.sessionId !== sessionId) return;
       const bytes = base64ToBytes(payload.data);
       const cache = outputCache.get(sessionId) ?? [];
       if (cache.length < MAX_CACHE_CHUNKS) {
@@ -118,25 +158,32 @@ export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
       }
       if (mounted) term.write(bytes);
     }).then((fn) => {
-      if (mounted) {
-        unlisten = fn;
-      } else {
-        fn();
-      }
+      if (mounted) unlistenOutput = fn;
+      else fn();
+    });
+
+    listenTerminalExit((payload) => {
+      if (payload.sessionId !== sessionId) return;
+      if (mounted) term.writeln('\r\n\x1B[90m[shell exited — click ↻ to restart]\x1B[0m');
+    }).then((fn) => {
+      if (mounted) unlistenExit = fn;
+      else fn();
     });
 
     const ro = new ResizeObserver(() => {
       fitAddon.fit();
-      const runId = activeRunIdRef.current;
-      if (!runId) return;
-      void invokeScriptResize(runId, term.cols, term.rows);
+      void invokeTerminalResize(sessionId, term.cols, term.rows);
     });
     ro.observe(container);
+
+    // Open the bash shell on first tab visit (lazy).
+    void openTerminal(sessionId, cwd, term.cols, term.rows);
 
     return () => {
       mounted = false;
       dataDisposable.dispose();
-      unlisten?.();
+      unlistenOutput?.();
+      unlistenExit?.();
       ro.disconnect();
       term.dispose();
       termRef.current = null;
@@ -144,9 +191,15 @@ export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
     };
   }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // React to global light/dark toggle without remounting the terminal.
+  useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+    term.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+  }, [theme]);
+
   useEffect(() => {
     if (isActive) {
-      // Small delay lets the CSS visibility change settle before measuring.
       const id = requestAnimationFrame(() => {
         fitAddonRef.current?.fit();
       });
@@ -154,5 +207,18 @@ export function TerminalPanel({ sessionId, isActive }: TerminalPanelProps) {
     }
   }, [isActive]);
 
-  return <div ref={containerRef} className="size-full overflow-hidden" />;
+  return (
+    <div className="relative size-full overflow-hidden">
+      <div ref={containerRef} className="size-full overflow-hidden" />
+      <button
+        type="button"
+        onClick={() => void handleRestart()}
+        title="restart shell"
+        aria-label="restart shell"
+        className="absolute right-2 top-2 z-10 rounded-sm bg-background/80 p-1 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+      >
+        <RotateCcw size={12} aria-hidden />
+      </button>
+    </div>
+  );
 }
