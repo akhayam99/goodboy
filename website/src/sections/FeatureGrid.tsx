@@ -107,17 +107,6 @@ const Icon = {
       />
     </>
   ),
-  skill: (
-    <>
-      <path
-        d="M8 2v3M8 11v3M2 8h3M11 8h3M3.5 3.5l2 2M10.5 10.5l2 2M3.5 12.5l2-2M10.5 5.5l2-2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </>
-  ),
   worktree: (
     <>
       <circle cx="4" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
@@ -165,7 +154,7 @@ const Icon = {
 
 function IconWrap({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[oklch(0.78_0.13_200_/_0.12)] text-[oklch(0.85_0.12_200)] border border-[oklch(0.78_0.13_200_/_0.2)]">
+    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border-soft bg-muted text-primary">
       <svg width="16" height="16" viewBox="0 0 16 16">
         {children}
       </svg>
@@ -212,8 +201,8 @@ const features: Feature[] = [
     icon: <IconWrap>{Icon.github}</IconWrap>,
   },
   {
-    title: 'Budget control',
-    body: 'Per-provider monthly caps. Per-session soft caps. Configurable threshold alerts. Real-time USD next to every turn.',
+    title: 'Session cost',
+    body: 'Real-time USD next to every turn. Running total per session. Optional soft cap so a runaway agent stops before it stings.',
     span: '',
     icon: <IconWrap>{Icon.budget}</IconWrap>,
   },
@@ -222,12 +211,6 @@ const features: Feature[] = [
     body: 'Tool-call interception, static rule matching, audit trail. Run agents autonomously without losing the kill switch.',
     span: 'lg:col-span-2',
     icon: <IconWrap>{Icon.permission}</IconWrap>,
-  },
-  {
-    title: 'Skills & slash-commands',
-    body: 'Workspace-scoped automation (.kay/skills/). Markdown + scripts. Invoke /skill in chat across any provider.',
-    span: '',
-    icon: <IconWrap>{Icon.skill}</IconWrap>,
   },
   {
     title: 'Git worktrees',
@@ -243,7 +226,7 @@ const features: Feature[] = [
   },
   {
     title: 'Notifications & nudges',
-    body: 'Budget alerts, PR state changes, session events. Toast for transient, feed for full history. No spam.',
+    body: 'PR state changes, session events, soft-cap warnings. Toast for transient, feed for full history. No spam.',
     span: '',
     icon: <IconWrap>{Icon.notif}</IconWrap>,
   },
@@ -270,7 +253,7 @@ function ContextVisual() {
       {slots.map((s) => (
         <div
           key={s.label}
-          className="rounded-md border border-[oklch(0.36_0.012_255)] bg-[oklch(0.22_0.007_255)] px-3 py-2 flex items-center gap-3"
+          className="rounded-md border border-border-soft bg-[oklch(0.27_0.008_255)] px-3 py-2 flex items-center gap-3"
         >
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: s.tone }} />
           <span className="text-[10.5px] uppercase tracking-wider text-[oklch(0.58_0.015_255)] w-20 shrink-0">
@@ -285,35 +268,33 @@ function ContextVisual() {
 
 export function FeatureGrid() {
   return (
-    <section id="features" className="py-24 relative">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="max-w-2xl mb-16">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-[oklch(0.82_0.12_200)] pb-3">
+    <section id="features" className="relative py-24 sm:py-28">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mb-16 max-w-2xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
             Features
-          </div>
-          <h2 className="text-[38px] sm:text-[50px] tracking-[-0.025em] font-bold leading-[1.02]">
-            <span className="gradient-text">Everything an agent needs</span>
-            <br />
-            <span className="gradient-text-accent">to work alongside you.</span>
+          </p>
+          <h2 className="mt-4 text-3xl sm:text-4xl leading-[1.05] tracking-[-0.025em] font-semibold text-foreground">
+            Everything an agent needs to work alongside you.
           </h2>
-          <p className="mt-5 text-[16px] text-[oklch(0.70_0.012_255)] leading-relaxed">
+          <p className="mt-5 max-w-prose text-[15px] leading-[1.7] text-muted-foreground">
             Twelve building blocks. They compose. They stay out of your way until you need them.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:auto-rows-[230px]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[230px]">
           {features.map((f) => (
             <article
               key={f.title}
               className={[
-                'card-glow p-6 group hover:border-[oklch(0.50_0.06_200)] transition-colors',
+                'rounded-xl border border-border-soft bg-subtle p-6 transition-colors hover:border-border',
                 f.span,
               ].join(' ')}
             >
               <div className="flex items-start justify-between">{f.icon}</div>
-              <h3 className="mt-4 text-[16px] font-semibold tracking-[-0.01em]">{f.title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[oklch(0.78_0.01_255)]">
-                {f.body}
-              </p>
+              <h3 className="mt-4 text-[15px] font-semibold tracking-[-0.005em] text-foreground">
+                {f.title}
+              </h3>
+              <p className="mt-1.5 text-[13px] leading-[1.65] text-muted-foreground">{f.body}</p>
               {f.visual}
             </article>
           ))}

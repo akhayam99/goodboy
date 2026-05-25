@@ -11,38 +11,34 @@ const items = [
 
 export function Stack() {
   return (
-    <section id="stack" className="py-24 relative">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-16 items-start">
+    <section id="stack" className="relative py-24 sm:py-28">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid items-start gap-16 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-[oklch(0.82_0.12_200)] pb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
               Architecture
-            </div>
-            <h2 className="text-[38px] sm:text-[50px] tracking-[-0.025em] font-bold leading-[1.02]">
-              <span className="gradient-text">Native shell.</span>
-              <br />
-              <span className="gradient-text-accent">Modern web underneath.</span>
+            </p>
+            <h2 className="mt-4 text-3xl sm:text-4xl leading-[1.05] tracking-[-0.025em] font-semibold text-foreground">
+              Native shell. Modern web underneath.
             </h2>
-            <p className="mt-6 text-[16px] text-[oklch(0.70_0.012_255)] leading-[1.65]">
+            <p className="mt-6 max-w-prose text-[15px] leading-[1.7] text-muted-foreground">
               Tauri shell wrapping a React + TypeScript surface. SQLite stores everything locally.
               API keys live in your OS credential store. Nothing leaves the machine unless an agent
               calls a provider you authorized.
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {items.map((i) => (
               <div
                 key={i.label}
-                className="card-glow p-4 aspect-square flex flex-col justify-between"
+                className="flex aspect-square flex-col justify-between rounded-xl border border-border-soft bg-subtle p-4"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[oklch(0.78_0.13_200_/_0.12)] text-[oklch(0.85_0.12_200)] border border-[oklch(0.78_0.13_200_/_0.2)] text-[12px] font-mono font-semibold">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border-soft bg-muted font-mono text-[12px] font-semibold text-primary">
                   {i.glyph}
                 </div>
                 <div>
-                  <div className="text-[13px] font-medium text-[oklch(0.92_0.006_90)]">
-                    {i.label}
-                  </div>
-                  <div className="text-[10.5px] text-[oklch(0.68_0.015_255)]">{i.sub}</div>
+                  <div className="text-[13px] font-medium text-foreground">{i.label}</div>
+                  <div className="text-[11px] text-muted-foreground">{i.sub}</div>
                 </div>
               </div>
             ))}

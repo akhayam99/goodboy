@@ -2,36 +2,38 @@ import { Logo } from '../components/Logo';
 
 export function Footer() {
   return (
-    <footer className="border-t border-[oklch(0.36_0.012_255_/_0.5)] py-10 mt-8">
-      <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-5">
+    <footer className="mt-8 border-t border-border-soft/60 py-10">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 px-6 sm:flex-row">
         <div className="flex items-center gap-4">
           <Logo size={22} />
-          <span className="text-[11.5px] text-[oklch(0.58_0.015_255)]">© 2026 · MIT licensed</span>
+          <span className="text-[12px] text-muted-foreground">© 2026 &middot; MIT licensed</span>
         </div>
-        <nav className="flex items-center gap-5 text-[12px] text-[oklch(0.78_0.01_255)]">
+        <nav className="flex items-center gap-5 text-[12.5px] text-muted-foreground">
           <a
             href="https://github.com/akhayam99/goodboy"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-[oklch(0.95_0.005_90)]"
+            className="transition-colors hover:text-foreground"
           >
             GitHub
           </a>
-          <a href="#features" className="hover:text-[oklch(0.95_0.005_90)]">
+          <a href="#features" className="transition-colors hover:text-foreground">
             Features
           </a>
-          <a href="#stack" className="hover:text-[oklch(0.95_0.005_90)]">
+          <a href="#stack" className="transition-colors hover:text-foreground">
             Stack
           </a>
-          <a href="#cta" className="hover:text-[oklch(0.95_0.005_90)]">
+          <a href="#cta" className="transition-colors hover:text-foreground">
             Install
           </a>
-          <span className="text-[oklch(0.45_0.015_255)]">·</span>
+          <span className="text-border" aria-hidden>
+            &middot;
+          </span>
           <a
             href="https://github.com/akhayam99/goodboy/blob/main/README.md"
             target="_blank"
             rel="noreferrer"
-            className="font-mono text-[oklch(0.78_0.01_255)] hover:text-[oklch(0.95_0.005_90)]"
+            className="font-mono transition-colors hover:text-foreground"
           >
             Docs
           </a>
