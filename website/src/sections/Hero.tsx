@@ -1,3 +1,4 @@
+import { DogMascot } from '../components/DogMascot';
 import { LinkButton } from '../components/ui';
 import { SessionsSnapshot, ContextSnapshot } from '../mockups/Snapshots';
 
@@ -6,13 +7,23 @@ export function Hero() {
     <section className="relative pt-16 pb-24 sm:pt-24 sm:pb-28">
       <div className="relative mx-auto max-w-6xl px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="rise text-[40px] sm:text-[60px] lg:text-[72px] leading-[1.02] tracking-[-0.035em] font-semibold text-foreground">
-            AI workspace orchestrator.
-          </h1>
+          <div className="rise relative mx-auto inline-flex flex-col pb-7">
+            <h1 className="flex items-center gap-2 sm:gap-3 text-[48px] sm:text-[68px] lg:text-[80px] leading-[0.95] tracking-[-0.035em] font-semibold text-foreground">
+              <DogMascot size={96} className="shrink-0 text-primary" />
+              <span>Goodboy</span>
+            </h1>
+
+            <p
+              className="rise absolute inset-x-0 top-full -mt-1 text-center text-[15px] sm:text-[17px] font-medium leading-[1.2] tracking-[-0.005em] text-primary"
+              style={{ animationDelay: '80ms' }}
+            >
+              AI workspace orchestrator.
+            </p>
+          </div>
 
           <p
-            className="rise mx-auto mt-6 max-w-xl text-[16px] sm:text-[17px] leading-[1.6] text-muted-foreground"
-            style={{ animationDelay: '60ms' }}
+            className="rise mx-auto mt-7 max-w-xl text-[15px] sm:text-[16px] leading-[1.6] text-muted-foreground"
+            style={{ animationDelay: '120ms' }}
           >
             Route agents across Claude, Cursor, and Codex without re-explaining the goal. Shared
             context, structured plans, real-time cost. Local-first. Your keys, your machine.
@@ -20,7 +31,7 @@ export function Hero() {
 
           <div
             className="rise mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            style={{ animationDelay: '120ms' }}
+            style={{ animationDelay: '180ms' }}
           >
             <LinkButton href="#cta" size="lg" variant="primary">
               Clone &amp; run
@@ -41,7 +52,7 @@ export function Hero() {
 
           <p
             className="rise mt-6 text-[12.5px] text-muted-foreground/75"
-            style={{ animationDelay: '180ms' }}
+            style={{ animationDelay: '240ms' }}
           >
             MIT licensed &middot; macOS, Windows, Linux &middot; Bring your own subscription
           </p>
@@ -51,7 +62,7 @@ export function Hero() {
             page rhythm. The deep-dive sections below carry the full tour. */}
         <div
           className="rise relative mx-auto mt-20 flex max-w-4xl flex-col items-center justify-center gap-6 sm:flex-row sm:items-end"
-          style={{ animationDelay: '260ms' }}
+          style={{ animationDelay: '320ms' }}
         >
           <div className="w-full max-w-[420px] sm:translate-y-3">
             <SessionsSnapshot />
