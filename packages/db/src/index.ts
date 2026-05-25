@@ -12,6 +12,7 @@ export {
   findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
+  touchWorkspaceLastAccessed,
   deleteWorkspace,
 } from './queries/workspace';
 export {

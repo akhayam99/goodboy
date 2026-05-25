@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Divider, Input, Popover, ScrollArea, cn } from '@goodboy/ui';
+import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -86,8 +85,10 @@ import {
   writeArchivedSessions,
 } from '../../../../shared/lib/archived-sessions';
 import { WorkspaceSelect } from '../WorkspaceSelect';
+import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -98,8 +99,6 @@ interface WorkspacesSidebarProps {
 
 const FOOTER_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
-
-const PREVIEW_LIST_ITEM = 'rounded bg-subtle px-3 py-2 text-xs' as const;
 
 const SECTION_LABEL =
   'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
@@ -266,7 +265,7 @@ export function WorkspacesSidebar({
         </div>
       </div>
 
-      <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
+      <WorkspaceLinkDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
       {currentWorkspace ? (
@@ -577,224 +576,6 @@ function useArchivedSessions(): [
     });
   }, []);
   return [map, archive, unarchive];
-}
-
-interface AddWorkspaceDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-export function AddWorkspaceDialog({ open, onClose }: AddWorkspaceDialogProps) {
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
-  const addWorkspace = useAppStore((s) => s.addWorkspace);
-  const workspaces = useWorkspaces();
-  const atCap = workspaces.length >= MAX_WORKSPACES;
-  const [path, setPath] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [activeSection, setActiveSection] = useState<'repo' | 'skills' | 'workflows'>('repo');
-
-  const reset = () => {
-    setPath('');
-    setError(null);
-    setBusy(false);
-    setActiveSection('repo');
-  };
-
-  const onPick = async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked === 'string') {
-      setPath(picked);
-      setError(null);
-    }
-  };
-
-  const onAdd = async () => {
-    setError(null);
-    setBusy(true);
-    try {
-      const ws = await addWorkspace({ rootPath: path });
-      await setCurrentWorkspace(ws.id);
-      reset();
-      onClose();
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="Add workspace"
-      description="point at a git repository on disk. each task creates its own worktree."
-      size="lg"
-      footer={
-        <>
-          {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
-          <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-          <Button onClick={() => void onAdd()} disabled={path.length === 0 || busy || atCap}>
-            {busy ? 'Adding…' : 'Add workspace'}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex h-full min-h-0 gap-0">
-        <nav className="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2">
-          <AddWsNavItem
-            active={activeSection === 'repo'}
-            onClick={() => setActiveSection('repo')}
-            label="repository"
-            ready={path.length > 0}
-          />
-          {WORKSPACE_FEATURES.skills ? (
-            <AddWsNavItem
-              active={activeSection === 'skills'}
-              onClick={() => setActiveSection('skills')}
-              label="skills"
-              ready={null}
-            />
-          ) : null}
-          <AddWsNavItem
-            active={activeSection === 'workflows'}
-            onClick={() => setActiveSection('workflows')}
-            label="workflows"
-            ready={null}
-          />
-        </nav>
-
-        <div className="min-w-0 flex-1 overflow-y-auto pl-4">
-          {activeSection === 'repo' ? (
-            <div className="flex flex-col gap-1.5">
-              {atCap ? (
-                <div className="mb-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">
-                  Workspace limit reached ({MAX_WORKSPACES}). Disconnect one from the sidebar before
-                  adding another.
-                </div>
-              ) : null}
-              <span className="text-xs font-semibold text-foreground">repository path</span>
-              <div className="flex gap-2">
-                <Input
-                  autoFocus
-                  value={path}
-                  placeholder="/path/to/repo"
-                  onChange={(e) => setPath(e.target.value)}
-                  className="flex-1"
-                />
-                <Button variant="secondary" onClick={() => void onPick()} disabled={busy}>
-                  Browse
-                </Button>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                the directory must contain a `.git` folder.
-              </p>
-            </div>
-          ) : null}
-
-          {activeSection === 'skills' ? <AddWsSkillsPreview /> : null}
-
-          {activeSection === 'workflows' ? <AddWsWorkflowsPreview /> : null}
-        </div>
-      </div>
-    </Dialog>
-  );
-}
-
-function AddWsNavItem({
-  active,
-  onClick,
-  label,
-  ready,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  ready: boolean | null;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors',
-        active
-          ? 'bg-muted font-medium text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-      )}
-    >
-      <span className="flex-1">{label}</span>
-      {ready === true ? (
-        <span aria-label="filled" className="text-success text-2xs">
-          ✓
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function AddWsSkillsPreview() {
-  return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <h3 className="text-xs font-semibold text-foreground">skills discovered on add</h3>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          after the workspace is registered, kay.am scans these locations and surfaces every skill
-          it finds in chat as `/skill-name`. you don&rsquo;t need to author anything here; existing
-          files are picked up automatically.
-        </p>
-      </div>
-      <ul className="flex flex-col gap-1.5">
-        <li className={PREVIEW_LIST_ITEM}>
-          <code className="font-mono text-foreground">&lt;root&gt;/.kay/skills/*.md</code>
-          <p className="mt-1 leading-relaxed text-muted-foreground">
-            flat directory of single-file skills (front-matter + body).
-          </p>
-        </li>
-        <li className={PREVIEW_LIST_ITEM}>
-          <code className="font-mono text-foreground">
-            &lt;root&gt;/.claude/skills/&lt;name&gt;/SKILL.md
-          </code>
-          <p className="mt-1 leading-relaxed text-muted-foreground">
-            claude-cli-style skills (one folder per skill, optional sibling scripts).
-          </p>
-        </li>
-      </ul>
-      <p className="text-2xs text-muted-foreground/70">
-        re-scan anytime from settings &rarr; skills.
-      </p>
-    </div>
-  );
-}
-
-function AddWsWorkflowsPreview() {
-  return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <h3 className="text-xs font-semibold text-foreground">workflow library auto-seeded</h3>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          new workspaces get a small library of presets so the new-task dialog is never empty. you
-          can edit, delete, or design custom ones via the planner later.
-        </p>
-      </div>
-      <ul className="flex flex-col gap-1.5">
-        {WORKFLOW_LIBRARY.map((entry) => (
-          <li key={entry.slug} className={PREVIEW_LIST_ITEM}>
-            <div className="flex items-baseline justify-between">
-              <span className="font-medium text-foreground">{entry.name.toLowerCase()}</span>
-              <span className="text-2xs text-muted-foreground">
-                {entry.steps.length} step{entry.steps.length === 1 ? '' : 's'}
-              </span>
-            </div>
-            <p className="mt-1 leading-relaxed text-muted-foreground">{entry.description}</p>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 interface AgentsSectionProps {
@@ -1686,21 +1467,6 @@ function findContextWindow(model: string): number | null {
     if (m) return m.contextWindow;
   }
   return null;
-}
-
-function formatRelativeDuration(fromIso: string, toIso?: string): string {
-  const fromMs = Date.parse(fromIso);
-  if (Number.isNaN(fromMs)) return '';
-  const toMs = toIso ? Date.parse(toIso) : Date.now();
-  if (Number.isNaN(toMs)) return '';
-  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
-  if (diff < 60) return `${diff}s`;
-  const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  return `${d}d`;
 }
 
 function AgentLifetime({ run }: { run: Agent }) {

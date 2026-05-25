@@ -21,6 +21,8 @@ export type Workspace = Readonly<{
    * adding a workspace pointing at the same `rootPath`.
    */
   disconnectedAt?: IsoDateTime;
+  /** Last time this workspace was switched to or added. Used to rank recent workspaces. */
+  lastAccessedAt?: IsoDateTime;
 }>;
 
 export type ContextSlot = Readonly<{

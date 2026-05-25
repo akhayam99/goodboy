@@ -8,10 +8,8 @@ import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ToastProvider } from './app/components/Toast';
-import {
-  WorkspacesSidebar,
-  AddWorkspaceDialog,
-} from './features/workspace/components/WorkspacesSidebar';
+import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
@@ -299,7 +297,7 @@ export function App() {
           }}
         />
       ) : null}
-      <AddWorkspaceDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
+      <WorkspaceLinkDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
       {currentSession ? (
         <EndSessionDialog
           session={currentSession}

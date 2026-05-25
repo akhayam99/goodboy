@@ -922,32 +922,17 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     </div>
   </div>
   <dialog
-    aria-describedby="_r_0_-desc"
-    aria-labelledby="_r_0_-title"
     class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   >
     <div
-      class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+      class="flex min-h-0 flex-col h-[420px] w-[44rem]"
     >
       <header
         class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
       >
         <div
           class="flex min-w-0 flex-col gap-1"
-        >
-          <h2
-            class="text-sm font-semibold tracking-tight text-foreground"
-            id="_r_0_-title"
-          >
-            Add workspace
-          </h2>
-          <p
-            class="text-xs leading-relaxed text-muted-foreground"
-            id="_r_0_-desc"
-          >
-            point at a git repository on disk. each task creates its own worktree.
-          </p>
-        </div>
+        />
         <button
           aria-label="close"
           class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
@@ -967,38 +952,89 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         role="separator"
       />
       <div
-        class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+        class="flex min-h-0 flex-1 overflow-hidden"
       >
         <div
-          class="flex h-full min-h-0 gap-0"
+          class="flex shrink-0 flex-col gap-0.5 px-3 py-5 w-44"
         >
-          <nav
-            class="flex w-40 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border-soft pr-2"
-          >
-            <button
-              class="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
-              type="button"
-            >
-              <span
-                class="flex-1"
-              >
-                repository
-              </span>
-            </button>
-            <button
-              class="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              type="button"
-            >
-              <span
-                class="flex-1"
-              >
-                workflows
-              </span>
-            </button>
-          </nav>
           <div
-            class="min-w-0 flex-1 overflow-y-auto pl-4"
+            class="flex flex-col gap-3"
           >
+            <div
+              class="flex flex-col gap-0.5"
+            >
+              <button
+                class="flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm motion-safe:transition-colors bg-muted font-medium text-foreground"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-plus"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12h14"
+                  />
+                  <path
+                    d="M12 5v14"
+                  />
+                </svg>
+                Add new
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          aria-orientation="vertical"
+          class="w-px self-stretch bg-gradient-to-b from-transparent via-border-soft to-transparent"
+          role="separator"
+        />
+        <div
+          class="flex min-w-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+        >
+          <div
+            class="flex flex-col gap-3"
+          >
+            <div
+              class="flex items-center gap-2"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-folder-plus shrink-0 text-muted-foreground"
+                fill="none"
+                height="15"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="15"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 10v6"
+                />
+                <path
+                  d="M9 13h6"
+                />
+                <path
+                  d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+                />
+              </svg>
+              <span
+                class="font-semibold"
+              >
+                add repository
+              </span>
+            </div>
             <div
               class="flex flex-col gap-1.5"
             >
@@ -1026,7 +1062,11 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
               <p
                 class="text-xs leading-relaxed text-muted-foreground"
               >
-                the directory must contain a \`.git\` folder.
+                the directory must contain a 
+                <code>
+                  .git
+                </code>
+                 folder.
               </p>
             </div>
           </div>
@@ -1047,11 +1087,12 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
           Cancel
         </button>
         <button
+          aria-busy="false"
           class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
           disabled=""
           type="button"
         >
-          Add workspace
+          Link repository
         </button>
       </footer>
     </div>

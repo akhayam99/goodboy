@@ -46,6 +46,7 @@ vi.mock('@goodboy/db', () => ({
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
+  touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   updateProviderRunStatus: vi.fn(),
   updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
