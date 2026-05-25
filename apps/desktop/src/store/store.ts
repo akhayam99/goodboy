@@ -189,10 +189,13 @@ import {
 import {
   invokeScriptRun,
   invokeScriptCancel,
+  listenScriptExit,
+  listenScriptOutput,
   type ScriptRunResult,
   type ScriptRunRecord,
   type ScriptRunStatus,
 } from '../features/scripts/scripts';
+import { invokeTerminalOpen, invokeTerminalClose } from '../features/terminal/terminal';
 import {
   invokePermissionRuleList,
   invokePermissionRuleUpsert,
@@ -383,6 +386,7 @@ export interface AppState {
    */
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
+  readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
 }
 
 export interface SessionLoadingFlags {
@@ -523,6 +527,8 @@ export interface AppActions {
     sessionId: SessionId,
     scriptId: WorkspaceScriptId,
     cwd: string,
+    cols?: number,
+    rows?: number,
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
@@ -641,6 +647,8 @@ export interface AppActions {
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
+  openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
+  closeTerminal(sessionId: SessionId): Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -706,6 +714,7 @@ const initialState: AppState = {
   planConsumptions: {},
   sessionLoading: {},
   sessionViewPrefs: {},
+  terminalSessions: {},
 };
 
 function mergeSlots(
@@ -3375,6 +3384,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }),
         ),
       );
+      // Best-effort: kill terminal shells for all sessions in this workspace.
+      const termSessions = state.sessions.filter(
+        (s) => state.terminalSessions[s.id as SessionId] === 'open',
+      );
+      void Promise.all(
+        termSessions.map((s) => invokeTerminalClose(s.id as SessionId).catch(() => undefined)),
+      );
     }
 
     const now = new Date().toISOString() as IsoDateTime;
@@ -3406,6 +3422,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sessionNextActions: {},
             budgetAlerts: [],
             unknownPayloadCounts: {},
+            terminalSessions: {},
           }
         : {}),
     }));
@@ -3462,7 +3479,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  runScript: async (sessionId, scriptId, cwd) => {
+  runScript: async (sessionId, scriptId, cwd, cols = 220, rows = 50) => {
     const runId = crypto.randomUUID();
 
     const writeRun = (record: ScriptRunRecord) =>
@@ -3475,25 +3492,62 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     writeRun({ status: 'pending', result: null, runId });
 
-    const settle = (status: ScriptRunStatus, result: ScriptRunResult): ScriptRunResult => {
+    // Set up the exit listener before spawning so we don't miss a fast exit.
+    let unlistenExit: () => void = () => undefined;
+    let unlistenOutput: () => void = () => undefined;
+    let resolveResult!: (r: ScriptRunResult) => void;
+    let rejectResult!: (e: unknown) => void;
+    const resultPromise = new Promise<ScriptRunResult>((res, rej) => {
+      resolveResult = res;
+      rejectResult = rej;
+    });
+
+    const STDOUT_CAP = 64 * 1024;
+    // eslint-disable-next-line no-control-regex
+    const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+    let stdoutBuf = '';
+    let truncated = false;
+
+    unlistenOutput = await listenScriptOutput((payload) => {
+      if (payload.runId !== runId) return;
+      if (truncated) return;
+      const chunk = atob(payload.data);
+      if (stdoutBuf.length + chunk.length > STDOUT_CAP) {
+        stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14));
+        truncated = true;
+      } else {
+        stdoutBuf += chunk;
+      }
+    });
+
+    unlistenExit = await listenScriptExit((payload) => {
+      if (payload.runId !== runId) return;
+      unlistenExit();
+      unlistenOutput();
       const curr = get().scriptRuns[sessionId]?.[scriptId];
-      // A newer run for this script took the slot — leave it untouched.
-      if (!curr || curr.runId !== runId) return result;
-      // A user cancel wins over the exit code the kill produces.
+      if (!curr || curr.runId !== runId) return;
+      const stdout = stdoutBuf.replace(ANSI_RE, '');
+      const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
       writeRun({
-        status: curr.status === 'cancelled' ? 'cancelled' : status,
+        status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
         result,
         runId,
       });
-      return result;
-    };
+      resolveResult(result);
+    });
 
     try {
-      const result = await invokeScriptRun(scriptId, runId, cwd);
-      return settle(result.exitCode === 0 ? 'ok' : 'error', result);
+      await invokeScriptRun(scriptId, runId, cwd, cols, rows);
     } catch (err) {
-      return settle('error', { stdout: '', stderr: formatError(err), exitCode: -1 });
+      unlistenExit();
+      unlistenOutput();
+      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
+      writeRun({ status: 'error', result, runId });
+      rejectResult(err);
+      return result;
     }
+
+    return resultPromise;
   },
 
   cancelScript: async (sessionId, scriptId) => {
@@ -4281,6 +4335,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       undefined,
       { sessionId },
     );
+  },
+
+  openTerminal: async (sessionId, cwd, cols, rows) => {
+    await invokeTerminalOpen(sessionId, cwd, cols, rows);
+    set((s) => ({ terminalSessions: { ...s.terminalSessions, [sessionId]: 'open' } }));
+  },
+
+  closeTerminal: async (sessionId) => {
+    await invokeTerminalClose(sessionId);
+    set((s) => ({ terminalSessions: { ...s.terminalSessions, [sessionId]: 'closed' } }));
   },
 }));
 

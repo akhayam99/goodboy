@@ -1,32 +1,65 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { WorkspaceScriptId } from '@goodboy/types';
 
-/** Result of running a workspace script. Mirrors the Rust `ScriptRunResult`. */
 export interface ScriptRunResult {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number;
 }
 
-/** Run state for a script row in the Scripts panel. */
 export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error' | 'cancelled';
 
-/** A tracked script run for one (session, script) pair, held in the store. */
 export interface ScriptRunRecord {
   readonly status: ScriptRunStatus;
   readonly result: ScriptRunResult | null;
   readonly runId: string;
 }
 
-export async function invokeScriptRun(
+export interface ScriptOutputPayload {
+  readonly runId: string;
+  readonly data: string;
+}
+
+export interface ScriptExitPayload {
+  readonly runId: string;
+  readonly exitCode: number;
+}
+
+/** Start a pty-backed script run. Returns immediately; output streams via events. */
+export function invokeScriptRun(
   scriptId: WorkspaceScriptId,
   runId: string,
   cwd: string,
-): Promise<ScriptRunResult> {
-  return invoke<ScriptRunResult>('workspace_script_run', { scriptId, runId, cwd });
+  cols: number,
+  rows: number,
+): Promise<void> {
+  return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows });
+}
+
+/** Send keyboard input (base64-encoded) to a running pty. */
+export function invokeScriptWrite(runId: string, data: string): Promise<void> {
+  return invoke<void>('workspace_script_write', { runId, data });
+}
+
+/** Notify the pty of a terminal resize. */
+export function invokeScriptResize(runId: string, cols: number, rows: number): Promise<void> {
+  return invoke<void>('workspace_script_resize', { runId, cols, rows });
 }
 
 /** Interrupt an in-flight script run. No-op if the run already finished. */
-export async function invokeScriptCancel(runId: string): Promise<void> {
+export function invokeScriptCancel(runId: string): Promise<void> {
   return invoke<void>('workspace_script_cancel', { runId });
+}
+
+export function listenScriptOutput(
+  handler: (payload: ScriptOutputPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<ScriptOutputPayload>('script-output', (e) => handler(e.payload));
+}
+
+export function listenScriptExit(
+  handler: (payload: ScriptExitPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<ScriptExitPayload>('script-exit', (e) => handler(e.payload));
 }
