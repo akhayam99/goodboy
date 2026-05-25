@@ -6,12 +6,7 @@ export function RoutingDeepDive() {
       id="routing"
       eyebrow="Routing & budget"
       reverse
-      title={
-        <>
-          <span className="gradient-text">Three providers.</span>{' '}
-          <span className="gradient-text-accent">One ledger.</span>
-        </>
-      }
+      title={<>Three providers. One ledger.</>}
       body={
         <>
           <p>
@@ -38,8 +33,8 @@ export function RoutingDeepDive() {
 
 function RoutingMockup() {
   return (
-    <div className="card-glow p-5">
-      <div className="flex items-center justify-between pb-4 border-b border-[oklch(0.36_0.012_255)]">
+    <div className="rounded-xl border border-border-soft bg-subtle p-5 shadow-md">
+      <div className="flex items-center justify-between pb-4 border-b border-border-soft">
         <div>
           <div className="text-[11px] uppercase tracking-wider text-[oklch(0.58_0.015_255)]">
             Budget · May 2026
@@ -127,7 +122,7 @@ function BudgetCard({
 }) {
   const pct = Math.round((spent / cap) * 100);
   return (
-    <div className="rounded-lg border border-[oklch(0.36_0.012_255)] bg-[oklch(0.22_0.007_255)] p-3">
+    <div className="rounded-lg border border-border-soft bg-[oklch(0.27_0.008_255)] p-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
@@ -143,17 +138,14 @@ function BudgetCard({
           <div className="text-[10px] text-[oklch(0.58_0.015_255)]">of ${cap} cap</div>
         </div>
       </div>
-      <div className="mt-2.5 h-1.5 rounded-full bg-[oklch(0.30_0.010_255)] overflow-hidden">
-        <div
-          className="h-full rounded-full bar-grow"
-          style={{ width: `${pct}%`, background: color }}
-        />
+      <div className="mt-2.5 h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
       <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
         {tasks.map((t) => (
           <span
             key={t}
-            className="text-[10px] rounded px-1.5 py-0.5 bg-[oklch(0.28_0.010_255)] text-[oklch(0.78_0.01_255)] font-mono"
+            className="text-[10px] rounded px-1.5 py-0.5 bg-muted text-[oklch(0.78_0.01_255)] font-mono"
           >
             {t}
           </span>

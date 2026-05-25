@@ -6,12 +6,7 @@ export function GithubDeepDive() {
       id="github"
       eyebrow="GitHub"
       reverse
-      title={
-        <>
-          <span className="gradient-text">PRs live</span>{' '}
-          <span className="gradient-text-accent">where you work.</span>
-        </>
-      }
+      title={<>PRs live where you work.</>}
       body={
         <>
           <p>
@@ -37,8 +32,8 @@ export function GithubDeepDive() {
 
 function GithubMockup() {
   return (
-    <div className="card-glow p-5">
-      <div className="flex items-center justify-between pb-3 border-b border-[oklch(0.36_0.012_255)]">
+    <div className="rounded-xl border border-border-soft bg-subtle p-5 shadow-md">
+      <div className="flex items-center justify-between pb-3 border-b border-border-soft">
         <div className="flex items-center gap-2.5">
           <svg width="18" height="18" viewBox="0 0 16 16" className="text-[oklch(0.86_0.008_90)]">
             <path
@@ -88,11 +83,11 @@ function GithubMockup() {
           reviews={['ci red']}
         />
       </div>
-      <div className="mt-4 pt-3 border-t border-[oklch(0.36_0.012_255)]">
+      <div className="mt-4 pt-3 border-t border-border-soft">
         <div className="text-[10.5px] uppercase tracking-wider text-[oklch(0.58_0.015_255)] pb-2">
           Latest diff comment · PR #617
         </div>
-        <div className="rounded-lg border border-[oklch(0.36_0.012_255)] bg-[oklch(0.22_0.007_255)] p-3">
+        <div className="rounded-lg border border-border-soft bg-[oklch(0.27_0.008_255)] p-3">
           <div className="flex items-center gap-2 text-[10.5px] text-[oklch(0.68_0.015_255)]">
             <span className="inline-flex items-center gap-1 rounded chip-anthropic px-1.5 py-0.5">
               claude-reviewer
@@ -135,7 +130,7 @@ function PR({
   const stateChip =
     state === 'merged' ? 'chip-merged' : state === 'draft' ? 'chip-warning' : 'chip-success';
   return (
-    <div className="rounded-lg border border-[oklch(0.36_0.012_255)] bg-[oklch(0.22_0.007_255)] p-3">
+    <div className="rounded-lg border border-border-soft bg-[oklch(0.27_0.008_255)] p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[11px] font-mono text-[oklch(0.58_0.015_255)]">#{num}</span>

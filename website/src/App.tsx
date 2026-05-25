@@ -1,5 +1,6 @@
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
+import { Letter } from './sections/Letter';
 import { LogoStrip } from './sections/LogoStrip';
 import { FeatureGrid } from './sections/FeatureGrid';
 import { ContextDeepDive } from './sections/ContextDeepDive';
@@ -17,6 +18,7 @@ export function App() {
       <Nav />
       <main>
         <Hero />
+        <Letter />
         <LogoStrip />
         <FeatureGrid />
         <ContextDeepDive />

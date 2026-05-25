@@ -37,13 +37,6 @@ export const IconPlus = (p: P) => (
     <path d="M5 12h14M12 5v14" />
   </S>
 );
-export const IconMore = (p: P) => (
-  <S {...p}>
-    <circle cx="12" cy="12" r="1" />
-    <circle cx="19" cy="12" r="1" />
-    <circle cx="5" cy="12" r="1" />
-  </S>
-);
 export const IconSettings = (p: P) => (
   <S {...p}>
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
@@ -107,11 +100,6 @@ export const IconWorkflow = (p: P) => (
     <rect width="8" height="8" x="3" y="3" rx="2" />
     <path d="M7 11v4a2 2 0 0 0 2 2h4" />
     <rect width="8" height="8" x="13" y="13" rx="2" />
-  </S>
-);
-export const IconPlay = (p: P) => (
-  <S {...p}>
-    <polygon points="6 3 20 12 6 21 6 3" />
   </S>
 );
 export const IconSearch = (p: P) => (
@@ -188,10 +176,5 @@ export const IconArchive = (p: P) => (
   <S {...p}>
     <rect width="20" height="5" x="2" y="3" rx="1" />
     <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4" />
-  </S>
-);
-export const IconCheck = (p: P) => (
-  <S {...p}>
-    <path d="M20 6 9 17l-5-5" />
   </S>
 );

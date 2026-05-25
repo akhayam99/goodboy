@@ -25,7 +25,8 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
     "website": {
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["tailwindcss"]
     }
   }
 }

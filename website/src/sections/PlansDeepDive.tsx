@@ -5,12 +5,7 @@ export function PlansDeepDive() {
     <Section
       id="plans"
       eyebrow="Plans"
-      title={
-        <>
-          <span className="gradient-text">Plans are artifacts,</span>{' '}
-          <span className="gradient-text-accent">not transcripts.</span>
-        </>
-      }
+      title={<>Plans are artifacts, not transcripts.</>}
       body={
         <>
           <p>
@@ -59,8 +54,8 @@ const statusColors: Record<string, { dot: string; text: string }> = {
 
 function PlanMockup() {
   return (
-    <div className="card-glow p-5">
-      <div className="flex items-center justify-between pb-4 border-b border-[oklch(0.36_0.012_255)]">
+    <div className="rounded-xl border border-border-soft bg-subtle p-5 shadow-md">
+      <div className="flex items-center justify-between pb-4 border-b border-border-soft">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-md chip-merged">
             <svg width="14" height="14" viewBox="0 0 16 16">
@@ -107,7 +102,7 @@ function PlanMockup() {
           );
         })}
       </ul>
-      <div className="mt-4 pt-3 border-t border-[oklch(0.36_0.012_255)] flex items-center justify-between text-[10.5px] text-[oklch(0.68_0.015_255)]">
+      <div className="mt-4 pt-3 border-t border-border-soft flex items-center justify-between text-[10.5px] text-muted-foreground">
         <span>Referenced by 3 sessions · 1 PR linked</span>
         <span className="font-mono">v2 · edited 4m ago</span>
       </div>

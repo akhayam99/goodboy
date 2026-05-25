@@ -71,7 +71,7 @@ const rows: Row[] = [
 function CellView({ v }: { v: Cell }) {
   if (v === true) {
     return (
-      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[oklch(0.69_0.13_148_/_0.15)] text-[oklch(0.82_0.13_148)]">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-success/15 text-success">
         <svg width="12" height="12" viewBox="0 0 12 12">
           <path
             d="M2.5 6.5 5 9l4.5-5.5"
@@ -87,7 +87,7 @@ function CellView({ v }: { v: Cell }) {
   }
   if (v === false) {
     return (
-      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[oklch(0.30_0.010_255)] text-[oklch(0.55_0.015_255)]">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground/70">
         <svg width="10" height="10" viewBox="0 0 12 12">
           <path
             d="M3 3l6 6M9 3l-6 6"
@@ -100,37 +100,29 @@ function CellView({ v }: { v: Cell }) {
     );
   }
   if (v === 'partial') {
-    return (
-      <span className="inline-flex items-center justify-center h-6 px-2 rounded chip-warning text-[10.5px] font-medium">
-        partial
-      </span>
-    );
+    return <span className="chip chip-warning">partial</span>;
   }
-  return (
-    <span className="inline-flex items-center justify-center h-6 px-2 rounded chip-primary text-[10.5px] font-medium">
-      {v}
-    </span>
-  );
+  return <span className="chip chip-primary">{v}</span>;
 }
 
 export function Comparison() {
   return (
-    <section id="compare" className="py-24 relative">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="max-w-2xl mb-14">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-[oklch(0.82_0.12_200)] pb-4">
+    <section id="compare" className="relative py-24 sm:py-28">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mb-12 max-w-2xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
             Comparison
-          </div>
-          <h2 className="text-[38px] sm:text-[50px] tracking-[-0.025em] font-bold leading-[1.02]">
-            <span className="gradient-text">Where Goodboy fits.</span>
+          </p>
+          <h2 className="mt-4 text-3xl sm:text-4xl leading-[1.05] tracking-[-0.025em] font-semibold text-foreground">
+            Where Goodboy fits.
           </h2>
-          <p className="mt-5 text-[16px] text-[oklch(0.70_0.012_255)] leading-relaxed">
+          <p className="mt-5 max-w-prose text-[15px] leading-[1.7] text-muted-foreground">
             Not another IDE. The layer above. Keep what you have, add coordination.
           </p>
         </div>
-        <div className="card-glow overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border-soft bg-subtle">
           <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_1fr] text-[11.5px]">
-            <div className="px-4 py-3 text-[oklch(0.58_0.015_255)] uppercase tracking-wider text-[10.5px] bg-[oklch(0.25_0.008_255)]">
+            <div className="bg-[oklch(0.27_0.008_255)] px-4 py-3 text-[10.5px] uppercase tracking-wider text-muted-foreground">
               Capability
             </div>
             <Header label="Goodboy" highlight />
@@ -151,10 +143,10 @@ function Header({ label, highlight }: { label: string; highlight?: boolean }) {
   return (
     <div
       className={[
-        'px-4 py-3 text-center text-[12.5px] font-semibold bg-[oklch(0.25_0.008_255)]',
+        'bg-[oklch(0.27_0.008_255)] px-4 py-3 text-center text-[12.5px] font-semibold',
         highlight
-          ? 'text-[oklch(0.88_0.12_200)] border-l border-r border-[oklch(0.78_0.13_200_/_0.25)] bg-[oklch(0.78_0.13_200_/_0.06)]'
-          : 'text-[oklch(0.92_0.006_90)]',
+          ? 'border-l border-r border-primary/25 bg-primary/[0.06] text-primary'
+          : 'text-foreground',
       ].join(' ')}
     >
       {label}
@@ -163,22 +155,22 @@ function Header({ label, highlight }: { label: string; highlight?: boolean }) {
 }
 
 function ComparisonRow({ row, odd }: { row: Row; odd: boolean }) {
-  const bg = odd ? 'bg-[oklch(0.22_0.007_255)]' : 'bg-[oklch(0.24_0.008_255)]';
+  const bg = odd ? 'bg-[oklch(0.27_0.008_255)]' : 'bg-subtle';
   return (
     <>
-      <div className={`px-4 py-3 text-[oklch(0.86_0.008_90)] ${bg}`}>{row.label}</div>
+      <div className={`px-4 py-3 text-foreground ${bg}`}>{row.label}</div>
       <div
-        className={`px-4 py-3 flex items-center justify-center ${bg} border-l border-r border-[oklch(0.78_0.13_200_/_0.15)]`}
+        className={`flex items-center justify-center border-l border-r border-primary/15 px-4 py-3 ${bg}`}
       >
         <CellView v={row.goodboy} />
       </div>
-      <div className={`px-4 py-3 flex items-center justify-center ${bg}`}>
+      <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
         <CellView v={row.cursor} />
       </div>
-      <div className={`px-4 py-3 flex items-center justify-center ${bg}`}>
+      <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
         <CellView v={row.claudeCode} />
       </div>
-      <div className={`px-4 py-3 flex items-center justify-center ${bg}`}>
+      <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
         <CellView v={row.chatgpt} />
       </div>
     </>

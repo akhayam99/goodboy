@@ -708,7 +708,7 @@ function Slot({
 
 export function AppMockup() {
   return (
-    <div className="card-glow overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-border-soft bg-subtle shadow-lg">
       <WindowChrome />
       <div className={`flex h-[600px] ${C.bg} ${C.fg}`}>
         <Sidebar />

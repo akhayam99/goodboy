@@ -5,12 +5,7 @@ export function ContextDeepDive() {
     <Section
       id="context"
       eyebrow="Shared context"
-      title={
-        <>
-          <span className="gradient-text">A scratchpad that survives</span>{' '}
-          <span className="gradient-text-accent">the next agent.</span>
-        </>
-      }
+      title={<>A scratchpad that survives the next agent.</>}
       body={
         <>
           <p>
@@ -37,8 +32,8 @@ export function ContextDeepDive() {
 
 function ContextMockup() {
   return (
-    <div className="card-glow p-5">
-      <div className="flex items-center justify-between pb-4 border-b border-[oklch(0.36_0.012_255)]">
+    <div className="rounded-xl border border-border-soft bg-subtle p-5 shadow-md">
+      <div className="flex items-center justify-between pb-4 border-b border-border-soft">
         <div>
           <div className="text-[11px] uppercase tracking-wider text-[oklch(0.58_0.015_255)]">
             Session context
@@ -116,7 +111,7 @@ function Slot({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-[oklch(0.36_0.012_255)] bg-[oklch(0.22_0.007_255)] p-3 relative overflow-hidden">
+    <div className="relative overflow-hidden rounded-lg border border-border-soft bg-[oklch(0.27_0.008_255)] p-3">
       <span
         className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r"
         style={{ background: toneMap[tone] }}
