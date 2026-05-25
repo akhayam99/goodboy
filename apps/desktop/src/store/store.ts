@@ -161,6 +161,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../features/settings/settings';
+import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic';
 import { AGENT_FEATURES, MAX_WORKSPACES } from '../shared/lib/features';
 import { getCodexPriceOverride, refreshPricingTable } from '../features/providers/provider-pricing';
 import {
@@ -1140,56 +1141,23 @@ async function emitTurnNudges(
   }
 }
 
-interface SummarizeCommandResult {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-}
-
-async function generateAutoTitle(
+async function applyHeuristicTitle(
   set: SetFn,
   get: () => AppStore,
   sessionId: SessionId,
-  turnInput: string,
-  turnOutput: string,
-  agentId: AgentId | null,
+  agentId: AgentId,
+  prompt: string,
 ): Promise<void> {
   try {
+    const title = heuristicAgentTitle(prompt);
+    if (!title) return;
+
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) return;
-    const providerId = session.providerPreference.defaultProvider;
-    const systemPrompt =
-      'You generate a short title for an AI coding session. Return ONLY the title, 2-4 words, all lowercase, no quotes, no trailing punctuation, no explanation. The title should be a concise micro-summary of what the agent is doing (e.g. "refactor auth module", "debug startup crash", "fix login bug"). It will be used as both the session title and the agent display name.';
-    const userMessage = [
-      'User request (excerpt):',
-      turnInput.slice(0, 600),
-      '',
-      'Assistant reply (excerpt):',
-      turnOutput.slice(0, 300),
-      '',
-      'Write the title now.',
-    ].join('\n');
-    const result = await invoke<SummarizeCommandResult>('summarize_session', {
-      args: { providerId, userMessage, systemPrompt },
-    });
-    if ((result.exitCode ?? 0) !== 0) return;
-    let title = '';
-    if (providerId === 'anthropic') {
-      try {
-        const parsed = JSON.parse(result.stdout.trim()) as { result?: string };
-        title = (parsed.result ?? '').trim();
-      } catch {
-        title = result.stdout.trim();
-      }
-    } else {
-      title = result.stdout.trim();
-    }
-    title = title
-      .replace(/^["']|["']$/g, '')
-      .replace(/[.!?]+$/, '')
-      .trim()
-      .toLowerCase();
-    if (!title) return;
+
+    const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
+    const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;
+
     const titleNow = new Date().toISOString() as IsoDateTime;
     if (!session.titleUserEdited) {
       set((state) => ({
@@ -1197,22 +1165,11 @@ async function generateAutoTitle(
       }));
       await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false);
     }
-    if (agentId) {
-      if (!get().agentKindOverride[agentId]) {
-        const runs = get().sessionPhaseRuns[sessionId] ?? [];
-        const row = runs.find((r) => r.id === agentId);
-        const currentKind = inferAgentKindFromName(row?.name ?? '');
-        set((s) => ({
-          agentKindOverride: { ...s.agentKindOverride, [agentId]: currentKind },
-        }));
-        void invokeAgentSetKind(agentId, currentKind).catch(() => {
-          // Best-effort persistence; not fatal if it fails.
-        });
-      }
+    if (agentNameEditable) {
       await get().renameAgent(sessionId, agentId, title);
     }
   } catch {
-    // auto-title is best-effort
+    // best-effort
   }
 }
 
@@ -2809,6 +2766,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }${resolvedPrompt}`;
     }
 
+    if (isFirstTurn) {
+      void applyHeuristicTitle(set, get, sessionId, activeAgentId, content);
+    }
+
     try {
       for await (const event of runTurn({
         runId,
@@ -3096,29 +3057,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         void get()
           .refreshSessionPr(sessionId, { force: true })
           .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
-      }
-      if (isFirstTurn) {
-        const sessionForTitle = get().sessions.find((s) => s.id === sessionId);
-        const titleEditable = sessionForTitle ? !sessionForTitle.titleUserEdited : false;
-        // Only auto-rename agents whose name still matches the default
-        // `agent N` pattern (or the legacy `puppy N`) — workflow-step names
-        // and user edits stay.
-        const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find(
-          (r) => r.id === activeAgentId,
-        );
-        const agentNameEditable = agentRecord
-          ? /^(agent|puppy) \d+$/i.test(agentRecord.name)
-          : false;
-        if (sessionForTitle && (titleEditable || agentNameEditable)) {
-          void generateAutoTitle(
-            set,
-            get,
-            sessionId,
-            resolvedPrompt,
-            assistantText,
-            agentNameEditable ? activeAgentId : null,
-          );
-        }
       }
     }
 
