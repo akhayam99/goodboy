@@ -120,8 +120,8 @@ export function Comparison() {
             Not another IDE. The layer above. Keep what you have, add coordination.
           </p>
         </div>
-        <div className="overflow-hidden rounded-xl border border-border-soft bg-subtle">
-          <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_1fr] text-[11.5px]">
+        <div className="overflow-x-auto rounded-xl border border-border-soft bg-subtle">
+          <div className="grid min-w-[640px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr] text-[11.5px]">
             <div className="bg-[oklch(0.27_0.008_255)] px-4 py-3 text-[10.5px] uppercase tracking-wider text-muted-foreground">
               Capability
             </div>

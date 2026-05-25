@@ -25,14 +25,14 @@ export function Section({
         <div
           className={`grid items-center gap-14 lg:grid-cols-2 lg:gap-20 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}
         >
-          <div className="max-w-lg">
+          <div className="min-w-0 max-w-lg">
             <Eyebrow>{eyebrow}</Eyebrow>
             <SectionTitle>{title}</SectionTitle>
             <div className="mt-6 max-w-prose space-y-4 text-[15px] leading-[1.7] text-muted-foreground">
               {body}
             </div>
           </div>
-          <div>{children}</div>
+          <div className="min-w-0">{children}</div>
         </div>
       </div>
     </section>

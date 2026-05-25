@@ -1,12 +1,12 @@
-import { AppMockup } from '../mockups/AppMockup';
 import { LinkButton } from '../components/ui';
+import { SessionsSnapshot, ContextSnapshot } from '../mockups/Snapshots';
 
 export function Hero() {
   return (
     <section className="relative pt-16 pb-24 sm:pt-24 sm:pb-28">
       <div className="relative mx-auto max-w-6xl px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="rise text-[44px] sm:text-[64px] lg:text-[72px] leading-[1.02] tracking-[-0.035em] font-semibold text-foreground">
+          <h1 className="rise text-[40px] sm:text-[60px] lg:text-[72px] leading-[1.02] tracking-[-0.035em] font-semibold text-foreground">
             AI workspace orchestrator.
           </h1>
 
@@ -39,7 +39,6 @@ export function Hero() {
             </LinkButton>
           </div>
 
-          {/* trust line: small, set-and-forget. */}
           <p
             className="rise mt-6 text-[12.5px] text-muted-foreground/75"
             style={{ animationDelay: '180ms' }}
@@ -48,8 +47,18 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="rise relative mt-20" style={{ animationDelay: '260ms' }}>
-          <AppMockup />
+        {/* Snapshot composition: two slices of the real app, sized to fit the
+            page rhythm. The deep-dive sections below carry the full tour. */}
+        <div
+          className="rise relative mx-auto mt-20 flex max-w-4xl flex-col items-center justify-center gap-6 sm:flex-row sm:items-end"
+          style={{ animationDelay: '260ms' }}
+        >
+          <div className="w-full max-w-[420px] sm:translate-y-3">
+            <SessionsSnapshot />
+          </div>
+          <div className="w-full max-w-[420px] sm:-translate-y-3">
+            <ContextSnapshot />
+          </div>
         </div>
       </div>
     </section>

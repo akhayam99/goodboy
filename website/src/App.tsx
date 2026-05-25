@@ -3,9 +3,10 @@ import { Hero } from './sections/Hero';
 import { Letter } from './sections/Letter';
 import { LogoStrip } from './sections/LogoStrip';
 import { FeatureGrid } from './sections/FeatureGrid';
+import { SessionsDeepDive } from './sections/SessionsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
-import { RoutingDeepDive } from './sections/RoutingDeepDive';
 import { PlansDeepDive } from './sections/PlansDeepDive';
+import { RoutingDeepDive } from './sections/RoutingDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
 import { Comparison } from './sections/Comparison';
 import { Stack } from './sections/Stack';
@@ -21,9 +22,10 @@ export function App() {
         <Letter />
         <LogoStrip />
         <FeatureGrid />
+        <SessionsDeepDive />
         <ContextDeepDive />
-        <RoutingDeepDive />
         <PlansDeepDive />
+        <RoutingDeepDive />
         <GithubDeepDive />
         <Comparison />
         <Stack />
