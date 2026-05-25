@@ -146,6 +146,10 @@ vi.mock('@goodboy/db', () => ({
   listNotifications: vi.fn(async () => []),
   markAllNotificationsRead: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
+  updateSessionWorkflowStep: vi.fn(),
+  attachWorkflowToSession: vi.fn(),
+  detachWorkflowFromSession: vi.fn(),
+  updateWorkflowOrder: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -171,6 +175,8 @@ function buildSession(): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    workflowIds: [],
+    currentStepByWorkflow: {},
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,

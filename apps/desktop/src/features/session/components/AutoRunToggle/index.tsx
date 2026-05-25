@@ -14,7 +14,7 @@ interface AutoRunToggleProps {
  */
 export function AutoRunToggle({ session }: AutoRunToggleProps) {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
-  const hasWorkflow = !!session.workflowId;
+  const hasWorkflow = session.workflowIds.length > 0;
   const tooltip = !hasWorkflow
     ? 'no workflow configured — auto-run unavailable'
     : session.autoRun

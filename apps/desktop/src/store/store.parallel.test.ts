@@ -93,6 +93,10 @@ vi.mock('@goodboy/db', () => ({
   listNotifications: vi.fn(async () => []),
   markAllNotificationsRead: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
+  updateSessionWorkflowStep: vi.fn(),
+  attachWorkflowToSession: vi.fn(),
+  detachWorkflowFromSession: vi.fn(),
+  updateWorkflowOrder: vi.fn(),
 }));
 
 vi.mock('../features/providers/providers', () => ({
@@ -174,7 +178,8 @@ function buildSession(): Session {
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',
-    workflowId: TEMPLATE_ID,
+    workflowIds: [TEMPLATE_ID],
+    currentStepByWorkflow: {},
     createdAt: now,
     updatedAt: now,
   };

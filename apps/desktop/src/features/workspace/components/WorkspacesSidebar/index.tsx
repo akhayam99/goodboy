@@ -419,12 +419,11 @@ function PlanReadySuggestion({ task }: { task: Session }) {
     (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   if (hasOpenQuestions) return null;
 
-  if (task.workflowId) {
-    const workflow = phaseTemplates.find((t) => t.id === task.workflowId);
-    if (workflow) {
-      const nextStep = pickNextWorkflowStep(workflow, phaseRuns);
-      if (nextStep && inferAgentKindFromName(nextStep.name) === 'implementer') return null;
-    }
+  for (const wid of task.workflowIds) {
+    const workflow = phaseTemplates.find((t) => t.id === wid);
+    if (!workflow) continue;
+    const nextStep = pickNextWorkflowStep(workflow, phaseRuns);
+    if (nextStep && inferAgentKindFromName(nextStep.name) === 'implementer') return null;
   }
 
   const onSpawn = async () => {
@@ -596,8 +595,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
-  const workflow = task.workflowId
-    ? (phaseTemplates.find((t) => t.id === task.workflowId) ?? null)
+  const activeWorkflowId = task.workflowIds[0] ?? null;
+  const workflow = activeWorkflowId
+    ? (phaseTemplates.find((t) => t.id === activeWorkflowId) ?? null)
     : null;
   const slots = useSessionSlots(task.id);
   const loading = useSessionLoading(task.id);
