@@ -11,8 +11,8 @@ export function Letter() {
 
         <div className="letter mt-10 space-y-6 text-[19px] text-foreground/90">
           <p>
-            A year ago I had three chats open. Claude for plans. Cursor for edits I trusted. Codex
-            when I needed a scaffold. Each one knew a slice of the work. None knew the whole.
+            Not too long ago I had three chats open. Claude for plans. Cursor for edits I trusted.
+            Codex when I needed a scaffold. Each one knew a slice of the work. None knew the whole.
           </p>
           <p>
             I would ship something half-built, then re-paste the goal into the next window because
@@ -31,17 +31,17 @@ export function Letter() {
             where it had to be, and quiet everywhere else.
           </p>
           <p>
-            If you&apos;ve felt the same thing this year, clone it. Tell me what&apos;s broken.
-            We&apos;ll fix it together.
+            If you&apos;ve felt the same, clone it. Tell me what&apos;s broken. We&apos;ll fix it
+            together.
           </p>
         </div>
 
-        <div className="mt-10 flex items-center gap-4 text-[14px] text-muted-foreground">
-          <div className="h-px w-10 bg-border-soft" />
+        <div className="mt-10 flex items-center justify-end gap-4 text-right text-[14px] text-muted-foreground">
           <div className="space-y-0.5">
             <p className="font-serif text-[18px] text-foreground">Amin Khayam</p>
             <p className="text-[12px] tracking-[0.02em]">Milan, 2026</p>
           </div>
+          <div className="h-px w-10 bg-border-soft" />
         </div>
       </div>
     </section>

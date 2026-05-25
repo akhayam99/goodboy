@@ -107,17 +107,6 @@ const Icon = {
       />
     </>
   ),
-  skill: (
-    <>
-      <path
-        d="M8 2v3M8 11v3M2 8h3M11 8h3M3.5 3.5l2 2M10.5 10.5l2 2M3.5 12.5l2-2M10.5 5.5l2-2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </>
-  ),
   worktree: (
     <>
       <circle cx="4" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
@@ -212,8 +201,8 @@ const features: Feature[] = [
     icon: <IconWrap>{Icon.github}</IconWrap>,
   },
   {
-    title: 'Budget control',
-    body: 'Per-provider monthly caps. Per-session soft caps. Configurable threshold alerts. Real-time USD next to every turn.',
+    title: 'Session cost',
+    body: 'Real-time USD next to every turn. Running total per session. Optional soft cap so a runaway agent stops before it stings.',
     span: '',
     icon: <IconWrap>{Icon.budget}</IconWrap>,
   },
@@ -222,12 +211,6 @@ const features: Feature[] = [
     body: 'Tool-call interception, static rule matching, audit trail. Run agents autonomously without losing the kill switch.',
     span: 'lg:col-span-2',
     icon: <IconWrap>{Icon.permission}</IconWrap>,
-  },
-  {
-    title: 'Skills & slash-commands',
-    body: 'Workspace-scoped automation (.kay/skills/). Markdown + scripts. Invoke /skill in chat across any provider.',
-    span: '',
-    icon: <IconWrap>{Icon.skill}</IconWrap>,
   },
   {
     title: 'Git worktrees',
@@ -243,7 +226,7 @@ const features: Feature[] = [
   },
   {
     title: 'Notifications & nudges',
-    body: 'Budget alerts, PR state changes, session events. Toast for transient, feed for full history. No spam.',
+    body: 'PR state changes, session events, soft-cap warnings. Toast for transient, feed for full history. No spam.',
     span: '',
     icon: <IconWrap>{Icon.notif}</IconWrap>,
   },

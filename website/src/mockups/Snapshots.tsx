@@ -125,18 +125,25 @@ const SESSION_DATA = [
   },
 ];
 
-/* Sessions rail snapshot. 112px wide rail like the real SessionActivityBar,
-   plus a 200px section title strip on the left to anchor the composition on
-   wide viewports. On narrow viewports the title collapses above the rail. */
+/* Sessions snapshot. Faithful slice of WorkspacesSidebar:
+     [ w-28 rail  |  divider  |  detail panel ]
+   The detail panel shows the same things the real product shows: a status
+   icon next to the title, a list of agent rows with kind chip + token/turn/
+   cost line, and a footer that pairs the branch chip with the session cost
+   chip. No "ACTIVE SESSION / Status / Branch / PR / Spend" label-value list
+   — that's marketing UI, not product UI.
+*/
 export function SessionsSnapshot() {
   return (
-    <SnapshotFrame className="max-w-[420px]">
-      <FrameHeader
-        label="Sessions"
-        right={<span className="text-[10px] font-mono text-muted-foreground/70">5 active</span>}
-      />
+    <SnapshotFrame className="max-w-[460px]">
       <div className="flex">
-        <div className="flex w-[112px] shrink-0 flex-col gap-1 border-r border-border-soft p-1.5">
+        {/* w-28 rail */}
+        <div className="flex w-[112px] shrink-0 flex-col gap-1 p-1.5">
+          <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Sessions
+            </span>
+          </div>
           <button
             type="button"
             className="mb-0.5 inline-flex w-full items-center justify-center gap-1 rounded-md border border-border bg-muted/60 px-1 py-1.5 text-[10px] font-medium text-foreground transition-colors hover:bg-muted"
@@ -149,27 +156,76 @@ export function SessionsSnapshot() {
           ))}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-              Active session
-            </p>
-            <p className="mt-1 text-[13px] font-semibold leading-snug text-foreground">
-              Audit reversions on context slots
-            </p>
-          </div>
-          <dl className="space-y-2 text-[11.5px]">
-            <Meta label="Status" value="in progress" tone="text-warning" />
-            <Meta label="Branch" value="ak/context-slot-history" mono />
-            <Meta label="PR" value="#617 in review" tone="text-info" />
-            <Meta label="Spend" value="$0.41" mono />
-          </dl>
-          <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2 text-[10px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <span className="size-1.5 rounded-full bg-success" aria-hidden />
-              All in sync
+        {/* hairline divider, exactly like the real WorkspacesSidebar. */}
+        <div
+          aria-hidden
+          className="my-1 ml-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
+        />
+
+        {/* detail panel: header + agents + footer (mirror SessionDetailPanel) */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* header: status icon + title + tiny actions */}
+          <div className="flex shrink-0 items-center gap-2 px-3 pt-3 pb-2">
+            <span
+              aria-hidden
+              className="inline-flex size-[18px] shrink-0 items-center justify-center rounded text-warning"
+              title="in progress"
+            >
+              <ConstructionIcon size={13} />
             </span>
-            <span className="font-mono">12s ago</span>
+            <span className="line-clamp-2 min-w-0 flex-1 text-[12px] font-semibold leading-snug text-foreground">
+              Audit reversions on context slots
+            </span>
+            <span className="shrink-0 text-muted-foreground/50">
+              <Settings2Icon size={13} />
+            </span>
+          </div>
+
+          {/* agent rows */}
+          <div className="flex flex-1 flex-col gap-1.5 overflow-hidden px-3 pb-1">
+            <AgentRow
+              num={1}
+              kind="scout"
+              name="scout-callsites"
+              tokensIn="1.2k"
+              tokensOut="240"
+              turns={3}
+              cost="$0.04"
+              age="12m"
+            />
+            <AgentRow
+              num={2}
+              kind="plan"
+              name="plan-completion"
+              tokensIn="3.1k"
+              tokensOut="890"
+              turns={5}
+              cost="$0.12"
+              age="4m"
+            />
+            <AgentRow
+              num={3}
+              kind="imple"
+              name="imple-restructure"
+              tokensIn="4.5k"
+              tokensOut="1.1k"
+              turns={9}
+              cost="$0.18"
+              age="42s"
+              running
+              selected
+            />
+          </div>
+
+          {/* footer: branch chip + cost chip (SessionMetaFooter) */}
+          <div className="mt-auto flex shrink-0 items-center gap-2 px-3 pt-2 pb-3">
+            <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
+              <IconBranch size={10} aria-hidden className="shrink-0 text-muted-foreground" />
+              <span className="truncate">ak/context-slot-history</span>
+            </span>
+            <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-[10px] tabular-nums text-success">
+              $0.34
+            </span>
           </div>
         </div>
       </div>
@@ -208,24 +264,130 @@ function SessionRailItem({ session }: { session: (typeof SESSION_DATA)[number] }
   );
 }
 
-function Meta({
-  label,
-  value,
-  tone,
-  mono,
+function AgentRow({
+  num,
+  kind,
+  name,
+  tokensIn,
+  tokensOut,
+  turns,
+  cost,
+  age,
+  running,
+  selected,
 }: {
-  label: string;
-  value: string;
-  tone?: string;
-  mono?: boolean;
+  num: number;
+  kind: keyof typeof KIND;
+  name: string;
+  tokensIn: string;
+  tokensOut: string;
+  turns: number;
+  cost: string;
+  age: string;
+  running?: boolean;
+  selected?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={[mono ? 'font-mono text-[11px]' : '', tone ?? 'text-foreground'].join(' ')}>
-        {value}
-      </dd>
+    <div
+      className={[
+        'group flex flex-col gap-1 rounded border px-2 py-1.5 transition-colors',
+        selected
+          ? running
+            ? 'spin-border-info border-transparent bg-elevated'
+            : 'border-border bg-elevated'
+          : 'border-transparent bg-muted/40',
+      ].join(' ')}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60"
+        >
+          {num}.
+        </span>
+        <span
+          className={[
+            'inline-flex w-[3.25rem] shrink-0 items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide text-zinc-950',
+            KIND[kind].bg,
+          ].join(' ')}
+        >
+          {KIND[kind].label}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[11.5px] text-foreground">{name}</span>
+      </div>
+      <div className="flex items-center gap-1.5 whitespace-nowrap pl-6 text-[10px] tabular-nums text-muted-foreground/80">
+        <span className="inline-flex items-baseline gap-0.5">
+          <span aria-hidden className="text-muted-foreground/60">
+            ↓
+          </span>
+          {tokensIn}
+        </span>
+        <span className="inline-flex items-baseline gap-0.5">
+          <span aria-hidden className="text-muted-foreground/60">
+            ↑
+          </span>
+          {tokensOut}
+        </span>
+        <span aria-hidden className="text-muted-foreground/40">
+          ·
+        </span>
+        <span>{turns}t</span>
+        <span aria-hidden className="text-muted-foreground/40">
+          ·
+        </span>
+        <span className="font-mono">{cost}</span>
+        <span aria-hidden className="text-muted-foreground/40">
+          ·
+        </span>
+        <span className="font-mono text-muted-foreground/80">{age}</span>
+      </div>
     </div>
+  );
+}
+
+function ConstructionIcon({ size = 13 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="2" y="6" rx="2" width="20" height="8" />
+      <path d="M17 14v7" />
+      <path d="M7 14v7" />
+      <path d="M17 3v3" />
+      <path d="M7 3v3" />
+      <path d="M10 14 2.3 6.3" />
+      <path d="m14 6 7.7 7.7" />
+      <path d="m8 6 8 8" />
+    </svg>
+  );
+}
+
+function Settings2Icon({ size = 13 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 7h-9" />
+      <path d="M14 17H5" />
+      <circle cx="17" cy="17" r="3" />
+      <circle cx="7" cy="7" r="3" />
+    </svg>
   );
 }
 
@@ -560,99 +722,99 @@ function PRRow({
   );
 }
 
-/* ---------------------------- Budget ----------------------------------- */
+/* ---------------------------- Session cost --------------------------- */
 
-const BUDGETS = [
+/* Mirrors apps/desktop/src/features/providers/components/CostBadge +
+   TelemetryPill. Each turn carries an estimated cost; the session-level
+   total ticks live in the chip strip. No monthly caps, no threshold alerts:
+   only what the product actually surfaces today. */
+
+const TURNS = [
   {
-    name: 'Anthropic',
-    model: 'sonnet-4.6',
-    spent: 144,
-    cap: 250,
-    color: 'oklch(0.74 0.15 55)',
+    who: 'You',
+    model: null,
+    kind: 'plan' as const,
+    body: 'Audit reversions on context slots.',
+    cost: null,
   },
   {
-    name: 'Cursor',
-    model: 'cursor-default',
-    spent: 48,
-    cap: 150,
-    color: 'oklch(0.70 0.16 290)',
+    who: 'Plan',
+    model: 'claude-sonnet-4.6',
+    kind: 'plan' as const,
+    body: '4 steps drafted. Trigger on UPDATE.',
+    cost: 0.071,
   },
   {
-    name: 'Codex',
+    who: 'Implement',
+    model: 'claude-opus-4.5',
+    kind: 'imple' as const,
+    body: 'Migration 038 applied. Trigger fires.',
+    cost: 0.142,
+  },
+  {
+    who: 'Review',
     model: 'gpt-5-codex',
-    spent: 21,
-    cap: 150,
-    color: 'oklch(0.72 0.16 150)',
+    kind: 'review' as const,
+    body: 'Composite index suggested. PR opened.',
+    cost: 0.198,
   },
 ];
 
 export function BudgetSnapshot() {
+  const total = TURNS.reduce((s, t) => s + (t.cost ?? 0), 0);
   return (
     <SnapshotFrame className="max-w-[440px]">
       <FrameHeader
-        label="Budget · May 2026"
-        right={<span className="chip chip-success">on track</span>}
+        label="Session cost"
+        right={
+          <span className="inline-flex items-baseline gap-0.5 font-mono text-[11px] tabular-nums text-foreground">
+            <span>$0</span>
+            <span className="opacity-70">.{total.toFixed(2).split('.')[1]}</span>
+          </span>
+        }
       />
-      <div className="space-y-2.5 p-3">
-        {BUDGETS.map((b) => (
-          <BudgetRow key={b.name} {...b} />
+      <div className="space-y-2 p-3">
+        {TURNS.map((t, i) => (
+          <TurnRow key={i} turn={t} />
         ))}
-        <div className="mt-1 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5">
-          <svg width="12" height="12" viewBox="0 0 16 16" className="mt-0.5 shrink-0 text-warning">
-            <path
-              d="M8 2l6 11H2L8 2z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              fill="none"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8 7v3M8 11.5v.1"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-          <p className="text-[11px] leading-relaxed text-foreground/85">
-            <span className="font-semibold text-foreground">Threshold alert.</span> Anthropic at 58%
-            with 13 days remaining. Switch to Cursor or Codex from the model picker.
-          </p>
+        <div className="mt-1 flex items-center justify-between rounded-md border border-border-soft bg-subtle px-2.5 py-2 text-[10.5px]">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-success" aria-hidden />
+            Session soft cap
+          </span>
+          <span className="font-mono text-[11px] text-foreground">
+            ${total.toFixed(2)}
+            <span className="text-muted-foreground"> / $2.00</span>
+          </span>
         </div>
       </div>
     </SnapshotFrame>
   );
 }
 
-function BudgetRow({
-  name,
-  model,
-  spent,
-  cap,
-  color,
-}: {
-  name: string;
-  model: string;
-  spent: number;
-  cap: number;
-  color: string;
-}) {
-  const pct = Math.round((spent / cap) * 100);
+function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
   return (
     <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full" style={{ background: color }} aria-hidden />
-          <span className="text-[12px] font-semibold text-foreground">{name}</span>
-          <span className="font-mono text-[10px] text-muted-foreground">{model}</span>
-        </div>
-        <span className="font-mono text-[12px] tabular-nums" style={{ color }}>
-          ${spent}
-          <span className="text-muted-foreground/70"> / ${cap}</span>
+      <div className="flex items-center gap-2">
+        {turn.model ? (
+          <KindBadge kind={turn.kind} />
+        ) : (
+          <span className="rounded bg-muted px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+            you
+          </span>
+        )}
+        <span className="min-w-0 flex-1 truncate text-[11.5px] text-foreground/85">
+          {turn.body}
         </span>
+        {turn.cost != null ? (
+          <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+            ${turn.cost.toFixed(3)}
+          </span>
+        ) : null}
       </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
-      </div>
+      {turn.model ? (
+        <p className="mt-1 pl-1 font-mono text-[10px] text-muted-foreground/70">{turn.model}</p>
+      ) : null}
     </div>
   );
 }

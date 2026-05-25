@@ -4,13 +4,17 @@ import { LinkButton } from '../components/ui';
 const links = [
   { href: '#note', label: 'A note' },
   { href: '#features', label: 'Features' },
-  { href: '#routing', label: 'Routing' },
+  { href: '#sessions', label: 'Sessions' },
   { href: '#compare', label: 'Compare' },
 ];
 
+/* Top-of-page nav. Not sticky: scrolls away with the hero. The floating pill
+   (FloatingNav.tsx) takes over once you scroll past it, in the same spirit as
+   apple.com / linear.app / vercel.com.
+*/
 export function Nav() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border-soft/50 bg-background/80 backdrop-blur-md">
+    <header className="relative z-30 border-b border-border-soft/40">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <a href="#" className="flex items-center">
           <Logo />

@@ -1,6 +1,5 @@
 type Card = {
   name: string;
-  org: string;
   color: string;
   desc: string;
   soon?: boolean;
@@ -9,25 +8,21 @@ type Card = {
 const subscriptions: Card[] = [
   {
     name: 'Claude',
-    org: 'Anthropic Max',
     color: 'oklch(0.74 0.15 55)',
     desc: 'Planning, refactors, reviews',
   },
   {
     name: 'Cursor',
-    org: 'Cursor Pro',
     color: 'oklch(0.70 0.16 290)',
     desc: 'Inline edits, autocomplete',
   },
   {
     name: 'Codex',
-    org: 'ChatGPT Pro',
     color: 'oklch(0.72 0.16 150)',
     desc: 'Scaffolds, one-shots',
   },
   {
     name: 'More',
-    org: 'soon',
     color: 'oklch(0.55 0.012 255)',
     desc: 'Gemini, local LLMs, OSS adapters',
     soon: true,
@@ -37,27 +32,23 @@ const subscriptions: Card[] = [
 const integrations: Card[] = [
   {
     name: 'GitHub',
-    org: 'PRs + CI',
     color: 'oklch(0.86 0.005 250)',
     desc: 'PRs, checks, diff comments',
   },
   {
-    name: 'VS Code',
-    org: 'soon',
-    color: 'oklch(0.69 0.11 238)',
-    desc: 'Open worktree in editor, jump-to-file',
+    name: 'GitLab',
+    color: 'oklch(0.74 0.15 55)',
+    desc: 'MRs, pipelines, threads',
     soon: true,
   },
   {
-    name: 'Linear',
-    org: 'soon',
-    color: 'oklch(0.70 0.16 290)',
-    desc: 'Link issues to sessions, sync status',
+    name: 'Jira',
+    color: 'oklch(0.69 0.11 238)',
+    desc: 'Link tickets, sync status',
     soon: true,
   },
   {
     name: 'Slack',
-    org: 'soon',
     color: 'oklch(0.76 0.13 78)',
     desc: 'Notify on PR ready, budget alerts',
     soon: true,
@@ -68,7 +59,7 @@ export function LogoStrip() {
   return (
     <section className="relative border-y border-border-soft/60 py-20">
       <div className="mx-auto max-w-6xl space-y-14 px-6">
-        <Row eyebrow="Subscriptions you already have" cards={subscriptions} />
+        <Row eyebrow="Bring your own subscription" cards={subscriptions} />
         <Row eyebrow="Integrations" cards={integrations} />
       </div>
     </section>
@@ -84,7 +75,7 @@ function Row({ eyebrow, cards }: { eyebrow: string; cards: Card[] }) {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((p) => (
           <div
-            key={p.name + p.org}
+            key={p.name}
             className={[
               'rounded-lg border border-border-soft bg-subtle p-4',
               p.soon ? 'opacity-65' : '',
@@ -99,16 +90,11 @@ function Row({ eyebrow, cards }: { eyebrow: string; cards: Card[] }) {
               <span className="text-[14px] font-semibold tracking-[-0.005em] text-foreground">
                 {p.name}
               </span>
-              <span
-                className={[
-                  'ml-auto rounded px-1.5 py-0.5 font-mono text-[10px]',
-                  p.soon
-                    ? 'bg-muted text-muted-foreground'
-                    : 'border border-border-soft bg-elevated text-muted-foreground',
-                ].join(' ')}
-              >
-                {p.org}
-              </span>
+              {p.soon ? (
+                <span className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  soon
+                </span>
+              ) : null}
             </div>
             <p className="mt-2 text-[12.5px] leading-snug text-muted-foreground">{p.desc}</p>
           </div>

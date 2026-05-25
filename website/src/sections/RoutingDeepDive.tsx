@@ -5,7 +5,7 @@ export function RoutingDeepDive() {
   return (
     <Section
       id="routing"
-      eyebrow="Routing & budget"
+      eyebrow="Routing & cost"
       reverse
       title={<>Three providers. One ledger.</>}
       body={
@@ -17,11 +17,12 @@ export function RoutingDeepDive() {
             thread.
           </p>
           <p>
-            Per-provider monthly caps. Per-session soft caps. Configurable threshold alerts. The
-            cost chip ticks live next to every turn. No surprise invoice.
+            Each turn carries an estimated cost. The session keeps a running total. Set an optional
+            soft cap and Goodboy stops the agent before it overshoots. No surprise invoice at the
+            end of the day.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
-            Subscription-based. Uses your Claude Max, Cursor Pro, ChatGPT Pro. No metered API
+            Subscription-based. Uses your Claude, Cursor, ChatGPT subscriptions. No metered API
             tokens.
           </p>
         </>

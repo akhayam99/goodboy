@@ -1,4 +1,5 @@
 import { Nav } from './sections/Nav';
+import { FloatingNav } from './sections/FloatingNav';
 import { Hero } from './sections/Hero';
 import { Letter } from './sections/Letter';
 import { LogoStrip } from './sections/LogoStrip';
@@ -17,6 +18,7 @@ export function App() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       <Nav />
+      <FloatingNav />
       <main>
         <Hero />
         <Letter />
