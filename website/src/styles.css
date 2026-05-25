@@ -9,7 +9,7 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', monospace;
   --font-serif: 'Iowan Old Style', 'Apple Garamond', Baskerville, 'Times New Roman', 'Droid Serif', Times, serif;
 
-  /* Dark palette — desktop tokens, identical L/C/h. Lifted black base. */
+  /* Dark palette: desktop tokens, identical L/C/h. Lifted black base. */
   --color-background: oklch(0.25 0.006 255);
   --color-foreground: oklch(0.91 0.006 90);
   --color-subtle: oklch(0.29 0.008 255);
@@ -99,7 +99,7 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* Scrollbar — same as desktop. */
+/* Scrollbar: same as desktop. */
 * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -142,7 +142,7 @@ body {
   animation: soft-pulse 2.4s ease-in-out infinite;
 }
 
-/* Provider/semantic chips — same recipe as desktop. */
+/* Provider/semantic chips: same recipe as desktop. */
 .chip {
   display: inline-flex;
   align-items: center;
