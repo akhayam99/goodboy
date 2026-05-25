@@ -23,6 +23,9 @@
     "packages/ui": {
       "entry": ["src/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"]
+    },
+    "website": {
+      "project": ["src/**/*.{ts,tsx}"]
     }
   }
 }
