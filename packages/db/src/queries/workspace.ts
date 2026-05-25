@@ -8,6 +8,7 @@ interface WorkspaceRow {
   created_at: number;
   updated_at: number;
   disconnected_at: number | null;
+  last_accessed_at: number | null;
 }
 
 function toDomain(row: WorkspaceRow): Workspace {
@@ -20,15 +21,19 @@ function toDomain(row: WorkspaceRow): Workspace {
     ...(row.disconnected_at != null
       ? { disconnectedAt: new Date(row.disconnected_at).toISOString() as IsoDateTime }
       : {}),
+    ...(row.last_accessed_at != null
+      ? { lastAccessedAt: new Date(row.last_accessed_at).toISOString() as IsoDateTime }
+      : {}),
   };
 }
 
 export async function insertWorkspace(db: Database, workspace: Workspace): Promise<void> {
   const created = Date.parse(workspace.createdAt);
   const updated = Date.parse(workspace.updatedAt);
+  const accessed = workspace.lastAccessedAt ? Date.parse(workspace.lastAccessedAt) : updated;
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [workspace.id, workspace.name, workspace.rootPath, created, updated],
+    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [workspace.id, workspace.name, workspace.rootPath, created, updated, accessed],
   );
 }
 
@@ -79,16 +84,22 @@ export async function disconnectWorkspace(
   ]);
 }
 
-/** Clears disconnected_at so the workspace shows up again. */
+/** Clears disconnected_at and refreshes last_accessed_at so the workspace shows up again. */
 export async function reconnectWorkspace(
   db: Database,
   id: WorkspaceId,
   at: IsoDateTime,
 ): Promise<void> {
-  await db.execute('UPDATE workspaces SET disconnected_at = NULL, updated_at = ? WHERE id = ?', [
-    Date.parse(at),
-    id,
-  ]);
+  const ts = Date.parse(at);
+  await db.execute(
+    'UPDATE workspaces SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
+    [ts, ts, id],
+  );
+}
+
+/** Updates last_accessed_at to now. Called on workspace switch. */
+export async function touchWorkspaceLastAccessed(db: Database, id: WorkspaceId): Promise<void> {
+  await db.execute('UPDATE workspaces SET last_accessed_at = ? WHERE id = ?', [Date.now(), id]);
 }
 
 /** Hard delete. Used only by data-purge flows / tests. UI prefers disconnect. */

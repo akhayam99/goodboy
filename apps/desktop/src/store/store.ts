@@ -29,6 +29,7 @@ import {
   insertWorkspace,
   disconnectWorkspace as disconnectWorkspaceInDb,
   reconnectWorkspace as reconnectWorkspaceInDb,
+  touchWorkspaceLastAccessed,
   findWorkspaceByRootPath,
   listContextSlotsForSession,
   insertContextSlotHistory,
@@ -1399,6 +1400,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionLoading: {},
     });
     if (id) {
+      const touchNow = new Date().toISOString() as IsoDateTime;
+      set((state) => ({
+        workspaces: state.workspaces.map((w) =>
+          w.id === id ? { ...w, lastAccessedAt: touchNow } : w,
+        ),
+      }));
+      touchWorkspaceLastAccessed(tauriDatabase, id).catch(() => undefined);
+
       const [
         loadedSessions,
         workspaceSummary,
@@ -3185,7 +3194,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       const now = new Date().toISOString() as IsoDateTime;
       await reconnectWorkspaceInDb(tauriDatabase, onDisk.id, now);
-      const reactivated: Workspace = { ...onDisk, updatedAt: now };
+      const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
       delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
       set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
       // Refresh side caches owned by this workspace; sessions hydrate lazily
@@ -3217,6 +3226,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       rootPath: resolvedRoot,
       createdAt: now,
       updatedAt: now,
+      lastAccessedAt: now,
     };
     try {
       await insertWorkspace(tauriDatabase, workspace);
