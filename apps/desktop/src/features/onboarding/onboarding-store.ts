@@ -1,8 +1,14 @@
 /**
- * Onboarding progress is auto-detected from store state and pinned to
- * localStorage so completion is monotonic — once a step lands as done,
- * it stays done across reloads. Per plan section G.
+ * Onboarding progress is auto-detected from store state and persisted to
+ * the DB `settings` table so completion is monotonic across reloads AND
+ * survives a localStorage wipe / reinstall. An in-memory cache keeps the
+ * sync API the existing callers depend on; the cache is hydrated at boot
+ * by `hydrateOnboardingFromDb` (called from app boot) and mutations are
+ * flushed to DB best-effort.
  */
+import { getSetting, setSetting } from '@goodboy/db';
+import { tauriDatabase } from '../../shared/lib/db';
+
 export type OnboardingStepId = 'workspace' | 'session' | 'agent' | 'plan' | 'palette';
 
 export const ONBOARDING_STEPS: ReadonlyArray<{
@@ -37,94 +43,102 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   },
 ];
 
-const STORAGE_KEY = 'goodboy:onboarding-progress';
-const COLLAPSE_KEY = 'goodboy:onboarding-collapsed';
-const FINISHED_KEY = 'goodboy:onboarding-finished';
+const SETTING_PROGRESS = 'onboarding.progress';
+const SETTING_COLLAPSED = 'onboarding.collapsed';
+const SETTING_FINISHED = 'onboarding.finished';
 
-interface PersistedProgress {
-  readonly completed: ReadonlyArray<OnboardingStepId>;
+const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
+  'workspace',
+  'session',
+  'agent',
+  'plan',
+  'palette',
+];
+
+interface OnboardingCache {
+  completed: ReadonlyArray<OnboardingStepId>;
+  collapsed: boolean;
+  finished: boolean;
 }
 
-function readPersisted(): PersistedProgress {
-  if (typeof localStorage === 'undefined') return { completed: [] };
+const cache: OnboardingCache = {
+  completed: [],
+  collapsed: false,
+  finished: false,
+};
+
+function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
+  if (!raw) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { completed: [] };
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return { completed: [] };
-    const completed = (parsed as { completed?: unknown }).completed;
-    if (!Array.isArray(completed)) return { completed: [] };
-    return {
-      completed: completed.filter(
-        (x): x is OnboardingStepId =>
-          typeof x === 'string' && ['workspace', 'session', 'agent', 'plan', 'palette'].includes(x),
-      ),
-    };
+    if (!parsed || typeof parsed !== 'object') return [];
+    const c = (parsed as { completed?: unknown }).completed;
+    if (!Array.isArray(c)) return [];
+    return c.filter(
+      (x): x is OnboardingStepId =>
+        typeof x === 'string' && STEP_IDS.includes(x as OnboardingStepId),
+    );
   } catch {
-    return { completed: [] };
+    return [];
   }
 }
 
-function writePersisted(progress: PersistedProgress): void {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  } catch {
-    // localStorage full / unavailable — ignore
-  }
-}
-
-export function getCompleted(): ReadonlyArray<OnboardingStepId> {
-  return readPersisted().completed;
-}
-
-export function markStepComplete(id: OnboardingStepId): void {
-  const current = readPersisted();
-  if (current.completed.includes(id)) return;
-  writePersisted({ completed: [...current.completed, id] });
+export async function hydrateOnboardingFromDb(): Promise<void> {
+  const [rawProgress, rawCollapsed, rawFinished] = await Promise.all([
+    getSetting(tauriDatabase, SETTING_PROGRESS),
+    getSetting(tauriDatabase, SETTING_COLLAPSED),
+    getSetting(tauriDatabase, SETTING_FINISHED),
+  ]);
+  cache.completed = parseCompleted(rawProgress);
+  cache.collapsed = rawCollapsed === '1';
+  cache.finished = rawFinished === '1';
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }
 
-function readFlag(key: string): boolean {
-  if (typeof localStorage === 'undefined') return false;
-  return localStorage.getItem(key) === '1';
+function flushProgress(): void {
+  void setSetting(tauriDatabase, SETTING_PROGRESS, JSON.stringify({ completed: cache.completed }));
 }
 
-function writeFlag(key: string, on: boolean): void {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    if (on) localStorage.setItem(key, '1');
-    else localStorage.removeItem(key);
-    window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-  } catch {
-    // localStorage full / unavailable — ignore
-  }
+function flushFlag(key: string, on: boolean): void {
+  void setSetting(tauriDatabase, key, on ? '1' : '0');
 }
 
-/**
- * The checklist card is collapsed to the sidebar chip. Unlike a permanent
- * dismiss this is reversible — clicking the chip reopens it.
- */
+export function getCompleted(): ReadonlyArray<OnboardingStepId> {
+  return cache.completed;
+}
+
+export function markStepComplete(id: OnboardingStepId): void {
+  if (cache.completed.includes(id)) return;
+  cache.completed = [...cache.completed, id];
+  flushProgress();
+  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
+}
+
 export function isCollapsed(): boolean {
-  return readFlag(COLLAPSE_KEY);
+  return cache.collapsed;
 }
 
 export function collapse(): void {
-  writeFlag(COLLAPSE_KEY, true);
+  if (cache.collapsed) return;
+  cache.collapsed = true;
+  flushFlag(SETTING_COLLAPSED, true);
+  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }
 
 export function reopen(): void {
-  writeFlag(COLLAPSE_KEY, false);
+  if (!cache.collapsed) return;
+  cache.collapsed = false;
+  flushFlag(SETTING_COLLAPSED, false);
+  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }
 
-/**
- * All steps done and the user acknowledged the wrap-up — onboarding is gone
- * for good (card + chip). Completing the six steps is the only other exit.
- */
 export function isFinished(): boolean {
-  return readFlag(FINISHED_KEY);
+  return cache.finished;
 }
 
 export function finish(): void {
-  writeFlag(FINISHED_KEY, true);
+  if (cache.finished) return;
+  cache.finished = true;
+  flushFlag(SETTING_FINISHED, true);
+  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }

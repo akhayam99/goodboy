@@ -68,6 +68,12 @@ export async function listAgentsForSession(
   return rows.map(toAgent);
 }
 
+export async function getAgentById(db: Database, id: AgentId): Promise<Agent | null> {
+  const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
+  const row = rows[0];
+  return row ? toAgent(row) : null;
+}
+
 export async function insertAgent(db: Database, agent: Agent): Promise<void> {
   await db.execute(
     `INSERT INTO agents

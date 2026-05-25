@@ -14,6 +14,8 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
     setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>;
+    setSessionConfig: (sessionId: string, fields: unknown) => Promise<void>;
+    setAgentConfig: (sessionId: string, agentId: string, fields: unknown) => Promise<void>;
     workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
     skills: Record<string, never>;
@@ -45,6 +47,8 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     sendTurn: send,
     cancelCurrentTurn: cancel,
     setAgentVerbosity: async () => undefined,
+    setSessionConfig: async () => undefined,
+    setAgentConfig: async () => undefined,
     workspaceOverrides: {},
     providers: [
       { id: 'anthropic', connection: 'connected' },
@@ -226,8 +230,9 @@ describe('ChatInput — input wiring', () => {
   });
 
   it('provider override persists across sends (regression for bug D)', async () => {
-    // Pre-populate localStorage: user previously picked cursor for this session.
-    localStorage.setItem('goodboy:provider:session-1', 'cursor');
+    // Session arrives with provider already overridden (persisted on DB).
+    const setSessionConfig = vi.fn(async () => undefined);
+    mockStore.setState({ setSessionConfig });
 
     const user = userEvent.setup();
     render(
@@ -237,6 +242,7 @@ describe('ChatInput — input wiring', () => {
             defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
             allowTurnOverride: true,
           },
+          providerOverride: 'cursor',
         })}
       />,
     );
@@ -246,7 +252,10 @@ describe('ChatInput — input wiring', () => {
     await user.keyboard('{Enter}');
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
-    // After send, the selected provider must still be cursor (not reset to anthropic).
-    expect(localStorage.getItem('goodboy:provider:session-1')).toBe('cursor');
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        override: expect.objectContaining({ providerId: 'cursor' }),
+      }),
+    );
   });
 });

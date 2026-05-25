@@ -48,7 +48,14 @@ import {
   listAllSessionWorktrees,
   renameSession as renameSessionInDb,
   deleteSession as deleteSessionFromDb,
+  archiveSession as archiveSessionInDb,
+  unarchiveSession as unarchiveSessionInDb,
+  updateSessionConfig as updateSessionConfigInDb,
+  updateAgentConfig as updateAgentConfigInDb,
+  type SessionConfigUpdate,
+  type AgentConfigUpdate,
   setSetting as dbSetSetting,
+  getSetting as dbGetSetting,
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeWorkspaceProviderTelemetry,
@@ -141,6 +148,8 @@ import {
   type ExtractedHandoff,
 } from '@goodboy/core';
 import { runDbMigrations, tauriDatabase, wipeDb } from '../shared/lib/db';
+import { migrateLsToDb } from '../shared/lib/ls-to-db-migration';
+import { hydrateOnboardingFromDb } from '../features/onboarding/onboarding-store';
 import {
   buildProviderList,
   checkProviderAuth,
@@ -170,11 +179,7 @@ import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
 } from '../features/chat/turn';
-import {
-  readWorkspaceVerbosity,
-  verbosityDirective,
-  writeWorkspaceVerbosity,
-} from '../features/settings/verbosity';
+import { verbosityDirective } from '../features/settings/verbosity';
 import {
   createWorktree,
   removeWorktree,
@@ -572,6 +577,10 @@ export interface AppActions {
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
+  archiveTask(sessionId: SessionId): Promise<void>;
+  unarchiveTask(sessionId: SessionId): Promise<void>;
+  setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
+  setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
   setSidebarSessionSearch(query: string): void;
   refreshUnreadWorkspaces(): Promise<void>;
@@ -1269,6 +1278,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       try {
         set({ bootPhase: 'migrating', error: null });
         await runDbMigrations();
+        await migrateLsToDb();
+        await hydrateOnboardingFromDb();
 
         set({ bootPhase: 'loading-settings' });
         const [editorBinary, lastWorkspaceRaw, lastSessionRaw] = await Promise.all([
@@ -1896,9 +1907,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Seed L2 (per-agent) verbosity from the workspace default at insert time
     // so each new chat starts with the user's workspace setting baked in.
     const workspaceVerbositySeed =
-      get().workspaceOverrides[workspaceId]?.defaultVerbosity ??
-      readWorkspaceVerbosity(workspaceId) ??
-      undefined;
+      get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
 
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
@@ -2701,7 +2710,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       phaseDefinition?.verbosity ??
       agentRowForVerbosity?.verbosity ??
       get().workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
-      readWorkspaceVerbosity(session.workspaceId) ??
       'normal';
     const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
@@ -3698,9 +3706,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const workspaceVerbositySeed =
-      state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
-      readWorkspaceVerbosity(session.workspaceId) ??
-      undefined;
+      state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
     const inserted = await invokePhaseRunInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -3928,9 +3934,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set((state) => ({
         workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
       }));
-      if (overrides.defaultVerbosity !== null) {
-        writeWorkspaceVerbosity(workspaceId, overrides.defaultVerbosity);
-      }
     }
   },
 
@@ -4047,6 +4050,122 @@ export const useAppStore = create<AppStore>((set, get) => ({
       undefined,
       { workspaceId: sessionWorkspaceId },
     );
+  },
+
+  archiveTask: async (sessionId) => {
+    const prev = get().sessions.find((s) => s.id === sessionId);
+    if (!prev) return;
+    const nowIso = new Date().toISOString() as IsoDateTime;
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, archivedAt: nowIso } : s)),
+    }));
+    try {
+      await archiveSessionInDb(tauriDatabase, sessionId);
+    } catch (err) {
+      set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
+      }));
+      throw err;
+    }
+  },
+
+  unarchiveTask: async (sessionId) => {
+    const prev = get().sessions.find((s) => s.id === sessionId);
+    if (!prev) return;
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id !== sessionId) return s;
+        const { archivedAt: _drop, ...rest } = s;
+        return rest as Session;
+      }),
+    }));
+    try {
+      await unarchiveSessionInDb(tauriDatabase, sessionId);
+    } catch (err) {
+      set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
+      }));
+      throw err;
+    }
+  },
+
+  setSessionConfig: async (sessionId, fields) => {
+    const prev = get().sessions.find((s) => s.id === sessionId);
+    if (!prev) return;
+    const applyFields = (s: Session): Session => {
+      const { verbosity, effort, modelOverride, providerOverride, ...rest } = s;
+      const next: Session = { ...rest } as Session;
+      const nextVerbosity = fields.verbosity !== undefined ? fields.verbosity : (verbosity ?? null);
+      const nextEffort = fields.effort !== undefined ? fields.effort : (effort ?? null);
+      const nextModel =
+        fields.modelOverride !== undefined ? fields.modelOverride : (modelOverride ?? null);
+      const nextProvider =
+        fields.providerOverride !== undefined
+          ? fields.providerOverride
+          : (providerOverride ?? null);
+      return {
+        ...next,
+        ...(nextVerbosity != null && { verbosity: nextVerbosity }),
+        ...(nextEffort != null && { effort: nextEffort }),
+        ...(nextModel != null && { modelOverride: nextModel }),
+        ...(nextProvider != null && { providerOverride: nextProvider }),
+      };
+    };
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? applyFields(s) : s)),
+    }));
+    try {
+      await updateSessionConfigInDb(tauriDatabase, sessionId, fields);
+    } catch (err) {
+      set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
+      }));
+      throw err;
+    }
+  },
+
+  setAgentConfig: async (sessionId, agentId, fields) => {
+    const prevRuns = get().sessionPhaseRuns[sessionId] ?? [];
+    const prevAgent = prevRuns.find((r) => r.id === agentId);
+    if (!prevAgent) return;
+    const applyFields = (a: Agent): Agent => {
+      const { verbosity, effort, modelOverride, providerOverride, ...rest } = a;
+      const nextVerbosity = fields.verbosity !== undefined ? fields.verbosity : (verbosity ?? null);
+      const nextEffort = fields.effort !== undefined ? fields.effort : (effort ?? null);
+      const nextModel =
+        fields.modelOverride !== undefined ? fields.modelOverride : (modelOverride ?? null);
+      const nextProvider =
+        fields.providerOverride !== undefined
+          ? fields.providerOverride
+          : (providerOverride ?? null);
+      return {
+        ...rest,
+        ...(nextVerbosity != null && { verbosity: nextVerbosity }),
+        ...(nextEffort != null && { effort: nextEffort }),
+        ...(nextModel != null && { modelOverride: nextModel }),
+        ...(nextProvider != null && { providerOverride: nextProvider }),
+      };
+    };
+    set((state) => {
+      const runs = state.sessionPhaseRuns[sessionId] ?? [];
+      return {
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [sessionId]: runs.map((r) => (r.id === agentId ? applyFields(r) : r)),
+        },
+      };
+    });
+    try {
+      await updateAgentConfigInDb(tauriDatabase, agentId, fields);
+    } catch (err) {
+      set((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [sessionId]: prevRuns,
+        },
+      }));
+      throw err;
+    }
   },
 
   exportConfig: async () => {
