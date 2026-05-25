@@ -2,6 +2,7 @@ export type {
   AgentId,
   IsoDateTime,
   MessageId,
+  OpenQuestionId,
   ParallelAgentId,
   ParallelGroupId,
   PermissionRequestId,
@@ -15,6 +16,7 @@ export type {
   WorkspaceId,
   WorkspaceScriptId,
 } from './ids';
+export type { OpenQuestion, OpenQuestionStatus } from './open-question';
 export type {
   ContextSlot,
   ContextSlotAuthor,

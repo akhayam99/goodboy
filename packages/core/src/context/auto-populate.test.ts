@@ -1,9 +1,16 @@
 import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { OpenQuestionStatus, SessionId, WorkspaceId } from '@goodboy/types';
 import { autoPopulateContext } from './auto-populate';
 import { ContextEngine } from './engine';
+
+interface OpenQuestionRowSnapshot {
+  readonly text: string;
+  readonly status: OpenQuestionStatus;
+  readonly suggested_answers: string;
+  readonly user_answer: string | null;
+}
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');
@@ -100,6 +107,90 @@ describe('autoPopulateContext', () => {
     });
 
     expect(result.updatedSlots).toEqual([]);
+  });
+
+  it('persists open questions to the open_questions table with suggestions', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_q1' as SessionId;
+    await seedSession(db, sessionId);
+
+    const result = await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question suggestions="a | b">>foo<</ctx-question>>',
+    });
+
+    expect(result.openQuestionsChanged).toBe(true);
+
+    const rows = await db.select<OpenQuestionRowSnapshot>(
+      'SELECT text, status, suggested_answers, user_answer FROM open_questions WHERE session_id = ?',
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.text).toBe('foo');
+    expect(rows[0]?.status).toBe('open');
+    expect(JSON.parse(rows[0]?.suggested_answers ?? '[]')).toEqual(['a', 'b']);
+  });
+
+  it('dedups identical open questions across turns', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_q2' as SessionId;
+    await seedSession(db, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>foo<</ctx-question>>',
+    });
+    const second = await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>foo<</ctx-question>>',
+    });
+
+    expect(second.openQuestionsChanged).toBe(false);
+
+    const rows = await db.select<OpenQuestionRowSnapshot>(
+      `SELECT text, status, suggested_answers, user_answer FROM open_questions
+       WHERE session_id = ? AND status = 'open'`,
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+  });
+
+  it('marks open questions answered when a resolved marker is emitted', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_q3' as SessionId;
+    await seedSession(db, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>foo<</ctx-question>>',
+    });
+    const resolved = await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-resolved>>foo<</ctx-resolved>>',
+    });
+
+    expect(resolved.openQuestionsChanged).toBe(true);
+
+    const rows = await db.select<OpenQuestionRowSnapshot>(
+      'SELECT text, status, suggested_answers, user_answer FROM open_questions WHERE session_id = ?',
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe('answered');
+    expect(rows[0]?.user_answer).toBe('[resolved by agent]');
   });
 
   it('skips slots whose additions are all duplicates', async () => {

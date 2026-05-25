@@ -73,6 +73,8 @@ vi.mock('@goodboy/db', () => ({
   updateProviderRunStatus: vi.fn(),
   updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
+  insertOpenQuestion: vi.fn(async () => undefined),
+  markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   insertTurnEvent: vi.fn(async () => undefined),
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForTask: vi.fn(async () => []),

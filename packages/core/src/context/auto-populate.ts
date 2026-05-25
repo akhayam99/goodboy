@@ -1,5 +1,5 @@
-import type { ContextSlot, SessionId } from '@goodboy/types';
-import type { Database } from '@goodboy/db';
+import type { ContextSlot, OpenQuestionId, SessionId } from '@goodboy/types';
+import { insertOpenQuestion, markOpenQuestionsResolvedByText, type Database } from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
@@ -18,6 +18,7 @@ export interface AutoPopulateInput {
 
 export interface AutoPopulateResult {
   readonly updatedSlots: ReadonlyArray<SlotKey>;
+  readonly openQuestionsChanged: boolean;
 }
 
 export async function autoPopulateContext(input: AutoPopulateInput): Promise<AutoPopulateResult> {
@@ -35,7 +36,10 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   // pending update if `pushUpdate` already staged one for this slot, so
   // resolutions and additions in the same turn don't fight each other.
   const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
-  let nextQuestions = mergeIntoSlot(existingQuestions, questions);
+  let nextQuestions = mergeIntoSlot(
+    existingQuestions,
+    questions.map((q) => q.text),
+  );
   nextQuestions = removeFromSlot(nextQuestions, resolved);
   if (nextQuestions !== existingQuestions) {
     updates.push({ key: 'open_questions', value: nextQuestions });
@@ -45,7 +49,39 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     await engine.upsert(input.sessionId, upd.key, upd.value);
   }
 
-  return { updatedSlots: updates.map((u) => u.key) };
+  // Persist questions to the dedicated `open_questions` table so the Questions
+  // tab can render gamified per-question cards with suggestion chips. Dedup is
+  // enforced by a partial unique index `(session_id, text) WHERE status='open'`;
+  // re-emitting the same question across turns is a no-op.
+  let insertedCount = 0;
+  for (const q of questions) {
+    const res = await insertOpenQuestion(input.db, {
+      id: cryptoRandomUUID() as OpenQuestionId,
+      sessionId: input.sessionId,
+      text: q.text,
+      suggestedAnswers: q.suggestedAnswers,
+    });
+    if (res.inserted) insertedCount += 1;
+  }
+
+  const resolvedCount = await markOpenQuestionsResolvedByText(input.db, input.sessionId, resolved);
+
+  return {
+    updatedSlots: updates.map((u) => u.key),
+    openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
+  };
+}
+
+function cryptoRandomUUID(): string {
+  const g = globalThis as { crypto?: { randomUUID?: () => string } };
+  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
+  // Fallback: RFC4122 v4 with Math.random — used only when the runtime lacks
+  // crypto.randomUUID (older test environments).
+  const rnd = () =>
+    Math.floor(Math.random() * 0x10000)
+      .toString(16)
+      .padStart(4, '0');
+  return `${rnd()}${rnd()}-${rnd()}-4${rnd().slice(1)}-${rnd()}-${rnd()}${rnd()}${rnd()}`;
 }
 
 function pushUpdate(
