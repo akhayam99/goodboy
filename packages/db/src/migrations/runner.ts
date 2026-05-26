@@ -32,7 +32,7 @@ export async function migrate(
       skipped.push(migration.version);
       continue;
     }
-    await db.exec(migration.sql);
+    await applyMigrationSql(db, migration);
     // OR IGNORE: under React StrictMode in dev, hydrate() runs twice and two
     // migrate() invocations race for the same version row. The SQL itself is
     // idempotent enough (table-rebuild recipe), but the version INSERT would
@@ -46,4 +46,41 @@ export async function migrate(
 
   const currentVersion = ordered.at(-1)?.version ?? 0;
   return { applied: newlyApplied, skipped, currentVersion };
+}
+
+// Self-healing apply: runs each statement individually so a benign "already
+// exists" error on an idempotent DDL (ALTER ADD COLUMN, CREATE INDEX, CREATE
+// TABLE) doesn't abort the rest of the migration. This unblocks users who
+// applied an older numbering of a migration before it was bumped to resolve
+// a version collision (the schema object is already there from the previous
+// run; re-applying it would otherwise throw and corrupt schema_version).
+async function applyMigrationSql(db: Database, migration: Migration): Promise<void> {
+  const statements = migration.sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  for (const stmt of statements) {
+    try {
+      await db.exec(stmt);
+    } catch (err) {
+      if (isAlreadyExistsError(err)) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[migrations] v${migration.version}: skipping idempotent statement (already applied): ${truncate(stmt)}`,
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+function isAlreadyExistsError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return msg.includes('duplicate column name') || msg.includes('already exists');
+}
+
+function truncate(s: string): string {
+  return s.length > 80 ? `${s.slice(0, 77)}...` : s;
 }
