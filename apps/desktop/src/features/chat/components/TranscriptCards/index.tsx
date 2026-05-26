@@ -5,6 +5,7 @@ import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { readAttachment } from '../../turn';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { ImageLightbox } from '../ImageLightbox';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
@@ -259,7 +260,7 @@ function InlineCopyButton({ value }: { value: string }) {
   );
 }
 
-// Loads a persisted attachment lazily — the bytes live on disk in the worktree,
+// Loads a persisted attachment lazily: the bytes live on disk in the worktree,
 // not in the turn-event payload, so each thumbnail reads its own file. Works
 // the same for a just-sent message and one restored from the DB after restart.
 function AttachmentThumb({
@@ -271,6 +272,7 @@ function AttachmentThumb({
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!workingDir) {
@@ -309,12 +311,24 @@ function AttachmentThumb({
   }
 
   return (
-    <img
-      src={src}
-      alt={attachment.fileName}
-      title={attachment.fileName}
-      className="max-h-60 max-w-full rounded-lg object-contain ring-1 ring-primary/20"
-    />
+    <>
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        title={`preview ${attachment.fileName}`}
+        aria-label={`preview ${attachment.fileName}`}
+        className="cursor-zoom-in"
+      >
+        <img
+          src={src}
+          alt={attachment.fileName}
+          className="max-h-60 max-w-full rounded-lg object-contain ring-1 ring-primary/20"
+        />
+      </button>
+      {previewOpen ? (
+        <ImageLightbox src={src} alt={attachment.fileName} onClose={() => setPreviewOpen(false)} />
+      ) : null}
+    </>
   );
 }
 

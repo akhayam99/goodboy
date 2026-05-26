@@ -53,6 +53,7 @@ import { ProviderUsagePill } from '../ProviderUsagePill';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from '../RightSizeCard';
+import { ImageLightbox } from '../ImageLightbox';
 import { NudgeCard } from '../NudgeCard';
 import { ClipboardCheck } from 'lucide-react';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -732,11 +733,11 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   // Native drag-drop. Tauri swallows DOM drop events for OS-file drags by
   // default (dragDropEnabled=true) and emits a window-global event instead.
-  // We register the listener ONCE per component lifetime — refs carry the
+  // We register the listener ONCE per component lifetime. Refs carry the
   // latest providerDisconnected/showToast so dep churn never tears the
   // listener down mid-drag. Coordinate semantics vary across Tauri builds
-  // (some emit physical px, some logical), so the hit-test tries both via
-  // elementFromPoint and accepts either as "inside the composer".
+  // (some emit physical px, some logical), so the hit-test tries both
+  // interpretations against the composer's bounding rect.
   const providerDisconnectedRef = useRef(providerDisconnected);
   providerDisconnectedRef.current = providerDisconnected;
   const showToastRef = useRef(showToast);
@@ -746,16 +747,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    const hitsComposer = (x: number, y: number): boolean => {
+    // Rect-based hit-test, tolerant to whichever coordinate space Tauri
+    // emits on this build (physical vs logical px). `elementFromPoint`
+    // proved unreliable during an active OS drag: the native drag overlay
+    // sits above the DOM and the hit-test returns null.
+    const isInsideComposer = (px: number, py: number): boolean => {
       const el = composerRef.current;
       if (!el) return false;
-      const hit = document.elementFromPoint(x, y);
-      return hit !== null && el.contains(hit);
-    };
-
-    const isInsideComposer = (px: number, py: number): boolean => {
+      const rect = el.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      return hitsComposer(px / dpr, py / dpr) || hitsComposer(px, py);
+      const candidates: ReadonlyArray<readonly [number, number]> = [
+        [px / dpr, py / dpr],
+        [px, py],
+      ];
+      return candidates.some(
+        ([x, y]) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom,
+      );
     };
 
     const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
@@ -770,7 +777,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
             dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
           });
         } catch {
-          // Non-image / oversize drops are silently skipped — otherwise a
+          // Non-image / oversize drops are silently skipped: otherwise a
           // folder drop would spam a toast per child.
         }
       }
@@ -799,15 +806,19 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           switch (p.type) {
             case 'enter':
             case 'over':
-              setIsDragging(isInsideComposer(p.position.x, p.position.y));
+              // Tauri only fires these while the cursor is over our webview,
+              // so an unconditional `true` means "drag is happening here".
+              // Good enough to highlight the composer as the drop target.
+              // We don't gate on hit-test: native drag overlays defeat the
+              // DOM, and the user knows there's only one drop zone.
+              setIsDragging(true);
               break;
             case 'leave':
               setIsDragging(false);
               break;
             case 'drop': {
-              const inside = isInsideComposer(p.position.x, p.position.y);
               setIsDragging(false);
-              if (!inside) return;
+              if (!isInsideComposer(p.position.x, p.position.y)) return;
               void ingestDroppedPaths(p.paths);
               break;
             }
@@ -816,7 +827,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         if (cancelled) off();
         else unlisten = off;
       } catch (err) {
-        // Webview API unavailable in non-Tauri test env — log so a real
+        // Webview API unavailable in non-Tauri test env. Log so a real
         // failure in dev surfaces in the console instead of being silent.
         console.warn('drag-drop listener registration failed:', err);
       }
@@ -1030,11 +1041,22 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
         ) : null}
         <div
           ref={composerRef}
-          className={`flex flex-col rounded-[6px] bg-subtle/80 ring-1 transition-shadow focus-within:ring-foreground/15 dark:bg-muted/40 ${
-            isDragging ? 'ring-2 ring-primary/50' : 'ring-border-soft'
+          className={`relative flex flex-col rounded-[6px] ring-1 transition-all focus-within:ring-foreground/15 dark:bg-muted/40 ${
+            isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft'
           }`}
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
+          {isDragging ? (
+            <div
+              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[6px] bg-primary/5"
+              aria-hidden
+            >
+              <div className="flex items-center gap-2 rounded-full bg-background/95 px-4 py-1.5 text-xs font-medium text-primary shadow-md ring-1 ring-primary/30">
+                <ImagePlus size={14} aria-hidden />
+                drop to attach
+              </div>
+            </div>
+          ) : null}
           {attachments.length > 0 ? (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (
@@ -1187,13 +1209,29 @@ function AttachmentChip({
   readonly attachment: PendingAttachment;
   readonly onRemove: () => void;
 }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
-      <img
-        src={attachment.dataUrl}
-        alt={attachment.fileName}
-        className="h-full w-full object-cover"
-      />
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        title={`preview ${attachment.fileName}`}
+        aria-label={`preview ${attachment.fileName}`}
+        className="block h-full w-full cursor-zoom-in"
+      >
+        <img
+          src={attachment.dataUrl}
+          alt={attachment.fileName}
+          className="h-full w-full object-cover"
+        />
+      </button>
+      {previewOpen ? (
+        <ImageLightbox
+          src={attachment.dataUrl}
+          alt={attachment.fileName}
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
       <button
         type="button"
         onClick={onRemove}
