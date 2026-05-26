@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
 import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
@@ -38,6 +39,7 @@ import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
   AgentId,
+  ProviderRunId,
   Session,
   SessionId,
   Step,
@@ -90,6 +92,7 @@ import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { useNow } from '../../../../shared/hooks/use-now';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -129,8 +132,17 @@ export function WorkspacesSidebar({
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const [archivedMap, archive, unarchive] = useArchivedSessions(sessions);
-  const activeSessions = sessions.filter((s) => !archivedMap[s.id]);
-  const archivedSessions = sessions.filter((s) => archivedMap[s.id]);
+  // Memoize so child memos (e.g. useSortedGroupedSessions) don't invalidate
+  // on every parent render — the filter would otherwise allocate fresh
+  // arrays each time and cascade through SessionActivityBar's sort/group.
+  const activeSessions = useMemo(
+    () => sessions.filter((s) => !archivedMap[s.id]),
+    [sessions, archivedMap],
+  );
+  const archivedSessions = useMemo(
+    () => sessions.filter((s) => archivedMap[s.id]),
+    [sessions, archivedMap],
+  );
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
 
@@ -266,21 +278,28 @@ export function WorkspacesSidebar({
         </div>
       </div>
 
-      <WorkspaceLinkDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
-      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
-      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
-      {currentWorkspace ? (
+      {/* Mount these heavy dialogs only when open. Otherwise their inner
+          selectors (PricingDialog subscribes to session/workspace summaries,
+          sessionTelemetry, providerSpendBreakdown — GuideDialog walks a few
+          maps too) re-evaluate on every store update for a panel the user
+          almost never has open. */}
+      {addWorkspaceOpen ? (
+        <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+      ) : null}
+      {guideOpen ? <GuideDialog open onClose={() => setGuideOpen(false)} /> : null}
+      {pricingOpen ? <PricingDialog open onClose={() => setPricingOpen(false)} /> : null}
+      {currentWorkspace && newSessionOpen ? (
         <NewSessionDialog
-          open={newSessionOpen}
+          open
           onClose={() => setNewSessionOpen(false)}
           workspaceId={currentWorkspace.id}
           onOpenSettings={onOpenSettings}
         />
       ) : null}
-      {currentSession ? (
+      {currentSession && sessionSettingsOpen ? (
         <SessionSettingsDialog
           sessionId={currentSession.id as SessionId}
-          open={sessionSettingsOpen}
+          open
           onClose={() => setSessionSettingsOpen(false)}
           archived={!!archivedMap[currentSession.id]}
           onArchive={() => archive(currentSession.id as SessionId)}
@@ -597,14 +616,51 @@ function AgentsSection({ task }: AgentsSectionProps) {
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
-  const agentRunHistory = useAppStore((s) => s.agentRunHistory);
+  // Scope cross-agent maps to this session's runs. Subscribing to the raw
+  // store map (`s.agentRunHistory` etc.) re-renders this section every time
+  // any agent anywhere in the app updates — useShallow narrows the
+  // subscription to "did any of *my* runs' entries change".
+  const agentRunHistory = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) return out;
+      for (const run of runs) {
+        const history = s.agentRunHistory[run.id];
+        if (history) out[run.id] = history;
+      }
+      return out;
+    }),
+  );
+  const agentKindOverride = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, AgentKind> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) return out;
+      for (const run of runs) {
+        const kind = s.agentKindOverride[run.id];
+        if (kind) out[run.id] = kind;
+      }
+      return out;
+    }),
+  );
+  const agentModelOverride = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, string> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) return out;
+      for (const run of runs) {
+        const model = s.agentModelOverride[run.id];
+        if (model) out[run.id] = model;
+      }
+      return out;
+    }),
+  );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const agentModelOverride = useAppStore((s) => s.agentModelOverride);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
@@ -1593,13 +1649,12 @@ function findContextWindow(model: string): number | null {
 }
 
 function AgentLifetime({ run }: { run: Agent }) {
-  const [now, setNow] = useState(() => Date.now());
   const isLive = !!run.startedAt && !run.completedAt;
-  useEffect(() => {
-    if (!isLive) return;
-    const id = window.setInterval(() => setNow(Date.now()), 5000);
-    return () => window.clearInterval(id);
-  }, [isLive]);
+  // Subscribe to a shared 5s ticker so the relative label refreshes without
+  // spawning one setInterval per live agent. The hook no-ops when isLive is
+  // false — completed agents render once and never re-tick.
+  const now = useNow(5_000, isLive);
+  void now;
 
   if (!run.startedAt) {
     return (
@@ -1613,8 +1668,6 @@ function AgentLifetime({ run }: { run: Agent }) {
   }
 
   const ageStr = formatRelativeDuration(run.startedAt, run.completedAt);
-  const dotNow = now;
-  void dotNow; // recalculation trigger
   const tooltip = run.completedAt
     ? `started ${run.startedAt}\ncompleted ${run.completedAt}\nworked ${ageStr}`
     : `started ${run.startedAt}\nworking for ${ageStr}`;

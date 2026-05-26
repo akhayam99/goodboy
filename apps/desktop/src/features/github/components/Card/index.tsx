@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNow } from '../../../../shared/hooks/use-now';
 import {
   AlertCircle,
   Check,
@@ -333,14 +334,10 @@ function computeReviewStatus(
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
-  const [, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!fetchedAt) return;
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(id);
-  }, [fetchedAt]);
+  // Shared 30s ticker — one timer total even with many PR cards on screen.
+  const now = useNow(30_000, !!fetchedAt);
   if (!fetchedAt) return null;
-  const ageMs = Date.now() - new Date(fetchedAt).getTime();
+  const ageMs = now - new Date(fetchedAt).getTime();
   if (!Number.isFinite(ageMs) || ageMs < 60_000) return null;
   return (
     <span

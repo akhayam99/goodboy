@@ -27,12 +27,6 @@ export interface OnboardingProgress {
 }
 
 export function useOnboardingProgress(): OnboardingProgress {
-  const workspaces = useWorkspaces();
-  const sessions = useAppStore((s) => s.sessions);
-  const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
-  const sessionPlans = useAppStore((s) => s.sessionPlans);
-  const currentSession = useCurrentSession();
-
   // localStorage is the source of truth (monotonic). Re-read on a custom
   // event so manual markStepComplete calls in other components propagate.
   const [tick, setTick] = useState(0);
@@ -46,31 +40,48 @@ export function useOnboardingProgress(): OnboardingProgress {
   const collapsed = useMemo(() => isCollapsed(), [tick]);
   const finished = useMemo(() => isFinished(), [tick]);
 
+  // Subscribe to *derived booleans*, not the raw maps. Subscribing to
+  // sessionPhaseRuns or sessionPlans would re-render every consumer of
+  // this hook (the floating card + the sidebar chip) on every agent or
+  // plan update across the entire app. We only need "did anything pass
+  // the gate yet", and once the corresponding step is persisted, we
+  // collapse the selector to a constant `false` so updates are ignored.
+  const workspaces = useWorkspaces();
+  const sessionCount = useAppStore((s) => s.sessions.length);
+  const needsAgentDetect = !persistedCompleted.has('agent');
+  const needsPlanDetect = !persistedCompleted.has('plan');
+  const anyAgent = useAppStore((s) => {
+    if (!needsAgentDetect) return false;
+    for (const runs of Object.values(s.sessionPhaseRuns)) {
+      if (runs.length > 0) return true;
+    }
+    return false;
+  });
+  const anyPlan = useAppStore((s) => {
+    if (!needsPlanDetect) return false;
+    for (const plans of Object.values(s.sessionPlans)) {
+      if (plans.length > 0) return true;
+    }
+    return false;
+  });
+  const currentSession = useCurrentSession();
+
   // Auto-detect completions from store state. These mark the persisted
   // store so the chip stays consistent after reload.
   useEffect(() => {
     if (workspaces.length > 0 && !persistedCompleted.has('workspace')) {
       markStepComplete('workspace');
     }
-    if (sessions.length > 0 && !persistedCompleted.has('session')) {
+    if (sessionCount > 0 && !persistedCompleted.has('session')) {
       markStepComplete('session');
     }
-    const anyAgent = Object.values(sessionPhaseRuns).some((runs) => runs.length > 0);
     if (anyAgent && !persistedCompleted.has('agent')) {
       markStepComplete('agent');
     }
-    const anyPlan = Object.values(sessionPlans).some((p) => p.length > 0);
     if (anyPlan && !persistedCompleted.has('plan')) {
       markStepComplete('plan');
     }
-  }, [
-    workspaces.length,
-    sessions.length,
-    sessionPhaseRuns,
-    sessionPlans,
-    persistedCompleted,
-    currentSession,
-  ]);
+  }, [workspaces.length, sessionCount, anyAgent, anyPlan, persistedCompleted, currentSession]);
 
   const totalCount = ONBOARDING_STEPS.length;
   const completedCount = persistedCompleted.size;

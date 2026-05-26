@@ -41,12 +41,20 @@ export function useSessionViewPrefs(workspaceId: WorkspaceId | null): SessionVie
   return prefs ?? DEFAULT_SESSION_VIEW_PREFS;
 }
 
+const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
+
 export function useSortedGroupedSessions(
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> {
   const prefs = useSessionViewPrefs(workspaceId);
-  const sessionGithub = useAppStore((s) => s.sessionGithub);
+  const needsGithub = prefs.group === 'pr';
+  // Only subscribe to the full github map when we actually group by PR.
+  // Otherwise any PR poll for any session would invalidate the memo and
+  // force a re-sort of every sidebar in the app.
+  const sessionGithub = useAppStore((s) =>
+    needsGithub ? s.sessionGithub : (EMPTY_GITHUB_STATE as typeof s.sessionGithub),
+  );
   return useMemo(
     () => sortAndGroupSessions(sessions, prefs, sessionGithub),
     [sessions, prefs, sessionGithub],
@@ -157,22 +165,25 @@ const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, d
  * commits doesn't drop the count because the diff is computed against the
  * merge-base with the base branch, not against `HEAD`.
  *
- * Refreshed on session switch, after agent activity (transcript grows), and
- * after summarizer ticks (proxy for "something on disk likely changed").
+ * Refresh triggers: session switch, summarizer ticks, and the max
+ * `lastFinishedAt` across the session's agents. We avoid keying on
+ * transcript length — that grows token-by-token and would re-fire the
+ * Tauri invoke on every streamed chunk.
  */
 export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
   const workingDir = useAppStore((s) =>
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
   );
-  // Refresh triggers: any new transcript event for this session's agents, or
-  // a summarizer tick. We don't need the actual content, just the size.
-  const transcriptSize = useAppStore((s) => {
-    if (!sessionId) return 0;
+  const lastTurnFinishedAt = useAppStore((s) => {
+    if (!sessionId) return null;
     const runs = s.sessionPhaseRuns[sessionId];
-    if (!runs) return 0;
-    let total = 0;
-    for (const run of runs) total += (s.transcripts[run.id] ?? []).length;
-    return total;
+    if (!runs) return null;
+    let max: string | null = null;
+    for (const run of runs) {
+      const t = run.lastFinishedAt ?? null;
+      if (t && (max === null || t > max)) max = t;
+    }
+    return max;
   });
   const summarizerLastUpdate = useAppStore((s) =>
     sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
@@ -206,7 +217,7 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
     return () => {
       cancelled = true;
     };
-  }, [workingDir, transcriptSize, summarizerLastUpdate]);
+  }, [workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
 
   return state;
 };

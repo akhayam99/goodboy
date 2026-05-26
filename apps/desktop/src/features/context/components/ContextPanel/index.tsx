@@ -178,8 +178,15 @@ export function ContextPanel({
     reconcileSessionBranch,
   ]);
 
-  const slotsByKey = new Map<string, ContextSlot>(
-    slots.map((s) => [s.key, s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s]),
+  const slotsByKey = useMemo(
+    () =>
+      new Map<string, ContextSlot>(
+        slots.map((s) => [
+          s.key,
+          s.key === 'files_touched' ? normalizeFilesSlot(s, workingDir) : s,
+        ]),
+      ),
+    [slots, workingDir],
   );
 
   // open_questions is pinned in a sticky footer (visible across both tabs);
@@ -319,7 +326,11 @@ export function ContextPanel({
               ) : tab === 'questions' ? (
                 <QuestionsTab sessionId={session.id} onSubmit={onSubmitAnswers} />
               ) : tab === 'files' ? (
-                <FilesTabContent sessionId={session.id} workingDir={workingDir} />
+                <FilesTabContent
+                  sessionId={session.id}
+                  workingDir={workingDir}
+                  filesTouched={filesTouched}
+                />
               ) : (
                 <GithubTabContent sessionId={session.id} branch={branch} />
               )}
@@ -572,14 +583,22 @@ function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
+interface FilesTouchedShape {
+  readonly paths: ReadonlyArray<string>;
+  readonly count: number;
+  readonly additions: number;
+  readonly deletions: number;
+}
+
 function FilesTabContent({
   sessionId,
   workingDir,
+  filesTouched,
 }: {
   sessionId: SessionId;
   workingDir: string | null;
+  filesTouched: FilesTouchedShape;
 }) {
-  const filesTouched = useFilesTouched(sessionId);
   const diffComments = useDiffComments(sessionId);
   const loading = useSessionLoading(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
