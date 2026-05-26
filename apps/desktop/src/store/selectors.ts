@@ -77,8 +77,25 @@ const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.wo
 const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
 const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
+
+// Archived sessions are not in `state.sessions` by construction — they live
+// in `state.archivedSessions[workspaceId]` and are loaded lazily. Lookups for
+// the current session / a specific id need to fall back into that pool so the
+// detail panel and SessionSettingsDialog work when the user clicks an
+// archived row in the Archived tab.
+function findSessionInAnyPool(state: AppState, id: string | null): Session | null {
+  if (!id) return null;
+  const active = state.sessions.find((s) => s.id === id);
+  if (active) return active;
+  for (const list of Object.values(state.archivedSessions)) {
+    const hit = list.find((s) => s.id === id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 const selectCurrentSession = (state: AppState): Session | null =>
-  state.sessions.find((s) => s.id === state.currentSessionId) ?? null;
+  findSessionInAnyPool(state, state.currentSessionId);
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
 export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
 export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
@@ -88,7 +105,7 @@ export const useSessionById = (id: SessionId | null): Session | null => {
   const selector = useMemo(
     () =>
       (state: AppState): Session | null =>
-        id ? (state.sessions.find((s) => s.id === id) ?? null) : null,
+        findSessionInAnyPool(state, id),
     [id],
   );
   return useAppStore(selector);

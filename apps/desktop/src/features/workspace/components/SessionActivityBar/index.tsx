@@ -54,6 +54,10 @@ interface SessionActivityBarProps {
   currentSessionId: SessionId | null;
   onSelectSession: (id: SessionId) => void;
   onNewSession: () => void;
+  // Fired when the user reveals the Archived tab. Triggers a lazy DB load
+  // of archived rows in the parent — archived sessions are never eager-
+  // loaded so the rest of the app stays free of them.
+  onArchivedTabOpen?: () => void;
 }
 
 export function SessionActivityBar({
@@ -63,6 +67,7 @@ export function SessionActivityBar({
   currentSessionId,
   onSelectSession,
   onNewSession,
+  onArchivedTabOpen,
 }: SessionActivityBarProps) {
   const [tab, setTab] = useState<ActivityTab>('active');
 
@@ -144,7 +149,11 @@ export function SessionActivityBar({
       <div className="shrink-0 p-1.5">
         <button
           type="button"
-          onClick={() => setTab(isArchivedView ? 'active' : 'archived')}
+          onClick={() => {
+            const next: ActivityTab = isArchivedView ? 'active' : 'archived';
+            if (next === 'archived') onArchivedTabOpen?.();
+            setTab(next);
+          }}
           aria-pressed={isArchivedView}
           className={cn(
             'flex w-full items-center justify-center gap-1.5 rounded border py-1.5 text-2xs font-medium transition-colors',

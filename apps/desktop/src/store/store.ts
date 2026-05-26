@@ -40,6 +40,7 @@ import {
   listTurnEventsForSession,
   listAgentRunIdsForSession,
   listSessionsForWorkspace,
+  listArchivedSessionsForWorkspace,
   listTelemetryForSession,
   listWorkspaces,
   listWorktreesForSession,
@@ -316,6 +317,11 @@ export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
+  // Archived sessions, loaded lazily per workspace when the user opens the
+  // Archived tab. Kept separate from `sessions` so interactive surfaces
+  // (palette, github polling, unread, workspace-switch eager loads) never see
+  // them — they exist only as historical info.
+  readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
@@ -473,6 +479,10 @@ export interface AppActions {
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   setCurrentSession(id: SessionId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
+  // Lazily load archived sessions for a workspace. Called when the Archived
+  // tab opens. Idempotent: re-running refreshes the list (e.g. after the user
+  // archived something new in another tab).
+  loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
   refreshSessionSummary(sessionId: SessionId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
@@ -688,6 +698,7 @@ const initialState: AppState = {
   workspaces: [],
   currentWorkspaceId: null,
   sessions: [],
+  archivedSessions: {},
   currentSessionId: null,
   settings: {},
   sessionSummary: null,
@@ -1414,6 +1425,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       currentWorkspaceId: id,
       currentSessionId: null,
       sessions: [],
+      // Drop the archived cache: lazy-reloads on next Archived-tab open.
+      archivedSessions: {},
       sessionSummary: null,
       workspaceSummary: null,
       transcripts: {},
@@ -1805,6 +1818,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   refreshSessions: async (workspaceId) => {
     const sessions = await listSessionsForWorkspace(tauriDatabase, workspaceId);
     set({ sessions });
+  },
+
+  loadArchivedSessions: async (workspaceId) => {
+    const archived = await listArchivedSessionsForWorkspace(tauriDatabase, workspaceId);
+    set((state) => ({
+      archivedSessions: { ...state.archivedSessions, [workspaceId]: archived },
+    }));
   },
 
   refreshSessionSummary: async (sessionId) => {
@@ -3467,34 +3487,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Optimistic: drop from sidebar list (and clear per-ws caches if it was
     // the active one).
-    set((s) => ({
-      workspaces: s.workspaces.filter((w) => w.id !== id),
-      ...(wasCurrentWorkspace
-        ? {
-            currentWorkspaceId: null,
-            currentSessionId: null,
-            sessions: [],
-            sessionSummary: null,
-            workspaceSummary: null,
-            transcripts: {},
-            messages: {},
-            sessionTelemetry: {},
-            sessionSlots: {},
-            slotHistory: {},
-            sessionWorktrees: {},
-            sessionPhaseRuns: {},
-            selectedAgentId: {},
-            agentRunHistory: {},
-            agentTurnState: {},
-            sessionBudgets: {},
-            summarizerStatus: {},
-            sessionNextActions: {},
-            budgetAlerts: [],
-            unknownPayloadCounts: {},
-            terminalSessions: {},
-          }
-        : {}),
-    }));
+    set((s) => {
+      const nextArchived = { ...s.archivedSessions };
+      delete nextArchived[id];
+      return {
+        workspaces: s.workspaces.filter((w) => w.id !== id),
+        archivedSessions: nextArchived,
+        ...(wasCurrentWorkspace
+          ? {
+              currentWorkspaceId: null,
+              currentSessionId: null,
+              sessions: [],
+              sessionSummary: null,
+              workspaceSummary: null,
+              transcripts: {},
+              messages: {},
+              sessionTelemetry: {},
+              sessionSlots: {},
+              slotHistory: {},
+              sessionWorktrees: {},
+              sessionPhaseRuns: {},
+              selectedAgentId: {},
+              agentRunHistory: {},
+              agentTurnState: {},
+              sessionBudgets: {},
+              summarizerStatus: {},
+              sessionNextActions: {},
+              budgetAlerts: [],
+              unknownPayloadCounts: {},
+              terminalSessions: {},
+            }
+          : {}),
+      };
+    });
 
     try {
       await disconnectWorkspaceInDb(tauriDatabase, id, now);
@@ -4174,36 +4199,150 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const prev = get().sessions.find((s) => s.id === sessionId);
     if (!prev) return;
     const nowIso = new Date().toISOString() as IsoDateTime;
-    set((state) => ({
-      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, archivedAt: nowIso } : s)),
-    }));
+    const archived: Session = { ...prev, archivedAt: nowIso };
+    const workspaceId = prev.workspaceId;
+
+    // Optimistic move: out of `sessions` (so palette / github / unread / eager
+    // loads stop seeing it), into `archivedSessions[workspaceId]` if that
+    // cache is loaded. If not loaded, the next Archived-tab open will fetch
+    // fresh from DB and pick it up.
+    set((state) => {
+      const cached = state.archivedSessions[workspaceId];
+      const nextArchived = cached
+        ? { ...state.archivedSessions, [workspaceId]: [archived, ...cached] }
+        : state.archivedSessions;
+      return {
+        sessions: state.sessions.filter((s) => s.id !== sessionId),
+        archivedSessions: nextArchived,
+        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+      };
+    });
+
     try {
       await archiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
-      set((state) => ({
-        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
-      }));
+      // Rollback: put the session back, undo the archived insertion.
+      set((state) => {
+        const cached = state.archivedSessions[workspaceId];
+        const nextArchived = cached
+          ? { ...state.archivedSessions, [workspaceId]: cached.filter((s) => s.id !== sessionId) }
+          : state.archivedSessions;
+        return {
+          sessions: [...state.sessions, prev],
+          archivedSessions: nextArchived,
+        };
+      });
       throw err;
     }
+
+    // Post-archive cleanup: drop heavy per-session caches so memory doesn't
+    // grow with the archive count. Cheap to rebuild on unarchive (lazy DB
+    // reload + worktree/agent re-fetch).
+    set((state) => {
+      const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
+      const nextTranscripts = { ...state.transcripts };
+      const nextMessages = { ...state.messages };
+      for (const agent of phaseRuns) {
+        delete nextTranscripts[agent.id];
+        delete nextMessages[agent.id];
+      }
+      const nextWorktrees = { ...state.sessionWorktrees };
+      delete nextWorktrees[sessionId];
+      const nextBranches = { ...state.sessionBranches };
+      delete nextBranches[sessionId];
+      const nextPhaseRuns = { ...state.sessionPhaseRuns };
+      delete nextPhaseRuns[sessionId];
+      const nextGithub = { ...state.sessionGithub };
+      delete nextGithub[sessionId];
+      const nextLoading = { ...state.sessionLoading };
+      delete nextLoading[sessionId];
+      const nextSelected = { ...state.selectedAgentId };
+      delete nextSelected[sessionId];
+      const nextConflicts = { ...state.sessionMergeConflicts };
+      delete nextConflicts[sessionId];
+      const nextOpenQs = { ...state.sessionOpenQuestions };
+      delete nextOpenQs[sessionId];
+      const nextWorkflows = { ...state.sessionWorkflows };
+      delete nextWorkflows[sessionId];
+      return {
+        transcripts: nextTranscripts,
+        messages: nextMessages,
+        sessionWorktrees: nextWorktrees,
+        sessionBranches: nextBranches,
+        sessionPhaseRuns: nextPhaseRuns,
+        sessionGithub: nextGithub,
+        sessionLoading: nextLoading,
+        selectedAgentId: nextSelected,
+        sessionMergeConflicts: nextConflicts,
+        sessionOpenQuestions: nextOpenQs,
+        sessionWorkflows: nextWorkflows,
+      };
+    });
   },
 
   unarchiveTask: async (sessionId) => {
-    const prev = get().sessions.find((s) => s.id === sessionId);
+    const archivedList = Object.values(get().archivedSessions).flat();
+    const prev = archivedList.find((s) => s.id === sessionId);
     if (!prev) return;
-    set((state) => ({
-      sessions: state.sessions.map((s) => {
-        if (s.id !== sessionId) return s;
-        const { archivedAt: _drop, ...rest } = s;
-        return rest as Session;
-      }),
-    }));
+    const workspaceId = prev.workspaceId;
+    const { archivedAt: _drop, ...restored } = prev;
+    const restoredSession = restored as Session;
+
+    // Optimistic move: out of archived cache, into `sessions`.
+    set((state) => {
+      const cached = state.archivedSessions[workspaceId];
+      const nextArchived = cached
+        ? { ...state.archivedSessions, [workspaceId]: cached.filter((s) => s.id !== sessionId) }
+        : state.archivedSessions;
+      const isCurrentWorkspace = state.currentWorkspaceId === workspaceId;
+      return {
+        sessions: isCurrentWorkspace ? [restoredSession, ...state.sessions] : state.sessions,
+        archivedSessions: nextArchived,
+      };
+    });
+
     try {
       await unarchiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
-      set((state) => ({
-        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
-      }));
+      // Rollback move.
+      set((state) => {
+        const cached = state.archivedSessions[workspaceId];
+        const nextArchived = cached
+          ? { ...state.archivedSessions, [workspaceId]: [prev, ...cached] }
+          : state.archivedSessions;
+        return {
+          sessions: state.sessions.filter((s) => s.id !== sessionId),
+          archivedSessions: nextArchived,
+        };
+      });
       throw err;
+    }
+
+    // Repopulate per-session caches we cleared on archive (only meaningful if
+    // we're on the same workspace — otherwise the next setCurrentWorkspace
+    // will hydrate fresh).
+    if (get().currentWorkspaceId !== workspaceId) return;
+    try {
+      const [worktreeRows, runs] = await Promise.all([
+        listWorktreesForSession(tauriDatabase, sessionId),
+        invokePhaseRunList(sessionId),
+      ]);
+      set((state) => {
+        const nextWorktrees = { ...state.sessionWorktrees };
+        const nextBranches = { ...state.sessionBranches };
+        if (worktreeRows.length > 0) {
+          nextWorktrees[sessionId] = worktreeRows.map((r) => r.worktreePath);
+          const primary = worktreeRows[0];
+          if (primary) nextBranches[sessionId] = primary.branch;
+        }
+        return {
+          sessionWorktrees: nextWorktrees,
+          sessionBranches: nextBranches,
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
+        };
+      });
+    } catch {
+      // Best-effort: setCurrentSession reloads on demand if the user opens it
     }
   },
 

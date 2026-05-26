@@ -131,8 +131,11 @@ export function CommandPalette({
       });
     }
 
-    // sessions
+    // sessions — archived live only as historical info, never in interactive
+    // surfaces (palette, switcher, polling). They show up under the Archived
+    // tab in the sidebar and that's it.
     for (const s of sessions) {
+      if (s.archivedAt) continue;
       const ws = workspaces.find((w) => w.id === s.workspaceId);
       out.push({
         id: `session:${s.id}`,
