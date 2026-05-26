@@ -730,30 +730,69 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     }
   }, [isRunning, queued, dispatchTurn]);
 
-  // Native drag-drop: Tauri swallows DOM drop events for OS-file drags by
-  // default (dragDropEnabled=true), so we subscribe to the webview's
-  // onDragDropEvent and gate on the composer's bounding rect — the listener
-  // is window-global. Position is in physical pixels; rect is CSS pixels,
-  // hence the DPR divide.
+  // Native drag-drop. Tauri swallows DOM drop events for OS-file drags by
+  // default (dragDropEnabled=true) and emits a window-global event instead.
+  // We register the listener ONCE per component lifetime — refs carry the
+  // latest providerDisconnected/showToast so dep churn never tears the
+  // listener down mid-drag. Coordinate semantics vary across Tauri builds
+  // (some emit physical px, some logical), so the hit-test tries both via
+  // elementFromPoint and accepts either as "inside the composer".
+  const providerDisconnectedRef = useRef(providerDisconnected);
+  providerDisconnectedRef.current = providerDisconnected;
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
+
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    const isInsideComposer = (physicalX: number, physicalY: number): boolean => {
+    const hitsComposer = (x: number, y: number): boolean => {
       const el = composerRef.current;
       if (!el) return false;
-      const rect = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(x, y);
+      return hit !== null && el.contains(hit);
+    };
+
+    const isInsideComposer = (px: number, py: number): boolean => {
       const dpr = window.devicePixelRatio || 1;
-      const cssX = physicalX / dpr;
-      const cssY = physicalY / dpr;
-      return cssX >= rect.left && cssX <= rect.right && cssY >= rect.top && cssY <= rect.bottom;
+      return hitsComposer(px / dpr, py / dpr) || hitsComposer(px, py);
+    };
+
+    const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
+      const dropped: PendingAttachment[] = [];
+      for (const path of paths) {
+        try {
+          const r = await readDroppedAttachment(path);
+          dropped.push({
+            id: crypto.randomUUID(),
+            fileName: r.fileName,
+            mimeType: r.mimeType,
+            dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
+          });
+        } catch {
+          // Non-image / oversize drops are silently skipped — otherwise a
+          // folder drop would spam a toast per child.
+        }
+      }
+      if (dropped.length === 0) return;
+      setAttachments((prev) => {
+        const room = ATTACHMENT_LIMIT - prev.length;
+        if (room <= 0) {
+          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+          return prev;
+        }
+        if (dropped.length > room) {
+          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+        }
+        return [...prev, ...dropped.slice(0, room)];
+      });
     };
 
     void (async () => {
       try {
         const off = await getCurrentWebview().onDragDropEvent((event) => {
           const p = event.payload;
-          if (providerDisconnected) {
+          if (providerDisconnectedRef.current) {
             setIsDragging(false);
             return;
           }
@@ -769,43 +808,17 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
               const inside = isInsideComposer(p.position.x, p.position.y);
               setIsDragging(false);
               if (!inside) return;
-              void (async () => {
-                const dropped: PendingAttachment[] = [];
-                for (const path of p.paths) {
-                  try {
-                    const r = await readDroppedAttachment(path);
-                    dropped.push({
-                      id: crypto.randomUUID(),
-                      fileName: r.fileName,
-                      mimeType: r.mimeType,
-                      dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
-                    });
-                  } catch {
-                    // Non-image / oversize drops are silently skipped —
-                    // otherwise a folder drop would spam a toast per child.
-                  }
-                }
-                if (dropped.length === 0) return;
-                setAttachments((prev) => {
-                  const room = ATTACHMENT_LIMIT - prev.length;
-                  if (room <= 0) {
-                    showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-                    return prev;
-                  }
-                  if (dropped.length > room) {
-                    showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-                  }
-                  return [...prev, ...dropped.slice(0, room)];
-                });
-              })();
+              void ingestDroppedPaths(p.paths);
               break;
             }
           }
         });
         if (cancelled) off();
         else unlisten = off;
-      } catch {
-        // Webview API unavailable in non-Tauri test env — silently no-op.
+      } catch (err) {
+        // Webview API unavailable in non-Tauri test env — log so a real
+        // failure in dev surfaces in the console instead of being silent.
+        console.warn('drag-drop listener registration failed:', err);
       }
     })();
 
@@ -813,7 +826,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       cancelled = true;
       unlisten?.();
     };
-  }, [providerDisconnected, showToast]);
+  }, []);
 
   const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
