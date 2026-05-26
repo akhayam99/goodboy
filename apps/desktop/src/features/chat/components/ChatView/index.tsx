@@ -270,7 +270,10 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const settings = useAppStore((s) => s.settings);
+  // Subscribe only to the flag we need — `s.settings` is a wide map and any
+  // setting write re-renders the whole chat view (and its transcript) if we
+  // pull the entire object.
+  const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
   const provider = session.providerPreference.defaultProvider;
@@ -286,8 +289,6 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const lastItem = items[items.length - 1];
   const isThinking =
     agentKind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
-
-  const flagOn = settings['experimental.enable_parallel_agents'] === 'true';
 
   const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
     () => (flagOn ? detectParallelRunIds(events) : []),

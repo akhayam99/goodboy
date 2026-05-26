@@ -11,17 +11,27 @@ export function useGithubPolling(): void {
   const sweepGithub = useAppStore((s) => s.sweepGithub);
   const githubAvailable = useAppStore((s) => s.githubStatus?.available ?? false);
   const sessions = useSessions();
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
+  // Why we derive a *signature* instead of subscribing to `sessionBranches`
+  // directly: the raw map's identity changes on every branch reconcile
+  // (typed once per summarizer tick, per session). Subscribing to it forced
+  // a full sweep on every keystroke an agent typed into its worktree's git
+  // log. The signature collapses to the set of (sessionId, branch) pairs
+  // that actually exist — exactly when "the set of PRs to poll" changes.
+  const branchSignature = useAppStore((s) => {
+    let acc = '';
+    for (const session of sessions) {
+      const branch = s.sessionBranches[session.id] ?? '';
+      acc += `${session.id}@${branch};`;
+    }
+    return acc;
+  });
 
   // Reactive sweep — boot, workspace switch, and session-list / branch
-  // changes: `sessions` and `sessionBranches` are replaced (fresh identity)
-  // on each, so this re-runs exactly when the set of PRs to poll changes.
-  // Full scope (no `skipUnknownPr`) so a session whose PR was created from
-  // outside the app — `gh pr create` in a terminal, web UI, etc. — gets
-  // discovered the first time we see it.
+  // changes. Full scope (no `skipUnknownPr`) so a session whose PR was
+  // created outside the app (`gh pr create`, web UI) gets discovered.
   useEffect(() => {
     sweepGithub();
-  }, [sweepGithub, githubAvailable, sessions, sessionBranches]);
+  }, [sweepGithub, githubAvailable, branchSignature]);
 
   // Steady-state poll. The tick no-ops while the window is hidden; returning
   // to the foreground fires an immediate catch-up. Incremental scope: skip
