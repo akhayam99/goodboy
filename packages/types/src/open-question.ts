@@ -1,4 +1,4 @@
-import type { IsoDateTime, OpenQuestionId, SessionId, WorkflowId } from './ids';
+import type { AgentId, IsoDateTime, OpenQuestionId, SessionId, WorkflowId } from './ids';
 
 export type OpenQuestionStatus = 'open' | 'answered' | 'dismissed';
 
@@ -8,6 +8,7 @@ export type OpenQuestion = Readonly<{
   workflowId?: WorkflowId;
   createdByStepOrdinal?: number;
   ownedByStepOrdinal?: number;
+  createdByAgentId?: AgentId;
   text: string;
   suggestedAnswers: ReadonlyArray<string>;
   userAnswer: string | null;

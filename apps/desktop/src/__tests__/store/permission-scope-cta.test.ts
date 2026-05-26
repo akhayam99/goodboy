@@ -56,6 +56,10 @@ vi.mock('@goodboy/db', () => ({
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForTask: vi.fn(async () => []),
   listMessagesForAgent: vi.fn(async () => []),
+  updateSessionWorkflowStep: vi.fn(),
+  attachWorkflowToSession: vi.fn(),
+  detachWorkflowFromSession: vi.fn(),
+  updateWorkflowOrder: vi.fn(),
 }));
 
 vi.mock('../../providers', () => ({
@@ -134,6 +138,8 @@ function buildSession() {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    workflowIds: [],
+    currentStepByWorkflow: {},
     userStatus: 'wip' as const,
     createdAt: AT,
     updatedAt: AT,

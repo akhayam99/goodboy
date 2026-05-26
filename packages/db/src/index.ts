@@ -20,7 +20,6 @@ export {
   updateSessionState,
   updateSessionPermissionMode,
   updateSessionAutoRun,
-  updateSessionWorkflow,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   getSessionById,
@@ -34,6 +33,14 @@ export {
   updateSessionConfig,
   type SessionConfigUpdate,
 } from './queries/session';
+export {
+  listWorkflowsForSession,
+  attachWorkflowToSession,
+  detachWorkflowFromSession,
+  updateWorkflowOrder,
+  updateSessionWorkflowStep,
+  type SessionWorkflowEntry,
+} from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertTurnEvent,

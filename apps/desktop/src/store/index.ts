@@ -9,6 +9,7 @@ export {
   useMostRecentPlan,
   useSessionById,
   useSessionLoading,
+  useSessionOpenQuestions,
   useSessionPlans,
   useSessionSlots,
   useSessionNextActions,

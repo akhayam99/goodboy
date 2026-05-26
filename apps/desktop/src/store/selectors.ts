@@ -5,6 +5,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  OpenQuestion,
   PlanWithCount,
   Session,
   SessionId,
@@ -89,6 +90,13 @@ const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
 
 export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
   useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
+
+const EMPTY_OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+
+export const useSessionOpenQuestions = (sessionId: SessionId | null): ReadonlyArray<OpenQuestion> =>
+  useAppStore((s) =>
+    sessionId ? (s.sessionOpenQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS) : EMPTY_OPEN_QUESTIONS,
+  );
 
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',

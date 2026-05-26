@@ -76,6 +76,10 @@ vi.mock('@goodboy/db', () => ({
   listNotifications: vi.fn(async () => []),
   markAllNotificationsRead: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
+  updateSessionWorkflowStep: vi.fn(),
+  attachWorkflowToSession: vi.fn(),
+  detachWorkflowFromSession: vi.fn(),
+  updateWorkflowOrder: vi.fn(),
 }));
 
 vi.mock('../features/providers/providers', () => ({
@@ -156,6 +160,8 @@ function buildSession(stateKind: 'idle' | 'running' = 'idle'): Session {
     permissionMode: 'bypassPermissions' as const,
     autoRun: false,
     titleUserEdited: false,
+    workflowIds: [],
+    currentStepByWorkflow: {},
     userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,

@@ -21,8 +21,6 @@ interface SessionRow {
   provider_default: string;
   provider_allow_override: number;
   permission_mode: string | null;
-  workflow_id: string | null;
-  current_step_ordinal: number | null;
   auto_run: number;
   title_user_edited: number;
   archived_at: number | null;
@@ -78,7 +76,12 @@ function toProviderPreference(row: SessionRow): SessionProviderPreference {
   };
 }
 
-function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Session {
+function toDomain(
+  row: SessionRow,
+  contextSlots: Session['contextSlots'],
+  workflowIds: ReadonlyArray<WorkflowId> = [],
+  currentStepByWorkflow: Readonly<Record<WorkflowId, number>> = {},
+): Session {
   return {
     id: row.id as SessionId,
     workspaceId: row.workspace_id as WorkspaceId,
@@ -87,8 +90,8 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     contextSlots,
     providerPreference: toProviderPreference(row),
     permissionMode: toPermissionMode(row.permission_mode),
-    ...(row.workflow_id && { workflowId: row.workflow_id as WorkflowId }),
-    ...(row.current_step_ordinal !== null && { currentStepOrdinal: row.current_step_ordinal }),
+    workflowIds,
+    currentStepByWorkflow,
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
     ...(row.archived_at != null && {
@@ -107,6 +110,25 @@ function toDomain(row: SessionRow, contextSlots: Session['contextSlots']): Sessi
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
+}
+
+async function loadWorkflowsForSession(
+  db: Database,
+  sessionId: string,
+): Promise<{
+  workflowIds: ReadonlyArray<WorkflowId>;
+  currentStepByWorkflow: Readonly<Record<WorkflowId, number>>;
+}> {
+  const rows = await db.select<{ workflow_id: string; current_step_ordinal: number }>(
+    'SELECT workflow_id, current_step_ordinal FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    [sessionId],
+  );
+  const workflowIds = rows.map((r) => r.workflow_id as WorkflowId);
+  const currentStepByWorkflow: Record<WorkflowId, number> = {};
+  for (const r of rows) {
+    currentStepByWorkflow[r.workflow_id as WorkflowId] = r.current_step_ordinal;
+  }
+  return { workflowIds, currentStepByWorkflow };
 }
 
 export interface SessionConfigUpdate {
@@ -153,8 +175,8 @@ export async function insertSession(db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, workflow_id, current_step_ordinal, auto_run, title_user_edited, user_status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, auto_run, title_user_edited, user_status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -164,8 +186,6 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       session.providerPreference.defaultProvider,
       session.providerPreference.allowTurnOverride ? 1 : 0,
       session.permissionMode,
-      session.workflowId ?? null,
-      session.currentStepOrdinal ?? null,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
       session.userStatus,
@@ -173,6 +193,16 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       Date.parse(session.updatedAt),
     ],
   );
+  // Mirror workflowIds into session_workflows so eager loaders see them on
+  // the next read. Without this, callers passing a populated Session would
+  // silently drop the attachment.
+  for (const [ordinal, workflowId] of session.workflowIds.entries()) {
+    const stepOrdinal = session.currentStepByWorkflow[workflowId] ?? 0;
+    await db.execute(
+      'INSERT INTO session_workflows (session_id, workflow_id, ordinal, current_step_ordinal) VALUES (?, ?, ?, ?)',
+      [session.id, workflowId, ordinal, stepOrdinal],
+    );
+  }
 }
 
 export async function updateSessionAutoRun(
@@ -186,19 +216,6 @@ export async function updateSessionAutoRun(
     Date.parse(updatedAt),
     id,
   ]);
-}
-
-export async function updateSessionWorkflow(
-  db: Database,
-  id: SessionId,
-  workflowId: WorkflowId | null,
-  autoRun: boolean,
-  updatedAt: IsoDateTime,
-): Promise<void> {
-  await db.execute(
-    'UPDATE sessions SET workflow_id = ?, auto_run = ?, updated_at = ? WHERE id = ?',
-    [workflowId, autoRun ? 1 : 0, Date.parse(updatedAt), id],
-  );
 }
 
 export async function updateSessionUserStatus(
@@ -257,7 +274,8 @@ export async function getSessionById(db: Database, id: SessionId): Promise<Sessi
   const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
   const row = rows[0];
   if (!row) return null;
-  return toDomain(row, []);
+  const { workflowIds, currentStepByWorkflow } = await loadWorkflowsForSession(db, id);
+  return toDomain(row, [], workflowIds, currentStepByWorkflow);
 }
 
 export async function listSessionsForWorkspace(
@@ -268,7 +286,36 @@ export async function listSessionsForWorkspace(
     'SELECT * FROM sessions WHERE workspace_id = ? ORDER BY updated_at DESC',
     [workspaceId],
   );
-  return rows.map((row) => toDomain(row, []));
+  if (rows.length === 0) return [];
+
+  const sessionIds = rows.map((r) => r.id);
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const workflowRows = await db.select<{
+    session_id: string;
+    workflow_id: string;
+    current_step_ordinal: number;
+  }>(
+    `SELECT session_id, workflow_id, current_step_ordinal FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    sessionIds,
+  );
+
+  type WorkflowEntry = { workflowId: WorkflowId; step: number };
+  const workflowsBySession = new Map<string, WorkflowEntry[]>();
+  for (const r of workflowRows) {
+    const arr = workflowsBySession.get(r.session_id) ?? [];
+    arr.push({ workflowId: r.workflow_id as WorkflowId, step: r.current_step_ordinal });
+    workflowsBySession.set(r.session_id, arr);
+  }
+
+  return rows.map((row) => {
+    const wf = workflowsBySession.get(row.id) ?? [];
+    const workflowIds = wf.map((w) => w.workflowId);
+    const currentStepByWorkflow: Record<WorkflowId, number> = {};
+    for (const { workflowId, step } of wf) {
+      currentStepByWorkflow[workflowId] = step;
+    }
+    return toDomain(row, [], workflowIds, currentStepByWorkflow);
+  });
 }
 
 export async function renameSession(

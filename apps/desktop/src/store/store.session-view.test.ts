@@ -34,6 +34,8 @@ function makeSession(
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions',
+    workflowIds: [],
+    currentStepByWorkflow: {},
     autoRun: false,
     titleUserEdited: false,
     userStatus: overrides.userStatus ?? 'wip',

@@ -337,8 +337,9 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       return buildScriptActions(workspaceScripts, (script) => void onPickScript(script));
     }
     if (symbol === '~') {
-      if (session.workflowId) return [];
-      return buildWorkflowActions(workspaceWorkflows, (workflow) => void onPickWorkflow(workflow));
+      const alreadyAttached = new Set(session.workflowIds);
+      const eligible = workspaceWorkflows.filter((w) => !alreadyAttached.has(w.id));
+      return buildWorkflowActions(eligible, (workflow) => void onPickWorkflow(workflow));
     }
     if (symbol === '@') {
       return buildAgentActions(sessionAgents, onSwitchAgent, () => void onSpawnAgent());
@@ -349,7 +350,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     return null;
   }, [
     parsed.prefix,
-    session.workflowId,
+    session.workflowIds,
     workspaceScripts,
     workspaceWorkflows,
     sessionAgents,
@@ -376,8 +377,8 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     parsed.prefix?.symbol === '$'
       ? 'no scripts. add them in workspace settings.'
       : parsed.prefix?.symbol === '~'
-        ? session.workflowId
-          ? 'this session already has a workflow.'
+        ? session.workflowIds.length > 0
+          ? 'all available workflows are already attached.'
           : 'no workflows. create one in workspace settings.'
         : parsed.prefix?.symbol === '@'
           ? 'no agents in this session.'
@@ -475,7 +476,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setError(null);
     setLastFailedTurn(null);
 
-    if (!isRunning && scopePending === null && activeAgentKind !== null && !session.workflowId) {
+    if (
+      !isRunning &&
+      scopePending === null &&
+      activeAgentKind !== null &&
+      session.workflowIds.length === 0
+    ) {
       const mismatch = detectScopeMismatch(content, activeAgentKind);
       if (mismatch) {
         const id = crypto.randomUUID();
@@ -688,7 +694,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   // scope-mismatch > right-size. RoutingIndicator stays outside — it's a
   // status line, not an action card.
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
-  if (sessionNudge?.kind === 'plan-ready' && !session.workflowId) {
+  if (sessionNudge?.kind === 'plan-ready' && session.workflowIds.length === 0) {
     suggestions.push({
       key: 'plan-ready',
       node: (

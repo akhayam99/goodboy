@@ -1,4 +1,5 @@
 import type {
+  AgentId,
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
@@ -14,6 +15,7 @@ interface OpenQuestionRow {
   workflow_id: string | null;
   created_by_step_ordinal: number | null;
   owned_by_step_ordinal: number | null;
+  created_by_agent_id: string | null;
   text: string;
   suggested_answers: string;
   user_answer: string | null;
@@ -30,6 +32,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
     workflowId: row.workflow_id ? (row.workflow_id as WorkflowId) : undefined,
     createdByStepOrdinal: row.created_by_step_ordinal ?? undefined,
     ownedByStepOrdinal: row.owned_by_step_ordinal ?? undefined,
+    createdByAgentId: row.created_by_agent_id ? (row.created_by_agent_id as AgentId) : undefined,
     text: row.text,
     suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
     userAnswer: row.user_answer,
@@ -50,6 +53,7 @@ export interface InsertOpenQuestionInput {
   readonly workflowId?: WorkflowId;
   readonly createdByStepOrdinal?: number;
   readonly ownedByStepOrdinal?: number;
+  readonly createdByAgentId?: AgentId;
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
 }
@@ -67,14 +71,15 @@ export async function insertOpenQuestion(
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
        (id, session_id, workflow_id, created_by_step_ordinal, owned_by_step_ordinal,
-        text, suggested_answers, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+        created_by_agent_id, text, suggested_answers, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
     [
       input.id,
       input.sessionId,
       input.workflowId ?? null,
       input.createdByStepOrdinal ?? null,
       input.ownedByStepOrdinal ?? null,
+      input.createdByAgentId ?? null,
       input.text,
       JSON.stringify(input.suggestedAnswers),
       now,

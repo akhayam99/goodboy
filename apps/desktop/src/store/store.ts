@@ -62,14 +62,18 @@ import {
   updateProviderRunStatus,
   updateSessionPermissionMode,
   updateSessionAutoRun,
-  updateSessionWorkflow,
   updateSessionTitleUserEdited,
   updateSessionUserStatus,
   updateSessionState,
+  attachWorkflowToSession as attachWorkflowToSessionInDb,
+  detachWorkflowFromSession as detachWorkflowFromSessionInDb,
+  updateWorkflowOrder,
+  updateSessionWorkflowStep,
   listWorkspaceScripts,
   upsertWorkspaceScript,
   deleteWorkspaceScript,
   upsertContextSlot,
+  listOpenQuestionsForSession,
   insertNudgeEvent,
   type Notification,
   type NotificationKind,
@@ -79,6 +83,7 @@ import {
   type TelemetrySummary,
 } from '@goodboy/db';
 import { useOpenQuestions } from '../features/context/components/QuestionsTab/useOpenQuestions';
+import { workflowHasOpenQuestions } from '../features/context/openQuestionsGate';
 import type {
   Agent,
   AgentId,
@@ -101,6 +106,7 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
+  OpenQuestion,
   PlanConsumption,
   PlanId,
   PlanStatus,
@@ -344,6 +350,7 @@ export interface AppState {
     Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
   >;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
+  readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   /**
@@ -380,6 +387,13 @@ export interface AppState {
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
+  // Open questions cached per session so sidebar gates (PlanReadySuggestion,
+  // AgentsSection's per-workflow NextStep CTA) can resolve their block state
+  // without poking the DB on every render. Loaded lazily by setCurrentSession
+  // and refreshed by autoPopulateContext when a turn either raises or
+  // resolves a question. Mirrors the useOpenQuestions store but is keyed by
+  // sessionId so the sidebar can show many sessions side-by-side.
+  readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   /**
    * Per-session pending nudges surfaced to the chat input area. Cleared on
    * dismiss or when the user acts on the suggestion. Not persisted across
@@ -488,6 +502,11 @@ export interface AppActions {
     sessionId: SessionId,
     workflowId: WorkflowId,
     options?: { autoRun?: boolean },
+  ): Promise<void>;
+  detachWorkflowFromSession(sessionId: SessionId, workflowId: WorkflowId): Promise<void>;
+  reorderSessionWorkflows(
+    sessionId: SessionId,
+    workflowIds: ReadonlyArray<WorkflowId>,
   ): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -698,6 +717,7 @@ const initialState: AppState = {
   workspaceScripts: {},
   scriptRuns: {},
   phaseTemplates: {},
+  sessionWorkflows: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
   agentRunHistory: {},
@@ -724,6 +744,7 @@ const initialState: AppState = {
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},
+  sessionOpenQuestions: {},
   sessionLoading: {},
   sessionViewPrefs: {},
   terminalSessions: {},
@@ -1102,7 +1123,7 @@ async function emitTurnNudges(
 ): Promise<void> {
   const session = get().sessions.find((s) => s.id === sessionId);
   if (!session) return;
-  const inWorkflow = session.workflowId !== null && session.workflowId !== undefined;
+  const inWorkflow = session.workflowIds.length > 0;
 
   let nextNudge: SessionNudge | null = null;
 
@@ -1470,6 +1491,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
+      const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
+      const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
       for (let i = 0; i < sessions.length; i++) {
         const s = sessions[i]!;
         const rows = worktreeRows[i]!;
@@ -1483,12 +1506,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
         for (const run of runs) {
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
+        const attached = s.workflowIds
+          .map((wid) => workflowById.get(wid) ?? null)
+          .filter((w): w is Workflow => w !== null);
+        if (attached.length > 0) sessionWorkflows[s.id] = attached;
       }
       set((state) => ({
         sessions,
         sessionWorktrees,
         sessionBranches,
         sessionPhaseRuns,
+        sessionWorkflows,
         workspaceSummary,
         providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
         skills: { ...state.skills, [id]: skills },
@@ -1642,6 +1670,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
           markDone('slots');
         });
     }
+
+    // Open questions: hydrate alongside slots so the sidebar gates
+    // (PlanReadySuggestion + per-workflow NextStep CTA) can resolve their
+    // block state for the just-loaded session without an extra round-trip.
+    void listOpenQuestionsForSession(tauriDatabase, id, 'open')
+      .then((qs) => {
+        set((state) => ({
+          sessionOpenQuestions: { ...state.sessionOpenQuestions, [id]: qs },
+        }));
+      })
+      .catch(() => {});
 
     // Plans
     if (!cached?.plans) {
@@ -1866,7 +1905,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       contextSlots: [],
       providerPreference: providerPreference ?? DEFAULT_SESSION_PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
-      ...(workflowId !== undefined ? { workflowId } : {}),
+      workflowIds: workflowId !== undefined ? [workflowId] : [],
+      currentStepByWorkflow: {},
       autoRun: autoRun === true && workflowId !== undefined,
       titleUserEdited: false,
       userStatus: 'wip',
@@ -1988,6 +2028,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         [session.id]: goalText.length > 0 ? [{ key: 'goal', value: goalText, enabled: true }] : [],
       },
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: prespawnedRuns },
+      sessionWorkflows: workflowId
+        ? {
+            ...state.sessionWorkflows,
+            [session.id]: (() => {
+              const templates = state.phaseTemplates[workspaceId] ?? [];
+              const tpl = templates.find((t) => t.id === workflowId);
+              return tpl ? [tpl] : [];
+            })(),
+          }
+        : state.sessionWorkflows,
       selectedAgentId: firstAgent
         ? { ...state.selectedAgentId, [session.id]: firstAgent.id }
         : state.selectedAgentId,
@@ -2229,9 +2279,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
-    if (session.workflowId) {
+    const activeWorkflowId = session.workflowIds[0] ?? null;
+    if (activeWorkflowId) {
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
-      const template = templates.find((t) => t.id === session.workflowId) ?? null;
+      const template = templates.find((t) => t.id === activeWorkflowId) ?? null;
       if (template) {
         const freshRuns = await invokePhaseRunList(sessionId);
         set((state) => ({
@@ -2946,14 +2997,35 @@ export const useAppStore = create<AppStore>((set, get) => ({
           completedAt: now(),
         });
         const refreshedRuns = await invokePhaseRunList(sessionId);
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-          ...(phaseDefinition && {
-            sessions: state.sessions.map((s) =>
-              s.id === sessionId ? { ...s, currentStepOrdinal: phaseDefinition.ordinal } : s,
-            ),
-          }),
-        }));
+        set((state) => {
+          if (!phaseDefinition) {
+            return { sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns } };
+          }
+          const target = state.sessions.find((s) => s.id === sessionId);
+          const wfId = target?.workflowIds[0] ?? null;
+          if (wfId) {
+            void updateSessionWorkflowStep(
+              tauriDatabase,
+              sessionId,
+              wfId,
+              phaseDefinition.ordinal,
+              new Date().toISOString() as IsoDateTime,
+            );
+          }
+          return {
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+            sessions: state.sessions.map((s) => {
+              if (s.id !== sessionId || !wfId) return s;
+              return {
+                ...s,
+                currentStepByWorkflow: {
+                  ...s.currentStepByWorkflow,
+                  [wfId]: phaseDefinition.ordinal,
+                },
+              };
+            }),
+          };
+        });
         void get().refreshUnreadWorkspaces();
 
         void get().maybeAutoAdvanceWorkflow(sessionId);
@@ -2972,11 +3044,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // from the assistant text. Best-effort — slot writes failing must not
       // mask the turn itself.
       try {
+        // Resolve agent context so any open questions captured this turn are
+        // stamped with their creator + (workflow, step ordinal) provenance.
+        // Without this the question would land orphan and fall back to the
+        // legacy session-wide blocking behaviour.
+        const stateForAgentCtx = get();
+        const activeAgentRow =
+          (stateForAgentCtx.sessionPhaseRuns[sessionId] ?? []).find(
+            (r) => r.id === activeAgentId,
+          ) ?? null;
+        const stepLookup = (() => {
+          if (!activeAgentRow?.stepId) return undefined;
+          const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
+          for (const t of templates) {
+            const step = t.steps.find((s) => s.id === activeAgentRow.stepId);
+            if (step) return { workflowId: t.id, ordinal: step.ordinal };
+          }
+          return undefined;
+        })();
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
           filesEdited: Array.from(filesTouchedThisTurn),
           assistantText,
+          agentContext: {
+            agentId: activeAgentId,
+            workflowId: stepLookup?.workflowId,
+            stepOrdinal: stepLookup?.ordinal,
+          },
         });
         if (result.updatedSlots.length > 0) {
           const refreshedSlots = await listContextSlotsForSession(tauriDatabase, sessionId);
@@ -2986,6 +3081,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
         if (result.openQuestionsChanged) {
           await useOpenQuestions.getState().loadQuestions(sessionId);
+          // Refresh the per-session cache the sidebar gates read from.
+          // Best-effort: a stale cache only mis-renders the block badge
+          // for one frame until the next turn refreshes again.
+          try {
+            const refreshedQs = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+            set((state) => ({
+              sessionOpenQuestions: {
+                ...state.sessionOpenQuestions,
+                [sessionId]: refreshedQs,
+              },
+            }));
+          } catch {
+            // ignore: cache stays stale until next turn
+          }
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);
@@ -3694,10 +3803,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     let stepPromptPrefix = '';
     if (args.stepId) {
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
-      const template = session.workflowId
-        ? (templates.find((t) => t.id === session.workflowId) ?? null)
-        : null;
-      const step = template?.steps.find((s) => s.id === args.stepId) ?? null;
+      const attached = templates.filter((t) => session.workflowIds.includes(t.id));
+      let step: Step | null = null;
+      for (const t of attached) {
+        const found = t.steps.find((s) => s.id === args.stepId);
+        if (found) {
+          step = found;
+          break;
+        }
+      }
       if (step) {
         if (!resolvedName) resolvedName = step.name;
         stepPromptPrefix = step.promptPrefix;
@@ -4246,7 +4360,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   attachWorkflowToSession: async (sessionId, workflowId, options) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
-    if (session.workflowId) throw new Error('session already has a workflow');
+    if (session.workflowIds.includes(workflowId)) {
+      throw new Error('workflow already attached to this session');
+    }
 
     const templates = get().phaseTemplates[session.workspaceId] ?? [];
     const template = templates.find((t) => t.id === workflowId);
@@ -4254,7 +4370,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const autoRun = options?.autoRun === true;
     const now = new Date().toISOString() as IsoDateTime;
-    await updateSessionWorkflow(tauriDatabase, sessionId, workflowId, autoRun, now);
+    await attachWorkflowToSessionInDb(tauriDatabase, sessionId, workflowId, now);
+    if (autoRun !== session.autoRun) {
+      await updateSessionAutoRun(tauriDatabase, sessionId, autoRun, now);
+    }
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
@@ -4287,8 +4406,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     set((state) => ({
       sessions: state.sessions.map((s) =>
-        s.id === sessionId ? { ...s, workflowId, autoRun, updatedAt: now } : s,
+        s.id === sessionId
+          ? {
+              ...s,
+              workflowIds: [...s.workflowIds, workflowId],
+              currentStepByWorkflow: { ...s.currentStepByWorkflow, [workflowId]: 0 },
+              autoRun,
+              updatedAt: now,
+            }
+          : s,
       ),
+      sessionWorkflows: {
+        ...state.sessionWorkflows,
+        [sessionId]: [...(state.sessionWorkflows[sessionId] ?? []), template],
+      },
       sessionPhaseRuns: {
         ...state.sessionPhaseRuns,
         [sessionId]: [...existingRuns, ...newAgents],
@@ -4300,6 +4431,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
 
     if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+  },
+
+  detachWorkflowFromSession: async (sessionId, workflowId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session.workflowIds.includes(workflowId)) return;
+
+    const now = new Date().toISOString() as IsoDateTime;
+    await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowId, now);
+
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id !== sessionId) return s;
+        const { [workflowId]: _dropped, ...rest } = s.currentStepByWorkflow;
+        return {
+          ...s,
+          workflowIds: s.workflowIds.filter((id) => id !== workflowId),
+          currentStepByWorkflow: rest,
+          updatedAt: now,
+        };
+      }),
+      sessionWorkflows: {
+        ...state.sessionWorkflows,
+        [sessionId]: (state.sessionWorkflows[sessionId] ?? []).filter((w) => w.id !== workflowId),
+      },
+    }));
+  },
+
+  reorderSessionWorkflows: async (sessionId, workflowIds) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error(`session not found: ${sessionId}`);
+    const set1 = new Set(workflowIds);
+    const set2 = new Set(session.workflowIds);
+    if (set1.size !== set2.size || ![...set1].every((id) => set2.has(id))) {
+      throw new Error('reorder list must be a permutation of the current workflow set');
+    }
+    const now = new Date().toISOString() as IsoDateTime;
+    await updateWorkflowOrder(tauriDatabase, sessionId, workflowIds, now);
+
+    const templates = get().phaseTemplates[session.workspaceId] ?? [];
+    const reordered = workflowIds
+      .map((id) => templates.find((t) => t.id === id) ?? null)
+      .filter((t): t is Workflow => t !== null);
+
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, workflowIds, updatedAt: now } : s,
+      ),
+      sessionWorkflows: { ...state.sessionWorkflows, [sessionId]: reordered },
+    }));
   },
 
   setSessionUserStatus: async (sessionId, status) => {
@@ -4318,10 +4499,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
 
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session || !session.workflowId) throw new Error('session has no workflow');
+    const activeWorkflowId = session?.workflowIds[0] ?? null;
+    if (!session || !activeWorkflowId) throw new Error('session has no workflow');
 
     const template = (get().phaseTemplates[session.workspaceId] ?? []).find(
-      (t) => t.id === session.workflowId,
+      (t) => t.id === activeWorkflowId,
     );
     const step = template?.steps.find((s) => s.id === agent.stepId);
     const promptPrefix = step?.promptPrefix ?? '';
@@ -4362,35 +4544,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   maybeAutoAdvanceWorkflow: async (sessionId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session || !session.autoRun || !session.workflowId) return;
-    const template = (state.phaseTemplates[session.workspaceId] ?? []).find(
-      (t) => t.id === session.workflowId,
-    );
-    if (!template) return;
+    if (!session || !session.autoRun || session.workflowIds.length === 0) return;
+    const templates = state.phaseTemplates[session.workspaceId] ?? [];
+    const attached = session.workflowIds
+      .map((wid) => templates.find((t) => t.id === wid))
+      .filter((t): t is Workflow => t !== undefined);
+    if (attached.length === 0) return;
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     if (runs.some((r) => r.status === 'failed')) return;
-    const slots = state.sessionSlots[sessionId] ?? [];
-    const hasOpenQuestions =
-      (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
     const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
-    if (hasOpenQuestions || summarizerBusy) return;
-    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-    const nextPendingAgent = (() => {
-      for (const step of sortedSteps) {
-        const agent = runs.find((r) => r.stepId === step.id);
-        if (!agent || agent.status !== 'pending') continue;
-        const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
-        const allDone = prevSteps.every((s) =>
-          runs.some(
-            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
-          ),
-        );
-        if (allDone) return agent;
-        return null;
-      }
-      return null;
-    })();
-    if (!nextPendingAgent) return;
+    if (summarizerBusy) return;
     const exceeded = state.budgetAlerts.some(
       (a) =>
         a.dismissedAt === undefined &&
@@ -4398,6 +4561,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
           a.kind === 'provider-exceeded'),
     );
     if (exceeded) return;
+    // Per-workflow open-question gate: load fresh from the typed table so
+    // we can distinguish "workflow A has a pending question" from
+    // "workflow B has a pending question" and only block the relevant
+    // workflow. Orphan questions (no workflow_id) block every workflow.
+    const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+    const nextPendingAgent = (() => {
+      for (const template of attached) {
+        if (workflowHasOpenQuestions(openQuestions, template.id)) continue;
+        const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+        for (const step of sortedSteps) {
+          const agent = runs.find((r) => r.stepId === step.id);
+          if (!agent || agent.status !== 'pending') continue;
+          const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
+          const allDone = prevSteps.every((s) =>
+            runs.some(
+              (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
+            ),
+          );
+          if (allDone) return agent;
+          break;
+        }
+      }
+      return null;
+    })();
+    if (!nextPendingAgent) return;
     await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
     void get().emitNotification(
       'agent-auto-spawn',

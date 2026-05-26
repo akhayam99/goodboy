@@ -29,6 +29,7 @@ import {
 import { Divider, ScrollArea, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
+  AgentId,
   ContextSlot,
   ContextSlotHistoryEntry,
   PlanId,
@@ -103,9 +104,17 @@ export function ContextPanel({
     void loadQuestions(session.id);
   }, [isActive, session.id, loadQuestions]);
 
+  // Route each cluster's batched answer to the cluster's owner agent.
+  // When targetAgentId is null (orphan cluster) we fall through to
+  // sendTurn's default behaviour: it picks the currently-selected agent
+  // for the session, matching the pre-clustering UX.
   const onSubmitAnswers = useCallback(
-    async (content: string) => {
-      await sendTurn({ sessionId: session.id, content });
+    async (content: string, targetAgentId: AgentId | null) => {
+      await sendTurn({
+        sessionId: session.id,
+        content,
+        agentId: targetAgentId ?? undefined,
+      });
     },
     [sendTurn, session.id],
   );

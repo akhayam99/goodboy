@@ -59,8 +59,8 @@ export type Session = Readonly<{
   contextSlots: ReadonlyArray<ContextSlot>;
   providerPreference: SessionProviderPreference;
   permissionMode: ClaudePermissionMode;
-  workflowId?: WorkflowId;
-  currentStepOrdinal?: number;
+  workflowIds: ReadonlyArray<WorkflowId>;
+  currentStepByWorkflow: Readonly<Record<WorkflowId, number>>;
   autoRun: boolean;
   titleUserEdited: boolean;
   userStatus: SessionUserStatus;

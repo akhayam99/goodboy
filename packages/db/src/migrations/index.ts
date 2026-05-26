@@ -38,6 +38,8 @@ import { m037PlanDiscardedStatus } from './m037-plan-discarded-status';
 import { m038WorkspaceVerbosity } from './m038-workspace-verbosity';
 import { m039WorkspaceLastAccessedAt } from './m039-workspace-last-accessed-at';
 import { m040OpenQuestions } from './m040-open-questions';
+import { m041SessionWorkflows } from './m041-session-workflows';
+import { m042OpenQuestionsCreatedBy } from './m042-open-questions-created-by';
 
 export interface Migration {
   readonly version: number;
@@ -85,4 +87,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 38, sql: m038WorkspaceVerbosity },
   { version: 39, sql: m039WorkspaceLastAccessedAt },
   { version: 40, sql: m040OpenQuestions },
+  { version: 41, sql: m041SessionWorkflows },
+  { version: 42, sql: m042OpenQuestionsCreatedBy },
 ];
