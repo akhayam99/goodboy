@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useSessionById } from '../../../../store';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
@@ -42,7 +42,7 @@ export function SessionSettingsDialog({
   onArchive,
   onUnarchive,
 }: SessionSettingsDialogProps) {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const session = useSessionById(sessionId);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const budget = useAppStore((s) => s.sessionBudgets[sessionId] ?? null);

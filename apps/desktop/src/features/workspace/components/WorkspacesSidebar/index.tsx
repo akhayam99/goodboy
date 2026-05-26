@@ -86,7 +86,6 @@ import {
 } from '../../../../features/session/components/AgentMetricsBlock';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { archivedMapFromSessions } from '../../../../shared/lib/archived-sessions';
 import { WorkspaceSelect } from '../WorkspaceSelect';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
@@ -131,18 +130,35 @@ export function WorkspacesSidebar({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  const [archivedMap, archive, unarchive] = useArchivedSessions(sessions);
-  // Memoize so child memos (e.g. useSortedGroupedSessions) don't invalidate
-  // on every parent render — the filter would otherwise allocate fresh
-  // arrays each time and cascade through SessionActivityBar's sort/group.
-  const activeSessions = useMemo(
-    () => sessions.filter((s) => !archivedMap[s.id]),
-    [sessions, archivedMap],
+  // `sessions` from the store is now archive-free by construction. Archived
+  // sessions live in `archivedSessions[workspaceId]`, loaded lazily when the
+  // Archived tab opens (see SessionActivityBar's onArchivedOpen).
+  const activeSessions = sessions;
+  const archivedSessions = useAppStore((s) =>
+    currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<Session>;
+  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  const archiveTaskAction = useAppStore((s) => s.archiveTask);
+  const unarchiveTaskAction = useAppStore((s) => s.unarchiveTask);
+  const archive = useCallback(
+    (id: SessionId) => {
+      void archiveTaskAction(id);
+    },
+    [archiveTaskAction],
   );
-  const archivedSessions = useMemo(
-    () => sessions.filter((s) => archivedMap[s.id]),
-    [sessions, archivedMap],
+  const unarchive = useCallback(
+    (id: SessionId) => {
+      void unarchiveTaskAction(id);
+    },
+    [unarchiveTaskAction],
   );
+  const onArchivedTabOpen = useCallback(() => {
+    if (!currentWorkspace) return;
+    void loadArchivedSessions(currentWorkspace.id);
+  }, [currentWorkspace, loadArchivedSessions]);
+  // currentSession may live in either pool — useCurrentSession looks up both
+  // — so the dialog's `archived` flag needs to read from the session itself.
+  const isCurrentArchived = !!currentSession?.archivedAt;
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
 
@@ -180,6 +196,7 @@ export function WorkspacesSidebar({
                     currentSessionId={currentSession?.id ?? null}
                     onSelectSession={onSelectSession}
                     onNewSession={() => setNewSessionOpen(true)}
+                    onArchivedTabOpen={onArchivedTabOpen}
                   />
                 </div>
                 {/* Inset hairline divider between rail and detail. */}
@@ -301,7 +318,7 @@ export function WorkspacesSidebar({
           sessionId={currentSession.id as SessionId}
           open
           onClose={() => setSessionSettingsOpen(false)}
-          archived={!!archivedMap[currentSession.id]}
+          archived={isCurrentArchived}
           onArchive={() => archive(currentSession.id as SessionId)}
           onUnarchive={() => unarchive(currentSession.id as SessionId)}
         />
@@ -580,27 +597,6 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
       </button>
     </div>
   );
-}
-
-function useArchivedSessions(
-  sessions: ReadonlyArray<Session>,
-): [Record<string, true>, (id: SessionId) => void, (id: SessionId) => void] {
-  const archiveTask = useAppStore((s) => s.archiveTask);
-  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
-  const map = useMemo(() => archivedMapFromSessions(sessions), [sessions]);
-  const archive = useCallback(
-    (id: SessionId) => {
-      void archiveTask(id);
-    },
-    [archiveTask],
-  );
-  const unarchive = useCallback(
-    (id: SessionId) => {
-      void unarchiveTask(id);
-    },
-    [unarchiveTask],
-  );
-  return [map, archive, unarchive];
 }
 
 interface AgentsSectionProps {

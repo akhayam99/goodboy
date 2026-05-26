@@ -16,7 +16,6 @@ import {
 import type { GhTokenStatus, SessionId, IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import { formatError } from '../../shared/lib/errors';
-import { archivedMapFromSessions } from '../../shared/lib/archived-sessions';
 import type { AppStore } from '../store';
 
 type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
@@ -368,7 +367,6 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     // sweep / on-access / manual refreshes.
     //
     // Filters:
-    //   - archived sessions → hidden in the sidebar, polling them is waste.
     //   - terminal PRs (merged/closed) → no new commits, CI, or reviews can
     //     land. On-access still refreshes them so reopening shows current.
     //   - `skipUnknownPr` → set by the steady-state interval. Sessions where
@@ -378,13 +376,13 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     //     them explicitly. The reactive sweep (boot / workspace switch /
     //     new session) still polls them once so PRs created from outside
     //     the app are discovered.
+    // (Archived sessions are not in `state.sessions` by construction — they
+    // live in `archivedSessions[workspaceId]` and are out of the poll loop.)
     sweepGithub: (opts?: { skipUnknownPr?: boolean }) => {
       if (!get().githubStatus?.available) return;
       const { sessions, sessionBranches, sessionGithub, currentSessionId } = get();
-      const archived = archivedMapFromSessions(sessions);
       const subOpts = { silent: true, retries: 1 } as const;
       for (const session of sessions) {
-        if (archived[session.id]) continue;
         if (!sessionBranches[session.id]) continue;
         const cached = sessionGithub[session.id];
         const pr = cached?.pr;

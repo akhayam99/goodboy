@@ -24,6 +24,7 @@ export {
   updateSessionUserStatus,
   getSessionById,
   listSessionsForWorkspace,
+  listArchivedSessionsForWorkspace,
   renameSession,
   deleteSession,
   softDeleteSession,

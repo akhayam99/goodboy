@@ -666,7 +666,9 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
          FROM agents a
          JOIN sessions t ON a.session_id = t.id
          WHERE a.last_finished_at IS NOT NULL
-           AND (a.last_viewed_at IS NULL OR a.last_finished_at > a.last_viewed_at)",
+           AND (a.last_viewed_at IS NULL OR a.last_finished_at > a.last_viewed_at)
+           AND t.archived_at IS NULL
+           AND t.deleted_at IS NULL",
     )?;
     let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)

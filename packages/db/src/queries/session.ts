@@ -278,16 +278,11 @@ export async function getSessionById(db: Database, id: SessionId): Promise<Sessi
   return toDomain(row, [], workflowIds, currentStepByWorkflow);
 }
 
-export async function listSessionsForWorkspace(
+async function hydrateSessions(
   db: Database,
-  workspaceId: WorkspaceId,
+  rows: ReadonlyArray<SessionRow>,
 ): Promise<ReadonlyArray<Session>> {
-  const rows = await db.select<SessionRow>(
-    'SELECT * FROM sessions WHERE workspace_id = ? ORDER BY updated_at DESC',
-    [workspaceId],
-  );
   if (rows.length === 0) return [];
-
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<{
@@ -316,6 +311,36 @@ export async function listSessionsForWorkspace(
     }
     return toDomain(row, [], workflowIds, currentStepByWorkflow);
   });
+}
+
+// Active sessions only — archived rows are returned by
+// `listArchivedSessionsForWorkspace` and live in a separate, lazily-loaded
+// slice of the store. The split keeps archived sessions out of every
+// interactive surface (palette, github polling, unread, eager loads) by
+// construction; they exist purely as historical info under the Archived tab.
+export async function listSessionsForWorkspace(
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<Session>> {
+  const rows = await db.select<SessionRow>(
+    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NULL AND deleted_at IS NULL ORDER BY updated_at DESC',
+    [workspaceId],
+  );
+  return hydrateSessions(db, rows);
+}
+
+// Archived sessions for a workspace, sorted by archival time. Loaded lazily
+// when the Archived tab is opened — never participates in palette search,
+// github polling, unread dots, or workspace-switch eager loads.
+export async function listArchivedSessionsForWorkspace(
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<Session>> {
+  const rows = await db.select<SessionRow>(
+    'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
+    [workspaceId],
+  );
+  return hydrateSessions(db, rows);
 }
 
 export async function renameSession(
