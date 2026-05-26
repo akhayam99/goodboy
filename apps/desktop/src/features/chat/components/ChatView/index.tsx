@@ -454,7 +454,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                 <ChatEmptyState
                   selectedAgentId={selectedAgentId}
                   phaseRuns={phaseRuns}
-                  workflowId={session.workflowIds[0] ?? null}
+                  hasWorkflow={session.workflowIds.length > 0}
                 />
               </div>
             )
@@ -588,10 +588,10 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
 interface ChatEmptyStateProps {
   selectedAgentId: AgentId | null;
   phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;
-  workflowId: string | null;
+  hasWorkflow: boolean;
 }
 
-function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptyStateProps) {
+function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptyStateProps) {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const selectedAgent = useMemo(
     () => (selectedAgentId ? (phaseRuns.find((r) => r.id === selectedAgentId) ?? null) : null),
@@ -605,9 +605,9 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, workflowId }: ChatEmptySta
   const scenario = useMemo<EmptyScenario>(() => {
     if (selectedAgent && selectedKind) return 'agent_focus';
     if (phaseRuns.length > 0) return 'pick_agent';
-    if (workflowId) return 'workflow_no_agent';
+    if (hasWorkflow) return 'workflow_no_agent';
     return 'fresh';
-  }, [selectedAgent, selectedKind, phaseRuns.length, workflowId]);
+  }, [selectedAgent, selectedKind, phaseRuns.length, hasWorkflow]);
 
   const copy = useMemo<EmptyCopy>(() => {
     switch (scenario) {

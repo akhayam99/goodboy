@@ -72,9 +72,9 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
     runPlan: async (sessionId: SessionId, planId: PlanId) => {
       const state = get();
 
-      // A: workflow-aware only if session carries a workflowId
+      // A: workflow-aware only if session has at least one attached workflow
       const session = state.sessions.find((s) => s.id === sessionId);
-      if (!session?.workflowId) {
+      if (!session || session.workflowIds.length === 0) {
         await get().spawnAgent(sessionId, {
           triggeredPlanId: planId,
           kindOverride: 'implementer',
@@ -82,7 +82,7 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
         return;
       }
 
-      // B: plan must have been created inside the workflow (creator agent has a stepId)
+      // B: plan must have been created inside a workflow (creator agent has a stepId)
       const plan = state.sessionPlans[sessionId]?.find((p) => p.id === planId);
       const runs = state.sessionPhaseRuns[sessionId] ?? [];
       const creatorAgent = plan ? runs.find((r) => r.id === plan.agentId) : undefined;
@@ -94,9 +94,14 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
         return;
       }
 
-      // C: template must be resolvable (defensive guard)
+      // C: resolve which attached workflow owns the creator step — that workflow is
+      // the routing context. Without a match we fall back to free-spawn.
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
-      const template = templates.find((t) => t.id === session.workflowId) ?? null;
+      const attached = session.workflowIds
+        .map((wid) => templates.find((t) => t.id === wid))
+        .filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const template =
+        attached.find((t) => t.steps.some((s) => s.id === creatorAgent.stepId)) ?? null;
       if (!template) {
         await get().spawnAgent(sessionId, {
           triggeredPlanId: planId,

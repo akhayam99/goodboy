@@ -46,7 +46,8 @@ function makeSession(overrides: Partial<Session> = {}): Session {
       allowTurnOverride: true,
     } as Session['providerPreference'],
     permissionMode: 'default' as Session['permissionMode'],
-    workflowId: WF_ID,
+    workflowIds: [WF_ID],
+    currentStepByWorkflow: {},
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',
@@ -210,10 +211,10 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate A — session has no workflowId → free-spawn', () => {
+  describe('gate A — session has no workflows attached → free-spawn', () => {
     it('free-spawns an implementer when session has no workflow attached', async () => {
       const state = defaultState({
-        sessions: [makeSession({ workflowId: undefined })],
+        sessions: [makeSession({ workflowIds: [] })],
       });
       const slice = buildSlice(state);
 
@@ -494,7 +495,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
         { name: 'happy path', state: defaultState() },
         {
           name: 'gate A',
-          state: defaultState({ sessions: [makeSession({ workflowId: undefined })] }),
+          state: defaultState({ sessions: [makeSession({ workflowIds: [] })] }),
         },
         {
           name: 'gate B',

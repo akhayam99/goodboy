@@ -3744,11 +3744,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     let stepPromptPrefix = '';
     if (args.stepId) {
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
-      const activeWorkflowId = session.workflowIds[0] ?? null;
-      const template = activeWorkflowId
-        ? (templates.find((t) => t.id === activeWorkflowId) ?? null)
-        : null;
-      const step = template?.steps.find((s) => s.id === args.stepId) ?? null;
+      const attached = templates.filter((t) => session.workflowIds.includes(t.id));
+      let step: Step | null = null;
+      for (const t of attached) {
+        const found = t.steps.find((s) => s.id === args.stepId);
+        if (found) {
+          step = found;
+          break;
+        }
+      }
       if (step) {
         if (!resolvedName) resolvedName = step.name;
         stepPromptPrefix = step.promptPrefix;
@@ -4481,12 +4485,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   maybeAutoAdvanceWorkflow: async (sessionId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
-    const activeWorkflowId = session?.workflowIds[0] ?? null;
-    if (!session || !session.autoRun || !activeWorkflowId) return;
-    const template = (state.phaseTemplates[session.workspaceId] ?? []).find(
-      (t) => t.id === activeWorkflowId,
-    );
-    if (!template) return;
+    if (!session || !session.autoRun || session.workflowIds.length === 0) return;
+    const templates = state.phaseTemplates[session.workspaceId] ?? [];
+    const attached = session.workflowIds
+      .map((wid) => templates.find((t) => t.id === wid))
+      .filter((t): t is Workflow => t !== undefined);
+    if (attached.length === 0) return;
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     if (runs.some((r) => r.status === 'failed')) return;
     const slots = state.sessionSlots[sessionId] ?? [];
@@ -4494,23 +4498,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
     const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
     if (hasOpenQuestions || summarizerBusy) return;
-    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-    const nextPendingAgent = (() => {
-      for (const step of sortedSteps) {
-        const agent = runs.find((r) => r.stepId === step.id);
-        if (!agent || agent.status !== 'pending') continue;
-        const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
-        const allDone = prevSteps.every((s) =>
-          runs.some(
-            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
-          ),
-        );
-        if (allDone) return agent;
-        return null;
-      }
-      return null;
-    })();
-    if (!nextPendingAgent) return;
     const exceeded = state.budgetAlerts.some(
       (a) =>
         a.dismissedAt === undefined &&
@@ -4518,6 +4505,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
           a.kind === 'provider-exceeded'),
     );
     if (exceeded) return;
+    const nextPendingAgent = (() => {
+      for (const template of attached) {
+        const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+        for (const step of sortedSteps) {
+          const agent = runs.find((r) => r.stepId === step.id);
+          if (!agent || agent.status !== 'pending') continue;
+          const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
+          const allDone = prevSteps.every((s) =>
+            runs.some(
+              (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
+            ),
+          );
+          if (allDone) return agent;
+          break;
+        }
+      }
+      return null;
+    })();
+    if (!nextPendingAgent) return;
     await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
     void get().emitNotification(
       'agent-auto-spawn',

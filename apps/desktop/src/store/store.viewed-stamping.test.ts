@@ -140,6 +140,8 @@ function buildSession(): Session {
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
     permissionMode: 'bypassPermissions',
+    workflowIds: [],
+    currentStepByWorkflow: {},
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',

@@ -4,6 +4,9 @@ import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
   Clock,
   DollarSign,
   FolderPlus,
@@ -22,7 +25,7 @@ import {
   Sun,
   Terminal,
   Trash2,
-  Check,
+  X,
 } from 'lucide-react';
 import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
@@ -595,10 +598,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
-  const activeWorkflowId = task.workflowIds[0] ?? null;
-  const workflow = activeWorkflowId
-    ? (phaseTemplates.find((t) => t.id === activeWorkflowId) ?? null)
-    : null;
+  const attachedWorkflows = useMemo<ReadonlyArray<Workflow>>(
+    () =>
+      task.workflowIds
+        .map((wid) => phaseTemplates.find((t) => t.id === wid))
+        .filter((t): t is Workflow => t !== undefined),
+    [task.workflowIds, phaseTemplates],
+  );
+  const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
+  const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const slots = useSessionSlots(task.id);
   const loading = useSessionLoading(task.id);
   const hasOpenQuestions =
@@ -609,13 +617,64 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
-  const workflowAgents = useMemo(() => sorted.filter((r) => r.stepId != null), [sorted]);
-  const adHocAgents = useMemo(() => sorted.filter((r) => r.stepId == null), [sorted]);
-  const actionableStepId = useMemo(() => {
-    if (!workflow) return null;
-    return pickNextWorkflowStep(workflow, sorted)?.id ?? null;
-  }, [workflow, sorted]);
+  const stepWorkflowById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const wf of attachedWorkflows) {
+      for (const step of wf.steps) map.set(step.id, wf.id);
+    }
+    return map;
+  }, [attachedWorkflows]);
+  const agentsByWorkflowId = useMemo(() => {
+    const map = new Map<string, ReadonlyArray<Agent>>();
+    for (const wf of attachedWorkflows) {
+      map.set(
+        wf.id,
+        sorted.filter((r) => r.stepId != null && stepWorkflowById.get(r.stepId) === wf.id),
+      );
+    }
+    return map;
+  }, [attachedWorkflows, sorted, stepWorkflowById]);
+  const adHocAgents = useMemo(
+    () => sorted.filter((r) => r.stepId == null || !stepWorkflowById.has(r.stepId)),
+    [sorted, stepWorkflowById],
+  );
+  const actionableStepIdByWorkflowId = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const wf of attachedWorkflows) {
+      const wfAgents = agentsByWorkflowId.get(wf.id) ?? EMPTY_ARRAY;
+      map.set(wf.id, pickNextWorkflowStep(wf, wfAgents)?.id ?? null);
+    }
+    return map;
+  }, [attachedWorkflows, agentsByWorkflowId]);
   const actionBlocked = hasOpenQuestions || summarizerBusy;
+
+  const onDetachWorkflow = useCallback(
+    async (workflowId: string) => {
+      try {
+        await detachWorkflowFromSession(task.id, workflowId as Workflow['id']);
+      } catch (err) {
+        setSpawnError(formatError(err));
+      }
+    },
+    [detachWorkflowFromSession, task.id],
+  );
+
+  const onReorderWorkflow = useCallback(
+    async (workflowId: string, direction: 'up' | 'down') => {
+      const ids = [...task.workflowIds];
+      const idx = ids.indexOf(workflowId as Workflow['id']);
+      if (idx === -1) return;
+      const swap = direction === 'up' ? idx - 1 : idx + 1;
+      if (swap < 0 || swap >= ids.length) return;
+      [ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!];
+      try {
+        await reorderSessionWorkflows(task.id, ids);
+      } catch (err) {
+        setSpawnError(formatError(err));
+      }
+    },
+    [reorderSessionWorkflows, task.id, task.workflowIds],
+  );
 
   const telemetryByRunId = useMemo(() => {
     const map = new Map<string, TelemetryRecord>();
@@ -762,39 +821,59 @@ function AgentsSection({ task }: AgentsSectionProps) {
     );
   };
 
-  return (
-    <section className="mt-2 flex flex-col px-3 pb-3">
-      {!workflow ? (
-        <div className="flex flex-col gap-1.5">
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <Layers size={11} aria-hidden className="text-primary" />
-              Workflow
-            </span>
-          </header>
+  const hasAnyWorkflow = attachedWorkflows.length > 0;
+  const renderWorkflowBlock = (workflow: Workflow, idx: number) => {
+    const wfAgents = agentsByWorkflowId.get(workflow.id) ?? EMPTY_ARRAY;
+    const actionableStepId = actionableStepIdByWorkflowId.get(workflow.id) ?? null;
+    const canMoveUp = idx > 0;
+    const canMoveDown = idx < attachedWorkflows.length - 1;
+    return (
+      <div key={workflow.id} className={cn('flex flex-col', idx > 0 && 'mt-4')}>
+        <header className="flex items-center gap-2 pb-1.5">
+          <span className={SECTION_LABEL}>
+            <Layers size={11} aria-hidden className="text-primary" />
+            Workflow
+          </span>
+          <span className="flex-1" />
+          <WorkflowKindLabel workflow={workflow} />
+          {attachedWorkflows.length > 1 ? (
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                disabled={!canMoveUp}
+                onClick={() => void onReorderWorkflow(workflow.id, 'up')}
+                title="move workflow up"
+                aria-label="move workflow up"
+                className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronUp size={11} aria-hidden />
+              </button>
+              <button
+                type="button"
+                disabled={!canMoveDown}
+                onClick={() => void onReorderWorkflow(workflow.id, 'down')}
+                title="move workflow down"
+                aria-label="move workflow down"
+                className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronDown size={11} aria-hidden />
+              </button>
+            </div>
+          ) : null}
           <button
             type="button"
-            onClick={() => setStartWorkflowOpen(true)}
-            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            onClick={() => void onDetachWorkflow(workflow.id)}
+            title="detach workflow"
+            aria-label="detach workflow"
+            className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-danger/10 hover:text-danger"
           >
-            <Plus size={13} aria-hidden />
-            Start a workflow
+            <X size={11} aria-hidden />
           </button>
-        </div>
-      ) : null}
-      {workflow && workflowAgents.length > 0 ? (
-        <>
-          <header className="flex items-center gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <Layers size={11} aria-hidden className="text-primary" />
-              Workflow
-            </span>
-            <span className="flex-1" />
-            <WorkflowKindLabel workflow={workflow} />
-            <AutoRunToggle session={task} />
-          </header>
+          {idx === 0 ? <AutoRunToggle session={task} /> : null}
+        </header>
+        {wfAgents.length > 0 ? (
           <div className="flex flex-col gap-1 pl-2">
-            {workflowAgents.map((run, index) => {
+            {wfAgents.map((run, index) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
               const resolvedModel =
@@ -823,21 +902,53 @@ function AgentsSection({ task }: AgentsSectionProps) {
               );
             })}
           </div>
-        </>
-      ) : null}
-
-      <header
-        className={cn(
-          'flex items-center gap-2 pb-1.5',
-          ((workflow && workflowAgents.length > 0) || !workflow) && 'mt-6',
+        ) : (
+          <p className="pl-2 text-2xs text-muted-foreground/60">no agents yet for this workflow.</p>
         )}
-      >
+      </div>
+    );
+  };
+
+  return (
+    <section className="mt-2 flex flex-col px-3 pb-3">
+      {!hasAnyWorkflow ? (
+        <div className="flex flex-col gap-1.5">
+          <header className="flex items-center justify-between gap-2 pb-1.5">
+            <span className={SECTION_LABEL}>
+              <Layers size={11} aria-hidden className="text-primary" />
+              Workflow
+            </span>
+          </header>
+          <button
+            type="button"
+            onClick={() => setStartWorkflowOpen(true)}
+            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={13} aria-hidden />
+            Start a workflow
+          </button>
+        </div>
+      ) : (
+        <>
+          {attachedWorkflows.map(renderWorkflowBlock)}
+          <button
+            type="button"
+            onClick={() => setStartWorkflowOpen(true)}
+            className="mt-2 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={11} aria-hidden />
+            Attach another workflow
+          </button>
+        </>
+      )}
+
+      <header className="mt-6 flex items-center gap-2 pb-1.5">
         <span className={SECTION_LABEL}>
           <DogMascot size={14} className="shrink-0 text-success" />
           Agents
         </span>
       </header>
-      {workflow ? (
+      {hasAnyWorkflow ? (
         adHocAgents.length > 0 ? (
           <ul className="flex flex-col gap-1 pl-2">{adHocAgents.map(renderAdHocRow)}</ul>
         ) : null
