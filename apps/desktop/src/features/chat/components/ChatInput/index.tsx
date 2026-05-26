@@ -1046,17 +1046,21 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
           }`}
           style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
-          {isDragging ? (
+          <div
+            className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[6px] bg-primary/5 transition-opacity duration-150 ${
+              isDragging ? 'opacity-100' : 'opacity-0'
+            }`}
+            aria-hidden
+          >
             <div
-              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[6px] bg-primary/5"
-              aria-hidden
+              className={`flex items-center gap-2 rounded-full bg-background/95 px-4 py-1.5 text-xs font-medium text-primary shadow-md ring-1 ring-primary/30 transition-transform duration-150 ${
+                isDragging ? 'scale-100' : 'scale-95'
+              }`}
             >
-              <div className="flex items-center gap-2 rounded-full bg-background/95 px-4 py-1.5 text-xs font-medium text-primary shadow-md ring-1 ring-primary/30">
-                <ImagePlus size={14} aria-hidden />
-                drop to attach
-              </div>
+              <ImagePlus size={14} aria-hidden />
+              drop to attach
             </div>
-          ) : null}
+          </div>
           {attachments.length > 0 ? (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (
