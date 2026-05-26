@@ -274,14 +274,19 @@ export function App() {
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
       />
-      <SettingsDialog
-        open={settingsOpen}
-        onClose={() => {
-          setSettingsOpen(false);
-          setSettingsInitialSection(undefined);
-        }}
-        initialSection={settingsInitialSection}
-      />
+      {/* Only mount dialog bodies (and their selectors) when actually open.
+          Otherwise SettingsDialog/WorkspaceLinkDialog stay alive across the
+          whole session and pay re-render cost on every store update. */}
+      {settingsOpen ? (
+        <SettingsDialog
+          open
+          onClose={() => {
+            setSettingsOpen(false);
+            setSettingsInitialSection(undefined);
+          }}
+          initialSection={settingsInitialSection}
+        />
+      ) : null}
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}
@@ -297,13 +302,11 @@ export function App() {
           }}
         />
       ) : null}
-      <WorkspaceLinkDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
-      {currentSession ? (
-        <EndSessionDialog
-          session={currentSession}
-          open={endOpen}
-          onClose={() => setEndOpen(false)}
-        />
+      {addWorkspaceOpen ? (
+        <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+      ) : null}
+      {currentSession && endOpen ? (
+        <EndSessionDialog session={currentSession} open onClose={() => setEndOpen(false)} />
       ) : null}
     </ToastProvider>
   );

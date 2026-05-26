@@ -278,21 +278,28 @@ export function WorkspacesSidebar({
         </div>
       </div>
 
-      <WorkspaceLinkDialog open={addWorkspaceOpen} onClose={() => setAddWorkspaceOpen(false)} />
-      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
-      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
-      {currentWorkspace ? (
+      {/* Mount these heavy dialogs only when open. Otherwise their inner
+          selectors (PricingDialog subscribes to session/workspace summaries,
+          sessionTelemetry, providerSpendBreakdown — GuideDialog walks a few
+          maps too) re-evaluate on every store update for a panel the user
+          almost never has open. */}
+      {addWorkspaceOpen ? (
+        <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+      ) : null}
+      {guideOpen ? <GuideDialog open onClose={() => setGuideOpen(false)} /> : null}
+      {pricingOpen ? <PricingDialog open onClose={() => setPricingOpen(false)} /> : null}
+      {currentWorkspace && newSessionOpen ? (
         <NewSessionDialog
-          open={newSessionOpen}
+          open
           onClose={() => setNewSessionOpen(false)}
           workspaceId={currentWorkspace.id}
           onOpenSettings={onOpenSettings}
         />
       ) : null}
-      {currentSession ? (
+      {currentSession && sessionSettingsOpen ? (
         <SessionSettingsDialog
           sessionId={currentSession.id as SessionId}
-          open={sessionSettingsOpen}
+          open
           onClose={() => setSessionSettingsOpen(false)}
           archived={!!archivedMap[currentSession.id]}
           onArchive={() => archive(currentSession.id as SessionId)}
