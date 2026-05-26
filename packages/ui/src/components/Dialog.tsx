@@ -95,9 +95,34 @@ export function Dialog({
   const titleId = title ? `${uid}-title` : undefined;
   const descId = description ? `${uid}-desc` : undefined;
 
+  // Latest-onClose ref so the showModal effect can stay keyed on `open` alone
+  // instead of refiring whenever the parent re-renders with a fresh handler.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  // Suppress close-event-driven onClose when we ourselves called dialog.close()
+  // (cleanup or open→false transition). React 19 strict mode double-invokes
+  // effects, so a "mount when open" parent would otherwise: setup → showModal,
+  // cleanup → dialog.close() queues a close event, resetup → showModal again,
+  // then the deferred close event fires onClose against the new listener and
+  // the parent unmounts the dialog for real. The user sees nothing happen.
+  const programmaticCloseRef = useRef(false);
+
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+
+    const handleClose = () => {
+      if (programmaticCloseRef.current) {
+        programmaticCloseRef.current = false;
+        return;
+      }
+      onCloseRef.current();
+    };
+    dialog.addEventListener('close', handleClose);
+
     if (open) {
       if (!dialog.open) {
         dialog.showModal();
@@ -112,20 +137,18 @@ export function Dialog({
         }
       }
     } else if (dialog.open) {
+      programmaticCloseRef.current = true;
       dialog.close();
     }
+
     return () => {
-      if (dialog.open) dialog.close();
+      dialog.removeEventListener('close', handleClose);
+      if (dialog.open) {
+        programmaticCloseRef.current = true;
+        dialog.close();
+      }
     };
   }, [open, initialFocusRef]);
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    const handleClose = () => onClose();
-    dialog.addEventListener('close', handleClose);
-    return () => dialog.removeEventListener('close', handleClose);
-  }, [onClose]);
 
   const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (!closeOnBackdrop) return;
