@@ -1,9 +1,11 @@
-import { memo, useState } from 'react';
-import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, Wrench } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
 import { CopyButton, Divider, Markdown, cn } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { readAttachment } from '../../turn';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { ImageLightbox } from '../ImageLightbox';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
@@ -37,7 +39,14 @@ function TranscriptCardImpl({
 }: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
-      return <UserText text={item.text} at={item.at} />;
+      return (
+        <UserText
+          text={item.text}
+          at={item.at}
+          attachments={item.attachments}
+          workingDir={workingDir}
+        />
+      );
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} />;
     case 'tool_call':
@@ -251,13 +260,105 @@ function InlineCopyButton({ value }: { value: string }) {
   );
 }
 
-function UserText({ text, at }: { text: string; at: string }) {
+// Loads a persisted attachment lazily: the bytes live on disk in the worktree,
+// not in the turn-event payload, so each thumbnail reads its own file. Works
+// the same for a just-sent message and one restored from the DB after restart.
+function AttachmentThumb({
+  attachment,
+  workingDir,
+}: {
+  attachment: MessageAttachment;
+  workingDir: string | null;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!workingDir) {
+      setFailed(true);
+      return;
+    }
+    let alive = true;
+    setFailed(false);
+    setSrc(null);
+    readAttachment(workingDir, attachment.relPath)
+      .then((dataUrl) => {
+        if (alive) setSrc(dataUrl);
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [workingDir, attachment.relPath]);
+
+  if (failed) {
+    return (
+      <div
+        className="flex h-28 w-28 flex-col items-center justify-center gap-1 rounded-lg bg-foreground/5 text-muted-foreground"
+        title={attachment.fileName}
+      >
+        <ImageOff size={16} aria-hidden />
+        <span className="max-w-[6.5rem] truncate px-1 text-2xs">{attachment.fileName}</span>
+      </div>
+    );
+  }
+
+  if (src === null) {
+    return <div className="h-28 w-28 animate-pulse rounded-lg bg-foreground/10" />;
+  }
+
   return (
-    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1 rounded-2xl bg-primary/15 px-4 pb-1.5 pt-2.5 ring-1 ring-primary/20">
-      <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+    <>
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        title={`preview ${attachment.fileName}`}
+        aria-label={`preview ${attachment.fileName}`}
+        className="cursor-zoom-in"
+      >
+        <img
+          src={src}
+          alt={attachment.fileName}
+          className="max-h-60 max-w-full rounded-lg object-contain ring-1 ring-primary/20"
+        />
+      </button>
+      {previewOpen ? (
+        <ImageLightbox src={src} alt={attachment.fileName} onClose={() => setPreviewOpen(false)} />
+      ) : null}
+    </>
+  );
+}
+
+function UserText({
+  text,
+  at,
+  attachments,
+  workingDir = null,
+}: {
+  text: string;
+  at: string;
+  attachments?: ReadonlyArray<MessageAttachment>;
+  workingDir?: string | null;
+}) {
+  const images = attachments ?? [];
+  return (
+    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-2xl bg-primary/15 px-4 pb-1.5 pt-2.5 ring-1 ring-primary/20">
+      {images.length > 0 ? (
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {images.map((a) => (
+            <AttachmentThumb key={a.id} attachment={a} workingDir={workingDir} />
+          ))}
+        </div>
+      ) : null}
+      {text.length > 0 ? (
+        <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+      ) : null}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         <span className="font-mono">{formatHHMM(at)}</span>
-        <InlineCopyButton value={text} />
+        {text.length > 0 ? <InlineCopyButton value={text} /> : null}
       </div>
     </div>
   );

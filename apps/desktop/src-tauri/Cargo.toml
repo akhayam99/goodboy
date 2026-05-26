@@ -27,7 +27,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 dirs = "5"
 regex = "1"
 sha2 = "0.10"
+base64 = "0.22"
 tauri-plugin-dialog = "2"
 libc = "0.2"
 portable-pty = "0.8"
-base64 = "0.22"

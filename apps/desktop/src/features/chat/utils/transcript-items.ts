@@ -1,5 +1,6 @@
 import type {
   IsoDateTime,
+  MessageAttachment,
   PermissionRuleId,
   ProviderId,
   ProviderRunId,
@@ -9,7 +10,13 @@ import type {
 import { decodeAuthRequiredMessage } from '../turn';
 
 export type TranscriptItem =
-  | { kind: 'user_text'; key: string; text: string; at: IsoDateTime }
+  | {
+      kind: 'user_text';
+      key: string;
+      text: string;
+      attachments?: ReadonlyArray<MessageAttachment>;
+      at: IsoDateTime;
+    }
   | { kind: 'assistant_text'; key: string; text: string }
   | {
       kind: 'tool_call';
@@ -106,7 +113,15 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
 
     switch (event.kind) {
       case 'user_text':
-        items.push({ kind: 'user_text', key: `user-${i}`, text: event.text, at: event.at });
+        items.push({
+          kind: 'user_text',
+          key: `user-${i}`,
+          text: event.text,
+          ...(event.attachments && event.attachments.length > 0
+            ? { attachments: event.attachments }
+            : {}),
+          at: event.at,
+        });
         break;
       case 'tool_call_start': {
         const key = `tool-${event.toolUseId}`;

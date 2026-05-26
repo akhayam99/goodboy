@@ -1,3 +1,4 @@
+mod attachment;
 mod budget;
 mod config_export;
 mod db;
@@ -87,6 +88,9 @@ pub fn run() {
       providers::provider_action,
       turn::turn_spawn,
       turn::turn_cancel,
+      attachment::attachment_write,
+      attachment::attachment_read,
+      attachment::attachment_read_dropped,
       summarize::summarize_session,
       planner::planner_run,
       repo::validate_git_repo,

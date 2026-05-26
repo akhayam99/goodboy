@@ -27,7 +27,7 @@ export type {
   Workspace,
   WorkspaceScript,
 } from './workspace';
-export type { Message, MessageRole } from './message';
+export type { AttachmentInput, Message, MessageAttachment, MessageRole } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {
   DetectResult,
