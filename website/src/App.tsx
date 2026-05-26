@@ -1,3 +1,5 @@
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Nav } from './sections/Nav';
 import { FloatingNav } from './sections/FloatingNav';
 import { Hero } from './sections/Hero';
@@ -34,6 +36,8 @@ export function App() {
         <CTA />
       </main>
       <Footer />
+      <Analytics />
+      <SpeedInsights />
     </div>
   );
 }
