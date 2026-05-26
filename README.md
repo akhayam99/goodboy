@@ -7,8 +7,7 @@ editor or terminal, it commands them. Run agents against your repos, keep them
 aware of the work through a context they all share, route them across Claude,
 Cursor, and Codex, and watch the cost as it accrues.
 
-<img width="3456" height="2170" alt="CleanShot 2026-05-25 at 14 09 18@2x" src="https://github.com/user-attachments/assets/7a9080a7-3c56-48c4-870d-0d461b82e0fa" />
-
+<img width="4036" height="2270" alt="CleanShot 2026-05-25 at 14 09 18@2x" src="https://github.com/user-attachments/assets/f669511b-c09d-472b-9f30-3dcc88b7ceae" />
 
 ## What it does
 
