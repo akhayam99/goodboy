@@ -73,6 +73,7 @@ import {
   upsertWorkspaceScript,
   deleteWorkspaceScript,
   upsertContextSlot,
+  listOpenQuestionsForSession,
   insertNudgeEvent,
   type Notification,
   type NotificationKind,
@@ -82,6 +83,7 @@ import {
   type TelemetrySummary,
 } from '@goodboy/db';
 import { useOpenQuestions } from '../features/context/components/QuestionsTab/useOpenQuestions';
+import { workflowHasOpenQuestions } from '../features/context/openQuestionsGate';
 import type {
   Agent,
   AgentId,
@@ -104,6 +106,7 @@ import type {
   PermissionRequest,
   PermissionRequestId,
   PermissionRule,
+  OpenQuestion,
   PlanConsumption,
   PlanId,
   PlanStatus,
@@ -384,6 +387,13 @@ export interface AppState {
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
+  // Open questions cached per session so sidebar gates (PlanReadySuggestion,
+  // AgentsSection's per-workflow NextStep CTA) can resolve their block state
+  // without poking the DB on every render. Loaded lazily by setCurrentSession
+  // and refreshed by autoPopulateContext when a turn either raises or
+  // resolves a question. Mirrors the useOpenQuestions store but is keyed by
+  // sessionId so the sidebar can show many sessions side-by-side.
+  readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   /**
    * Per-session pending nudges surfaced to the chat input area. Cleared on
    * dismiss or when the user acts on the suggestion. Not persisted across
@@ -734,6 +744,7 @@ const initialState: AppState = {
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},
+  sessionOpenQuestions: {},
   sessionLoading: {},
   sessionViewPrefs: {},
   terminalSessions: {},
@@ -1659,6 +1670,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
           markDone('slots');
         });
     }
+
+    // Open questions: hydrate alongside slots so the sidebar gates
+    // (PlanReadySuggestion + per-workflow NextStep CTA) can resolve their
+    // block state for the just-loaded session without an extra round-trip.
+    void listOpenQuestionsForSession(tauriDatabase, id, 'open')
+      .then((qs) => {
+        set((state) => ({
+          sessionOpenQuestions: { ...state.sessionOpenQuestions, [id]: qs },
+        }));
+      })
+      .catch(() => {});
 
     // Plans
     if (!cached?.plans) {
@@ -3022,11 +3044,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // from the assistant text. Best-effort — slot writes failing must not
       // mask the turn itself.
       try {
+        // Resolve agent context so any open questions captured this turn are
+        // stamped with their creator + (workflow, step ordinal) provenance.
+        // Without this the question would land orphan and fall back to the
+        // legacy session-wide blocking behaviour.
+        const stateForAgentCtx = get();
+        const activeAgentRow =
+          (stateForAgentCtx.sessionPhaseRuns[sessionId] ?? []).find(
+            (r) => r.id === activeAgentId,
+          ) ?? null;
+        const stepLookup = (() => {
+          if (!activeAgentRow?.stepId) return undefined;
+          const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
+          for (const t of templates) {
+            const step = t.steps.find((s) => s.id === activeAgentRow.stepId);
+            if (step) return { workflowId: t.id, ordinal: step.ordinal };
+          }
+          return undefined;
+        })();
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
           filesEdited: Array.from(filesTouchedThisTurn),
           assistantText,
+          agentContext: {
+            agentId: activeAgentId,
+            workflowId: stepLookup?.workflowId,
+            stepOrdinal: stepLookup?.ordinal,
+          },
         });
         if (result.updatedSlots.length > 0) {
           const refreshedSlots = await listContextSlotsForSession(tauriDatabase, sessionId);
@@ -3036,6 +3081,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
         if (result.openQuestionsChanged) {
           await useOpenQuestions.getState().loadQuestions(sessionId);
+          // Refresh the per-session cache the sidebar gates read from.
+          // Best-effort: a stale cache only mis-renders the block badge
+          // for one frame until the next turn refreshes again.
+          try {
+            const refreshedQs = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+            set((state) => ({
+              sessionOpenQuestions: {
+                ...state.sessionOpenQuestions,
+                [sessionId]: refreshedQs,
+              },
+            }));
+          } catch {
+            // ignore: cache stays stale until next turn
+          }
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);
@@ -4493,11 +4552,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (attached.length === 0) return;
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     if (runs.some((r) => r.status === 'failed')) return;
-    const slots = state.sessionSlots[sessionId] ?? [];
-    const hasOpenQuestions =
-      (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
     const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
-    if (hasOpenQuestions || summarizerBusy) return;
+    if (summarizerBusy) return;
     const exceeded = state.budgetAlerts.some(
       (a) =>
         a.dismissedAt === undefined &&
@@ -4505,8 +4561,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
           a.kind === 'provider-exceeded'),
     );
     if (exceeded) return;
+    // Per-workflow open-question gate: load fresh from the typed table so
+    // we can distinguish "workflow A has a pending question" from
+    // "workflow B has a pending question" and only block the relevant
+    // workflow. Orphan questions (no workflow_id) block every workflow.
+    const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
     const nextPendingAgent = (() => {
       for (const template of attached) {
+        if (workflowHasOpenQuestions(openQuestions, template.id)) continue;
         const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
         for (const step of sortedSteps) {
           const agent = runs.find((r) => r.stepId === step.id);

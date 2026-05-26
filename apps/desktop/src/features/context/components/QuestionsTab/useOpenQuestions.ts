@@ -5,7 +5,7 @@ import {
   markOpenQuestionDismissed,
   restoreOpenQuestion,
 } from '@goodboy/db';
-import type { OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 
 const UNDO_TTL_MS = 5_000;
@@ -34,9 +34,17 @@ interface OpenQuestionsState {
   toggleCustomField: (questionId: OpenQuestionId) => void;
   dismissQuestion: (id: OpenQuestionId) => Promise<void>;
   undoDismiss: () => Promise<void>;
-  submitAnsweredBatch: (
+  // Submit the answered questions in a single cluster (a per-owner batch).
+  // `clusterQuestionIds` defines exactly which question rows belong to the
+  // cluster being submitted; the store filters drafts to that subset so a
+  // half-typed answer for another cluster's question doesn't get included.
+  // `targetAgentId` is the cluster's current owner agent; null for the
+  // orphan cluster (caller falls back to the active chat).
+  submitClusterAnswers: (
     sessionId: SessionId,
-    onSubmit: (content: string) => Promise<void>,
+    clusterQuestionIds: ReadonlyArray<OpenQuestionId>,
+    targetAgentId: AgentId | null,
+    onSubmit: (content: string, targetAgentId: AgentId | null) => Promise<void>,
   ) => Promise<void>;
   clearJustAnswered: (id: OpenQuestionId) => void;
 }
@@ -126,12 +134,14 @@ export const useOpenQuestions = create<OpenQuestionsState>((set, get) => ({
     }));
   },
 
-  submitAnsweredBatch: async (sessionId, onSubmit) => {
+  submitClusterAnswers: async (sessionId, clusterQuestionIds, targetAgentId, onSubmit) => {
     const { questions, drafts } = get();
+    const clusterIdSet = new Set<OpenQuestionId>(clusterQuestionIds);
 
     const pairs: Array<{ id: OpenQuestionId; question: string; answer: string }> = [];
 
     for (const q of questions) {
+      if (!clusterIdSet.has(q.id)) continue;
       const draft = drafts[q.id] ?? emptyDraft();
       const answer =
         draft.customAnswer.trim().length > 0
@@ -144,9 +154,8 @@ export const useOpenQuestions = create<OpenQuestionsState>((set, get) => ({
     if (pairs.length === 0) return;
 
     const content = buildBatchPrompt(pairs);
-    await onSubmit(content);
+    await onSubmit(content, targetAgentId);
 
-    const now = new Date().toISOString();
     const answeredIds = pairs.map((p) => p.id);
 
     await Promise.all(pairs.map((p) => markOpenQuestionAnswered(tauriDatabase, p.id, p.answer)));
@@ -164,8 +173,6 @@ export const useOpenQuestions = create<OpenQuestionsState>((set, get) => ({
       drafts: cleanedDrafts,
       justAnswered: answeredIds,
     });
-
-    void now; // used implicitly for animation timing
   },
 
   clearJustAnswered: (id) => {

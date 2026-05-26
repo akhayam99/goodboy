@@ -53,14 +53,15 @@ import {
   useCurrentSession,
   useCurrentWorkspace,
   useSessionLoading,
+  useSessionOpenQuestions,
   useSessionPlans,
-  useSessionSlots,
   useSessions,
   useWorkspaces,
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
+import { workflowHasOpenQuestions } from '../../../../features/context/openQuestionsGate';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
@@ -405,7 +406,7 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
  */
 function PlanReadySuggestion({ task }: { task: Session }) {
   const plans = useSessionPlans(task.id);
-  const slots = useSessionSlots(task.id);
+  const openQuestions = useSessionOpenQuestions(task.id);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -418,9 +419,19 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   const latest = plans[plans.length - 1];
   if (!latest || latest.status !== 'active') return null;
 
-  const hasOpenQuestions =
-    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
-  if (hasOpenQuestions) return null;
+  // Per-workflow gate: find the workflow that owns the plan creator's step
+  // and block only if THAT workflow has open questions. Plans without a
+  // workflow context (ad-hoc creator) fall back to the orphan-or-any check.
+  const creator = phaseRuns.find((r) => r.id === latest.agentId);
+  const creatorWorkflow = creator?.stepId
+    ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
+    : null;
+  if (creatorWorkflow) {
+    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) return null;
+  } else if (openQuestions.some((q) => q.status === 'open')) {
+    // No workflow context — keep legacy session-wide block (safe default).
+    return null;
+  }
 
   for (const wid of task.workflowIds) {
     const workflow = phaseTemplates.find((t) => t.id === wid);
@@ -607,10 +618,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
   const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
-  const slots = useSessionSlots(task.id);
+  const openQuestions = useSessionOpenQuestions(task.id);
   const loading = useSessionLoading(task.id);
-  const hasOpenQuestions =
-    (slots.find((s) => s.key === 'open_questions')?.value?.trim().length ?? 0) > 0;
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
@@ -646,7 +655,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     return map;
   }, [attachedWorkflows, agentsByWorkflowId]);
-  const actionBlocked = hasOpenQuestions || summarizerBusy;
+  // Per-workflow block state: each workflow is gated by its own open
+  // questions (plus session-wide summarizer / orphan questions). Set true
+  // when the workflow can't auto-advance until the user resolves something.
+  const blockedByWorkflowId = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const wf of attachedWorkflows) {
+      map.set(wf.id, workflowHasOpenQuestions(openQuestions, wf.id) || summarizerBusy);
+    }
+    return map;
+  }, [attachedWorkflows, openQuestions, summarizerBusy]);
 
   const onDetachWorkflow = useCallback(
     async (workflowId: string) => {
@@ -825,6 +843,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const renderWorkflowBlock = (workflow: Workflow, idx: number) => {
     const wfAgents = agentsByWorkflowId.get(workflow.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByWorkflowId.get(workflow.id) ?? null;
+    const wfBlocked = blockedByWorkflowId.get(workflow.id) ?? false;
     const canMoveUp = idx > 0;
     const canMoveDown = idx < attachedWorkflows.length - 1;
     return (
@@ -886,7 +905,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                   index={index}
                   resolvedModel={resolvedModel}
                   isActionable={isActionable}
-                  isBlocked={isActionable && actionBlocked}
+                  isBlocked={isActionable && wfBlocked}
                   isSelected={run.id === selectedAgentId}
                   isEditing={editingId === run.id}
                   telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
