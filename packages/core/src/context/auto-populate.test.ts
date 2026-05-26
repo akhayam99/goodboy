@@ -1,7 +1,13 @@
 import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
-import type { OpenQuestionStatus, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  OpenQuestionStatus,
+  SessionId,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { autoPopulateContext } from './auto-populate';
 import { ContextEngine } from './engine';
 
@@ -10,6 +16,13 @@ interface OpenQuestionRowSnapshot {
   readonly status: OpenQuestionStatus;
   readonly suggested_answers: string;
   readonly user_answer: string | null;
+}
+
+interface OpenQuestionProvenanceRow {
+  readonly workflow_id: string | null;
+  readonly created_by_step_ordinal: number | null;
+  readonly owned_by_step_ordinal: number | null;
+  readonly created_by_agent_id: string | null;
 }
 
 function makeDb(): DbInterface {
@@ -42,6 +55,14 @@ async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void>
        (id, workspace_id, goal, state_kind, state_payload, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [sessionId, workspaceId, 'demo', 'idle', '{"lastActivityAt":"2026-05-07T00:00:00Z"}', 0, 0],
+  );
+}
+
+async function seedAgent(db: DbInterface, agentId: AgentId, sessionId: SessionId): Promise<void> {
+  await db.execute(
+    `INSERT INTO agents (id, session_id, ordinal, name, status)
+     VALUES (?, ?, ?, ?, ?)`,
+    [agentId, sessionId, 0, 'scout', 'completed'],
   );
 }
 
@@ -191,6 +212,60 @@ describe('autoPopulateContext', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.status).toBe('answered');
     expect(rows[0]?.user_answer).toBe('[resolved by agent]');
+  });
+
+  it('stamps open question with agentContext (workflow + step + creator)', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_prov_1' as SessionId;
+    await seedSession(db, sessionId);
+    const agentId = 'agent_scout_1' as AgentId;
+    const workflowId = 'wf_demo' as WorkflowId;
+    await seedAgent(db, agentId, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>do we need refresh tokens?<</ctx-question>>',
+      agentContext: { agentId, workflowId, stepOrdinal: 1 },
+    });
+
+    const rows = await db.select<OpenQuestionProvenanceRow>(
+      `SELECT workflow_id, created_by_step_ordinal, owned_by_step_ordinal, created_by_agent_id
+         FROM open_questions WHERE session_id = ?`,
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.workflow_id).toBe(workflowId);
+    expect(rows[0]?.created_by_step_ordinal).toBe(1);
+    expect(rows[0]?.owned_by_step_ordinal).toBe(1);
+    expect(rows[0]?.created_by_agent_id).toBe(agentId);
+  });
+
+  it('leaves provenance null when no agentContext is supplied', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_prov_2' as SessionId;
+    await seedSession(db, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>orphan question<</ctx-question>>',
+    });
+
+    const rows = await db.select<OpenQuestionProvenanceRow>(
+      `SELECT workflow_id, created_by_step_ordinal, owned_by_step_ordinal, created_by_agent_id
+         FROM open_questions WHERE session_id = ?`,
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.workflow_id).toBeNull();
+    expect(rows[0]?.created_by_step_ordinal).toBeNull();
+    expect(rows[0]?.owned_by_step_ordinal).toBeNull();
+    expect(rows[0]?.created_by_agent_id).toBeNull();
   });
 
   it('skips slots whose additions are all duplicates', async () => {

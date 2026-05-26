@@ -1,4 +1,4 @@
-import type { ContextSlot, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { AgentId, ContextSlot, OpenQuestionId, SessionId, WorkflowId } from '@goodboy/types';
 import { insertOpenQuestion, markOpenQuestionsResolvedByText, type Database } from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
@@ -9,11 +9,23 @@ import type { SlotKey } from './slots';
 // end of every turn. Thin on purpose: heavy logic lives in extractors.ts and
 // ContextEngine; this fn orchestrates load → merge → upsert per slot.
 
+// Provenance of the agent that produced the turn whose markers we're about
+// to persist. Used to stamp open_questions with their creator so the UI can
+// cluster them per-agent and route answers back to the right chat. The
+// store resolves this from `activeAgentId` + workflow templates before
+// invoking auto-populate.
+export interface AgentContext {
+  readonly agentId: AgentId;
+  readonly workflowId?: WorkflowId;
+  readonly stepOrdinal?: number;
+}
+
 export interface AutoPopulateInput {
   readonly db: Database;
   readonly sessionId: SessionId;
   readonly filesEdited: ReadonlyArray<string>;
   readonly assistantText: string;
+  readonly agentContext?: AgentContext;
 }
 
 export interface AutoPopulateResult {
@@ -58,6 +70,10 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     const res = await insertOpenQuestion(input.db, {
       id: cryptoRandomUUID() as OpenQuestionId,
       sessionId: input.sessionId,
+      workflowId: input.agentContext?.workflowId,
+      createdByStepOrdinal: input.agentContext?.stepOrdinal,
+      ownedByStepOrdinal: input.agentContext?.stepOrdinal,
+      createdByAgentId: input.agentContext?.agentId,
       text: q.text,
       suggestedAnswers: q.suggestedAnswers,
     });
