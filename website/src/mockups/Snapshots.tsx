@@ -222,13 +222,19 @@ export function SessionsSnapshot() {
             >
               GRW-628
             </a>
-            <span aria-hidden className="shrink-0 text-muted-foreground/50" title="session actions">
-              <DotsVerticalIcon size={13} />
+            <span
+              className="relative inline-flex shrink-0 items-center text-muted-foreground/80"
+              title="session actions"
+            >
+              <span className="rounded bg-foreground/10 p-0.5">
+                <DotsVerticalIcon size={13} />
+              </span>
+              <SessionActionsMenu />
             </span>
           </div>
 
           {/* agent rows */}
-          <div className="flex flex-1 flex-col gap-1.5 overflow-hidden px-3 pb-1">
+          <div className="flex flex-col gap-1.5 px-3 pb-1">
             <AgentRow
               num={1}
               kind="scout"
@@ -263,11 +269,15 @@ export function SessionsSnapshot() {
             />
           </div>
 
-          {/* footer: branch chip + cost chip (SessionMetaFooter) */}
-          <div className="mt-auto flex shrink-0 items-center gap-2 px-3 pt-2 pb-3">
-            <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
+          {/* footer: branch chip + PR chip + cost chip */}
+          <div className="mt-auto flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-3">
+            <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
               <IconBranch size={10} aria-hidden className="shrink-0 text-muted-foreground" />
               <span className="truncate">ak/context-slot-history</span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
+              <span className="size-1.5 rounded-full bg-success" aria-hidden />
+              PR #617
             </span>
             <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-[10px] tabular-nums text-success">
               $0.34
@@ -276,6 +286,93 @@ export function SessionsSnapshot() {
         </div>
       </div>
     </SnapshotFrame>
+  );
+}
+
+/* Action menu mock that hangs below the ⋮ trigger in the session detail
+   header. Mirrors apps/desktop/src/shared/components/OverflowMenu items as
+   wired from SessionDetailPanel: detected editors first, scripts next, then
+   settings + end session. Renders open so the reader sees what is collapsed
+   behind the dots in the real product. */
+function SessionActionsMenu() {
+  return (
+    <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-border bg-muted text-[10.5px] shadow-lg">
+      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+        Open in editor
+      </p>
+      <MenuItem
+        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
+        label="Cursor"
+      />
+      <MenuItem
+        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
+        label="VS Code"
+      />
+      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
+      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+        Run script
+      </p>
+      <MenuItem
+        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
+        label="copy environments"
+      />
+      <MenuItem
+        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
+        label="deploy preview"
+      />
+      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
+      <MenuItem icon={<DotsVerticalIcon size={10} />} label="Session settings" />
+      <MenuItem
+        icon={<XIcon size={10} className="text-danger/90" />}
+        label="End session"
+        hint="⌘."
+        destructive
+      />
+    </div>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+  hint,
+  destructive,
+}: {
+  icon: ReactNode;
+  label: string;
+  hint?: string;
+  destructive?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'flex items-center gap-2 px-2.5 py-1.5',
+        destructive ? 'text-danger/90' : 'text-foreground/85',
+      ].join(' ')}
+    >
+      <span className="shrink-0">{icon}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {hint ? <kbd className="font-mono text-[9px] text-muted-foreground/70">{hint}</kbd> : null}
+    </div>
+  );
+}
+
+function XIcon({ size = 10, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
   );
 }
 
@@ -1145,35 +1242,35 @@ function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
 /* ---------------------------- Chat header ---------------------------- */
 
 /* Mirror of features/chat/components/ChatBreadcrumb. Path-on-the-left,
-   dog-on-the-right pattern: workspace > session > workflow chip on the left,
-   a quiet role avatar pinned to the right so the user always knows which
-   kind of agent they are talking to. */
+   role-on-the-right. Labels are kept tight so the strip stays on a single
+   line at the snapshot's natural width: anything longer would wrap and the
+   composition stops reading as a header. */
 export function ChatHeaderSnapshot() {
   return (
     <SnapshotFrame className="max-w-[520px]">
-      <div className="flex h-9 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[11px]">
-        <span className="font-medium text-muted-foreground">app-web</span>
+      <div className="flex h-9 items-center gap-1.5 whitespace-nowrap border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[11px]">
+        <span className="font-medium text-muted-foreground">web</span>
         <Chevron />
-        <span className="font-medium text-muted-foreground">refactor tests focus</span>
+        <span className="font-medium text-muted-foreground">Refactor</span>
         <Chevron />
         <span className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           <IconBranch size={9} />
-          <span>Clinical Bond Test Refactor</span>
+          <span>Plan</span>
           <span aria-hidden className="opacity-60">
             ·
           </span>
           <span className="font-mono tabular-nums">1/3</span>
         </span>
         <Chevron />
-        <span className="font-medium text-foreground/90">Map Test Files</span>
+        <span className="font-medium text-foreground/90">Map Files</span>
         <div className="flex-1" />
         <AgentAvatar kind="scout" size={20} />
       </div>
       <div className="flex items-center justify-center px-6 py-12 text-center">
         <p className="max-w-[26ch] text-[12px] leading-relaxed text-muted-foreground">
-          Path on the left.
+          Where you are on the left.
           <br />
-          The dog on the right is the agent driving this turn.
+          Who is driving this turn on the right.
         </p>
       </div>
     </SnapshotFrame>
@@ -1530,383 +1627,189 @@ function StackStepRow({
   );
 }
 
-/* ---------------------------- App overview --------------------------- */
+/* ---------------------------- App layout (hero) ---------------------- */
 
-/* One large composite snapshot. Three columns laid out exactly as the real
-   desktop AppShell does: workspace sidebar on the left (rail + detail), chat
-   column in the middle (breadcrumb + transcript snippet + composer), context
-   panel on the right (tab strip + slots). Read as the answer to "what does
-   the running app look like" without forcing a screenshot. */
+/* Abstract three-column hero. Reads as the app silhouette, not as a literal
+   screenshot. The deep-dive sections below carry the real detail. Each
+   column gets a label + bracketed hint of what lives there in the product:
+   sessions/agents/scripts on the left, conversation in the middle, the
+   context tabs on the right. No real names, no real prices. */
 export function AppOverviewSnapshot() {
   return (
     <SnapshotFrame className="w-full">
-      {/* macOS-style chrome bar */}
       <div className="flex h-7 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.22_0.006_255)] px-3">
         <span className="h-2.5 w-2.5 rounded-full bg-danger/70" aria-hidden />
         <span className="h-2.5 w-2.5 rounded-full bg-warning/70" aria-hidden />
         <span className="h-2.5 w-2.5 rounded-full bg-success/70" aria-hidden />
         <span className="ml-auto text-[10px] text-muted-foreground/60">Goodboy</span>
       </div>
-      <div className="grid h-[480px] grid-cols-[260px_minmax(0,1fr)_280px]">
-        {/* Workspace + sessions sidebar */}
-        <aside className="flex min-h-0 flex-col border-r border-border-soft bg-[oklch(0.24_0.006_255)]">
-          <OverviewSidebarTop />
-          <OverviewSessionsRail />
-          <OverviewDetailPanel />
-        </aside>
-
-        {/* Chat column */}
-        <section className="flex min-h-0 flex-col">
-          <OverviewBreadcrumb />
-          <OverviewTranscript />
-          <OverviewComposer />
-        </section>
-
-        {/* Context panel */}
-        <aside className="flex min-h-0 flex-col border-l border-border-soft bg-[oklch(0.24_0.006_255)]">
-          <OverviewContextTabs />
-          <OverviewContextBody />
-        </aside>
+      <div className="grid h-[420px] grid-cols-1 sm:grid-cols-[1fr_1.4fr_1fr]">
+        <LayoutColumn
+          eyebrow="Sessions"
+          tag="rail + detail"
+          hint="Linked tickets, agents, scripts, PR state, branch + cost — collapsed into one rail."
+          body={<SessionsAbstract />}
+          tone="primary"
+        />
+        <LayoutColumn
+          eyebrow="Conversation"
+          tag="chat + composer"
+          hint="The transcript with the agent currently driving the turn. Switch role mid-flight."
+          body={<ConversationAbstract />}
+          tone="emerald"
+          accent
+        />
+        <LayoutColumn
+          eyebrow="Context"
+          tag="five tabs"
+          hint="Goal, plans, files, GitHub, terminal — one click each. Open questions pinned below."
+          body={<ContextAbstract />}
+          tone="info"
+        />
       </div>
     </SnapshotFrame>
   );
 }
 
-function OverviewSidebarTop() {
-  return (
-    <div className="flex shrink-0 items-center gap-1.5 border-b border-border-soft px-2.5 py-2">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-        Workspaces
-      </span>
-      <span className="ml-auto inline-flex items-center gap-1 rounded border border-border bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-        app-web
-      </span>
-      <span className="inline-flex items-center gap-1 rounded border border-border-soft bg-subtle px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-        goodboy
-      </span>
-    </div>
-  );
-}
+const COLUMN_TONE = {
+  primary: { eyebrow: 'text-primary', dot: 'bg-primary' },
+  emerald: { eyebrow: 'text-success', dot: 'bg-success' },
+  info: { eyebrow: 'text-info', dot: 'bg-info' },
+} as const;
 
-const OVERVIEW_SESSIONS: ReadonlyArray<{
-  readonly id: string;
-  readonly kind: SessionKind;
-  readonly goal: string;
-  readonly cost: number;
-  readonly state: 'active' | 'running' | 'pending' | 'idle';
-  readonly linearId?: string;
-}> = [
-  {
-    id: 'a',
-    kind: 'plan',
-    goal: 'Audit reversions on context slots',
-    cost: 0.41,
-    state: 'active',
-    linearId: 'GRW-628',
-  },
-  {
-    id: 'b',
-    kind: 'imple',
-    goal: 'Add history table migration',
-    cost: 0.18,
-    state: 'running',
-  },
-  {
-    id: 'c',
-    kind: 'docs',
-    goal: 'Document the history API',
-    cost: 0.02,
-    state: 'idle',
-    linearId: 'GRW-631',
-  },
-  {
-    id: 'd',
-    kind: 'scout',
-    goal: 'Map upsertSlot callsites',
-    cost: 0.03,
-    state: 'idle',
-  },
-];
-
-function OverviewSessionsRail() {
-  return (
-    <div className="flex shrink-0 flex-col gap-1 border-b border-border-soft p-2">
-      <div className="flex items-center justify-between px-1 pb-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Sessions
-        </span>
-        <span className="font-mono text-[9px] text-muted-foreground/60">
-          {OVERVIEW_SESSIONS.length}
-        </span>
-      </div>
-      {OVERVIEW_SESSIONS.map((session) => (
-        <OverviewSessionRow key={session.id} session={session} />
-      ))}
-    </div>
-  );
-}
-
-function OverviewSessionRow({ session }: { session: (typeof OVERVIEW_SESSIONS)[number] }) {
-  const isActive = session.state === 'active';
-  const isRunning = session.state === 'running';
-  return (
-    <div
-      className={[
-        'flex items-center gap-2 rounded-md border px-2 py-1.5 text-left',
-        isActive
-          ? 'border-border bg-elevated'
-          : isRunning
-            ? 'border-info/40 bg-muted/40'
-            : 'border-transparent bg-muted/30',
-      ].join(' ')}
-    >
-      <AgentAvatar kind={KIND[session.kind].kind} size={14} />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[11px] font-medium text-foreground">{session.goal}</span>
-        <span className="flex items-center gap-1.5 text-[9.5px] text-muted-foreground/70">
-          {session.linearId ? (
-            <span className="inline-flex items-center rounded-sm border border-[#5e6ad2]/30 bg-[#5e6ad2]/10 px-1 py-px font-mono text-[8.5px] font-medium text-[#5e6ad2]">
-              {session.linearId}
-            </span>
-          ) : null}
-          <span className="font-mono tabular-nums">${session.cost.toFixed(2)}</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function OverviewDetailPanel() {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-border-soft px-3 py-2">
-        <span className="text-warning" title="in progress">
-          <ConstructionIcon size={12} />
-        </span>
-        <span className="line-clamp-1 flex-1 text-[11px] font-semibold text-foreground">
-          Audit reversions on context slots
-        </span>
-        <span className="text-muted-foreground/60" title="session actions">
-          <DotsVerticalIcon size={12} />
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col gap-1 px-2 py-1.5">
-        <OverviewAgentRow num={1} kind="scout" name="scout-callsites" age="12m" cost="$0.04" />
-        <OverviewAgentRow num={2} kind="plan" name="plan-completion" age="4m" cost="$0.12" />
-        <OverviewAgentRow
-          num={3}
-          kind="imple"
-          name="imple-restructure"
-          age="42s"
-          cost="$0.18"
-          selected
-          running
-        />
-      </div>
-      <div className="flex items-center gap-2 border-t border-border-soft px-2.5 py-2">
-        <span className="inline-flex min-w-0 items-center gap-1 truncate rounded-md border border-border-soft bg-muted/30 px-1.5 py-1 font-mono text-[9.5px] text-foreground/80">
-          <IconBranch size={9} className="shrink-0 text-muted-foreground" />
-          <span className="truncate">ak/context-slot-history</span>
-        </span>
-        <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-1.5 py-1 font-mono text-[9.5px] tabular-nums text-success">
-          $0.34
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function OverviewAgentRow({
-  num,
-  kind,
-  name,
-  age,
-  cost,
-  selected,
-  running,
+function LayoutColumn({
+  eyebrow,
+  tag,
+  hint,
+  body,
+  tone,
+  accent,
 }: {
-  num: number;
-  kind: keyof typeof KIND;
-  name: string;
-  age: string;
-  cost: string;
-  selected?: boolean;
-  running?: boolean;
+  eyebrow: string;
+  tag: string;
+  hint: string;
+  body: ReactNode;
+  tone: keyof typeof COLUMN_TONE;
+  accent?: boolean;
 }) {
+  const t = COLUMN_TONE[tone];
   return (
     <div
       className={[
-        'flex items-center gap-1.5 rounded border px-1.5 py-1',
-        selected
-          ? running
-            ? 'spin-border-info border-transparent bg-elevated'
-            : 'border-border bg-elevated'
-          : 'border-transparent bg-muted/30',
+        'flex min-h-0 flex-col gap-3 border-r border-border-soft/60 px-4 py-4 last:border-r-0',
+        accent ? 'bg-[oklch(0.26_0.006_255)]' : 'bg-[oklch(0.24_0.006_255)]',
       ].join(' ')}
     >
-      <span className="w-3 shrink-0 text-right text-[9px] tabular-nums text-muted-foreground/60">
-        {num}.
-      </span>
-      <KindBadge kind={kind} />
-      <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground">{name}</span>
-      <span className="shrink-0 font-mono text-[9px] tabular-nums text-muted-foreground/70">
-        {cost} · {age}
-      </span>
-    </div>
-  );
-}
-
-function OverviewBreadcrumb() {
-  return (
-    <div className="flex h-8 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[10.5px]">
-      <span className="font-medium text-muted-foreground">app-web</span>
-      <Chevron />
-      <span className="font-medium text-muted-foreground">Audit reversions on context slots</span>
-      <Chevron />
-      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-medium text-primary">
-        <IconBranch size={8} />
-        <span>Refactor strategy</span>
-        <span aria-hidden className="opacity-60">
-          ·
+      <div className="flex items-center gap-1.5">
+        <span aria-hidden className={['size-1.5 rounded-full', t.dot].join(' ')} />
+        <span
+          className={['text-[10px] font-semibold uppercase tracking-[0.10em]', t.eyebrow].join(' ')}
+        >
+          {eyebrow}
         </span>
-        <span className="font-mono tabular-nums">2/3</span>
-      </span>
-      <Chevron />
-      <span className="font-medium text-foreground/90">imple-restructure</span>
-      <div className="flex-1" />
-      <AgentAvatar kind="implementer" size={18} />
+        <span className="ml-auto font-mono text-[9.5px] text-muted-foreground/60">{tag}</span>
+      </div>
+      <p className="max-w-[28ch] text-[11.5px] leading-relaxed text-muted-foreground">{hint}</p>
+      <div className="mt-1 flex-1">{body}</div>
     </div>
   );
 }
 
-const OVERVIEW_TURNS = [
-  {
-    role: 'user' as const,
-    text: 'Migration looks good. Wire the trigger so reverts are auditable.',
-    cost: null,
-  },
-  {
-    role: 'agent' as const,
-    kind: 'implementer' as AgentKind,
-    text: 'Trigger `cs_history_after_update` added on context_slots(UPDATE). 90-day retention via nightly prune. Tests added in queries.test.ts.',
-    cost: '~$0.142',
-    edits: ['migrations/038_history.sql', 'packages/db/queries/slot.ts'],
-  },
+function AbstractBar({
+  width = 'w-3/4',
+  tone = 'bg-muted-foreground/30',
+  className,
+}: {
+  width?: string;
+  tone?: string;
+  className?: string;
+}) {
+  return <span className={['block h-1.5 rounded-full', width, tone, className].join(' ')} />;
+}
+
+const SESSIONS_ABSTRACT: ReadonlyArray<{ readonly dot: string; readonly glow: boolean }> = [
+  { dot: 'bg-sky-400/80', glow: true },
+  { dot: 'bg-violet-400/80', glow: false },
+  { dot: 'bg-orange-400/80', glow: false },
+  { dot: 'bg-emerald-400/80', glow: false },
 ];
 
-function OverviewTranscript() {
+function SessionsAbstract() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-5 py-4">
-      {OVERVIEW_TURNS.map((turn, i) => (
-        <OverviewTurnBlock key={i} turn={turn} />
-      ))}
-    </div>
-  );
-}
-
-function OverviewTurnBlock({ turn }: { turn: (typeof OVERVIEW_TURNS)[number] }) {
-  if (turn.role === 'user') {
-    return (
-      <div className="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-primary/20 px-3 py-2 text-[11.5px] leading-relaxed text-foreground/90">
-        {turn.text}
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <AgentAvatar kind={turn.kind} size={12} />
-        <span className="font-medium text-foreground/80">imple-restructure</span>
-        <span className="opacity-60">·</span>
-        <span className="font-mono">sonnet-4-5</span>
-      </div>
-      <p className="text-[12px] leading-relaxed text-foreground/85">{turn.text}</p>
-      {turn.edits ? (
-        <div className="flex flex-wrap gap-1.5">
-          {turn.edits.map((path) => (
-            <span
-              key={path}
-              className="inline-flex items-center gap-1 rounded-md border border-info/20 bg-info/5 px-1.5 py-0.5 font-mono text-[10px] text-info/80"
-            >
-              <span className="text-[8px] uppercase tracking-wide text-info/60">edit</span>
-              <span>{path}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      <p className="text-[10px] text-muted-foreground/70">4.5k in / 1.1k out · {turn.cost}</p>
-    </div>
-  );
-}
-
-function OverviewComposer() {
-  return (
-    <div className="shrink-0 border-t border-border-soft p-3">
-      <div className="rounded-xl border border-border-soft bg-[oklch(0.22_0.006_255)] px-3 py-2.5">
-        <p className="text-[11px] text-muted-foreground/60">
-          Message Claude · $ scripts · ~ workflows · @ agents
-        </p>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-[9.5px] font-medium text-danger">
-            <span className="size-1.5 rounded-full bg-danger" aria-hidden /> Bypass
-          </span>
-          <span className="font-mono text-[10px] text-muted-foreground/80">
-            Claude · Opus 4.7 · Medium · Normal
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const OVERVIEW_TABS = ['Context', 'Plans', 'Files', 'GitHub', 'Term'] as const;
-
-function OverviewContextTabs() {
-  return (
-    <div className="flex h-8 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
-      {OVERVIEW_TABS.map((tab, i) => (
-        <span
-          key={tab}
+    <div className="flex flex-col gap-2.5">
+      {SESSIONS_ABSTRACT.map((card, i) => (
+        <div
+          key={i}
           className={[
-            'rounded px-1.5 py-1 text-[10px] font-medium',
-            i === 0 ? 'bg-muted text-foreground' : 'text-muted-foreground/70',
+            'flex items-center gap-2.5 rounded-md border px-2.5 py-2',
+            card.glow ? 'border-primary/40 bg-primary/5' : 'border-border-soft/60 bg-subtle/60',
           ].join(' ')}
         >
-          {tab}
-        </span>
+          <span className={['size-3 shrink-0 rounded-full', card.dot].join(' ')} aria-hidden />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <AbstractBar width="w-full" tone="bg-muted-foreground/40" />
+            <AbstractBar width="w-2/3" tone="bg-muted-foreground/20" />
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-const OVERVIEW_SLOTS = [
-  {
-    label: 'Goal',
-    body: 'Add history table for context_slots so reversions are auditable. Preserve current write path.',
-  },
-  {
-    label: 'Decisions',
-    body: 'Trigger on UPDATE. Retain 90 days. Prune nightly.',
-  },
-  {
-    label: 'Last output',
-    body: 'Migration applied. Trigger fires. Tests green.',
-  },
-];
-
-function OverviewContextBody() {
+function ConversationAbstract() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-3">
-      {OVERVIEW_SLOTS.map((slot) => (
-        <div key={slot.label} className="rounded-md border border-border-soft bg-subtle p-2">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-            {slot.label}
-          </p>
-          <p className="mt-0.5 line-clamp-3 text-[10.5px] leading-relaxed text-foreground/85">
-            {slot.body}
-          </p>
+    <div className="flex flex-col gap-4">
+      {/* user bubble right */}
+      <div className="ml-auto w-3/4 rounded-2xl rounded-br-md bg-primary/15 px-3 py-2">
+        <AbstractBar width="w-full" tone="bg-foreground/30" />
+        <span className="mt-1.5 block">
+          <AbstractBar width="w-2/3" tone="bg-foreground/20" />
+        </span>
+      </div>
+      {/* agent reply left */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="size-2.5 shrink-0 rounded-full bg-emerald-400/80" aria-hidden />
+          <AbstractBar width="w-20" tone="bg-foreground/30" />
+        </div>
+        <AbstractBar width="w-full" tone="bg-foreground/25" />
+        <AbstractBar width="w-11/12" tone="bg-foreground/25" />
+        <AbstractBar width="w-3/4" tone="bg-foreground/25" />
+      </div>
+      {/* composer chip */}
+      <div className="mt-auto rounded-xl border border-border-soft bg-[oklch(0.22_0.006_255)] px-3 py-2.5">
+        <p className="text-[10.5px] text-muted-foreground/60">$ ~ @ /</p>
+      </div>
+    </div>
+  );
+}
+
+function ContextAbstract() {
+  return (
+    <div className="flex flex-col gap-2">
+      {/* tab strip */}
+      <div className="flex items-center gap-1">
+        {['Ctx', 'Plans', 'Files', 'GH', 'Term'].map((t, i) => (
+          <span
+            key={t}
+            className={[
+              'rounded px-1.5 py-1 text-[9px] font-medium',
+              i === 0 ? 'bg-muted text-foreground' : 'text-muted-foreground/60',
+            ].join(' ')}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+      {/* slot cards abstract */}
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-md border border-border-soft bg-subtle p-2">
+          <AbstractBar width="w-12" tone="bg-muted-foreground/40" className="mb-1.5" />
+          <AbstractBar width="w-full" tone="bg-foreground/25" className="mb-1" />
+          <AbstractBar width="w-3/4" tone="bg-foreground/20" />
         </div>
       ))}
+      {/* open questions pin */}
       <div className="mt-auto flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2 py-1.5 text-[10px] text-warning">
         <IconHelp size={10} />
         <span>1 open question</span>
