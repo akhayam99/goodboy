@@ -697,12 +697,19 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
           style={{ animationDuration: '3.2s' }}
         />
         {agentVisual?.image ? (
-          <img
-            src={agentVisual.image}
-            alt=""
+          <span
             aria-hidden
-            className="relative size-24 object-contain"
-            draggable={false}
+            className={cn('relative size-20', agentVisual.tint)}
+            style={{
+              maskImage: `url(${agentVisual.image})`,
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              maskSize: 'contain',
+              WebkitMaskImage: `url(${agentVisual.image})`,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              WebkitMaskSize: 'contain',
+            }}
           />
         ) : (
           <DogMascot size={46} className="relative" />
@@ -733,10 +740,12 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
 interface KindVisual {
-  /** Pre-resized dog portrait. Resolver has no portrait and falls back to the
-   *  shared DogMascot ring. Colours live entirely in ringBg/pulseBg, so the
-   *  illustration stays palette-neutral. */
+  /** Pre-processed dog silhouette (white on transparent). Applied via CSS
+   *  mask-image so the body fills with the role tint colour. Resolver has no
+   *  portrait and falls back to the shared DogMascot. */
   image: string | null;
+  /** Tailwind background colour applied to the masked silhouette. */
+  tint: string;
   ringBg: string;
   pulseBg: string;
 }
@@ -744,46 +753,55 @@ interface KindVisual {
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   generic: {
     image: agentGoodboy,
+    tint: 'bg-rose-400',
     ringBg: 'bg-rose-400/10',
     pulseBg: 'bg-rose-400/15',
   },
   scout: {
     image: agentScout,
+    tint: 'bg-sky-400',
     ringBg: 'bg-sky-400/10',
     pulseBg: 'bg-sky-400/15',
   },
   planner: {
     image: agentPlanner,
+    tint: 'bg-violet-400',
     ringBg: 'bg-violet-400/10',
     pulseBg: 'bg-violet-400/15',
   },
   implementer: {
     image: agentImplementer,
+    tint: 'bg-emerald-400',
     ringBg: 'bg-emerald-400/10',
     pulseBg: 'bg-emerald-400/15',
   },
   debugger: {
     image: agentDebugger,
+    tint: 'bg-amber-400',
     ringBg: 'bg-amber-400/10',
     pulseBg: 'bg-amber-400/15',
   },
   tester: {
     image: agentTester,
+    tint: 'bg-teal-400',
     ringBg: 'bg-teal-400/10',
     pulseBg: 'bg-teal-400/15',
   },
   reviewer: {
     image: agentReviewer,
+    tint: 'bg-cyan-400',
     ringBg: 'bg-cyan-400/10',
     pulseBg: 'bg-cyan-400/15',
   },
   docs: {
     image: agentDocs,
+    tint: 'bg-orange-400',
     ringBg: 'bg-orange-400/10',
     pulseBg: 'bg-orange-400/15',
   },
   resolver: {
     image: null,
+    tint: 'bg-lime-400',
     ringBg: 'bg-lime-400/10',
     pulseBg: 'bg-lime-400/15',
   },

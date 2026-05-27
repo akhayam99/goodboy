@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@goodboy/desktop", "dev"],
+      "port": 1420
+    }
+  ]
+}
