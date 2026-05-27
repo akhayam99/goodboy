@@ -1,6 +1,6 @@
 # Parallel Agents (Experimental)
 
-Parallel agents let you fan out a goal across multiple independent agent threads, then merge results back into your main session. Experimental as of v0.7.
+Parallel agents let you fan out a goal across multiple independent agent threads, then merge results back into your main session. Experimental as of v0.0.7.
 
 ## What it is
 
@@ -53,7 +53,7 @@ Each phase runs on a new worktree. On completion, Goodboy merges back into main 
 - **Context sharing**: Agents copy parent context once at launch. Real-time parent updates don't propagate to running agents.
 - **Provider quota**: Parallel agents count against your provider subscription cap. Running 3 agents uses 3x the quota.
 
-See [#214](https://github.com/akhayam99/goodboy/issues/214) for v0.7 integration tests (fan-out/fan-in verified).
+See [#214](https://github.com/akhayam99/goodboy/issues/214) for v0.0.7 integration tests (fan-out/fan-in verified).
 
 ## Rollback
 

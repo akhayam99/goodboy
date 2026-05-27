@@ -170,7 +170,7 @@ async function* spawnCodex(
   });
 
   child.stderr?.on('data', () => {
-    // captured but not surfaced as TurnEvent for v0.1
+    // captured but not surfaced as TurnEvent for v0.0.1
   });
 
   try {
