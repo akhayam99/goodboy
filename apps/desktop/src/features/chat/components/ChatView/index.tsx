@@ -7,19 +7,16 @@ import {
   useState,
   type ComponentType,
 } from 'react';
-import {
-  ArrowDown,
-  Bot,
-  BookOpen,
-  ClipboardList,
-  FlaskConical,
-  Hammer,
-  ScanEye,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
+import { ArrowDown, Sparkles } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { DogSniff } from '../../../../shared/components/DogSniff';
+import agentDebugger from '../../../../assets/agents/debugger.png';
+import agentDocs from '../../../../assets/agents/docs.png';
+import agentGoodboy from '../../../../assets/agents/goodboy.png';
+import agentImplementer from '../../../../assets/agents/implementer.png';
+import agentPlanner from '../../../../assets/agents/planner.png';
+import agentReviewer from '../../../../assets/agents/reviewer.png';
+import agentScout from '../../../../assets/agents/scout.png';
+import agentTester from '../../../../assets/agents/tester.png';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
@@ -687,7 +684,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
       <div
         className={cn(
-          'relative flex size-24 items-center justify-center rounded-full',
+          'relative flex size-28 items-center justify-center rounded-full',
           agentVisual ? agentVisual.ringBg : 'bg-primary/10 text-primary',
         )}
       >
@@ -699,11 +696,13 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
           )}
           style={{ animationDuration: '3.2s' }}
         />
-        {agentVisual ? (
-          <agentVisual.Icon
-            size={agentVisual.size ?? 42}
-            className={cn('relative', agentVisual.iconClass)}
+        {agentVisual?.image ? (
+          <img
+            src={agentVisual.image}
+            alt=""
             aria-hidden
+            className="relative size-24 object-contain"
+            draggable={false}
           />
         ) : (
           <DogMascot size={46} className="relative" />
@@ -734,68 +733,57 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
 interface KindVisual {
-  Icon: ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
-  iconClass: string;
+  /** Pre-resized dog portrait. Resolver has no portrait and falls back to the
+   *  shared DogMascot ring. Colours live entirely in ringBg/pulseBg, so the
+   *  illustration stays palette-neutral. */
+  image: string | null;
   ringBg: string;
   pulseBg: string;
-  // Custom illustrations carry more detail than lucide glyphs, render them
-  // larger so they stay legible. Falls back to the default glyph size.
-  size?: number;
 }
 
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   generic: {
-    Icon: Bot,
-    iconClass: 'text-rose-400',
+    image: agentGoodboy,
     ringBg: 'bg-rose-400/10',
     pulseBg: 'bg-rose-400/15',
   },
   scout: {
-    Icon: Telescope,
-    iconClass: 'text-sky-400',
+    image: agentScout,
     ringBg: 'bg-sky-400/10',
     pulseBg: 'bg-sky-400/15',
   },
   planner: {
-    Icon: ClipboardList,
-    iconClass: 'text-violet-400',
+    image: agentPlanner,
     ringBg: 'bg-violet-400/10',
     pulseBg: 'bg-violet-400/15',
   },
   implementer: {
-    Icon: Hammer,
-    iconClass: 'text-emerald-400',
+    image: agentImplementer,
     ringBg: 'bg-emerald-400/10',
     pulseBg: 'bg-emerald-400/15',
   },
   debugger: {
-    Icon: DogSniff,
-    iconClass: 'text-amber-400',
+    image: agentDebugger,
     ringBg: 'bg-amber-400/10',
     pulseBg: 'bg-amber-400/15',
-    size: 64,
   },
   tester: {
-    Icon: FlaskConical,
-    iconClass: 'text-teal-400',
+    image: agentTester,
     ringBg: 'bg-teal-400/10',
     pulseBg: 'bg-teal-400/15',
   },
   reviewer: {
-    Icon: ScanEye,
-    iconClass: 'text-cyan-400',
+    image: agentReviewer,
     ringBg: 'bg-cyan-400/10',
     pulseBg: 'bg-cyan-400/15',
   },
   docs: {
-    Icon: BookOpen,
-    iconClass: 'text-orange-400',
+    image: agentDocs,
     ringBg: 'bg-orange-400/10',
     pulseBg: 'bg-orange-400/15',
   },
   resolver: {
-    Icon: Sparkles,
-    iconClass: 'text-lime-400',
+    image: null,
     ringBg: 'bg-lime-400/10',
     pulseBg: 'bg-lime-400/15',
   },
