@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 import { ChevronRight, GitBranch } from 'lucide-react';
-import { cn } from '@goodboy/ui';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,
-  AGENT_KIND_PALETTE,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../session/agent-kind';
@@ -131,27 +129,17 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
         </>
       ) : null}
 
-      {/* Spacer pushes the agent identity to the far right of the bar. The
-          right-hand badge is a persistent "who am I talking to" cue: visible
-          for the whole session, never crammed inside the path. */}
+      {/* Spacer pushes the dog to the far right. Just the silhouette: the
+          path on the left already says where you are, the dog is the quiet
+          "who am I talking to" cue. */}
       <div className="flex-1" />
 
       {selectedAgent && agentKind ? (
-        <span
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-subtle px-2 py-0.5 text-foreground/90 ring-1 ring-border-soft"
-          title={`agent: ${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
-        >
-          <AgentAvatar kind={agentKind} size="md" />
-          <span className="max-w-[10rem] truncate font-medium">{selectedAgent.name}</span>
-          <span
-            className={cn(
-              'text-[9px] font-semibold uppercase tracking-wide',
-              AGENT_KIND_PALETTE[agentKind].fg,
-            )}
-          >
-            {AGENT_KIND_META[agentKind].label}
-          </span>
-        </span>
+        <AgentAvatar
+          kind={agentKind}
+          size="md"
+          title={`${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
+        />
       ) : null}
     </div>
   );
