@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Dialog, cn } from '@goodboy/ui';
+import { Dialog, cn, formatUsdPrecise } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-
-const formatCost = (usd: number): string => `$${usd.toFixed(4)}`;
 const formatTokens = (n: number): string => {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
@@ -37,8 +35,8 @@ function ProviderSpendRow({ entry }: { entry: ProviderSpendEntry }) {
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium capitalize">{label}</span>
         <span className={cn('font-mono text-sm', spendTextColor(entry.pct, hasCap))}>
-          {formatCost(entry.spentUsd)}
-          {hasCap ? ` / ${formatCost(entry.capUsd!)}` : null}
+          {formatUsdPrecise(entry.spentUsd)}
+          {hasCap ? ` / ${formatUsdPrecise(entry.capUsd!)}` : null}
         </span>
       </div>
       {hasCap ? (
@@ -135,14 +133,14 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
     <Dialog open={open} onClose={onClose} size="lg" title="Pricing">
       <div className="flex flex-col gap-4 text-sm">
         <div className="grid grid-cols-2 gap-3">
-          <CostStat label="current session" value={formatCost(sessionCost)} />
-          <CostStat label="workspace total" value={formatCost(workspaceCost)} />
+          <CostStat label="current session" value={formatUsdPrecise(sessionCost)} />
+          <CostStat label="workspace total" value={formatUsdPrecise(workspaceCost)} />
         </div>
 
         {summarizerCost > 0 ? (
           <div className="rounded-md bg-subtle px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{formatCost(summarizerCost)}</span> spent
-            on summarizer turns this session
+            <span className="font-medium text-foreground">{formatUsdPrecise(summarizerCost)}</span>{' '}
+            spent on summarizer turns this session
           </div>
         ) : null}
 
@@ -199,7 +197,7 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
                         {formatTokens(entry.tokensOut)}
                       </td>
                       <td className="px-2 py-1.5 text-right font-mono tabular-nums font-medium text-foreground">
-                        {formatCost(entry.spentUsd)}
+                        {formatUsdPrecise(entry.spentUsd)}
                       </td>
                     </tr>
                   ))}
@@ -260,7 +258,7 @@ export function PricingDialog({ open, onClose }: PricingDialogProps) {
                       </span>
                     </span>
                     <span className="font-mono tabular-nums font-medium">
-                      {formatCost(record.estimatedCostUsd)}
+                      {formatUsdPrecise(record.estimatedCostUsd)}
                     </span>
                   </li>
                 ))}

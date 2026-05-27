@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
-import { CopyButton, Divider, Markdown, cn } from '@goodboy/ui';
+import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { readAttachment } from '../../turn';
@@ -67,9 +67,7 @@ function TranscriptCardImpl({
           {item.usage.cachedInputTokens > 0
             ? ` · ${formatTokens(item.usage.cachedInputTokens)} cached`
             : ''}
-          {item.usage.estimatedCostUsd > 0
-            ? ` · ~${formatCostUsd(item.usage.estimatedCostUsd)}`
-            : ''}
+          {item.usage.estimatedCostUsd > 0 ? ` · ~${formatUsd(item.usage.estimatedCostUsd)}` : ''}
         </p>
       );
     case 'error':
@@ -177,12 +175,6 @@ function formatTokens(n: number): string {
   if (n < 1000) return String(n);
   if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
   return `${Math.round(n / 1000)}k`;
-}
-
-function formatCostUsd(cost: number): string {
-  if (cost < 0.001) return `$${cost.toFixed(4)}`;
-  if (cost < 1) return `$${cost.toFixed(3)}`;
-  return `$${cost.toFixed(2)}`;
 }
 
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;

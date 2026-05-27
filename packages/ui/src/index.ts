@@ -1,4 +1,5 @@
 export { cn } from './cn';
+export { formatUsd, formatUsdPrecise } from './format-cost';
 export { AppShell } from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
