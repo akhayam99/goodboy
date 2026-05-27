@@ -46,6 +46,32 @@ The context panel's **GitHub** tab shows the session's pull request right where
 you work: state, CI checks, and unresolved review comments, one click from the
 full detail.
 
+### Linear integration
+
+Connect a Linear workspace to pull issues assigned to you straight into the
+new-session dialog. Pick an issue, the goal autofills from its title and
+description, and the session header carries a chip that opens the issue back
+in Linear.
+
+Integration scope is **per workspace** (not global): each workspace holds its
+own Linear account, so a single repo can be wired to its own Linear org without
+leaking issues across repos. The personal access token is verified against
+Linear's `/viewer` endpoint and stored in the OS keychain
+(`goodboy.workspace.<id>.linear`). It never leaves your machine.
+
+To enable:
+
+1. Generate a Linear PAT at
+   [linear.app/settings/account/security](https://linear.app/settings/account/security)
+   (read-only scope is enough).
+2. Open **Workspace settings → Integrations → Linear**, paste the token, click
+   **Connect**.
+3. New sessions in that workspace now show a Linear issue picker above the
+   goal field.
+
+Disconnect from the same panel: removes both the keychain entry and the DB
+row. Sessions already linked keep their chip — history is preserved.
+
 ### Workflows
 
 Run a whole multi-step flow as a single session. Each step is a role-typed
