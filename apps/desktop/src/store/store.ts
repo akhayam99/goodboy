@@ -1512,21 +1512,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }));
       touchWorkspaceLastAccessed(tauriDatabase, id).catch(() => undefined);
 
-      const [
-        loadedSessions,
-        workspaceSummary,
-        providerSummaries,
-        budgetRules,
-        skills,
-        phaseTemplates,
-      ] = await Promise.all([
-        listSessionsForWorkspace(tauriDatabase, id),
-        summarizeWorkspaceTelemetry(tauriDatabase, id),
-        summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
-        invokeBudgetRuleList(),
-        invokeSkillList(id),
-        invokePhaseTemplateList(id),
-      ]);
+      // Critical path = what the sidebar needs to paint: sessions (rail rows),
+      // worktrees (branch chip + github polling signature), agents (unread
+      // dots). Every other workspace-scoped load (telemetry summary, provider
+      // summary, budget rules, skills, phase templates) feeds chips or
+      // composer/menu surfaces that the user reaches well after first paint,
+      // so we kick them off as fire-and-forget AFTER the sessions render.
+      // Each DB call serializes through the Rust `Mutex<Connection>`; trimming
+      // the awaited set from 6 to 1 (sessions) cuts the blocking time for
+      // n-bro's 7-session workspace switch by ~5× mutex acquisitions.
+      const tWsLoad = performance.now();
+      const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
       // Boot-recovery: a session row in 'running' state is necessarily orphaned
       // here — the Rust TurnRegistry is reset on every app start, so there is
       // no live process to reattach to. Normalize to 'idle' so the UI re-enables
@@ -1543,9 +1539,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }),
       );
       // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
-      // trips through the Rust `Mutex<Connection>`. With 30 sessions the prior
-      // `Promise.all(sessions.map(...))` shape acquired the same mutex ~60
-      // times back-to-back — the prime source of workspace-switch stall.
+      // trips through the Rust `Mutex<Connection>`.
       const sessionIds = sessions.map((s) => s.id);
       const [worktreesBySession, agentsBySession] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
@@ -1558,8 +1552,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
-      const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
-      const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
       for (const s of sessions) {
         const rows = worktreesBySession.get(s.id) ?? [];
         if (rows.length > 0) {
@@ -1572,29 +1564,59 @@ export const useAppStore = create<AppStore>((set, get) => ({
         for (const run of runs) {
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
-        const attached = s.workflowIds
-          .map((wid) => workflowById.get(wid) ?? null)
-          .filter((w): w is Workflow => w !== null);
-        if (attached.length > 0) sessionWorkflows[s.id] = attached;
       }
+      // First paint commit — sidebar can render the rail right now.
       set((state) => ({
         sessions,
         sessionWorktrees,
         sessionBranches,
         sessionPhaseRuns,
-        sessionWorkflows,
-        workspaceSummary,
-        providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
-        skills: { ...state.skills, [id]: skills },
-        phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
+      // eslint-disable-next-line no-console
+      console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
+
+      // Deferred loads — fire AFTER first paint so the UI is interactive
+      // immediately. Each resolves into its own `set` call when ready.
+      void (async (): Promise<void> => {
+        const tWsDefer = performance.now();
+        const [workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
+          await Promise.all([
+            summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
+            summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
+            invokeBudgetRuleList().catch(() => []),
+            invokeSkillList(id).catch(() => []),
+            invokePhaseTemplateList(id).catch(() => []),
+          ]);
+        // Workspace may have changed under us while these were inflight.
+        if (get().currentWorkspaceId !== id) return;
+        const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
+        const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
+        for (const s of get().sessions) {
+          const attached = s.workflowIds
+            .map((wid) => workflowById.get(wid) ?? null)
+            .filter((w): w is Workflow => w !== null);
+          if (attached.length > 0) sessionWorkflows[s.id] = attached;
+        }
+        set((state) => ({
+          sessionWorkflows,
+          workspaceSummary,
+          providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+          skills: { ...state.skills, [id]: skills },
+          phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
+        }));
+        // eslint-disable-next-line no-console
+        console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
+      })();
       void get().loadWorkspaceOverrides(id);
     } else {
       set({ providerSpendBreakdown: [] });
     }
-    await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    // Settings persistence — survives next launch as "last opened
+    // workspace/session". Fire-and-forget: no UI code awaits these, but
+    // awaiting used to add 2 more mutex acquisitions to the click handler.
+    void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
+    void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     void get().refreshUnreadWorkspaces();
     // Single-session workspaces don't have an activity rail — the user can't
     // pick a session manually. Auto-select so the detail panel renders
