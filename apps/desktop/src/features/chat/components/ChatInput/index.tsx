@@ -73,7 +73,7 @@ const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
 // Idle-state composer placeholder, shows the whole prefix grammar at once
 // so the user is taught every quick-action up front, not over time.
-const CHAT_PLACEHOLDER = 'Message Claude, $ scripts · ~ workflows · @ agents';
+const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
 const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 

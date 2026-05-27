@@ -23,13 +23,13 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   },
   {
     id: 'session',
-    title: 'Spin up your first session',
+    title: 'Create your first session',
     why: 'A session = one goal on its own worktree + branch. Pick something concrete.',
   },
   {
     id: 'agent',
-    title: 'Spawn your first agent',
-    why: 'Sessions host agents (planner, scout, implementer…). Spawn the one that fits the work.',
+    title: 'Create your first agent',
+    why: 'Sessions host agents (planner, scout, implementer…). Create the one that fits the work.',
   },
   {
     id: 'plan',

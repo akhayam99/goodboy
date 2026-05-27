@@ -22,7 +22,7 @@ export function workflowHasOpenQuestions(
 
 // True when the session has any orphan open question (no workflowId).
 // Used at UI sites that don't have a specific workflow context (e.g. the
-// ad-hoc "spawn agent" button) so they still gate on legacy questions.
+// ad-hoc "create agent" button) so they still gate on legacy questions.
 export function hasOrphanOpenQuestions(questions: ReadonlyArray<OpenQuestion>): boolean {
   return questions.some((q) => q.status === 'open' && !q.workflowId);
 }

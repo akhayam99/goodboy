@@ -430,7 +430,7 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
 }
 
 /**
- * Inline follow-up CTA rendered directly above the generic 'Spawn agent'
+ * Inline follow-up CTA rendered directly above the generic 'Create agent'
  * trigger when the session has an active plan ready to execute. The pitch is:
  * before the user picks any role from the spawn menu, the plan already
  * implies the answer, so offer it one click away.
@@ -566,7 +566,7 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
         <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          Add a git repo to spin up worktrees and start orchestrating sessions.
+          Add a git repo to create worktrees and start orchestrating sessions.
         </p>
       </div>
       <button
@@ -1155,7 +1155,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        Spawn agent
+        Create agent
       </button>
       {menu}
     </div>

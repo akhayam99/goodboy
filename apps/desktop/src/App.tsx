@@ -452,7 +452,7 @@ function EmptyState({
             Pick up where you left off
           </h2>
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Spin up a new session from the sidebar, or jump back into an existing one. Each session
+            Create a new session from the sidebar, or jump back into an existing one. Each session
             lives in its own worktree.
           </p>
         </div>

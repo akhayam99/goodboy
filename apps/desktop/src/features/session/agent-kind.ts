@@ -123,7 +123,7 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt?: string;
     // When false, the kind is spawnable only programmatically (by other
     // UI surfaces, e.g. the PR resolve flow) and is hidden from the manual
-    // "Spawn agent" menu. Defaults to visible.
+    // "Create agent" menu. Defaults to visible.
     visible?: boolean;
   }
 > = {
