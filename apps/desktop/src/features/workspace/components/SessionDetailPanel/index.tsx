@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, GitBranch, Settings2 } from 'lucide-react';
+import { Check, FolderOpen, GitBranch, LogOut, Play, ScrollText, Settings2 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
+import type { Session, SessionId, TelemetryRecord, WorkspaceScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
-import { OpenInEditorIconButton } from '../../../session/components/OpenInEditorIconButton';
-import { RunScriptControl } from '../../../scripts';
+import { openInEditor } from '../../../../shared/lib/editor';
+import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { PricingDialog } from '../../../providers/components/PricingDialog';
@@ -22,10 +22,111 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
   const externalTask = useAppStore(
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
   );
+  const detectedEditors = useAppStore((s) => s.detectedEditors);
+  const scripts = useAppStore((s) => s.workspaceScripts[session.workspaceId]);
+  const loadScripts = useAppStore((s) => s.loadScripts);
+  const runScript = useAppStore((s) => s.runScript);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    void loadScripts(session.workspaceId);
+  }, [session.workspaceId, loadScripts]);
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
+
+  const launchEditor = async (binary: string) => {
+    if (!worktreePath) return;
+    try {
+      await openInEditor(worktreePath, binary);
+    } catch (err) {
+      showToast('error', `couldn't open editor: ${formatError(err)}`);
+    }
+  };
+
+  const onRunScript = (script: WorkspaceScript) => {
+    if (!worktreePath) return;
+    void runScript(session.id as SessionId, script.id, worktreePath);
+  };
+
+  const onEndSession = () => {
+    window.dispatchEvent(new CustomEvent('goodboy:end-session'));
+  };
+
+  const actionItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
+    const items: OverflowMenuItem[] = [];
+
+    if (detectedEditors.length === 0) {
+      items.push({
+        kind: 'item',
+        key: 'no-editor',
+        label: 'No editor detected',
+        icon: FolderOpen,
+        onClick: () => undefined,
+        disabled: true,
+      });
+    } else {
+      items.push({ kind: 'header', key: 'editor-header', label: 'Open in editor' });
+      for (const ed of detectedEditors) {
+        items.push({
+          kind: 'item',
+          key: `editor-${ed.binary}`,
+          label: ed.label,
+          icon: FolderOpen,
+          onClick: () => void launchEditor(ed.binary),
+          disabled: !worktreePath,
+        });
+      }
+    }
+
+    items.push({ kind: 'separator', key: 'sep-scripts' });
+
+    const scriptList = scripts ?? [];
+    if (scriptList.length === 0) {
+      items.push({
+        kind: 'item',
+        key: 'no-scripts',
+        label: 'No scripts defined',
+        icon: ScrollText,
+        onClick: () => undefined,
+        disabled: true,
+      });
+    } else {
+      items.push({ kind: 'header', key: 'script-header', label: 'Run script' });
+      for (const s of scriptList) {
+        items.push({
+          kind: 'item',
+          key: `script-${s.id}`,
+          label: s.name,
+          icon: Play,
+          onClick: () => onRunScript(s),
+          disabled: !worktreePath,
+        });
+      }
+    }
+
+    items.push({ kind: 'separator', key: 'sep-settings' });
+    items.push({
+      kind: 'item',
+      key: 'settings',
+      label: 'Session settings',
+      icon: Settings2,
+      onClick: onOpenSessionSettings,
+    });
+    items.push({
+      kind: 'item',
+      key: 'end',
+      label: 'End session',
+      icon: LogOut,
+      onClick: onEndSession,
+      destructive: true,
+      hint: '⌘.',
+    });
+
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detectedEditors, scripts, worktreePath, onOpenSessionSettings]);
 
   const startRename = () => {
     setRenameDraft(session.goal);
@@ -99,21 +200,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
             <span className="font-mono">{externalTask.identifier}</span>
           </a>
         ) : null}
-        <OpenInEditorIconButton worktreePath={worktreePath} />
-        <RunScriptControl
-          sessionId={session.id as SessionId}
-          workspaceId={session.workspaceId}
-          worktreePath={worktreePath}
-        />
-        <button
-          type="button"
-          onClick={onOpenSessionSettings}
-          className="shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          title="session settings"
-          aria-label="session settings"
-        >
-          <Settings2 size={13} aria-hidden />
-        </button>
+        <OverflowMenu items={actionItems} label="session actions" />
       </div>
     </div>
   );

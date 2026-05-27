@@ -164,6 +164,14 @@ export function App() {
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (currentSession) setEndOpen(true);
+    };
+    window.addEventListener('goodboy:end-session', handler);
+    return () => window.removeEventListener('goodboy:end-session', handler);
+  }, [currentSession]);
   const openShortcutHelp = useCallback(() => {
     setSettingsInitialSection('shortcuts');
     setSettingsOpen(true);
