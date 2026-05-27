@@ -44,6 +44,8 @@ import {
   listTelemetryForSession,
   listWorkspaces,
   listWorktreesForSession,
+  listWorktreesForSessions,
+  listAgentsForSessions,
   deleteWorktreesForSession,
   updateSessionWorktreeBranch,
   listAllSessionWorktrees,
@@ -1508,15 +1510,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
-      const [worktreeRows, phaseRunsPerTask] = await Promise.all([
-        Promise.all(sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id))),
-        // Eager-load agents (phase runs) for every session in this workspace. The
-        // unread indicators on workspace- and session-rows derive from each
-        // agent's `lastFinishedAt` vs `lastViewedAt` columns, and those are
-        // only inspected once we have the agent rows in memory. Without this
-        // prefetch, the sidebar would only know about agents for sessions the
-        // user has explicitly opened — yellow dots vanish on workspace switch.
-        Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+      // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
+      // trips through the Rust `Mutex<Connection>`. With 30 sessions the prior
+      // `Promise.all(sessions.map(...))` shape acquired the same mutex ~60
+      // times back-to-back — the prime source of workspace-switch stall.
+      const sessionIds = sessions.map((s) => s.id);
+      const [worktreesBySession, agentsBySession] = await Promise.all([
+        listWorktreesForSessions(tauriDatabase, sessionIds),
+        // Unread indicators on workspace- and session-rows derive from each
+        // agent's `lastFinishedAt` vs `lastViewedAt` columns, so the full
+        // agent set has to be in memory before the sidebar can paint dots.
+        listAgentsForSessions(tauriDatabase, sessionIds),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
@@ -1524,15 +1528,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
       const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
-      for (let i = 0; i < sessions.length; i++) {
-        const s = sessions[i]!;
-        const rows = worktreeRows[i]!;
+      for (const s of sessions) {
+        const rows = worktreesBySession.get(s.id) ?? [];
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
           const primaryRow = rows[0];
           if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
-        const runs = phaseRunsPerTask[i]!;
+        const runs = agentsBySession.get(s.id) ?? [];
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;

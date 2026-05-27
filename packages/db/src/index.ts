@@ -92,6 +92,7 @@ export {
 export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
 export {
   listAgentsForSession,
+  listAgentsForSessions,
   insertAgent,
   updateAgentStatus,
   softDeleteAgent,
@@ -103,6 +104,7 @@ export {
 export {
   insertSessionWorktree,
   listWorktreesForSession,
+  listWorktreesForSessions,
   deleteWorktreesForSession,
   updateSessionWorktreeBranch,
   listAllSessionWorktrees,

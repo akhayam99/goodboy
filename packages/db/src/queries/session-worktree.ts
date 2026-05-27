@@ -60,6 +60,29 @@ export async function listWorktreesForSession(
   return rows.map(toDomain);
 }
 
+// Batched lookup for workspace switch: replaces `Promise.all(ids.map(listWorktreesForSession))`,
+// which used to serialize N round trips through the single `Mutex<Connection>` on the Rust
+// side. One IN-clause query + group-by-session keeps the result shape per-session.
+export async function listWorktreesForSessions(
+  db: Database,
+  sessionIds: ReadonlyArray<SessionId>,
+): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> {
+  const out = new Map<SessionId, SessionWorktree[]>();
+  if (sessionIds.length === 0) return out;
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const rows = await db.select<SessionWorktreeRow>(
+    `SELECT * FROM session_worktrees WHERE session_id IN (${placeholders}) ORDER BY session_id, parallel_index ASC`,
+    sessionIds,
+  );
+  for (const row of rows) {
+    const wt = toDomain(row);
+    const bucket = out.get(wt.sessionId) ?? [];
+    bucket.push(wt);
+    out.set(wt.sessionId, bucket);
+  }
+  return out;
+}
+
 export async function deleteWorktreesForSession(db: Database, sessionId: SessionId): Promise<void> {
   await db.execute('DELETE FROM session_worktrees WHERE session_id = ?', [sessionId]);
 }
