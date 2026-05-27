@@ -40,6 +40,8 @@ import { m039WorkspaceLastAccessedAt } from './m039-workspace-last-accessed-at';
 import { m040OpenQuestions } from './m040-open-questions';
 import { m041SessionWorkflows } from './m041-session-workflows';
 import { m042OpenQuestionsCreatedBy } from './m042-open-questions-created-by';
+import { m043WorkspaceIntegrations } from './m043-workspace-integrations';
+import { m044SessionExternalTask } from './m044-session-external-task';
 
 export interface Migration {
   readonly version: number;
@@ -89,4 +91,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 40, sql: m040OpenQuestions },
   { version: 41, sql: m041SessionWorkflows },
   { version: 42, sql: m042OpenQuestionsCreatedBy },
+  { version: 43, sql: m043WorkspaceIntegrations },
+  { version: 44, sql: m044SessionExternalTask },
 ];

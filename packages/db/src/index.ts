@@ -9,12 +9,25 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
+  listDisconnectedWorkspaces,
   findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
   touchWorkspaceLastAccessed,
   deleteWorkspace,
 } from './queries/workspace';
+export {
+  upsertWorkspaceIntegration,
+  listIntegrationsForWorkspace,
+  getWorkspaceIntegration,
+  deleteWorkspaceIntegration,
+} from './queries/workspace-integration';
+export {
+  setSessionExternalTask,
+  getSessionExternalTask,
+  listExternalTasksForWorkspace,
+  removeSessionExternalTask,
+} from './queries/session-external-task';
 export {
   insertSession,
   updateSessionState,

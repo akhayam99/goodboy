@@ -23,6 +23,8 @@ import {
   insertMessage,
   insertProviderRun,
   insertSession,
+  setSessionExternalTask,
+  listExternalTasksForWorkspace,
   insertSessionWorktree,
   insertTelemetry,
   insertTurnEventsBatch,
@@ -138,8 +140,10 @@ import type {
   TelemetryRecordId,
   TurnEvent,
   TurnProviderOverride,
+  SessionExternalTask,
   Workspace,
   WorkspaceId,
+  WorkspaceIntegration,
   WorkspaceScript,
   WorkspaceScriptId,
   GhTokenStatus,
@@ -270,8 +274,10 @@ import { createBudgetSlice, buildProviderSpendBreakdown } from './slices/budget.
 import { createSkillsSlice } from './slices/skills.slice';
 import { createDiffCommentsSlice } from './slices/diff-comments.slice';
 import { createGithubSlice } from './slices/github.slice';
+import { createIntegrationsSlice } from './slices/integrations.slice';
 import { createSidebarSlice } from './slices/sidebar.slice';
 import { createSessionViewSlice } from './slices/session-view.slice';
+import type { LinearViewer } from '../features/integrations/linear/client';
 
 export type BootPhase =
   | 'pending'
@@ -321,6 +327,15 @@ function toRelPath(absPath: string, workingDir: string): string {
 
 export interface AppState {
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly workspaceIntegrations: Readonly<
+    Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
+  >;
+  /**
+   * Per-session external task (Linear issue) snapshot. Hydrated on workspace
+   * switch and refreshed when createSession links a fresh issue. Used by the
+   * UI to show an "open in Linear" badge in the session header.
+   */
+  readonly sessionExternalTasks: Readonly<Record<SessionId, SessionExternalTask>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
   // Archived sessions, loaded lazily per workspace when the user opens the
@@ -496,6 +511,9 @@ export interface AppActions {
   refreshProviders(): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
+  loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
+  connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
+  disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -507,6 +525,18 @@ export interface AppActions {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
+    /**
+     * Optional Linear issue to link to the new session. Stored in the
+     * session_external_tasks table for navigation back to Linear, status
+     * sync, etc. Set by the new-session dialog when the user picks an
+     * issue from the autocomplete.
+     */
+    linearIssue?: {
+      externalId: string;
+      identifier: string;
+      url: string;
+      title: string;
+    };
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -703,6 +733,8 @@ export type AppStore = AppState & AppActions;
 
 const initialState: AppState = {
   workspaces: [],
+  workspaceIntegrations: {},
+  sessionExternalTasks: {},
   currentWorkspaceId: null,
   sessions: [],
   archivedSessions: {},
@@ -1354,6 +1386,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
+  ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),
 
@@ -1415,6 +1448,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set({ bootPhase: 'loading-workspaces' });
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
+        // Hydrate integrations cache for every active workspace so the
+        // "Linear connected" badge + new-session issue picker work without
+        // a roundtrip on first interaction.
+        await Promise.all(
+          workspaces.map((w) =>
+            get()
+              .loadIntegrations(w.id)
+              .catch(() => {}),
+          ),
+        );
 
         set({ bootPhase: 'restoring-session' });
         const lastWorkspaceId =
@@ -1539,14 +1582,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }),
       );
       // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
-      // trips through the Rust `Mutex<Connection>`.
+      // trips through the Rust `Mutex<Connection>`. External-task hydration
+      // piggy-backs on the same batch — single query for the whole workspace.
       const sessionIds = sessions.map((s) => s.id);
-      const [worktreesBySession, agentsBySession] = await Promise.all([
+      const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
         // Unread indicators on workspace- and session-rows derive from each
         // agent's `lastFinishedAt` vs `lastViewedAt` columns, so the full
         // agent set has to be in memory before the sidebar can paint dots.
         listAgentsForSessions(tauriDatabase, sessionIds),
+        listExternalTasksForWorkspace(tauriDatabase, id),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
@@ -1565,6 +1610,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
       }
+      const externalTasksMap: Record<string, SessionExternalTask> = {};
+      for (const task of externalTasks) externalTasksMap[task.sessionId] = task;
       // First paint commit — sidebar can render the rail right now.
       set((state) => ({
         sessions,
@@ -1572,6 +1619,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
+        sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));
       // eslint-disable-next-line no-console
       console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
@@ -1975,6 +2023,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
+    linearIssue,
   }) => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -2009,6 +2058,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
+    let externalTask: SessionExternalTask | null = null;
+    if (linearIssue) {
+      externalTask = {
+        sessionId: session.id,
+        provider: 'linear',
+        externalId: linearIssue.externalId,
+        identifier: linearIssue.identifier,
+        url: linearIssue.url,
+        title: linearIssue.title,
+        createdAt: now,
+      };
+      try {
+        await setSessionExternalTask(tauriDatabase, externalTask);
+      } catch {
+        // non-fatal: session is usable without the issue link
+        externalTask = null;
+      }
+    }
     await insertSessionWorktree(tauriDatabase, {
       id: crypto.randomUUID(),
       sessionId: session.id,
@@ -2110,6 +2177,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
+      sessionExternalTasks: externalTask
+        ? { ...state.sessionExternalTasks, [session.id]: externalTask }
+        : state.sessionExternalTasks,
       sessionWorktrees: {
         ...state.sessionWorktrees,
         [session.id]: [worktree.worktreePath],
@@ -3482,6 +3552,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
       delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
       set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
+      // Bring back any persisted integration settings (Linear team, etc.).
+      // Token in the OS keychain also survives disconnect, so the user is
+      // back online with Linear in one click.
+      await get()
+        .loadIntegrations(reactivated.id)
+        .catch(() => {});
       // Refresh side caches owned by this workspace; sessions hydrate lazily
       // via setCurrentWorkspace when the user actually picks it.
       try {

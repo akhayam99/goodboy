@@ -55,6 +55,21 @@ export async function listWorkspaces(db: Database): Promise<ReadonlyArray<Worksp
 }
 
 /**
+ * Returns disconnected workspaces ordered by most recently disconnected first.
+ * Used to populate the "recents" list when adding a new workspace.
+ */
+export async function listDisconnectedWorkspaces(
+  db: Database,
+  limit = 10,
+): Promise<ReadonlyArray<Workspace>> {
+  const rows = await db.select<WorkspaceRow>(
+    'SELECT * FROM workspaces WHERE disconnected_at IS NOT NULL ORDER BY disconnected_at DESC LIMIT ?',
+    [limit],
+  );
+  return rows.map(toDomain);
+}
+
+/**
  * Lookup by root_path across all workspaces (active + disconnected). Used
  * during add to surface "already exists" and to reactivate a disconnected one.
  */

@@ -4,6 +4,7 @@ mod config_export;
 mod db;
 mod editor;
 mod github;
+mod linear;
 mod parallel_groups;
 mod path_env;
 mod permissions;
@@ -160,6 +161,9 @@ pub fn run() {
       github::gh_clear_token,
       github::gh_run,
       github::gh_pr_diff,
+      linear::linear_connect,
+      linear::linear_disconnect,
+      linear::linear_fetch_assigned_issues,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -19,6 +19,9 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
+  const externalTask = useAppStore(
+    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
+  );
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -84,6 +87,18 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
             </span>
           )}
         </div>
+        {externalTask ? (
+          <a
+            href={externalTask.url}
+            target="_blank"
+            rel="noreferrer"
+            title={`${externalTask.identifier}: ${externalTask.title}`}
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-[#5e6ad2]/30 bg-[#5e6ad2]/5 px-1.5 py-0.5 text-[10px] font-medium text-[#5e6ad2] transition-colors hover:border-[#5e6ad2]/60 hover:bg-[#5e6ad2]/10"
+            aria-label={`open ${externalTask.identifier} in linear`}
+          >
+            <span className="font-mono">{externalTask.identifier}</span>
+          </a>
+        ) : null}
         <OpenInEditorIconButton worktreePath={worktreePath} />
         <RunScriptControl
           sessionId={session.id as SessionId}

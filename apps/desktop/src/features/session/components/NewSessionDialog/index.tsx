@@ -8,6 +8,9 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
+import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
+import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
+import type { LinearIssue } from '../../../../features/integrations/linear/client';
 
 interface NewSessionDialogProps {
   open: boolean;
@@ -173,6 +176,14 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
+
+  // Hide the issue picker entirely on workspaces without a Linear integration.
+  // Defensive read: tests mock the store with a shallow shape that may not
+  // include the integrations slot.
+  const hasLinear = useAppStore((s) =>
+    (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
+  );
 
   const defaultProvider = pickDefaultProvider(
     new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
@@ -188,10 +199,17 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
     setExistingBranch('');
     setError(null);
     setBusy(false);
+    setLinearIssue(null);
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
   }, [open, settingKey, loadSetting, workspaceId]);
+
+  const onPickLinearIssue = (issue: LinearIssue) => {
+    setLinearIssue(issue);
+    setGoal(goalFromIssue(issue));
+    setSlugTouched(false);
+  };
 
   // Drop the cached branch list when the workspace changes (different repo →
   // different branches). Reuse the cache across reopens of the same workspace.
@@ -250,6 +268,16 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
         branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
         branchSlug: branchSlug.trim() || undefined,
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
+        ...(linearIssue
+          ? {
+              linearIssue: {
+                externalId: linearIssue.id,
+                identifier: linearIssue.identifier,
+                url: linearIssue.url,
+                title: linearIssue.title,
+              },
+            }
+          : {}),
       });
       showToast('success', `session created: ${session.goal}`);
       onClose();
@@ -287,6 +315,27 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       }
     >
       <div className="flex flex-col gap-7">
+        {hasLinear ? (
+          <Section
+            icon={
+              <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#5e6ad2] text-[9px] font-bold text-white">
+                L
+              </span>
+            }
+            tone="primary"
+            title="Linear issue"
+            subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+          >
+            <IssuePicker
+              workspaceId={workspaceId}
+              value={linearIssue}
+              onPick={onPickLinearIssue}
+              onClear={() => setLinearIssue(null)}
+              disabled={busy}
+            />
+          </Section>
+        ) : null}
+
         <Section
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
