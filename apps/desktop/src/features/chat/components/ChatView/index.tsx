@@ -41,6 +41,7 @@ import {
   MergeDialog,
   type MergeConflict,
   type MergeResolution,
+  type RunMeta,
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
@@ -296,6 +297,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
   const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
@@ -337,6 +339,25 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
     [rawMergeConflicts],
   );
+
+  const mergeRunMeta = useMemo<ReadonlyMap<ProviderRunId, RunMeta>>(() => {
+    const map = new Map<ProviderRunId, RunMeta>();
+    const stepNameById = new Map<string, string>();
+    for (const workflow of sessionWorkflows ?? EMPTY_ARRAY) {
+      for (const step of workflow.steps) {
+        stepNameById.set(step.id, step.name);
+      }
+    }
+    for (const run of phaseRuns) {
+      if (!run.runId) continue;
+      const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined;
+      map.set(run.runId as ProviderRunId, {
+        agentName: run.name,
+        ...(stepName ? { stepName } : {}),
+      });
+    }
+    return map;
+  }, [phaseRuns, sessionWorkflows]);
 
   const terminalRunStatuses = useMemo(
     () =>
@@ -398,6 +419,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         <MergeDialog
           open={mergeDialogOpen}
           conflicts={mergeConflicts}
+          runMeta={mergeRunMeta}
           onResolve={onMergeResolve}
           onCancel={() => setMergeDialogOpen(false)}
         />

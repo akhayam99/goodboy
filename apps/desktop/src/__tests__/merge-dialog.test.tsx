@@ -48,11 +48,12 @@ describe('MergeDialog, rendering', () => {
     expect(screen.getByText('no conflicts detected.')).toBeDefined();
   });
 
-  it('renders diff preview placeholder', () => {
+  it('renders generic run labels when no run metadata is supplied', () => {
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
-    expect(screen.getByText(/diff preview.*follow-on/i)).toBeDefined();
+    expect(screen.getByText('run 1')).toBeDefined();
+    expect(screen.getByText('run 2')).toBeDefined();
   });
 });
 
@@ -61,7 +62,7 @@ describe('MergeDialog, confirm button gate', () => {
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
-    const confirm = screen.getByRole('button', { name: /confirm/i });
+    const confirm = screen.getByRole('button', { name: /apply merge/i });
     expect(confirm.hasAttribute('disabled')).toBe(true);
   });
 
@@ -71,7 +72,7 @@ describe('MergeDialog, confirm button gate', () => {
     );
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!); // pick run-a
-    const confirm = screen.getByRole('button', { name: /confirm/i });
+    const confirm = screen.getByRole('button', { name: /apply merge/i });
     expect(confirm.hasAttribute('disabled')).toBe(false);
   });
 
@@ -82,7 +83,7 @@ describe('MergeDialog, confirm button gate', () => {
     // pick run-a for first file only (radio index 0)
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!);
-    const confirm = screen.getByRole('button', { name: /confirm/i });
+    const confirm = screen.getByRole('button', { name: /apply merge/i });
     expect(confirm.hasAttribute('disabled')).toBe(true);
   });
 
@@ -95,7 +96,7 @@ describe('MergeDialog, confirm button gate', () => {
     // Skip for file 1 = index 2; skip for file 2 = index 5.
     fireEvent.click(radios[2]!);
     fireEvent.click(radios[5]!);
-    const confirm = screen.getByRole('button', { name: /confirm/i });
+    const confirm = screen.getByRole('button', { name: /apply merge/i });
     expect(confirm.hasAttribute('disabled')).toBe(false);
   });
 
@@ -103,7 +104,7 @@ describe('MergeDialog, confirm button gate', () => {
     // With 0 conflicts the button stays disabled because
     // "allResolved = conflicts.length > 0 && ..." guards the empty state.
     render(<MergeDialog open={true} conflicts={[]} onResolve={vi.fn()} onCancel={vi.fn()} />);
-    const confirm = screen.getByRole('button', { name: /confirm/i });
+    const confirm = screen.getByRole('button', { name: /apply merge/i });
     // empty conflicts → allResolved = false → disabled
     expect(confirm.hasAttribute('disabled')).toBe(true);
   });
@@ -117,7 +118,7 @@ describe('MergeDialog, onResolve payload', () => {
     );
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!); // run-a
-    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledOnce();
     expect(onResolve).toHaveBeenCalledWith({ 'src/foo.ts': RUN_A });
   });
@@ -129,7 +130,7 @@ describe('MergeDialog, onResolve payload', () => {
     );
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[2]!); // skip
-    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledWith({ 'src/foo.ts': SKIP_SENTINEL });
   });
 
@@ -146,7 +147,7 @@ describe('MergeDialog, onResolve payload', () => {
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!); // foo.ts → run-a
     fireEvent.click(radios[5]!); // bar.ts → skip
-    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledWith({
       'src/foo.ts': RUN_A,
       'src/bar.ts': SKIP_SENTINEL,
