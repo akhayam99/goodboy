@@ -1518,11 +1518,14 @@ function AgentRow({
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
         // State signal lives on the border — never on the dot, never on
-        // the content. running > unread > selected > idle.
+        // the content. running > unread > selected > idle. Static colors
+        // only; the prior `spin-border` and `animate-border-pulse` here
+        // were the same GPU-heavy conic-gradient / oklch border-color
+        // animations dropped from the workflow row variant.
         run.status === 'running'
-          ? 'spin-border spin-border-info border-transparent'
+          ? 'border-info/60'
           : agentHasUnread(run, isSelected && isTaskActive)
-            ? 'animate-border-pulse border-warning/70'
+            ? 'border-warning/70'
             : isSelected
               ? 'border-border'
               : 'border-transparent',
