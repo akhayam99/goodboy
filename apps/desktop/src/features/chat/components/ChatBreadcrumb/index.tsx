@@ -9,6 +9,7 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../session/agent-kind';
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
 interface ChatBreadcrumbProps {
   readonly session: Session;
@@ -135,13 +136,10 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
         <>
           <Separator />
           <span
-            className="inline-flex shrink-0 items-center gap-1 text-foreground/90"
+            className="inline-flex shrink-0 items-center gap-1.5 text-foreground/90"
             title={`agent: ${selectedAgent.name}`}
           >
-            <span
-              aria-hidden
-              className={cn('size-1.5 rounded-full', AGENT_KIND_PALETTE[agentKind].bg)}
-            />
+            <AgentAvatar kind={agentKind} size="sm" />
             <span className="font-medium">{selectedAgent.name}</span>
             <span
               className={cn('text-2xs uppercase tracking-wide', AGENT_KIND_PALETTE[agentKind].fg)}
