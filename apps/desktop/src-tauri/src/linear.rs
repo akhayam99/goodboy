@@ -1,3 +1,5 @@
+use std::sync::OnceLock;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Map;
 use thiserror::Error;
@@ -5,6 +7,13 @@ use thiserror::Error;
 use crate::secrets;
 
 const API_URL: &str = "https://api.linear.app/graphql";
+
+// Single client so reqwest can reuse the TLS connection pool across calls.
+// `new()` is cheap but constructing a Client every call defeats keep-alive.
+fn http_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(reqwest::Client::new)
+}
 
 fn credential_key(workspace_id: &str) -> String {
     format!("goodboy.workspace.{}.linear", workspace_id)
@@ -69,8 +78,7 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     query: &str,
     variables: Option<serde_json::Value>,
 ) -> Result<T, LinearError> {
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .post(API_URL)
         .header("Authorization", token)
         .header("Content-Type", "application/json")
@@ -80,11 +88,7 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     let status = res.status();
     let body: serde_json::Value = res.json().await?;
     if !status.is_success() {
-        return Err(LinearError::Http(format!(
-            "status {}: {}",
-            status,
-            body.to_string()
-        )));
+        return Err(LinearError::Http(format!("status {}: {}", status, body)));
     }
     if let Some(errors) = body.get("errors") {
         return Err(LinearError::GraphQl(errors.to_string()));
@@ -123,21 +127,6 @@ query Viewer {
     name
     email
     organization { urlKey name }
-  }
-}
-"#;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LinearTeam {
-    pub id: String,
-    pub key: String,
-    pub name: String,
-}
-
-const TEAMS_QUERY: &str = r#"
-query Teams {
-  teams(first: 100) {
-    nodes { id key name }
   }
 }
 "#;
@@ -184,21 +173,6 @@ query AssignedIssues($filter: IssueFilter!) {
 }
 "#;
 
-const ISSUE_QUERY: &str = r#"
-query Issue($id: String!) {
-  issue(id: $id) {
-    id
-    identifier
-    title
-    description
-    url
-    state { name type }
-    team { key }
-    updatedAt
-  }
-}
-"#;
-
 /// Verify token via /viewer query and save to keyring on success.
 #[tauri::command]
 pub async fn linear_connect(
@@ -214,25 +188,6 @@ pub async fn linear_connect(
 pub async fn linear_disconnect(workspace_id: String) -> Result<(), LinearError> {
     secrets::clear(&credential_key(&workspace_id))?;
     Ok(())
-}
-
-#[tauri::command]
-pub async fn linear_has_token(workspace_id: String) -> Result<bool, LinearError> {
-    Ok(secrets::read(&credential_key(&workspace_id))?.is_some())
-}
-
-#[tauri::command]
-pub async fn linear_fetch_viewer(workspace_id: String) -> Result<LinearViewer, LinearError> {
-    let token = read_token(&workspace_id)?;
-    let resp: ViewerResponse = graphql(&token, VIEWER_QUERY, None).await?;
-    Ok(resp.viewer)
-}
-
-#[tauri::command]
-pub async fn linear_fetch_teams(workspace_id: String) -> Result<Vec<LinearTeam>, LinearError> {
-    let token = read_token(&workspace_id)?;
-    let resp: TeamsResponse = graphql(&token, TEAMS_QUERY, None).await?;
-    Ok(resp.teams.nodes)
 }
 
 #[tauri::command]
@@ -253,17 +208,6 @@ pub async fn linear_fetch_assigned_issues(
     Ok(resp.issues.nodes)
 }
 
-#[tauri::command]
-pub async fn linear_fetch_issue(
-    workspace_id: String,
-    issue_id: String,
-) -> Result<LinearIssue, LinearError> {
-    let token = read_token(&workspace_id)?;
-    let resp: IssueResponse =
-        graphql(&token, ISSUE_QUERY, Some(serde_json::json!({ "id": issue_id }))).await?;
-    Ok(resp.issue)
-}
-
 #[derive(Deserialize)]
 struct ViewerResponse {
     viewer: LinearViewer,
@@ -275,16 +219,6 @@ struct Nodes<T> {
 }
 
 #[derive(Deserialize)]
-struct TeamsResponse {
-    teams: Nodes<LinearTeam>,
-}
-
-#[derive(Deserialize)]
 struct IssuesResponse {
     issues: Nodes<LinearIssue>,
-}
-
-#[derive(Deserialize)]
-struct IssueResponse {
-    issue: LinearIssue,
 }

@@ -73,45 +73,6 @@ export function createIntegrationsSlice(set: SetFn, get: GetFn) {
       return viewer;
     },
 
-    /**
-     * Update the optional team filter on the Linear integration. teamId=null
-     * clears the filter so the user sees issues across all teams.
-     */
-    setLinearTeam: async (
-      workspaceId: WorkspaceId,
-      teamId: string | null,
-      teamName: string | null,
-    ) => {
-      const existing = get().workspaceIntegrations[workspaceId]?.find(
-        (i) => i.provider === 'linear',
-      );
-      if (!existing) throw new Error('linear integration not connected');
-      const now = new Date().toISOString() as IsoDateTime;
-      const nextConfig: LinearIntegrationConfig =
-        teamId && teamName
-          ? { ...existing.config, teamId, teamName }
-          : (() => {
-              const { teamId: _t, teamName: _tn, ...rest } = existing.config;
-              return rest;
-            })();
-      const integration: WorkspaceIntegration = {
-        ...existing,
-        config: nextConfig,
-        updatedAt: now,
-      };
-      await upsertWorkspaceIntegration(tauriDatabase, integration);
-      set((state) => {
-        const current = state.workspaceIntegrations[workspaceId] ?? [];
-        const rest = current.filter((i) => i.provider !== 'linear');
-        return {
-          workspaceIntegrations: {
-            ...state.workspaceIntegrations,
-            [workspaceId]: [...rest, integration],
-          },
-        };
-      });
-    },
-
     disconnectLinear: async (workspaceId: WorkspaceId) => {
       await linearDisconnect(workspaceId);
       await deleteIntegrationInDb(tauriDatabase, workspaceId, 'linear');

@@ -513,11 +513,6 @@ export interface AppActions {
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
-  setLinearTeam(
-    workspaceId: WorkspaceId,
-    teamId: string | null,
-    teamName: string | null,
-  ): Promise<void>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;

@@ -102,19 +102,6 @@ export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
               <dd className="font-mono text-foreground">
                 linear.app/{linear.config.workspaceUrlKey}
               </dd>
-              <dt className="text-muted-foreground">user id</dt>
-              <dd className="font-mono text-foreground">{linear.config.viewerUserId}</dd>
-              {linear.config.teamName ? (
-                <>
-                  <dt className="text-muted-foreground">team filter</dt>
-                  <dd className="text-foreground">{linear.config.teamName}</dd>
-                </>
-              ) : (
-                <>
-                  <dt className="text-muted-foreground">team filter</dt>
-                  <dd className="text-muted-foreground">all teams</dd>
-                </>
-              )}
             </dl>
             <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
               <Unplug size={12} aria-hidden className="mr-1.5" />

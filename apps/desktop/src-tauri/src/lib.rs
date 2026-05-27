@@ -163,11 +163,7 @@ pub fn run() {
       github::gh_pr_diff,
       linear::linear_connect,
       linear::linear_disconnect,
-      linear::linear_has_token,
-      linear::linear_fetch_viewer,
-      linear::linear_fetch_teams,
       linear::linear_fetch_assigned_issues,
-      linear::linear_fetch_issue,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -11,12 +11,6 @@ export type LinearViewer = {
   };
 };
 
-export type LinearTeam = {
-  id: string;
-  key: string;
-  name: string;
-};
-
 export type LinearIssueState = {
   name: string;
   type: string;
@@ -33,8 +27,6 @@ export type LinearIssue = {
   updatedAt: string;
 };
 
-export type LinearError = { kind: string; message: string };
-
 export async function linearConnect(
   workspaceId: WorkspaceId,
   token: string,
@@ -46,18 +38,6 @@ export async function linearDisconnect(workspaceId: WorkspaceId): Promise<void> 
   await invoke('linear_disconnect', { workspaceId });
 }
 
-export async function linearHasToken(workspaceId: WorkspaceId): Promise<boolean> {
-  return invoke<boolean>('linear_has_token', { workspaceId });
-}
-
-export async function linearFetchViewer(workspaceId: WorkspaceId): Promise<LinearViewer> {
-  return invoke<LinearViewer>('linear_fetch_viewer', { workspaceId });
-}
-
-export async function linearFetchTeams(workspaceId: WorkspaceId): Promise<LinearTeam[]> {
-  return invoke<LinearTeam[]>('linear_fetch_teams', { workspaceId });
-}
-
 export async function linearFetchAssignedIssues(
   workspaceId: WorkspaceId,
   teamId?: string,
@@ -66,11 +46,4 @@ export async function linearFetchAssignedIssues(
     workspaceId,
     teamId: teamId ?? null,
   });
-}
-
-export async function linearFetchIssue(
-  workspaceId: WorkspaceId,
-  issueId: string,
-): Promise<LinearIssue> {
-  return invoke<LinearIssue>('linear_fetch_issue', { workspaceId, issueId });
 }
