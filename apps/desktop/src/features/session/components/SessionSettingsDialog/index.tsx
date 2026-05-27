@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Dialog, Divider, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -250,9 +250,8 @@ export function SessionSettingsDialog({
             onClick={onDeleteClick}
             disabled={busy}
             className={cn(
-              'gap-1.5',
+              'relative gap-1.5 overflow-hidden',
               !deleteArmed && 'text-danger/80 hover:bg-danger/10 hover:text-danger',
-              deleteArmed && 'animate-pulse',
             )}
             title={
               deleteArmed
@@ -267,7 +266,14 @@ export function SessionSettingsDialog({
             ) : (
               <Trash2 size={13} aria-hidden />
             )}
-            {deleteArmed ? 'click again to confirm' : 'Delete'}
+            {deleteArmed ? 'Click again to confirm' : 'Delete'}
+            {deleteArmed ? (
+              <span
+                aria-hidden
+                className="shrink-bar absolute inset-x-0 bottom-0 h-0.5 bg-danger-foreground/70"
+                style={{ '--shrink-duration': `${DELETE_ARM_TIMEOUT_MS}ms` } as CSSProperties}
+              />
+            ) : null}
           </Button>
           {deleteArmed && !archived ? (
             <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">

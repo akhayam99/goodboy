@@ -45,7 +45,7 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
       open={open}
       onClose={onClose}
       title="End session?"
-      description="The worktree directory will be removed. The branch is preserved for manual merge."
+      description="Removes the worktree and session transcripts from this device. The branch is preserved for manual merge if needed."
       size="sm"
       footer={
         <>
@@ -59,8 +59,11 @@ export function EndSessionDialog({ session, open, onClose }: EndSessionDialogPro
         </>
       }
     >
-      <div className="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
-        <span className="font-mono text-foreground">{session.goal}</span>
+      <div className="flex flex-col gap-3">
+        <div className="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
+          <span className="font-mono text-foreground">{session.goal}</span>
+        </div>
+        <p className="text-xs font-medium text-danger">This cannot be undone.</p>
       </div>
     </Dialog>
   );
