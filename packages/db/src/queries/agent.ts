@@ -20,6 +20,7 @@ interface AgentRow {
   output_summary: string | null;
   started_at: string | null;
   completed_at: string | null;
+  provider_session_id: string | null;
   last_finished_at: string | null;
   last_viewed_at: string | null;
   deleted_at: number | null;
@@ -42,6 +43,7 @@ function toAgent(row: AgentRow): Agent {
     ...(row.output_summary && { outputSummary: row.output_summary }),
     ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
     ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
+    ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
     ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
     ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
     ...(row.deleted_at != null && {
@@ -66,6 +68,30 @@ export async function listAgentsForSession(
     [sessionId],
   );
   return rows.map(toAgent);
+}
+
+// Batched lookup for workspace switch: replaces
+// `Promise.all(ids.map(invokePhaseRunList))`, which serialized N IPC round trips
+// through the Rust `Mutex<Connection>`. One IN-clause query + group-by-session
+// preserves per-session ordering (ordinal ASC within each bucket).
+export async function listAgentsForSessions(
+  db: Database,
+  sessionIds: ReadonlyArray<SessionId>,
+): Promise<Map<SessionId, ReadonlyArray<Agent>>> {
+  const out = new Map<SessionId, Agent[]>();
+  if (sessionIds.length === 0) return out;
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const rows = await db.select<AgentRow>(
+    `SELECT * FROM agents WHERE session_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY session_id, ordinal ASC`,
+    sessionIds,
+  );
+  for (const row of rows) {
+    const agent = toAgent(row);
+    const bucket = out.get(agent.sessionId) ?? [];
+    bucket.push(agent);
+    out.set(agent.sessionId, bucket);
+  }
+  return out;
 }
 
 export async function getAgentById(db: Database, id: AgentId): Promise<Agent | null> {

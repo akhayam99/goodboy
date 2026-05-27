@@ -25,7 +25,8 @@ import {
   insertSession,
   insertSessionWorktree,
   insertTelemetry,
-  insertTurnEvent,
+  insertTurnEventsBatch,
+  type PendingTurnEventInsert,
   insertWorkspace,
   disconnectWorkspace as disconnectWorkspaceInDb,
   reconnectWorkspace as reconnectWorkspaceInDb,
@@ -44,6 +45,8 @@ import {
   listTelemetryForSession,
   listWorkspaces,
   listWorktreesForSession,
+  listWorktreesForSessions,
+  listAgentsForSessions,
   deleteWorktreesForSession,
   updateSessionWorktreeBranch,
   listAllSessionWorktrees,
@@ -1311,6 +1314,37 @@ async function drainAuditRetryQueue(set: SetFn): Promise<void> {
 // the second call wait for the first.
 let hydratePromise: Promise<void> | null = null;
 
+// Streaming providers can emit 50-200 turn_events per second. Persisting each
+// one with its own `insertTurnEvent` used to grab the Rust `Mutex<Connection>`
+// at the same cadence and block every concurrent reader — including a
+// freshly-clicked workspace/session switch. The buffer below coalesces
+// non-critical events between microtasks and flushes them through a single
+// multi-row INSERT, collapsing the write storm to ~one IPC per frame.
+let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
+let turnEventFlushScheduled = false;
+
+function scheduleTurnEventFlush(): void {
+  if (turnEventFlushScheduled) return;
+  turnEventFlushScheduled = true;
+  queueMicrotask(() => {
+    turnEventFlushScheduled = false;
+    if (pendingTurnEventInserts.length === 0) return;
+    const batch = pendingTurnEventInserts;
+    pendingTurnEventInserts = [];
+    void insertTurnEventsBatch(tauriDatabase, batch).catch((err) => {
+      if (import.meta.env.DEV) {
+        const message = formatError(err);
+        console.warn(`[turn-events] batch insert failed (${batch.length} rows): ${message}`);
+      }
+    });
+  });
+}
+
+function queueTurnEventInsert(insert: PendingTurnEventInsert): void {
+  pendingTurnEventInserts.push(insert);
+  scheduleTurnEventFlush();
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createNotificationsSlice(set, get),
@@ -1478,21 +1512,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }));
       touchWorkspaceLastAccessed(tauriDatabase, id).catch(() => undefined);
 
-      const [
-        loadedSessions,
-        workspaceSummary,
-        providerSummaries,
-        budgetRules,
-        skills,
-        phaseTemplates,
-      ] = await Promise.all([
-        listSessionsForWorkspace(tauriDatabase, id),
-        summarizeWorkspaceTelemetry(tauriDatabase, id),
-        summarizeWorkspaceProviderTelemetry(tauriDatabase, id),
-        invokeBudgetRuleList(),
-        invokeSkillList(id),
-        invokePhaseTemplateList(id),
-      ]);
+      // Critical path = what the sidebar needs to paint: sessions (rail rows),
+      // worktrees (branch chip + github polling signature), agents (unread
+      // dots). Every other workspace-scoped load (telemetry summary, provider
+      // summary, budget rules, skills, phase templates) feeds chips or
+      // composer/menu surfaces that the user reaches well after first paint,
+      // so we kick them off as fire-and-forget AFTER the sessions render.
+      // Each DB call serializes through the Rust `Mutex<Connection>`; trimming
+      // the awaited set from 6 to 1 (sessions) cuts the blocking time for
+      // n-bro's 7-session workspace switch by ~5× mutex acquisitions.
+      const tWsLoad = performance.now();
+      const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
       // Boot-recovery: a session row in 'running' state is necessarily orphaned
       // here — the Rust TurnRegistry is reset on every app start, so there is
       // no live process to reattach to. Normalize to 'idle' so the UI re-enables
@@ -1508,58 +1538,85 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
-      const [worktreeRows, phaseRunsPerTask] = await Promise.all([
-        Promise.all(sessions.map((s) => listWorktreesForSession(tauriDatabase, s.id))),
-        // Eager-load agents (phase runs) for every session in this workspace. The
-        // unread indicators on workspace- and session-rows derive from each
-        // agent's `lastFinishedAt` vs `lastViewedAt` columns, and those are
-        // only inspected once we have the agent rows in memory. Without this
-        // prefetch, the sidebar would only know about agents for sessions the
-        // user has explicitly opened — yellow dots vanish on workspace switch.
-        Promise.all(sessions.map((s) => invokePhaseRunList(s.id))),
+      // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
+      // trips through the Rust `Mutex<Connection>`.
+      const sessionIds = sessions.map((s) => s.id);
+      const [worktreesBySession, agentsBySession] = await Promise.all([
+        listWorktreesForSessions(tauriDatabase, sessionIds),
+        // Unread indicators on workspace- and session-rows derive from each
+        // agent's `lastFinishedAt` vs `lastViewedAt` columns, so the full
+        // agent set has to be in memory before the sidebar can paint dots.
+        listAgentsForSessions(tauriDatabase, sessionIds),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
-      const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
-      const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
-      for (let i = 0; i < sessions.length; i++) {
-        const s = sessions[i]!;
-        const rows = worktreeRows[i]!;
+      for (const s of sessions) {
+        const rows = worktreesBySession.get(s.id) ?? [];
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
           const primaryRow = rows[0];
           if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
         }
-        const runs = phaseRunsPerTask[i]!;
+        const runs = agentsBySession.get(s.id) ?? [];
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
           if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
         }
-        const attached = s.workflowIds
-          .map((wid) => workflowById.get(wid) ?? null)
-          .filter((w): w is Workflow => w !== null);
-        if (attached.length > 0) sessionWorkflows[s.id] = attached;
       }
+      // First paint commit — sidebar can render the rail right now.
       set((state) => ({
         sessions,
         sessionWorktrees,
         sessionBranches,
         sessionPhaseRuns,
-        sessionWorkflows,
-        workspaceSummary,
-        providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
-        skills: { ...state.skills, [id]: skills },
-        phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
       }));
+      // eslint-disable-next-line no-console
+      console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
+
+      // Deferred loads — fire AFTER first paint so the UI is interactive
+      // immediately. Each resolves into its own `set` call when ready.
+      void (async (): Promise<void> => {
+        const tWsDefer = performance.now();
+        const [workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
+          await Promise.all([
+            summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
+            summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
+            invokeBudgetRuleList().catch(() => []),
+            invokeSkillList(id).catch(() => []),
+            invokePhaseTemplateList(id).catch(() => []),
+          ]);
+        // Workspace may have changed under us while these were inflight.
+        if (get().currentWorkspaceId !== id) return;
+        const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
+        const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
+        for (const s of get().sessions) {
+          const attached = s.workflowIds
+            .map((wid) => workflowById.get(wid) ?? null)
+            .filter((w): w is Workflow => w !== null);
+          if (attached.length > 0) sessionWorkflows[s.id] = attached;
+        }
+        set((state) => ({
+          sessionWorkflows,
+          workspaceSummary,
+          providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+          skills: { ...state.skills, [id]: skills },
+          phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
+        }));
+        // eslint-disable-next-line no-console
+        console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
+      })();
       void get().loadWorkspaceOverrides(id);
     } else {
       set({ providerSpendBreakdown: [] });
     }
-    await dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    // Settings persistence — survives next launch as "last opened
+    // workspace/session". Fire-and-forget: no UI code awaits these, but
+    // awaiting used to add 2 more mutex acquisitions to the click handler.
+    void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
+    void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     void get().refreshUnreadWorkspaces();
     // Single-session workspaces don't have an activity rail — the user can't
     // pick a session manually. Auto-select so the detail panel renders
@@ -2191,12 +2248,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const updatedRuns = runs.map((s) =>
           s.id === agentId ? { ...s, providerSessionId: event.providerSessionId } : s,
         );
-        void insertTurnEvent(tauriDatabase, {
+        queueTurnEventInsert({
           id: crypto.randomUUID(),
           sessionId,
           agentId,
           event,
-        }).catch(() => undefined);
+        });
         void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
           if (import.meta.env.DEV) {
             const message = formatError(err);
@@ -2211,16 +2268,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return { transcripts: updatedTranscripts };
     });
     if (event.kind === 'provider_session_init') return;
-    void insertTurnEvent(tauriDatabase, {
+    queueTurnEventInsert({
       id: crypto.randomUUID(),
       sessionId,
       agentId,
       event,
-    }).catch((err) => {
-      if (import.meta.env.DEV) {
-        const message = formatError(err);
-        console.warn(`[turn-events] insert failed for agent ${agentId}: ${message}`);
-      }
     });
   },
 

@@ -1252,13 +1252,13 @@ function WorkflowStepRow({
   const isRunning = run.status === 'running';
   const containerClass = isRunning
     ? cn(
-        `${ROW_BASE} spin-border spin-border-info border-transparent transition-colors cursor-pointer`,
+        `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
         isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
       )
     : isStartable
       ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
       : isActionable && isBlocked
-        ? `${ROW_BASE} animate-border-pulse border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
+        ? `${ROW_BASE} border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
         : isPendingFuture
           ? `${ROW_BASE} border-transparent text-muted-foreground/40`
           : cn(
@@ -1286,10 +1286,12 @@ function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      // Status icon left empty on running — the conic spin-border around
-      // the row carries that signal now, no need to double-flag with the
-      // little inline spinner.
-      return null;
+      // Used to rely on the row's conic spin-border to signal running.
+      // That ring forced a 250×36px composite layer per running agent and
+      // showed up in WKWebView profiles as 200ms+ composite stalls on hover.
+      // Static border-info now carries the state; a tiny Loader2 spin keeps
+      // the motion cue without the gradient cost.
+      return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
     }
     if (run.status === 'completed') {
       return (
@@ -1516,11 +1518,14 @@ function AgentRow({
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
         // State signal lives on the border — never on the dot, never on
-        // the content. running > unread > selected > idle.
+        // the content. running > unread > selected > idle. Static colors
+        // only; the prior `spin-border` and `animate-border-pulse` here
+        // were the same GPU-heavy conic-gradient / oklch border-color
+        // animations dropped from the workflow row variant.
         run.status === 'running'
-          ? 'spin-border spin-border-info border-transparent'
+          ? 'border-info/60'
           : agentHasUnread(run, isSelected && isTaskActive)
-            ? 'animate-border-pulse border-warning/70'
+            ? 'border-warning/70'
             : isSelected
               ? 'border-border'
               : 'border-transparent',

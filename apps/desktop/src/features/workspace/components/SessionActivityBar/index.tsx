@@ -1,5 +1,5 @@
 import { Fragment, memo, useMemo, useState } from 'react';
-import { Archive, Plus } from 'lucide-react';
+import { Archive, Loader2, Plus } from 'lucide-react';
 import { Button, cn, ScrollArea } from '@goodboy/ui';
 import type {
   Session,
@@ -189,7 +189,6 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const isRunning = session.state.kind === 'running';
   const isErrored = session.state.kind === 'error';
   const isAutoMode = session.autoRun === true;
-  const spinBorder = isRunning ? (isAutoMode ? 'spin-border-danger' : 'spin-border-info') : null;
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -222,9 +221,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
         isActive
           ? 'border-border'
           : isRunning
-            ? cn('spin-border border-transparent', spinBorder)
+            ? isAutoMode
+              ? 'border-danger/60'
+              : 'border-info/60'
             : isPending
-              ? 'animate-border-pulse border-warning/70'
+              ? 'border-warning/70'
               : isErrored
                 ? 'border-danger/40'
                 : 'border-transparent',
@@ -232,9 +233,17 @@ const SessionActivityItem = memo(function SessionActivityItem({
       )}
     >
       <span className="flex items-center gap-1">
-        <span className={cn('shrink-0', statusEntry.className)}>
-          <StatusIcon size={10} aria-hidden />
-        </span>
+        {isRunning ? (
+          <Loader2
+            size={10}
+            aria-hidden
+            className={cn('animate-spin shrink-0', isAutoMode ? 'text-danger' : 'text-info')}
+          />
+        ) : (
+          <span className={cn('shrink-0', statusEntry.className)}>
+            <StatusIcon size={10} aria-hidden />
+          </span>
+        )}
         {prState ? (
           <PullRequestChip state={prState} variant="icon" iconSize={10} />
         ) : (

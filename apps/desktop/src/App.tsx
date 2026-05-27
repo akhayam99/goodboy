@@ -135,6 +135,15 @@ export function App() {
     });
   };
 
+  // Discard keep-alive IDs from the previous workspace. Without this, switching
+  // workspaces left up to 5 orphan IDs in App state: their KeepAliveChatPanel/
+  // ContextPanel components stayed mounted, ran `useSessionById` (which itself
+  // scans every archivedSessions list) on every store update, and only ever
+  // resolved to null. Pure dead weight on the render path of every set call.
+  useEffect(() => {
+    setKeepAliveIds([]);
+  }, [currentWorkspace?.id]);
+
   // Persist visited-session order across renders. Triggered by the same
   // currentSession change that drives the synchronous derivation above; this
   // just commits the new order to state so future switches reuse it.

@@ -187,7 +187,10 @@ const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, d
  * transcript length — that grows token-by-token and would re-fire the
  * Tauri invoke on every streamed chunk.
  */
-export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
+export const useFilesTouched = (
+  sessionId: SessionId | null,
+  isActive: boolean = true,
+): FilesTouched => {
   const workingDir = useAppStore((s) =>
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
   );
@@ -208,9 +211,14 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
 
   const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED);
 
+  // Keep-alive panels stay mounted but hidden behind the active session.
+  // Without the `isActive` gate, every summarizer tick on a hidden session
+  // re-fires `worktreeChangedFiles` (4 git subprocesses + per-untracked
+  // `fs::read_to_string`). With 5 keep-alive ContextPanels this piles up
+  // 15+ concurrent git invocations during heavy streaming.
   useEffect(() => {
-    if (!workingDir) {
-      setState(EMPTY_FILES_TOUCHED);
+    if (!isActive || !workingDir) {
+      if (!workingDir) setState(EMPTY_FILES_TOUCHED);
       return;
     }
     let cancelled = false;
@@ -234,7 +242,7 @@ export const useFilesTouched = (sessionId: SessionId | null): FilesTouched => {
     return () => {
       cancelled = true;
     };
-  }, [workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
+  }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
 
   return state;
 };
