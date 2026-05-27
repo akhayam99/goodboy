@@ -119,13 +119,13 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: (sid: SessionId) => phaseRunListSpy(sid),
-  invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: (sid: SessionId) => phaseRunListSpy(sid),
+  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
+  invokeAgentUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({

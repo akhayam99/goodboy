@@ -143,15 +143,15 @@ const phaseRunListSpy = vi.fn<(sid: SessionId) => Promise<ReadonlyArray<Agent>>>
 const parallelPhaseGroupCreateSpy = vi.fn();
 const parallelPhaseGroupUpdateCompletedAtSpy = vi.fn();
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: (sid: SessionId) => phaseRunListSpy(sid),
-  invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: AgentId, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-  invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
-  invokeParallelPhaseGroupUpdateCompletedAt: (id: ParallelGroupId, at: IsoDateTime) =>
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: (sid: SessionId) => phaseRunListSpy(sid),
+  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
+  invokeAgentUpdateStatus: (id: AgentId, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
+  invokeParallelGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
+  invokeParallelGroupUpdateCompletedAt: (id: ParallelGroupId, at: IsoDateTime) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
 }));
 

@@ -62,7 +62,7 @@ import {
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
-import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowHasOpenQuestions } from '../../../../features/context/openQuestionsGate';
 import {
   computeLatestTelemetryByAgentId,

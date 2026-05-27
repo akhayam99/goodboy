@@ -31,12 +31,12 @@ import type {
   Workspace,
 } from '@goodboy/types';
 import {
-  invokeParallelPhaseGroupCreate,
-  invokeParallelPhaseGroupUpdateCompletedAt,
-  invokePhaseRunInsert,
-  invokePhaseRunList,
-  invokePhaseRunUpdateStatus,
-} from '../features/phases/phases';
+  invokeParallelGroupCreate,
+  invokeParallelGroupUpdateCompletedAt,
+  invokeAgentInsert,
+  invokeAgentList,
+  invokeAgentUpdateStatus,
+} from '../features/workflows/workflows';
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 import { inferAgentKindFromName } from '../features/session/agent-kind';
 
@@ -214,7 +214,7 @@ export async function runParallelBranch(
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
 
   // Persist parallel group up front so the audit trail captures it even if spawn fails.
-  const groupRow = await invokeParallelPhaseGroupCreate({
+  const groupRow = await invokeParallelGroupCreate({
     sessionId: session.id,
     ordinal: currentDef.ordinal,
     mergeStrategy,
@@ -290,7 +290,7 @@ export async function runParallelBranch(
   for (let i = 0; i < cappedDefs.length; i++) {
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
-    await invokePhaseRunInsert({
+    await invokeAgentInsert({
       sessionId: session.id,
       stepId: def.id,
       ordinal: def.ordinal,
@@ -365,10 +365,10 @@ export async function runParallelBranch(
       const def = cappedDefs[i]!;
       const runId = runIds[i]!;
       const status = merge.runStatuses.find((rs) => rs.runId === runId);
-      const phaseRunsAfter = await invokePhaseRunList(session.id);
+      const phaseRunsAfter = await invokeAgentList(session.id);
       const row = phaseRunsAfter.find((r) => r.runId === runId && r.stepId === def.id);
       if (row) {
-        await invokePhaseRunUpdateStatus(row.id, {
+        await invokeAgentUpdateStatus(row.id, {
           status: (status?.status ?? 'failed') as AgentStatus,
           completedAt: now(),
         });
@@ -437,7 +437,7 @@ export async function runParallelBranch(
     // Mark group complete only when at least one run completed. allFailed runs
     // leave completedAt NULL so the user can inspect/retry without rolling up.
     if (!allFailed) {
-      await invokeParallelPhaseGroupUpdateCompletedAt(groupId, now());
+      await invokeParallelGroupUpdateCompletedAt(groupId, now());
     }
 
     return {

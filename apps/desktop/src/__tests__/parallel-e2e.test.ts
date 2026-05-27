@@ -44,17 +44,17 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 
-vi.mock('../features/phases/phases', () => ({
-  invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
-  invokeParallelPhaseGroupUpdateCompletedAt: (id: string, at: string) =>
+vi.mock('../features/workflows/workflows', () => ({
+  invokeParallelGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
+  invokeParallelGroupUpdateCompletedAt: (id: string, at: string) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
-  invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: string, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-  invokePhaseRunList: (sid: string) => phaseRunListSpy(sid),
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunDelete: vi.fn(),
+  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
+  invokeAgentUpdateStatus: (id: string, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
+  invokeAgentList: (sid: string) => phaseRunListSpy(sid),
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentDelete: vi.fn(),
 }));
 
 // Turn invocations.

@@ -13,7 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
+import { WorkflowsPanel } from '../../../../features/workflows/components/WorkflowsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/config-selects';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
@@ -267,7 +267,7 @@ export function WorkspaceSettingsDialog({
             subtitle="Multi-agent blueprints offered when creating a session. Each step spawns its own agent in order."
             beta
           >
-            <PhasesPanel workspaceId={workspaceId} />
+            <WorkflowsPanel workspaceId={workspaceId} />
           </SectionShell>
         ) : null}
 

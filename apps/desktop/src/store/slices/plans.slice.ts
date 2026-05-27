@@ -4,7 +4,7 @@ import {
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../features/plans/plans';
-import { pickNextWorkflowStep } from '../../features/workflow/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../features/workflows/components/WorkflowNextStepCta';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../features/session/agent-kind';
 import type { SessionId, PlanId, PlanStatus } from '@goodboy/types';
 import type { AppStore } from '../store';

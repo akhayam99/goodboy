@@ -233,18 +233,18 @@ import {
   type PermissionAuditInsertPayload,
 } from '../features/permissions/permissions';
 import {
-  invokePhaseTemplateList,
-  invokePhaseTemplateUpsert,
-  invokePhaseTemplateDelete,
-  invokePhaseRunList,
-  invokePhaseRunInsert,
-  invokePhaseRunUpdateStatus,
-  invokeSessionSetProviderSessionId,
-  invokeSessionMarkViewed,
+  invokeWorkflowList,
+  invokeWorkflowUpsert,
+  invokeWorkflowDelete,
+  invokeAgentList,
+  invokeAgentInsert,
+  invokeAgentUpdateStatus,
+  invokeAgentSetProviderSessionId,
+  invokeAgentMarkViewed,
   invokeAgentSetKind,
   invokeAgentSetVerbosity,
-  type PhaseTemplateUpsertArgs,
-} from '../features/phases/phases';
+  type WorkflowUpsertArgs,
+} from '../features/workflows/workflows';
 import {
   detectParallelGroup,
   runParallelBranch,
@@ -606,7 +606,7 @@ export interface AppActions {
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
-  savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
+  savePhaseTemplate(template: WorkflowUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -1634,7 +1634,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
             invokeBudgetRuleList().catch(() => []),
             invokeSkillList(id).catch(() => []),
-            invokePhaseTemplateList(id).catch(() => []),
+            invokeWorkflowList(id).catch(() => []),
           ]);
         // Workspace may have changed under us while these were inflight.
         if (get().currentWorkspaceId !== id) return;
@@ -1852,7 +1852,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const endPhaseRunList = perf('agents:phaseRunList');
       const endRunIds = perf('agents:runIds');
       void Promise.all([
-        invokePhaseRunList(id).finally(() => endPhaseRunList()),
+        invokeAgentList(id).finally(() => endPhaseRunList()),
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
       ])
         .then(([agents, agentRunIds]) => {
@@ -2121,7 +2121,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const allAgents: Agent[] = [];
         for (const step of sortedSteps) {
           const kind = inferAgentKindFromName(step.name);
-          const agent = await invokePhaseRunInsert({
+          const agent = await invokeAgentInsert({
             sessionId: session.id,
             stepId: step.id,
             ordinal: step.ordinal,
@@ -2137,7 +2137,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         firstStepPromptPrefix = sortedSteps[0]!.promptPrefix;
         prespawnedRuns = allAgents;
       } else {
-        const fallback = await invokePhaseRunInsert({
+        const fallback = await invokeAgentInsert({
           sessionId: session.id,
           ordinal: 0,
           name: 'agent 1',
@@ -2149,7 +2149,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else if (firstAgentKind !== undefined) {
       const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
       const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model;
-      const singleAgent = await invokePhaseRunInsert({
+      const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,
         name: agentName,
@@ -2324,7 +2324,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           agentId,
           event,
         });
-        void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
+        void invokeAgentSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
           if (import.meta.env.DEV) {
             const message = formatError(err);
             console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
@@ -2471,7 +2471,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
       const template = templates.find((t) => t.id === activeWorkflowId) ?? null;
       if (template) {
-        const freshRuns = await invokePhaseRunList(sessionId);
+        const freshRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
         }));
@@ -2670,13 +2670,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const reusable = findReusableAgent(runsForSession, phaseDefinition.id);
       let resolved: Agent;
       if (reusable) {
-        resolved = await invokePhaseRunUpdateStatus(reusable.id, {
+        resolved = await invokeAgentUpdateStatus(reusable.id, {
           status: 'running',
           providerRunId: runId,
           startedAt: now(),
         });
       } else {
-        resolved = await invokePhaseRunInsert({
+        resolved = await invokeAgentInsert({
           sessionId,
           stepId: phaseDefinition.id,
           ordinal: phaseDefinition.ordinal,
@@ -2688,7 +2688,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
       }
       resolvedAgentId = resolved.id;
-      const refreshedRuns = await invokePhaseRunList(sessionId);
+      const refreshedRuns = await invokeAgentList(sessionId);
       set((state) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
       }));
@@ -2698,13 +2698,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else if (!phaseDefinition && parallelDispatch === null) {
       const manualAgentId = get().selectedAgentId[sessionId] ?? null;
       if (manualAgentId) {
-        await invokePhaseRunUpdateStatus(manualAgentId, {
+        await invokeAgentUpdateStatus(manualAgentId, {
           status: 'running',
           providerRunId: runId,
           startedAt: now(),
         });
         resolvedAgentId = manualAgentId;
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -2829,7 +2829,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const effects: ParallelBranchEffects = {
         appendTurnEvent: (agentId, sid, ev) => get().appendTurnEvent(agentId, sid, ev),
         refreshPhaseRuns: async (sid) => {
-          const runs = await invokePhaseRunList(sid);
+          const runs = await invokeAgentList(sid);
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [sid]: runs },
           }));
@@ -3179,12 +3179,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
           : { kind: 'succeeded', finishedAt: now() },
       );
       if (resolvedAgentId && !wasCancelled) {
-        await invokePhaseRunUpdateStatus(resolvedAgentId, {
+        await invokeAgentUpdateStatus(resolvedAgentId, {
           status: 'completed',
           outputSummary: assistantText.slice(0, 2000),
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => {
           if (!phaseDefinition) {
             return { sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns } };
@@ -3221,7 +3221,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         // Cancelled turn, agent stays `running`. It was activated and has
         // context; reverting to `pending` would re-surface the "force spawn"
         // dialog. We only block workflow advancement (no auto-advance call).
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -3316,11 +3316,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         at: now(),
       });
       if (resolvedAgentId) {
-        await invokePhaseRunUpdateStatus(resolvedAgentId, {
+        await invokeAgentUpdateStatus(resolvedAgentId, {
           status: 'failed',
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -3561,7 +3561,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Refresh side caches owned by this workspace; sessions hydrate lazily
       // via setCurrentWorkspace when the user actually picks it.
       try {
-        const templates = await invokePhaseTemplateList(reactivated.id);
+        const templates = await invokeWorkflowList(reactivated.id);
         set((state) => ({
           phaseTemplates: { ...state.phaseTemplates, [reactivated.id]: templates },
         }));
@@ -3603,7 +3603,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Seed default workflow library so the new-task wizard always has presets.
     try {
       await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id);
-      const templates = await invokePhaseTemplateList(workspace.id);
+      const templates = await invokeWorkflowList(workspace.id);
       set((state) => ({
         phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates },
       }));
@@ -3832,28 +3832,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadPhaseTemplates: async (workspaceId) => {
-    const templates = await invokePhaseTemplateList(workspaceId);
+    const templates = await invokeWorkflowList(workspaceId);
     set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates } }));
   },
 
   savePhaseTemplate: async (template) => {
-    await invokePhaseTemplateUpsert(template);
-    const templates = await invokePhaseTemplateList(template.workspaceId);
+    await invokeWorkflowUpsert(template);
+    const templates = await invokeWorkflowList(template.workspaceId);
     set((state) => ({
       phaseTemplates: { ...state.phaseTemplates, [template.workspaceId]: templates },
     }));
   },
 
   deleteWorkflow: async (id, workspaceId) => {
-    await invokePhaseTemplateDelete(id);
-    const templates = await invokePhaseTemplateList(workspaceId);
+    await invokeWorkflowDelete(id);
+    const templates = await invokeWorkflowList(workspaceId);
     set((state) => ({
       phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates },
     }));
   },
 
   loadPhaseRunsForSession: async (sessionId) => {
-    const runs = await invokePhaseRunList(sessionId);
+    const runs = await invokeAgentList(sessionId);
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs } }));
   },
 
@@ -3868,7 +3868,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
 
     for (const id of stampAgents) {
-      void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
+      void invokeAgentMarkViewed(id, stampedAt).catch(() => undefined);
     }
 
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
@@ -3990,7 +3990,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ),
       },
     }));
-    void invokeSessionMarkViewed(agentId, stampedAt).catch(() => undefined);
+    void invokeAgentMarkViewed(agentId, stampedAt).catch(() => undefined);
     void get().refreshUnreadWorkspaces();
   },
 
@@ -4024,7 +4024,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const workspaceVerbositySeed =
       state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
-    const inserted = await invokePhaseRunInsert({
+    const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
       ordinal: nextOrdinal,
@@ -4033,7 +4033,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     });
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       selectedAgentId: { ...s.selectedAgentId, [sessionId]: inserted.id },
@@ -4092,7 +4092,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const trimmed = name.trim();
     if (trimmed.length === 0) return;
     await tauriDatabase.execute('UPDATE agents SET name = ? WHERE id = ?', [trimmed, agentId]);
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
     }));
@@ -4160,7 +4160,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => {
       // Clear selection, never auto-pick a sibling. Picking a 'fallback'
       // dumps the user into a chat they didn't ask for; the empty-state
@@ -4499,7 +4499,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       const [worktreeRows, runs] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
-        invokePhaseRunList(sessionId),
+        invokeAgentList(sessionId),
       ]);
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };
@@ -4697,7 +4697,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     for (let i = 0; i < sortedSteps.length; i += 1) {
       const step = sortedSteps[i]!;
       const kind = inferAgentKindFromName(step.name);
-      const agent = await invokePhaseRunInsert({
+      const agent = await invokeAgentInsert({
         sessionId,
         stepId: step.id,
         ordinal: baseOrdinal + 1 + i,
