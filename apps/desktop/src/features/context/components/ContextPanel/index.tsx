@@ -644,8 +644,8 @@ function FilesTabContent({
   if (isLoading) {
     return (
       <div role="status" aria-label="loading files touched" className="flex flex-col gap-2 py-1">
-        <div className="h-3 w-24 animate-pulse rounded bg-muted/70" />
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/70" />
+        <div className="h-3 w-24 rounded bg-muted/50" />
+        <div className="h-9 w-full rounded-lg bg-muted/50" />
       </div>
     );
   }
@@ -858,9 +858,9 @@ function CiBadge({ state }: { state: CiState }) {
 function SlotRowSkeleton({ slotKey }: { slotKey: SlotKey }) {
   return (
     <li role="status" aria-label={`loading ${slotKey}`} className="flex flex-col gap-2">
-      <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
-      <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
-      <div className="h-3 w-3/4 animate-pulse rounded bg-muted/70" />
+      <div className="h-2.5 w-20 rounded bg-muted/50" />
+      <div className="h-3 w-full rounded bg-muted/50" />
+      <div className="h-3 w-3/4 rounded bg-muted/50" />
     </li>
   );
 }
@@ -868,9 +868,9 @@ function SlotRowSkeleton({ slotKey }: { slotKey: SlotKey }) {
 function PlansSkeleton() {
   return (
     <div role="status" aria-label="loading plans" className="flex flex-col gap-2 pb-2">
-      <div className="h-2.5 w-16 animate-pulse rounded bg-muted/70" />
-      <div className="h-3 w-full animate-pulse rounded bg-muted/70" />
-      <div className="h-3 w-2/3 animate-pulse rounded bg-muted/70" />
+      <div className="h-2.5 w-16 rounded bg-muted/50" />
+      <div className="h-3 w-full rounded bg-muted/50" />
+      <div className="h-3 w-2/3 rounded bg-muted/50" />
     </div>
   );
 }
