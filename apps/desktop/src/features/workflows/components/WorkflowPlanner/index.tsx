@@ -33,7 +33,7 @@ interface StepOverrides {
   readonly verbosity: VerbosityLevel;
 }
 
-interface PlannerWidgetProps {
+interface WorkflowPlannerProps {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialTheme: string;
@@ -43,13 +43,13 @@ interface PlannerWidgetProps {
 
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
-export function PlannerWidget({
+export function WorkflowPlanner({
   workspaceId,
   providerId,
   initialTheme,
   onWorkflowReady,
   onPlanChange,
-}: PlannerWidgetProps) {
+}: WorkflowPlannerProps) {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const [theme, setTheme] = useState(initialTheme);
   const [busy, setBusy] = useState(false);
@@ -153,12 +153,17 @@ export function PlannerWidget({
 
   return (
     <div className="flex flex-col gap-2">
+      <p className="px-1 text-2xs leading-relaxed text-muted-foreground">
+        Generates a reusable workflow template (sequence of agent steps) from a theme. Workflows
+        live at the workspace level. Plans are session-scoped artifacts produced by planning agents
+        during a run.
+      </p>
       <div className="rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
         <div className="relative">
           <Textarea
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
-            placeholder="describe the theme: e.g. migrate auth to oauth, add dark mode toggle…"
+            placeholder="describe the theme (e.g. migrate auth to oauth, add dark mode toggle)…"
             autoGrow
             minRows={5}
             maxRows={10}

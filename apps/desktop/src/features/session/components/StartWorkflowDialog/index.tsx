@@ -3,7 +3,7 @@ import { Button, Dialog, cn } from '@goodboy/ui';
 import { Check, Layers, Sparkles, AlertTriangle } from 'lucide-react';
 import type { ProviderId, Session, Workflow, WorkflowId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { PlannerWidget } from '../../../plans/components/PlannerWidget';
+import { WorkflowPlanner } from '../../../workflows/components/WorkflowPlanner';
 import { shortModel } from '../../agent-row-format';
 import { AGENT_KIND_PALETTE, inferAgentKindFromName } from '../../agent-kind';
 import { formatError } from '../../../../shared/lib/errors';
@@ -138,7 +138,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
             />
           ) : (
             <CustomIntro>
-              <PlannerWidget
+              <WorkflowPlanner
                 workspaceId={session.workspaceId}
                 providerId={providerId}
                 initialTheme={session.goal}
