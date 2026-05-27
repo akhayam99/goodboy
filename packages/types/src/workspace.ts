@@ -103,10 +103,6 @@ export type LinearIntegrationConfig = Readonly<{
   viewerUserId: string;
   /** Display name of the connected user. Cached for UI. */
   viewerName: string;
-  /** Optional team filter. When omitted, issues come from all teams. */
-  teamId?: string;
-  /** Display name of the team. Cached for UI. */
-  teamName?: string;
 }>;
 
 export type WorkspaceIntegration = Readonly<{

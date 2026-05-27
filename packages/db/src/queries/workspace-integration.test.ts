@@ -72,9 +72,7 @@ describe('workspace_integrations queries', () => {
       config: {
         workspaceUrlKey: 'serenis',
         viewerUserId: 'u-abc',
-        viewerName: 'Amin',
-        teamId: 't-1',
-        teamName: 'Eng',
+        viewerName: 'Amin Khayam',
       },
       credentialKey: 'rotated-key',
       updatedAt: new Date('2026-05-22T10:00:00Z').toISOString() as IsoDateTime,
@@ -83,7 +81,7 @@ describe('workspace_integrations queries', () => {
 
     const got = await getWorkspaceIntegration(db, workspaceId, 'linear');
     expect(got!.id).toBe(initial.id);
-    expect(got!.config.teamId).toBe('t-1');
+    expect(got!.config.viewerName).toBe('Amin Khayam');
     expect(got!.credentialKey).toBe('rotated-key');
     expect(got!.createdAt).toBe(initial.createdAt);
   });
