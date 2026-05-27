@@ -6,22 +6,24 @@ export function AgentsDeepDive() {
     <Section
       id="agents"
       eyebrow="Agents"
-      title={<>Every agent is a different kind of dog.</>}
+      title={<>Every agent has a role. Scoped, defaulted, swappable.</>}
       body={
         <>
           <p>
-            Goodboy ships eight role profiles: scout, planner, implementer, debugger, tester,
-            reviewer, docs, plus a generic catch-all. Each carries a default model, a default
-            effort, a default verbosity, and a system prompt that scopes what it is allowed to do.
+            Seven roles ship out of the box: <strong>scout</strong> reads and searches without
+            editing, <strong>planner</strong> drafts steps and risks, <strong>implementer</strong>{' '}
+            writes code, <strong>debugger</strong> reproduces and fixes, <strong>tester</strong>{' '}
+            writes coverage, <strong>reviewer</strong> reads diffs, <strong>docs</strong> writes
+            documentation. A generic agent catches anything else.
           </p>
           <p>
-            A small breed marker travels with the role. You see the same dog in the chat header, the
-            sidebar chip, and the @ picker when you swap agents mid-session. Custom-named agents
-            stay legible, the dog answers the "who am I talking to" question at a glance.
+            Each role carries its own default model, default effort, and a system prompt that scopes
+            what it is allowed to do. A scout asked to refactor will hand off to an implementer
+            instead of editing the file.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
-            Spawn freely. Each agent inherits the session brief on the right (goal, decisions, open
-            questions) so the next one starts already knowing what the last one was doing.
+            Spawn freely. Each new agent inherits the session brief on the right (goal, decisions,
+            open questions) so the next one starts already knowing what the last one was doing.
           </p>
         </>
       }

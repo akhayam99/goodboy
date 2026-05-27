@@ -5,23 +5,24 @@ export function LinearDeepDive() {
   return (
     <Section
       id="linear"
-      eyebrow="Linear"
+      eyebrow="Linear (optional)"
       reverse
-      title={<>Sessions start from the ticket, not the empty prompt.</>}
+      title={<>Start sessions from a ticket. Or just write your goal.</>}
       body={
         <>
           <p>
-            Connect a Linear workspace once and the new-session dialog grows an issue picker. Choose
-            an issue assigned to you and the goal field auto-fills from its title and description.
-            The branch slug derives from the ticket identifier.
+            Sessions always start the same way: open the dialog, write what you want to do, pick a
+            branch. If you connect a Linear workspace, the dialog grows an issue picker so you can
+            skip the goal field entirely: pick a ticket assigned to you and the title, description,
+            and identifier auto-fill the session.
           </p>
           <p>
-            The Linear chip rides with the session everywhere it goes: in the rail, in the detail
-            header, in the session footer. One click opens the original ticket in Linear so you
-            never need a second tab to know where the work belongs.
+            The Linear chip then rides with the session everywhere: in the rail, in the detail
+            header, in the session footer. One click jumps back to the original ticket. If you never
+            connect Linear, the dialog stays exactly as before. No nag, no fallback prompt.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
-            Your OAuth token, stored locally. Issues fetched on demand, not synced. No webhooks to
+            Your OAuth token, stored locally. Issues fetched on demand, never synced. No webhooks to
             configure on the Linear side.
           </p>
         </>

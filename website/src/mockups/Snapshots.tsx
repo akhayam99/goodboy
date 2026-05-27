@@ -18,7 +18,7 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   IconArrowDown,
   IconArrowUp,
@@ -469,7 +469,7 @@ export function WorkflowSnapshot() {
         <button
           type="button"
           className="group mt-3 flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
-          aria-label="Start reviewer (claude-sonnet-4-6, medium effort)"
+          aria-label="Start reviewer (claude-sonnet-4-5, medium effort)"
         >
           <span className="flex items-center gap-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden>
@@ -486,7 +486,7 @@ export function WorkflowSnapshot() {
             <span className="font-semibold">Review &amp; open PR</span>
             <KindBadge kind="review" />
           </span>
-          <span className="text-[10px] font-normal opacity-60">sonnet-4.6</span>
+          <span className="text-[10px] font-normal opacity-60">sonnet-4-5</span>
         </button>
       </div>
     </SnapshotFrame>
@@ -526,7 +526,7 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
       </div>
       {active ? (
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Running with <span className="font-mono text-foreground/80">claude-opus-4.5</span>{' '}
+          Running with <span className="font-mono text-foreground/80">claude-opus-4-7</span>{' '}
           &middot; medium effort &middot; 2 turns
         </p>
       ) : null}
@@ -536,13 +536,20 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
 
 /* ---------------------------- Context --------------------------------- */
 
-const TABS = [
-  { key: 'context', label: 'Context', icon: IconTarget, badge: null, active: true },
-  { key: 'plans', label: 'Plans', icon: IconClipboard, badge: 2, active: false },
-  { key: 'files', label: 'Files', icon: IconFolder, badge: 3, active: false },
-  { key: 'github', label: 'GitHub', icon: IconPullRequest, badge: null, active: false },
-  { key: 'terminal', label: 'Term', icon: IconTerminal, badge: null, active: false },
-] as const;
+type ContextTabKey = 'context' | 'plans' | 'files' | 'github' | 'terminal';
+
+const CTX_TABS: ReadonlyArray<{
+  readonly key: ContextTabKey;
+  readonly label: string;
+  readonly icon: typeof IconTarget;
+  readonly badge: number | null;
+}> = [
+  { key: 'context', label: 'Context', icon: IconTarget, badge: null },
+  { key: 'plans', label: 'Plans', icon: IconClipboard, badge: 2 },
+  { key: 'files', label: 'Files', icon: IconFolder, badge: 3 },
+  { key: 'github', label: 'GitHub', icon: IconPullRequest, badge: null },
+  { key: 'terminal', label: 'Term', icon: IconTerminal, badge: null },
+];
 
 const SLOTS = [
   {
@@ -565,29 +572,196 @@ const SLOTS = [
   },
 ];
 
+/* Interactive context snapshot. Tabs are real buttons: click to switch panel.
+   Each tab renders a faithful slice of the real ContextPanel surfaces. The
+   sticky open-questions footer stays put across tabs, like the product. */
 export function ContextSnapshot() {
+  const [tab, setTab] = useState<ContextTabKey>('context');
+
   return (
-    <SnapshotFrame className="max-w-[420px]">
-      <div className="flex h-8 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
-        {TABS.map(({ key, ...rest }) => (
-          <TabButton key={key} {...rest} />
+    <SnapshotFrame className="max-w-[460px]">
+      <div className="flex h-9 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
+        {CTX_TABS.map((t) => (
+          <TabButton
+            key={t.key}
+            label={t.label}
+            icon={t.icon}
+            badge={t.badge}
+            active={tab === t.key}
+            onClick={() => setTab(t.key)}
+          />
         ))}
       </div>
-      <div className="flex flex-col gap-2.5 p-3">
-        {SLOTS.map(({ key, ...rest }) => (
-          <SlotCard key={key} {...rest} />
-        ))}
+
+      <div className="min-h-[260px]">
+        {tab === 'context' ? <ContextTabBody /> : null}
+        {tab === 'plans' ? <PlansTabBody /> : null}
+        {tab === 'files' ? <FilesTabBody /> : null}
+        {tab === 'github' ? <GithubTabBody /> : null}
+        {tab === 'terminal' ? <TerminalTabBody /> : null}
       </div>
-      <div className="flex flex-col gap-2 border-t border-border-soft bg-subtle/30 px-3 py-2.5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.10em] text-warning">
-          Open questions
-        </p>
-        <p className="flex items-start gap-1.5 text-[11.5px] leading-relaxed text-foreground/85">
-          <IconHelp size={11} className="mt-0.5 shrink-0 text-warning" />
-          Should reverts be reachable from the UI in v0.0.8, or wait for the audit page in v0.0.9?
-        </p>
-      </div>
+
+      <button
+        type="button"
+        onClick={() => setTab('context')}
+        className="flex w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning transition-colors hover:bg-warning/10"
+      >
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <IconHelp size={11} />1 open question
+        </span>
+        <span aria-hidden className="opacity-60">
+          →
+        </span>
+      </button>
     </SnapshotFrame>
+  );
+}
+
+function ContextTabBody() {
+  return (
+    <div className="flex flex-col gap-2 p-3">
+      {SLOTS.map(({ key, ...rest }) => (
+        <SlotCard key={key} {...rest} />
+      ))}
+    </div>
+  );
+}
+
+const PLANS_DATA = [
+  {
+    title: 'context_slot_history rollout',
+    status: 'active' as const,
+    body: '1. Migration 038 (trigger + retention)\n2. Hook into db queries\n3. Surface in UI as a tab',
+  },
+  {
+    title: 'audit-log surfacing v0.0.9',
+    status: 'consumed' as const,
+    body: 'consumed by imple-restructure · spawned audit page agent',
+  },
+];
+
+function PlansTabBody() {
+  return (
+    <div className="flex flex-col gap-2 p-3">
+      {PLANS_DATA.map((plan) => (
+        <div key={plan.title} className="rounded-md border border-border-soft bg-subtle p-2.5">
+          <div className="flex items-center gap-2 pb-1.5">
+            <IconClipboard size={11} className="text-muted-foreground" />
+            <span className="text-[11.5px] font-semibold text-foreground">{plan.title}</span>
+            <span
+              className={[
+                'ml-auto rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+                plan.status === 'active' ? 'bg-warning/15 text-warning' : 'bg-info/10 text-info',
+              ].join(' ')}
+            >
+              {plan.status}
+            </span>
+          </div>
+          <pre className="whitespace-pre-wrap font-mono text-[10.5px] leading-relaxed text-foreground/75">
+            {plan.body}
+          </pre>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const FILES_DATA = [
+  { path: 'packages/db/migrations/038_history.sql', adds: 42, dels: 0, edit: 'created' as const },
+  { path: 'packages/db/queries/slot.ts', adds: 18, dels: 4, edit: 'modified' as const },
+  {
+    path: 'apps/desktop/src/features/context/openQuestionsGate.ts',
+    adds: 3,
+    dels: 1,
+    edit: 'modified' as const,
+  },
+];
+
+function FilesTabBody() {
+  return (
+    <ul className="flex flex-col divide-y divide-border-soft/40">
+      {FILES_DATA.map((f) => (
+        <li key={f.path} className="flex items-center gap-2 px-3 py-2 text-[11px]">
+          <span
+            className={[
+              'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+              f.edit === 'created' ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
+            ].join(' ')}
+          >
+            {f.edit}
+          </span>
+          <code className="min-w-0 flex-1 truncate font-mono text-foreground/85">{f.path}</code>
+          <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-success">
+            <IconArrowUp size={9} />
+            {f.adds}
+          </span>
+          {f.dels > 0 ? (
+            <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-danger">
+              <IconArrowDown size={9} />
+              {f.dels}
+            </span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function GithubTabBody() {
+  return (
+    <div className="flex flex-col gap-2 p-3">
+      <div className="rounded-md border border-border-soft bg-subtle p-2.5">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10.5px] text-muted-foreground">#617</span>
+          <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
+            feat(core): context_slot_history with rollback
+          </span>
+          <span className="chip chip-success">open</span>
+        </div>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <IconBranch size={9} />
+            <span className="truncate">ak/context-slot-history</span>
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-success">
+            <IconArrowUp size={9} />
+            142
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-danger">
+            <IconArrowDown size={9} />
+            18
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-success" />5 / 5 checks
+          </span>
+        </div>
+      </div>
+      <p className="text-[10px] text-muted-foreground/60">last sync 12s ago · click to refresh</p>
+    </div>
+  );
+}
+
+const TERMINAL_LINES = [
+  { p: '$', t: 'pnpm typecheck', tone: 'cmd' as const },
+  { p: '·', t: '@goodboy/types:typecheck ✓', tone: 'ok' as const },
+  { p: '·', t: '@goodboy/db:typecheck ✓', tone: 'ok' as const },
+  { p: '·', t: '@goodboy/core:typecheck ✓', tone: 'ok' as const },
+  { p: '·', t: '@goodboy/desktop:typecheck ✓', tone: 'ok' as const },
+  { p: '$', t: 'pnpm --filter @goodboy/desktop test', tone: 'cmd' as const },
+  { p: '·', t: 'Tests  523 passed (523)', tone: 'ok' as const },
+];
+
+function TerminalTabBody() {
+  return (
+    <div className="flex flex-col gap-0.5 px-3 py-3 font-mono text-[10.5px] leading-relaxed">
+      {TERMINAL_LINES.map((line, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <span className="shrink-0 text-muted-foreground/60">{line.p}</span>
+          <span className={line.tone === 'cmd' ? 'text-foreground' : 'text-success'}>{line.t}</span>
+        </div>
+      ))}
+      <span aria-hidden className="mt-1 inline-block h-3 w-1.5 animate-pulse bg-primary/60" />
+    </div>
   );
 }
 
@@ -596,17 +770,20 @@ function TabButton({
   icon: Icon,
   badge,
   active,
+  onClick,
 }: {
   label: string;
   icon: typeof IconTarget;
   badge: number | null;
   active: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={[
-        'flex items-center gap-1 rounded px-1.5 py-1 text-[10.5px] font-medium transition-colors',
+        'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
         active
           ? 'bg-muted text-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -699,6 +876,112 @@ export function PRSnapshot() {
   );
 }
 
+/* ---------------------------- PR review with resolver ---------------- */
+
+/* Mirror of features/github/components/Card review-comment block. Each line
+   comment exposes a "resolve" button: clicking spawns a resolver agent in
+   the session worktree, which addresses the comment with the smallest
+   reasonable diff, commits locally, and posts back. The chip on the
+   comment flips to "resolved" once the agent's commit lands. */
+const REVIEW_COMMENTS = [
+  {
+    author: 'sara.h',
+    avatar: 'oklch(0.72 0.16 150)',
+    file: 'packages/db/queries/slot.ts',
+    line: 42,
+    body: 'Use `transaction()` here so the trigger and the audit insert stay atomic.',
+    status: 'open' as const,
+  },
+  {
+    author: 'matteo.r',
+    avatar: 'oklch(0.74 0.15 55)',
+    file: 'migrations/038_history.sql',
+    line: 14,
+    body: 'Composite index on (slot_id, snapshot_at DESC)? Reverts scan a lot of history.',
+    status: 'open' as const,
+  },
+  {
+    author: 'you',
+    avatar: 'oklch(0.78 0.13 200)',
+    file: 'apps/desktop/src/features/context/openQuestionsGate.ts',
+    line: 25,
+    body: 'rename the comment, the function no longer talks about "phases".',
+    status: 'resolved' as const,
+    resolvedBy: 'resolver-c3b7',
+  },
+];
+
+export function PRReviewSnapshot() {
+  return (
+    <SnapshotFrame className="max-w-[520px]">
+      <FrameHeader
+        label="PR #617 · review"
+        right={
+          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground/70">
+            <span className="size-1.5 rounded-full bg-warning" />2 unresolved
+          </span>
+        }
+      />
+      <ul className="flex flex-col divide-y divide-border-soft/40">
+        {REVIEW_COMMENTS.map((c, i) => (
+          <li key={i} className="px-3 py-2.5">
+            <ReviewCommentRow comment={c} />
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[10.5px]">
+        <span className="inline-flex items-center gap-1.5 text-warning">
+          <IconSparkles size={11} />
+          Resolve all 2 with one agent batch
+        </span>
+        <span aria-hidden className="opacity-60 text-warning">
+          →
+        </span>
+      </div>
+    </SnapshotFrame>
+  );
+}
+
+function ReviewCommentRow({ comment }: { comment: (typeof REVIEW_COMMENTS)[number] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <span
+          aria-hidden
+          className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
+          style={{ background: comment.avatar }}
+        >
+          {comment.author[0]!.toUpperCase()}
+        </span>
+        <span className="font-medium text-foreground/80">{comment.author}</span>
+        <span>on</span>
+        <code className="font-mono text-primary">
+          {comment.file.split('/').pop()}:{comment.line}
+        </code>
+      </div>
+      <p className="text-[11.5px] leading-relaxed text-foreground/85">{comment.body}</p>
+      <div className="flex items-center gap-2">
+        {comment.status === 'resolved' ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
+            <IconCheck size={10} />
+            resolved by {comment.resolvedBy}
+          </span>
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+              <IconSparkles size={10} />
+              resolve
+            </span>
+            <span className="text-[10px] text-muted-foreground/60">
+              spawns a resolver agent on this comment
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PRRow({
   num,
   title,
@@ -779,14 +1062,14 @@ const TURNS = [
   },
   {
     who: 'Plan',
-    model: 'claude-sonnet-4.6',
+    model: 'claude-sonnet-4-5',
     kind: 'plan' as const,
     body: '4 steps drafted. Trigger on UPDATE.',
     cost: 0.071,
   },
   {
     who: 'Implement',
-    model: 'claude-opus-4.5',
+    model: 'claude-opus-4-7',
     kind: 'imple' as const,
     body: 'Migration 038 applied. Trigger fires.',
     cost: 0.142,
@@ -1243,6 +1526,391 @@ function StackStepRow({
       <KindBadge kind={step.kind} />
       <span className="min-w-0 flex-1 truncate font-medium text-foreground/90">{step.name}</span>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">{step.model}</span>
+    </div>
+  );
+}
+
+/* ---------------------------- App overview --------------------------- */
+
+/* One large composite snapshot. Three columns laid out exactly as the real
+   desktop AppShell does: workspace sidebar on the left (rail + detail), chat
+   column in the middle (breadcrumb + transcript snippet + composer), context
+   panel on the right (tab strip + slots). Read as the answer to "what does
+   the running app look like" without forcing a screenshot. */
+export function AppOverviewSnapshot() {
+  return (
+    <SnapshotFrame className="w-full">
+      {/* macOS-style chrome bar */}
+      <div className="flex h-7 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.22_0.006_255)] px-3">
+        <span className="h-2.5 w-2.5 rounded-full bg-danger/70" aria-hidden />
+        <span className="h-2.5 w-2.5 rounded-full bg-warning/70" aria-hidden />
+        <span className="h-2.5 w-2.5 rounded-full bg-success/70" aria-hidden />
+        <span className="ml-auto text-[10px] text-muted-foreground/60">Goodboy</span>
+      </div>
+      <div className="grid h-[480px] grid-cols-[260px_minmax(0,1fr)_280px]">
+        {/* Workspace + sessions sidebar */}
+        <aside className="flex min-h-0 flex-col border-r border-border-soft bg-[oklch(0.24_0.006_255)]">
+          <OverviewSidebarTop />
+          <OverviewSessionsRail />
+          <OverviewDetailPanel />
+        </aside>
+
+        {/* Chat column */}
+        <section className="flex min-h-0 flex-col">
+          <OverviewBreadcrumb />
+          <OverviewTranscript />
+          <OverviewComposer />
+        </section>
+
+        {/* Context panel */}
+        <aside className="flex min-h-0 flex-col border-l border-border-soft bg-[oklch(0.24_0.006_255)]">
+          <OverviewContextTabs />
+          <OverviewContextBody />
+        </aside>
+      </div>
+    </SnapshotFrame>
+  );
+}
+
+function OverviewSidebarTop() {
+  return (
+    <div className="flex shrink-0 items-center gap-1.5 border-b border-border-soft px-2.5 py-2">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+        Workspaces
+      </span>
+      <span className="ml-auto inline-flex items-center gap-1 rounded border border-border bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+        app-web
+      </span>
+      <span className="inline-flex items-center gap-1 rounded border border-border-soft bg-subtle px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+        goodboy
+      </span>
+    </div>
+  );
+}
+
+const OVERVIEW_SESSIONS: ReadonlyArray<{
+  readonly id: string;
+  readonly kind: SessionKind;
+  readonly goal: string;
+  readonly cost: number;
+  readonly state: 'active' | 'running' | 'pending' | 'idle';
+  readonly linearId?: string;
+}> = [
+  {
+    id: 'a',
+    kind: 'plan',
+    goal: 'Audit reversions on context slots',
+    cost: 0.41,
+    state: 'active',
+    linearId: 'GRW-628',
+  },
+  {
+    id: 'b',
+    kind: 'imple',
+    goal: 'Add history table migration',
+    cost: 0.18,
+    state: 'running',
+  },
+  {
+    id: 'c',
+    kind: 'docs',
+    goal: 'Document the history API',
+    cost: 0.02,
+    state: 'idle',
+    linearId: 'GRW-631',
+  },
+  {
+    id: 'd',
+    kind: 'scout',
+    goal: 'Map upsertSlot callsites',
+    cost: 0.03,
+    state: 'idle',
+  },
+];
+
+function OverviewSessionsRail() {
+  return (
+    <div className="flex shrink-0 flex-col gap-1 border-b border-border-soft p-2">
+      <div className="flex items-center justify-between px-1 pb-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          Sessions
+        </span>
+        <span className="font-mono text-[9px] text-muted-foreground/60">
+          {OVERVIEW_SESSIONS.length}
+        </span>
+      </div>
+      {OVERVIEW_SESSIONS.map((session) => (
+        <OverviewSessionRow key={session.id} session={session} />
+      ))}
+    </div>
+  );
+}
+
+function OverviewSessionRow({ session }: { session: (typeof OVERVIEW_SESSIONS)[number] }) {
+  const isActive = session.state === 'active';
+  const isRunning = session.state === 'running';
+  return (
+    <div
+      className={[
+        'flex items-center gap-2 rounded-md border px-2 py-1.5 text-left',
+        isActive
+          ? 'border-border bg-elevated'
+          : isRunning
+            ? 'border-info/40 bg-muted/40'
+            : 'border-transparent bg-muted/30',
+      ].join(' ')}
+    >
+      <AgentAvatar kind={KIND[session.kind].kind} size={14} />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[11px] font-medium text-foreground">{session.goal}</span>
+        <span className="flex items-center gap-1.5 text-[9.5px] text-muted-foreground/70">
+          {session.linearId ? (
+            <span className="inline-flex items-center rounded-sm border border-[#5e6ad2]/30 bg-[#5e6ad2]/10 px-1 py-px font-mono text-[8.5px] font-medium text-[#5e6ad2]">
+              {session.linearId}
+            </span>
+          ) : null}
+          <span className="font-mono tabular-nums">${session.cost.toFixed(2)}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function OverviewDetailPanel() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-2 border-b border-border-soft px-3 py-2">
+        <span className="text-warning" title="in progress">
+          <ConstructionIcon size={12} />
+        </span>
+        <span className="line-clamp-1 flex-1 text-[11px] font-semibold text-foreground">
+          Audit reversions on context slots
+        </span>
+        <span className="text-muted-foreground/60" title="session actions">
+          <DotsVerticalIcon size={12} />
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col gap-1 px-2 py-1.5">
+        <OverviewAgentRow num={1} kind="scout" name="scout-callsites" age="12m" cost="$0.04" />
+        <OverviewAgentRow num={2} kind="plan" name="plan-completion" age="4m" cost="$0.12" />
+        <OverviewAgentRow
+          num={3}
+          kind="imple"
+          name="imple-restructure"
+          age="42s"
+          cost="$0.18"
+          selected
+          running
+        />
+      </div>
+      <div className="flex items-center gap-2 border-t border-border-soft px-2.5 py-2">
+        <span className="inline-flex min-w-0 items-center gap-1 truncate rounded-md border border-border-soft bg-muted/30 px-1.5 py-1 font-mono text-[9.5px] text-foreground/80">
+          <IconBranch size={9} className="shrink-0 text-muted-foreground" />
+          <span className="truncate">ak/context-slot-history</span>
+        </span>
+        <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-1.5 py-1 font-mono text-[9.5px] tabular-nums text-success">
+          $0.34
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function OverviewAgentRow({
+  num,
+  kind,
+  name,
+  age,
+  cost,
+  selected,
+  running,
+}: {
+  num: number;
+  kind: keyof typeof KIND;
+  name: string;
+  age: string;
+  cost: string;
+  selected?: boolean;
+  running?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'flex items-center gap-1.5 rounded border px-1.5 py-1',
+        selected
+          ? running
+            ? 'spin-border-info border-transparent bg-elevated'
+            : 'border-border bg-elevated'
+          : 'border-transparent bg-muted/30',
+      ].join(' ')}
+    >
+      <span className="w-3 shrink-0 text-right text-[9px] tabular-nums text-muted-foreground/60">
+        {num}.
+      </span>
+      <KindBadge kind={kind} />
+      <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground">{name}</span>
+      <span className="shrink-0 font-mono text-[9px] tabular-nums text-muted-foreground/70">
+        {cost} · {age}
+      </span>
+    </div>
+  );
+}
+
+function OverviewBreadcrumb() {
+  return (
+    <div className="flex h-8 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[10.5px]">
+      <span className="font-medium text-muted-foreground">app-web</span>
+      <Chevron />
+      <span className="font-medium text-muted-foreground">Audit reversions on context slots</span>
+      <Chevron />
+      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-medium text-primary">
+        <IconBranch size={8} />
+        <span>Refactor strategy</span>
+        <span aria-hidden className="opacity-60">
+          ·
+        </span>
+        <span className="font-mono tabular-nums">2/3</span>
+      </span>
+      <Chevron />
+      <span className="font-medium text-foreground/90">imple-restructure</span>
+      <div className="flex-1" />
+      <AgentAvatar kind="implementer" size={18} />
+    </div>
+  );
+}
+
+const OVERVIEW_TURNS = [
+  {
+    role: 'user' as const,
+    text: 'Migration looks good. Wire the trigger so reverts are auditable.',
+    cost: null,
+  },
+  {
+    role: 'agent' as const,
+    kind: 'implementer' as AgentKind,
+    text: 'Trigger `cs_history_after_update` added on context_slots(UPDATE). 90-day retention via nightly prune. Tests added in queries.test.ts.',
+    cost: '~$0.142',
+    edits: ['migrations/038_history.sql', 'packages/db/queries/slot.ts'],
+  },
+];
+
+function OverviewTranscript() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-5 py-4">
+      {OVERVIEW_TURNS.map((turn, i) => (
+        <OverviewTurnBlock key={i} turn={turn} />
+      ))}
+    </div>
+  );
+}
+
+function OverviewTurnBlock({ turn }: { turn: (typeof OVERVIEW_TURNS)[number] }) {
+  if (turn.role === 'user') {
+    return (
+      <div className="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-primary/20 px-3 py-2 text-[11.5px] leading-relaxed text-foreground/90">
+        {turn.text}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <AgentAvatar kind={turn.kind} size={12} />
+        <span className="font-medium text-foreground/80">imple-restructure</span>
+        <span className="opacity-60">·</span>
+        <span className="font-mono">sonnet-4-5</span>
+      </div>
+      <p className="text-[12px] leading-relaxed text-foreground/85">{turn.text}</p>
+      {turn.edits ? (
+        <div className="flex flex-wrap gap-1.5">
+          {turn.edits.map((path) => (
+            <span
+              key={path}
+              className="inline-flex items-center gap-1 rounded-md border border-info/20 bg-info/5 px-1.5 py-0.5 font-mono text-[10px] text-info/80"
+            >
+              <span className="text-[8px] uppercase tracking-wide text-info/60">edit</span>
+              <span>{path}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <p className="text-[10px] text-muted-foreground/70">4.5k in / 1.1k out · {turn.cost}</p>
+    </div>
+  );
+}
+
+function OverviewComposer() {
+  return (
+    <div className="shrink-0 border-t border-border-soft p-3">
+      <div className="rounded-xl border border-border-soft bg-[oklch(0.22_0.006_255)] px-3 py-2.5">
+        <p className="text-[11px] text-muted-foreground/60">
+          Message Claude · $ scripts · ~ workflows · @ agents
+        </p>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-[9.5px] font-medium text-danger">
+            <span className="size-1.5 rounded-full bg-danger" aria-hidden /> Bypass
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/80">
+            Claude · Opus 4.7 · Medium · Normal
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const OVERVIEW_TABS = ['Context', 'Plans', 'Files', 'GitHub', 'Term'] as const;
+
+function OverviewContextTabs() {
+  return (
+    <div className="flex h-8 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
+      {OVERVIEW_TABS.map((tab, i) => (
+        <span
+          key={tab}
+          className={[
+            'rounded px-1.5 py-1 text-[10px] font-medium',
+            i === 0 ? 'bg-muted text-foreground' : 'text-muted-foreground/70',
+          ].join(' ')}
+        >
+          {tab}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const OVERVIEW_SLOTS = [
+  {
+    label: 'Goal',
+    body: 'Add history table for context_slots so reversions are auditable. Preserve current write path.',
+  },
+  {
+    label: 'Decisions',
+    body: 'Trigger on UPDATE. Retain 90 days. Prune nightly.',
+  },
+  {
+    label: 'Last output',
+    body: 'Migration applied. Trigger fires. Tests green.',
+  },
+];
+
+function OverviewContextBody() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-3">
+      {OVERVIEW_SLOTS.map((slot) => (
+        <div key={slot.label} className="rounded-md border border-border-soft bg-subtle p-2">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+            {slot.label}
+          </p>
+          <p className="mt-0.5 line-clamp-3 text-[10.5px] leading-relaxed text-foreground/85">
+            {slot.body}
+          </p>
+        </div>
+      ))}
+      <div className="mt-auto flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2 py-1.5 text-[10px] text-warning">
+        <IconHelp size={10} />
+        <span>1 open question</span>
+      </div>
     </div>
   );
 }
