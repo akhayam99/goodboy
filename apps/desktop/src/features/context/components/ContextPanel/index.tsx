@@ -240,10 +240,6 @@ export function ContextPanel({
         className={cn(
           'flex h-full min-h-0 flex-col overflow-hidden rounded-[6px]',
           collapsed && 'hidden',
-          // Spin-info border ring while the summarizer is running — same
-          // visual language as a running session card. Replaces the per-slot
-          // skeletons: content stays readable, click-to-edit is frozen below.
-          summarizer.status === 'running' && 'spin-border spin-border-info',
         )}
       >
         <div className="shrink-0 flex flex-col gap-0 px-3 pt-3 pb-0">
@@ -1358,11 +1354,20 @@ function SummarizerBadge({
     </span>
   );
 
-  // Running state: no chip. The spin-border around the whole context panel
-  // already says "summarizing"; the cost pill stays put so the eye sees a
-  // single stable number that will then animate when the run completes.
+  // Running state: small spinner glyph next to the cost pill. Replaces the
+  // earlier full-panel spin-border, which forced a 400×800px composite layer
+  // with a conic-gradient + mask-composite animation — the heaviest CSS shape
+  // possible on WKWebView. With 5 keep-alive ContextPanels each potentially
+  // wearing one, the GPU compositor stalled for 200-300ms during cursor
+  // movement (verified via Web Inspector perf trace). A 10px Loader2 is one
+  // tiny layer, negligible cost.
   if (status === 'running') {
-    return costPill;
+    return (
+      <span className="flex items-center gap-1">
+        <Loader2 size={10} aria-hidden className="animate-spin text-info" />
+        {costPill}
+      </span>
+    );
   }
 
   if (status === 'error') {
