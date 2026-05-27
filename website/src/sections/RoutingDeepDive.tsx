@@ -6,7 +6,6 @@ export function RoutingDeepDive() {
     <Section
       id="routing"
       eyebrow="Routing & cost"
-      reverse
       title={<>Three providers. One ledger.</>}
       body={
         <>

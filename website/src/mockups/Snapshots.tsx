@@ -116,51 +116,57 @@ interface SessionMock {
   readonly pr?: 'draft' | 'open' | 'merged';
 }
 
+/* One coherent product story used across every mockup: a developer ships a
+   password-reset flow. The ticket comes from Linear (AUTH-142), the branch
+   is ak/password-reset, the agents that run on it are scout/plan/implement,
+   the PR opens for review. Each surface (rail, breadcrumb, context, plans,
+   PR) shows a slice of the same work so the page reads as one tour, not a
+   loose collection of screenshots. */
 const SESSION_DATA: ReadonlyArray<SessionMock> = [
   {
     id: 'a',
-    kind: 'plan',
-    goal: 'Audit reversions on context slots',
-    cost: 0.41,
+    kind: 'imple',
+    goal: 'Add password reset via email link',
+    cost: 0.34,
     state: 'active',
-    linearId: 'GRW-628',
+    linearId: 'AUTH-142',
   },
   {
     id: 'b',
-    kind: 'imple',
-    goal: 'Add history table migration',
+    kind: 'debug',
+    goal: 'Fix flaky checkout webhook test',
     cost: 0.18,
     state: 'running',
+    linearId: 'PAY-77',
   },
   {
     id: 'c',
     kind: 'review',
-    goal: 'Cleanup, tests, PR #617',
+    goal: 'Review PR #214 (rate limiter)',
     cost: 0.09,
     state: 'pending',
   },
   {
     id: 'd',
     kind: 'scout',
-    goal: 'Map all callsites of upsertSlot',
+    goal: 'Map every place we send transactional email',
     cost: 0.03,
     state: 'idle',
   },
   {
     id: 'e',
     kind: 'docs',
-    goal: 'Document the history table API',
+    goal: 'Document the new password-reset endpoint',
     cost: 0.02,
     state: 'idle',
-    linearId: 'GRW-631',
+    linearId: 'AUTH-149',
   },
   {
     id: 'f',
-    kind: 'debug',
-    goal: 'Trigger fires twice on rollback',
+    kind: 'plan',
+    goal: 'Plan the migration off legacy session cookies',
     cost: 0.07,
     state: 'idle',
-    pr: 'draft',
   },
 ];
 
@@ -213,14 +219,14 @@ export function SessionsSnapshot() {
               <ConstructionIcon size={13} />
             </span>
             <span className="line-clamp-2 min-w-0 flex-1 text-[12px] font-semibold leading-snug text-foreground">
-              Audit reversions on context slots
+              Add password reset via email link
             </span>
             <a
               href="#linear"
               className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#5e6ad2]/30 bg-[#5e6ad2]/5 px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#5e6ad2]"
-              title="open GRW-628 in Linear"
+              title="open AUTH-142 in Linear"
             >
-              GRW-628
+              AUTH-142
             </a>
             <span
               className="relative inline-flex shrink-0 items-center text-muted-foreground/80"
@@ -238,32 +244,32 @@ export function SessionsSnapshot() {
             <AgentRow
               num={1}
               kind="scout"
-              name="scout-callsites"
+              name="locate auth surface"
               tokensIn="1.2k"
               tokensOut="240"
               turns={3}
               cost="$0.04"
-              age="12m"
+              age="14m"
             />
             <AgentRow
               num={2}
               kind="plan"
-              name="plan-completion"
+              name="design reset flow"
               tokensIn="3.1k"
               tokensOut="890"
               turns={5}
               cost="$0.12"
-              age="4m"
+              age="6m"
             />
             <AgentRow
               num={3}
               kind="imple"
-              name="imple-restructure"
+              name="build endpoint + email"
               tokensIn="4.5k"
               tokensOut="1.1k"
               turns={9}
               cost="$0.18"
-              age="42s"
+              age="48s"
               running
               selected
             />
@@ -273,11 +279,11 @@ export function SessionsSnapshot() {
           <div className="mt-auto flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-3">
             <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
               <IconBranch size={10} aria-hidden className="shrink-0 text-muted-foreground" />
-              <span className="truncate">ak/context-slot-history</span>
+              <span className="truncate">ak/password-reset</span>
             </span>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
               <span className="size-1.5 rounded-full bg-success" aria-hidden />
-              PR #617
+              PR #214
             </span>
             <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-[10px] tabular-nums text-success">
               $0.34
@@ -531,12 +537,12 @@ function DotsVerticalIcon({ size = 13 }: { size?: number }) {
 /* ---------------------------- Workflow -------------------------------- */
 
 const WORKFLOW_STEPS = [
-  { kind: 'scout' as const, role: 'scout', name: 'Map callsites', state: 'done' as const },
-  { kind: 'plan' as const, role: 'planner', name: 'Plan completion', state: 'done' as const },
+  { kind: 'scout' as const, role: 'scout', name: 'Locate auth surface', state: 'done' as const },
+  { kind: 'plan' as const, role: 'planner', name: 'Design reset flow', state: 'done' as const },
   {
     kind: 'imple' as const,
     role: 'implementer',
-    name: 'Implement restructure',
+    name: 'Build endpoint + email',
     state: 'active' as const,
   },
   {
@@ -653,19 +659,19 @@ const SLOTS = [
     key: 'goal',
     label: 'Goal',
     icon: IconTarget,
-    body: 'Add history table for context_slots so reversions are auditable. Preserve current write path.',
+    body: 'Add password reset via email link. Reuse existing transactional mailer. Keep the login UI untouched.',
   },
   {
     key: 'decisions',
     label: 'Decisions',
     icon: IconList,
-    body: 'Trigger on UPDATE, not application code. Retain 90 days. Prune nightly.',
+    body: 'Token TTL 60 minutes, single-use, hashed before storage. Rate-limit per email at 3 per hour.',
   },
   {
     key: 'last_output_summary',
     label: 'Last output',
     icon: IconSparkles,
-    body: 'Migration applied. Trigger fires on update. Tests green. Ready for review.',
+    body: 'POST /auth/reset-request live. Email template wired. Endpoint + handler tests green.',
   },
 ];
 
@@ -726,14 +732,14 @@ function ContextTabBody() {
 
 const PLANS_DATA = [
   {
-    title: 'context_slot_history rollout',
+    title: 'Password reset rollout',
     status: 'active' as const,
-    body: '1. Migration 038 (trigger + retention)\n2. Hook into db queries\n3. Surface in UI as a tab',
+    body: '1. Token model (hashed, 60min TTL)\n2. POST /auth/reset-request handler\n3. Email template + send\n4. Frontend form on /reset/[token]',
   },
   {
-    title: 'audit-log surfacing v0.0.9',
+    title: 'Rate-limit transactional mail',
     status: 'consumed' as const,
-    body: 'consumed by imple-restructure · spawned audit page agent',
+    body: 'consumed by build endpoint + email · 3/email/hour, exponential cooldown on abuse',
   },
 ];
 
@@ -764,14 +770,10 @@ function PlansTabBody() {
 }
 
 const FILES_DATA = [
-  { path: 'packages/db/migrations/038_history.sql', adds: 42, dels: 0, edit: 'created' as const },
-  { path: 'packages/db/queries/slot.ts', adds: 18, dels: 4, edit: 'modified' as const },
-  {
-    path: 'apps/desktop/src/features/context/openQuestionsGate.ts',
-    adds: 3,
-    dels: 1,
-    edit: 'modified' as const,
-  },
+  { path: 'src/auth/reset/token.ts', adds: 56, dels: 0, edit: 'created' as const },
+  { path: 'src/auth/reset/handler.ts', adds: 84, dels: 0, edit: 'created' as const },
+  { path: 'src/mail/templates/reset.tsx', adds: 34, dels: 0, edit: 'created' as const },
+  { path: 'src/auth/routes.ts', adds: 6, dels: 2, edit: 'modified' as const },
 ];
 
 function FilesTabBody() {
@@ -809,27 +811,26 @@ function GithubTabBody() {
     <div className="flex flex-col gap-2 p-3">
       <div className="rounded-md border border-border-soft bg-subtle p-2.5">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10.5px] text-muted-foreground">#617</span>
+          <span className="font-mono text-[10.5px] text-muted-foreground">#214</span>
           <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
-            feat(core): context_slot_history with rollback
+            feat(auth): password reset via email link
           </span>
           <span className="chip chip-success">open</span>
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <IconBranch size={9} />
-            <span className="truncate">ak/context-slot-history</span>
+            <span className="truncate">ak/password-reset</span>
           </span>
           <span className="inline-flex items-center gap-0.5 text-success">
             <IconArrowUp size={9} />
-            142
+            180
           </span>
           <span className="inline-flex items-center gap-0.5 text-danger">
-            <IconArrowDown size={9} />
-            18
+            <IconArrowDown size={9} />2
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-success" />5 / 5 checks
+            <span className="size-1.5 rounded-full bg-success" />6 / 6 checks
           </span>
         </div>
       </div>
@@ -839,13 +840,12 @@ function GithubTabBody() {
 }
 
 const TERMINAL_LINES = [
+  { p: '$', t: 'pnpm test src/auth/reset', tone: 'cmd' as const },
+  { p: '·', t: 'token.test.ts  ✓ 7 passed', tone: 'ok' as const },
+  { p: '·', t: 'handler.test.ts  ✓ 12 passed', tone: 'ok' as const },
+  { p: '·', t: 'rate-limit.test.ts  ✓ 4 passed', tone: 'ok' as const },
   { p: '$', t: 'pnpm typecheck', tone: 'cmd' as const },
-  { p: '·', t: '@goodboy/types:typecheck ✓', tone: 'ok' as const },
-  { p: '·', t: '@goodboy/db:typecheck ✓', tone: 'ok' as const },
-  { p: '·', t: '@goodboy/core:typecheck ✓', tone: 'ok' as const },
-  { p: '·', t: '@goodboy/desktop:typecheck ✓', tone: 'ok' as const },
-  { p: '$', t: 'pnpm --filter @goodboy/desktop test', tone: 'cmd' as const },
-  { p: '·', t: 'Tests  523 passed (523)', tone: 'ok' as const },
+  { p: '·', t: 'no errors found', tone: 'ok' as const },
 ];
 
 function TerminalTabBody() {
@@ -919,106 +919,85 @@ function SlotCard({
   );
 }
 
-/* ---------------------------- PR --------------------------------- */
+/* ---------------------------- GitHub panel (unified) ---------------- */
 
-export function PRSnapshot() {
-  return (
-    <SnapshotFrame className="max-w-[440px]">
-      <FrameHeader
-        label="GitHub"
-        right={
-          <span className="text-[10px] font-mono text-muted-foreground/70">last sync 12s ago</span>
-        }
-      />
-      <div className="space-y-2.5 p-3">
-        <PRRow
-          num={617}
-          title="feat(core): context_slot_history with rollback"
-          branch="ak/context-slot-history"
-          state="open"
-          additions={142}
-          deletions={18}
-          checksPass={5}
-          checksFail={0}
-          reviews="claude-reviewer ✓ · human pending"
-        />
-        <PRRow
-          num={616}
-          title="fix(desktop): annotate sweep opts param"
-          branch="ak/typecheck-fix"
-          state="merged"
-          additions={3}
-          deletions={1}
-          checksPass={6}
-          checksFail={0}
-          reviews="merged via squash"
-        />
-
-        <div className="mt-1 rounded-md border border-border-soft bg-subtle p-2.5">
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <span className="chip chip-anthropic">claude-reviewer</span>
-            <span>on</span>
-            <code className="font-mono text-[10px] text-primary">migrations/038…sql:14</code>
-          </div>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-foreground/85">
-            Add a composite index on{' '}
-            <code className="font-mono text-[10.5px] text-warning">
-              (slot_id, snapshot_at DESC)
-            </code>{' '}
-            if reverts need to scan history quickly.
-          </p>
-        </div>
-      </div>
-    </SnapshotFrame>
-  );
-}
-
-/* ---------------------------- PR review with resolver ---------------- */
-
-/* Mirror of features/github/components/Card review-comment block. Each line
-   comment exposes a "resolve" button: clicking spawns a resolver agent in
-   the session worktree, which addresses the comment with the smallest
-   reasonable diff, commits locally, and posts back. The chip on the
-   comment flips to "resolved" once the agent's commit lands. */
+/* Single coherent screen mirroring features/github/components/Panel: the PR
+   header for the session (state, branch, diff stats, CI), then the review
+   thread with line-anchored comments from human teammates, the locally-run
+   claude reviewer, and you. Each comment exposes a one-click resolve that
+   spawns a resolver agent in the worktree. Replaces the older two-snapshot
+   split (overview list + review list) which read as two different products. */
 const REVIEW_COMMENTS = [
   {
     author: 'sara.h',
     avatar: 'oklch(0.72 0.16 150)',
-    file: 'packages/db/queries/slot.ts',
-    line: 42,
-    body: 'Use `transaction()` here so the trigger and the audit insert stay atomic.',
+    file: 'src/auth/reset/handler.ts',
+    line: 28,
+    body: 'Wrap the token insert + audit log in `transaction()` so a flaky mailer never leaves a token without a paired log row.',
     status: 'open' as const,
   },
   {
-    author: 'matteo.r',
+    author: 'claude-reviewer',
     avatar: 'oklch(0.74 0.15 55)',
-    file: 'migrations/038_history.sql',
-    line: 14,
-    body: 'Composite index on (slot_id, snapshot_at DESC)? Reverts scan a lot of history.',
+    file: 'src/auth/reset/token.ts',
+    line: 42,
+    body: 'Hash with `argon2id` instead of sha256. Tokens are short-lived but the table will still get scraped if the DB leaks.',
     status: 'open' as const,
   },
   {
     author: 'you',
     avatar: 'oklch(0.78 0.13 200)',
-    file: 'apps/desktop/src/features/context/openQuestionsGate.ts',
-    line: 25,
-    body: 'rename the comment, the function no longer talks about "phases".',
+    file: 'src/mail/templates/reset.tsx',
+    line: 11,
+    body: 'Link text reads "Reset password" but the button below already says that. Make the body line a sentence.',
     status: 'resolved' as const,
     resolvedBy: 'resolver-c3b7',
   },
 ];
 
-export function PRReviewSnapshot() {
+export function GithubPanelSnapshot() {
+  const unresolved = REVIEW_COMMENTS.filter((c) => c.status === 'open').length;
   return (
-    <SnapshotFrame className="max-w-[520px]">
+    <SnapshotFrame className="max-w-[540px]">
       <FrameHeader
-        label="PR #617 · review"
+        label="GitHub"
         right={
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground/70">
-            <span className="size-1.5 rounded-full bg-warning" />2 unresolved
-          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/70">last sync 12s ago</span>
         }
       />
+
+      {/* PR header */}
+      <div className="border-b border-border-soft/60 px-3 py-3">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] text-muted-foreground">#214</span>
+          <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-foreground">
+            feat(auth): password reset via email link
+          </span>
+          <span className="chip chip-success">open</span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10.5px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <IconBranch size={10} />
+            <span className="truncate">ak/password-reset</span>
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-success">
+            <IconArrowUp size={9} />
+            180
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-danger">
+            <IconArrowDown size={9} />2
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-success" />6 / 6 checks
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-warning" />
+            {unresolved} unresolved
+          </span>
+        </div>
+      </div>
+
+      {/* Review thread */}
       <ul className="flex flex-col divide-y divide-border-soft/40">
         {REVIEW_COMMENTS.map((c, i) => (
           <li key={i} className="px-3 py-2.5">
@@ -1026,12 +1005,14 @@ export function PRReviewSnapshot() {
           </li>
         ))}
       </ul>
-      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[10.5px]">
+
+      {/* Footer: batch resolve */}
+      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[11px]">
         <span className="inline-flex items-center gap-1.5 text-warning">
           <IconSparkles size={11} />
-          Resolve all 2 with one agent batch
+          Resolve all {unresolved} with one agent batch
         </span>
-        <span aria-hidden className="opacity-60 text-warning">
+        <span aria-hidden className="text-warning opacity-60">
           →
         </span>
       </div>
@@ -1079,69 +1060,6 @@ function ReviewCommentRow({ comment }: { comment: (typeof REVIEW_COMMENTS)[numbe
   );
 }
 
-function PRRow({
-  num,
-  title,
-  branch,
-  state,
-  additions,
-  deletions,
-  checksPass,
-  checksFail,
-  reviews,
-}: {
-  num: number;
-  title: string;
-  branch: string;
-  state: 'open' | 'merged' | 'draft';
-  additions: number;
-  deletions: number;
-  checksPass: number;
-  checksFail: number;
-  reviews: string;
-}) {
-  const stateChip =
-    state === 'merged'
-      ? 'chip chip-merged'
-      : state === 'draft'
-        ? 'chip chip-warning'
-        : 'chip chip-success';
-  return (
-    <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-[11px] text-muted-foreground">#{num}</span>
-        <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-foreground">
-          {title}
-        </span>
-        <span className={stateChip}>{state}</span>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] font-mono text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <IconBranch size={10} />
-          <span className="truncate">{branch}</span>
-        </span>
-        <span className="inline-flex items-center gap-0.5 text-success">
-          <IconArrowUp size={9} />
-          {additions}
-        </span>
-        <span className="inline-flex items-center gap-0.5 text-danger">
-          <IconArrowDown size={9} />
-          {deletions}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span
-            className={['size-1.5 rounded-full', checksFail > 0 ? 'bg-danger' : 'bg-success'].join(
-              ' ',
-            )}
-          />
-          {checksPass}/{checksPass + checksFail} checks
-        </span>
-      </div>
-      <p className="mt-1 text-[10.5px] text-muted-foreground/80">{reviews}</p>
-    </div>
-  );
-}
-
 /* ---------------------------- Session cost --------------------------- */
 
 /* Mirrors apps/desktop/src/features/providers/components/CostBadge +
@@ -1154,28 +1072,28 @@ const TURNS = [
     who: 'You',
     model: null,
     kind: 'plan' as const,
-    body: 'Audit reversions on context slots.',
+    body: 'Add a password reset via email link. Keep the login UI untouched.',
     cost: null,
   },
   {
     who: 'Plan',
-    model: 'claude-sonnet-4-5',
+    model: 'claude-opus-4-7',
     kind: 'plan' as const,
-    body: '4 steps drafted. Trigger on UPDATE.',
+    body: '4 steps drafted: token model, request handler, email template, frontend form.',
     cost: 0.071,
   },
   {
     who: 'Implement',
-    model: 'claude-opus-4-7',
+    model: 'claude-sonnet-4-5',
     kind: 'imple' as const,
-    body: 'Migration 038 applied. Trigger fires.',
+    body: 'POST /auth/reset-request live. Tokens hashed at 60min TTL.',
     cost: 0.142,
   },
   {
     who: 'Review',
     model: 'gpt-5-codex',
     kind: 'review' as const,
-    body: 'Composite index suggested. PR opened.',
+    body: 'Argon2 over sha256 suggested. PR #214 opened.',
     cost: 0.198,
   },
 ];
@@ -1251,20 +1169,20 @@ export function ChatHeaderSnapshot() {
       <div className="flex h-9 items-center gap-1.5 whitespace-nowrap border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[11px]">
         <span className="font-medium text-muted-foreground">web</span>
         <Chevron />
-        <span className="font-medium text-muted-foreground">Refactor</span>
+        <span className="font-medium text-muted-foreground">Reset flow</span>
         <Chevron />
         <span className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           <IconBranch size={9} />
-          <span>Plan</span>
+          <span>Rollout</span>
           <span aria-hidden className="opacity-60">
             ·
           </span>
-          <span className="font-mono tabular-nums">1/3</span>
+          <span className="font-mono tabular-nums">3/4</span>
         </span>
         <Chevron />
-        <span className="font-medium text-foreground/90">Map Files</span>
+        <span className="font-medium text-foreground/90">build endpoint</span>
         <div className="flex-1" />
-        <AgentAvatar kind="scout" size={20} />
+        <AgentAvatar kind="implementer" size={20} />
       </div>
       <div className="flex items-center justify-center px-6 py-12 text-center">
         <p className="max-w-[26ch] text-[12px] leading-relaxed text-muted-foreground">
@@ -1307,12 +1225,12 @@ const PICKER_AGENTS: ReadonlyArray<{
   readonly status: 'pending' | 'running' | 'completed';
   readonly kind: AgentKind;
 }> = [
-  { name: 'scout-callsites', status: 'completed', kind: 'scout' },
-  { name: 'come stai?', status: 'running', kind: 'planner' },
-  { name: 'plan-completion', status: 'completed', kind: 'planner' },
-  { name: 'imple-restructure', status: 'running', kind: 'implementer' },
-  { name: 'review-pr-617', status: 'pending', kind: 'reviewer' },
-  { name: 'docs-history-api', status: 'pending', kind: 'docs' },
+  { name: 'locate auth surface', status: 'completed', kind: 'scout' },
+  { name: 'one-off: check mailer', status: 'running', kind: 'generic' },
+  { name: 'design reset flow', status: 'completed', kind: 'planner' },
+  { name: 'build endpoint + email', status: 'running', kind: 'implementer' },
+  { name: 'review PR #214', status: 'pending', kind: 'reviewer' },
+  { name: 'document reset endpoint', status: 'pending', kind: 'docs' },
 ];
 
 export function AgentPickerSnapshot() {
@@ -1383,10 +1301,10 @@ export function NewSessionLinearSnapshot() {
         >
           <div className="flex items-center gap-2 rounded-md border border-[#5e6ad2]/30 bg-[#5e6ad2]/5 px-2.5 py-2 text-[12px]">
             <span className="inline-flex shrink-0 items-center rounded-sm bg-[#5e6ad2]/15 px-1.5 py-0.5 font-mono text-[10px] font-medium text-[#5e6ad2]">
-              GRW-628
+              AUTH-142
             </span>
             <span className="min-w-0 flex-1 truncate text-foreground/90">
-              Audit context_slots reversions
+              Password reset via email link
             </span>
             <span className="shrink-0 text-[10px] text-muted-foreground">In Progress</span>
           </div>
@@ -1399,8 +1317,8 @@ export function NewSessionLinearSnapshot() {
           subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
         >
           <div className="rounded-md border border-border-soft bg-subtle px-3 py-2 text-[12px] leading-relaxed text-foreground/90">
-            Add a history table for context_slots so reversions are auditable. Preserve current
-            write path.
+            Add password reset via email link. Reuse existing transactional mailer. Keep the login
+            UI untouched.
           </div>
         </SectionRow>
 
@@ -1413,7 +1331,7 @@ export function NewSessionLinearSnapshot() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-[11px] text-foreground/80">
               <span className="text-muted-foreground/70">ak/</span>
-              <span>context-slot-history</span>
+              <span>password-reset</span>
             </span>
             <span className="text-[10px] text-muted-foreground">new branch off main</span>
           </div>
@@ -1490,50 +1408,56 @@ function BranchMark() {
    stack lives in a single session: workflows are 1-to-many, not 1-to-1. */
 const STACK_WORKFLOWS = [
   {
-    name: 'Clinical Bond Test Refactor',
-    progress: '2/3',
-    custom: true,
+    name: 'Password reset rollout',
+    progress: '3/4',
+    custom: false,
     steps: [
       {
         kind: 'scout' as const,
-        name: 'Map Test Files',
+        name: 'Locate auth surface',
         state: 'done' as const,
         model: 'haiku-4-5',
       },
       {
-        kind: 'imple' as const,
-        name: 'Propose Refactor Strategy',
-        state: 'active' as const,
-        model: 'sonnet-4-5',
+        kind: 'plan' as const,
+        name: 'Design reset flow',
+        state: 'done' as const,
+        model: 'opus-4-7',
       },
       {
         kind: 'imple' as const,
-        name: 'Implement Agreed Changes',
-        state: 'pending' as const,
+        name: 'Build endpoint + email',
+        state: 'done' as const,
+        model: 'sonnet-4-5',
+      },
+      {
+        kind: 'review' as const,
+        name: 'Open PR for review',
+        state: 'active' as const,
         model: 'sonnet-4-5',
       },
     ],
   },
   {
-    name: 'Cleanup follow-up',
+    name: 'Rate-limit follow-up',
     progress: '0/3',
     custom: true,
     steps: [
       {
-        kind: 'generic' as const,
-        name: 'Locate & Analyze',
+        kind: 'scout' as const,
+        name: 'Find every mailer call',
         state: 'pending' as const,
         model: 'haiku-4-5',
       },
       {
         kind: 'plan' as const,
-        name: 'Plan Refactor',
+        name: 'Pick a backoff strategy',
         state: 'pending' as const,
         model: 'opus-4-7',
       },
       {
         kind: 'imple' as const,
-        name: 'Implement Refactor',
+        name: 'Wrap mailer in limiter',
         state: 'pending' as const,
         model: 'sonnet-4-5',
       },
@@ -1545,7 +1469,7 @@ export function WorkflowStackSnapshot() {
   return (
     <SnapshotFrame className="max-w-[440px]">
       <FrameHeader
-        label="refactor tests focus"
+        label="Add password reset"
         right={
           <span className="font-mono text-[10px] text-muted-foreground/70">
             {STACK_WORKFLOWS.length} workflows · 1 session

@@ -6,6 +6,7 @@ export function PlansDeepDive() {
     <Section
       id="plans"
       eyebrow="Plans & workflows"
+      reverse
       title={<>Stack workflows on one session. Plans land as artifacts.</>}
       body={
         <>

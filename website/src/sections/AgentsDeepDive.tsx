@@ -6,6 +6,7 @@ export function AgentsDeepDive() {
     <Section
       id="agents"
       eyebrow="Agents"
+      reverse
       title={<>Every agent has a role. Scoped, defaulted, swappable.</>}
       body={
         <>

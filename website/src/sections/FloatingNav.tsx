@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { DogMascot } from '../components/DogMascot';
 
 const links = [
-  { href: '#note', label: 'A note' },
   { href: '#sessions', label: 'Sessions' },
   { href: '#agents', label: 'Agents' },
+  { href: '#context', label: 'Context' },
+  { href: '#plans', label: 'Plans' },
   { href: '#linear', label: 'Linear' },
+  { href: '#github', label: 'GitHub' },
   { href: '#compare', label: 'Compare' },
 ];
 

@@ -6,7 +6,6 @@ export function LinearDeepDive() {
     <Section
       id="linear"
       eyebrow="Linear (optional)"
-      reverse
       title={<>Start sessions from a ticket. Or just write your goal.</>}
       body={
         <>
