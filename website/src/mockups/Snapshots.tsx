@@ -400,7 +400,7 @@ function SessionRailItem({ session }: { session: SessionMock }) {
       ].join(' ')}
     >
       <span className="flex items-center gap-1">
-        <AgentAvatar kind={KIND[session.kind].kind} size={12} />
+        <SessionStatusIcon state={session.state} />
         {session.linearId ? <LinearIdChip id={session.linearId} /> : null}
         {session.pr ? <IconPullRequest size={9} className="text-muted-foreground" /> : null}
       </span>
@@ -411,6 +411,83 @@ function SessionRailItem({ session }: { session: SessionMock }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+/* Status icon for a rail card. Mirrors the SESSION_STATUS_PALETTE in
+   apps/desktop/src/features/workspace/components/SessionActivityBar:
+   active → construction (in progress), running → spinner, pending → bell,
+   idle → clock. The rail tells you what each session is doing, not which
+   kind of agent is selected inside it. */
+function SessionStatusIcon({ state }: { state: SessionMock['state'] }) {
+  if (state === 'active') {
+    return <ConstructionIcon size={12} />;
+  }
+  if (state === 'running') {
+    return <SpinnerIcon />;
+  }
+  if (state === 'pending') {
+    return <BellIcon />;
+  }
+  return <ClockIcon />;
+}
+
+function SpinnerIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="animate-spin text-info"
+      aria-hidden
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-warning"
+      aria-hidden
+    >
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-muted-foreground/60"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
   );
 }
 
@@ -1409,7 +1486,7 @@ function BranchMark() {
 const STACK_WORKFLOWS = [
   {
     name: 'Password reset rollout',
-    progress: '3/4',
+    progress: '2/4',
     custom: false,
     steps: [
       {
@@ -1419,21 +1496,21 @@ const STACK_WORKFLOWS = [
         model: 'haiku-4-5',
       },
       {
-        kind: 'plan' as const,
-        name: 'Design reset flow',
+        kind: 'scout' as const,
+        name: 'Deep-scan token + mailer flow',
         state: 'done' as const,
         model: 'opus-4-7',
       },
       {
         kind: 'imple' as const,
         name: 'Build endpoint + email',
-        state: 'done' as const,
+        state: 'active' as const,
         model: 'sonnet-4-5',
       },
       {
         kind: 'review' as const,
         name: 'Open PR for review',
-        state: 'active' as const,
+        state: 'pending' as const,
         model: 'sonnet-4-5',
       },
     ],
@@ -1444,8 +1521,8 @@ const STACK_WORKFLOWS = [
     custom: true,
     steps: [
       {
-        kind: 'scout' as const,
-        name: 'Find every mailer call',
+        kind: 'debug' as const,
+        name: 'Locate & analyze rate-limit gaps',
         state: 'pending' as const,
         model: 'haiku-4-5',
       },
