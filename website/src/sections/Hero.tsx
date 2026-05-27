@@ -1,6 +1,6 @@
 import { DogMascot } from '../components/DogMascot';
 import { LinkButton } from '../components/ui';
-import { SessionsSnapshot, ContextSnapshot } from '../mockups/Snapshots';
+import { SessionsSnapshot, ChatHeaderSnapshot } from '../mockups/Snapshots';
 
 export function Hero() {
   return (
@@ -25,8 +25,9 @@ export function Hero() {
             className="rise mx-auto mt-7 max-w-xl text-[15px] sm:text-[16px] leading-[1.6] text-muted-foreground"
             style={{ animationDelay: '120ms' }}
           >
-            Route agents across Claude, Cursor, and Codex without re-explaining the goal. Shared
-            context, structured plans, real-time cost. Local-first. Your keys, your machine.
+            Start sessions from Linear tickets. Stack workflows on one session. Route agents across
+            Claude, Cursor, and Codex without re-explaining the goal. Shared context, structured
+            plans, real-time cost. Local-first. Your keys, your machine.
           </p>
 
           <div
@@ -61,14 +62,14 @@ export function Hero() {
         {/* Snapshot composition: two slices of the real app, sized to fit the
             page rhythm. The deep-dive sections below carry the full tour. */}
         <div
-          className="rise relative mx-auto mt-20 flex max-w-4xl flex-col items-center justify-center gap-6 sm:flex-row sm:items-end"
+          className="rise relative mx-auto mt-20 flex max-w-5xl flex-col items-center justify-center gap-6"
           style={{ animationDelay: '320ms' }}
         >
-          <div className="w-full max-w-[420px] sm:translate-y-3">
-            <SessionsSnapshot />
+          <div className="w-full max-w-[520px]">
+            <ChatHeaderSnapshot />
           </div>
-          <div className="w-full max-w-[420px] sm:-translate-y-3">
-            <ContextSnapshot />
+          <div className="w-full max-w-[480px] -mt-2">
+            <SessionsSnapshot />
           </div>
         </div>
       </div>

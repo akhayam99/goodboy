@@ -24,6 +24,20 @@ const rows: Row[] = [
     chatgpt: false,
   },
   {
+    label: 'Multi-workflow per session',
+    goodboy: true,
+    cursor: false,
+    claudeCode: false,
+    chatgpt: false,
+  },
+  {
+    label: 'Linear issue → session goal',
+    goodboy: true,
+    cursor: false,
+    claudeCode: false,
+    chatgpt: false,
+  },
+  {
     label: 'Per-session budget caps',
     goodboy: true,
     cursor: false,

@@ -150,6 +150,53 @@ const Icon = {
       <circle cx="5.5" cy="4.5" r="0.5" fill="currentColor" />
     </>
   ),
+  linear: (
+    <>
+      <rect x="2" y="2" width="12" height="12" rx="2" fill="#5e6ad2" />
+      <path
+        d="M5 9.5l3 3 3-3M5 6.5l3-3 3 3"
+        stroke="white"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </>
+  ),
+  quickActions: (
+    <>
+      <text
+        x="8"
+        y="11"
+        textAnchor="middle"
+        fontFamily="ui-monospace, monospace"
+        fontSize="9"
+        fill="currentColor"
+      >
+        $ ~ @
+      </text>
+    </>
+  ),
+  keyboard: (
+    <>
+      <rect
+        x="1.5"
+        y="4"
+        width="13"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+      />
+      <path
+        d="M4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M4 10h.01M11.5 10h.01M6 10h4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </>
+  ),
 };
 
 function IconWrap({ children }: { children: ReactNode }) {
@@ -171,64 +218,70 @@ const features: Feature[] = [
     visual: <ContextVisual />,
   },
   {
+    title: 'Multi-workflow sessions',
+    body: 'Stack many workflows on one session. Step results land in the shared context, the next workflow picks up from there without copy-paste.',
+    span: 'lg:col-span-2',
+    icon: <IconWrap>{Icon.workflow}</IconWrap>,
+  },
+  {
     title: 'Multi-provider routing',
-    body: 'Claude. Cursor. Codex. Route by task, by budget, by latency. Switch mid-session without re-explaining.',
+    body: 'Claude. Cursor. Codex. Route by task, by budget. Override a single turn or switch the session default. Every turn rebuilds from shared context, not the provider thread.',
     span: 'lg:col-span-2',
     icon: <IconWrap>{Icon.routing}</IconWrap>,
   },
   {
-    title: 'Multi-agent sessions',
-    body: 'Spawn scouts, planners, implementers, reviewers in parallel. Each has its own thread, model, and effort. Independent work, shared notes.',
+    title: 'Linear integration',
+    body: 'Pick an issue assigned to you and the new-session goal auto-fills from its title. The ticket identifier rides with the session everywhere it goes.',
+    span: '',
+    icon: <IconWrap>{Icon.linear}</IconWrap>,
+  },
+  {
+    title: 'Agents with a role',
+    body: 'Scout, planner, implementer, debugger, tester, reviewer, docs. Each carries its own default model, effort, and scope. A breed marker travels with the role.',
     span: '',
     icon: <IconWrap>{Icon.agents}</IconWrap>,
   },
   {
     title: 'Plans as artifacts',
-    body: 'Planner output gets captured as a structured plan, not buried in transcripts. Consumed by downstream agents, tracked to completion.',
-    span: '',
+    body: 'Planner agents emit structured output wrapped in <<plan>> markers. Goodboy lifts them out of the chat, tracks consumption, lets you replay them on a fresh agent.',
+    span: 'lg:col-span-2',
     icon: <IconWrap>{Icon.plan}</IconWrap>,
   },
   {
-    title: 'Workflow presets',
-    body: 'Pre-built or custom flows fan out agents at session start: scout → planner → implementer → reviewer. Sequential or parallel.',
-    span: 'lg:col-span-2',
-    icon: <IconWrap>{Icon.workflow}</IconWrap>,
-  },
-  {
     title: 'GitHub integration',
-    body: 'PR state, CI checks, review decisions, linked issues, line-level diff comments. Refreshed in real time.',
+    body: 'PR state, CI checks, review decisions, line-anchored diff comments. Spawn a resolver agent on one with a click, commit lands back on the branch.',
     span: '',
     icon: <IconWrap>{Icon.github}</IconWrap>,
   },
   {
-    title: 'Session cost',
-    body: 'Real-time USD next to every turn. Running total per session. Optional soft cap so a runaway agent stops before it stings.',
+    title: 'Real-time cost',
+    body: 'Estimated USD next to every turn. Running total per session. Optional soft cap so a runaway agent stops before it stings.',
     span: '',
     icon: <IconWrap>{Icon.budget}</IconWrap>,
   },
   {
     title: 'Permission proxy',
-    body: 'Tool-call interception, static rule matching, audit trail. Run agents autonomously without losing the kill switch.',
+    body: 'Four modes (default, edits, bypass, plan) gate tool calls. Static rule matching, audit trail. Run agents autonomously without losing the kill switch.',
     span: 'lg:col-span-2',
     icon: <IconWrap>{Icon.permission}</IconWrap>,
   },
   {
+    title: 'Quick actions grammar',
+    body: 'In the composer, $ runs a saved script, ~ attaches a workflow, @ switches agents, / invokes a skill. Discoverable, prefix-filtered, keyboard-first.',
+    span: '',
+    icon: <IconWrap>{Icon.quickActions}</IconWrap>,
+  },
+  {
     title: 'Git worktrees',
-    body: 'Each session lives on its own branch + worktree. Auto-created, auto-cleaned. Agents never collide on the working tree.',
+    body: 'Each session lives on its own branch + worktree, auto-created and auto-cleaned. Agents never collide on the working tree.',
     span: '',
     icon: <IconWrap>{Icon.worktree}</IconWrap>,
   },
   {
-    title: 'Editor integration',
-    body: "Open VS Code or Cursor on the right worktree, on the right branch, when it's time to write code. Then hand control back.",
+    title: 'Keyboard-first',
+    body: '⌘1-9 jumps workspaces, ⌘[ / ⌘] cycles sessions, ⌘K opens the palette, ⌘⇧K picks the model. The pointer is optional.',
     span: '',
-    icon: <IconWrap>{Icon.editor}</IconWrap>,
-  },
-  {
-    title: 'Notifications & nudges',
-    body: 'PR state changes, session events, soft-cap warnings. Toast for transient, feed for full history. No spam.',
-    span: '',
-    icon: <IconWrap>{Icon.notif}</IconWrap>,
+    icon: <IconWrap>{Icon.keyboard}</IconWrap>,
   },
 ];
 
@@ -278,7 +331,8 @@ export function FeatureGrid() {
             Everything an agent needs to work alongside you.
           </h2>
           <p className="mt-5 max-w-prose text-[15px] leading-[1.7] text-muted-foreground">
-            Twelve building blocks. They compose. They stay out of your way until you need them.
+            Twelve building blocks pulled straight from the running app. They compose. They stay out
+            of your way until you need them.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[230px]">

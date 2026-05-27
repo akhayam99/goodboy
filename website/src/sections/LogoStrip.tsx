@@ -33,18 +33,17 @@ const integrations: Card[] = [
   {
     name: 'GitHub',
     color: 'oklch(0.86 0.005 250)',
-    desc: 'PRs, checks, diff comments',
+    desc: 'PRs, checks, diff comments, resolver agents',
+  },
+  {
+    name: 'Linear',
+    color: 'oklch(0.62 0.18 275)',
+    desc: 'Issue picker, goal auto-fill, identifier badge',
   },
   {
     name: 'GitLab',
     color: 'oklch(0.74 0.15 55)',
     desc: 'MRs, pipelines, threads',
-    soon: true,
-  },
-  {
-    name: 'Jira',
-    color: 'oklch(0.69 0.11 238)',
-    desc: 'Link tickets, sync status',
     soon: true,
   },
   {

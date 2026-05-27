@@ -12,14 +12,14 @@ export function RoutingDeepDive() {
         <>
           <p>
             Pick the right provider for the work. Long-context refactor? Claude. Inline edit?
-            Cursor. Codegen scaffold? Codex. Switch mid-session without re-explaining the goal:
-            every turn is rebuilt from the shared context, not resumed from the provider&apos;s
-            thread.
+            Cursor. Codegen scaffold? Codex. Switch the session default at any time, or override
+            just the next turn from the composer chip. Either way the next agent rebuilds from
+            shared context, never the provider thread.
           </p>
           <p>
             Each turn carries an estimated cost. The session keeps a running total. Set an optional
-            soft cap and Goodboy stops the agent before it overshoots. No surprise invoice at the
-            end of the day.
+            soft cap and Goodboy warns you before it overshoots. The cost chip ticks live next to
+            the composer so the bill never lives in a different tab.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
             Subscription-based. Uses your Claude, Cursor, ChatGPT subscriptions. No metered API

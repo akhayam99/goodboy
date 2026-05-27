@@ -4,7 +4,8 @@ import { LinkButton } from '../components/ui';
 const links = [
   { href: '#note', label: 'A note' },
   { href: '#features', label: 'Features' },
-  { href: '#sessions', label: 'Sessions' },
+  { href: '#agents', label: 'Agents' },
+  { href: '#linear', label: 'Linear' },
   { href: '#compare', label: 'Compare' },
 ];
 

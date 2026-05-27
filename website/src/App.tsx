@@ -7,8 +7,10 @@ import { Letter } from './sections/Letter';
 import { LogoStrip } from './sections/LogoStrip';
 import { FeatureGrid } from './sections/FeatureGrid';
 import { SessionsDeepDive } from './sections/SessionsDeepDive';
+import { AgentsDeepDive } from './sections/AgentsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
 import { PlansDeepDive } from './sections/PlansDeepDive';
+import { LinearDeepDive } from './sections/LinearDeepDive';
 import { RoutingDeepDive } from './sections/RoutingDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
 import { Comparison } from './sections/Comparison';
@@ -27,10 +29,12 @@ export function App() {
         <LogoStrip />
         <FeatureGrid />
         <SessionsDeepDive />
+        <AgentsDeepDive />
         <ContextDeepDive />
         <PlansDeepDive />
-        <RoutingDeepDive />
+        <LinearDeepDive />
         <GithubDeepDive />
+        <RoutingDeepDive />
         <Comparison />
         <Stack />
         <CTA />
