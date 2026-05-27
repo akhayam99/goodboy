@@ -95,7 +95,7 @@ function slugifyLive(input: string): string {
 }
 
 // Live sanitizer for the hand-typed branch slug. Unlike slugifyLive (which
-// derives a slug from the prose goal) this preserves the user's casing — an
+// derives a slug from the prose goal) this preserves the user's casing, an
 // uppercase branch stays uppercase. Any run of spaces or disallowed chars
 // collapses to a single dash so e.g. ten spaces yield one dash.
 function sanitizeBranchSlug(input: string): string {
@@ -245,7 +245,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
         setSlugTouched(true);
       })
       .catch(() => {
-        // silent — user can type manually
+        // silent, user can type manually
       })
       .finally(() => {
         setSlugGenerating(false);
@@ -340,7 +340,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
           title="Goal"
-          subtitle="What this session should accomplish. Be specific — agents lean on it for context."
+          subtitle="What this session should accomplish. Be specific, agents lean on it for context."
         >
           <Textarea
             value={goal}

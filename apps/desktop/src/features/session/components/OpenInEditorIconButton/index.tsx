@@ -16,7 +16,7 @@ interface OpenInEditorIconButtonProps {
  * - 0 editors detected → disabled
  * - 1 editor → opens directly
  * - 2+ editors → opens a centered popover; picking an entry triggers the
- *   launch immediately (no remembered default, no select state — every
+ *   launch immediately (no remembered default, no select state, every
  *   pick is just a one-shot action).
  */
 export function OpenInEditorIconButton({ worktreePath }: OpenInEditorIconButtonProps) {

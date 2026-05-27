@@ -165,7 +165,7 @@ function buildSession(): Session {
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // CLI exits without emitting any event — no `done`, no `error`, no
+  // CLI exits without emitting any event, no `done`, no `error`, no
   // `assistant_text`. Mirrors a provider that runs to completion but
   // emits no parseable result line.
 }
@@ -178,7 +178,7 @@ async function* doneOnlyStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   };
 }
 
-describe('sendTurn — terminal state guarantees', () => {
+describe('sendTurn, terminal state guarantees', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();

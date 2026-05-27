@@ -18,7 +18,7 @@ function slots(map: Record<string, string>): ContextSlot[] {
   return Object.entries(map).map(([key, value]) => ({ key, value, enabled: true }));
 }
 
-describe('inferNextActions — trigger gating', () => {
+describe('inferNextActions, trigger gating', () => {
   it('returns [] when no turn output and no slots populated', () => {
     const actions = inferNextActions({
       input: buildInput(''),
@@ -57,7 +57,7 @@ describe('inferNextActions — trigger gating', () => {
   });
 });
 
-describe('inferNextActions — trio shape', () => {
+describe('inferNextActions, trio shape', () => {
   it('emits exactly 3 actions with stable ids', () => {
     const actions = inferNextActions({
       input: buildInput('explored the auth module'),
@@ -122,7 +122,7 @@ describe('inferNextActions — trio shape', () => {
   });
 });
 
-describe('inferNextActions — pr-state ignored', () => {
+describe('inferNextActions, pr-state ignored', () => {
   it('pr-state does not change the trio output', () => {
     const actions = inferNextActions({
       input: buildInput('ci passed'),

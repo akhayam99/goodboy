@@ -173,7 +173,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
         }
       }
       // All attempts failed. `silent: true` (polling) suppresses the error
-      // chip — by design the timer-driven path shouldn't paint failures the
+      // chip, by design the timer-driven path shouldn't paint failures the
       // user didn't ask for. Explicit refreshes keep the existing UI.
       set((state) => ({
         sessionGithub: {
@@ -230,7 +230,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
           },
         },
       }));
-      // Retry loop — same shape as `refreshSessionPr`. Polling sweeps pass
+      // Retry loop, same shape as `refreshSessionPr`. Polling sweeps pass
       // `retries: 1` so a transient gh failure gets a second chance.
       const maxAttempts = (opts?.retries ?? 0) + 1;
       let lastErr: unknown = null;
@@ -300,7 +300,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
 
     // Closes a review thread on github with a contextual reply, then flips the
     // thread to resolved. The reply is built from the optional `closure`
-    // payload — a commit sha turns into `Resolved in [<short>](commit url)`,
+    // payload, a commit sha turns into `Resolved in [<short>](commit url)`,
     // a free-text reason posts that verbatim. Without a closure the thread is
     // resolved silently (back-compat for any caller that still hits the bare
     // form). Returns true on success so the chip can collapse its CTA.
@@ -362,8 +362,8 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     // Interim PR auto-refresh until a GitHub webhook lands. Sweeps every
     // session held in `state.sessions` (the active workspace's): head for all,
     // detail for the one whose card is open. Each refresh is silent with one
-    // retry — polling errors don't deserve UI, transient gh failures get a
-    // second chance. No `force` — the 60s/30s caches absorb overlapping
+    // retry, polling errors don't deserve UI, transient gh failures get a
+    // second chance. No `force`, the 60s/30s caches absorb overlapping
     // sweep / on-access / manual refreshes.
     //
     // Filters:
@@ -376,7 +376,7 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     //     them explicitly. The reactive sweep (boot / workspace switch /
     //     new session) still polls them once so PRs created from outside
     //     the app are discovered.
-    // (Archived sessions are not in `state.sessions` by construction — they
+    // (Archived sessions are not in `state.sessions` by construction, they
     // live in `archivedSessions[workspaceId]` and are out of the poll loop.)
     sweepGithub: (opts?: { skipUnknownPr?: boolean }) => {
       if (!get().githubStatus?.available) return;

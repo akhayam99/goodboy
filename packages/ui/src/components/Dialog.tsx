@@ -31,7 +31,7 @@ export interface DialogProps {
   fixedHeightClass?: string;
   /**
    * Override the body wrapper classes. Default: `gap-4 px-6 py-5`.
-   * Pass `''` for full-bleed body (no padding/gap) — useful for full-width
+   * Pass `''` for full-bleed body (no padding/gap), useful for full-width
    * layouts like diff viewers with their own internal toolbars.
    */
   bodyClassName?: string;
@@ -40,7 +40,7 @@ export interface DialogProps {
   /**
    * Optional left panel (nav, side actions, etc.) rendered alongside the
    * main body. When present, a vertical gradient divider separates it from
-   * the content. Use this for any modal that wants a sidebar layout — it
+   * the content. Use this for any modal that wants a sidebar layout, it
    * keeps Header / Panel / Body / Footer consistent across the app.
    */
   panel?: ReactNode;
@@ -59,7 +59,7 @@ const SIZE: Record<DialogSize, string> = {
 
 // Per-size baseline min-height. Without this the dialog collapses to the
 // height of its content, which looks thin for small forms (add workspace,
-// new session). Caps at the per-size sweet spot — large dialogs already
+// new session). Caps at the per-size sweet spot, large dialogs already
 // need more room. Skipped when fixedHeightClass is set (caller knows best).
 const MIN_HEIGHT: Record<DialogSize, string> = {
   sm: 'min-h-[16rem]',

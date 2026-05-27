@@ -256,7 +256,7 @@ export function SessionSettingsDialog({
             )}
             title={
               deleteArmed
-                ? 'click again to confirm — this cannot be undone'
+                ? 'click again to confirm, this cannot be undone'
                 : 'delete session (worktree, transcripts, branch)'
             }
           >
@@ -272,7 +272,7 @@ export function SessionSettingsDialog({
           {deleteArmed && !archived ? (
             <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
               <Archive size={11} aria-hidden className="text-warning" />
-              not sure? archive instead — reversible, keeps history.
+              not sure? archive instead, reversible, keeps history.
             </span>
           ) : (
             <div className="flex-1">
@@ -439,7 +439,7 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Branch — inline change */}
+      {/* Branch, inline change */}
       <Field
         label="Branch"
         hint="Switch this session to a different branch. Existing checkouts with uncommitted work require confirmation."
@@ -561,7 +561,7 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Provider — read-only */}
+      {/* Provider, read-only */}
       <Field
         label="Provider"
         hint="Set at creation time. Per-turn overrides happen in the chat composer."

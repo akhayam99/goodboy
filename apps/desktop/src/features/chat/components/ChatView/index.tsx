@@ -49,7 +49,7 @@ interface ChatViewProps {
   session: Session;
   onRequestEnd?: () => void;
   // Keep-alive aware. False when this instance is mounted but hidden behind
-  // another session's view — used to skip background DB fetches.
+  // another session's view, used to skip background DB fetches.
   isActive?: boolean;
 }
 
@@ -210,10 +210,10 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const items = useMemo(() => reduceTranscript(events), [events]);
   // Defer the heavy transcript list so React 18 can paint header / input /
   // empty shell first on session switch and treat the card list as low-priority.
-  // Pairs with React.memo on TranscriptCard — together they make session swaps
+  // Pairs with React.memo on TranscriptCard, together they make session swaps
   // feel instant even with hundreds of turns in history.
   // Tag the deferred value with its agent id: useDeferredValue keeps returning
-  // the previous agent's array for a render or more after a switch — without
+  // the previous agent's array for a render or more after a switch, without
   // the tag the list below would paint the wrong agent's transcript. While it
   // lags (`transcriptStale`) we render the skeleton instead.
   const taggedItems = useMemo(
@@ -244,7 +244,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
 
   // Lazy transcript load: only fires when this view is the active one. With
   // keep-alive, hidden ChatView instances stay mounted but must not preload
-  // transcripts in the background — that would defeat the lazy DB savings.
+  // transcripts in the background, that would defeat the lazy DB savings.
   useEffect(() => {
     if (!isActive || !selectedAgentId || transcriptCached) return;
     void selectAgent(session.id, selectedAgentId);
@@ -270,7 +270,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  // Subscribe only to the flag we need — `s.settings` is a wide map and any
+  // Subscribe only to the flag we need, `s.settings` is a wide map and any
   // setting write re-renders the whole chat view (and its transcript) if we
   // pull the entire object.
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
@@ -330,9 +330,9 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     void refreshProviders();
   }, [refreshProviders]);
 
-  // Derive MergeConflict[] from store — populated by parallel-turn scheduler
+  // Derive MergeConflict[] from store, populated by parallel-turn scheduler
   // when manual resolution is required. Cast FileConflict to MergeConflict:
-  // both have {file, runIds} — the shapes are structurally identical.
+  // both have {file, runIds}, the shapes are structurally identical.
   const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
     () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
     [rawMergeConflicts],
@@ -351,7 +351,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 
   const onMergeResolve = (picks: Record<string, MergeResolution>) => {
-    // Filter out SKIP_SENTINEL picks — those files stay unresolved (winner's version kept).
+    // Filter out SKIP_SENTINEL picks, those files stay unresolved (winner's version kept).
     const resolvedPicks: Record<string, string> = {};
     for (const [file, pick] of Object.entries(picks)) {
       if (pick !== '__skip__') resolvedPicks[file] = pick;
@@ -716,7 +716,7 @@ interface KindVisual {
   iconClass: string;
   ringBg: string;
   pulseBg: string;
-  // Custom illustrations carry more detail than lucide glyphs — render them
+  // Custom illustrations carry more detail than lucide glyphs, render them
   // larger so they stay legible. Falls back to the default glyph size.
   size?: number;
 }

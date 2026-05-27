@@ -118,7 +118,7 @@ async function collect(adapter: CursorAdapter): Promise<ReadonlyArray<TurnEvent>
   return events;
 }
 
-describe('CursorAdapter — text stream', () => {
+describe('CursorAdapter, text stream', () => {
   it('emits assistant_text, usage, done for a basic text turn', async () => {
     const lines = [FIXTURES.init, FIXTURES.assistantText, FIXTURES.resultSuccess];
     const child = new FakeChild(lines);
@@ -130,7 +130,7 @@ describe('CursorAdapter — text stream', () => {
   });
 });
 
-describe('CursorAdapter — tool use', () => {
+describe('CursorAdapter, tool use', () => {
   it('emits tool_call_start + tool_call_end for a bash tool round-trip', async () => {
     const lines = [
       FIXTURES.init,
@@ -161,7 +161,7 @@ describe('CursorAdapter — tool use', () => {
   });
 });
 
-describe('CursorAdapter — usage', () => {
+describe('CursorAdapter, usage', () => {
   it('maps input/output/cached token fields into ProviderUsage', async () => {
     const child = new FakeChild([FIXTURES.resultSuccess]);
     const adapter = new CursorAdapter({ now: fakeNow, spawnFn: (() => child) as never });
@@ -174,7 +174,7 @@ describe('CursorAdapter — usage', () => {
   });
 });
 
-describe('CursorAdapter — malformed JSON', () => {
+describe('CursorAdapter, malformed JSON', () => {
   it('tolerates malformed lines without crashing the stream', async () => {
     const lines = ['this is not json', '{ broken', FIXTURES.assistantText, FIXTURES.resultSuccess];
     const child = new FakeChild(lines);
@@ -215,7 +215,7 @@ describe('CursorAdapter — malformed JSON', () => {
   });
 });
 
-describe('CursorAdapter — non-zero exit', () => {
+describe('CursorAdapter, non-zero exit', () => {
   it('emits an error event when result subtype is error', async () => {
     const child = new FakeChild([FIXTURES.assistantText, FIXTURES.resultError]);
     const adapter = new CursorAdapter({ now: fakeNow, spawnFn: (() => child) as never });

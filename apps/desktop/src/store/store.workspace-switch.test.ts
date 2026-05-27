@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
@@ -168,7 +168,7 @@ function buildRunningSession(id: SessionId, wsId: WorkspaceId, runId: ProviderRu
   };
 }
 
-describe('setCurrentWorkspace — session-scoped state cleanup', () => {
+describe('setCurrentWorkspace, session-scoped state cleanup', () => {
   beforeEach(() => {
     cancelTurnSpy.mockReset();
     cancelTurnSpy.mockResolvedValue(undefined);

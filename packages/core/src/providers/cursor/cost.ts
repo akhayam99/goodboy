@@ -2,8 +2,8 @@ import type { ProviderUsage } from '@goodboy/types';
 
 // Cursor proxies agent requests through its own gateway under a flat Pro
 // subscription tier. Per-token prices are not published. The mapping below uses
-// the underlying provider's public list price as the best available cost proxy —
-// this approximates the premium-request consumption Cursor users are billed for.
+// the underlying provider's public list price as the best available cost proxy.
+// This approximates the premium-request consumption Cursor users are billed for.
 // Source: Anthropic + OpenAI public pricing (verified 2026-05).
 interface ModelPrice {
   readonly inputPerMtok: number;
@@ -36,7 +36,7 @@ const GPT5_PRICE: ModelPrice = {
 };
 
 const PRICES: Record<string, ModelPrice> = {
-  // Cursor's first-party Composer family — cheap tier proxy pricing.
+  // Cursor's first-party Composer family, cheap tier proxy pricing.
   [CURSOR_CHEAP_MODEL]: COMPOSER_PRICE,
   'composer-2': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,

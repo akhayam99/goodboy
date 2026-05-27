@@ -109,7 +109,7 @@ const FIXTURES = {
   resultError: JSON.stringify({ type: 'result', subtype: 'error', error: 'rate limit' }),
 };
 
-describe('ClaudeAdapter — stream-json contract', () => {
+describe('ClaudeAdapter, stream-json contract', () => {
   it('normalizes a full conversational turn into the expected event sequence', async () => {
     const lines = [
       FIXTURES.init,

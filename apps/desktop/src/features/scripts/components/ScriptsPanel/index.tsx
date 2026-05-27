@@ -86,7 +86,7 @@ export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
 
       {list.length === 0 && draft === null ? (
         <p className="rounded-md border border-dashed border-border-soft px-3 py-6 text-center text-xs text-muted-foreground">
-          No scripts yet. Create one — e.g. <code className="font-mono">copy environments</code>.
+          No scripts yet. Create one, e.g. <code className="font-mono">copy environments</code>.
         </p>
       ) : null}
 
@@ -214,7 +214,7 @@ function ScriptEditor({
       <Input
         value={draft.name}
         onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-        placeholder="script name — e.g. copy environments"
+        placeholder="script name, e.g. copy environments"
         autoFocus
       />
       <Textarea

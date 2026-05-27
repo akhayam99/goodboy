@@ -87,7 +87,7 @@ async function migrateArchivedSessions(): Promise<void> {
       }
     }
   } catch {
-    // malformed LS payload — ignore
+    // malformed LS payload, ignore
   }
   localStorage.removeItem(LS_ARCHIVED);
 }
@@ -226,7 +226,7 @@ export async function migrateLsToDb(): Promise<void> {
     await migrateOnboarding();
     localStorage.setItem(MIGRATED_MARKER, '1');
   } catch (err) {
-    // best-effort — don't block boot; next launch will retry
+    // best-effort, don't block boot; next launch will retry
     console.warn('[ls-to-db migration] failed', err);
   }
 }

@@ -18,7 +18,7 @@ import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-acti
 import { useToast } from '../../../../app/components/Toast';
 
 /**
- * Categorized palette with a prefix-routed grammar — the Raycast / Linear
+ * Categorized palette with a prefix-routed grammar, the Raycast / Linear
  * model. Empty input shows all sources; typing a prefix (@ # : / ~ $ ?)
  * scopes the result list to one source. Plan section A.2.
  */
@@ -73,7 +73,7 @@ export interface CommandPaletteProps {
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;
-  /** Pre-fills the input — e.g. a prefix like '/' opened from a quick-action. */
+  /** Pre-fills the input, e.g. a prefix like '/' opened from a quick-action. */
   initialQuery?: string;
 }
 
@@ -131,7 +131,7 @@ export function CommandPalette({
       });
     }
 
-    // sessions — archived live only as historical info, never in interactive
+    // sessions, archived live only as historical info, never in interactive
     // surfaces (palette, switcher, polling). They show up under the Archived
     // tab in the sidebar and that's it.
     for (const s of sessions) {
@@ -146,7 +146,7 @@ export function CommandPalette({
       });
     }
 
-    // agents (in current session only — they only make sense there)
+    // agents (in current session only, they only make sense there)
     if (currentSession) {
       for (const a of agents) {
         const kind: AgentKind =
@@ -170,7 +170,7 @@ export function CommandPalette({
         sublabel: sk.description ?? 'skill',
         group: 'skill',
         onSelect: () => {
-          /* skill invocation lives in chat input — palette can only navigate.
+          /* skill invocation lives in chat input, palette can only navigate.
              Surface as a hint until we wire a deep-link into ChatInput. */
         },
       });
@@ -202,15 +202,13 @@ export function CommandPalette({
         group: 'script',
         onSelect: () => {
           if (!currentSession || !sessionWorktree) {
-            showToast('warning', `${sc.name} — open a session worktree to run scripts`);
+            showToast('warning', `${sc.name}, open a session worktree to run scripts`);
             return;
           }
           void runScript(currentSession.id, sc.id, sessionWorktree).then((result) => {
             showToast(
               result.exitCode === 0 ? 'success' : 'error',
-              result.exitCode === 0
-                ? `${sc.name} — done`
-                : `${sc.name} — exited ${result.exitCode}`,
+              result.exitCode === 0 ? `${sc.name}, done` : `${sc.name}, exited ${result.exitCode}`,
             );
           });
         },
@@ -348,7 +346,7 @@ export function CommandPalette({
           className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
 
-        {/* prefix legend strip when the input is empty — teaches grammar */}
+        {/* prefix legend strip when the input is empty, teaches grammar */}
         {parsed.prefix === null && query.length === 0 ? (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border-soft bg-subtle/30 px-3 py-1.5 text-[10px] text-muted-foreground">
             {PREFIXES.map((p) => (

@@ -185,7 +185,7 @@ export function ModelPicker({
           </PickerSection>
           <PickerDivider />
 
-          {/* Model — family/subfamily/variant chip layout. */}
+          {/* Model, family/subfamily/variant chip layout. */}
           {[...groupedModels.entries()].map(([fam, subMap]) => {
             const subKeys = [...subMap.keys()];
             const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
@@ -235,7 +235,7 @@ export function ModelPicker({
           })}
           <PickerDivider />
 
-          {/* Effort — always visible */}
+          {/* Effort, always visible */}
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
               <div className={CHIP_ROW}>

@@ -48,7 +48,7 @@ function writePersistedContextOpen(id: SessionId, open: boolean): void {
   try {
     localStorage.setItem(CONTEXT_PANEL_KEY(id), open ? '1' : '0');
   } catch {
-    // localStorage unavailable — ignore
+    // localStorage unavailable, ignore
   }
 }
 
@@ -97,11 +97,11 @@ export function App() {
     return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
 
-  // ESC on macOS exits native fullscreen — never wanted. preventDefault at the
+  // ESC on macOS exits native fullscreen, never wanted. preventDefault at the
   // capture phase blocks it (the event is marked handled in WKWebView before
   // it reaches the native responder chain). That same call also cancels a
   // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
-  // dialog ourselves — ESC dismisses modals without ever leaving fullscreen.
+  // dialog ourselves, ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -202,7 +202,7 @@ export function App() {
   // Defer the heavy panel mount so sidebar selection + AppShell swap paint
   // urgently while React schedules the fresh ChatView/ContextPanel at low
   // priority. Active id is deferred too so the previous panel stays visible
-  // (and `isActive`) during the lag — otherwise we'd flash a blank frame.
+  // (and `isActive`) during the lag, otherwise we'd flash a blank frame.
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
@@ -255,8 +255,8 @@ export function App() {
                 onAddWorkspace={() => setAddWorkspaceOpen(true)}
               />
             )}
-            {/* Onboarding checklist floats top-right of the chat area —
-                app-level so the sidebar chip can summon it from anywhere. */}
+            {/* Onboarding checklist floats top-right of the chat area: app-level so
+                the sidebar chip can summon it from anywhere. */}
             <OnboardingCard />
           </div>
         }
@@ -426,7 +426,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
           </h2>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
             Point at a git repo to create your first workspace. Every session spins up its own
-            worktree and branch — your main checkout stays untouched.
+            worktree and branch, your main checkout stays untouched.
           </p>
         </div>
 

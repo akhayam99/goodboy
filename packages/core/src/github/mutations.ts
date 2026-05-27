@@ -85,7 +85,7 @@ export interface PostedThreadReply {
  * silently flipping the thread to resolved.
  *
  * Body is passed as a graphql variable so newlines and markdown survive
- * the shell hop intact — no need to escape on the caller side.
+ * the shell hop intact, no need to escape on the caller side.
  */
 export async function addReviewThreadReply(
   runner: GhRunner,

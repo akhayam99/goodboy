@@ -38,7 +38,7 @@ interface NavItem {
   beta?: boolean;
 }
 
-// global settings only — per-workspace skills + workflows live in
+// global settings only, per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },

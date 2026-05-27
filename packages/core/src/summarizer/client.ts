@@ -85,7 +85,7 @@ interface SummarizeCommandResult {
   readonly exitCode: number | null;
 }
 
-const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload — a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
+const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload, a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
 
 There are exactly five slots, each with a stable key:
 ${SLOT_KEYS.map((k) => `- ${k} (${SLOT_LABELS[k]})`).join('\n')}
@@ -94,25 +94,25 @@ INPUT
 You receive the previous slot values plus the most recent user turn and assistant turn.
 
 CONTEXT PRESERVATION (critical)
-Previous slot content is canonical memory. There is no "append" operation — every upsert REPLACES the slot — so when you change a slot you MUST emit the full merged value (previous content + new additions, with only items the latest turn invalidated removed).
+Previous slot content is canonical memory. There is no "append" operation, every upsert REPLACES the slot, so when you change a slot you MUST emit the full merged value (previous content + new additions, with only items the latest turn invalidated removed).
 Never silently drop facts that are still valid. Per slot:
-- goal: refine over time as intent clarifies — sharpen wording, surface implicit constraints, drop vague phrasing. Do not erase prior framing if still valid.
+- goal: refine over time as intent clarifies, sharpen wording, surface implicit constraints, drop vague phrasing. Do not erase prior framing if still valid.
 - decisions: append new decisions to the existing list. Never remove accepted ones.
 - open_questions: drop only items the latest user turn explicitly resolves. Add new ones only when the assistant is blocked on the user.
 - files_touched: one path per line; append unique paths; never duplicate or drop prior paths unless a file was deleted.
-- last_output_summary: this slot is REPLACE, not merge — it summarizes only the latest assistant turn.
+- last_output_summary: this slot is REPLACE, not merge, it summarizes only the latest assistant turn.
 
-FORMATTING (critical — values render as markdown in the UI)
+FORMATTING (critical, values render as markdown in the UI)
 Each value MUST be compact, well-structured markdown. Never write a wall of prose on one line.
 Rules:
 - Prefer short bullet lists ("- " prefix). One fact per bullet, under ~100 chars; split long bullets in two.
 - Insert a blank line between logically distinct groups of bullets so the UI does not render them squashed.
 - Use two-space indent + "- " for sub-bullets when nesting context.
 - Use \`backticks\` for identifiers, paths, commands. Use **bold** sparingly for keys/file names that aid scanning.
-- Do NOT use markdown headings (#) — the slot label is already the heading.
+- Do NOT use markdown headings (#), the slot label is already the heading.
 - Do NOT wrap the value in code fences unless quoting actual code.
 - Exclude raw tool output and chat-style narration.
-- The "goal" slot stays as one tight sentence or two — no bullets needed unless multiple sub-goals exist.
+- The "goal" slot stays as one tight sentence or two, no bullets needed unless multiple sub-goals exist.
 
 OUTPUT
 You MUST respond with a single JSON object and nothing else. No prose, no markdown wrapper, no code fences around the JSON.

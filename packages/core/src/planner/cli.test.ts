@@ -102,7 +102,7 @@ describe('PlannerAgent', () => {
 
     const promise = agent.plan({
       theme: 'Migrate to Drizzle ORM',
-      repoContext: 'Workspace: goodboy — TypeScript monorepo',
+      repoContext: 'Workspace: goodboy, TypeScript monorepo',
     });
 
     setImmediate(() => {

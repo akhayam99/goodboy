@@ -19,7 +19,7 @@ describe('parseToolPattern', () => {
 
   it('Bash(git:*) matches command with git: prefix (claude colon notation)', () => {
     // In claude --allowedTools syntax, Bash(git:*) means the Bash command arg
-    // starts with "git:" — the colon is literal in the pattern.
+    // starts with "git:", the colon is literal in the pattern.
     const m = parseToolPattern('Bash(git:*)');
     expect(m.matches('Bash', { command: 'git:status' })).toBe(true);
     expect(m.matches('Bash', { command: 'git:commit' })).toBe(true);

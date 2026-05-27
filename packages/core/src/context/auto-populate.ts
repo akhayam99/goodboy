@@ -91,7 +91,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
 function cryptoRandomUUID(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
   if (g.crypto?.randomUUID) return g.crypto.randomUUID();
-  // Fallback: RFC4122 v4 with Math.random — used only when the runtime lacks
+  // Fallback: RFC4122 v4 with Math.random, used only when the runtime lacks
   // crypto.randomUUID (older test environments).
   const rnd = () =>
     Math.floor(Math.random() * 0x10000)

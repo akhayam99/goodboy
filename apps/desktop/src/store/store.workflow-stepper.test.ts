@@ -11,7 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — hoisted before subject import.
+// Module mocks, hoisted before subject import.
 const runTurnSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
@@ -260,7 +260,7 @@ function wirePhaseSpies() {
   );
 }
 
-describe('createSession — workflow stepper seeding (#424)', () => {
+describe('createSession, workflow stepper seeding (#424)', () => {
   beforeEach(() => {
     wirePhaseSpies();
   });
@@ -309,7 +309,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
       branchPrefix: 'kay',
     });
 
-    // The session is created empty — the user explicitly spawns an agent or
+    // The session is created empty, the user explicitly spawns an agent or
     // starts a workflow from the panel after creation. No placeholder.
     expect(phaseRunInsertSpy).not.toHaveBeenCalled();
     const state = useAppStore.getState();
@@ -344,7 +344,7 @@ describe('createSession — workflow stepper seeding (#424)', () => {
   });
 });
 
-describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent (#439)', () => {
+describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#439)', () => {
   beforeEach(async () => {
     wirePhaseSpies();
     runTurnSpy.mockReset();
@@ -427,7 +427,7 @@ describe('createSession — AGENT_KIND_DEFAULTS applied to first workflow agent 
   });
 });
 
-describe('spawnAgent — AGENT_KIND_DEFAULTS applied via CTA advance (#439)', () => {
+describe('spawnAgent, AGENT_KIND_DEFAULTS applied via CTA advance (#439)', () => {
   beforeEach(() => {
     wirePhaseSpies();
   });
@@ -462,7 +462,7 @@ describe('spawnAgent — AGENT_KIND_DEFAULTS applied via CTA advance (#439)', ()
   });
 });
 
-describe('spawnAgent — CTA auto-run next step (#442)', () => {
+describe('spawnAgent, CTA auto-run next step (#442)', () => {
   beforeEach(() => {
     wirePhaseSpies();
     runTurnSpy.mockReset();

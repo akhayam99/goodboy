@@ -112,7 +112,7 @@ interface FakeState {
 
 function buildSlice(state: FakeState) {
   const set = vi.fn();
-  // Cast through unknown — the slice only touches the few fields above; the
+  // Cast through unknown, the slice only touches the few fields above; the
   // rest of AppStore is intentionally absent to keep the harness narrow.
   const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[1];
   return createPlansSlice(set as unknown as Parameters<typeof createPlansSlice>[0], get);
@@ -149,7 +149,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
   };
 }
 
-describe('runPlan — workflow-aware spawn routing', () => {
+describe('runPlan, workflow-aware spawn routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -169,7 +169,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
         triggeredPlanId: PLAN_ID,
         model: AGENT_KIND_DEFAULTS.implementer.model,
       });
-      // No kindOverride — agent kind must come from the step name so the
+      // No kindOverride, agent kind must come from the step name so the
       // workflow slot's role wins over the implementer default.
       expect(args).not.toHaveProperty('kindOverride');
     });
@@ -211,7 +211,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate A — session has no workflows attached → free-spawn', () => {
+  describe('gate A, session has no workflows attached → free-spawn', () => {
     it('free-spawns an implementer when session has no workflow attached', async () => {
       const state = defaultState({
         sessions: [makeSession({ workflowIds: [] })],
@@ -237,7 +237,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate B — plan creator agent has no stepId → free-spawn', () => {
+  describe('gate B, plan creator agent has no stepId → free-spawn', () => {
     it('free-spawns when the creator agent is not part of the workflow (no stepId)', async () => {
       const freeCreator: Agent = makeAgent({
         id: CREATOR_AGENT_ID,
@@ -302,7 +302,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate C — workflow template not resolvable → free-spawn', () => {
+  describe('gate C, workflow template not resolvable → free-spawn', () => {
     it('free-spawns when the workflow template is missing from phaseTemplates', async () => {
       const state = defaultState({ phaseTemplates: { [WS_ID]: [] } });
       const slice = buildSlice(state);
@@ -324,7 +324,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate D — no next step available → free-spawn', () => {
+  describe('gate D, no next step available → free-spawn', () => {
     it('free-spawns when all workflow steps are completed (pickNextWorkflowStep returns null)', async () => {
       const state = defaultState({
         sessionPhaseRuns: {
@@ -400,7 +400,7 @@ describe('runPlan — workflow-aware spawn routing', () => {
     });
   });
 
-  describe('gate E — next step is not an implementer → free-spawn', () => {
+  describe('gate E, next step is not an implementer → free-spawn', () => {
     it('free-spawns when the next step is a reviewer (not implementer)', async () => {
       const wf = makeWorkflow([
         { id: STEP_PLAN, name: 'Plan', ordinal: 0 },

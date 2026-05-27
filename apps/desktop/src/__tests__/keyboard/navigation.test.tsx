@@ -96,7 +96,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
-describe('keyboard — EndSessionDialog', () => {
+describe('keyboard, EndSessionDialog', () => {
   it('Escape key triggers onClose', async () => {
     const onClose = vi.fn();
     render(<EndSessionDialog session={makeSession()} open={true} onClose={onClose} />);
@@ -139,7 +139,7 @@ describe('keyboard — EndSessionDialog', () => {
   });
 });
 
-describe('keyboard — NewSessionDialog', () => {
+describe('keyboard, NewSessionDialog', () => {
   it('renders without crash when open (multiple textbox inputs present)', () => {
     render(
       <ToastProvider>
@@ -168,7 +168,7 @@ describe('keyboard — NewSessionDialog', () => {
         />
       </ToastProvider>,
     );
-    // Tab through up to 10 focusable elements — verify at least one is an input/textarea
+    // Tab through up to 10 focusable elements, verify at least one is an input/textarea
     let foundInput = false;
     for (let i = 0; i < 10; i++) {
       await user.tab();
@@ -197,7 +197,7 @@ describe('keyboard — NewSessionDialog', () => {
   });
 });
 
-describe('keyboard — QuickActionsPopover arrow / tab navigation', () => {
+describe('keyboard, QuickActionsPopover arrow / tab navigation', () => {
   const items: ReadonlyArray<QuickActionItem> = [
     { id: 'review', label: 'review', sublabel: 'code review', group: 'skill', perform: vi.fn() },
     { id: 'test', label: 'test', sublabel: 'run tests', group: 'skill', perform: vi.fn() },

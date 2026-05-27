@@ -102,7 +102,7 @@ function AgentDuration({ run }: { run: Agent }) {
   if (!run.startedAt) {
     return (
       <span className="font-mono text-muted-foreground/60" title="not started yet">
-        —
+        ·
       </span>
     );
   }

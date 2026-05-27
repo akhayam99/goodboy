@@ -80,7 +80,7 @@ export function isAgentRole(role: string): role is AgentRole {
 
 /**
  * Resolve a role string from the workflow library to its defaults. Unknown
- * roles fall back to `custom` instead of throwing — library entries are
+ * roles fall back to `custom` instead of throwing, library entries are
  * data, not code, and a typo there should still produce a usable agent.
  */
 export function defaultsForRole(role: string): RoleDefaults {

@@ -197,7 +197,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   // The comment-resolved chip lives in the top-right of its own row and
   // hovers a primary action. The hover-only copy button positioned at the
   // same corner of the assistant bubble crashes into that primary action
-  // on short messages — and copying the marker prose isn't useful anyway.
+  // on short messages, and copying the marker prose isn't useful anyway.
   // Hide copy when the marker is present.
   const hasCommentResolvedMarker = COMMENT_RESOLVED_MARKER_RE.test(text);
   COMMENT_RESOLVED_MARKER_RE.lastIndex = 0;

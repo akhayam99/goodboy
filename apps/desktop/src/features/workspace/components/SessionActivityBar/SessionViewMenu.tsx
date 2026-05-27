@@ -39,7 +39,7 @@ interface SessionViewMenuProps {
 /**
  * Linear-style "display options" trigger for the sessions rail. Portals the
  * popover to document.body via fixed coords so it escapes the rail's
- * `overflow-hidden`. State lives in zustand (`sessionViewPrefs`) — this only
+ * `overflow-hidden`. State lives in zustand (`sessionViewPrefs`), this only
  * dispatches `setSessionSort` / `setSessionGroup`.
  */
 export function SessionViewMenu({ workspaceId }: SessionViewMenuProps) {

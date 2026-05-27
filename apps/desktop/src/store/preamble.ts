@@ -6,8 +6,8 @@ const CONTEXT_MARKER_HINT =
   '## context handoff protocol\n' +
   'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
   'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`.\n' +
-  'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>` — the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
-  "the orchestrator parses these markers and persists them to this task's shared context panel — every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
+  'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>`, the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
+  "the orchestrator parses these markers and persists them to this task's shared context panel, every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
 
 export function buildContextPreamble(
   sharedSlots: ReadonlyArray<ContextSlot>,
@@ -19,9 +19,7 @@ export function buildContextPreamble(
     : sharedSlots;
   const rendered = filtered.length > 0 ? serializeSlots(filtered) : '';
   if (rendered.length > 0) {
-    parts.push(
-      '## shared context (already loaded by orchestrator — do not re-derive)\n' + rendered,
-    );
+    parts.push('## shared context (already loaded by orchestrator, do not re-derive)\n' + rendered);
   }
   parts.push(CONTEXT_MARKER_HINT);
   return parts.join('\n\n');

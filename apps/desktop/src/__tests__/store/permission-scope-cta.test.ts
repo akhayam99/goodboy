@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -185,7 +185,7 @@ describe('resolvePermissionRequest', () => {
       scope,
     });
 
-  it('approve global — upserts rule with scope global, decision allow', async () => {
+  it('approve global, upserts rule with scope global, decision allow', async () => {
     await call(useAppStore.getState(), 'global');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
@@ -199,7 +199,7 @@ describe('resolvePermissionRequest', () => {
     expect(arg.sessionId).toBeUndefined();
   });
 
-  it('approve workspace — upserts rule with scope workspace + workspaceId', async () => {
+  it('approve workspace, upserts rule with scope workspace + workspaceId', async () => {
     await call(useAppStore.getState(), 'workspace');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
@@ -212,7 +212,7 @@ describe('resolvePermissionRequest', () => {
     expect(arg.sessionId).toBeUndefined();
   });
 
-  it('approve session — upserts rule with scope task + sessionId', async () => {
+  it('approve session, upserts rule with scope task + sessionId', async () => {
     await call(useAppStore.getState(), 'session');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<
@@ -225,14 +225,14 @@ describe('resolvePermissionRequest', () => {
     expect(arg.workspaceId).toBeUndefined();
   });
 
-  it('approve once — does NOT call upsert, adds toolUseId to volatilePermissionAllows', async () => {
+  it('approve once, does NOT call upsert, adds toolUseId to volatilePermissionAllows', async () => {
     await call(useAppStore.getState(), 'once');
     expect(permissionRuleUpsertSpy).not.toHaveBeenCalled();
     const volatile = useAppStore.getState().volatilePermissionAllows;
     expect(volatile.has(TOOL_USE_ID)).toBe(true);
   });
 
-  it('deny — upserts deny rule with scope task + sessionId', async () => {
+  it('deny, upserts deny rule with scope task + sessionId', async () => {
     await call(useAppStore.getState(), 'deny');
     expect(permissionRuleUpsertSpy).toHaveBeenCalledOnce();
     const arg = (permissionRuleUpsertSpy.mock.calls as unknown as [unknown[]])[0]![0] as Record<

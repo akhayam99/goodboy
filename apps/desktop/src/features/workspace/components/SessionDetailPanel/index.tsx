@@ -57,7 +57,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
 
   return (
     <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
-      {/* header row — user tick · title · settings */}
+      {/* header row, user tick · title · settings */}
       <div className="flex items-center gap-2">
         <SessionStatusMenu
           status={session.userStatus}
@@ -182,7 +182,7 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Session switch — snap, don't animate stale → fresh transition.
+    // Session switch, snap, don't animate stale → fresh transition.
     if (prevSessionIdRef.current !== sessionId) {
       prevSessionIdRef.current = sessionId;
       prevCostRef.current = sessionCost;
@@ -251,7 +251,7 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
       <button
         type="button"
         onClick={() => setPricingOpen(true)}
-        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer) — click for spend breakdown`}
+        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer), click for spend breakdown`}
         className={cn(
           'inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15',
           animating && 'cost-chip-pulse',

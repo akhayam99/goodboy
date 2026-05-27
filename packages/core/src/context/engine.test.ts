@@ -44,7 +44,7 @@ describe('serializeSlots', () => {
     for (const key of SLOT_KEYS) {
       expect(out).toContain(`## ${key.replace(/_/g, ' ')}`);
     }
-    expect(out.split('—').length - 1).toBe(SLOT_KEYS.length);
+    expect(out.split('·').length - 1).toBe(SLOT_KEYS.length);
   });
 
   it('uses provided value when present', () => {
@@ -65,7 +65,7 @@ describe('serializeSlots', () => {
   });
 
   it('serializes slots regardless of the legacy enabled flag', () => {
-    // The enabled flag is no longer respected at serialization time — slots
+    // The enabled flag is no longer respected at serialization time, slots
     // with content always reach the model. The flag is kept on the type for
     // schema compat but has no effect on output.
     const out = serializeSlots([{ key: 'goal', value: 'visible-anyway', enabled: false }]);

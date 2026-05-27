@@ -126,7 +126,7 @@ describe('detectDrift', () => {
       expect(result.some((v) => v.signal === 'file-edit-from-readonly-kind')).toBe(true);
     });
 
-    it('allows mixed doc+non-doc edits from docs — flags only non-doc', () => {
+    it('allows mixed doc+non-doc edits from docs, flags only non-doc', () => {
       const result = detectDrift({
         agentKind: 'docs',
         assistantText: 'done',

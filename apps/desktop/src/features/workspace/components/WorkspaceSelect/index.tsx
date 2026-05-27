@@ -40,7 +40,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
 
   // Deep-link into per-workspace settings from elsewhere (e.g. the command
   // palette selecting a workflow or script). Always targets the current
-  // workspace — the palette only lists the current workspace's items.
+  // workspace, the palette only lists the current workspace's items.
   useEffect(() => {
     const handler = (e: Event) => {
       if (!currentWorkspace) return;
@@ -97,7 +97,7 @@ export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
           )}
           title={
             atCap
-              ? `max ${MAX_WORKSPACES} workspaces — disconnect one to add another`
+              ? `max ${MAX_WORKSPACES} workspaces, disconnect one to add another`
               : 'add workspace'
           }
           aria-label={atCap ? `workspace limit reached (${MAX_WORKSPACES})` : 'add workspace'}
@@ -143,7 +143,7 @@ function WorkspaceCard({
             ? 'animate-soft-pulse border-warning/70 bg-warning/5 text-foreground hover:bg-warning/10'
             : 'border-border-soft bg-subtle text-muted-foreground hover:border-border hover:bg-muted/50',
       )}
-      title={showUnread ? `${workspace.name} — new activity` : workspace.name}
+      title={showUnread ? `${workspace.name}, new activity` : workspace.name}
       data-tauri-drag-region="false"
     >
       <button
@@ -162,7 +162,7 @@ function WorkspaceCard({
         }}
         data-tauri-drag-region="false"
         className="flex h-full items-center px-1.5 text-muted-foreground/50 transition-colors hover:text-foreground focus-visible:text-foreground"
-        title={`workspace settings — ${workspace.name}`}
+        title={`workspace settings, ${workspace.name}`}
         aria-label={`open workspace settings for ${workspace.name}`}
       >
         <Settings size={11} aria-hidden />

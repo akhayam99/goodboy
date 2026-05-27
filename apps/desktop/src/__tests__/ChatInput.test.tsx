@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-// Module mocks — hoisted before imports that transitively pull the mocked modules.
+// Module mocks, hoisted before imports that transitively pull the mocked modules.
 // vi.hoisted keeps shared refs alive across the hoisting reorder.
 const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
   const { create } = await import('zustand');
@@ -157,7 +157,7 @@ afterEach(() => {
   resetMockStore();
 });
 
-describe('ChatInput — input wiring', () => {
+describe('ChatInput, input wiring', () => {
   it('typed characters appear in the textarea', async () => {
     const user = userEvent.setup();
     render(<ChatInput session={makeSession()} />);

@@ -18,7 +18,7 @@ interface BootSplashProps {
 }
 
 // User-facing steps. Internal phases (migrations, settings, cli detection) are
-// collapsed into the first one — users don't care about the difference.
+// collapsed into the first one, users don't care about the difference.
 interface BootStep {
   threshold: number;
   label: string;
@@ -36,7 +36,7 @@ const LAST_STEP: BootStep = STEPS[STEPS.length - 1] ?? {
 };
 
 // Maps a real boot phase to the target % the animation should crawl toward.
-// The animation always lerps smoothly — fast boots still play the full bar.
+// The animation always lerps smoothly, fast boots still play the full bar.
 function targetForPhase(phase: BootPhase): number {
   switch (phase) {
     case 'pending':

@@ -55,7 +55,7 @@ describe('computeCodexCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // 1M billable @ $4 + 1M cached @ $4 (same rate — no discount configured)
+    // 1M billable @ $4 + 1M cached @ $4 (same rate, no discount configured)
     expect(computeCodexCostUsd(partial, 'codex-latest', noCache)).toBeCloseTo(4 + 4);
   });
 

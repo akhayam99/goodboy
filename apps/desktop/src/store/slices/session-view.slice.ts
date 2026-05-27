@@ -76,7 +76,7 @@ function writeToStorage(workspaceId: WorkspaceId, prefs: SessionViewPrefs): void
     const persisted: PersistedSessionViewPrefs = { v: 1, ...prefs };
     localStorage.setItem(storageKey(workspaceId), JSON.stringify(persisted));
   } catch {
-    // Swallow quota errors — prefs are non-critical.
+    // Swallow quota errors, prefs are non-critical.
   }
 }
 

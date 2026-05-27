@@ -101,7 +101,7 @@ describe('parseModelId', () => {
     });
   });
 
-  it('provider/model prefix — strips the provider prefix before parsing', () => {
+  it('provider/model prefix, strips the provider prefix before parsing', () => {
     expect(parseModelId('anthropic/claude-sonnet-4-6')).toEqual({
       family: 'claude',
       subfamily: 'sonnet',

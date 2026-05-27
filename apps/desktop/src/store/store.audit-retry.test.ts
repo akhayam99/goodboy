@@ -9,7 +9,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -202,7 +202,7 @@ async function* emptyStream(): AsyncIterable<TurnEvent> {
   // intentionally empty
 }
 
-describe('audit retry queue — sendTurn enqueue on failure', () => {
+describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
@@ -316,7 +316,7 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
   });
 });
 
-describe('audit retry queue — drain worker (happy path)', () => {
+describe('audit retry queue, drain worker (happy path)', () => {
   beforeEach(() => {
     runTurnSpy.mockImplementation(() => emptyStream());
     permissionRuleListSpy.mockResolvedValue([]);
@@ -361,7 +361,7 @@ describe('audit retry queue — drain worker (happy path)', () => {
 
     const mod = await import('./store');
     await mod.useAppStore.getState().hydrate();
-    // Drain is fired with void — yield microtask so it can settle.
+    // Drain is fired with void, yield microtask so it can settle.
     await Promise.resolve();
   }
 

@@ -254,7 +254,7 @@ export interface ParallelSpawnArgs {
  * Spawn N child processes concurrently via a single Tauri invoke.
  *
  * Returns the launched `runId`s in the same order as `args.runs`.
- * Each run emits `turn_event` envelopes tagged with its own `runId` — the
+ * Each run emits `turn_event` envelopes tagged with its own `runId`, the
  * existing `RawTurnEnvelope` listener already filters by `runId`, so no
  * frontend changes are needed for multiplexing.
  */

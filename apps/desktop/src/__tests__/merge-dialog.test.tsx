@@ -18,7 +18,7 @@ const TWO_CONFLICTS = [
   { file: 'src/bar.ts', runIds: [RUN_A, RUN_B] as ReadonlyArray<ProviderRunId> },
 ];
 
-describe('MergeDialog — rendering', () => {
+describe('MergeDialog, rendering', () => {
   it('renders file path in mono font', () => {
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
@@ -56,7 +56,7 @@ describe('MergeDialog — rendering', () => {
   });
 });
 
-describe('MergeDialog — confirm button gate', () => {
+describe('MergeDialog, confirm button gate', () => {
   it('confirm disabled before any pick', () => {
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
@@ -109,7 +109,7 @@ describe('MergeDialog — confirm button gate', () => {
   });
 });
 
-describe('MergeDialog — onResolve payload', () => {
+describe('MergeDialog, onResolve payload', () => {
   it('calls onResolve with correct runId pick', () => {
     const onResolve = vi.fn();
     render(
@@ -154,7 +154,7 @@ describe('MergeDialog — onResolve payload', () => {
   });
 });
 
-describe('MergeDialog — cancel', () => {
+describe('MergeDialog, cancel', () => {
   it('invokes onCancel when cancel button is clicked', () => {
     const onCancel = vi.fn();
     render(
@@ -185,7 +185,7 @@ describe('MergeDialog — cancel', () => {
   });
 });
 
-describe('MergeDialog — escape', () => {
+describe('MergeDialog, escape', () => {
   it('calls onCancel when escape key fires a close event on the dialog', () => {
     const onCancel = vi.fn();
     render(

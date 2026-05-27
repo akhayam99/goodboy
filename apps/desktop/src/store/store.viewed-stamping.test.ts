@@ -240,7 +240,7 @@ describe('markAgentViewed', () => {
   });
 });
 
-describe('agentHasUnread — after markAgentViewed', () => {
+describe('agentHasUnread, after markAgentViewed', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });

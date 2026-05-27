@@ -5,7 +5,7 @@ import { Button, Dialog } from '@goodboy/ui';
 // Sentinel used when the user chooses to skip resolution for a file.
 // The consumer (onResolve) receives picks[file] === SKIP_SENTINEL for skipped files.
 // Skipped files are included in the picks map so callers always have a full record
-// keyed by every conflict file — no ambiguity between "skipped" and "not yet picked".
+// keyed by every conflict file, no ambiguity between "skipped" and "not yet picked".
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
 
@@ -82,7 +82,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
       )}
 
       {/* diff preview: [follow-on issue, not blocking merge]
-          Full side-by-side diff rendering is deferred — see #213 (or next follow-on).
+          Full side-by-side diff rendering is deferred, see #213 (or next follow-on).
           The scheduler MergeResult payload does not yet carry raw diff hunks;
           that wire-up lands in I1 #212. When available, replace this placeholder
           with a per-conflict <DiffPreview> component rendered below the radio list. */}

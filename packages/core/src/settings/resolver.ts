@@ -7,14 +7,14 @@ export type ResolveSettingsInput = {
 };
 
 /**
- * Pure fn — browser-safe, no I/O.
+ * Pure fn, browser-safe, no I/O.
  * Resolution order: session > workspace > global (null = inherit).
  */
 export function resolveSettings(input: ResolveSettingsInput): ResolvedSettings {
   const { global: g, workspaceOverride: ws, sessionOverride: sess } = input;
 
   // workflowId can be `null` (explicit "no workflow" override), so `??` cannot
-  // chain — first defined wins, including null.
+  // chain, first defined wins, including null.
   const resolvedWorkflowId = (() => {
     if (sess?.defaultWorkflowId !== undefined) return sess.defaultWorkflowId;
     if (ws?.defaultWorkflowId !== undefined) return ws.defaultWorkflowId;

@@ -6,7 +6,7 @@ import { Dialog } from '@goodboy/ui';
 
 afterEach(cleanup);
 
-describe('Dialog — aria associations', () => {
+describe('Dialog, aria associations', () => {
   it('renders aria-labelledby pointing to title element', () => {
     const { container } = render(
       <Dialog open={true} onClose={() => undefined} title="test title">

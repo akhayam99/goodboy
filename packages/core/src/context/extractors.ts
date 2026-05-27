@@ -2,7 +2,7 @@ import type { TurnEvent } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
 
 // Extractors that turn raw turn output into ContextPanel updates. Each
-// exported fn is pure — caller persists via the ContextEngine. Split kept
+// exported fn is pure, caller persists via the ContextEngine. Split kept
 // extractors trivially testable and lets the store decide when to flush.
 
 /**
@@ -78,11 +78,11 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
 
 /**
  * Pull the most recent `<<plan>>...<</plan>>` block from an assistant turn.
- * Planning agents wrap a Markdown body inside the marker — title is the first
+ * Planning agents wrap a Markdown body inside the marker, title is the first
  * non-empty line (with leading `#` stripped); body is the rest. Returns null
  * when no marker is present or its content is empty.
  *
- * If multiple plans appear in one turn (rare), the last one wins — agents are
+ * If multiple plans appear in one turn (rare), the last one wins, agents are
  * expected to emit one final plan per turn.
  */
 export interface ExtractedPlan {
@@ -182,7 +182,7 @@ export interface ExtractedCommentResolution {
  * and create a local commit, so the chat surface can offer a one-click action
  * that marks the underlying review thread resolved on github.
  *
- * Self-closing. If multiple markers exist (rare — the agent should emit one
+ * Self-closing. If multiple markers exist (rare, the agent should emit one
  * after committing), the last one wins. Returns null if no well-formed marker
  * is present.
  */
@@ -218,7 +218,7 @@ export interface PlanReadinessResult {
 
 /**
  * Heuristic check for whether a freshly emitted plan looks complete enough to
- * justify suggesting the implementer agent. Conservative on purpose — false
+ * justify suggesting the implementer agent. Conservative on purpose, false
  * positives mean noisy nudges. Three rejections:
  *   - body contains TODO / TBD / FIXME / ??
  *   - body has fewer than 2 bulleted/numbered steps
@@ -256,7 +256,7 @@ function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
  * by exact-match line. Order: existing lines first, new ones after.
  *
  * Returns the merged value. If nothing changed (every addition already
- * present), returns the original string verbatim — caller can use that to
+ * present), returns the original string verbatim, caller can use that to
  * skip the upsert.
  */
 export function mergeIntoSlot(existing: string, additions: ReadonlyArray<string>): string {
@@ -276,7 +276,7 @@ export function mergeIntoSlot(existing: string, additions: ReadonlyArray<string>
 }
 
 /**
- * Remove lines from `existing` that match any string in `removals` — match is
+ * Remove lines from `existing` that match any string in `removals`, match is
  * case-insensitive, ignores leading list markers (`-`, `*`, `1.`), and
  * succeeds when one is a substring of the other. Used to clean up resolved
  * open questions when the agent emits `<<ctx-resolved>>` markers.

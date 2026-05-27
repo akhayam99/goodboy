@@ -189,7 +189,7 @@ async function importStore() {
   return mod.useAppStore;
 }
 
-describe('sendTurn — agent routing', () => {
+describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();

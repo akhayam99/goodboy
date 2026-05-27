@@ -141,7 +141,7 @@ export function parseModelId(id: string): ParsedModel {
     return { family: 'composer', subfamily: null, variantLabel: m[1]! };
   }
 
-  // Cursor's `auto` model — standalone family so it renders without a row label.
+  // Cursor's `auto` model, standalone family so it renders without a row label.
   if (local === 'auto') {
     return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
   }
@@ -195,7 +195,7 @@ export function modelWeight(model: string): number {
 }
 
 // Heuristic floor used by the first-turn right-sizing card.
-// Never suggest Haiku — user explicitly disallows it for this workspace.
+// Never suggest Haiku, user explicitly disallows it for this workspace.
 const SUGGESTION_FLOOR_PATTERN = /haiku|small|mini|nano|cursor-small/i;
 
 // Weight delta below which a suggestion is not worth surfacing (avoid nagging

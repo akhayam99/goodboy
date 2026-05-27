@@ -17,12 +17,12 @@ interface ChatBreadcrumbProps {
 /**
  * Sticky 32px breadcrumb header at the top of ChatView. Shows
  * workspace › session › agent · [kind] so the user always knows
- * which agent is talking — before this header the active agent's
+ * which agent is talking, before this header the active agent's
  * name was nowhere in the chat surface (only in the sidebar).
  *
  * Segments are interactive: workspace opens its settings, session
  * opens its settings, agent shows the kind chip. Open Linear-style
- * — segments are anchors, not just labels.
+ *, segments are anchors, not just labels.
  *
  * Per plan §A.4.
  */
@@ -83,7 +83,7 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
         {sessionLabel}
       </span>
 
-      {/* agent — only when one is selected; the chat empties otherwise */}
+      {/* agent, only when one is selected; the chat empties otherwise */}
       {selectedAgent && agentKind ? (
         <>
           <Separator />

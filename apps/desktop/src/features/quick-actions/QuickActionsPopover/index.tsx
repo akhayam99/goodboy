@@ -10,8 +10,8 @@ interface QuickActionsPopoverProps {
 
 /**
  * Generic prefix-action picker rendered inline above the composer. Renders
- * whatever `QuickActionItem[]` it is handed and reports the chosen one —
- * the behavior lives in `item.perform`, not here.
+ * whatever `QuickActionItem[]` it is handed and reports the chosen one. The
+ * behavior lives in `item.perform`, not here.
  */
 export function QuickActionsPopover({
   items,

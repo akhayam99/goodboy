@@ -8,7 +8,7 @@ import { Summarizer } from './cli';
 
 const enabled = process.env['SUMMARIZER_INTEGRATION'] === '1';
 
-describe.skipIf(!enabled)('Summarizer — integration (requires active provider binary)', () => {
+describe.skipIf(!enabled)('Summarizer, integration (requires active provider binary)', () => {
   it('detects available binary via anthropic provider', async () => {
     const summarizer = new Summarizer({ providerId: 'anthropic' });
 

@@ -4,7 +4,7 @@ interface DogSniffProps {
   'aria-hidden'?: boolean;
 }
 
-// "Debug" mascot — a dog in a head-down sniffing pose, nosing out a pile
+// "Debug" mascot, a dog in a head-down sniffing pose, nosing out a pile
 // on the ground (the bug) set a small gap apart so the two read as distinct.
 // Single-color (currentColor); the eye is knocked out (evenodd) so the
 // background shows through. Same solid style as DogMascot.
@@ -32,7 +32,7 @@ export function DogSniff({
         </g>
         {/* the dog */}
         <g transform="translate(5.13 3.64) scale(0.8)">
-          {/* legs — hind pair then front pair */}
+          {/* legs, hind pair then front pair */}
           <path d="M17.2 12.9L19.2 12.9Q19.1 17 19 20.1Q19 21.05 18.3 21.1L17.05 21.1Q16.5 21.1 16.65 20.35Q16.9 17 17.2 12.9Z" />
           <path d="M11.8 13.1L13.8 13.1Q13.7 17 13.6 20.1Q13.6 21.05 12.9 21.1L11.65 21.1Q11.1 21.1 11.25 20.35Q11.5 17 11.8 13.1Z" />
           <path d="M15 12.7L17.1 12.7Q17 17 16.9 20.2Q16.9 21.15 16.15 21.2L14.85 21.2Q14.3 21.2 14.45 20.45Q14.7 17 15 12.7Z" />

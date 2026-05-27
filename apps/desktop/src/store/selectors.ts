@@ -78,7 +78,7 @@ const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
 const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
 
-// Archived sessions are not in `state.sessions` by construction — they live
+// Archived sessions are not in `state.sessions` by construction, they live
 // in `state.archivedSessions[workspaceId]` and are loaded lazily. Lookups for
 // the current session / a specific id need to fall back into that pool so the
 // detail panel and SessionSettingsDialog work when the user clicks an
@@ -177,14 +177,14 @@ const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, d
 
 /**
  * Files that differ between the session worktree and its base branch
- * (`main`/`master`, or their `origin/` counterparts — first existing wins).
+ * (`main`/`master`, or their `origin/` counterparts, first existing wins).
  * Includes uncommitted + untracked changes. Stable across pushes: pushing
  * commits doesn't drop the count because the diff is computed against the
  * merge-base with the base branch, not against `HEAD`.
  *
  * Refresh triggers: session switch, summarizer ticks, and the max
  * `lastFinishedAt` across the session's agents. We avoid keying on
- * transcript length — that grows token-by-token and would re-fire the
+ * transcript length, that grows token-by-token and would re-fire the
  * Tauri invoke on every streamed chunk.
  */
 export const useFilesTouched = (
@@ -251,7 +251,7 @@ export const useFilesTouched = (
  * Unread = agent finished a terminal turn after the user last viewed it.
  * `isCurrentlyViewed` must be true ONLY when the user is actively looking at
  * this agent right now (i.e. agent is selected in its session AND its session is the
- * active session). Being merely "selected" in a non-active session does not count —
+ * active session). Being merely "selected" in a non-active session does not count:
  * the user is elsewhere.
  */
 export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {

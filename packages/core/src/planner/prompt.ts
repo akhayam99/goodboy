@@ -2,7 +2,7 @@ import type { PlannerInput } from './types';
 
 export const PLANNER_SYSTEM_PROMPT = `You are a planning agent for an AI coding workspace.
 
-The user gives you a theme — a goal they want to accomplish on their codebase.
+The user gives you a theme, a goal they want to accomplish on their codebase.
 Your job is to break that goal into a sequence of agent steps. Each step will be
 executed as its own LLM session. Steps run in order; the output of one step becomes
 context for the next.

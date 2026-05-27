@@ -149,7 +149,7 @@ describe('ClaudeAdapter.detect', () => {
   });
 });
 
-describe('spawnClaude — permission flags', () => {
+describe('spawnClaude, permission flags', () => {
   function captureArgs(permissionFlags?: TurnPermissionFlags): string[] {
     let capturedArgs: string[] = [];
     const child = new FakeChild([]);

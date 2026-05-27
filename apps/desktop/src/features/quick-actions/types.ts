@@ -2,7 +2,7 @@ import type { QuickActionGroup } from './grammar';
 
 /**
  * One selectable row in the quick-actions popover. `perform` carries the
- * behavior — exec a script, pre-fill a skill — so the popover stays a
+ * behavior, exec a script, pre-fill a skill, so the popover stays a
  * generic renderer.
  */
 export interface QuickActionItem {

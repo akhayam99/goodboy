@@ -12,7 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — these MUST be hoisted before importing the store.
+// Module mocks, these MUST be hoisted before importing the store.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -188,10 +188,10 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // emit nothing — turn ends immediately
+  // emit nothing, turn ends immediately
 }
 
-describe('sendTurn — permission proxy integration', () => {
+describe('sendTurn, permission proxy integration', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();

@@ -108,7 +108,7 @@ function resolveLastWriteWins(
       );
 
     if (candidates.length === 0) {
-      // No completed run — fall back to deterministic sort on runId
+      // No completed run, fall back to deterministic sort on runId
       const sorted = [...conflict.runIds].sort();
       return { file: conflict.file, winnerRunId: sorted[0]!, reason: 'last_write_wins' };
     }

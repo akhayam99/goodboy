@@ -20,7 +20,7 @@ export const SLOT_LABELS: Record<SlotKey, string> = {
   last_output_summary: 'last output summary',
 };
 
-const EMPTY_PLACEHOLDER = '—';
+const EMPTY_PLACEHOLDER = '·';
 
 export class InvalidSlotKeyError extends Error {
   constructor(public readonly key: string) {

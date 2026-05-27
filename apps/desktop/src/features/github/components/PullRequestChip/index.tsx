@@ -19,7 +19,7 @@ interface PrStateMeta {
 // renders icon-only; the GithubCard renders icon + #number; the right-panel
 // GitHub tab and status-bar signal render the full badge with label word.
 // Colors lift from existing tokens (success/merged/danger/muted) so there's
-// no new palette work — see plan §H.5.
+// no new palette work, see plan §H.5.
 const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   draft: {
     icon: GitPullRequestDraft,
@@ -62,10 +62,10 @@ type Variant = 'icon' | 'compact' | 'badge';
 interface PullRequestChipProps {
   readonly state: PullRequestStateKind;
   /**
-   * - `icon` — single 10–12px icon, no text. Use when space is tight (sidebar rail).
-   * - `compact` — icon + #number, no label word. Use in dense rows.
-   * - `badge` — colored chip with icon + label word (+ optional #number). The
-   *   richest variant — use in headers, status bar, inbox entries.
+   * - `icon`, single 10–12px icon, no text. Use when space is tight (sidebar rail).
+   * - `compact`, icon + #number, no label word. Use in dense rows.
+   * - `badge`, colored chip with icon + label word (+ optional #number). The
+   *   richest variant, use in headers, status bar, inbox entries.
    */
   readonly variant?: Variant;
   readonly number?: number;

@@ -27,7 +27,7 @@ interface WorkspaceSettingsDialogProps {
   workspaceName: string;
   open: boolean;
   onClose: () => void;
-  /** Tab to open on — e.g. deep-linked from the command palette. */
+  /** Tab to open on, e.g. deep-linked from the command palette. */
   initialSection?: string;
 }
 
@@ -254,7 +254,7 @@ export function WorkspaceSettingsDialog({
           <SectionShell
             icon={<Terminal size={14} aria-hidden className="text-primary" />}
             title="Scripts"
-            subtitle="User-defined shell scripts you run by hand — copy env files, install deps, build. No agent, no tokens spent."
+            subtitle="User-defined shell scripts you run by hand, copy env files, install deps, build. No agent, no tokens spent."
           >
             <ScriptsPanel workspaceId={workspaceId} />
           </SectionShell>
@@ -497,7 +497,7 @@ function DangerSection({
       <SectionHeader
         icon={<AlertTriangle size={14} aria-hidden className="text-danger" />}
         title="Danger zone"
-        subtitle="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk — re-add the same path later and everything comes back."
+        subtitle="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk, re-add the same path later and everything comes back."
         tone="danger"
       />
 
@@ -514,7 +514,7 @@ function DangerSection({
               Disconnect workspace
             </div>
             <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-              Nothing is deleted. The repo and all its sessions stay in place — they just stop
+              Nothing is deleted. The repo and all its sessions stay in place, they just stop
               showing up in the sidebar until you re-add the path.
             </p>
           </div>

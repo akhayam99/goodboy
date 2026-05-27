@@ -15,7 +15,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — hoisted before importing the store.
+// Module mocks, hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
 vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
@@ -47,7 +47,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-// Listener mock — captures the registered handler so tests can drive 'end' events.
+// Listener mock, captures the registered handler so tests can drive 'end' events.
 const listenHandlers: Array<(payload: unknown) => void> = [];
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async (_event: string, cb: (e: { payload: unknown }) => void) => {
@@ -278,7 +278,7 @@ function setupSession(
   });
 }
 
-describe('sendTurn — parallel agents branch', () => {
+describe('sendTurn, parallel agents branch', () => {
   beforeEach(() => {
     agentFeaturesMock.parallelAgents = false;
     agentFeaturesMock.maxParallelism = 4;

@@ -147,7 +147,7 @@ function makeProviderInfo(overrides: Partial<ProviderInfo> = {}): ProviderInfo {
   };
 }
 
-describe('snapshot — empty states', () => {
+describe('snapshot, empty states', () => {
   it('SkillsPanel: no skills', () => {
     const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
     expect(container.firstChild).toMatchSnapshot();
@@ -201,8 +201,8 @@ describe('snapshot — empty states', () => {
   });
 });
 
-describe('snapshot — error states', () => {
-  it('App init error — BootSplash with error message', () => {
+describe('snapshot, error states', () => {
+  it('App init error, BootSplash with error message', () => {
     const { container } = render(<BootSplash phase="error" error="database migration failed" />);
     expect(container.firstChild).toMatchSnapshot();
   });
