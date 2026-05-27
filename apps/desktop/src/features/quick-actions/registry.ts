@@ -1,5 +1,5 @@
-import type { Agent, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
-import { AGENT_KIND_META, inferAgentKindFromName } from '../session/agent-kind';
+import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import { AGENT_KIND_META, inferAgentKindFromName, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
 function firstLine(body: string): string | undefined {
@@ -57,13 +57,17 @@ export function buildWorkflowActions(
  */
 export function buildAgentActions(
   agents: ReadonlyArray<Agent>,
+  kindOverride: Readonly<Record<AgentId, AgentKind>>,
   onSwitch: (agent: Agent) => void,
   onSpawn: () => void,
 ): ReadonlyArray<QuickActionItem> {
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
     .map<QuickActionItem>((agent) => {
-      const kind = inferAgentKindFromName(agent.name);
+      // Authoritative source: agentKindOverride is populated by the workflow
+      // step that spawned the agent. Fall back to name-based inference for
+      // ad-hoc agents created without a workflow context.
+      const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name);
       return {
         id: `agent:${agent.id}`,
         label: agent.name,

@@ -168,6 +168,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
+  const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
   const selectedAgentName = useAppStore((s) => {
     if (!selectedAgentId) return null;
     const runs = s.sessionPhaseRuns[session.id] ?? [];
@@ -402,7 +403,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       return buildWorkflowActions(eligible, (workflow) => void onPickWorkflow(workflow));
     }
     if (symbol === '@') {
-      return buildAgentActions(sessionAgents, onSwitchAgent, () => void onSpawnAgent());
+      return buildAgentActions(
+        sessionAgents,
+        sessionAgentKindOverrides,
+        onSwitchAgent,
+        () => void onSpawnAgent(),
+      );
     }
     if (symbol === '/' && WORKSPACE_FEATURES.skills) {
       return buildSkillActions(workspaceSkills, onPickSkill);
@@ -414,6 +420,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     workspaceScripts,
     workspaceWorkflows,
     sessionAgents,
+    sessionAgentKindOverrides,
     workspaceSkills,
     onPickScript,
     onPickWorkflow,
