@@ -1,8 +1,8 @@
 # Goodboy — Roadmap
 
-Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v1.0. Each version is a GitHub milestone; issues live there.
+Local-first AI workspace orchestrator. This roadmap tracks the path from bootstrap to v0.1.0 (first public release). Each version is a GitHub milestone; issues live there.
 
-> **Status**: post-v0.7 sprint complete (PRs #501–#569). Domain rename shipped. GitHub panel, plans, agent kinds, next-actions, diff viewer, notifications, session status all live. **v1.0 next.**
+> **Status**: post-v0.0.7 sprint complete (PRs #501–#569). Domain rename shipped. GitHub panel, plans, agent kinds, next-actions, diff viewer, notifications, session status all live. **v0.1.0 next.**
 
 ## Architectural decisions (locked)
 
@@ -12,8 +12,8 @@ Non-negotiable choices that frame the product. Numbers preserved for cross-refer
 2. **Goodboy owns the conversation** — history lives in our SQLite, not in `~/.claude/projects/`. Every turn is reconstructed from the synthetic context plus the new user message; we never rely on `--resume`. This is what makes context portable across providers.
 3. **Synthetic context = hybrid structured slots** — fixed slots (`goal`, `files_touched`, `decisions`, `open_questions`, `last_output_summary`), editable by hand at any time, auto-updated post-turn by a cheap summarizer (active provider's cheap-tier model via CLI — no separate API key required, runs against the user's existing subscription).
 4. **Isolation = git worktree per session** — branch prefix configurable per workspace (default `kay`). Worktree is the sandbox in which agents operate.
-5. **Provider scope, phased** — v0.1 shipped with Claude only behind a stable adapter interface; v0.2 added Cursor + Codex together to stress-test the contract on two new adapters at once.
-6. **Permission proxy** — landed in v0.6 for Claude (intercept tool-calls → UI approve/deny). Cursor + Codex coverage tracked for v1.0.
+5. **Provider scope, phased** — v0.0.1 shipped with Claude only behind a stable adapter interface; v0.0.2 added Cursor + Codex together to stress-test the contract on two new adapters at once.
+6. **Permission proxy** — landed in v0.0.6 for Claude (intercept tool-calls → UI approve/deny). Cursor + Codex coverage tracked for v0.1.0.
 7. **Stack** — Tauri 2 + React 19 + TypeScript 5 strict + Vite 6 + Tailwind v4 + Zustand 5 + SQLite. Monorepo via pnpm 10 workspaces + Turborepo. See [CLAUDE.md](./CLAUDE.md) and [CONVENTIONS.md](./CONVENTIONS.md).
 8. **Domain model = workspace > session > agent (n)** — sessions own a goal, a worktree, and a shared context panel. Agents are independent chat threads inside a session, spawned at will from the sidebar; they share the session's context but each owns its own message history. DB tables match the domain: `sessions`, `agents`. Types: `Session`/`SessionId`, `Agent`/`AgentId`. Full rename completed in m031 (PR #564).
 
@@ -21,57 +21,57 @@ Non-negotiable choices that frame the product. Numbers preserved for cross-refer
 
 ## Completed milestones
 
-### v0.1 — MVP
+### v0.0.1 — MVP
 
 Single-provider session with synthetic context and live telemetry. End-to-end Claude session inside a Goodboy-managed worktree.
 
-[v0.1 milestone](https://github.com/akhayam99/goodboy/milestone/1)
+[v0.0.1 milestone](https://github.com/akhayam99/goodboy/milestone/1)
 
-### v0.2 — Multi-provider
+### v0.0.2 — Multi-provider
 
 Cursor + Codex adapters, capability matrix, provider connection UX, summarizer migrated to active-provider CLI.
 
-[v0.2 milestone](https://github.com/akhayam99/goodboy/milestone/2)
+[v0.0.2 milestone](https://github.com/akhayam99/goodboy/milestone/2)
 
-### v0.3 — Budget & routing
+### v0.0.3 — Budget & routing
 
 Per-provider monthly cap, per-session soft cap, automatic fallback when cap hit, threshold alerts, routing engine wired into turn flow.
 
-[v0.3 milestone](https://github.com/akhayam99/goodboy/milestone/3)
+[v0.0.3 milestone](https://github.com/akhayam99/goodboy/milestone/3)
 
-### v0.4 — Multi-agent sequential
+### v0.0.4 — Multi-agent sequential
 
 Declared phases inside a session. Each phase spawns its own agent; synthetic context flows between phases.
 
-[v0.4 milestone](https://github.com/akhayam99/goodboy/milestone/4)
+[v0.0.4 milestone](https://github.com/akhayam99/goodboy/milestone/4)
 
-### v0.5 — Skills
+### v0.0.5 — Skills
 
 Local skill registry (markdown + scripts), slash-command invocation from chat, executable across providers.
 
-[v0.5 milestone](https://github.com/akhayam99/goodboy/milestone/5)
+[v0.0.5 milestone](https://github.com/akhayam99/goodboy/milestone/5)
 
-### v0.6 — Permission proxy
+### v0.0.6 — Permission proxy
 
 Tool-call interception via static rules + audit for Claude. `--dangerously-skip-permissions` removed.
 
-[v0.6 milestone](https://github.com/akhayam99/goodboy/milestone/6)
+[v0.0.6 milestone](https://github.com/akhayam99/goodboy/milestone/6)
 
-### v0.7 — Multi-agent parallel
+### v0.0.7 — Multi-agent parallel
 
 Multiple agents inside a single session on throwaway worktrees, coordinating via shared context. Fan-out / fan-in with merge conflict UI.
 
-[v0.7 milestone](https://github.com/akhayam99/goodboy/milestone/7)
+[v0.0.7 milestone](https://github.com/akhayam99/goodboy/milestone/7)
 
-### pre-1.0 — UX polish
+### pre-0.1.0 — UX polish
 
 Design tokens, typography scale, motion language, empty/loading/error states, sidebar mega, settings IA split, a11y baseline, config export/import, settings inheritance resolver.
 
 ---
 
-## Post-v0.7 sprint (PRs #501–#569)
+## Post-v0.0.7 sprint (PRs #501–#569)
 
-Major sprint bridging v0.7 → v1.0. Shipped in ~2 weeks.
+Major sprint bridging v0.0.7 → v0.1.0. Shipped in ~2 weeks.
 
 ### Domain & DB
 
@@ -125,7 +125,7 @@ Major sprint bridging v0.7 → v1.0. Shipped in ~2 weeks.
 
 ---
 
-## v1.0 — Stable release
+## v0.1.0 — First public release
 
 Signed binary distribution and everything needed for a public launch.
 
@@ -148,7 +148,7 @@ Signed binary distribution and everything needed for a public launch.
 - Cursor + Codex permission proxy parity (currently Claude-only)
 - Command palette (⌘K) polish
 
-[v1.0 milestone](https://github.com/akhayam99/goodboy/milestone/8)
+[v0.1.0 milestone](https://github.com/akhayam99/goodboy/milestone/8)
 
 ---
 

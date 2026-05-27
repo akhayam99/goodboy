@@ -70,7 +70,7 @@ Opzione C . sito live: usa `mcp__Claude_Preview__preview_screenshot` sulla pagin
 
 - Cambio tagline
 - Nuovo logo
-- Nuovo major version (es. v1.0)
+- Nuovo major version (es. v0.1.0)
 - Cambio palette
 
 ---
@@ -105,7 +105,7 @@ Definito inline in `index.html`. Campi da tenere aggiornati:
 
 | Campo             | Dove aggiornare                                      |
 | ----------------- | ---------------------------------------------------- |
-| `softwareVersion` | Ad ogni release (v0.7 → v0.8 → v1.0)                 |
+| `softwareVersion` | Ad ogni release (v0.0.7 → v0.0.8 → v0.1.0)           |
 | `featureList`     | Quando si aggiungono/rimuovono features dal prodotto |
 | `offers.price`    | Quando arriva il pricing                             |
 | `operatingSystem` | Se si aggiunge mobile/web                            |

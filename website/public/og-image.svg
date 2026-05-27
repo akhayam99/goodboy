@@ -83,5 +83,5 @@
   <!-- Badge -->
   <rect x="88" y="550" width="200" height="32" rx="16" fill="#1a2830" stroke="#2a4855"/>
   <circle cx="112" cy="566" r="5" fill="#4fbcd4"/>
-  <text x="125" y="571" font-family="-apple-system, sans-serif" font-size="15" fill="#7dcfe0">v0.7 · private beta</text>
+  <text x="125" y="571" font-family="-apple-system, sans-serif" font-size="15" fill="#7dcfe0">v0.0.7 · private beta</text>
 </svg>

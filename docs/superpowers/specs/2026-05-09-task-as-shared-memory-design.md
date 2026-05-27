@@ -6,7 +6,7 @@
 
 ## Problem
 
-The pre-1.0 workflow model treats a Task as an automatic chain of single-turn steps. The orchestrator advances on every user message: 1 message → 1 assistant turn → step marked complete → next message routed to next step. The user reported (verbatim, 2026-05-09):
+The pre-0.1.0 workflow model treats a Task as an automatic chain of single-turn steps. The orchestrator advances on every user message: 1 message → 1 assistant turn → step marked complete → next message routed to next step. The user reported (verbatim, 2026-05-09):
 
 - "ogni input crea nuovo agent" — cannot iterate within a step
 - "step 4 chat fresca, contesto perso" — only `outputSummary` (≤2000 char) of the immediately previous step propagates
@@ -102,7 +102,7 @@ Each PR: green CI required before merge. No squashed mega-PR.
 
 ## Out of scope (deferred)
 
-- Cross-Task ContextPanel inheritance (e.g. seeding new Task from previous Task's panel). Future v1.x.
+- Cross-Task ContextPanel inheritance (e.g. seeding new Task from previous Task's panel). Future v0.1.x.
 - Multi-agent parallel execution within one Task. Existing parallel mode unchanged for now.
 - Agent handoff protocols beyond ContextPanel reads (e.g. structured tool-call passing). Out of scope.
 - LLM-driven role inference (auto-detecting "this prompt feels like planning"). Always user-explicit chip.

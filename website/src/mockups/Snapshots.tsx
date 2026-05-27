@@ -544,7 +544,7 @@ export function ContextSnapshot() {
         </p>
         <p className="flex items-start gap-1.5 text-[11.5px] leading-relaxed text-foreground/85">
           <IconHelp size={11} className="mt-0.5 shrink-0 text-warning" />
-          Should reverts be reachable from the UI in v0.8, or wait for the audit page in v0.9?
+          Should reverts be reachable from the UI in v0.0.8, or wait for the audit page in v0.0.9?
         </p>
       </div>
     </SnapshotFrame>
