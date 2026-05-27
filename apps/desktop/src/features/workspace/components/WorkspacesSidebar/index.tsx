@@ -161,6 +161,14 @@ export function WorkspacesSidebar({
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
 
+  useEffect(() => {
+    const handler = () => {
+      if (!collapsed && currentWorkspace) setNewSessionOpen(true);
+    };
+    window.addEventListener('goodboy:new-session', handler);
+    return () => window.removeEventListener('goodboy:new-session', handler);
+  }, [collapsed, currentWorkspace]);
+
   if (collapsed) {
     return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
   }

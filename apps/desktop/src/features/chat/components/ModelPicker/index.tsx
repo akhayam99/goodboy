@@ -80,6 +80,14 @@ export function ModelPicker({
     };
   }, [open]);
 
+  useEffect(() => {
+    const handler = () => {
+      if (!disabled) setOpen(true);
+    };
+    window.addEventListener('goodboy:open-model-picker', handler);
+    return () => window.removeEventListener('goodboy:open-model-picker', handler);
+  }, [disabled]);
+
   const effortLevels = modelEffortLevels(model);
   const showEffort = provider === 'anthropic' && effortLevels !== null;
   const tier = modelTier(model);
