@@ -550,6 +550,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setSelectedModel(id);
   };
 
+  const onResetTurnOverride = () => {
+    if (!allowOverride || isRunning) return;
+    setSelectedProvider(null);
+    setSelectedModel(null);
+  };
+
   const dispatchTurn = useCallback(
     async (
       content: string,
@@ -1172,10 +1178,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                 connectedProviders={connectedProviderIds}
                 disabled={!allowOverride || isRunning}
                 disabledTitle={overrideDisabledTitle}
+                defaultProvider={defaultProvider}
+                defaultModel={defaultModel}
                 onSelectProvider={onSelectProvider}
                 onSelectModel={onSelectModel}
                 onSelectEffort={setEffort}
                 onSelectVerbosity={setVerbosity}
+                onResetToDefault={onResetTurnOverride}
               />
             </div>
           </div>
