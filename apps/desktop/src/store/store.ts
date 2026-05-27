@@ -25,7 +25,8 @@ import {
   insertSession,
   insertSessionWorktree,
   insertTelemetry,
-  insertTurnEvent,
+  insertTurnEventsBatch,
+  type PendingTurnEventInsert,
   insertWorkspace,
   disconnectWorkspace as disconnectWorkspaceInDb,
   reconnectWorkspace as reconnectWorkspaceInDb,
@@ -1313,6 +1314,37 @@ async function drainAuditRetryQueue(set: SetFn): Promise<void> {
 // the second call wait for the first.
 let hydratePromise: Promise<void> | null = null;
 
+// Streaming providers can emit 50-200 turn_events per second. Persisting each
+// one with its own `insertTurnEvent` used to grab the Rust `Mutex<Connection>`
+// at the same cadence and block every concurrent reader — including a
+// freshly-clicked workspace/session switch. The buffer below coalesces
+// non-critical events between microtasks and flushes them through a single
+// multi-row INSERT, collapsing the write storm to ~one IPC per frame.
+let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
+let turnEventFlushScheduled = false;
+
+function scheduleTurnEventFlush(): void {
+  if (turnEventFlushScheduled) return;
+  turnEventFlushScheduled = true;
+  queueMicrotask(() => {
+    turnEventFlushScheduled = false;
+    if (pendingTurnEventInserts.length === 0) return;
+    const batch = pendingTurnEventInserts;
+    pendingTurnEventInserts = [];
+    void insertTurnEventsBatch(tauriDatabase, batch).catch((err) => {
+      if (import.meta.env.DEV) {
+        const message = formatError(err);
+        console.warn(`[turn-events] batch insert failed (${batch.length} rows): ${message}`);
+      }
+    });
+  });
+}
+
+function queueTurnEventInsert(insert: PendingTurnEventInsert): void {
+  pendingTurnEventInserts.push(insert);
+  scheduleTurnEventFlush();
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createNotificationsSlice(set, get),
@@ -2194,12 +2226,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const updatedRuns = runs.map((s) =>
           s.id === agentId ? { ...s, providerSessionId: event.providerSessionId } : s,
         );
-        void insertTurnEvent(tauriDatabase, {
+        queueTurnEventInsert({
           id: crypto.randomUUID(),
           sessionId,
           agentId,
           event,
-        }).catch(() => undefined);
+        });
         void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
           if (import.meta.env.DEV) {
             const message = formatError(err);
@@ -2214,16 +2246,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return { transcripts: updatedTranscripts };
     });
     if (event.kind === 'provider_session_init') return;
-    void insertTurnEvent(tauriDatabase, {
+    queueTurnEventInsert({
       id: crypto.randomUUID(),
       sessionId,
       agentId,
       event,
-    }).catch((err) => {
-      if (import.meta.env.DEV) {
-        const message = formatError(err);
-        console.warn(`[turn-events] insert failed for agent ${agentId}: ${message}`);
-      }
     });
   },
 

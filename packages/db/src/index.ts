@@ -45,9 +45,11 @@ export {
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertTurnEvent,
+  insertTurnEventsBatch,
   listTurnEventsForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,
+  type PendingTurnEventInsert,
 } from './queries/turn-event';
 export {
   upsertContextSlot,

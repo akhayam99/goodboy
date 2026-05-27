@@ -41,6 +41,45 @@ export async function insertTurnEvent(
   );
 }
 
+export interface PendingTurnEventInsert {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly event: TurnEvent;
+}
+
+// Multi-row INSERT for batched streaming events. Token-by-token providers can
+// emit 50-200 events/sec; one `db.execute` per event used to grab the Rust
+// `Mutex<Connection>` 50-200× per second and block every reader (including a
+// freshly-clicked session-switch). Caller coalesces events between microtasks
+// and flushes through this one statement.
+export async function insertTurnEventsBatch(
+  db: Database,
+  inserts: ReadonlyArray<PendingTurnEventInsert>,
+): Promise<void> {
+  if (inserts.length === 0) return;
+  if (inserts.length === 1) {
+    const ins = inserts[0]!;
+    await insertTurnEvent(db, ins);
+    return;
+  }
+  const placeholders = inserts.map(() => '(?, ?, ?, ?, ?)').join(', ');
+  const values: unknown[] = [];
+  for (const ins of inserts) {
+    values.push(
+      ins.id,
+      ins.sessionId,
+      ins.agentId,
+      JSON.stringify(ins.event),
+      eventTimestamp(ins.event),
+    );
+  }
+  await db.execute(
+    `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at) VALUES ${placeholders}`,
+    values,
+  );
+}
+
 export async function listTurnEventsForAgent(
   db: Database,
   agentId: AgentId,
