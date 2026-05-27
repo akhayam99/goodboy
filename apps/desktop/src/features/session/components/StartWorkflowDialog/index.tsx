@@ -68,7 +68,7 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
       open={open}
       onClose={onClose}
       title="Start a workflow"
-      description="Pick a saved preset or design a fresh workflow with the planner."
+      description="Pick a preset to drive this session step by step, or design one from a theme. You can always skip and add a workflow later from the session panel."
       size="xl"
       footer={
         <div className="flex w-full items-center gap-3">
@@ -96,10 +96,10 @@ export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDia
             ) : null}
           </div>
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            Skip for now
           </Button>
           <Button onClick={() => void onSpawn()} disabled={!canSpawn}>
-            Spawn workflow
+            Start workflow
           </Button>
         </div>
       }

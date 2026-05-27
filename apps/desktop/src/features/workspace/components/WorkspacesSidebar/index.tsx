@@ -659,6 +659,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ sessionId?: string }>).detail;
+      if (!detail?.sessionId || detail.sessionId === task.id) {
+        setStartWorkflowOpen(true);
+      }
+    };
+    window.addEventListener('goodboy:open-workflow-picker', handler);
+    return () => window.removeEventListener('goodboy:open-workflow-picker', handler);
+  }, [task.id]);
+
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const stepWorkflowById = useMemo(() => {
     const map = new Map<string, string>();

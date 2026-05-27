@@ -272,8 +272,17 @@ exports[`snapshot, empty states > NewSessionDialog: no workflows 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
-        class="flex w-full items-center gap-2"
+        class="flex w-full items-center gap-3"
       >
+        <label
+          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <input
+            class="accent-primary"
+            type="checkbox"
+          />
+          Set up workflow next
+        </label>
         <div
           class="flex-1 text-xs text-danger"
         />
@@ -1525,8 +1534,17 @@ exports[`snapshot, error states > NewSessionDialog: form error 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
-        class="flex w-full items-center gap-2"
+        class="flex w-full items-center gap-3"
       >
+        <label
+          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <input
+            class="accent-primary"
+            type="checkbox"
+          />
+          Set up workflow next
+        </label>
         <div
           class="flex-1 text-xs text-danger"
         />

@@ -188,6 +188,13 @@ export function NewSessionDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
+  const [setupWorkflow, setSetupWorkflow] = useState(() => {
+    try {
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+    } catch {
+      return true;
+    }
+  });
 
   // Hide the issue picker entirely on workspaces without a Linear integration.
   // Defensive read: tests mock the store with a shallow shape that may not
@@ -292,10 +299,30 @@ export function NewSessionDialog({
       });
       showToast('success', `session created: ${session.goal}`);
       onClose();
+      if (setupWorkflow) {
+        // Defer one tick so the closing dialog finishes its leave transition
+        // and the new session becomes current before we open the next step.
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-workflow-picker', {
+              detail: { sessionId: session.id },
+            }),
+          );
+        }, 0);
+      }
     } catch (err) {
       setError(formatError(err));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onToggleSetupWorkflow = (next: boolean) => {
+    setSetupWorkflow(next);
+    try {
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+    } catch {
+      // localStorage unavailable, ignore
     }
   };
 
@@ -307,7 +334,17 @@ export function NewSessionDialog({
       description="Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating."
       size="lg"
       footer={
-        <div className="flex w-full items-center gap-2">
+        <div className="flex w-full items-center gap-3">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={setupWorkflow}
+              onChange={(e) => onToggleSetupWorkflow(e.target.checked)}
+              className="accent-primary"
+              disabled={busy}
+            />
+            Set up workflow next
+          </label>
           <div className="flex-1 text-xs text-danger">{error ?? ''}</div>
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
