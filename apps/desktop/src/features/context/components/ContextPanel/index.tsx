@@ -336,9 +336,8 @@ export function ContextPanel({
 
         <Divider />
 
-        {/* Sticky footer, always-visible open questions entry point.
-            New-style: compact nav chip opens the Questions tab.
-            Legacy: falls back to the raw ContextSlot row. */}
+        {/* Sticky footer. Open questions are owned by the Questions tab now,
+            the footer is just a one-click entry point when any are unresolved. */}
         {questions.length > 0 ? (
           <button
             type="button"
@@ -353,19 +352,6 @@ export function ContextPanel({
             </span>
             <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
           </button>
-        ) : slotsByKey.get('open_questions')?.value ? (
-          <div className="flex shrink-0 flex-col gap-2.5 bg-subtle/30 px-4 py-3">
-            <ul className="flex flex-col">
-              <SlotRow
-                sessionId={session.id}
-                slotKey="open_questions"
-                slot={slotsByKey.get('open_questions')}
-                loading={loading.slots}
-                isSummarizing={summarizer.status === 'running'}
-                onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
-              />
-            </ul>
-          </div>
         ) : null}
       </div>
     </>
