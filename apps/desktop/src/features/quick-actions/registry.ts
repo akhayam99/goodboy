@@ -1,4 +1,5 @@
 import type { Agent, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import { AGENT_KIND_META, inferAgentKindFromName } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
 function firstLine(body: string): string | undefined {
@@ -61,15 +62,19 @@ export function buildAgentActions(
 ): ReadonlyArray<QuickActionItem> {
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
-    .map<QuickActionItem>((agent) => ({
-      id: `agent:${agent.id}`,
-      label: agent.name,
-      sublabel: agent.status,
-      group: 'agent',
-      perform: () => onSwitch(agent),
-    }));
+    .map<QuickActionItem>((agent) => {
+      const kind = inferAgentKindFromName(agent.name);
+      return {
+        id: `agent:${agent.id}`,
+        label: agent.name,
+        sublabel: agent.status,
+        trailing: { label: AGENT_KIND_META[kind].label, kind },
+        group: 'agent',
+        perform: () => onSwitch(agent),
+      };
+    });
   return [
     ...switches,
-    { id: 'agent:spawn', label: '+ spawn new agent', group: 'agent', perform: onSpawn },
+    { id: 'agent:spawn', label: '+ create new agent', group: 'agent', perform: onSpawn },
   ];
 }
