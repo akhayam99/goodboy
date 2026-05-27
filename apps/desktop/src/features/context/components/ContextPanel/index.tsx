@@ -123,7 +123,7 @@ export function ContextPanel({
   // regardless of the active tab, and the PR / diff-comment fetches fire
   // even before the user visits those tabs — matching the behaviour of the
   // old SessionMetaFooter, which always rendered for the current session.
-  const filesTouched = useFilesTouched(session.id);
+  const filesTouched = useFilesTouched(session.id, isActive);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
