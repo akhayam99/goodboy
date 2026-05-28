@@ -176,6 +176,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
 function makeDeps(effects: ParallelBranchEffects) {
   return {
     now: () => NOW,
+    provider: 'anthropic' as ProviderId,
     providerBinary: 'claude',
     model: 'claude-sonnet-4-6',
     effects,

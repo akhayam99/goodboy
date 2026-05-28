@@ -6,6 +6,10 @@ import type { SetFn } from './types';
 
 export function appendTurnEvent(set: SetFn) {
   return (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => {
+    // The set updater stays PURE — it only derives next state. The side effects
+    // (DB queue + provider-session-id persist) run after, never inside the
+    // updater: Zustand updaters can be re-invoked (React strict mode), and
+    // queueing inside one used to double-insert the row.
     set((state) => {
       const existing = state.transcripts[agentId] ?? [];
       const updatedTranscripts = { ...state.transcripts, [agentId]: [...existing, event] };
@@ -20,26 +24,12 @@ export function appendTurnEvent(set: SetFn) {
         };
       }
       // M1: capture claude's session id from the `system` init event so the
-      // next turn for this agent can pass `--resume <id>`. Update in-memory
-      // sessionPhaseRuns + persist; tolerate transient DB failures (worst
-      // case: next turn starts fresh, no data loss).
+      // next turn for this agent can pass `--resume <id>`.
       if (event.kind === 'provider_session_init') {
         const runs = state.sessionPhaseRuns[sessionId] ?? [];
         const updatedRuns = runs.map((s) =>
           s.id === agentId ? { ...s, providerSessionId: event.providerSessionId } : s,
         );
-        queueTurnEventInsert({
-          id: crypto.randomUUID(),
-          sessionId,
-          agentId,
-          event,
-        });
-        void invokeAgentSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
-          if (import.meta.env.DEV) {
-            const message = formatError(err);
-            console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
-          }
-        });
         return {
           transcripts: updatedTranscripts,
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: updatedRuns },
@@ -47,12 +37,23 @@ export function appendTurnEvent(set: SetFn) {
       }
       return { transcripts: updatedTranscripts };
     });
-    if (event.kind === 'provider_session_init') return;
+
     queueTurnEventInsert({
       id: crypto.randomUUID(),
       sessionId,
       agentId,
       event,
     });
+
+    // Persist the provider session id so the next turn can `--resume`. Tolerate
+    // transient DB failures (worst case: next turn starts fresh, no data loss).
+    if (event.kind === 'provider_session_init') {
+      void invokeAgentSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
+        if (import.meta.env.DEV) {
+          const message = formatError(err);
+          console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
+        }
+      });
+    }
   };
 }

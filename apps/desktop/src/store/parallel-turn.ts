@@ -13,7 +13,12 @@ import {
   type SchedulerDeps,
   type SchedulerHandle,
 } from '@goodboy/core';
-import { parseStreamJsonLine } from '@goodboy/core';
+import {
+  parseStreamJsonLine,
+  parseCursorStreamLine,
+  parseCodexJsonLine,
+  parseGeminiJsonLine,
+} from '@goodboy/core';
 import type {
   IsoDateTime,
   ParallelMergeStrategy,
@@ -24,6 +29,7 @@ import type {
   AgentId,
   AgentStatus,
   Workflow,
+  ProviderId,
   ProviderRunId,
   Session,
   SessionId,
@@ -115,7 +121,32 @@ interface MultiplexedListener {
   filesTouchedByRun: (runId: ProviderRunId) => ReadonlyArray<string>;
 }
 
-async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<MultiplexedListener> {
+// Pick the stream parser matching the spawned provider. The single-run path
+// (sendTurn → runTurn) already selects per-provider; the parallel path must
+// too. Hardcoding claude's parseStreamJsonLine made a codex/cursor/gemini
+// parallel run yield no assistant_text, no file_edit (so detectConflicts saw
+// nothing and merged blind), and no usage.
+function parseProviderLine(
+  provider: ProviderId,
+  line: string,
+  ctx: { runId: ProviderRunId; now: () => IsoDateTime },
+): ReadonlyArray<TurnEvent> {
+  switch (provider) {
+    case 'cursor':
+      return parseCursorStreamLine(line, ctx);
+    case 'codex':
+      return parseCodexJsonLine(line, ctx);
+    case 'gemini':
+      return parseGeminiJsonLine(line, ctx);
+    default:
+      return parseStreamJsonLine(line, ctx);
+  }
+}
+
+async function startMultiplexedTurnListener(
+  now: () => IsoDateTime,
+  provider: ProviderId,
+): Promise<MultiplexedListener> {
   const states = new Map<string, RunListenerState>();
 
   const unlistenFn: UnlistenFn = await listen<RawTurnEnvelope>('turn_event', (event) => {
@@ -125,7 +156,7 @@ async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<Mul
 
     if (payload.type === 'line' && typeof payload.line === 'string') {
       const ctx = { runId: payload.runId as ProviderRunId, now };
-      for (const ev of parseStreamJsonLine(payload.line, ctx)) {
+      for (const ev of parseProviderLine(provider, payload.line, ctx)) {
         state.onEvent(ev);
         if (ev.kind === 'file_edit') state.collectedFiles.add(ev.path);
       }
@@ -187,6 +218,7 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
 
 export interface RunParallelBranchDeps {
   readonly now: () => IsoDateTime;
+  readonly provider: ProviderId;
   readonly providerBinary: string | undefined;
   readonly model: string;
   readonly permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
@@ -208,7 +240,7 @@ export async function runParallelBranch(
     maxParallelism,
     workingDir,
   } = inputs;
-  const { now, effects } = deps;
+  const { now, effects, provider } = deps;
 
   // Cap by maxParallelism, defensive guard; UI clamps but accept any spec list.
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
@@ -233,7 +265,7 @@ export async function runParallelBranch(
   );
 
   // Boot listener BEFORE spawn, race-free: events arrive only after spawn.
-  const listener = await startMultiplexedTurnListener(now);
+  const listener = await startMultiplexedTurnListener(now, provider);
 
   const settleResolvers = new Map<
     ProviderRunId,
