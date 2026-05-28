@@ -9,7 +9,7 @@ import { AGENT_KIND_PALETTE, inferAgentKindFromName } from '../../agent-kind';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
-interface StartWorkflowDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
   session: Session;
@@ -17,7 +17,7 @@ interface StartWorkflowDialogProps {
 
 type Mode = 'preset' | 'custom';
 
-export function StartWorkflowDialog({ open, onClose, session }: StartWorkflowDialogProps) {
+export function StartWorkflowDialog({ open, onClose, session }: Props) {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );

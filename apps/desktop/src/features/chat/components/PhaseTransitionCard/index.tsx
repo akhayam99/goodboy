@@ -4,11 +4,11 @@ import { Collapsible } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 
-interface PhaseTransitionCardProps {
+interface Props {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
 }
 
-export function PhaseTransitionCard({ item }: PhaseTransitionCardProps) {
+export function PhaseTransitionCard({ item }: Props) {
   const [open, setOpen] = useState(false);
   const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
   const timestamp = formatCardTime(item.at);

@@ -34,7 +34,7 @@ vi.mock('../../../../features/integrations/linear/ConnectLinearDialog', () => ({
   ConnectLinearDialog: () => null,
 }));
 
-vi.mock('../../../../features/session/components/config-selects', () => ({
+vi.mock('../../../../features/session/components/VerbositySelect', () => ({
   VerbositySelect: () => null,
 }));
 

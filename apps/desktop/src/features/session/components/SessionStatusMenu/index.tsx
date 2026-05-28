@@ -6,13 +6,13 @@ import {
   SESSION_STATUS_PALETTE,
 } from '../../../../features/session/session-status';
 
-interface SessionStatusMenuProps {
+interface Props {
   readonly status: SessionUserStatus;
   readonly sessionLabel: string;
   readonly onPick: (next: SessionUserStatus) => void;
 }
 
-export function SessionStatusMenu({ status, sessionLabel, onPick }: SessionStatusMenuProps) {
+export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

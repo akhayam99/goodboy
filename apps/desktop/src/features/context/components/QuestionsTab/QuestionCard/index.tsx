@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
-import { SuggestionChip } from './SuggestionChip';
-import { CustomAnswerField } from './CustomAnswerField';
+import { SuggestionChip } from '../SuggestionChip';
+import { CustomAnswerField } from '../CustomAnswerField';
 
-interface QuestionCardProps {
+interface Props {
   question: OpenQuestion;
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
@@ -41,7 +41,7 @@ export function QuestionCard({
   onToggleCustomField,
   onDismiss,
   onClearJustAnswered,
-}: QuestionCardProps) {
+}: Props) {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {

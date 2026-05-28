@@ -31,7 +31,7 @@ import {
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-export interface ModelPickerProps {
+export interface Props {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly models: ReadonlyArray<string>;
   readonly provider: ProviderId;
@@ -69,7 +69,7 @@ export function ModelPicker({
   onSelectEffort,
   onSelectVerbosity,
   onResetToDefault,
-}: ModelPickerProps) {
+}: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isOverride = provider !== defaultProvider || model !== defaultModel;

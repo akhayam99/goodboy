@@ -4,7 +4,7 @@ import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 
-interface SkillsPanelProps {
+interface Props {
   readonly workspaceId: WorkspaceId;
 }
 
@@ -55,7 +55,7 @@ function parseChips(raw: string): ReadonlyArray<string> {
     .filter(Boolean);
 }
 
-export function SkillsPanel({ workspaceId }: SkillsPanelProps) {
+export function SkillsPanel({ workspaceId }: Props) {
   const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY);
   const loadSkills = useAppStore((s) => s.loadSkills);
   const saveSkill = useAppStore((s) => s.saveSkill);

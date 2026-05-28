@@ -11,7 +11,7 @@ import {
   useWorkspaces,
 } from '../../../../store';
 
-interface WorkspaceSelectProps {
+interface Props {
   onAddWorkspace: () => void;
 }
 
@@ -20,7 +20,7 @@ interface WorkspaceTarget {
   readonly name: string;
 }
 
-export function WorkspaceSelect({ onAddWorkspace }: WorkspaceSelectProps) {
+export function WorkspaceSelect({ onAddWorkspace }: Props) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);

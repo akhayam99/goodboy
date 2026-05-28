@@ -9,7 +9,7 @@ import {
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
-interface ChatBreadcrumbProps {
+interface Props {
   readonly session: Session;
 }
 
@@ -33,7 +33,7 @@ const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
  *
  * Per plan §A.4.
  */
-export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
+export function ChatBreadcrumb({ session }: Props) {
   const workspace = useAppStore((s) =>
     s.workspaces.find((w) => w.id === (session.workspaceId as WorkspaceId)),
   );

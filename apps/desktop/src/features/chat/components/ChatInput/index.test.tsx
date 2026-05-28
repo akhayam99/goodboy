@@ -94,16 +94,16 @@ function resetMockStore() {
   mockStore.setState({ agentDraft: {} });
 }
 
-vi.mock('../store', () => ({
+vi.mock('../../../../store', () => ({
   useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../permissions', () => ({
+vi.mock('../../../../permissions', () => ({
   useEffectivePermissionRules: () => [],
 }));
 
-vi.mock('../app/components/Toast', () => ({
+vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
@@ -126,7 +126,7 @@ vi.mock('@goodboy/core', () => ({
 }));
 
 // Import component AFTER mocks are in place.
-import { ChatInput } from '../features/chat/components/ChatInput';
+import { ChatInput } from './index';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {

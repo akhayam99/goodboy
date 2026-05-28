@@ -4,7 +4,7 @@ import { extractCommentResolved } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface CommentResolvedChipProps {
+interface Props {
   readonly assistantText: string;
   readonly sessionId: SessionId;
 }
@@ -22,7 +22,7 @@ type ChipState =
  * resolved on github (via the resolveReviewThread graphql mutation) and a
  * second to dismiss without taking action.
  */
-export function CommentResolvedChip({ assistantText, sessionId }: CommentResolvedChipProps) {
+export function CommentResolvedChip({ assistantText, sessionId }: Props) {
   const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
   const [state, setState] = useState<ChipState>({ kind: 'idle' });

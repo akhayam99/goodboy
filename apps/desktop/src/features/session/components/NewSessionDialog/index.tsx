@@ -12,7 +12,7 @@ import { IssuePicker } from '../../../../features/integrations/linear/IssuePicke
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 
-interface NewSessionDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
   workspaceId: WorkspaceId;
@@ -162,12 +162,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-export function NewSessionDialog({
-  open,
-  onClose,
-  workspaceId,
-  onOpenSettings,
-}: NewSessionDialogProps) {
+export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }: Props) {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const providers = useAppStore((s) => s.providers);

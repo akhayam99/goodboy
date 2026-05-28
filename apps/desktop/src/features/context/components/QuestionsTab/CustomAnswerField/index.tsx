@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 
-interface CustomAnswerFieldProps {
+interface Props {
   value: string;
   open: boolean;
   onToggle: () => void;
@@ -15,7 +15,7 @@ export function CustomAnswerField({
   onToggle,
   onChange,
   placeholder = 'write your own answer…',
-}: CustomAnswerFieldProps) {
+}: Props) {
   if (!open) {
     return (
       <button

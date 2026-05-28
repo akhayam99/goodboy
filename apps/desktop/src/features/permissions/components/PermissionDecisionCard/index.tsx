@@ -3,7 +3,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 
-interface PermissionDecisionCardProps {
+interface Props {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
@@ -14,11 +14,7 @@ const DECISION_TONE: Record<'allow' | 'deny', string> = {
   deny: 'text-danger',
 };
 
-export function PermissionDecisionCard({
-  item,
-  sessionId: _sessionId,
-  agentId: _agentId,
-}: PermissionDecisionCardProps) {
+export function PermissionDecisionCard({ item, sessionId: _sessionId, agentId: _agentId }: Props) {
   const timestamp = formatCardTime(item.at);
 
   return (

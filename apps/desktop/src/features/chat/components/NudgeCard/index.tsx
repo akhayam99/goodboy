@@ -10,7 +10,7 @@ export interface NudgeAction {
   readonly testId?: string;
 }
 
-export interface NudgeCardProps {
+export interface Props {
   readonly severity: NudgeSeverity;
   readonly icon?: ReactNode;
   readonly title: ReactNode;
@@ -54,7 +54,7 @@ export function NudgeCard({
   ariaLabel,
   testId,
   autoFocusPrimary = false,
-}: NudgeCardProps) {
+}: Props) {
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!autoFocusPrimary) return;

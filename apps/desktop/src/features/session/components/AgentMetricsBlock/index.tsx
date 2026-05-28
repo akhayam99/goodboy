@@ -1,6 +1,6 @@
 import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { CostBadge } from '../../providers/components/CostBadge';
-import { formatTokens } from '../agent-row-format';
+import { CostBadge } from '../../../providers/components/CostBadge';
+import { formatTokens } from '../../agent-row-format';
 
 export interface AgentAggregate {
   readonly inputTokens: number;
@@ -9,7 +9,7 @@ export interface AgentAggregate {
   readonly turns: number;
 }
 
-interface AgentMetricsBlockProps {
+interface Props {
   readonly run: Agent;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
@@ -25,7 +25,7 @@ export function AgentMetricsBlock({
   turns,
   turnsLoading,
   variant,
-}: AgentMetricsBlockProps) {
+}: Props) {
   void variant;
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/85">

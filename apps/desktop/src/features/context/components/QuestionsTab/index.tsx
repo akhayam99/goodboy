@@ -11,7 +11,7 @@ const COLLAPSE_THRESHOLD = 4;
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-interface QuestionsTabProps {
+interface Props {
   sessionId: SessionId;
   // Routes the cluster's batched answer back to its owner. Implementations
   // should send to `targetAgentId` when non-null, falling back to the
@@ -19,7 +19,7 @@ interface QuestionsTabProps {
   onSubmit: (content: string, targetAgentId: AgentId | null) => Promise<void>;
 }
 
-export function QuestionsTab({ sessionId, onSubmit }: QuestionsTabProps) {
+export function QuestionsTab({ sessionId, onSubmit }: Props) {
   const {
     questions,
     drafts,

@@ -1,4 +1,4 @@
-interface DogMascotProps {
+interface Props {
   size?: number;
   className?: string;
 }
@@ -6,7 +6,7 @@ interface DogMascotProps {
 // Goodboy mascot, solid dog face ("musetto"). Single-color (currentColor):
 // two floppy ears + a rounded head; eyes and nose are knocked out (evenodd)
 // so the background shows through. Reads as a dog from 16px up to hero sizes.
-export function DogMascot({ size = 16, className }: DogMascotProps) {
+export function DogMascot({ size = 16, className }: Props) {
   return (
     <svg
       width={size}

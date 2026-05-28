@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Check, SlidersHorizontal } from 'lucide-react';
 import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
-import { useAppStore, useSessionViewPrefs } from '../../../../store';
+import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 
 interface SortOption {
   readonly key: SessionSortKey;

@@ -81,13 +81,13 @@ function stringToBase64(s: string): string {
   return btoa(binary);
 }
 
-interface TerminalPanelProps {
+interface Props {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly cwd: string | null;
 }
 
-export function TerminalPanel({ sessionId, isActive, cwd }: TerminalPanelProps) {
+export function TerminalPanel({ sessionId, isActive, cwd }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);

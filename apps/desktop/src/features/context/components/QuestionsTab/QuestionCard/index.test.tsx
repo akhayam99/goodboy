@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { OpenQuestion } from '@goodboy/types';
-import { QuestionCard } from './QuestionCard';
+import { QuestionCard } from '.';
 
 afterEach(cleanup);
 

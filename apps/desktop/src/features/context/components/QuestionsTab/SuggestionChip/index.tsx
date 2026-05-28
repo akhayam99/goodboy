@@ -1,12 +1,12 @@
 import { cn } from '@goodboy/ui';
 
-interface SuggestionChipProps {
+interface Props {
   label: string;
   selected: boolean;
   onToggle: () => void;
 }
 
-export function SuggestionChip({ label, selected, onToggle }: SuggestionChipProps) {
+export function SuggestionChip({ label, selected, onToggle }: Props) {
   return (
     <button
       type="button"

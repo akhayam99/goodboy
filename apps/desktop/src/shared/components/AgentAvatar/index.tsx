@@ -1,14 +1,14 @@
 import type { CSSProperties } from 'react';
 import { cn } from '@goodboy/ui';
-import type { AgentKind } from '../../features/session/agent-kind';
-import agentDebugger from '../../assets/agents/debugger.png';
-import agentDocs from '../../assets/agents/docs.png';
-import agentGoodboy from '../../assets/agents/goodboy.png';
-import agentImplementer from '../../assets/agents/implementer.png';
-import agentPlanner from '../../assets/agents/planner.png';
-import agentReviewer from '../../assets/agents/reviewer.png';
-import agentScout from '../../assets/agents/scout.png';
-import agentTester from '../../assets/agents/tester.png';
+import type { AgentKind } from '../../../features/session/agent-kind';
+import agentDebugger from '../../../assets/agents/debugger.png';
+import agentDocs from '../../../assets/agents/docs.png';
+import agentGoodboy from '../../../assets/agents/goodboy.png';
+import agentImplementer from '../../../assets/agents/implementer.png';
+import agentPlanner from '../../../assets/agents/planner.png';
+import agentReviewer from '../../../assets/agents/reviewer.png';
+import agentScout from '../../../assets/agents/scout.png';
+import agentTester from '../../../assets/agents/tester.png';
 
 const KIND_IMAGE: Record<AgentKind, string | null> = {
   generic: agentGoodboy,
@@ -43,7 +43,7 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 
-interface AgentAvatarProps {
+interface Props {
   readonly kind: AgentKind;
   readonly size?: AvatarSize;
   readonly className?: string;
@@ -55,7 +55,7 @@ interface AgentAvatarProps {
  * coloured-dot pattern (size-1.5 rounded-full bg-{kind}-400) used to mark an
  * agent kind. Falls back to a plain dot for the resolver kind (no portrait).
  */
-export function AgentAvatar({ kind, size = 'sm', className, title }: AgentAvatarProps) {
+export function AgentAvatar({ kind, size = 'sm', className, title }: Props) {
   const image = KIND_IMAGE[kind];
   const tint = KIND_TINT[kind];
 

@@ -29,14 +29,14 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   discarded: 'Discarded',
 };
 
-interface PlansModalProps {
+interface Props {
   readonly sessionId: SessionId;
   readonly open: boolean;
   readonly onClose: () => void;
   readonly initialPlanId?: PlanId;
 }
 
-export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansModalProps) {
+export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),

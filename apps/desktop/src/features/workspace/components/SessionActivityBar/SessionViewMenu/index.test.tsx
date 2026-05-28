@@ -11,7 +11,7 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(
     selector: (s: {
       setSessionSort: typeof state.setSessionSort;
@@ -21,7 +21,7 @@ vi.mock('../../../../store', () => ({
   useSessionViewPrefs: () => state.prefs,
 }));
 
-import { SessionViewMenu } from './SessionViewMenu';
+import { SessionViewMenu } from '.';
 
 afterEach(cleanup);
 

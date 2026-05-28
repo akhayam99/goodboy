@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { AgentMetricsBlock, type AgentAggregate } from './AgentMetricsBlock';
+import { AgentMetricsBlock, type AgentAggregate } from '.';
 
 afterEach(cleanup);
 

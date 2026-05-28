@@ -68,7 +68,7 @@ function fuzzyScore(query: string, text: string): number {
   return 0;
 }
 
-export interface CommandPaletteProps {
+export interface Props {
   onClose: () => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
@@ -83,7 +83,7 @@ export function CommandPalette({
   onNewSession,
   onOpenShortcutHelp,
   initialQuery = '',
-}: CommandPaletteProps) {
+}: Props) {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);

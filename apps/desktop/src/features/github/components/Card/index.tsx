@@ -39,7 +39,7 @@ const TAB_LABEL: Record<GithubTabKey, string> = {
 const TAB_ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-interface GithubCardProps {
+interface Props {
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
   readonly detailLoading: boolean;
@@ -63,7 +63,7 @@ export function GithubCard({
   onRefresh,
   onSpawnFromComment,
   onSpawnFromReviewChanges,
-}: GithubCardProps) {
+}: Props) {
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
     [pr, detail, branchLastActivity],

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
 import type { QuickActionItem } from '../types';
 
-interface QuickActionsPopoverProps {
+interface Props {
   readonly items: ReadonlyArray<QuickActionItem>;
   readonly emptyHint: string;
   readonly onSelect: (item: QuickActionItem) => void;
@@ -14,12 +14,7 @@ interface QuickActionsPopoverProps {
  * whatever `QuickActionItem[]` it is handed and reports the chosen one. The
  * behavior lives in `item.perform`, not here.
  */
-export function QuickActionsPopover({
-  items,
-  emptyHint,
-  onSelect,
-  onDismiss,
-}: QuickActionsPopoverProps) {
+export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
