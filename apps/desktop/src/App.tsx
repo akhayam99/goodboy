@@ -8,6 +8,7 @@ import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ToastProvider } from './app/components/Toast';
+import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { DogMascot } from './shared/components/DogMascot';
@@ -384,6 +385,10 @@ export function App() {
       {currentSession && endOpen ? (
         <EndSessionDialog session={currentSession} open onClose={() => setEndOpen(false)} />
       ) : null}
+      {/* App-level modal host so the provider connect modal can be summoned
+          from any surface (providers panel, chat callout, future onboarding
+          cards) via a CustomEvent, without prop-drilling. */}
+      <ProviderModalHost />
     </ToastProvider>
   );
 }

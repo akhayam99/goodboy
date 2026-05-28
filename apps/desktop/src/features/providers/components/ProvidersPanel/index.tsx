@@ -45,7 +45,7 @@ export function ProvidersPanel() {
       {ordered.length === 0 ? (
         <p className="text-2xs text-muted-foreground">No providers configured</p>
       ) : (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {ordered.map((p) => (
             <ProviderLifecycleTile key={p.id} info={p} />
           ))}
@@ -54,8 +54,8 @@ export function ProvidersPanel() {
       <div className="flex items-start gap-1.5 text-2xs text-muted-foreground">
         <Info size={11} aria-hidden className="mt-0.5 shrink-0" />
         <span>
-          Install and sign in straight from the app. Each step runs in an embedded terminal so you
-          never leave Goodboy.
+          Install and sign in straight from Goodboy. Every step runs in a roomy modal with the
+          embedded terminal, the per-provider playbook, and an escape hatch to your own shell.
         </span>
       </div>
     </div>

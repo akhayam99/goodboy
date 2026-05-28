@@ -18,7 +18,8 @@ const COPY: Record<CopyKey, string> = {
   'codex.login': 'Opens your browser to sign in with your OpenAI account.',
   'codex.logout': 'Signs you out of Codex. You can sign back in any time.',
   'gemini.install': 'Installs the Google Gemini CLI globally via npm. Takes about 10 seconds.',
-  'gemini.login': 'Opens your browser to sign in with your Google account.',
+  'gemini.login':
+    'Opens an interactive menu in the terminal. Click in to pick Google sign-in with arrow keys.',
   'gemini.logout': 'Removes your Gemini credentials from this machine.',
 };
 

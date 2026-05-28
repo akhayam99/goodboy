@@ -7,8 +7,12 @@ use tauri::State;
 
 use crate::path_env;
 
-const DETECT_TIMEOUT: Duration = Duration::from_secs(5);
-const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
+// Tight detection budgets: a CLI that doesn't respond to `--version` in 2s is
+// already broken from the user's POV, and worst-case sum across 4 providers
+// dominates the "refresh providers" UI latency. Auth was previously 5s × N
+// candidate subcommands × N providers, easily 20s+ wall time on cold runs.
+const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
+const AUTH_TIMEOUT: Duration = Duration::from_secs(2);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Clone, Serialize)]
@@ -438,77 +442,20 @@ fn extract_gemini_identity_from_creds() -> Option<String> {
 }
 
 fn check_gemini_auth() -> AuthState {
-    // gemini-cli has no stable `auth status` subcommand at v0.x; probe a few
-    // candidates then fall back to the on-disk credentials file as ground truth.
-    let candidates: &[&[&str]] = &[
-        &["gemini", "auth", "status"],
-        &["gemini", "auth", "whoami"],
-        &["gemini", "whoami"],
-    ];
-    for cmd in candidates {
-        if let Ok(out) = run_auth_command(cmd) {
-            let text = out.primary_text();
-            if !text.trim().is_empty() {
-                let parsed = parse_gemini_auth_output(text);
-                if !matches!(parsed.state, AuthStateKind::Unknown) {
-                    return parsed;
-                }
-            }
-        }
-    }
+    // gemini-cli (v0.x) has no `auth status`-like subcommand. Past attempts to
+    // probe `gemini auth status`/`whoami` either hung interactively (no TTY)
+    // or printed help, costing 3 × AUTH_TIMEOUT per refresh. The credentials
+    // file is the actual ground truth — gemini writes it on every successful
+    // login and removes it on logout — so we read it directly. Fast, accurate,
+    // no subprocess.
     if let Some(identity) = extract_gemini_identity_from_creds() {
         return AuthState {
             state: AuthStateKind::Connected,
             identity: Some(identity),
         };
     }
-    // No subcommand worked and no creds file. Treat the absence as disconnected
-    // when the binary is present — install detection is handled separately, so
-    // reaching this point means `gemini --version` succeeded.
     AuthState {
         state: AuthStateKind::Disconnected,
-        identity: None,
-    }
-}
-
-fn parse_gemini_auth_output(output: &str) -> AuthState {
-    let stripped: String = strip_ansi(output);
-    let first_line = stripped
-        .lines()
-        .map(|l| l.trim())
-        .find(|l| !l.is_empty())
-        .unwrap_or("");
-    let lower = first_line.to_lowercase();
-
-    if lower.starts_with("not logged")
-        || lower.starts_with("not signed")
-        || lower.contains("not logged in")
-        || lower.contains("not signed in")
-        || lower.contains("unauthenticated")
-        || lower.contains("no credentials")
-    {
-        return AuthState {
-            state: AuthStateKind::Disconnected,
-            identity: None,
-        };
-    }
-    if lower.starts_with("logged in")
-        || lower.starts_with("signed in")
-        || lower.contains("authenticated as")
-        || extract_email(first_line).is_some()
-    {
-        let identity = extract_email(first_line)
-            .or_else(|| extract_json_string(output, "email"))
-            .or_else(|| extract_json_string(output, "username"))
-            .or_else(extract_gemini_identity_from_creds);
-        return AuthState {
-            state: AuthStateKind::Connected,
-            identity,
-        };
-    }
-
-    AuthState {
-        state: AuthStateKind::Unknown,
         identity: None,
     }
 }
@@ -641,9 +588,11 @@ pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
     next
 }
 
-#[tauri::command]
-pub fn check_provider_auth(provider_id: String) -> AuthState {
-    match provider_id.as_str() {
+// Sync entry point for callers that already run on a blocking thread (e.g.
+// the lifecycle PTY exit handler in provider_lifecycle.rs). Kept private so
+// only the async Tauri command shape leaks into the JS surface.
+pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
+    match provider_id {
         "anthropic" => check_claude_auth(),
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
@@ -653,6 +602,20 @@ pub fn check_provider_auth(provider_id: String) -> AuthState {
             identity: None,
         },
     }
+}
+
+// Async wrapper so Tauri schedules this on the async runtime and the
+// process-spawning work runs on a blocking thread instead of stalling the
+// main IPC thread. Without this, four parallel refreshProviders() auth
+// checks serialize on the main thread and freeze every other IPC call.
+#[tauri::command]
+pub async fn check_provider_auth(provider_id: String) -> AuthState {
+    tauri::async_runtime::spawn_blocking(move || check_provider_auth_blocking(&provider_id))
+        .await
+        .unwrap_or(AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        })
 }
 
 #[cfg(test)]
@@ -816,24 +779,10 @@ mod tests {
         assert!(out.primary_text().trim().is_empty());
     }
 
-    #[test]
-    fn gemini_parses_logged_in() {
-        let s = parse_gemini_auth_output("Logged in as alice@example.com\n");
-        assert_eq!(s.state, AuthStateKind::Connected);
-        assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
-    }
-
-    #[test]
-    fn gemini_parses_not_logged_in() {
-        let s = parse_gemini_auth_output("Not logged in\n");
-        assert_eq!(s.state, AuthStateKind::Disconnected);
-    }
-
-    #[test]
-    fn gemini_unknown_on_unrecognized() {
-        let s = parse_gemini_auth_output("some unrelated output\n");
-        assert_eq!(s.state, AuthStateKind::Unknown);
-    }
+    // Gemini auth is now creds-file-based (no subprocess), so the cli-output
+    // parser is gone and unit-test coverage moved to the filesystem layer.
+    // See extract_email_from_id_token tests below for the JWT decode path
+    // that backs both gemini and codex on-disk identity recovery.
 
     #[test]
     #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]

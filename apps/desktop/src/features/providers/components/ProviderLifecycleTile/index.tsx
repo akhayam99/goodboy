@@ -1,49 +1,28 @@
 import { useCallback, useState } from 'react';
-import { Code2, Gem, MousePointer2, Sparkles } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, type LucideIcon } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { CommandPreview } from './CommandPreview';
+import { brandColor, PROVIDER_BRAND } from '../provider-brand';
+import { openProviderModal } from '../ProviderModalHost';
 import { CtaButton, intentForState } from './CtaButton';
 import { DisconnectControl } from './DisconnectControl';
-import { ErrorPanel } from './ErrorPanel';
 import { InfoBanner } from './InfoBanner';
-import { InlineTerminal } from './InlineTerminal';
-import { OpenInBrowserButton } from './OpenInBrowserButton';
 import { StatusPill } from './StatusPill';
-import { Stepper } from './Stepper';
 import { copyFor } from './copy';
-
-interface ProviderBrand {
-  readonly icon: LucideIcon;
-  readonly cssVar: string;
-}
-
-const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
-  anthropic: { icon: Sparkles, cssVar: '--color-provider-anthropic' },
-  cursor: { icon: MousePointer2, cssVar: '--color-provider-cursor' },
-  codex: { icon: Code2, cssVar: '--color-provider-codex' },
-  gemini: { icon: Gem, cssVar: '--color-provider-gemini' },
-};
 
 interface Props {
   readonly info: ProviderInfo;
 }
 
-// In-flight phases drive the wide layout (col-span-full with terminal).
-const WIDE_PHASES = new Set(['installing', 'connecting', 'disconnecting']);
-
 export function ProviderLifecycleTile({ info }: Props) {
   const providerId = info.id as ProviderId;
   const brand = PROVIDER_BRAND[providerId];
-  const Icon = brand?.icon ?? Sparkles;
-  const color = brand ? `var(${brand.cssVar})` : 'var(--color-primary)';
+  const Icon: LucideIcon = brand?.icon ?? Sparkles;
+  const color = brand ? brandColor(providerId) : 'var(--color-primary)';
 
   const lifecycle = useAppStore((s) => s.providerLifecycle[providerId]);
-  const installProvider = useAppStore((s) => s.installProvider);
-  const loginProvider = useAppStore((s) => s.loginProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
   const cancelLifecycle = useAppStore((s) => s.cancelProviderLifecycle);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -58,82 +37,69 @@ export function ProviderLifecycleTile({ info }: Props) {
     }
   }, [refreshProviders]);
 
-  const fireAction = useCallback(
-    (action: ProviderLifecycleAction | 'cancel') => {
-      if (action === 'install') void installProvider(providerId);
-      else if (action === 'login') void loginProvider(providerId);
-      else if (action === 'logout') void logoutProvider(providerId);
-      else if (action === 'cancel') void cancelLifecycle(providerId);
-    },
-    [providerId, installProvider, loginProvider, logoutProvider, cancelLifecycle],
-  );
-
-  const isWide = WIDE_PHASES.has(lifecycle.phase);
   const intent = intentForState(lifecycle.phase, info.connection);
 
-  // The connected state with a stable connection gets its own composite
-  // (refresh + two-tap disconnect) rather than a single CTA button.
+  // Connected providers expose disconnect inline (two-tap confirm, no modal).
+  // Everything else routes through the modal.
   const showDisconnectComposite = lifecycle.phase === 'idle' && info.connection === 'connected';
+  const inFlight =
+    lifecycle.phase === 'installing' ||
+    lifecycle.phase === 'connecting' ||
+    lifecycle.phase === 'disconnecting';
+
+  const onCtaClick = useCallback(() => {
+    if (!intent) return;
+    if (intent.action === 'logout') {
+      void logoutProvider(providerId);
+      return;
+    }
+    if (intent.action === 'cancel') {
+      // Cancel directly from the tile so the user does not have to detour
+      // through the modal just to abort. "View progress" remains available
+      // as a separate inline button for the watching-only case.
+      void cancelLifecycle(providerId);
+      return;
+    }
+    openProviderModal({ providerId, action: intent.action });
+  }, [intent, providerId, cancelLifecycle, logoutProvider]);
 
   return (
     <div
       className="relative flex flex-col gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
       style={{
         borderColor: `color-mix(in oklch, ${color} 25%, var(--color-border-soft))`,
-        gridColumn: isWide ? '1 / -1' : undefined,
       }}
     >
-      <div
-        className={cn(
-          'flex items-start gap-3',
-          isWide ? 'justify-between' : 'flex-col items-center',
-        )}
-      >
-        <TileHeader
-          icon={Icon}
-          color={color}
-          info={info}
-          phase={lifecycle.phase}
-          stacked={!isWide}
-        />
-        {isWide ? (
-          <div className="flex flex-col items-end gap-1">
-            <StatusPill phase={lifecycle.phase} connection={info.connection} />
-            {lifecycle.action ? <Stepper action={lifecycle.action} /> : null}
-          </div>
-        ) : (
-          <StatusPill phase={lifecycle.phase} connection={info.connection} />
-        )}
+      <div className="flex flex-col items-center gap-2">
+        <TileHeader icon={Icon} color={color} info={info} phase={lifecycle.phase} />
+        <StatusPill phase={lifecycle.phase} connection={info.connection} />
       </div>
 
-      {isWide && lifecycle.command ? <CommandPreview command={lifecycle.command} /> : null}
-
-      {isWide && lifecycle.runId ? <InlineTerminal runId={lifecycle.runId} isActive /> : null}
-
-      {isWide && lifecycle.detectedAuthUrl ? (
-        <div className="flex justify-center">
-          <OpenInBrowserButton url={lifecycle.detectedAuthUrl} />
-        </div>
-      ) : null}
-
-      {lifecycle.phase === 'error' && lifecycle.errorTail ? (
-        <ErrorPanel tail={lifecycle.errorTail} />
-      ) : null}
-
-      {!isWide && lifecycle.phase === 'idle' && lifecycle.action !== 'logout' ? (
+      {lifecycle.phase === 'idle' && lifecycle.action !== 'logout' ? (
         <PreActionCopy providerId={providerId} info={info} />
+      ) : null}
+
+      {inFlight ? (
+        <InFlightPing
+          onClick={() =>
+            openProviderModal({
+              providerId,
+              action: lifecycle.action ?? 'install',
+            })
+          }
+        />
       ) : null}
 
       <div className="mt-1 w-full">
         {showDisconnectComposite ? (
           <DisconnectControl
-            onDisconnect={() => fireAction('logout')}
+            onDisconnect={() => void logoutProvider(providerId)}
             onRefresh={() => void onRefresh()}
             refreshing={refreshing}
             disconnecting={false}
           />
         ) : intent ? (
-          <CtaButton intent={intent} onClick={() => fireAction(intent.action)} />
+          <CtaButton intent={intent} onClick={onCtaClick} />
         ) : null}
       </div>
     </div>
@@ -145,13 +111,12 @@ interface HeaderProps {
   readonly color: string;
   readonly info: ProviderInfo;
   readonly phase: string;
-  readonly stacked: boolean;
 }
 
-function TileHeader({ icon: Icon, color, info, phase, stacked }: HeaderProps) {
+function TileHeader({ icon: Icon, color, info, phase }: HeaderProps) {
   const dim = info.connection !== 'connected' && info.connection !== 'error' && phase === 'idle';
   return (
-    <div className={cn('flex items-center gap-2.5', stacked && 'flex-col gap-2')}>
+    <div className="flex flex-col items-center gap-2">
       <div
         aria-hidden
         className={cn(
@@ -165,7 +130,7 @@ function TileHeader({ icon: Icon, color, info, phase, stacked }: HeaderProps) {
       >
         <Icon size={18} strokeWidth={2} />
       </div>
-      <div className={cn('flex flex-col', stacked ? 'items-center' : 'items-start')}>
+      <div className="flex flex-col items-center">
         <span className="text-sm font-semibold lowercase">{info.label}</span>
         <span
           className="max-w-[160px] truncate text-2xs text-muted-foreground"
@@ -189,4 +154,25 @@ function PreActionCopy({ providerId, info }: { providerId: ProviderId; info: Pro
         : null;
   if (!action) return null;
   return <InfoBanner text={copyFor(providerId, action)} />;
+}
+
+interface InFlightPingProps {
+  readonly onClick: () => void;
+}
+
+// Compact "in flight" hint when the lifecycle runs in the background and
+// the modal is closed. Clicking it reopens the modal as a viewer over the
+// existing PTY (the runId in the slice stays stable across remounts).
+function InFlightPing({ onClick }: InFlightPingProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-2xs text-primary transition-colors hover:bg-primary/10"
+    >
+      <Loader2 size={11} aria-hidden className="animate-spin" />
+      <span>View progress</span>
+      <ArrowRight size={10} aria-hidden />
+    </button>
+  );
 }

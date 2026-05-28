@@ -10,8 +10,8 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::providers::{
-    check_provider_auth, detect_claude, detect_codex, detect_cursor, detect_gemini, AuthState,
-    ProviderStatus,
+    check_provider_auth_blocking, detect_claude, detect_codex, detect_cursor, detect_gemini,
+    AuthState, ProviderStatus,
 };
 
 // ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
             error: Some(format!("unknown provider: {}", provider_id)),
         },
     };
-    let auth = check_provider_auth(provider_id.to_string());
+    let auth = check_provider_auth_blocking(provider_id);
     (status, auth)
 }
 
