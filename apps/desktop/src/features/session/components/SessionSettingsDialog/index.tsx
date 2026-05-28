@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, Dialog, Divider, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -51,8 +52,11 @@ export function SessionSettingsDialog({
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const setSessionConfig = useAppStore((s) => s.setSessionConfig);
   const renameTask = useAppStore((s) => s.renameTask);
-  const connectedProviderIds = useAppStore((s) =>
-    s.providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+  // useShallow because the selector derives a fresh array each call; without
+  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
+  // every render and React 19 bails into an infinite render loop.
+  const connectedProviderIds = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
   const deleteTask = useAppStore((s) => s.deleteTask);
   const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
