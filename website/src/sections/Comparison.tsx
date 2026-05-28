@@ -1,5 +1,12 @@
 type Cell = boolean | 'partial' | string;
-type Row = { label: string; goodboy: Cell; cursor: Cell; claudeCode: Cell; chatgpt: Cell };
+type Row = {
+  label: string;
+  goodboy: Cell;
+  cursor: Cell;
+  claudeCode: Cell;
+  gemini: Cell;
+  chatgpt: Cell;
+};
 
 const rows: Row[] = [
   {
@@ -7,6 +14,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: false,
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -14,6 +22,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: 'partial',
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -21,6 +30,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: 'partial',
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -28,6 +38,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: false,
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -35,6 +46,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: false,
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -42,6 +54,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: false,
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -49,6 +62,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: 'partial',
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -56,6 +70,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: 'partial',
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -63,6 +78,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: false,
+    gemini: false,
     chatgpt: false,
   },
   {
@@ -70,6 +86,7 @@ const rows: Row[] = [
     goodboy: true,
     cursor: false,
     claudeCode: true,
+    gemini: true,
     chatgpt: false,
   },
   {
@@ -77,9 +94,17 @@ const rows: Row[] = [
     goodboy: 'all three',
     cursor: 'own',
     claudeCode: 'own',
+    gemini: 'own',
     chatgpt: 'own',
   },
-  { label: 'Replaces your IDE', goodboy: false, cursor: true, claudeCode: false, chatgpt: false },
+  {
+    label: 'Replaces your IDE',
+    goodboy: false,
+    cursor: true,
+    claudeCode: false,
+    gemini: false,
+    chatgpt: false,
+  },
 ];
 
 function CellView({ v }: { v: Cell }) {
@@ -135,13 +160,14 @@ export function Comparison() {
           </p>
         </div>
         <div className="overflow-x-auto rounded-xl border border-border-soft bg-subtle">
-          <div className="grid min-w-[640px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr] text-[11.5px]">
+          <div className="grid min-w-[780px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr] text-[11.5px]">
             <div className="bg-[oklch(0.27_0.008_255)] px-4 py-3 text-[10.5px] uppercase tracking-wider text-muted-foreground">
               Capability
             </div>
             <Header label="Goodboy" highlight />
             <Header label="Cursor" />
             <Header label="Claude Code" />
+            <Header label="Gemini" />
             <Header label="ChatGPT" />
             {rows.map((r, i) => (
               <ComparisonRow key={r.label} row={r} odd={i % 2 === 1} />
@@ -183,6 +209,9 @@ function ComparisonRow({ row, odd }: { row: Row; odd: boolean }) {
       </div>
       <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
         <CellView v={row.claudeCode} />
+      </div>
+      <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
+        <CellView v={row.gemini} />
       </div>
       <div className={`flex items-center justify-center px-4 py-3 ${bg}`}>
         <CellView v={row.chatgpt} />

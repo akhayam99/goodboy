@@ -20,7 +20,9 @@ function TerminalFrame({ label, children }: { label: string; children: ReactNode
         <span className="h-2.5 w-2.5 rounded-full bg-success" aria-hidden />
         <span className="ml-3 font-mono text-[10.5px] text-muted-foreground">{label}</span>
       </div>
-      <div className="px-5 py-4 font-mono text-[12.5px] leading-[1.9]">{children}</div>
+      <div className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-[1.9]">
+        {children}
+      </div>
     </div>
   );
 }
@@ -40,40 +42,39 @@ export function CTA() {
           you&apos;re running locally.
         </p>
 
-        <div className="mx-auto mt-10 grid max-w-xl gap-6 text-left sm:grid-cols-2">
-          <div>
-            <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              macOS
-            </p>
-            <TerminalFrame label="Homebrew">
-              <div className="flex items-start gap-2">
-                <span className="shrink-0 select-none text-muted-foreground">$</span>
-                <span className="text-foreground break-all">{brewLine}</span>
-              </div>
-            </TerminalFrame>
-            <div className="mt-4">
-              <LinkButton
-                href={RELEASES_LATEST}
-                target="_blank"
-                rel="noreferrer"
-                size="lg"
-                variant="primary"
-              >
-                Download for macOS
-              </LinkButton>
-            </div>
-            <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Universal build &middot; Intel &amp; Apple Silicon
-            </p>
+        <div className="mx-auto mt-11 max-w-lg">
+          {/* macOS: the primary path */}
+          <LinkButton
+            href={RELEASES_LATEST}
+            target="_blank"
+            rel="noreferrer"
+            size="lg"
+            variant="primary"
+            className="w-full sm:w-auto"
+          >
+            Download for macOS
+          </LinkButton>
+          <p className="mt-3 text-[12px] text-muted-foreground/70">
+            Universal build &middot; Intel &amp; Apple Silicon
+          </p>
+
+          <div className="mt-5 flex items-center gap-3 text-left">
+            <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground/60">
+              or brew
+            </span>
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-border-soft bg-[oklch(0.22_0.007_255)] px-4 py-2.5 font-mono text-[12.5px] text-foreground">
+              {brewLine}
+            </code>
           </div>
 
-          <div>
+          {/* Linux & Windows: build from source */}
+          <div className="mt-9 text-left">
             <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Linux &amp; Windows
+              Linux &amp; Windows &middot; from source
             </p>
-            <TerminalFrame label="build from source">
+            <TerminalFrame label="~/work">
               {sourceLines.map((l) => (
-                <div key={l.command} className="flex items-start gap-2">
+                <div key={l.command} className="flex items-start gap-2 whitespace-nowrap">
                   <span className="shrink-0 select-none text-muted-foreground">{l.prompt}</span>
                   <span className={l.muted ? 'text-primary' : 'text-foreground'}>{l.command}</span>
                 </div>
@@ -85,7 +86,7 @@ export function CTA() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"
@@ -108,11 +109,6 @@ export function CTA() {
             Read the docs
           </LinkButton>
         </div>
-
-        <p className="mt-6 text-[12px] text-muted-foreground/70">
-          Prebuilt for macOS &middot; build from source on Linux &amp; Windows &middot; Node 20+
-          &middot; pnpm 9+
-        </p>
       </div>
     </section>
   );
