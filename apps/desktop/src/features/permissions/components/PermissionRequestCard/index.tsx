@@ -4,13 +4,13 @@ import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { PermissionScopePicker } from '../PermissionScopePicker';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 
-interface PermissionRequestCardProps {
+interface Props {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
 }
 
-export function PermissionRequestCard({ item, sessionId, agentId }: PermissionRequestCardProps) {
+export function PermissionRequestCard({ item, sessionId, agentId }: Props) {
   const [resolved, setResolved] = useState(false);
 
   const timestamp = formatCardTime(item.at);

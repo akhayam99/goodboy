@@ -5,13 +5,13 @@ import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
-interface ScriptsPanelProps {
+interface Props {
   readonly workspaceId: WorkspaceId;
 }
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 
-export function ScriptsPanel({ workspaceId }: ScriptsPanelProps) {
+export function ScriptsPanel({ workspaceId }: Props) {
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const saveScript = useAppStore((s) => s.saveScript);

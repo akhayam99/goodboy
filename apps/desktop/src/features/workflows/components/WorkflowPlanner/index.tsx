@@ -19,13 +19,13 @@ import {
 } from '../../../../features/session/agent-kind';
 import {
   type EffortLevel,
-  type VerbosityLevel,
   modelEffortLevels,
-  InlineField,
-  ModelSelect,
-  EffortSelect,
-  VerbositySelect,
-} from '../../../../features/session/components/config-selects';
+} from '../../../../features/chat/utils/chat-constants';
+import { type VerbosityLevel } from '../../../../features/settings/verbosity';
+import { InlineField } from '../../../../features/session/components/InlineField';
+import { ModelSelect } from '../../../../features/session/components/ModelSelect';
+import { EffortSelect } from '../../../../features/session/components/EffortSelect';
+import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 
 interface StepOverrides {
   readonly model: string;
@@ -33,7 +33,7 @@ interface StepOverrides {
   readonly verbosity: VerbosityLevel;
 }
 
-interface WorkflowPlannerProps {
+interface Props {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialTheme: string;
@@ -49,7 +49,7 @@ export function WorkflowPlanner({
   initialTheme,
   onWorkflowReady,
   onPlanChange,
-}: WorkflowPlannerProps) {
+}: Props) {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const [theme, setTheme] = useState(initialTheme);
   const [busy, setBusy] = useState(false);

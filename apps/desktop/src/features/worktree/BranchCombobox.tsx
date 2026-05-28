@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
-interface BranchComboboxProps {
+interface Props {
   readonly branches: ReadonlyArray<LocalBranchInfo>;
   readonly value: string;
   readonly onChange: (v: string) => void;
@@ -31,7 +31,7 @@ export function BranchCombobox({
   loading,
   excludeNames,
   openDirection = 'down',
-}: BranchComboboxProps) {
+}: Props) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);

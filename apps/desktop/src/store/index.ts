@@ -6,13 +6,11 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
-  useMostRecentPlan,
   useSessionById,
   useSessionLoading,
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionSlots,
-  useSessionNextActions,
   useSessionViewPrefs,
   useSlotHistory,
   useSessions,
@@ -21,7 +19,6 @@ export {
   useSessionHasUnread,
   useWorkspaceHasUnread,
   useWorkspaces,
-  type GroupedSessions,
 } from './selectors';
 export { useTranscript } from './transcript';
 

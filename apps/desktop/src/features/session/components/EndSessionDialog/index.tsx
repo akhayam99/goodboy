@@ -14,13 +14,13 @@ function unwrapError(err: unknown): string {
   return String(err);
 }
 
-interface EndSessionDialogProps {
+interface Props {
   session: Session;
   open: boolean;
   onClose: () => void;
 }
 
-export function EndSessionDialog({ session, open, onClose }: EndSessionDialogProps) {
+export function EndSessionDialog({ session, open, onClose }: Props) {
   const endSession = useAppStore((s) => s.endSession);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

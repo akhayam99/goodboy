@@ -7,7 +7,7 @@ import { MAX_WORKSPACES } from '../../../../shared/lib/features';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 
-interface WorkspaceLinkDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
 }
@@ -19,7 +19,7 @@ interface WorkspaceLinkDialogProps {
  * one. Past versions also hosted a "Recent" tab; that overlapped with the
  * switcher and confused the primary action, so it was dropped.
  */
-export function WorkspaceLinkDialog({ open, onClose }: WorkspaceLinkDialogProps) {
+export function WorkspaceLinkDialog({ open, onClose }: Props) {
   const addWorkspace = useAppStore((s) => s.addWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const workspaces = useWorkspaces();

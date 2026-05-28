@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import { HelpCircle, Send, Undo2, ArrowDownRight } from 'lucide-react';
 import { ScrollArea, cn } from '@goodboy/ui';
-import type { Agent, AgentId, OpenQuestionId, SessionId, Workflow } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { QuestionCard } from './QuestionCard';
 import { buildQuestionClusters, type QuestionCluster } from './clusters';
@@ -11,7 +11,7 @@ const COLLAPSE_THRESHOLD = 4;
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-interface QuestionsTabProps {
+interface Props {
   sessionId: SessionId;
   // Routes the cluster's batched answer back to its owner. Implementations
   // should send to `targetAgentId` when non-null, falling back to the
@@ -19,7 +19,7 @@ interface QuestionsTabProps {
   onSubmit: (content: string, targetAgentId: AgentId | null) => Promise<void>;
 }
 
-export function QuestionsTab({ sessionId, onSubmit }: QuestionsTabProps) {
+export function QuestionsTab({ sessionId, onSubmit }: Props) {
   const {
     questions,
     drafts,
@@ -199,6 +199,3 @@ export function QuestionsTab({ sessionId, onSubmit }: QuestionsTabProps) {
     </div>
   );
 }
-
-// Re-exported so callers that prop-type their onSubmit can stay clean.
-export type { OpenQuestionId };

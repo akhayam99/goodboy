@@ -1,0 +1,16 @@
+import { cancelScript } from './cancelScript';
+import { deleteScript } from './deleteScript';
+import { loadScripts } from './loadScripts';
+import { runScript } from './runScript';
+import { saveScript } from './saveScript';
+import type { GetFn, SetFn } from './types';
+
+export function createScriptsSlice(set: SetFn, get: GetFn) {
+  return {
+    loadScripts: loadScripts(set),
+    saveScript: saveScript(get),
+    deleteScript: deleteScript(set),
+    runScript: runScript(set, get),
+    cancelScript: cancelScript(set, get),
+  };
+}

@@ -7,13 +7,13 @@ async function providerAction(id: ProviderId, action: 'login' | 'logout'): Promi
   return invoke('provider_action', { id, action });
 }
 
-interface AuthRequiredCalloutProps {
+interface Props {
   readonly providerId: ProviderId;
   readonly identity?: string | null;
   readonly onRefresh: () => void;
 }
 
-export function AuthRequiredCallout({ providerId, identity, onRefresh }: AuthRequiredCalloutProps) {
+export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) {
   const label = PROVIDER_LABEL_LOWER[providerId];
 
   const onConnect = () => {

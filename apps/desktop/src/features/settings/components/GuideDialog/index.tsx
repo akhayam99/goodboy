@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 
-interface GuideDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
 }
@@ -41,7 +41,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
 ];
 
-export function GuideDialog({ open, onClose }: GuideDialogProps) {
+export function GuideDialog({ open, onClose }: Props) {
   const [active, setActive] = useState<Section>('overview');
 
   return (

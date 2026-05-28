@@ -9,7 +9,7 @@ import {
   inferAgentKindFromName,
 } from '../../../../features/session/agent-kind';
 
-export interface WorkflowNextStepCtaProps {
+export interface Props {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (
@@ -61,7 +61,7 @@ export function WorkflowNextStepCta({
   hasOpenQuestions = false,
   consumesActivePlan = false,
   className,
-}: WorkflowNextStepCtaProps) {
+}: Props) {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const next = useMemo(() => pickNextWorkflowStep(workflow, runs), [workflow, runs]);

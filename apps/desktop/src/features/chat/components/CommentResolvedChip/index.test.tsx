@@ -1,0 +1,41 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+const { extractMock, resolveMock } = vi.hoisted(() => ({
+  extractMock: vi.fn<(text: string) => unknown>(() => null),
+  resolveMock: vi.fn(async () => true),
+}));
+
+vi.mock('@goodboy/core', () => ({ extractCommentResolved: extractMock }));
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (s: { resolveGithubThread: typeof resolveMock }) => T) =>
+    selector({ resolveGithubThread: resolveMock }),
+}));
+
+import { CommentResolvedChip } from './index';
+
+beforeEach(() => {
+  extractMock.mockReset();
+  resolveMock.mockReset().mockResolvedValue(true);
+});
+afterEach(cleanup);
+
+describe('CommentResolvedChip', () => {
+  it('renders nothing when no marker is found', () => {
+    extractMock.mockReturnValue(null);
+    const { container } = render(<CommentResolvedChip assistantText="" sessionId={'s' as never} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('resolves the thread when the confirm button is clicked', async () => {
+    extractMock.mockReturnValue({ threadId: 'th-1', commitSha: 'abcdef1234567890' });
+    render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('comment-resolved-confirm'));
+    });
+    expect(resolveMock).toHaveBeenCalledWith('s', 'th-1', { commitSha: 'abcdef1234567890' });
+    expect(screen.getByText(/conversation resolved/i)).toBeDefined();
+  });
+});

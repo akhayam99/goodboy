@@ -59,7 +59,7 @@ export function pullRequestMeta(state: PullRequestStateKind): PrStateMeta {
 
 type Variant = 'icon' | 'compact' | 'badge';
 
-interface PullRequestChipProps {
+interface Props {
   readonly state: PullRequestStateKind;
   /**
    * - `icon`, single 10–12px icon, no text. Use when space is tight (sidebar rail).
@@ -73,13 +73,7 @@ interface PullRequestChipProps {
   readonly className?: string;
 }
 
-export function PullRequestChip({
-  state,
-  variant = 'icon',
-  number,
-  iconSize,
-  className,
-}: PullRequestChipProps) {
+export function PullRequestChip({ state, variant = 'icon', number, iconSize, className }: Props) {
   const meta = PR_META[state];
   const Icon = meta.icon;
 

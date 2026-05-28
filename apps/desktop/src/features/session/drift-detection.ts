@@ -1,6 +1,6 @@
 import type { AgentKind } from './agent-kind';
 
-export type DriftSignal =
+type DriftSignal =
   | 'plan-marker-from-non-planner'
   | 'file-edit-from-readonly-kind'
   | 'impl-output-from-readonly-kind';

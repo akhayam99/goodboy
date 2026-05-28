@@ -4,7 +4,7 @@ import type { QuickActionGroup } from './grammar';
 /** Optional trailing badge rendered on the right of the row. Lets a builder
  *  surface a typed marker (agent kind + role label) without coupling the
  *  popover to any specific group. */
-export interface QuickActionTrailing {
+interface QuickActionTrailing {
   readonly label: string;
   readonly kind?: AgentKind;
 }

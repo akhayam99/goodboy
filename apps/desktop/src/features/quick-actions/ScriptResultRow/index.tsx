@@ -10,7 +10,7 @@ export interface ScriptResultState {
   readonly result: ScriptRunResult | null;
 }
 
-interface ScriptResultRowProps {
+interface Props {
   readonly state: ScriptResultState;
   readonly onDismiss: () => void;
 }
@@ -19,7 +19,7 @@ interface ScriptResultRowProps {
  * Sticky result of a `$` quick-action script run, shown above the composer.
  * Never sent to the LLM, stays until dismissed or replaced by the next run.
  */
-export function ScriptResultRow({ state, onDismiss }: ScriptResultRowProps) {
+export function ScriptResultRow({ state, onDismiss }: Props) {
   const { script, status, result } = state;
   const [outputOpen, setOutputOpen] = useState(false);
 

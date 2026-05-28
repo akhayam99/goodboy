@@ -47,11 +47,11 @@ export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
   return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
 }
 
-interface PermissionModePickerProps {
+interface Props {
   readonly session: Session;
 }
 
-export function PermissionModePicker({ session }: PermissionModePickerProps) {
+export function PermissionModePicker({ session }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);

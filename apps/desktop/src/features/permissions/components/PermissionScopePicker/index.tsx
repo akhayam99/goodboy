@@ -22,7 +22,7 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
   deny: 'rule added: deny for this session',
 };
 
-interface PermissionScopePickerProps {
+interface Props {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly toolUseId: string;
@@ -38,7 +38,7 @@ export function PermissionScopePicker({
   toolName,
   runId,
   onResolved,
-}: PermissionScopePickerProps) {
+}: Props) {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);

@@ -12,15 +12,14 @@ import {
 } from '../../../../features/settings/settings';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { formatError } from '../../../../shared/lib/errors';
+import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 
-interface SettingsDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
   initialSection?: string;
 }
-
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 type NavSection =
   | 'app'
@@ -95,7 +94,7 @@ function BetaChip() {
   );
 }
 
-export function SettingsDialog({ open, onClose, initialSection }: SettingsDialogProps) {
+export function SettingsDialog({ open, onClose, initialSection }: Props) {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);

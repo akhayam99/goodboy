@@ -8,7 +8,7 @@ import type {
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 
-interface RoutingIndicatorProps {
+interface Props {
   readonly sessionPreference: SessionProviderPreference;
   readonly turnOverride: TurnProviderOverride | undefined;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -20,7 +20,7 @@ export function RoutingIndicator({
   turnOverride,
   connectedProviders,
   onSendAnyway,
-}: RoutingIndicatorProps) {
+}: Props) {
   const [decision, setDecision] = useState<RoutingDecision | null>(null);
 
   useEffect(() => {

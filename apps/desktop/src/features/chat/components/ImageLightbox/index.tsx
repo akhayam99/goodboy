@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-interface ImageLightboxProps {
+interface Props {
   readonly src: string;
   readonly alt: string;
   readonly onClose: () => void;
@@ -22,7 +22,7 @@ const EXIT_MS = 180;
  *            the exit transition so the unmount happens at the end of
  *            the animation, not the start.
  */
-export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
+export function ImageLightbox({ src, alt, onClose }: Props) {
   const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
   const exitTimerRef = useRef<number | null>(null);
 

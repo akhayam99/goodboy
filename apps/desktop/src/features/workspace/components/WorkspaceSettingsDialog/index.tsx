@@ -15,14 +15,14 @@ import {
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkflowsPanel } from '../../../../features/workflows/components/WorkflowsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
-import { VerbositySelect } from '../../../../features/session/components/config-selects';
+import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 
-interface WorkspaceSettingsDialogProps {
+interface Props {
   workspaceId: WorkspaceId;
   workspaceName: string;
   open: boolean;
@@ -58,7 +58,7 @@ export function WorkspaceSettingsDialog({
   open,
   onClose,
   initialSection,
-}: WorkspaceSettingsDialogProps) {
+}: Props) {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);

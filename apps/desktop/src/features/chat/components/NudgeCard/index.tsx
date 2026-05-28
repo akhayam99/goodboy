@@ -2,15 +2,15 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
-export type NudgeSeverity = 'info' | 'warning' | 'success';
+type NudgeSeverity = 'info' | 'warning' | 'success';
 
-export interface NudgeAction {
+interface NudgeAction {
   readonly label: string;
   readonly onClick: () => void;
   readonly testId?: string;
 }
 
-export interface NudgeCardProps {
+export interface Props {
   readonly severity: NudgeSeverity;
   readonly icon?: ReactNode;
   readonly title: ReactNode;
@@ -54,7 +54,7 @@ export function NudgeCard({
   ariaLabel,
   testId,
   autoFocusPrimary = false,
-}: NudgeCardProps) {
+}: Props) {
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!autoFocusPrimary) return;

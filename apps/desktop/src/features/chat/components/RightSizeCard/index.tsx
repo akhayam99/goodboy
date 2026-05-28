@@ -4,7 +4,7 @@ import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 import { NudgeCard } from '../NudgeCard';
 
-export interface RightSizeCardProps {
+export interface Props {
   readonly currentModel: string;
   readonly suggestedModel: string;
   readonly onUseSuggested: () => void;
@@ -18,7 +18,7 @@ export function RightSizeCard({
   onUseSuggested,
   onKeepCurrent,
   onChangeModel,
-}: RightSizeCardProps) {
+}: Props) {
   return (
     <NudgeCard
       severity="info"

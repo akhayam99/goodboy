@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface AutoRunToggleProps {
+interface Props {
   readonly session: Session;
 }
 
@@ -12,7 +12,7 @@ interface AutoRunToggleProps {
  * the session has a workflow attached, without one the autorun loop has
  * nothing to step through, so the control disables and dims.
  */
-export function AutoRunToggle({ session }: AutoRunToggleProps) {
+export function AutoRunToggle({ session }: Props) {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const hasWorkflow = session.workflowIds.length > 0;
   const tooltip = !hasWorkflow

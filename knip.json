@@ -2,7 +2,8 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["package.json"]
+      "entry": ["package.json"],
+      "ignoreDependencies": ["@commitlint/cli"]
     },
     "apps/desktop": {
       "entry": ["src/**/*.test.{ts,tsx}"],
@@ -26,7 +27,8 @@
     },
     "website": {
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["tailwindcss"]
+      "ignoreDependencies": ["tailwindcss"],
+      "ignoreBinaries": ["vite"]
     }
   }
 }

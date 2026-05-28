@@ -92,48 +92,6 @@ export const tauriGhRunner: GhRunner = {
   },
 };
 
-export interface GithubIssue {
-  readonly number: number;
-  readonly title: string;
-  readonly body: string;
-  readonly url: string;
-}
-
-export async function fetchGithubIssue(repoSlug: string, number: number): Promise<GithubIssue> {
-  const raw = await invoke<RawGhRunResult>('gh_run', {
-    args: ['api', `repos/${repoSlug}/issues/${number}`],
-    cwd: undefined,
-  });
-  if (raw.exitCode !== 0) {
-    throw new Error(`gh api failed: ${raw.stderr || raw.stdout}`);
-  }
-  const parsed = JSON.parse(raw.stdout) as {
-    number: number;
-    title: string;
-    body: string | null;
-    html_url: string;
-  };
-  return {
-    number: parsed.number,
-    title: parsed.title,
-    body: parsed.body ?? '',
-    url: parsed.html_url,
-  };
-}
-
-export function parseGithubIssueUrl(input: string): { repoSlug: string; number: number } | null {
-  const trimmed = input.trim();
-  const urlMatch = trimmed.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\/issues\/(\d+)/);
-  if (urlMatch) {
-    return { repoSlug: urlMatch[1]!, number: parseInt(urlMatch[2]!, 10) };
-  }
-  const shortMatch = trimmed.match(/^([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)#(\d+)$/);
-  if (shortMatch) {
-    return { repoSlug: shortMatch[1]!, number: parseInt(shortMatch[2]!, 10) };
-  }
-  return null;
-}
-
 export function createTauriPrCacheStore(db: Database): PrCacheStore {
   return {
     async get(repoSlug, branch) {

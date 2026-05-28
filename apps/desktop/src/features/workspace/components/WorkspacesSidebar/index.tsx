@@ -90,7 +90,7 @@ import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { useNow } from '../../../../shared/hooks/use-now';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;

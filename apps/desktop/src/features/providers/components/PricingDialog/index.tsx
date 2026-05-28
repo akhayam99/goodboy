@@ -51,7 +51,7 @@ function ProviderSpendRow({ entry }: { entry: ProviderSpendEntry }) {
   );
 }
 
-interface PricingDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
 }
@@ -67,7 +67,7 @@ const EMPTY_TELEMETRY: ReadonlyArray<{
   kind: 'turn' | 'summarizer';
 }> = [];
 
-export function PricingDialog({ open, onClose }: PricingDialogProps) {
+export function PricingDialog({ open, onClose }: Props) {
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const currentSessionId = useAppStore((s) => s.currentSessionId);

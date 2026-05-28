@@ -1,7 +1,7 @@
 import { cn } from '@goodboy/ui';
 import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 
-interface ParallelProgressPillProps {
+interface Props {
   parallelRunIds: ReadonlyArray<ProviderRunId>;
   runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>;
   onSelectRun: (runId: ProviderRunId) => void;
@@ -15,11 +15,7 @@ const BADGE_CLASSES: Record<AgentStatus, string> = {
   pending: 'bg-muted-foreground/25',
 };
 
-export function ParallelProgressPill({
-  parallelRunIds,
-  runStatuses,
-  onSelectRun,
-}: ParallelProgressPillProps) {
+export function ParallelProgressPill({ parallelRunIds, runStatuses, onSelectRun }: Props) {
   if (parallelRunIds.length === 0) return null;
 
   return (

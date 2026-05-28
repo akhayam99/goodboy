@@ -9,7 +9,7 @@ import type {
   WorkflowStepUpsertArgs,
 } from '../../../../features/workflows/workflows';
 
-interface WorkflowsPanelProps {
+interface Props {
   readonly workspaceId: WorkspaceId;
 }
 
@@ -59,7 +59,7 @@ function templateToForm(t: Workflow): TemplateForm {
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
-export function WorkflowsPanel({ workspaceId }: WorkflowsPanelProps) {
+export function WorkflowsPanel({ workspaceId }: Props) {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);

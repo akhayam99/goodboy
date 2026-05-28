@@ -14,7 +14,7 @@ import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
-import { useKeyboardShortcut } from './shared/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
 import {
   useAppStore,
   useCurrentSession,
@@ -25,7 +25,7 @@ import {
   useWorkspaces,
 } from './store';
 import { refreshPricingTable } from './features/providers/provider-pricing';
-import { useGithubPolling } from './features/github/use-github-polling';
+import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;

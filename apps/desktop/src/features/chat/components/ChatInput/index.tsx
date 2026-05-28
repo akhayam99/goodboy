@@ -128,7 +128,7 @@ function asProvider(v: string | undefined | null): ProviderId | null {
   return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
 }
 
-interface ChatInputProps {
+interface Props {
   readonly session: Session;
   readonly providerDisconnected?: boolean;
 }
@@ -151,7 +151,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   return 'session budget exceeded';
 }
 
-export function ChatInput({ session, providerDisconnected = false }: ChatInputProps) {
+export function ChatInput({ session, providerDisconnected = false }: Props) {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);

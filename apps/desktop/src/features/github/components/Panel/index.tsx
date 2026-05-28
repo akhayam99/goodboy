@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { GitFork as GithubIcon, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Input, cn } from '@goodboy/ui';
 import { formatError } from '../../../../shared/lib/errors';
+import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
-
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) {
   const status = useAppStore((s) => s.githubStatus);

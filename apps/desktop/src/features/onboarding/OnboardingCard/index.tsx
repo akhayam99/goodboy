@@ -7,7 +7,7 @@ import {
   reopen,
   type OnboardingStepId,
 } from '../onboarding-store';
-import { useOnboardingProgress, type OnboardingProgress } from '../use-onboarding-progress';
+import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress';
 
 /**
  * Progressive setup checklist. Floats top-right of the chat area. The X

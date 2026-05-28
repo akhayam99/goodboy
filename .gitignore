@@ -43,3 +43,6 @@ coverage/
 .claude/launch.json
 .claude/scheduled_tasks.lock
 .goodboy/
+
+# refactor plan stays local
+REFACTOR_PLAN.md
