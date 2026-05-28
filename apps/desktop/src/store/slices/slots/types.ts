@@ -1,8 +1,6 @@
 import type { ContextSlot } from '@goodboy/types';
-import type { AppStore } from '../../store';
 
-export type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
-export type GetFn = () => AppStore;
+export type { SetFn, GetFn } from '../../slice-types';
 
 export function mergeSlots(
   existing: ReadonlyArray<ContextSlot>,

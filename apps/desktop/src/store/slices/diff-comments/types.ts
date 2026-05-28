@@ -1,8 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import type { AppStore } from '../../store';
 
-export type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
-export type GetFn = () => AppStore;
+export type { SetFn, GetFn } from '../../slice-types';
 
 // In-flight dedup for actions whose store slice has no native loading flag.
 // Prevents the second fetch when ContextPanel's effect fires twice (StrictMode

@@ -1,5 +1,6 @@
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
-import type { AppStore, SessionLoadingFlags } from './store';
+import type { SessionLoadingFlags } from './store';
+import type { SetFn } from './slice-types';
 
 export const EMPTY_LOADING: SessionLoadingFlags = {
   agents: false,
@@ -9,8 +10,6 @@ export const EMPTY_LOADING: SessionLoadingFlags = {
   plans: false,
   summary: false,
 };
-
-type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
 
 /**
  * Shared per-turn session state mutator. Called by every action that flips

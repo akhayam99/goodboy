@@ -87,11 +87,9 @@ vi.mock('../../routing', () => ({
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { ProviderInfo } from '../../features/providers/providers';
-import type { AppState, AppActions } from '../../store/store';
+import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-
-type AppStore = AppState & AppActions;
 
 function mockStore(partial: Partial<AppStore>): void {
   vi.mocked(useAppStore).mockImplementation((selector: (state: AppStore) => unknown) =>

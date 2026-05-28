@@ -12,6 +12,7 @@ import {
 } from '../../../../features/settings/settings';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { formatError } from '../../../../shared/lib/errors';
+import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 
 interface Props {
@@ -19,8 +20,6 @@ interface Props {
   onClose: () => void;
   initialSection?: string;
 }
-
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 type NavSection =
   | 'app'

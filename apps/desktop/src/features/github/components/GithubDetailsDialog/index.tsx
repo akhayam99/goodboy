@@ -34,6 +34,7 @@ import type {
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
+import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 
 type TabKey = 'ci' | 'reviews' | 'comments';
 
@@ -363,49 +364,11 @@ function ReviewsPane({ reviews }: { reviews: ReadonlyArray<PrReview> }) {
 
 // --- Comments ---
 
-interface CommentThread {
-  readonly head: PrComment;
-  readonly replies: ReadonlyArray<PrComment>;
-}
-
-function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
-  const byId = new Map<string, PrComment>();
-  for (const c of comments) byId.set(c.id, c);
-  const heads: Array<PrComment> = [];
-  const repliesByHead = new Map<string, Array<PrComment>>();
-  for (const c of comments) {
-    if (c.source === 'review' && c.inReplyToId && byId.has(c.inReplyToId)) {
-      const arr = repliesByHead.get(c.inReplyToId) ?? [];
-      arr.push(c);
-      repliesByHead.set(c.inReplyToId, arr);
-    } else {
-      heads.push(c);
-    }
-  }
-  return heads.map((head) => ({
-    head,
-    replies: (repliesByHead.get(head.id) ?? []).sort((a, b) =>
-      a.createdAt.localeCompare(b.createdAt),
-    ),
-  }));
-}
-
 type ThreadStatus = 'open-review' | 'issue' | 'resolved';
 
 function threadStatus(t: CommentThread): ThreadStatus {
   if (t.head.source === 'review') return t.head.resolved ? 'resolved' : 'open-review';
   return 'issue';
-}
-
-function threadPriority(t: CommentThread): number {
-  const s = threadStatus(t);
-  if (s === 'open-review') return 0;
-  if (s === 'issue') return 1;
-  return 2;
-}
-
-function isBot(author: string): boolean {
-  return author.endsWith('[bot]') || author.endsWith('-bot');
 }
 
 interface CommentsPaneProps {

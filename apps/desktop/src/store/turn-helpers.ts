@@ -43,10 +43,8 @@ import {
 import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic';
 import { formatError } from '../shared/lib/errors';
 import { buildProviderSpendBreakdown } from './slices/budget';
-import type { AppStore, SessionNudge } from './store';
-
-type SetFn = (p: Partial<AppStore> | ((s: AppStore) => Partial<AppStore>)) => void;
-type GetFn = () => AppStore;
+import type { SessionNudge } from './store';
+import type { SetFn, GetFn } from './slice-types';
 
 // The provider CLIs have no API content-block channel, images reach the model
 // only as files named in the prompt text. Paths stay worktree-relative so they
