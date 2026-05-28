@@ -1,0 +1,72 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Build the macOS universal (.dmg) on tag push and publish it as a draft
+# GitHub Release. Signing + notarization run automatically when the APPLE_*
+# secrets are present; if they are unset the build still produces an unsigned
+# .dmg. See docs/release.md.
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: build universal dmg
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build workspace deps
+        run: pnpm turbo run build --filter=@goodboy/desktop^...
+
+      - name: build, release (universal)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Goodboy ${{ github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: --target universal-apple-darwin
