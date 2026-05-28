@@ -25,7 +25,12 @@ export type BudgetCheckResult = Readonly<{
   exceeded: boolean;
 }>;
 
-export type RoutingReason = 'preferred' | 'fallback-budget' | 'all-exceeded' | 'override';
+export type RoutingReason =
+  | 'preferred'
+  | 'fallback-budget'
+  | 'fallback-disconnected'
+  | 'all-exceeded'
+  | 'override';
 
 export type RoutingDecision = Readonly<{
   selectedProvider: ProviderId;
