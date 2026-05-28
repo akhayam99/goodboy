@@ -1,11 +1,7 @@
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
-
-async function providerAction(id: ProviderId, action: 'login' | 'logout'): Promise<void> {
-  return invoke('provider_action', { id, action });
-}
+import { useAppStore } from '../../../../store';
 
 interface Props {
   readonly providerId: ProviderId;
@@ -15,9 +11,10 @@ interface Props {
 
 export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) {
   const label = PROVIDER_LABEL_LOWER[providerId];
+  const loginProvider = useAppStore((s) => s.loginProvider);
 
   const onConnect = () => {
-    void providerAction(providerId, 'login');
+    void loginProvider(providerId);
   };
 
   return (

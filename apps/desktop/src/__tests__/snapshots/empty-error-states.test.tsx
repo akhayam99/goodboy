@@ -17,6 +17,48 @@ vi.mock('../../store', () => ({
       budgetAlerts: [],
       notifications: [],
       providers: [],
+      providerLifecycle: {
+        anthropic: {
+          phase: 'idle' as const,
+          runId: null,
+          action: null,
+          command: null,
+          exitCode: null,
+          startedAt: null,
+          errorTail: null,
+          detectedAuthUrl: null,
+        },
+        cursor: {
+          phase: 'idle' as const,
+          runId: null,
+          action: null,
+          command: null,
+          exitCode: null,
+          startedAt: null,
+          errorTail: null,
+          detectedAuthUrl: null,
+        },
+        codex: {
+          phase: 'idle' as const,
+          runId: null,
+          action: null,
+          command: null,
+          exitCode: null,
+          startedAt: null,
+          errorTail: null,
+          detectedAuthUrl: null,
+        },
+        gemini: {
+          phase: 'idle' as const,
+          runId: null,
+          action: null,
+          command: null,
+          exitCode: null,
+          startedAt: null,
+          errorTail: null,
+          detectedAuthUrl: null,
+        },
+      },
       skills: {},
       settings: {},
       phaseTemplates: {},
@@ -34,6 +76,10 @@ vi.mock('../../store', () => ({
       markNotificationsRead: vi.fn(),
       clearNotifications: vi.fn(),
       refreshProviders: vi.fn(),
+      installProvider: vi.fn(),
+      loginProvider: vi.fn(),
+      logoutProvider: vi.fn(),
+      cancelProviderLifecycle: vi.fn(),
       loadSkills: vi.fn(),
       saveSkill: vi.fn(),
       deleteSkill: vi.fn(),
@@ -91,9 +137,27 @@ import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 
+const IDLE_LIFECYCLE = {
+  phase: 'idle' as const,
+  runId: null,
+  action: null,
+  command: null,
+  exitCode: null,
+  startedAt: null,
+  errorTail: null,
+  detectedAuthUrl: null,
+};
+
+const DEFAULT_LIFECYCLE_MAP = {
+  anthropic: IDLE_LIFECYCLE,
+  cursor: IDLE_LIFECYCLE,
+  codex: IDLE_LIFECYCLE,
+  gemini: IDLE_LIFECYCLE,
+};
+
 function mockStore(partial: Partial<AppStore>): void {
   vi.mocked(useAppStore).mockImplementation((selector: (state: AppStore) => unknown) =>
-    selector(partial as AppStore),
+    selector({ providerLifecycle: DEFAULT_LIFECYCLE_MAP, ...partial } as AppStore),
   );
 }
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';

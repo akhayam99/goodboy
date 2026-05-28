@@ -6,7 +6,7 @@ import { refreshProviderStatus } from './refreshProviderStatus';
 import { refreshProviders } from './refreshProviders';
 import type { GetFn, SetFn } from './types';
 
-export type { ProviderLifecycleMap, ProviderLifecycleState } from './types';
+export type { ProviderLifecycleMap, ProviderLifecyclePhase, ProviderLifecycleState } from './types';
 export { INITIAL_LIFECYCLE_MAP } from './types';
 
 export function createProvidersSlice(set: SetFn, get: GetFn) {

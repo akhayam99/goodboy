@@ -3,15 +3,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn(async () => undefined) }));
+const { loginProviderMock } = vi.hoisted(() => ({
+  loginProviderMock: vi.fn(async () => undefined),
+}));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (s: { loginProvider: typeof loginProviderMock }) => T) =>
+    selector({ loginProvider: loginProviderMock }),
+}));
 
 import { AuthRequiredCallout } from './index';
 
 afterEach(() => {
   cleanup();
-  invokeMock.mockClear();
+  loginProviderMock.mockClear();
 });
 
 describe('AuthRequiredCallout', () => {
@@ -27,10 +32,10 @@ describe('AuthRequiredCallout', () => {
     expect(screen.getByText(/last known identity: amin@x\.io/i)).toBeDefined();
   });
 
-  it('invokes provider_action login when Connect is clicked', () => {
+  it('invokes loginProvider when Connect is clicked', () => {
     render(<AuthRequiredCallout providerId="codex" onRefresh={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: /connect now/i }));
-    expect(invokeMock).toHaveBeenCalledWith('provider_action', { id: 'codex', action: 'login' });
+    expect(loginProviderMock).toHaveBeenCalledWith('codex');
   });
 
   it('calls onRefresh when the Refresh status button is clicked', () => {

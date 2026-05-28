@@ -20,6 +20,9 @@ export interface ProviderLifecycleState {
   readonly exitCode: number | null;
   readonly startedAt: number | null;
   readonly errorTail: string | null;
+  // First OAuth URL spotted in the lifecycle PTY stream, surfaced so the UI
+  // can offer "Open in browser" without auto-opening (link safety).
+  readonly detectedAuthUrl: string | null;
 }
 
 export const IDLE_LIFECYCLE: ProviderLifecycleState = {
@@ -30,6 +33,7 @@ export const IDLE_LIFECYCLE: ProviderLifecycleState = {
   exitCode: null,
   startedAt: null,
   errorTail: null,
+  detectedAuthUrl: null,
 };
 
 export type ProviderLifecycleMap = Readonly<Record<ProviderId, ProviderLifecycleState>>;

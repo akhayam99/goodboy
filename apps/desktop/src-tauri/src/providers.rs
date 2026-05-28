@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -639,90 +639,6 @@ pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
         *current = next.clone();
     }
     next
-}
-
-fn provider_login_command(provider_id: &str) -> Option<String> {
-    match provider_id {
-        "anthropic" => Some("claude /login".to_string()),
-        "cursor" => Some("cursor login".to_string()),
-        "codex" => Some("codex login".to_string()),
-        // gemini-cli prompts for OAuth on first run when no creds file exists;
-        // launching the bare binary opens the browser flow.
-        "gemini" => Some("gemini".to_string()),
-        _ => None,
-    }
-}
-
-fn provider_logout_command(provider_id: &str) -> Option<String> {
-    match provider_id {
-        "anthropic" => Some("claude /logout".to_string()),
-        "cursor" => Some("cursor logout".to_string()),
-        "codex" => Some("codex logout".to_string()),
-        // gemini-cli has no logout subcommand; deleting the creds file is the
-        // closest equivalent. Wrap with a confirmation message in the terminal.
-        "gemini" => Some("rm -f ~/.gemini/oauth_creds.json && echo 'gemini credentials removed'".to_string()),
-        _ => None,
-    }
-}
-
-#[cfg(target_os = "macos")]
-fn spawn_in_terminal(command: &str) -> Result<(), String> {
-    // `do script` opens a Terminal window but does not raise Terminal.app when
-    // Goodboy is frontmost; the explicit `activate` brings it to the foreground.
-    let escaped = command.replace('\\', "\\\\").replace('"', "\\\"");
-    let script = format!(
-        "tell application \"Terminal\"\n  do script \"{}\"\n  activate\nend tell",
-        escaped
-    );
-    Command::new("osascript")
-        .args(["-e", &script])
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[cfg(target_os = "linux")]
-fn spawn_in_terminal(command: &str) -> Result<(), String> {
-    let terminals: &[(&str, &[&str])] = &[
-        ("gnome-terminal", &["--", "bash", "-c"]),
-        ("konsole", &["-e", "bash", "-c"]),
-        ("xterm", &["-e", "bash", "-c"]),
-    ];
-    for (term, base_args) in terminals {
-        let mut args: Vec<&str> = base_args.to_vec();
-        let cmd_with_pause = format!("{}; read -p 'press enter to close'", command);
-        args.push(&cmd_with_pause);
-        if Command::new(term).args(&args).spawn().is_ok() {
-            return Ok(());
-        }
-    }
-    Err("no supported terminal emulator found (tried gnome-terminal, konsole, xterm)".to_string())
-}
-
-#[cfg(target_os = "windows")]
-fn spawn_in_terminal(command: &str) -> Result<(), String> {
-    Command::new("cmd")
-        .args(["/c", "start", "cmd", "/k", command])
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn spawn_in_terminal(_command: &str) -> Result<(), String> {
-    Err("unsupported platform".to_string())
-}
-
-#[tauri::command]
-pub fn provider_action(provider_id: String, action: String) -> Result<(), String> {
-    let command = match action.as_str() {
-        "login" => provider_login_command(&provider_id),
-        "logout" => provider_logout_command(&provider_id),
-        _ => return Err(format!("unknown action: {}", action)),
-    }
-    .ok_or_else(|| format!("unknown provider: {}", provider_id))?;
-
-    spawn_in_terminal(&command)
 }
 
 #[tauri::command]

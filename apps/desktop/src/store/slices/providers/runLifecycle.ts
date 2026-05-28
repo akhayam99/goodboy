@@ -19,6 +19,21 @@ import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
 const OUTPUT_TAIL_CAP = 4 * 1024;
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g;
+const AUTH_HINT_RE =
+  /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i;
+
+// First plausible OAuth URL in the chunk, or null. Stays conservative: only
+// surfaces URLs whose path or host looks auth-related so we don't offer to
+// "open in browser" on a random npm changelog link.
+function findAuthUrl(text: string): string | null {
+  const matches = text.match(URL_RE);
+  if (!matches) return null;
+  for (const url of matches) {
+    if (AUTH_HINT_RE.test(url)) return url;
+  }
+  return null;
+}
 
 // Map an action to the in-flight phase that drives the UI while the PTY runs.
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
@@ -99,11 +114,13 @@ export async function runLifecycle(
         exitCode: null,
         startedAt,
         errorTail: null,
+        detectedAuthUrl: null,
       },
     },
   }));
 
   let outputTail = '';
+  let foundAuthUrl = false;
   let unlistenOutput: () => void = () => undefined;
   let unlistenExit: () => void = () => undefined;
 
@@ -111,6 +128,22 @@ export async function runLifecycle(
     if (payload.runId !== runId) return;
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
+    if (!foundAuthUrl) {
+      const url = findAuthUrl(chunk.replace(ANSI_RE, ''));
+      if (url) {
+        foundAuthUrl = true;
+        set((state) => {
+          const curr = state.providerLifecycle[providerId];
+          if (curr.runId !== runId) return {};
+          return {
+            providerLifecycle: {
+              ...state.providerLifecycle,
+              [providerId]: { ...curr, detectedAuthUrl: url },
+            },
+          };
+        });
+      }
+    }
   });
 
   unlistenExit = await listenLifecycleExit((payload) => {
