@@ -109,6 +109,8 @@ function getDefaultBinary(providerId: ProviderId): string {
       return 'cursor-agent';
     case 'codex':
       return 'codex';
+    case 'gemini':
+      return 'gemini';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
@@ -233,6 +235,8 @@ function buildCliArgs(
         '--skip-git-repo-check',
         `${systemPrompt}\n\n${userMessage}`,
       ];
+    case 'gemini':
+      return ['-m', model, '-p', `${systemPrompt}\n\n${userMessage}`];
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
