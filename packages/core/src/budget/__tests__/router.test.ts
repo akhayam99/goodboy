@@ -112,4 +112,46 @@ describe('resolveProvider', () => {
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.fallbackFrom).toBeUndefined();
   });
+
+  it('preferred disconnected but a connected provider is within budget → fallback-disconnected', async () => {
+    const input = makeInput({
+      connectedProviders: ['cursor'],
+      budgetChecker: { checkProviderBudget: vi.fn().mockResolvedValue(notExceeded()) },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-disconnected');
+    expect(decision.fallbackUsed).toBe(true);
+    expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('preferred disconnected with no connected provider → returns preferred for the auth flow', async () => {
+    const input = makeInput({
+      connectedProviders: [],
+      budgetChecker: { checkProviderBudget: vi.fn().mockResolvedValue(notExceeded()) },
+    });
+    const decision = await resolveProvider(input);
+
+    // Handed back unchanged so the caller's auth-required flow can prompt a
+    // reconnect; not 'all-exceeded' (which would show a budget message).
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('preferred disconnected and the only fallback is over budget → returns preferred, not all-exceeded', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'cursor' ? exceeded() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['cursor'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
 });
