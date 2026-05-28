@@ -15,12 +15,20 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
     if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
 
     const session = get().sessions.find((s) => s.id === sessionId);
-    const activeWorkflowId = session?.workflowIds[0] ?? null;
-    if (!session || !activeWorkflowId) throw new Error('session has no workflow');
+    if (!session || session.workflowIds.length === 0) {
+      throw new Error('session has no workflow');
+    }
 
-    const template = (get().phaseTemplates[session.workspaceId] ?? []).find(
-      (t) => t.id === activeWorkflowId,
-    );
+    // Look up the template that owns this agent's stepId. Multi-workflow
+    // sessions can attach >1 workflow, so hardcoding `workflowIds[0]` would
+    // route step lookups for workflow #2+ agents into workflow #1's template,
+    // silently producing an empty kickoff (kickoff.length === 0 → sendTurn
+    // never fires → the lit row appears unresponsive on click).
+    const templates = get().phaseTemplates[session.workspaceId] ?? [];
+    const template =
+      templates.find(
+        (t) => session.workflowIds.includes(t.id) && t.steps.some((s) => s.id === agent.stepId),
+      ) ?? null;
     const step = template?.steps.find((s) => s.id === agent.stepId);
     const promptPrefix = step?.promptPrefix ?? '';
 

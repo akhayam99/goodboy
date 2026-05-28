@@ -232,29 +232,37 @@ export function sendTurn(set: SetFn, get: GetFn) {
     // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
-    const activeWorkflowId = session.workflowIds[0] ?? null;
-    if (activeWorkflowId) {
+    if (session.workflowIds.length > 0) {
+      const freshRuns = await invokeAgentList(sessionId);
+      set((state) => ({
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
+      }));
+      // Route the turn to the step of the currently selected agent. With
+      // pre-creation, selectedAgentId is the source of truth: it's set by
+      // activateWorkflowAgent (auto-advance / CTA) or spawnAgent (retry),
+      // or the user via the sidebar. Falling back to currentStep here
+      // would mis-route follow-up turns to the next pre-created pending
+      // step instead of staying on the active agent.
+      const initialRuns = before.sessionPhaseRuns[sessionId] ?? [];
+      const activeAgentRow =
+        freshRuns.find((r) => r.id === activeAgentId) ??
+        initialRuns.find((r) => r.id === activeAgentId) ??
+        null;
+      // Multi-workflow sessions: locate the template that owns the active
+      // agent's stepId across ALL attached workflows. Hardcoding
+      // `workflowIds[0]` would silently drop phase context (carry-forward,
+      // step prompt, parallel detection, model override) for any agent
+      // belonging to workflow #2+.
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
-      const template = templates.find((t) => t.id === activeWorkflowId) ?? null;
+      const template = activeAgentRow?.stepId
+        ? (templates.find(
+            (t) =>
+              session.workflowIds.includes(t.id) &&
+              t.steps.some((s) => s.id === activeAgentRow.stepId),
+          ) ?? null)
+        : null;
       if (template) {
-        const freshRuns = await invokeAgentList(sessionId);
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
-        }));
-        // Route the turn to the step of the currently selected agent. With
-        // pre-creation, selectedAgentId is the source of truth: it's set by
-        // activateWorkflowAgent (auto-advance / CTA) or spawnAgent (retry),
-        // or the user via the sidebar. Falling back to currentStep here
-        // would mis-route follow-up turns to the next pre-created pending
-        // step instead of staying on the active agent.
-        const initialRuns = before.sessionPhaseRuns[sessionId] ?? [];
-        const activeAgentRow =
-          freshRuns.find((r) => r.id === activeAgentId) ??
-          initialRuns.find((r) => r.id === activeAgentId) ??
-          null;
-        const nextDef = activeAgentRow?.stepId
-          ? (template.steps.find((s) => s.id === activeAgentRow.stepId) ?? null)
-          : null;
+        const nextDef = template.steps.find((s) => s.id === activeAgentRow!.stepId) ?? null;
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
           const prevDef =
@@ -936,7 +944,15 @@ export function sendTurn(set: SetFn, get: GetFn) {
             return { sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns } };
           }
           const target = state.sessions.find((s) => s.id === sessionId);
-          const wfId = target?.workflowIds[0] ?? null;
+          // Resolve the workflow from the step's `workflowId` field, not the
+          // session's first attached workflow. Multi-workflow sessions can
+          // complete a step belonging to workflow #2+; pointing the cursor
+          // update at `workflowIds[0]` would advance the wrong workflow's
+          // `currentStepByWorkflow` map and skip the right one's update.
+          const wfId =
+            target && target.workflowIds.includes(phaseDefinition.workflowId)
+              ? phaseDefinition.workflowId
+              : null;
           if (wfId) {
             void updateSessionWorkflowStep(
               tauriDatabase,
