@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Code2, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
+import { Code2, Gem, Info, MousePointer2, RotateCw, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, cn } from '@goodboy/ui';
 import type {
@@ -25,7 +25,7 @@ const STATE_DOT: Record<ProviderConnectionState, string> = {
   error: 'bg-danger',
 };
 
-const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 interface ProviderBrand {
   readonly name: string;
@@ -52,6 +52,12 @@ const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
     description: 'openai codex cli',
     icon: Code2,
     cssVar: '--color-provider-codex',
+  },
+  gemini: {
+    name: 'gemini',
+    description: 'google gemini cli',
+    icon: Gem,
+    cssVar: '--color-provider-gemini',
   },
 };
 

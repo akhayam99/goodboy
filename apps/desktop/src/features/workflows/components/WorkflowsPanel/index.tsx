@@ -57,7 +57,7 @@ function templateToForm(t: Workflow): TemplateForm {
   };
 }
 
-const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 export function WorkflowsPanel({ workspaceId }: Props) {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);

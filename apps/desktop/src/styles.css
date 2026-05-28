@@ -39,6 +39,7 @@
   --color-provider-anthropic: oklch(0.74 0.15 55);
   --color-provider-cursor: oklch(0.70 0.16 290);
   --color-provider-codex: oklch(0.72 0.16 150);
+  --color-provider-gemini: oklch(0.72 0.16 240);
 
   --text-2xs: 11px;
   --text-xs: 12px;
@@ -157,6 +158,7 @@ html[data-theme="light"] {
   --color-provider-anthropic: oklch(0.54 0.16 55);
   --color-provider-cursor: oklch(0.50 0.17 290);
   --color-provider-codex: oklch(0.48 0.15 148);
+  --color-provider-gemini: oklch(0.50 0.16 240);
   --color-focus-ring: oklch(0.50 0.13 200 / 0.45);
   /* Light shadows, softer, multi-layered for depth without harshness. */
   --shadow-sm:

@@ -5,12 +5,14 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
   cursor: 'Cursor',
   codex: 'Codex',
+  gemini: 'Gemini',
 };
 
 export const PROVIDER_TEXT: Record<ProviderId, string> = {
   anthropic: 'text-[var(--color-provider-anthropic)]',
   cursor: 'text-[var(--color-provider-cursor)]',
   codex: 'text-[var(--color-provider-codex)]',
+  gemini: 'text-[var(--color-provider-gemini)]',
 };
 
 export const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;

@@ -4,7 +4,7 @@ import type { BudgetRule, ProviderName } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
-const PROVIDER_OPTIONS: ProviderName[] = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_OPTIONS: ProviderName[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 const DEFAULT_THRESHOLD = 80;
 

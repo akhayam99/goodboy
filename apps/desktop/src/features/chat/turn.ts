@@ -4,6 +4,7 @@ import {
   parseStreamJsonLine,
   parseCursorStreamLine,
   parseCodexJsonLine,
+  parseGeminiJsonLine,
   type ParseContext,
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
@@ -22,6 +23,8 @@ function parseForProvider(
       return parseCursorStreamLine(line, ctx);
     case 'codex':
       return parseCodexJsonLine(line, ctx);
+    case 'gemini':
+      return parseGeminiJsonLine(line, ctx);
     default: {
       const _exhaustive: never = provider;
       void _exhaustive;

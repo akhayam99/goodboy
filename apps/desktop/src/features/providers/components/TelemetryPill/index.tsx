@@ -9,6 +9,7 @@ const PROVIDER_DOT: Record<string, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
   cursor: 'bg-[var(--color-provider-cursor)]',
   codex: 'bg-[var(--color-provider-codex)]',
+  gemini: 'bg-[var(--color-provider-gemini)]',
 };
 
 export function TelemetryPill() {

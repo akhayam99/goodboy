@@ -23,6 +23,7 @@ const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Claude Code',
   cursor: 'cursor-agent',
   codex: 'OpenAI Codex',
+  gemini: 'Google Gemini',
 };
 
 function formatError(err: unknown): string {
@@ -40,7 +41,7 @@ function formatError(err: unknown): string {
   return String(err);
 }
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
@@ -63,6 +64,8 @@ function getCheapModel(providerId: ProviderId): string {
       return 'composer-2-fast';
     case 'codex':
       return 'gpt-5.4-mini';
+    case 'gemini':
+      return 'gemini-2.5-flash';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;
@@ -79,6 +82,8 @@ function getDefaultBinary(providerId: ProviderId): string {
       return 'cursor-agent';
     case 'codex':
       return 'codex';
+    case 'gemini':
+      return 'gemini';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;

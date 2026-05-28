@@ -11,6 +11,7 @@ import {
   computeCostUsd,
   computeCodexCostUsd,
   computeCursorCostUsd,
+  computeGeminiCostUsd,
 } from '@goodboy/core';
 import {
   insertMessage,
@@ -78,6 +79,7 @@ import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/s
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import {
   getCodexPriceOverride,
+  getGeminiPriceOverride,
   refreshPricingTable,
 } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
@@ -697,7 +699,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
 
     // M5: codex/cursor have no native --resume. inject recent turn text so
     // they keep working memory. claude skips, duplicating context wastes tokens.
-    const needsTextHistory = provider === 'cursor' || provider === 'codex';
+    const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';
     if (needsTextHistory) {
       const priorTranscripts = get().transcripts[activeAgentId] ?? [];
       const priorTurns = buildPriorTurnsBlock(priorTranscripts, 8000);
@@ -853,6 +855,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
               return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
             }
             if (provider === 'cursor') return computeCursorCostUsd(event.usage, model);
+            if (provider === 'gemini') {
+              return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
+            }
             return computeCostUsd(event.usage, model);
           })();
           const record: TelemetryRecord = {
