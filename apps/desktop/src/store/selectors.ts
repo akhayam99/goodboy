@@ -20,7 +20,7 @@ import {
   type SessionLoadingFlags,
   type SummarizerSessionStatus,
 } from './store';
-import { sortAndGroupSessions, type GroupedSessions } from './slices/session-view.slice';
+import { sortAndGroupSessions, type GroupedSessions } from './slices/session-view';
 
 export type { GroupedSessions };
 

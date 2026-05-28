@@ -1,0 +1,40 @@
+import type { SessionId } from '@goodboy/types';
+import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { changeWorktreeBranch } from '../../../features/worktree/worktree';
+import type { GetFn, SetFn } from './types';
+
+interface Args {
+  branch: string;
+  createNew: boolean;
+}
+
+export function changeSessionBranch(set: SetFn, get: GetFn) {
+  return async (sessionId: SessionId, { branch, createNew }: Args) => {
+    const target = branch.trim();
+    if (!target) throw new Error('branch name cannot be empty');
+    const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
+    const primary = worktrees[0];
+    if (!primary) throw new Error(`no worktree found for session ${sessionId}`);
+    const session = get().sessions.find((s) => s.id === sessionId);
+    const workspace = session ? get().workspaces.find((w) => w.id === session.workspaceId) : null;
+    if (!workspace) throw new Error('workspace not found for session');
+    await changeWorktreeBranch({
+      repoPath: workspace.rootPath,
+      worktreePath: primary.worktreePath,
+      branch: target,
+      createNew,
+    });
+    await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, target);
+    set((state) => {
+      // Branch changed → the cached PR/detail belong to the old branch. Drop
+      // the entry so the ContextPanel effect refetches against the new branch.
+      const nextGithub = { ...state.sessionGithub };
+      delete nextGithub[sessionId];
+      return {
+        sessionBranches: { ...state.sessionBranches, [sessionId]: target },
+        sessionGithub: nextGithub,
+      };
+    });
+  };
+}

@@ -5,7 +5,7 @@ import {
   createSessionViewSlice,
   sortAndGroupSessions,
   type GroupedSessions,
-} from './slices/session-view.slice';
+} from './slices/session-view';
 import type { SessionViewPrefs } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
 
