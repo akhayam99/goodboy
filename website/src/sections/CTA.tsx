@@ -3,7 +3,7 @@ import { LinkButton } from '../components/ui';
 const lines = [
   { prompt: '$', command: 'git clone https://github.com/akhayam99/goodboy.git', muted: false },
   { prompt: '$', command: 'cd goodboy && pnpm install', muted: false },
-  { prompt: '$', command: 'pnpm tauri:dev', muted: true },
+  { prompt: '$', command: 'pnpm tauri:build', muted: true },
 ];
 
 export function CTA() {
@@ -17,8 +17,8 @@ export function CTA() {
           Clone, install, run it.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.65] text-muted-foreground">
-          No waitlist. No email. The repo is public. Bring your own Claude, Cursor or Codex
-          subscription and you&apos;re running locally in a couple of minutes.
+          No waitlist. No email. The repo is public. Bring your own Claude, Cursor, Codex or Gemini
+          subscription and you&apos;re running locally.
         </p>
 
         <div className="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.22_0.007_255)] text-left">
