@@ -25,9 +25,9 @@ export function Hero() {
             className="rise mx-auto mt-7 max-w-xl text-[15px] sm:text-[16px] leading-[1.6] text-muted-foreground"
             style={{ animationDelay: '120ms' }}
           >
-            Stack workflows on one session. Route agents across Claude, Cursor, and Codex without
-            re-explaining the goal. Shared context, structured plans, real-time cost. Local-first.
-            Your keys, your machine.
+            Stack workflows on one session. Route agents across Claude, Cursor, Codex, and Gemini
+            without re-explaining the goal. Shared context, structured plans, real-time cost.
+            Local-first. Your keys, your machine.
           </p>
 
           <div

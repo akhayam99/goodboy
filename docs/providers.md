@@ -152,6 +152,63 @@ Skipped by default; opt in when you want to verify a fresh install.
 
 ---
 
+## Google (Gemini)
+
+### Install
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Docs: <https://github.com/google-gemini/gemini-cli>
+
+Verify: `gemini --version`
+
+### Connect
+
+```bash
+gemini
+```
+
+Launching the bare binary triggers the OAuth flow on first run — Goodboy spawns it in an external terminal. Complete the Google sign-in in the browser that opens; credentials land in `~/.gemini/oauth_creds.json`.
+
+### Disconnect
+
+```bash
+rm -f ~/.gemini/oauth_creds.json
+```
+
+gemini-cli v0.x has no `logout` subcommand. Goodboy wires the disconnect button to remove the credentials file directly.
+
+### Subscription tier
+
+Requires **Google AI Pro** (or the free tier with rate caps). Goodboy uses the local CLI's authenticated Google account; no API key is needed when signed in via OAuth.
+
+### Default models
+
+Per Google's Gemini 2.5 lineup:
+
+- **Turn**: `gemini-2.5-pro` (default).
+- **Cheap**: `gemini-2.5-flash` (default), `gemini-2.5-flash-lite`.
+
+All three support a 1M-token context window.
+
+### Turn spawn args
+
+Goodboy spawns gemini non-interactively:
+
+```
+gemini -m <MODEL> -p <PROMPT>
+```
+
+The working directory is set on the spawned process; gemini-cli has no `--cwd` flag yet. There is no stable structured JSON output today, so the parser treats each stdout line as an `assistant_text` delta and is forward-compatible with a future `--output-format json` mode.
+
+### Auth detection
+
+gemini-cli does not ship a stable `auth status` subcommand. Goodboy probes a few candidates (`gemini auth status`, `gemini whoami`) and falls back to reading the email claim from `~/.gemini/oauth_creds.json` as ground truth. If the providers panel shows "not logged in" after a successful browser flow, click **refresh** so the file check runs again.
+
+---
+
 ## Multi-account
 
 A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in Goodboy targets one active identity per provider.
