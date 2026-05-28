@@ -624,6 +624,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
           },
           {
             now,
+            provider,
             providerBinary: providerInfo?.binary,
             model,
             ...(claudeFlags.permissionMode !== undefined && {
