@@ -24,13 +24,13 @@ export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
   },
   planner: {
     provider: 'anthropic',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     effort: 'high',
     description: 'design the change; produce an ordered plan',
   },
   architect: {
     provider: 'anthropic',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     effort: 'high',
     description: 'propose technical approach, modules, data flow, migrations',
   },
