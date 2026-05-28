@@ -95,7 +95,6 @@ pub fn run() {
       providers::get_gemini_status,
       providers::refresh_gemini_status,
       providers::check_provider_auth,
-      providers::provider_action,
       provider_lifecycle::provider_lifecycle_run,
       provider_lifecycle::provider_lifecycle_write,
       provider_lifecycle::provider_lifecycle_resize,

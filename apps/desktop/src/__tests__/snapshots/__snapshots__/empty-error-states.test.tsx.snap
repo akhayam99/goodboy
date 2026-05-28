@@ -421,14 +421,7 @@ exports[`snapshot, empty states > ProvidersPanel: no providers (store returns []
       />
     </svg>
     <span>
-      Sign in once via each provider's CLI (e.g. run
-       
-      <code
-        class="rounded bg-muted px-1"
-      >
-        claude
-      </code>
-       in a terminal). Goodboy picks up the credentials.
+      Install and sign in straight from the app. Each step runs in an embedded terminal so you never leave Goodboy.
     </span>
   </div>
 </div>
@@ -1614,80 +1607,81 @@ exports[`snapshot, error states > ProvidersPanel: provider in error state 1`] = 
     class="grid grid-cols-3 gap-2.5"
   >
     <div
-      class="relative flex flex-col items-center gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
+      class="relative flex flex-col gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
     >
-      <span
-        class="relative inline-flex"
-      >
-        <span
-          aria-hidden="true"
-          class="absolute left-2.5 top-2.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-danger"
-        />
-      </span>
       <div
-        aria-hidden="true"
-        class="mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-opacity"
-        style="color: var(--color-provider-anthropic);"
+        class="flex gap-3 flex-col items-center"
       >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-sparkles"
-          fill="none"
-          height="18"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="18"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          class="flex items-center flex-col gap-2"
         >
-          <path
-            d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-          />
-          <path
-            d="M20 2v4"
-          />
-          <path
-            d="M22 4h-4"
-          />
-          <circle
-            cx="4"
-            cy="20"
-            r="2"
-          />
-        </svg>
-      </div>
-      <div
-        class="flex flex-col items-center gap-0.5"
-      >
+          <div
+            aria-hidden="true"
+            class="flex h-10 w-10 items-center justify-center rounded-full transition-opacity"
+            style="color: var(--color-provider-anthropic);"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-sparkles"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+              />
+              <path
+                d="M20 2v4"
+              />
+              <path
+                d="M22 4h-4"
+              />
+              <circle
+                cx="4"
+                cy="20"
+                r="2"
+              />
+            </svg>
+          </div>
+          <div
+            class="flex flex-col items-center"
+          >
+            <span
+              class="text-sm font-semibold lowercase"
+            >
+              claude
+            </span>
+            <span
+              class="max-w-[160px] truncate text-2xs text-muted-foreground"
+              title="1.0.0"
+            >
+              1.0.0
+            </span>
+          </div>
+        </div>
         <span
-          class="text-sm font-semibold lowercase"
+          class="inline-flex items-center gap-1.5 text-2xs font-medium"
         >
-          claude
+          <span
+            aria-hidden="true"
+            class="inline-block h-1.5 w-1.5 rounded-full bg-danger"
+          />
+          <span
+            class="text-danger"
+          >
+            Error
+          </span>
         </span>
-        <span
-          class="text-2xs text-muted-foreground"
-        >
-          1.0.0
-        </span>
-      </div>
-      <div
-        class="line-clamp-2 text-center text-2xs text-danger"
-        title="unknown error"
-      >
-        unknown error
       </div>
       <div
         class="mt-1 w-full"
-      >
-        <button
-          class="block w-full rounded-md border border-border-soft py-1.5 text-center text-xs hover:bg-muted"
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
+      />
     </div>
   </div>
   <div
@@ -1719,14 +1713,7 @@ exports[`snapshot, error states > ProvidersPanel: provider in error state 1`] = 
       />
     </svg>
     <span>
-      Sign in once via each provider's CLI (e.g. run
-       
-      <code
-        class="rounded bg-muted px-1"
-      >
-        claude
-      </code>
-       in a terminal). Goodboy picks up the credentials.
+      Install and sign in straight from the app. Each step runs in an embedded terminal so you never leave Goodboy.
     </span>
   </div>
 </div>
