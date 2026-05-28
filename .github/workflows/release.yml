@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 # Build the macOS universal (.dmg) on tag push and publish it as a draft
 # GitHub Release. Signing + notarization run automatically when the APPLE_*
@@ -17,7 +17,10 @@ jobs:
   macos:
     name: build universal dmg
     runs-on: macos-14
-    timeout-minutes: 45
+    # Apple notarization can be slow, especially the first submission from a new
+    # Developer ID account. Keep generous headroom so the runner does not get
+    # killed mid-notarization.
+    timeout-minutes: 90
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -66,7 +69,7 @@ jobs:
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
-          releaseName: "Goodboy ${{ github.ref_name }}"
+          releaseName: 'Goodboy ${{ github.ref_name }}'
           releaseDraft: true
           prerelease: false
           args: --target universal-apple-darwin
