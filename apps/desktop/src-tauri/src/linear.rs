@@ -1,10 +1,24 @@
-use std::sync::OnceLock;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Map;
+use tauri::State;
 use thiserror::Error;
 
 use crate::secrets;
+
+/// In-memory cache of Linear PATs keyed by workspace id.
+/// macOS Keychain prompts the user on every `get_password` unless the ACL is
+/// "Always Allow" + the app's code signature is stable. Caching avoids the
+/// repeated prompt in dev builds and the per-fetch prompt in any build.
+pub struct LinearTokenCache(Mutex<HashMap<String, String>>);
+
+impl LinearTokenCache {
+    pub fn new() -> Self {
+        Self(Mutex::new(HashMap::new()))
+    }
+}
 
 const API_URL: &str = "https://api.linear.app/graphql";
 
@@ -100,9 +114,18 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     serde_json::from_value(data).map_err(|e| LinearError::InvalidShape(e.to_string()))
 }
 
-fn read_token(workspace_id: &str) -> Result<String, LinearError> {
-    secrets::read(&credential_key(workspace_id))?
-        .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))
+fn read_token(workspace_id: &str, cache: &LinearTokenCache) -> Result<String, LinearError> {
+    if let Some(tok) = cache.0.lock().unwrap().get(workspace_id) {
+        return Ok(tok.clone());
+    }
+    let tok = secrets::read(&credential_key(workspace_id))?
+        .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))?;
+    cache
+        .0
+        .lock()
+        .unwrap()
+        .insert(workspace_id.to_string(), tok.clone());
+    Ok(tok)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -178,15 +201,21 @@ query AssignedIssues($filter: IssueFilter!) {
 pub async fn linear_connect(
     workspace_id: String,
     token: String,
+    cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearViewer, LinearError> {
     let viewer: ViewerResponse = graphql(&token, VIEWER_QUERY, None).await?;
     secrets::set(&credential_key(&workspace_id), &token)?;
+    cache.0.lock().unwrap().insert(workspace_id, token);
     Ok(viewer.viewer)
 }
 
 #[tauri::command]
-pub async fn linear_disconnect(workspace_id: String) -> Result<(), LinearError> {
+pub async fn linear_disconnect(
+    workspace_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<(), LinearError> {
     secrets::clear(&credential_key(&workspace_id))?;
+    cache.0.lock().unwrap().remove(&workspace_id);
     Ok(())
 }
 
@@ -194,8 +223,9 @@ pub async fn linear_disconnect(workspace_id: String) -> Result<(), LinearError> 
 pub async fn linear_fetch_assigned_issues(
     workspace_id: String,
     team_id: Option<String>,
+    cache: State<'_, LinearTokenCache>,
 ) -> Result<Vec<LinearIssue>, LinearError> {
-    let token = read_token(&workspace_id)?;
+    let token = read_token(&workspace_id, &cache)?;
     let mut filter = serde_json::json!({
         "assignee": { "isMe": { "eq": true } },
         "state": { "type": { "nin": ["completed", "canceled"] } }

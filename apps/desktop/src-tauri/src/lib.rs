@@ -34,6 +34,7 @@ pub fn run() {
   let turn_registry = turn::TurnRegistry::new();
   let script_registry = scripts::ScriptRegistry::new();
   let terminal_registry = terminal::TerminalRegistry::new();
+  let linear_token_cache = linear::LinearTokenCache::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -44,6 +45,7 @@ pub fn run() {
     .manage(turn_registry)
     .manage(script_registry)
     .manage(terminal_registry)
+    .manage(linear_token_cache)
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
