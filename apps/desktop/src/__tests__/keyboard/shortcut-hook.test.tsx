@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
-import { useKeyboardShortcut } from '../../shared/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from '../../shared/hooks/useKeyboardShortcut';
 
 afterEach(cleanup);
 

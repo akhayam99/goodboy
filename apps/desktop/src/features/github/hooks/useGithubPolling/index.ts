@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAppStore, useSessions } from '../../store';
+import { useAppStore, useSessions } from '../../../../store';
 
 // Interim PR polling until a GitHub webhook lands. Five minutes is a
 // deliberate floor: the on-access and on-workspace-switch sweeps already

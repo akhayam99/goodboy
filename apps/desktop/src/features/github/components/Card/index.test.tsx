@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PullRequestState } from '@goodboy/types';
 
-vi.mock('../../../../shared/hooks/use-now', () => ({
+vi.mock('../../../../shared/hooks/useNow', () => ({
   useNow: () => Date.now(),
 }));
 

@@ -4,15 +4,9 @@ import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { Check, ChevronDown } from 'lucide-react';
 import { shortModelWithVersion } from '../../agent-row-format';
-import {
-  MODEL_COST_DOT,
-  POPUP_BASE,
-  POPUP_DOWN,
-  POPUP_UP,
-  modelCostTier,
-  useClickOutside,
-  useDropdownDirection,
-} from '../dropdown-utils';
+import { MODEL_COST_DOT, POPUP_BASE, POPUP_DOWN, POPUP_UP, modelCostTier } from '../dropdown-utils';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
 interface Props {
   provider: ProviderId;

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useAppStore, useCurrentSession, useWorkspaces } from '../../store';
+import { useAppStore, useCurrentSession, useWorkspaces } from '../../../../store';
 import {
   ONBOARDING_STEPS,
   getCompleted,
@@ -7,7 +7,7 @@ import {
   isFinished,
   markStepComplete,
   type OnboardingStepId,
-} from './onboarding-store';
+} from '../../onboarding-store';
 
 /**
  * Reads progress from localStorage and auto-detects new completions

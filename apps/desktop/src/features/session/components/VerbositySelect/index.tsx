@@ -6,14 +6,9 @@ import {
   VERBOSITY_LEVELS,
   type VerbosityLevel,
 } from '../../../settings/verbosity';
-import {
-  POPUP_BASE,
-  POPUP_DOWN,
-  POPUP_UP,
-  VERBOSITY_DOT,
-  useClickOutside,
-  useDropdownDirection,
-} from '../dropdown-utils';
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP, VERBOSITY_DOT } from '../dropdown-utils';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
 interface Props {
   value: VerbosityLevel;

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useNow } from '../../../../shared/hooks/use-now';
+import { useNow } from '../../../../shared/hooks/useNow';
 import {
   AlertCircle,
   Check,

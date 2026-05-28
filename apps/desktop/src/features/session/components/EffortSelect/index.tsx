@@ -7,13 +7,9 @@ import {
   type EffortLevel,
   modelEffortLevels,
 } from '../../../chat/utils/chat-constants';
-import {
-  POPUP_BASE,
-  POPUP_DOWN,
-  POPUP_UP,
-  useClickOutside,
-  useDropdownDirection,
-} from '../dropdown-utils';
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
 interface Props {
   model: string;
