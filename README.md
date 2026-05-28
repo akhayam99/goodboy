@@ -5,7 +5,7 @@
 Goodboy sits between you and your AI coding agents — it doesn't replace your
 editor or terminal, it commands them. Run agents against your repos, keep them
 aware of the work through a context they all share, route them across Claude,
-Cursor, and Codex, and watch the cost as it accrues.
+Cursor, Codex, and Gemini, and watch the cost as it accrues.
 
 <img width="4036" height="2270" alt="CleanShot 2026-05-25 at 14 09 18@2x" src="https://github.com/user-attachments/assets/f669511b-c09d-472b-9f30-3dcc88b7ceae" />
 
@@ -31,7 +31,7 @@ work, kept separate from any one chat transcript.
 
 Goodboy owns the conversation: every turn is rebuilt from the shared context,
 not resumed from a provider's session. So you can switch provider or model
-mid-task — Claude, Cursor, Codex; Haiku, Sonnet, Opus — and the agent still has
+mid-task — Claude, Cursor, Codex, Gemini; Haiku, Sonnet, Opus, Flash, Pro — and the agent still has
 the full picture. No re-explaining where things stand.
 
 ### First-class plans
@@ -95,6 +95,7 @@ Goodboy drives locally installed provider CLIs — each on your existing
 | **Anthropic (Claude)** | `npm i -g @anthropic-ai/claude-code` | Claude Max / Pro |
 | **Cursor**             | Cursor desktop app                   | Cursor Pro       |
 | **OpenAI (Codex)**     | `npm i -g @openai/codex`             | ChatGPT Pro      |
+| **Google (Gemini)**    | `npm i -g @google/gemini-cli`        | Google AI Pro    |
 
 At least one connected CLI is required. Full guide: [docs/providers.md](./docs/providers.md).
 

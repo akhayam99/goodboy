@@ -136,6 +136,10 @@ export interface SessionConfigUpdate {
   effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max' | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
+  /** Session-level default provider. New agents/workflows spawned in this
+   *  session inherit it. Distinct from `providerOverride`, which is the
+   *  ephemeral per-turn pick from the chat composer. */
+  defaultProvider?: ProviderId | null;
 }
 
 export async function updateSessionConfig(
@@ -160,6 +164,14 @@ export async function updateSessionConfig(
   if (fields.providerOverride !== undefined) {
     updates.push('provider_override = ?');
     values.push(fields.providerOverride);
+  }
+  if (fields.defaultProvider !== undefined && fields.defaultProvider !== null) {
+    updates.push('provider_default = ?');
+    values.push(fields.defaultProvider);
+    // Changing the session-level default clears any stale per-turn override so
+    // future agents inherit the new default instead of the old override.
+    updates.push('provider_override = ?');
+    values.push(null);
   }
   if (updates.length === 0) return;
   values.push(id);

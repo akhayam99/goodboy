@@ -167,6 +167,7 @@ export interface AppState {
   readonly providerStatus: ProviderStatus | null;
   readonly cursorStatus: ProviderStatus | null;
   readonly codexStatus: ProviderStatus | null;
+  readonly geminiStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly hydrated: boolean;
@@ -544,8 +545,9 @@ export const initialState: AppState = {
   providerStatus: null,
   cursorStatus: null,
   codexStatus: null,
+  geminiStatus: null,
   authResults: null,
-  providers: buildProviderList({ anthropic: null, cursor: null, codex: null }),
+  providers: buildProviderList({ anthropic: null, cursor: null, codex: null, gemini: null }),
   hydrated: false,
   bootPhase: 'pending',
   error: null,

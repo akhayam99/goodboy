@@ -8,6 +8,7 @@ import {
   checkProviderAuth,
   getCodexStatus,
   getCursorStatus,
+  getGeminiStatus,
   getProviderStatus,
   type ProviderAuthResults,
   type ProviderStatuses,
@@ -54,34 +55,40 @@ export function hydrate(set: SetFn, get: GetFn) {
         });
 
         set({ bootPhase: 'detecting-cli' });
-        const [providerStatus, cursorStatus, codexStatus, detectedEditors] = await Promise.all([
-          getProviderStatus('anthropic'),
-          getCursorStatus(),
-          getCodexStatus(),
-          detectEditors(),
-        ]);
+        const [providerStatus, cursorStatus, codexStatus, geminiStatus, detectedEditors] =
+          await Promise.all([
+            getProviderStatus('anthropic'),
+            getCursorStatus(),
+            getCodexStatus(),
+            getGeminiStatus(),
+            detectEditors(),
+          ]);
         set({ detectedEditors });
         const statuses: ProviderStatuses = {
           anthropic: providerStatus,
           cursor: cursorStatus,
           codex: codexStatus,
+          gemini: geminiStatus,
         };
         set({
           providerStatus,
           cursorStatus,
           codexStatus,
+          geminiStatus,
           providers: buildProviderList(statuses),
         });
 
-        const [anthropicAuth, cursorAuth, codexAuth] = await Promise.all([
+        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth] = await Promise.all([
           checkProviderAuth('anthropic'),
           checkProviderAuth('cursor'),
           checkProviderAuth('codex'),
+          checkProviderAuth('gemini'),
         ]);
         const authResults: ProviderAuthResults = {
           anthropic: anthropicAuth,
           cursor: cursorAuth,
           codex: codexAuth,
+          gemini: geminiAuth,
         };
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 

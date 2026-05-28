@@ -13,7 +13,7 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
+import type { ProviderId, SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../../store';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
@@ -21,7 +21,7 @@ import { parseCap } from '../../../../shared/lib/parse-cap';
 import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
-import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 
 interface SessionSettingsDialogProps {
   sessionId: SessionId;
@@ -49,7 +49,11 @@ export function SessionSettingsDialog({
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
+  const setSessionConfig = useAppStore((s) => s.setSessionConfig);
   const renameTask = useAppStore((s) => s.renameTask);
+  const connectedProviderIds = useAppStore((s) =>
+    s.providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+  );
   const deleteTask = useAppStore((s) => s.deleteTask);
   const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
   const workspace = useAppStore((s) =>
@@ -220,6 +224,20 @@ export function SessionSettingsDialog({
     onClose();
   };
 
+  const onChangeProvider = async (next: ProviderId) => {
+    if (next === session?.providerPreference.defaultProvider) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await setSessionConfig(sessionId, { defaultProvider: next });
+      showToast('success', `default provider set to ${PROVIDER_LABEL[next] ?? next}`);
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onDelete = async () => {
     setBusy(true);
     setError(null);
@@ -314,6 +332,8 @@ export function SessionSettingsDialog({
           branch={branch}
           workspaceReady={!!workspace}
           busy={busy}
+          connectedProviderIds={connectedProviderIds}
+          onChangeProvider={(p) => void onChangeProvider(p)}
           branchEditOpen={branchEditOpen}
           setBranchEditOpen={setBranchEditOpen}
           branchMode={branchMode}
@@ -361,13 +381,15 @@ export function SessionSettingsDialog({
 /* ──────────────────────────────────────────────────────────────────── */
 
 interface GeneralSectionProps {
-  readonly session: { goal: string; providerPreference: { defaultProvider: string } };
+  readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
   readonly goalDraft: string;
   readonly setGoalDraft: (v: string) => void;
   readonly onSaveGoal: () => void;
   readonly branch: string | null;
   readonly workspaceReady: boolean;
   readonly busy: boolean;
+  readonly connectedProviderIds: ReadonlyArray<ProviderId>;
+  readonly onChangeProvider: (p: ProviderId) => void;
   readonly branchEditOpen: boolean;
   readonly setBranchEditOpen: (v: boolean) => void;
   readonly branchMode: 'existing' | 'new';
@@ -393,6 +415,8 @@ function GeneralSection(props: GeneralSectionProps) {
     branch,
     workspaceReady,
     busy,
+    connectedProviderIds,
+    onChangeProvider,
     branchEditOpen,
     setBranchEditOpen,
     branchMode,
@@ -409,10 +433,7 @@ function GeneralSection(props: GeneralSectionProps) {
     onChangeBranch,
   } = props;
 
-  const providerLabel =
-    PROVIDER_LABEL_LOWER[
-      session.providerPreference.defaultProvider as keyof typeof PROVIDER_LABEL_LOWER
-    ] ?? session.providerPreference.defaultProvider;
+  const currentProvider = session.providerPreference.defaultProvider;
 
   return (
     <div className="flex flex-col gap-7">
@@ -567,16 +588,68 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Provider, read-only */}
       <Field
         label="Provider"
-        hint="Set at creation time. Per-turn overrides happen in the chat composer."
+        hint="Default provider for new agents and workflows spawned in this session. Inherited from the workspace at creation; per-turn overrides still happen in the chat composer."
       >
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xs">
-          <Zap size={11} aria-hidden className="text-muted-foreground" />
-          <span className="font-medium text-foreground">{providerLabel}</span>
-        </span>
+        <SessionProviderPicker
+          value={currentProvider}
+          onChange={onChangeProvider}
+          connected={connectedProviderIds}
+          disabled={busy}
+        />
       </Field>
+    </div>
+  );
+}
+
+const SESSION_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+];
+
+function SessionProviderPicker({
+  value,
+  onChange,
+  connected,
+  disabled,
+}: {
+  value: ProviderId;
+  onChange: (p: ProviderId) => void;
+  connected: ReadonlyArray<ProviderId>;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {SESSION_PROVIDER_OPTIONS.map((id) => {
+        const active = value === id;
+        const isConnected = connected.includes(id);
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            disabled={disabled}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs motion-safe:transition-colors',
+              active
+                ? 'border-primary/40 bg-primary/10 font-medium text-primary'
+                : 'border-border-soft bg-background text-muted-foreground hover:border-border hover:text-foreground',
+              !isConnected && 'opacity-60',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+            title={isConnected ? undefined : 'CLI not connected'}
+          >
+            <Zap size={11} aria-hidden />
+            {PROVIDER_LABEL[id]}
+            {!isConnected ? (
+              <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

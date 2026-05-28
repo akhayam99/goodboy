@@ -12,6 +12,7 @@ export function refreshProviderStatus(set: SetFn) {
         anthropic: status,
         cursor: state.cursorStatus,
         codex: state.codexStatus,
+        gemini: state.geminiStatus,
       };
       return {
         providerStatus: status,

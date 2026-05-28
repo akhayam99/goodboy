@@ -11,6 +11,7 @@ const { state } = vi.hoisted(() => ({
     workspaceOverrides: {} as Record<string, unknown>,
     setWorkspaceOverrides: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    providers: [] as ReadonlyArray<{ id: string; connection: string }>,
   },
 }));
 

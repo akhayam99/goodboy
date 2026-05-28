@@ -75,7 +75,7 @@ const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 // so the user is taught every quick-action up front, not over time.
 const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
-const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const ATTACHMENT_LIMIT = 10;
@@ -926,7 +926,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     ? 'override disabled in session settings'
     : undefined;
 
-  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
+  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));

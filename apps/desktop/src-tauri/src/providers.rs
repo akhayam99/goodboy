@@ -26,6 +26,8 @@ pub struct CursorState(pub Mutex<ProviderStatus>);
 
 pub struct CodexState(pub Mutex<ProviderStatus>);
 
+pub struct GeminiState(pub Mutex<ProviderStatus>);
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthStateKind {
@@ -50,6 +52,10 @@ pub fn detect_cursor() -> ProviderStatus {
 
 pub fn detect_codex() -> ProviderStatus {
     detect_binary("codex", "codex")
+}
+
+pub fn detect_gemini() -> ProviderStatus {
+    detect_binary("gemini", "gemini")
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -406,6 +412,107 @@ fn check_codex_auth() -> AuthState {
     }
 }
 
+fn extract_gemini_identity_from_creds() -> Option<String> {
+    // gemini-cli stores OAuth credentials at `~/.gemini/oauth_creds.json` after
+    // an interactive login; the `email` field carries the user's Google identity.
+    // Fallback paths covered: legacy `~/.config/gemini/auth.json`.
+    let home = dirs::home_dir()?;
+    for rel in ["./.gemini/oauth_creds.json", "./.config/gemini/auth.json"] {
+        let path = home.join(rel);
+        let Ok(content) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(root) = serde_json::from_str::<serde_json::Value>(&content) else {
+            continue;
+        };
+        if let Some(email) = root.get("email").and_then(|v| v.as_str()) {
+            return Some(email.to_string());
+        }
+        if let Some(id_token) = root.get("id_token").and_then(|v| v.as_str()) {
+            if let Some(email) = extract_email_from_id_token(id_token) {
+                return Some(email);
+            }
+        }
+    }
+    None
+}
+
+fn check_gemini_auth() -> AuthState {
+    // gemini-cli has no stable `auth status` subcommand at v0.x; probe a few
+    // candidates then fall back to the on-disk credentials file as ground truth.
+    let candidates: &[&[&str]] = &[
+        &["gemini", "auth", "status"],
+        &["gemini", "auth", "whoami"],
+        &["gemini", "whoami"],
+    ];
+    for cmd in candidates {
+        if let Ok(out) = run_auth_command(cmd) {
+            let text = out.primary_text();
+            if !text.trim().is_empty() {
+                let parsed = parse_gemini_auth_output(text);
+                if !matches!(parsed.state, AuthStateKind::Unknown) {
+                    return parsed;
+                }
+            }
+        }
+    }
+    if let Some(identity) = extract_gemini_identity_from_creds() {
+        return AuthState {
+            state: AuthStateKind::Connected,
+            identity: Some(identity),
+        };
+    }
+    // No subcommand worked and no creds file. Treat the absence as disconnected
+    // when the binary is present — install detection is handled separately, so
+    // reaching this point means `gemini --version` succeeded.
+    AuthState {
+        state: AuthStateKind::Disconnected,
+        identity: None,
+    }
+}
+
+fn parse_gemini_auth_output(output: &str) -> AuthState {
+    let stripped: String = strip_ansi(output);
+    let first_line = stripped
+        .lines()
+        .map(|l| l.trim())
+        .find(|l| !l.is_empty())
+        .unwrap_or("");
+    let lower = first_line.to_lowercase();
+
+    if lower.starts_with("not logged")
+        || lower.starts_with("not signed")
+        || lower.contains("not logged in")
+        || lower.contains("not signed in")
+        || lower.contains("unauthenticated")
+        || lower.contains("no credentials")
+    {
+        return AuthState {
+            state: AuthStateKind::Disconnected,
+            identity: None,
+        };
+    }
+    if lower.starts_with("logged in")
+        || lower.starts_with("signed in")
+        || lower.contains("authenticated as")
+        || extract_email(first_line).is_some()
+    {
+        let identity = extract_email(first_line)
+            .or_else(|| extract_json_string(output, "email"))
+            .or_else(|| extract_json_string(output, "username"))
+            .or_else(extract_gemini_identity_from_creds);
+        return AuthState {
+            state: AuthStateKind::Connected,
+            identity,
+        };
+    }
+
+    AuthState {
+        state: AuthStateKind::Unknown,
+        identity: None,
+    }
+}
+
 fn parse_codex_auth_output(output: &str) -> AuthState {
     let stripped: String = strip_ansi(output);
     let first_line = stripped
@@ -514,11 +621,34 @@ pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
     next
 }
 
+#[tauri::command]
+pub fn get_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
+    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
+        id: "gemini".to_string(),
+        binary: "gemini".to_string(),
+        available: false,
+        version: None,
+        error: Some("status mutex poisoned".to_string()),
+    })
+}
+
+#[tauri::command]
+pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
+    let next = detect_gemini();
+    if let Ok(mut current) = state.0.lock() {
+        *current = next.clone();
+    }
+    next
+}
+
 fn provider_login_command(provider_id: &str) -> Option<String> {
     match provider_id {
         "anthropic" => Some("claude /login".to_string()),
         "cursor" => Some("cursor login".to_string()),
         "codex" => Some("codex login".to_string()),
+        // gemini-cli prompts for OAuth on first run when no creds file exists;
+        // launching the bare binary opens the browser flow.
+        "gemini" => Some("gemini".to_string()),
         _ => None,
     }
 }
@@ -528,6 +658,9 @@ fn provider_logout_command(provider_id: &str) -> Option<String> {
         "anthropic" => Some("claude /logout".to_string()),
         "cursor" => Some("cursor logout".to_string()),
         "codex" => Some("codex logout".to_string()),
+        // gemini-cli has no logout subcommand; deleting the creds file is the
+        // closest equivalent. Wrap with a confirmation message in the terminal.
+        "gemini" => Some("rm -f ~/.gemini/oauth_creds.json && echo 'gemini credentials removed'".to_string()),
         _ => None,
     }
 }
@@ -598,6 +731,7 @@ pub fn check_provider_auth(provider_id: String) -> AuthState {
         "anthropic" => check_claude_auth(),
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
+        "gemini" => check_gemini_auth(),
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
@@ -764,6 +898,25 @@ mod tests {
             stderr: String::new(),
         };
         assert!(out.primary_text().trim().is_empty());
+    }
+
+    #[test]
+    fn gemini_parses_logged_in() {
+        let s = parse_gemini_auth_output("Logged in as alice@example.com\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
+    }
+
+    #[test]
+    fn gemini_parses_not_logged_in() {
+        let s = parse_gemini_auth_output("Not logged in\n");
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn gemini_unknown_on_unrecognized() {
+        let s = parse_gemini_auth_output("some unrelated output\n");
+        assert_eq!(s.state, AuthStateKind::Unknown);
     }
 
     #[test]

@@ -25,6 +25,7 @@ const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   anthropic: 'anthropic',
   cursor: 'cursor',
   codex: 'openai',
+  gemini: 'gemini',
 };
 
 export async function resolveProvider(input: ResolveProviderInput): Promise<RoutingDecision> {

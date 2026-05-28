@@ -133,6 +133,27 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             v.shrink_to_fit();
             v
         }
+        "gemini" => {
+            // gemini-cli v0.x headless mode: `-m <model> -p <prompt>`. Working
+            // directory is set on the spawned child via current_dir(), the CLI
+            // has no --cwd/--workspace flag yet. No resume/system_prompt/tool
+            // gates are honoured by the binary today.
+            let _ = (
+                args.permission_mode,
+                args.allowed_tools,
+                args.disallowed_tools,
+                args.resume_session_id,
+                args.system_prompt,
+            );
+            let mut v = vec![
+                "-m".to_string(),
+                args.model.to_string(),
+                "-p".to_string(),
+                args.prompt.to_string(),
+            ];
+            v.shrink_to_fit();
+            v
+        }
         "codex" => {
             // codex exec v0.130 gotchas:
             //   --cd, NOT --cwd (codex exits 1 with "unexpected argument").

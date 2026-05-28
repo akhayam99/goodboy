@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type { ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -8,10 +8,12 @@ import {
   GitBranch,
   Link2,
   Loader2,
+  Sparkles,
   Terminal,
   Unplug,
   Zap,
 } from 'lucide-react';
+import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkflowsPanel } from '../../../../features/workflows/components/WorkflowsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
@@ -65,11 +67,17 @@ export function WorkspaceSettingsDialog({
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
 
+  const connectedProviderIds = useAppStore((s) =>
+    s.providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+  );
+
   const [active, setActive] = useState<Section>('general');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [verbosity, setVerbosity] = useState<VerbosityLevel>('normal');
   const [savedVerbosity, setSavedVerbosity] = useState<VerbosityLevel>('normal');
+  const [defaultProvider, setDefaultProvider] = useState<ProviderId | null>(null);
+  const [savedDefaultProvider, setSavedDefaultProvider] = useState<ProviderId | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -90,6 +98,9 @@ export function WorkspaceSettingsDialog({
     const savedVerbosityValue = wsOverrides?.defaultVerbosity ?? 'normal';
     setVerbosity(savedVerbosityValue);
     setSavedVerbosity(savedVerbosityValue);
+    const savedProvider = wsOverrides?.defaultProviderId ?? null;
+    setDefaultProvider(savedProvider);
+    setSavedDefaultProvider(savedProvider);
   }, [open, workspaceId, loadSetting, initialSection, wsOverrides]);
 
   const onDisconnect = async () => {
@@ -113,7 +124,7 @@ export function WorkspaceSettingsDialog({
       setSavedBranchPrefix(next);
       setBranchPrefix(next);
       const mergedOverrides = {
-        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultProviderId: defaultProvider,
         defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
         defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
         parallelEnabled: wsOverrides?.parallelEnabled ?? null,
@@ -121,6 +132,7 @@ export function WorkspaceSettingsDialog({
       };
       await storeSetWorkspaceOverrides(workspaceId, mergedOverrides);
       setSavedVerbosity(verbosity);
+      setSavedDefaultProvider(defaultProvider);
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
@@ -130,7 +142,8 @@ export function WorkspaceSettingsDialog({
 
   const branchPrefixDirty = branchPrefix.trim() !== savedBranchPrefix.trim();
   const verbosityDirty = verbosity !== savedVerbosity;
-  const settingsDirty = branchPrefixDirty || verbosityDirty;
+  const providerDirty = defaultProvider !== savedDefaultProvider;
+  const settingsDirty = branchPrefixDirty || verbosityDirty || providerDirty;
 
   const navItems: ReadonlyArray<NavItem> = [
     { id: 'general', label: 'General', icon: <FolderCode size={13} aria-hidden /> },
@@ -226,6 +239,9 @@ export function WorkspaceSettingsDialog({
             setBranchPrefix={setBranchPrefix}
             verbosity={verbosity}
             setVerbosity={setVerbosity}
+            defaultProvider={defaultProvider}
+            setDefaultProvider={setDefaultProvider}
+            connectedProviderIds={connectedProviderIds}
             busy={saveState === 'saving'}
           />
         ) : null}
@@ -333,12 +349,18 @@ function GeneralSection({
   setBranchPrefix,
   verbosity,
   setVerbosity,
+  defaultProvider,
+  setDefaultProvider,
+  connectedProviderIds,
   busy,
 }: {
   branchPrefix: string;
   setBranchPrefix: (v: string) => void;
   verbosity: VerbosityLevel;
   setVerbosity: (v: VerbosityLevel) => void;
+  defaultProvider: ProviderId | null;
+  setDefaultProvider: (v: ProviderId | null) => void;
+  connectedProviderIds: ReadonlyArray<ProviderId>;
   busy: boolean;
 }) {
   const sanitized = (input: string): string =>
@@ -399,6 +421,23 @@ function GeneralSection({
 
       <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/50 p-4">
         <div className="flex items-center gap-2">
+          <Sparkles size={13} aria-hidden className="text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">Default provider</span>
+        </div>
+        <p className="text-2xs leading-relaxed text-muted-foreground">
+          New sessions in this workspace start with this provider. Each session can override it from
+          its own settings without affecting siblings.
+        </p>
+        <DefaultProviderPicker
+          value={defaultProvider}
+          onChange={setDefaultProvider}
+          connected={connectedProviderIds}
+          disabled={busy}
+        />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/50 p-4">
+        <div className="flex items-center gap-2">
           <Zap size={13} aria-hidden className="text-muted-foreground" />
           <span className="text-xs font-semibold text-foreground">Output verbosity</span>
         </div>
@@ -409,6 +448,66 @@ function GeneralSection({
           <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={busy} />
         </div>
       </div>
+    </div>
+  );
+}
+
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+
+function DefaultProviderPicker({
+  value,
+  onChange,
+  connected,
+  disabled,
+}: {
+  value: ProviderId | null;
+  onChange: (v: ProviderId | null) => void;
+  connected: ReadonlyArray<ProviderId>;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        disabled={disabled}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs motion-safe:transition-colors',
+          value === null
+            ? 'border-primary/40 bg-primary/10 font-medium text-primary'
+            : 'border-border-soft bg-background text-muted-foreground hover:border-border hover:text-foreground',
+          disabled && 'cursor-not-allowed opacity-50',
+        )}
+        title="Use global default"
+      >
+        Inherit global
+      </button>
+      {PROVIDER_OPTIONS.map((id) => {
+        const active = value === id;
+        const isConnected = connected.includes(id);
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            disabled={disabled}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs motion-safe:transition-colors',
+              active
+                ? 'border-primary/40 bg-primary/10 font-medium text-primary'
+                : 'border-border-soft bg-background text-muted-foreground hover:border-border hover:text-foreground',
+              !isConnected && 'opacity-60',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+            title={isConnected ? undefined : 'CLI not connected'}
+          >
+            {PROVIDER_LABEL[id]}
+            {!isConnected ? (
+              <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

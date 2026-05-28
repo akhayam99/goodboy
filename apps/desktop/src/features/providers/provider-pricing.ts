@@ -1,4 +1,4 @@
-import type { CodexModelPriceOverride } from '@goodboy/core';
+import type { CodexModelPriceOverride, GeminiModelPriceOverride } from '@goodboy/core';
 import shippedPricing from './pricing.json';
 
 interface ModelPrice {
@@ -12,6 +12,7 @@ export interface PricingTable {
   readonly anthropic: Record<string, ModelPrice>;
   readonly cursor: Record<string, ModelPrice>;
   readonly codex: Record<string, ModelPrice>;
+  readonly gemini: Record<string, ModelPrice>;
 }
 
 const activeTable: PricingTable = shippedPricing as PricingTable;
@@ -39,7 +40,7 @@ declare global {
 const IS_DEV = import.meta.env.DEV === true;
 
 function priceForModel(
-  provider: 'anthropic' | 'cursor' | 'codex',
+  provider: 'anthropic' | 'cursor' | 'codex' | 'gemini',
   model: string,
 ): ModelPrice | null {
   const table: PricingTable =
@@ -56,6 +57,21 @@ export function getCodexPriceOverride(
   model: string,
 ): CodexModelPriceOverride | null {
   const price = priceForModel('codex', model);
+  if (price === null) return null;
+  return {
+    inputPerMtok: price.inputPerMtok,
+    outputPerMtok: price.outputPerMtok,
+    ...(price.cachedInputPerMtok !== undefined
+      ? { cachedInputPerMtok: price.cachedInputPerMtok }
+      : {}),
+  };
+}
+
+export function getGeminiPriceOverride(
+  _config: unknown,
+  model: string,
+): GeminiModelPriceOverride | null {
+  const price = priceForModel('gemini', model);
   if (price === null) return null;
   return {
     inputPerMtok: price.inputPerMtok,

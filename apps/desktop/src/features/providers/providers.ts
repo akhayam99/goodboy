@@ -32,6 +32,7 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor',
   codex: 'codex',
+  gemini: 'gemini',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -39,18 +40,21 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   // cursor-agent (CLI), NOT cursor IDE, point at the agent CLI install docs.
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
+  gemini: 'https://github.com/google-gemini/gemini-cli#installation',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor-agent',
   codex: 'codex',
+  gemini: 'gemini',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {
   anthropic: 'get_provider_status',
   cursor: 'get_cursor_status',
   codex: 'get_codex_status',
+  gemini: 'get_gemini_status',
 };
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
@@ -66,6 +70,7 @@ export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus>
 
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
+export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
 
 export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
   return invoke<AuthState>('check_provider_auth', { providerId });
@@ -131,12 +136,13 @@ export interface ProviderStatuses {
   readonly anthropic: ProviderStatus | null;
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
+  readonly gemini: ProviderStatus | null;
 }
 
 export function buildProviderList(
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
 ): ReadonlyArray<ProviderInfo> {
-  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex'];
+  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
   return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
 }

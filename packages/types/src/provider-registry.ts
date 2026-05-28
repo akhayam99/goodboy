@@ -1,4 +1,4 @@
-export type ProviderId = 'anthropic' | 'cursor' | 'codex';
+export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini';
 
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 

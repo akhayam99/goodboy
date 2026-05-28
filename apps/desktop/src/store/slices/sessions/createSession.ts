@@ -77,6 +77,22 @@ export function createSession(set: SetFn, get: GetFn) {
       ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
     });
 
+    // Make sure workspace overrides are cached before reading defaultProviderId,
+    // otherwise a fresh boot would silently fall back to anthropic for the
+    // first session created against a workspace.
+    if (!get().workspaceOverrides[workspaceId]) {
+      try {
+        await get().loadWorkspaceOverrides(workspaceId);
+      } catch {
+        // best-effort: missing overrides just means we fall back to global default
+      }
+    }
+    const workspaceDefaultProvider =
+      get().workspaceOverrides[workspaceId]?.defaultProviderId ?? null;
+    const inheritedPreference: SessionProviderPreference = workspaceDefaultProvider
+      ? { ...DEFAULT_SESSION_PROVIDER_PREFERENCE, defaultProvider: workspaceDefaultProvider }
+      : DEFAULT_SESSION_PROVIDER_PREFERENCE;
+
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };
     const session: Session = {
@@ -85,7 +101,7 @@ export function createSession(set: SetFn, get: GetFn) {
       goal: goal.trim() || worktree.slug,
       state: initialState,
       contextSlots: [],
-      providerPreference: providerPreference ?? DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: providerPreference ?? inheritedPreference,
       permissionMode: 'bypassPermissions',
       workflowIds: workflowId !== undefined ? [workflowId] : [],
       currentStepByWorkflow: {},

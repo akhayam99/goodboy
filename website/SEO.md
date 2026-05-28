@@ -93,7 +93,7 @@ Tutti i meta risiedono in `website/index.html` (app SPA . unico HTML). Non ci so
 ### Regole di copy SEO
 
 - keyword primaria nella prima frase: "AI workspace orchestrator"
-- keyword secondarie: "local-first", "multi-agent", "Claude Cursor Codex", "developer tools"
+- keyword secondarie: "local-first", "multi-agent", "Claude Cursor Codex Gemini", "developer tools"
 - niente keyword stuffing: le parole chiave vanno nei testi del sito, non solo nei meta
 - `<title>` format: `[Product] . [tagline corta]` (es. "Goodboy . AI workspace orchestrator")
 

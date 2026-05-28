@@ -1,0 +1,96 @@
+import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
+import { devWarn } from '../../dev-log';
+
+export interface ParseContext {
+  readonly runId: ProviderRunId;
+  readonly now: () => IsoDateTime;
+  readonly onUnknown?: (type: string, payload: unknown) => void;
+}
+
+// gemini-cli v0.x emits plain text on stdout in headless mode (`-p <prompt>`).
+// No stable structured streaming schema is documented today; we fall back to
+// treating each non-empty line as an assistant_text delta. When future versions
+// gain a JSON output flag, the JSON branch below already handles a small set
+// of expected types (mirrors codex.parser conventions) so we can opt in by
+// passing `--output-format json` from turn.rs without rewriting this file.
+const KNOWN_TYPES = new Set(['response.delta', 'response.completed', 'usage', 'error']);
+
+interface UsagePayload {
+  readonly input_tokens?: number;
+  readonly cached_input_tokens?: number;
+  readonly output_tokens?: number;
+}
+
+function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
+  return {
+    inputTokens: raw?.input_tokens ?? 0,
+    outputTokens: raw?.output_tokens ?? 0,
+    cachedInputTokens: raw?.cached_input_tokens ?? 0,
+    estimatedCostUsd: 0,
+  };
+}
+
+function tryParseJson(line: string): ({ type?: string } & Record<string, unknown>) | null {
+  if (!line.startsWith('{') && !line.startsWith('[')) return null;
+  try {
+    return JSON.parse(line) as { type?: string } & Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
+  const trimmed = line.trim();
+  if (trimmed.length === 0) return [];
+
+  const at = ctx.now();
+  const payload = tryParseJson(trimmed);
+
+  if (payload === null) {
+    // Plain-text mode: every line is text the model produced. Preserve newline
+    // so multi-line output renders correctly in the transcript.
+    return [{ kind: 'assistant_text', runId: ctx.runId, delta: `${trimmed}\n`, at }];
+  }
+
+  const type = payload.type;
+  switch (type) {
+    case 'response.delta': {
+      const delta = typeof payload['text'] === 'string' ? (payload['text'] as string) : '';
+      if (delta.length === 0) return [];
+      return [{ kind: 'assistant_text', runId: ctx.runId, delta, at }];
+    }
+
+    case 'response.completed':
+      return [];
+
+    case 'usage': {
+      const usage = buildUsage(payload['usage'] as UsagePayload | undefined);
+      return [{ kind: 'usage', runId: ctx.runId, usage, at }];
+    }
+
+    case 'error': {
+      const msg =
+        typeof payload['message'] === 'string'
+          ? (payload['message'] as string)
+          : JSON.stringify(payload);
+      return [{ kind: 'error', runId: ctx.runId, message: msg, at }];
+    }
+
+    default:
+      if (typeof type === 'string' && !KNOWN_TYPES.has(type)) {
+        devWarn(`[gemini-adapter] unknown json payload type: ${type}`);
+        ctx.onUnknown?.(type, payload);
+        return [
+          {
+            kind: 'unknown_payload',
+            runId: ctx.runId,
+            adapter: 'gemini',
+            payloadType: type,
+            raw: payload,
+            at,
+          },
+        ];
+      }
+      return [];
+  }
+}

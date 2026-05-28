@@ -22,10 +22,9 @@ const subscriptions: Card[] = [
     desc: 'Scaffolds, one-shots',
   },
   {
-    name: 'More',
-    color: 'oklch(0.55 0.012 255)',
-    desc: 'Gemini, local LLMs, OSS adapters',
-    soon: true,
+    name: 'Gemini',
+    color: 'oklch(0.72 0.16 240)',
+    desc: 'Long context, multimodal',
   },
 ];
 
