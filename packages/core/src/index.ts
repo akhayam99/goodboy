@@ -102,6 +102,19 @@ export {
   type ParseContext as CodexParseContext,
 } from './providers/codex/parser';
 
+// GeminiAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
+// Import directly from packages/core/src/providers/gemini/adapter in Node contexts.
+export {
+  GEMINI_CHEAP_MODEL,
+  GEMINI_DEFAULT_MODEL,
+  GEMINI_MODELS,
+} from './providers/gemini/constants';
+export { computeGeminiCostUsd, type GeminiModelPriceOverride } from './providers/gemini/cost';
+export {
+  parseJsonLine as parseGeminiJsonLine,
+  type ParseContext as GeminiParseContext,
+} from './providers/gemini/parser';
+
 // SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
 // Import directly from packages/core/src/summarizer/cli in Node/test contexts.
 export {
