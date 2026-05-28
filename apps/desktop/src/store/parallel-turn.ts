@@ -31,12 +31,12 @@ import type {
   Workspace,
 } from '@goodboy/types';
 import {
-  invokeParallelPhaseGroupCreate,
-  invokeParallelPhaseGroupUpdateCompletedAt,
-  invokePhaseRunInsert,
-  invokePhaseRunList,
-  invokePhaseRunUpdateStatus,
-} from '../features/phases/phases';
+  invokeParallelGroupCreate,
+  invokeParallelGroupUpdateCompletedAt,
+  invokeAgentInsert,
+  invokeAgentList,
+  invokeAgentUpdateStatus,
+} from '../features/workflows/workflows';
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 import { inferAgentKindFromName } from '../features/session/agent-kind';
 
@@ -92,7 +92,7 @@ export function detectParallelGroup(
 }
 
 // Multiplexes turn_event envelopes to per-runId callbacks. Single global
-// listener routed by runId — N independent listeners on the same Tauri
+// listener routed by runId, N independent listeners on the same Tauri
 // channel would be wasteful.
 interface RawTurnEnvelope {
   readonly runId: string;
@@ -147,7 +147,7 @@ async function startMultiplexedTurnListener(now: () => IsoDateTime): Promise<Mul
   };
 }
 
-// Scheduler deps factory — design (b): pre-batch via invokeParallelPhaseRunSpawn,
+// Scheduler deps factory, design (b): pre-batch via invokeParallelPhaseRunSpawn,
 // scheduler.spawnRun resolves on per-runId 'end' envelope. Aligns with T2 (#208)
 // batched spawn design and keeps the scheduler purely an await-only orchestrator.
 interface BuildSchedulerDepsArgs {
@@ -168,7 +168,7 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
     spawnRun: async (run, onEvent) => {
       const handler = settleHandlers.get(run.runId);
       if (!handler) {
-        // Should be impossible — every run has a pre-registered handler.
+        // Should be impossible, every run has a pre-registered handler.
         return { status: 'failed', outputSummary: null, error: 'no settle handler registered' };
       }
       handler.onEvent(onEvent);
@@ -210,11 +210,11 @@ export async function runParallelBranch(
   } = inputs;
   const { now, effects } = deps;
 
-  // Cap by maxParallelism — defensive guard; UI clamps but accept any spec list.
+  // Cap by maxParallelism, defensive guard; UI clamps but accept any spec list.
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
 
   // Persist parallel group up front so the audit trail captures it even if spawn fails.
-  const groupRow = await invokeParallelPhaseGroupCreate({
+  const groupRow = await invokeParallelGroupCreate({
     sessionId: session.id,
     ordinal: currentDef.ordinal,
     mergeStrategy,
@@ -232,7 +232,7 @@ export async function runParallelBranch(
     }),
   );
 
-  // Boot listener BEFORE spawn — race-free: events arrive only after spawn.
+  // Boot listener BEFORE spawn, race-free: events arrive only after spawn.
   const listener = await startMultiplexedTurnListener(now);
 
   const settleResolvers = new Map<
@@ -240,15 +240,15 @@ export async function runParallelBranch(
     (v: { status: AgentStatus; error?: string }) => void
   >();
 
-  // Per-run scheduler progress callbacks — set by scheduler.spawnRun, invoked by
+  // Per-run scheduler progress callbacks, set by scheduler.spawnRun, invoked by
   // listener. Listener registration must happen up front (before spawn) so no
   // events leak before scheduler subscribes. Until spawnRun fires, scheduler
-  // progress callbacks are absent — benign because scheduler progress fan-out is
+  // progress callbacks are absent, benign because scheduler progress fan-out is
   // best-effort UI plumbing; the canonical transcript stream still flows via
   // appendTurnEvent below.
   const progressCallbacks = new Map<ProviderRunId, ((e: TurnEvent) => void) | null>();
 
-  // Per-run settle handlers — promise resolves when listener observes 'end'/'error'
+  // Per-run settle handlers, promise resolves when listener observes 'end'/'error'
   // for the matching runId. scheduler.spawnRun awaits the promise; onEvent stores
   // the scheduler's progress callback for the listener to dispatch into.
   const settleHandlers = new Map<
@@ -285,12 +285,12 @@ export async function runParallelBranch(
   }
 
   // Persist N phase_runs rows (status=running). Using the existing single-run
-  // invoker — group_id remains NULL for now (Rust insert doesn't accept it yet),
+  // invoker, group_id remains NULL for now (Rust insert doesn't accept it yet),
   // but session_id+ordinal+stepId still uniquely identifies each run.
   for (let i = 0; i < cappedDefs.length; i++) {
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
-    await invokePhaseRunInsert({
+    await invokeAgentInsert({
       sessionId: session.id,
       stepId: def.id,
       ordinal: def.ordinal,
@@ -304,7 +304,7 @@ export async function runParallelBranch(
   await effects.refreshPhaseRuns(session.id);
 
   // Build ParallelAgent records the scheduler operates on. parallelIndex
-  // matches the spec's order. We DO NOT wire createParallelWorktrees here — the
+  // matches the spec's order. We DO NOT wire createParallelWorktrees here, the
   // issue scope keeps worktree-per-run out of v1: every run executes in the
   // session's primary worktree (existing single-run invariant). Workdir
   // collisions are still surfaced by detectConflicts via emitted file_edit events.
@@ -323,7 +323,7 @@ export async function runParallelBranch(
     completedAt: null,
   }));
 
-  // Pre-batch spawn — keeps registration atomic on the rust side. Per-run prompts
+  // Pre-batch spawn, keeps registration atomic on the rust side. Per-run prompts
   // differ, so we issue one invokeParallelPhaseRunSpawn PER definition with a single
   // run each. (T2's batch invoker is designed for same-prompt fan-out; here each
   // run has a distinct prompt because each is a different phase definition.)
@@ -365,10 +365,10 @@ export async function runParallelBranch(
       const def = cappedDefs[i]!;
       const runId = runIds[i]!;
       const status = merge.runStatuses.find((rs) => rs.runId === runId);
-      const phaseRunsAfter = await invokePhaseRunList(session.id);
+      const phaseRunsAfter = await invokeAgentList(session.id);
       const row = phaseRunsAfter.find((r) => r.runId === runId && r.stepId === def.id);
       if (row) {
-        await invokePhaseRunUpdateStatus(row.id, {
+        await invokeAgentUpdateStatus(row.id, {
           status: (status?.status ?? 'failed') as AgentStatus,
           completedAt: now(),
         });
@@ -376,7 +376,7 @@ export async function runParallelBranch(
     }
     await effects.refreshPhaseRuns(session.id);
 
-    // Auto-resolution path only — manual MergeDialog wiring is deferred. Reason:
+    // Auto-resolution path only, manual MergeDialog wiring is deferred. Reason:
     // surfacing conflicts to the user requires emitting MergeResult into ChatView
     // state (currently a TODO placeholder in MergeDialog). Default to the group's
     // mergeStrategy; if 'manual' and unresolved, swallow the rejection and emit
@@ -391,7 +391,7 @@ export async function runParallelBranch(
 
     if (conflicts.length > 0) {
       if (mergeStrategy === 'manual') {
-        // Surface conflicts to UI via store — ChatView will open MergeDialog.
+        // Surface conflicts to UI via store, ChatView will open MergeDialog.
         effects.setMergeConflicts(session.id, conflicts);
       } else {
         try {
@@ -437,7 +437,7 @@ export async function runParallelBranch(
     // Mark group complete only when at least one run completed. allFailed runs
     // leave completedAt NULL so the user can inspect/retry without rolling up.
     if (!allFailed) {
-      await invokeParallelPhaseGroupUpdateCompletedAt(groupId, now());
+      await invokeParallelGroupUpdateCompletedAt(groupId, now());
     }
 
     return {

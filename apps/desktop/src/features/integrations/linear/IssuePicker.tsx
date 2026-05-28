@@ -16,7 +16,7 @@ interface Props {
 /**
  * Autocomplete combobox over issues assigned to the current Linear viewer.
  * Lazy-fetches on first focus to keep dialog open fast. Filtering is
- * client-side over identifier + title — Linear's search API is heavier and
+ * client-side over identifier + title, Linear's search API is heavier and
  * a single fetch of the user's active queue is small enough to scan in
  * memory.
  */

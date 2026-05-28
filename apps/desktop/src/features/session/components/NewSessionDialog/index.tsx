@@ -19,6 +19,12 @@ interface NewSessionDialogProps {
   onOpenSettings: () => void;
 }
 
+const PROVIDER_LABELS: Record<ProviderId, string> = {
+  anthropic: 'Claude Code',
+  cursor: 'cursor-agent',
+  codex: 'OpenAI Codex',
+};
+
 function formatError(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;
@@ -95,7 +101,7 @@ function slugifyLive(input: string): string {
 }
 
 // Live sanitizer for the hand-typed branch slug. Unlike slugifyLive (which
-// derives a slug from the prose goal) this preserves the user's casing — an
+// derives a slug from the prose goal) this preserves the user's casing, an
 // uppercase branch stays uppercase. Any run of spaces or disallowed chars
 // collapses to a single dash so e.g. ten spaces yield one dash.
 function sanitizeBranchSlug(input: string): string {
@@ -156,7 +162,12 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialogProps) {
+export function NewSessionDialog({
+  open,
+  onClose,
+  workspaceId,
+  onOpenSettings,
+}: NewSessionDialogProps) {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const providers = useAppStore((s) => s.providers);
@@ -177,6 +188,13 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
+  const [setupWorkflow, setSetupWorkflow] = useState(() => {
+    try {
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+    } catch {
+      return true;
+    }
+  });
 
   // Hide the issue picker entirely on workspaces without a Linear integration.
   // Defensive read: tests mock the store with a shallow shape that may not
@@ -185,9 +203,9 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
     (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
   );
 
-  const defaultProvider = pickDefaultProvider(
-    new Set(providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
+  const connectedProviders = providers.filter((p) => p.connection === 'connected');
+  const noProviderConnected = open && providers.length > 0 && connectedProviders.length === 0;
+  const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
 
   useEffect(() => {
     if (!open) return;
@@ -245,7 +263,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
         setSlugTouched(true);
       })
       .catch(() => {
-        // silent — user can type manually
+        // silent, user can type manually
       })
       .finally(() => {
         setSlugGenerating(false);
@@ -255,7 +273,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
   const branchReady =
     branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
   const goalReady = goal.trim().length > 0;
-  const canCreate = goalReady && branchReady && !busy;
+  const canCreate = goalReady && branchReady && !busy && !noProviderConnected;
 
   const onCreate = async () => {
     setError(null);
@@ -281,10 +299,30 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       });
       showToast('success', `session created: ${session.goal}`);
       onClose();
+      if (setupWorkflow) {
+        // Defer one tick so the closing dialog finishes its leave transition
+        // and the new session becomes current before we open the next step.
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-workflow-picker', {
+              detail: { sessionId: session.id },
+            }),
+          );
+        }, 0);
+      }
     } catch (err) {
       setError(formatError(err));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onToggleSetupWorkflow = (next: boolean) => {
+    setSetupWorkflow(next);
+    try {
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+    } catch {
+      // localStorage unavailable, ignore
     }
   };
 
@@ -293,10 +331,20 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       open={open}
       onClose={onClose}
       title="New session"
-      description="Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards."
+      description="Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating."
       size="lg"
       footer={
-        <div className="flex w-full items-center gap-2">
+        <div className="flex w-full items-center gap-3">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={setupWorkflow}
+              onChange={(e) => onToggleSetupWorkflow(e.target.checked)}
+              className="accent-primary"
+              disabled={busy}
+            />
+            Set up workflow next
+          </label>
           <div className="flex-1 text-xs text-danger">{error ?? ''}</div>
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
@@ -315,6 +363,29 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
       }
     >
       <div className="flex flex-col gap-7">
+        {noProviderConnected ? (
+          <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
+            <span className="mt-0.5 text-warning">⚠</span>
+            <div className="flex-1 leading-relaxed text-foreground">
+              No provider is connected. Sessions need at least one of{' '}
+              {PROVIDER_ORDER.map((id, i) => (
+                <span key={id}>
+                  <span className="font-medium">{PROVIDER_LABELS[id]}</span>
+                  {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
+                </span>
+              ))}{' '}
+              connected before any agent can run.
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="ml-1 underline underline-offset-2 hover:text-warning"
+              >
+                Open settings
+              </button>
+              .
+            </div>
+          </div>
+        ) : null}
         {hasLinear ? (
           <Section
             icon={
@@ -340,7 +411,7 @@ export function NewSessionDialog({ open, onClose, workspaceId }: NewSessionDialo
           icon={<Target size={14} aria-hidden className="text-primary" />}
           tone="primary"
           title="Goal"
-          subtitle="What this session should accomplish. Be specific — agents lean on it for context."
+          subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
         >
           <Textarea
             value={goal}

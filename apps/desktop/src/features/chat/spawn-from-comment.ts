@@ -73,7 +73,7 @@ export function buildReviewChangesAgentPrompt(
     lines.push('');
   }
   lines.push(
-    'Address every comment with the smallest reasonable change. Do not over-scope. The per-comment resolution marker is not applicable here — a single commit covers multiple threads.',
+    'Address every comment with the smallest reasonable change. Do not over-scope. The per-comment resolution marker is not applicable here, a single commit covers multiple threads.',
   );
   return lines.join('\n');
 }

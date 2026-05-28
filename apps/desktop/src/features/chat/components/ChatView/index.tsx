@@ -7,19 +7,16 @@ import {
   useState,
   type ComponentType,
 } from 'react';
-import {
-  ArrowDown,
-  Bot,
-  BookOpen,
-  ClipboardList,
-  FlaskConical,
-  Hammer,
-  ScanEye,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
+import { ArrowDown, Sparkles } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { DogSniff } from '../../../../shared/components/DogSniff';
+import agentDebugger from '../../../../assets/agents/debugger.png';
+import agentDocs from '../../../../assets/agents/docs.png';
+import agentGoodboy from '../../../../assets/agents/goodboy.png';
+import agentImplementer from '../../../../assets/agents/implementer.png';
+import agentPlanner from '../../../../assets/agents/planner.png';
+import agentReviewer from '../../../../assets/agents/reviewer.png';
+import agentScout from '../../../../assets/agents/scout.png';
+import agentTester from '../../../../assets/agents/tester.png';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
@@ -41,6 +38,7 @@ import {
   MergeDialog,
   type MergeConflict,
   type MergeResolution,
+  type RunMeta,
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
@@ -49,7 +47,7 @@ interface ChatViewProps {
   session: Session;
   onRequestEnd?: () => void;
   // Keep-alive aware. False when this instance is mounted but hidden behind
-  // another session's view — used to skip background DB fetches.
+  // another session's view, used to skip background DB fetches.
   isActive?: boolean;
 }
 
@@ -210,10 +208,10 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const items = useMemo(() => reduceTranscript(events), [events]);
   // Defer the heavy transcript list so React 18 can paint header / input /
   // empty shell first on session switch and treat the card list as low-priority.
-  // Pairs with React.memo on TranscriptCard — together they make session swaps
+  // Pairs with React.memo on TranscriptCard, together they make session swaps
   // feel instant even with hundreds of turns in history.
   // Tag the deferred value with its agent id: useDeferredValue keeps returning
-  // the previous agent's array for a render or more after a switch — without
+  // the previous agent's array for a render or more after a switch, without
   // the tag the list below would paint the wrong agent's transcript. While it
   // lags (`transcriptStale`) we render the skeleton instead.
   const taggedItems = useMemo(
@@ -244,7 +242,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
 
   // Lazy transcript load: only fires when this view is the active one. With
   // keep-alive, hidden ChatView instances stay mounted but must not preload
-  // transcripts in the background — that would defeat the lazy DB savings.
+  // transcripts in the background, that would defeat the lazy DB savings.
   useEffect(() => {
     if (!isActive || !selectedAgentId || transcriptCached) return;
     void selectAgent(session.id, selectedAgentId);
@@ -270,7 +268,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  // Subscribe only to the flag we need — `s.settings` is a wide map and any
+  // Subscribe only to the flag we need, `s.settings` is a wide map and any
   // setting write re-renders the whole chat view (and its transcript) if we
   // pull the entire object.
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
@@ -296,6 +294,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
   const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
@@ -330,13 +329,32 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     void refreshProviders();
   }, [refreshProviders]);
 
-  // Derive MergeConflict[] from store — populated by parallel-turn scheduler
+  // Derive MergeConflict[] from store, populated by parallel-turn scheduler
   // when manual resolution is required. Cast FileConflict to MergeConflict:
-  // both have {file, runIds} — the shapes are structurally identical.
+  // both have {file, runIds}, the shapes are structurally identical.
   const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
     () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
     [rawMergeConflicts],
   );
+
+  const mergeRunMeta = useMemo<ReadonlyMap<ProviderRunId, RunMeta>>(() => {
+    const map = new Map<ProviderRunId, RunMeta>();
+    const stepNameById = new Map<string, string>();
+    for (const workflow of sessionWorkflows ?? EMPTY_ARRAY) {
+      for (const step of workflow.steps) {
+        stepNameById.set(step.id, step.name);
+      }
+    }
+    for (const run of phaseRuns) {
+      if (!run.runId) continue;
+      const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined;
+      map.set(run.runId as ProviderRunId, {
+        agentName: run.name,
+        ...(stepName ? { stepName } : {}),
+      });
+    }
+    return map;
+  }, [phaseRuns, sessionWorkflows]);
 
   const terminalRunStatuses = useMemo(
     () =>
@@ -351,7 +369,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 
   const onMergeResolve = (picks: Record<string, MergeResolution>) => {
-    // Filter out SKIP_SENTINEL picks — those files stay unresolved (winner's version kept).
+    // Filter out SKIP_SENTINEL picks, those files stay unresolved (winner's version kept).
     const resolvedPicks: Record<string, string> = {};
     for (const [file, pick] of Object.entries(picks)) {
       if (pick !== '__skip__') resolvedPicks[file] = pick;
@@ -398,6 +416,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         <MergeDialog
           open={mergeDialogOpen}
           conflicts={mergeConflicts}
+          runMeta={mergeRunMeta}
           onResolve={onMergeResolve}
           onCancel={() => setMergeDialogOpen(false)}
         />
@@ -665,7 +684,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
       <div
         className={cn(
-          'relative flex size-24 items-center justify-center rounded-full',
+          'relative flex size-28 items-center justify-center rounded-full',
           agentVisual ? agentVisual.ringBg : 'bg-primary/10 text-primary',
         )}
       >
@@ -677,11 +696,20 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
           )}
           style={{ animationDuration: '3.2s' }}
         />
-        {agentVisual ? (
-          <agentVisual.Icon
-            size={agentVisual.size ?? 42}
-            className={cn('relative', agentVisual.iconClass)}
+        {agentVisual?.image ? (
+          <span
             aria-hidden
+            className={cn('relative size-20', agentVisual.tint)}
+            style={{
+              maskImage: `url(${agentVisual.image})`,
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              maskSize: 'contain',
+              WebkitMaskImage: `url(${agentVisual.image})`,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              WebkitMaskSize: 'contain',
+            }}
           />
         ) : (
           <DogMascot size={46} className="relative" />
@@ -712,68 +740,68 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
 interface KindVisual {
-  Icon: ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
-  iconClass: string;
+  /** Pre-processed dog silhouette (white on transparent). Applied via CSS
+   *  mask-image so the body fills with the role tint colour. Resolver has no
+   *  portrait and falls back to the shared DogMascot. */
+  image: string | null;
+  /** Tailwind background colour applied to the masked silhouette. */
+  tint: string;
   ringBg: string;
   pulseBg: string;
-  // Custom illustrations carry more detail than lucide glyphs — render them
-  // larger so they stay legible. Falls back to the default glyph size.
-  size?: number;
 }
 
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   generic: {
-    Icon: Bot,
-    iconClass: 'text-rose-400',
+    image: agentGoodboy,
+    tint: 'bg-rose-400',
     ringBg: 'bg-rose-400/10',
     pulseBg: 'bg-rose-400/15',
   },
   scout: {
-    Icon: Telescope,
-    iconClass: 'text-sky-400',
+    image: agentScout,
+    tint: 'bg-sky-400',
     ringBg: 'bg-sky-400/10',
     pulseBg: 'bg-sky-400/15',
   },
   planner: {
-    Icon: ClipboardList,
-    iconClass: 'text-violet-400',
+    image: agentPlanner,
+    tint: 'bg-violet-400',
     ringBg: 'bg-violet-400/10',
     pulseBg: 'bg-violet-400/15',
   },
   implementer: {
-    Icon: Hammer,
-    iconClass: 'text-emerald-400',
+    image: agentImplementer,
+    tint: 'bg-emerald-400',
     ringBg: 'bg-emerald-400/10',
     pulseBg: 'bg-emerald-400/15',
   },
   debugger: {
-    Icon: DogSniff,
-    iconClass: 'text-amber-400',
+    image: agentDebugger,
+    tint: 'bg-amber-400',
     ringBg: 'bg-amber-400/10',
     pulseBg: 'bg-amber-400/15',
-    size: 64,
   },
   tester: {
-    Icon: FlaskConical,
-    iconClass: 'text-teal-400',
+    image: agentTester,
+    tint: 'bg-teal-400',
     ringBg: 'bg-teal-400/10',
     pulseBg: 'bg-teal-400/15',
   },
   reviewer: {
-    Icon: ScanEye,
-    iconClass: 'text-cyan-400',
+    image: agentReviewer,
+    tint: 'bg-cyan-400',
     ringBg: 'bg-cyan-400/10',
     pulseBg: 'bg-cyan-400/15',
   },
   docs: {
-    Icon: BookOpen,
-    iconClass: 'text-orange-400',
+    image: agentDocs,
+    tint: 'bg-orange-400',
     ringBg: 'bg-orange-400/10',
     pulseBg: 'bg-orange-400/15',
   },
   resolver: {
-    Icon: Sparkles,
-    iconClass: 'text-lime-400',
+    image: null,
+    tint: 'bg-lime-400',
     ringBg: 'bg-lime-400/10',
     pulseBg: 'bg-lime-400/15',
   },

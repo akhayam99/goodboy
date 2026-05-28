@@ -12,7 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — these MUST be hoisted before importing the store.
+// Module mocks, these MUST be hoisted before importing the store.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -128,13 +128,13 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -188,10 +188,10 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // emit nothing — turn ends immediately
+  // emit nothing, turn ends immediately
 }
 
-describe('sendTurn — permission proxy integration', () => {
+describe('sendTurn, permission proxy integration', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();

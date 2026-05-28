@@ -38,7 +38,7 @@ interface NavItem {
   beta?: boolean;
 }
 
-// global settings only — per-workspace skills + workflows live in
+// global settings only, per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
@@ -72,12 +72,19 @@ function isNavSection(value: string | undefined): value is NavSection {
 }
 
 const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
-  { combo: ['⌘', ','], label: 'open settings' },
   { combo: ['⌘', 'K'], label: 'command palette' },
+  { combo: ['⌘', 'N'], label: 'new session' },
+  { combo: ['⌘', '1', '..', '9'], label: 'jump to workspace 1 to 9' },
+  { combo: ['⌘', '['], label: 'previous session' },
+  { combo: ['⌘', ']'], label: 'next session' },
   { combo: ['⌘', 'B'], label: 'toggle sidebar' },
-  { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
+  { combo: ['⌘', '⇧', 'K'], label: 'open model picker' },
+  { combo: ['⌘', '⇧', 'P'], label: 'open permission picker' },
+  { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
   { combo: ['⌘', '.'], label: 'end current session' },
-  { combo: ['Esc'], label: 'close dialog / cancel' },
+  { combo: ['⌘', ','], label: 'open settings' },
+  { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
+  { combo: ['Esc'], label: 'close dialog or cancel' },
 ];
 
 function BetaChip() {

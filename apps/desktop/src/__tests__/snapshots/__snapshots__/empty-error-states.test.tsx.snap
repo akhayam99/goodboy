@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
+exports[`snapshot, empty states > NewSessionDialog: no workflows 1`] = `
 <dialog
   aria-describedby="_r_0_-desc"
   aria-labelledby="_r_0_-title"
@@ -26,7 +26,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_0_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
+          Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating.
         </p>
       </div>
       <button
@@ -103,7 +103,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — agents lean on it for context.
+                What this session should accomplish. Be specific. This is the agent's primary context.
               </p>
             </div>
           </header>
@@ -272,8 +272,17 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
-        class="flex w-full items-center gap-2"
+        class="flex w-full items-center gap-3"
       >
+        <label
+          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <input
+            class="accent-primary"
+            type="checkbox"
+          />
+          Set up workflow next
+        </label>
         <div
           class="flex-1 text-xs text-danger"
         />
@@ -296,7 +305,7 @@ exports[`snapshot — empty states > NewSessionDialog: no workflows 1`] = `
 </dialog>
 `;
 
-exports[`snapshot — empty states > NotificationCenter: no notifications 1`] = `
+exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
 <div
   aria-label="notifications"
   aria-live="polite"
@@ -335,7 +344,7 @@ exports[`snapshot — empty states > NotificationCenter: no notifications 1`] = 
 </div>
 `;
 
-exports[`snapshot — empty states > ProvidersPanel: no providers (store returns []) 1`] = `
+exports[`snapshot, empty states > ProvidersPanel: no providers (store returns []) 1`] = `
 <div
   class="flex flex-col gap-3"
 >
@@ -425,7 +434,7 @@ exports[`snapshot — empty states > ProvidersPanel: no providers (store returns
 </div>
 `;
 
-exports[`snapshot — empty states > QuickActionsPopover: no skills / empty items 1`] = `
+exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1`] = `
 <div
   class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
 >
@@ -437,7 +446,7 @@ exports[`snapshot — empty states > QuickActionsPopover: no skills / empty item
 </div>
 `;
 
-exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
+exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
 <div
   class="flex flex-col gap-3"
 >
@@ -474,7 +483,7 @@ exports[`snapshot — empty states > SkillsPanel: no skills 1`] = `
 </div>
 `;
 
-exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`] = `
+exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] = `
 <div
   class="flex h-full min-h-0 flex-col"
 >
@@ -606,7 +615,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
         <p
           class="max-w-[220px] text-2xs leading-relaxed text-muted-foreground"
         >
-          Add a git repo to spin up worktrees and start orchestrating sessions.
+          Add a git repo to create worktrees and start orchestrating sessions.
         </p>
       </div>
       <button
@@ -681,7 +690,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
     <button
       aria-label="open onboarding checklist"
       class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 transition-colors hover:border-border"
-      title="Setup — 0 of 5 done"
+      title="Setup, 0 of 5 done"
       type="button"
     >
       <span
@@ -924,7 +933,7 @@ exports[`snapshot — empty states > WorkspacesSidebar: no workspace selected 1`
 </div>
 `;
 
-exports[`snapshot — error states > App init error — BootSplash with error message 1`] = `
+exports[`snapshot, error states > App init error, BootSplash with error message 1`] = `
 <div
   class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
 >
@@ -1028,7 +1037,7 @@ exports[`snapshot — error states > App init error — BootSplash with error me
 </div>
 `;
 
-exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
+exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 <div
   class="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground"
 >
@@ -1132,7 +1141,7 @@ exports[`snapshot — error states > BootSplash: boot-error phase 1`] = `
 </div>
 `;
 
-exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
+exports[`snapshot, error states > BudgetRulesPanel: form error 1`] = `
 <div
   class="flex flex-col gap-3"
 >
@@ -1159,7 +1168,7 @@ exports[`snapshot — error states > BudgetRulesPanel: form error 1`] = `
 </div>
 `;
 
-exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
+exports[`snapshot, error states > EndSessionDialog: error state 1`] = `
 <dialog
   aria-describedby="_r_2_-desc"
   aria-labelledby="_r_2_-title"
@@ -1185,7 +1194,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_2_-desc"
         >
-          The worktree directory will be removed. The branch is preserved for manual merge.
+          Removes the worktree and session transcripts from this device. The branch is preserved for manual merge if needed.
         </p>
       </div>
       <button
@@ -1210,13 +1219,22 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
       class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
     >
       <div
-        class="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
+        class="flex flex-col gap-3"
       >
-        <span
-          class="font-mono text-foreground"
+        <div
+          class="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
         >
-          test goal
-        </span>
+          <span
+            class="font-mono text-foreground"
+          >
+            test goal
+          </span>
+        </div>
+        <p
+          class="text-xs font-medium text-danger"
+        >
+          This cannot be undone.
+        </p>
       </div>
     </div>
     <div
@@ -1244,7 +1262,7 @@ exports[`snapshot — error states > EndSessionDialog: error state 1`] = `
 </dialog>
 `;
 
-exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
+exports[`snapshot, error states > NewSessionDialog: form error 1`] = `
 <dialog
   aria-describedby="_r_1_-desc"
   aria-labelledby="_r_1_-title"
@@ -1270,7 +1288,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_1_-desc"
         >
-          Creates a worktree on a fresh branch. Configure workflow and agents from the session panel afterwards.
+          Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating.
         </p>
       </div>
       <button
@@ -1347,7 +1365,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
               <p
                 class="text-2xs leading-relaxed text-muted-foreground"
               >
-                What this session should accomplish. Be specific — agents lean on it for context.
+                What this session should accomplish. Be specific. This is the agent's primary context.
               </p>
             </div>
           </header>
@@ -1516,8 +1534,17 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <div
-        class="flex w-full items-center gap-2"
+        class="flex w-full items-center gap-3"
       >
+        <label
+          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <input
+            class="accent-primary"
+            type="checkbox"
+          />
+          Set up workflow next
+        </label>
         <div
           class="flex-1 text-xs text-danger"
         />
@@ -1540,7 +1567,7 @@ exports[`snapshot — error states > NewSessionDialog: form error 1`] = `
 </dialog>
 `;
 
-exports[`snapshot — error states > ProvidersPanel: provider in error state 1`] = `
+exports[`snapshot, error states > ProvidersPanel: provider in error state 1`] = `
 <div
   class="flex flex-col gap-3"
 >
@@ -1705,7 +1732,7 @@ exports[`snapshot — error states > ProvidersPanel: provider in error state 1`]
 </div>
 `;
 
-exports[`snapshot — error states > TranscriptCard: turn error item 1`] = `
+exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
 <div
   class="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger"
 >

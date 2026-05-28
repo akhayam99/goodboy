@@ -16,7 +16,7 @@ export function useGithubPolling(): void {
   // (typed once per summarizer tick, per session). Subscribing to it forced
   // a full sweep on every keystroke an agent typed into its worktree's git
   // log. The signature collapses to the set of (sessionId, branch) pairs
-  // that actually exist — exactly when "the set of PRs to poll" changes.
+  // that actually exist, exactly when "the set of PRs to poll" changes.
   const branchSignature = useAppStore((s) => {
     let acc = '';
     for (const session of sessions) {
@@ -26,7 +26,7 @@ export function useGithubPolling(): void {
     return acc;
   });
 
-  // Reactive sweep — boot, workspace switch, and session-list / branch
+  // Reactive sweep, boot, workspace switch, and session-list / branch
   // changes. Full scope (no `skipUnknownPr`) so a session whose PR was
   // created outside the app (`gh pr create`, web UI) gets discovered.
   useEffect(() => {
@@ -35,7 +35,7 @@ export function useGithubPolling(): void {
 
   // Steady-state poll. The tick no-ops while the window is hidden; returning
   // to the foreground fires an immediate catch-up. Incremental scope: skip
-  // sessions we already learned have no PR — the app's PR-creation paths
+  // sessions we already learned have no PR, the app's PR-creation paths
   // (createPrForSession, assistant-text URL detect, summarizer hook) refresh
   // them explicitly, so the timer doesn't need to.
   useEffect(() => {

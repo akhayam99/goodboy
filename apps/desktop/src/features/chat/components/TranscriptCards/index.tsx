@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
-import { CopyButton, Divider, Markdown, cn } from '@goodboy/ui';
+import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { readAttachment } from '../../turn';
@@ -67,9 +67,7 @@ function TranscriptCardImpl({
           {item.usage.cachedInputTokens > 0
             ? ` · ${formatTokens(item.usage.cachedInputTokens)} cached`
             : ''}
-          {item.usage.estimatedCostUsd > 0
-            ? ` · ~${formatCostUsd(item.usage.estimatedCostUsd)}`
-            : ''}
+          {item.usage.estimatedCostUsd > 0 ? ` · ~${formatUsd(item.usage.estimatedCostUsd)}` : ''}
         </p>
       );
     case 'error':
@@ -179,12 +177,6 @@ function formatTokens(n: number): string {
   return `${Math.round(n / 1000)}k`;
 }
 
-function formatCostUsd(cost: number): string {
-  if (cost < 0.001) return `$${cost.toFixed(4)}`;
-  if (cost < 1) return `$${cost.toFixed(3)}`;
-  return `$${cost.toFixed(2)}`;
-}
-
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
 const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
 
@@ -197,7 +189,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   // The comment-resolved chip lives in the top-right of its own row and
   // hovers a primary action. The hover-only copy button positioned at the
   // same corner of the assistant bubble crashes into that primary action
-  // on short messages — and copying the marker prose isn't useful anyway.
+  // on short messages, and copying the marker prose isn't useful anyway.
   // Hide copy when the marker is present.
   const hasCommentResolvedMarker = COMMENT_RESOLVED_MARKER_RE.test(text);
   COMMENT_RESOLVED_MARKER_RE.lastIndex = 0;

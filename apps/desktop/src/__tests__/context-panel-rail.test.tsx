@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Tests for ContextPanel rail variant (collapsed state) — #318.
+// Tests for ContextPanel rail variant (collapsed state), #318.
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(vi.fn()) }));
@@ -103,7 +103,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
-describe('snapshot — ContextPanel variants', () => {
+describe('snapshot, ContextPanel variants', () => {
   it('collapsed: renders rail button, not slot content', () => {
     const { container } = render(
       <ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />,
@@ -119,7 +119,7 @@ describe('snapshot — ContextPanel variants', () => {
   });
 });
 
-describe('ContextPanel rail — a11y attributes', () => {
+describe('ContextPanel rail, a11y attributes', () => {
   it('has role=button', () => {
     render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
     expect(screen.getByRole('button', { name: /expand context panel/i })).toBeDefined();
@@ -139,7 +139,7 @@ describe('ContextPanel rail — a11y attributes', () => {
   });
 });
 
-describe('ContextPanel rail — keyboard', () => {
+describe('ContextPanel rail, keyboard', () => {
   it('Enter key calls onExpand', async () => {
     const onExpand = vi.fn();
     render(<ContextPanel session={makeSession()} collapsed={true} onExpand={onExpand} />);
@@ -168,7 +168,7 @@ describe('ContextPanel rail — keyboard', () => {
   });
 });
 
-describe('ContextPanel — persistence contract', () => {
+describe('ContextPanel, persistence contract', () => {
   it('collapsed=false: rail button present in DOM but visually hidden', () => {
     render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
     const rail = screen.getByRole('button', { name: /expand context panel/i });

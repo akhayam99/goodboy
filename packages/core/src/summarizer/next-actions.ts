@@ -57,7 +57,7 @@ const STOPWORDS = new Set([
 
 // Trigger: a turn has produced output, or the assistant left open questions, or
 // last_output_summary captured a decision branch worth acting on. Otherwise the
-// user is still framing — surface nothing.
+// user is still framing, surface nothing.
 export function inferNextActions(input: InferNextActionsInput): ReadonlyArray<NextAction> {
   const slots = mapSlots(input.slotsAfter);
   const openQuestions = (slots.open_questions ?? '').trim();

@@ -5,12 +5,14 @@ import { FloatingNav } from './sections/FloatingNav';
 import { Hero } from './sections/Hero';
 import { Letter } from './sections/Letter';
 import { LogoStrip } from './sections/LogoStrip';
-import { FeatureGrid } from './sections/FeatureGrid';
 import { SessionsDeepDive } from './sections/SessionsDeepDive';
+import { AgentsDeepDive } from './sections/AgentsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
 import { PlansDeepDive } from './sections/PlansDeepDive';
+import { LinearDeepDive } from './sections/LinearDeepDive';
 import { RoutingDeepDive } from './sections/RoutingDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
+import { AlsoGrid } from './sections/AlsoGrid';
 import { Comparison } from './sections/Comparison';
 import { Stack } from './sections/Stack';
 import { CTA } from './sections/CTA';
@@ -25,12 +27,14 @@ export function App() {
         <Hero />
         <Letter />
         <LogoStrip />
-        <FeatureGrid />
         <SessionsDeepDive />
+        <AgentsDeepDive />
         <ContextDeepDive />
         <PlansDeepDive />
-        <RoutingDeepDive />
+        <LinearDeepDive />
         <GithubDeepDive />
+        <RoutingDeepDive />
+        <AlsoGrid />
         <Comparison />
         <Stack />
         <CTA />

@@ -15,7 +15,7 @@ export interface PopoverProps {
  * picker, and menu in the app. Centralizes the visual contract (background,
  * border, shadow, radius, base typography) so every popover reads the same.
  *
- * Positioning is the caller's responsibility — pass `style` for fixed/portal
+ * Positioning is the caller's responsibility, pass `style` for fixed/portal
  * placement or compose with absolute classes via `className`.
  */
 export function Popover({ children, className, style, role, ariaLabel, innerRef }: PopoverProps) {

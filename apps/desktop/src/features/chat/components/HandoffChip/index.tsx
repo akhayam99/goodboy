@@ -18,7 +18,7 @@ export function HandoffChip({ assistantText, sessionId }: HandoffChipProps) {
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
 
   if (!handoff || !session) return null;
-  // Handoff suggestions are noise inside a workflow — the next step is
+  // Handoff suggestions are noise inside a workflow, the next step is
   // already defined by the workflow itself.
   if (session.workflowIds.length > 0) return null;
 
@@ -46,7 +46,7 @@ export function HandoffChip({ assistantText, sessionId }: HandoffChipProps) {
       >
         <ArrowRight size={11} aria-hidden />
         <span>spawn {meta.label.toLowerCase()}</span>
-        {handoff.reason ? <span className="text-muted-foreground">— {handoff.reason}</span> : null}
+        {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
       </button>
     </div>
   );

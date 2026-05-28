@@ -99,7 +99,7 @@ interface SkillInvokeArgs {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
-  /** Must be the workspace root_path — passed to rust for path guard. */
+  /** Must be the workspace root_path, passed to rust for path guard. */
   readonly workspaceRoot: string;
 }
 

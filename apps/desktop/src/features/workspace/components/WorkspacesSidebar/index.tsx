@@ -15,7 +15,6 @@ import {
   HelpCircle,
   Layers,
   Loader2,
-  MessagesSquare,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -62,7 +61,7 @@ import {
 } from '../../../../store';
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
-import { pickNextWorkflowStep } from '../../../../features/workflow/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowHasOpenQuestions } from '../../../../features/context/openQuestionsGate';
 import {
   computeLatestTelemetryByAgentId,
@@ -156,11 +155,19 @@ export function WorkspacesSidebar({
     if (!currentWorkspace) return;
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
-  // currentSession may live in either pool — useCurrentSession looks up both
-  // — so the dialog's `archived` flag needs to read from the session itself.
+  // currentSession may live in either pool, useCurrentSession looks up both
+  //, so the dialog's `archived` flag needs to read from the session itself.
   const isCurrentArchived = !!currentSession?.archivedAt;
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      if (!collapsed && currentWorkspace) setNewSessionOpen(true);
+    };
+    window.addEventListener('goodboy:new-session', handler);
+    return () => window.removeEventListener('goodboy:new-session', handler);
+  }, [collapsed, currentWorkspace]);
 
   if (collapsed) {
     return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
@@ -175,7 +182,7 @@ export function WorkspacesSidebar({
 
       <Divider />
 
-      {/* unified master-detail card — sessions rail + selected-session detail */}
+      {/* unified master-detail card, sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
@@ -183,7 +190,7 @@ export function WorkspacesSidebar({
             const hasAnySession = totalSessions > 0;
             return (
               <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                {/* Sessions rail — always visible while a workspace is current.
+                {/* Sessions rail, always visible while a workspace is current.
                     Earlier builds collapsed it when totalSessions <= 1, which
                     moved the "new session" affordance into the detail header.
                     That morphing made it hard to teach; now the rail is the
@@ -218,10 +225,10 @@ export function WorkspacesSidebar({
                       <SessionMetaFooter session={currentSession} />
                     </>
                   ) : (
-                    <NoSessionSelectedEmpty
-                      hasAnySession={hasAnySession}
-                      onNewSession={() => setNewSessionOpen(true)}
-                    />
+                    /* No detail panel content when no session is selected: the
+                       sessions rail on the left already offers selection and
+                       creation, and the chat area renders the primary hero. */
+                    <SidebarDetailHint hasAnySession={hasAnySession} />
                   )}
                 </div>
               </div>
@@ -234,13 +241,13 @@ export function WorkspacesSidebar({
 
       <Divider />
 
-      {/* quick actions — jump straight into the palette pre-scoped to a
+      {/* quick actions, jump straight into the palette pre-scoped to a
           source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
       {currentWorkspace ? (
         <QuickActionsRow onOpenPalette={onOpenPalette} skillsEnabled={WORKSPACE_FEATURES.skills} />
       ) : null}
 
-      {/* sidebar footer — logo + onboarding chip + controls */}
+      {/* sidebar footer, logo + onboarding chip + controls */}
       <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
         <div className="flex-1" />
@@ -297,7 +304,7 @@ export function WorkspacesSidebar({
 
       {/* Mount these heavy dialogs only when open. Otherwise their inner
           selectors (PricingDialog subscribes to session/workspace summaries,
-          sessionTelemetry, providerSpendBreakdown — GuideDialog walks a few
+          sessionTelemetry, providerSpendBreakdown, GuideDialog walks a few
           maps too) re-evaluate on every store update for a panel the user
           almost never has open. */}
       {addWorkspaceOpen ? (
@@ -327,11 +334,11 @@ export function WorkspacesSidebar({
   );
 }
 
-// Collapsed left sidebar — a minimal rail (just an expand affordance), the
+// Collapsed left sidebar, a minimal rail (just an expand affordance), the
 // left-side mirror of the ContextPanel's collapsed state. The rail width is
 // fixed by AppShell's LEFT_RAIL_WIDTH.
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
-  // Logo pinned top, expand control pinned bottom — the expand button holds
+  // Logo pinned top, expand control pinned bottom, the expand button holds
   // the same bottom slot it occupies in the expanded sidebar's footer, so it
   // doesn't jump when the rail toggles.
   return (
@@ -423,10 +430,10 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
 }
 
 /**
- * Inline follow-up CTA rendered directly above the generic 'Spawn agent'
+ * Inline follow-up CTA rendered directly above the generic 'Create agent'
  * trigger when the session has an active plan ready to execute. The pitch is:
  * before the user picks any role from the spawn menu, the plan already
- * implies the answer — so offer it one click away.
+ * implies the answer, so offer it one click away.
  *
  * Visibility guards:
  *   - latest plan status is 'active' (a 'consumed' plan already has an
@@ -434,7 +441,7 @@ function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
  *   - no open questions on the session (the user owes the agent an answer
  *     first; a spawn CTA on top would be noise)
  *   - if the session has a workflow whose next un-spawned step is itself an
- *     implementer, defer to WorkflowNextStepCta — two CTAs for the same
+ *     implementer, defer to WorkflowNextStepCta, two CTAs for the same
  *     action would compete
  *
  * Click goes through the store's runPlan, which (since the runPlan fix in
@@ -465,7 +472,7 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   if (creatorWorkflow) {
     if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) return null;
   } else if (openQuestions.some((q) => q.status === 'open')) {
-    // No workflow context — keep legacy session-wide block (safe default).
+    // No workflow context, keep legacy session-wide block (safe default).
     return null;
   }
 
@@ -535,39 +542,14 @@ function SidebarLogo() {
   );
 }
 
-function NoSessionSelectedEmpty({
-  hasAnySession,
-  onNewSession,
-}: {
-  hasAnySession: boolean;
-  onNewSession: () => void;
-}) {
+function SidebarDetailHint({ hasAnySession }: { hasAnySession: boolean }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-      <div className="relative">
-        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
-          <MessagesSquare size={26} className="text-info" aria-hidden />
-        </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-foreground">
-          {hasAnySession ? 'Ready when you are' : 'No sessions yet'}
-        </h3>
-        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          {hasAnySession
-            ? 'Pick a session from the list to dive in, or spin up a new one to start cooking.'
-            : 'This workspace is empty. Spin up your first session to start working.'}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onNewSession}
-        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
-      >
-        <Plus size={12} aria-hidden />
-        <span>{hasAnySession ? 'New session' : 'Create first session'}</span>
-      </button>
+    <div className="flex h-full items-center justify-center px-6 text-center">
+      <p className="text-2xs leading-relaxed text-muted-foreground/70">
+        {hasAnySession
+          ? 'Select a session from the rail.'
+          : 'Create your first session from the rail.'}
+      </p>
     </div>
   );
 }
@@ -584,7 +566,7 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
         <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          Add a git repo to spin up worktrees and start orchestrating sessions.
+          Add a git repo to create worktrees and start orchestrating sessions.
         </p>
       </div>
       <button
@@ -614,7 +596,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
   // Scope cross-agent maps to this session's runs. Subscribing to the raw
   // store map (`s.agentRunHistory` etc.) re-renders this section every time
-  // any agent anywhere in the app updates — useShallow narrows the
+  // any agent anywhere in the app updates, useShallow narrows the
   // subscription to "did any of *my* runs' entries change".
   const agentRunHistory = useAppStore(
     useShallow((s) => {
@@ -676,6 +658,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ sessionId?: string }>).detail;
+      if (!detail?.sessionId || detail.sessionId === task.id) {
+        setStartWorkflowOpen(true);
+      }
+    };
+    window.addEventListener('goodboy:open-workflow-picker', handler);
+    return () => window.removeEventListener('goodboy:open-workflow-picker', handler);
+  }, [task.id]);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const stepWorkflowById = useMemo(() => {
@@ -780,7 +773,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   /**
    * Cumulative telemetry per agent across every providerRun we recorded for
-   * that agent — needed so the cost/tokens row in the sidebar doesn't drop
+   * that agent, needed so the cost/tokens row in the sidebar doesn't drop
    * earlier providers' usage when the user swaps provider mid-session.
    */
   const aggregatesByAgentId = useMemo(() => {
@@ -816,7 +809,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   }, [telemetry, phaseRuns, agentRunHistory]);
 
   /**
-   * Most recent turn telemetry per agent — walks agentRunHistory newest-first so
+   * Most recent turn telemetry per agent, walks agentRunHistory newest-first so
    * the context bar always shows the latest prompt size, even if Session.runId
    * lags behind (e.g. the DB row wasn't flushed before telemetry arrived).
    */
@@ -1173,7 +1166,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
         aria-expanded={open}
       >
         <Plus size={13} aria-hidden />
-        Spawn agent
+        Create agent
       </button>
       {menu}
     </div>
@@ -1517,7 +1510,7 @@ function AgentRow({
         'group rounded border transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
-        // State signal lives on the border — never on the dot, never on
+        // State signal lives on the border, never on the dot, never on
         // the content. running > unread > selected > idle. Static colors
         // only; the prior `spin-border` and `animate-border-pulse` here
         // were the same GPU-heavy conic-gradient / oklch border-color
@@ -1653,7 +1646,7 @@ function AgentLifetime({ run }: { run: Agent }) {
   const isLive = !!run.startedAt && !run.completedAt;
   // Subscribe to a shared 5s ticker so the relative label refreshes without
   // spawning one setInterval per live agent. The hook no-ops when isLive is
-  // false — completed agents render once and never re-tick.
+  // false, completed agents render once and never re-tick.
   const now = useNow(5_000, isLive);
   void now;
 

@@ -4,7 +4,7 @@ import {
   setPlanBody as invokeSetPlanBody,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../features/plans/plans';
-import { pickNextWorkflowStep } from '../../features/workflow/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../features/workflows/components/WorkflowNextStepCta';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../features/session/agent-kind';
 import type { SessionId, PlanId, PlanStatus } from '@goodboy/types';
 import type { AppStore } from '../store';
@@ -94,7 +94,7 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
         return;
       }
 
-      // C: resolve which attached workflow owns the creator step — that workflow is
+      // C: resolve which attached workflow owns the creator step, that workflow is
       // the routing context. Without a match we fall back to free-spawn.
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
       const attached = session.workflowIds
@@ -120,7 +120,7 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
         return;
       }
 
-      // E: next step must be an implementer — don't hijack reviewer/tester/etc.
+      // E: next step must be an implementer, don't hijack reviewer/tester/etc.
       if (inferAgentKindFromName(nextStep.name) !== 'implementer') {
         await get().spawnAgent(sessionId, {
           triggeredPlanId: planId,

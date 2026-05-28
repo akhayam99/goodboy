@@ -53,7 +53,7 @@ function makeDoneTurnEvent(runId: string): TurnEvent {
   return { kind: 'done', runId: runId as ProviderRunId, at: NOW };
 }
 
-describe('fanOut + awaitMerge — 3-run happy path', () => {
+describe('fanOut + awaitMerge, 3-run happy path', () => {
   it('returns MergeResult with completed status for all runs', async () => {
     const runs = [makeRun(0), makeRun(1), makeRun(2)];
     const group = makeGroup();
@@ -81,7 +81,7 @@ describe('fanOut + awaitMerge — 3-run happy path', () => {
   });
 });
 
-describe('fanOut + awaitMerge — partial failure', () => {
+describe('fanOut + awaitMerge, partial failure', () => {
   it('includes failed run in result without cancelling siblings', async () => {
     const runs = [makeRun(0, 'run-0'), makeRun(1, 'run-1'), makeRun(2, 'run-2')];
     const group = makeGroup();
@@ -113,7 +113,7 @@ describe('fanOut + awaitMerge — partial failure', () => {
   });
 });
 
-describe('fanOut + awaitMerge — all fail', () => {
+describe('fanOut + awaitMerge, all fail', () => {
   it('returns MergeResult with all runs failed', async () => {
     const runs = [makeRun(0), makeRun(1)];
     const group = makeGroup({ mergeStrategy: 'manual' });
@@ -134,7 +134,7 @@ describe('fanOut + awaitMerge — all fail', () => {
   });
 });
 
-describe('fanOut + awaitMerge — unexpected rejection', () => {
+describe('fanOut + awaitMerge, unexpected rejection', () => {
   it('treats thrown error as failed run', async () => {
     const runs = [makeRun(0, 'run-0')];
     const group = makeGroup();
@@ -157,7 +157,7 @@ describe('cancelGroup', () => {
     const runs = [makeRun(0, 'run-0'), makeRun(1, 'run-1'), makeRun(2, 'run-2')];
     const group = makeGroup();
 
-    // spawnRun never resolves — we cancel before awaiting merge
+    // spawnRun never resolves, we cancel before awaiting merge
     const spawnRun = vi.fn(() => new Promise<never>(() => undefined));
     const cancelRun = vi.fn(async () => undefined);
 

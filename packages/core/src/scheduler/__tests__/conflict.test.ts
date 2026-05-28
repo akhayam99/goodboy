@@ -50,7 +50,7 @@ describe('detectConflicts', () => {
   });
 });
 
-describe('resolveConflicts — last_write_wins', () => {
+describe('resolveConflicts, last_write_wins', () => {
   const conflicts: ReadonlyArray<FileConflict> = [
     { file: 'src/shared.ts', runIds: [runId('run-a'), runId('run-b')] },
   ];
@@ -115,7 +115,7 @@ describe('resolveConflicts — last_write_wins', () => {
   });
 });
 
-describe('resolveConflicts — manual', () => {
+describe('resolveConflicts, manual', () => {
   const conflicts: ReadonlyArray<FileConflict> = [
     { file: 'src/alpha.ts', runIds: [runId('run-a'), runId('run-b')] },
     { file: 'src/beta.ts', runIds: [runId('run-a'), runId('run-c')] },
@@ -175,7 +175,7 @@ describe('resolveConflicts — manual', () => {
   });
 });
 
-describe('resolveConflicts — synthesizer_driven', () => {
+describe('resolveConflicts, synthesizer_driven', () => {
   const conflicts: ReadonlyArray<FileConflict> = [
     { file: 'src/shared.ts', runIds: [runId('run-a'), runId('run-b')] },
   ];

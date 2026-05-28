@@ -1,5 +1,5 @@
 import { Section } from '../components/Section';
-import { PRSnapshot } from '../mockups/Snapshots';
+import { GithubPanelSnapshot } from '../mockups/Snapshots';
 
 export function GithubDeepDive() {
   return (
@@ -7,26 +7,29 @@ export function GithubDeepDive() {
       id="github"
       eyebrow="GitHub"
       reverse
-      title={<>PRs live where you work.</>}
+      title={<>The PR is a panel, not another tab.</>}
       body={
         <>
           <p>
-            Open the GitHub panel next to your session. PR state, CI checks, reviews, linked issues.
-            Refreshed by client-side polling every five minutes, and immediately when an agent
-            creates a PR.
+            Pull requests live next to the session that opened them. State, CI checks, line counts,
+            reviews — refreshed by client-side polling and immediately when an agent opens or
+            updates a PR.
           </p>
           <p>
-            Diff comments are line-anchored. Spawn a resolver agent on one with a click. It
-            addresses the comment in the worktree, commits locally, and posts back. Approvals show
-            up in the session feed so you never miss a green light.
+            Diff comments are line-anchored, from any reviewer: a teammate on GitHub, a Claude
+            review agent run locally, or you writing one in the desktop. Each comment gets a
+            one-click <em>resolve</em>. Click it and a resolver agent spawns in the session
+            worktree, addresses the comment with the smallest reasonable change, commits locally,
+            and posts back on the thread.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
-            No webhooks to configure. No browser tab to alt-tab. The PR comes to you.
+            No webhooks to configure. No browser tab to alt-tab. The conversation comes to where the
+            code is.
           </p>
         </>
       }
     >
-      <PRSnapshot />
+      <GithubPanelSnapshot />
     </Section>
   );
 }

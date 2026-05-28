@@ -20,6 +20,7 @@ import {
   useCurrentSession,
   useCurrentWorkspace,
   useSessionById,
+  useSessions,
   useSessionSlots,
   useWorkspaces,
 } from './store';
@@ -48,7 +49,7 @@ function writePersistedContextOpen(id: SessionId, open: boolean): void {
   try {
     localStorage.setItem(CONTEXT_PANEL_KEY(id), open ? '1' : '0');
   } catch {
-    // localStorage unavailable — ignore
+    // localStorage unavailable, ignore
   }
 }
 
@@ -97,11 +98,11 @@ export function App() {
     return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
 
-  // ESC on macOS exits native fullscreen — never wanted. preventDefault at the
+  // ESC on macOS exits native fullscreen, never wanted. preventDefault at the
   // capture phase blocks it (the event is marked handled in WKWebView before
   // it reaches the native responder chain). That same call also cancels a
   // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
-  // dialog ourselves — ESC dismisses modals without ever leaving fullscreen.
+  // dialog ourselves, ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -163,6 +164,14 @@ export function App() {
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (currentSession) setEndOpen(true);
+    };
+    window.addEventListener('goodboy:end-session', handler);
+    return () => window.removeEventListener('goodboy:end-session', handler);
+  }, [currentSession]);
   const openShortcutHelp = useCallback(() => {
     setSettingsInitialSection('shortcuts');
     setSettingsOpen(true);
@@ -182,11 +191,67 @@ export function App() {
     });
   }, []);
 
+  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const currentWorkspaceSessions = useSessions();
+
+  const selectWorkspaceByIndex = useCallback(
+    (idx: number) => {
+      const w = workspaces[idx];
+      if (w) void setCurrentWorkspace(w.id);
+    },
+    [workspaces, setCurrentWorkspace],
+  );
+
+  const navigateSession = useCallback(
+    (delta: number) => {
+      const list = currentWorkspaceSessions;
+      if (list.length === 0) return;
+      if (!currentSession) {
+        const target = delta >= 0 ? list[0] : list[list.length - 1];
+        if (target) void setCurrentSession(target.id);
+        return;
+      }
+      const idx = list.findIndex((s) => s.id === currentSession.id);
+      if (idx === -1) return;
+      const next = list[idx + delta];
+      if (next) void setCurrentSession(next.id);
+    },
+    [currentWorkspaceSessions, currentSession, setCurrentSession],
+  );
+
+  const openNewSession = useCallback(() => {
+    if (!currentWorkspace) return;
+    window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+  }, [currentWorkspace]);
+
+  const openModelPicker = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('goodboy:open-model-picker'));
+  }, []);
+
+  const openPermissionPicker = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
+  }, []);
+
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+b', toggleLeftSidebar);
+  useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+[', () => navigateSession(-1), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+]', () => navigateSession(1), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+k', openModelPicker);
+  useKeyboardShortcut('cmd+shift+p', openPermissionPicker);
+  useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+4', () => selectWorkspaceByIndex(3), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+5', () => selectWorkspaceByIndex(4), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+6', () => selectWorkspaceByIndex(5), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+7', () => selectWorkspaceByIndex(6), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
 
   // Synchronous LRU: include the current session even before the persisting
   // effect runs, so the active view paints on the first frame after a switch.
@@ -202,7 +267,7 @@ export function App() {
   // Defer the heavy panel mount so sidebar selection + AppShell swap paint
   // urgently while React schedules the fresh ChatView/ContextPanel at low
   // priority. Active id is deferred too so the previous panel stays visible
-  // (and `isActive`) during the lag — otherwise we'd flash a blank frame.
+  // (and `isActive`) during the lag, otherwise we'd flash a blank frame.
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
@@ -255,8 +320,8 @@ export function App() {
                 onAddWorkspace={() => setAddWorkspaceOpen(true)}
               />
             )}
-            {/* Onboarding checklist floats top-right of the chat area —
-                app-level so the sidebar chip can summon it from anywhere. */}
+            {/* Onboarding checklist floats top-right of the chat area: app-level so
+                the sidebar chip can summon it from anywhere. */}
             <OnboardingCard />
           </div>
         }
@@ -395,7 +460,7 @@ function EmptyState({
             Pick up where you left off
           </h2>
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Spin up a new session from the sidebar, or jump back into an existing one. Each session
+            Create a new session from the sidebar, or jump back into an existing one. Each session
             lives in its own worktree.
           </p>
         </div>
@@ -426,7 +491,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
           </h2>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
             Point at a git repo to create your first workspace. Every session spins up its own
-            worktree and branch — your main checkout stays untouched.
+            worktree and branch, your main checkout stays untouched.
           </p>
         </div>
 

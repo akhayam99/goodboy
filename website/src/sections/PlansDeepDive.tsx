@@ -1,31 +1,34 @@
 import { Section } from '../components/Section';
-import { WorkflowSnapshot } from '../mockups/Snapshots';
+import { WorkflowStackSnapshot } from '../mockups/Snapshots';
 
 export function PlansDeepDive() {
   return (
     <Section
       id="plans"
       eyebrow="Plans & workflows"
-      title={<>Plans are artifacts, not transcripts.</>}
+      reverse
+      title={<>Stack workflows on one session. Plans land as artifacts.</>}
       body={
         <>
           <p>
-            Planner agents emit structured plans wrapped in{' '}
-            <code className="font-mono text-warning">&lt;&lt;plan&gt;&gt;</code> markers. Goodboy
-            lifts them out of the chat and stores them as first-class objects.
+            A workflow is a reusable sequence of typed steps (scout, plan, implement, review, debug,
+            test, docs). Attach one to start a session, then stack another on top when the work
+            forks. One session can carry many workflows in flight, each tracked end to end.
           </p>
           <p>
-            A plan becomes a workflow: a sequence of typed steps (scout, plan, implement, review).
-            Downstream agents pick the next one with the right model, the right effort, and the
-            right slice of the context.
+            Pick a preset or design a fresh one from a theme. The planner agent emits structured
+            output wrapped in <code className="font-mono text-warning">&lt;&lt;plan&gt;&gt;</code>{' '}
+            markers; Goodboy lifts them out of the chat and stores them as first-class plan
+            artifacts the implementer can consume.
           </p>
           <p className="text-[14px] text-muted-foreground/80">
-            No more scrolling a 4,000-line conversation to find what was decided.
+            Workflows live at the workspace. Plans live at the session. The boundary is explicit so
+            templates stay reusable and artifacts stay specific to the work that produced them.
           </p>
         </>
       }
     >
-      <WorkflowSnapshot />
+      <WorkflowStackSnapshot />
     </Section>
   );
 }

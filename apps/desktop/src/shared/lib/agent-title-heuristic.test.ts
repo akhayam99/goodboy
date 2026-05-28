@@ -11,11 +11,11 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle('refactor the database layer')).toBe('refactor database layer');
   });
 
-  it('verb not at position 0 — skip prefix words', () => {
+  it('verb not at position 0, skip prefix words', () => {
     expect(heuristicAgentTitle('please fix the broken router')).toBe('fix broken router');
   });
 
-  it('"can you add …" — finds verb past stop-word prefix', () => {
+  it('"can you add …", finds verb past stop-word prefix', () => {
     expect(heuristicAgentTitle('can you add a dark mode toggle')).toBe('add dark mode');
   });
 
@@ -116,7 +116,7 @@ describe('heuristicAgentTitle', () => {
 
   // ── multi-line ──────────────────────────────────────────────────────
   // NOTE: \s+ collapsing turns \n into spaces before split('\n'), so ALL
-  // lines are treated as one continuous string — verbs from any line match.
+  // lines are treated as one continuous string, verbs from any line match.
   it('newlines collapsed: verb from later line is still found', () => {
     // 'fix' is the first action verb across the collapsed string
     expect(heuristicAgentTitle('auth service\nfix the bug on line 42')).toBe('fix bug line');
@@ -128,7 +128,7 @@ describe('heuristicAgentTitle', () => {
   });
 
   // ── long prompts ────────────────────────────────────────────────────
-  it('truncates to 300 chars — content beyond 300 ignored', () => {
+  it('truncates to 300 chars, content beyond 300 ignored', () => {
     const padding = 'x'.repeat(290);
     const prompt = `optimize ${padding} important_stuff_after_limit`;
     const result = heuristicAgentTitle(prompt);

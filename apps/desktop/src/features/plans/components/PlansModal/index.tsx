@@ -92,7 +92,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
     if (selected && mode === 'preview') setDraft(planToSource(selected));
   }, [selected, mode]);
 
-  // Discarded plans are frozen — force preview, segmented control is
+  // Discarded plans are frozen, force preview, segmented control is
   // disabled below. If the user was editing when the plan got discarded
   // (or selected a discarded one), drop back to preview.
   useEffect(() => {
@@ -144,7 +144,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
     }
   };
 
-  // Soft delete — flips the plan to 'discarded' (status only, row stays).
+  // Soft delete, flips the plan to 'discarded' (status only, row stays).
   // If the user happens to be mid-edit, commit the draft first so their
   // typing isn't lost on restore. Selection stays on the plan: it's still
   // visible in the list (dimmed) so the user can immediately undo.
@@ -347,7 +347,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                     )}
                     title={
                       selected.status === 'discarded'
-                        ? 'Discarded plans cannot be edited — restore first'
+                        ? 'Discarded plans cannot be edited, restore first'
                         : 'Edit markdown source'
                     }
                   >
@@ -369,9 +369,9 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                     )}
                     title={
                       retriggerArmed
-                        ? 'Already consumed — click again to confirm and spawn a fresh agent'
+                        ? 'Already consumed, click again to confirm and spawn a fresh agent'
                         : selected.status === 'consumed' || selected.status === 'superseded'
-                          ? 'Plan already ran — click to replay (asks for confirmation)'
+                          ? 'Plan already ran, click to replay (asks for confirmation)'
                           : 'Spawn new agent to execute this plan'
                     }
                   >
@@ -385,7 +385,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                       <RotateCw size={12} aria-hidden />
                     )}
                     {retriggerArmed
-                      ? 'Already consumed — click again to confirm'
+                      ? 'Already consumed, click again to confirm'
                       : selected.status === 'active'
                         ? 'Start'
                         : 'Replay'}
@@ -413,7 +413,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                   <button
                     type="button"
                     onClick={() => handleDiscard(selected)}
-                    title="Delete plan (soft delete — click restore to recover)"
+                    title="Delete plan (soft delete, click restore to recover)"
                     aria-label="Delete plan"
                     className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
                   >
@@ -422,7 +422,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: PlansMod
                 )}
               </div>
             </div>
-            {/* Scroll container: only the body scrolls — header/actions above
+            {/* Scroll container: only the body scrolls, header/actions above
                 stay anchored. Top/bottom gradients fade content into the
                 dialog bg, same trick used by the chat transcript. Border
                 only in edit mode where the textarea needs a visible field. */}

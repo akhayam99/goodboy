@@ -1,5 +1,4 @@
-import { cn } from '@goodboy/ui';
-import { formatCost } from '../../../../features/session/agent-row-format';
+import { cn, formatUsd } from '@goodboy/ui';
 
 export interface CostBadgeProps {
   readonly value: number;
@@ -8,7 +7,7 @@ export interface CostBadgeProps {
 }
 
 export function CostBadge({ value, className, title }: CostBadgeProps) {
-  const formatted = formatCost(value);
+  const formatted = formatUsd(value);
   const split = splitDollarsCents(formatted);
   return (
     <span className={cn('inline-flex items-baseline tabular-nums', className)} title={title}>

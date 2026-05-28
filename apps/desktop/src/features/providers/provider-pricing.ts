@@ -20,7 +20,7 @@ export function getActivePricingTable(): PricingTable {
   return activeTable;
 }
 
-// Remote CDN refresh is intentionally disabled — the previous placeholder URL
+// Remote CDN refresh is intentionally disabled, the previous placeholder URL
 // (`goodboy.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
 // every boot and spammed DevTools with `Failed to load resource` 3×. The shipped
 // `data/pricing.json` is authoritative until a real CDN endpoint exists.

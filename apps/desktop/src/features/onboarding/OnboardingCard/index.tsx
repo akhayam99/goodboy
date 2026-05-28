@@ -11,7 +11,7 @@ import { useOnboardingProgress, type OnboardingProgress } from '../use-onboardin
 
 /**
  * Progressive setup checklist. Floats top-right of the chat area. The X
- * collapses it to the sidebar chip (reopenable) — it is not a permanent
+ * collapses it to the sidebar chip (reopenable), it is not a permanent
  * dismiss. When all six steps land it swaps to a one-time wrap-up; closing
  * that retires onboarding for good. Per plan section G.
  */
@@ -19,7 +19,7 @@ export function OnboardingCard() {
   const progress = useOnboardingProgress();
 
   if (progress.finished) return null;
-  // Collapsed hides the checklist — but a freshly-completed run still earns
+  // Collapsed hides the checklist, but a freshly-completed run still earns
   // its wrap-up, so the completed state ignores the collapsed flag.
   if (!progress.isDone && progress.collapsed) return null;
 
@@ -42,7 +42,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
         <button
           type="button"
           onClick={() => collapse()}
-          title="hide — reopen from the sidebar"
+          title="hide, reopen from the sidebar"
           aria-label="hide onboarding checklist"
           className="rounded-sm p-0.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
@@ -86,7 +86,7 @@ function CompletedBody() {
         </button>
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground/80">
-        Nice — you've got the hang of Goodboy. That was the last step.
+        Nice, you've got the hang of Goodboy. That was the last step.
       </p>
       <button
         type="button"
@@ -130,7 +130,7 @@ function StepRow({ title, why, done }: StepRowProps) {
 }
 
 /**
- * Compact dotted progress chip — onboarding's permanent home in the sidebar
+ * Compact dotted progress chip, onboarding's permanent home in the sidebar
  * footer. Visible until onboarding is finished; click reopens the checklist
  * card. Six dots fill as steps land.
  */
@@ -142,7 +142,7 @@ export function OnboardingChip() {
     <button
       type="button"
       onClick={() => reopen()}
-      title={`Setup — ${progress.completedCount} of ${progress.totalCount} done`}
+      title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
       aria-label="open onboarding checklist"
       className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 transition-colors hover:border-border"
     >

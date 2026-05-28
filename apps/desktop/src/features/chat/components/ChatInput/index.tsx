@@ -71,9 +71,9 @@ const RUNNING_KINDS = new Set(['starting', 'running']);
 // so the message sends normally.
 const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
-// Idle-state composer placeholder — shows the whole prefix grammar at once
+// Idle-state composer placeholder, shows the whole prefix grammar at once
 // so the user is taught every quick-action up front, not over time.
-const CHAT_PLACEHOLDER = 'Message Claude — $ scripts · ~ workflows · @ agents';
+const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
 const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
@@ -84,7 +84,7 @@ interface PendingAttachment {
   readonly id: string;
   readonly fileName: string;
   readonly mimeType: string;
-  /** `data:<mime>;base64,<…>` — drives both the composer preview and the send payload. */
+  /** `data:<mime>;base64,<…>`, drives both the composer preview and the send payload. */
   readonly dataUrl: string;
 }
 
@@ -168,6 +168,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
+  const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
   const selectedAgentName = useAppStore((s) => {
     if (!selectedAgentId) return null;
     const runs = s.sessionPhaseRuns[session.id] ?? [];
@@ -321,7 +322,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
   const onPickScript = useCallback(
     async (script: WorkspaceScript) => {
       if (!sessionWorktree) {
-        showToast('warning', `${script.name} — open a session worktree to run scripts`);
+        showToast('warning', `${script.name}, open a session worktree to run scripts`);
         return;
       }
       const seq = ++runSeqRef.current;
@@ -402,7 +403,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
       return buildWorkflowActions(eligible, (workflow) => void onPickWorkflow(workflow));
     }
     if (symbol === '@') {
-      return buildAgentActions(sessionAgents, onSwitchAgent, () => void onSpawnAgent());
+      return buildAgentActions(
+        sessionAgents,
+        sessionAgentKindOverrides,
+        onSwitchAgent,
+        () => void onSpawnAgent(),
+      );
     }
     if (symbol === '/' && WORKSPACE_FEATURES.skills) {
       return buildSkillActions(workspaceSkills, onPickSkill);
@@ -414,6 +420,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     workspaceScripts,
     workspaceWorkflows,
     sessionAgents,
+    sessionAgentKindOverrides,
     workspaceSkills,
     onPickScript,
     onPickWorkflow,
@@ -550,6 +557,12 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     setSelectedModel(id);
   };
 
+  const onResetTurnOverride = () => {
+    if (!allowOverride || isRunning) return;
+    setSelectedProvider(null);
+    setSelectedModel(null);
+  };
+
   const dispatchTurn = useCallback(
     async (
       content: string,
@@ -674,7 +687,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     try {
       await spawnAgent(session.id, { kindOverride: target });
     } catch {
-      // ignore — user will see standard error path elsewhere
+      // ignore, user will see standard error path elsewhere
     }
   };
 
@@ -889,7 +902,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
 
-  // Script results are session-scoped — drop them when the session changes.
+  // Script results are session-scoped, drop them when the session changes.
   useEffect(() => {
     setScriptResult(null);
   }, [session.id]);
@@ -936,7 +949,7 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
 
   // Priority-ranked suggestions, folded into one stack so a pile of nudges
   // can't shove the composer below the fold (plan §D.1). Order: plan-ready >
-  // scope-mismatch > right-size. RoutingIndicator stays outside — it's a
+  // scope-mismatch > right-size. RoutingIndicator stays outside, it's a
   // status line, not an action card.
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
   if (sessionNudge?.kind === 'plan-ready' && session.workflowIds.length === 0) {
@@ -1172,10 +1185,13 @@ export function ChatInput({ session, providerDisconnected = false }: ChatInputPr
                 connectedProviders={connectedProviderIds}
                 disabled={!allowOverride || isRunning}
                 disabledTitle={overrideDisabledTitle}
+                defaultProvider={defaultProvider}
+                defaultModel={defaultModel}
                 onSelectProvider={onSelectProvider}
                 onSelectModel={onSelectModel}
                 onSelectEffort={setEffort}
                 onSelectVerbosity={setVerbosity}
+                onResetToDefault={onResetTurnOverride}
               />
             </div>
           </div>

@@ -6,7 +6,7 @@ import { CursorAdapter } from './adapter';
 // To run: CURSOR_INTEGRATION=1 pnpm -w test --filter @goodboy/core
 const enabled = process.env['CURSOR_INTEGRATION'] === '1';
 
-describe.skipIf(!enabled)('CursorAdapter — integration (requires cursor-agent + auth)', () => {
+describe.skipIf(!enabled)('CursorAdapter, integration (requires cursor-agent + auth)', () => {
   it('detect() reports cursor-agent as available', async () => {
     const adapter = new CursorAdapter();
     const result = await adapter.detect();

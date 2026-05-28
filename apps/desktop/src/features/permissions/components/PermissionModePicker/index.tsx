@@ -73,6 +73,12 @@ export function PermissionModePicker({ session }: PermissionModePickerProps) {
     };
   }, [open]);
 
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener('goodboy:open-permission-picker', handler);
+    return () => window.removeEventListener('goodboy:open-permission-picker', handler);
+  }, []);
+
   const onPick = (mode: ClaudePermissionMode) => {
     void setSessionPermissionMode(session.id, mode);
     setOpen(false);

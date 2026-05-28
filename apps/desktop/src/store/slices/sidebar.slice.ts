@@ -1,4 +1,4 @@
-import { invokeWorkspacesWithUnread } from '../../features/phases/phases';
+import { invokeWorkspacesWithUnread } from '../../features/workflows/workflows';
 import type { TurnState, ProviderId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../store';
 

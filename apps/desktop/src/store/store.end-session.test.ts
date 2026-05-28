@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
@@ -119,13 +119,13 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../shared/lib/repo', () => ({
@@ -176,7 +176,7 @@ async function importStore() {
   return mod.useAppStore;
 }
 
-describe('endSession — happy path', () => {
+describe('endSession, happy path', () => {
   beforeEach(() => {
     removeWorktreeSpy.mockReset();
     deleteWorktreesForSessionSpy.mockReset();
@@ -282,7 +282,7 @@ describe('endSession — happy path', () => {
   });
 });
 
-describe('endSession — Tauri error propagation (#242)', () => {
+describe('endSession, Tauri error propagation (#242)', () => {
   beforeEach(() => {
     removeWorktreeSpy.mockReset();
     deleteWorktreesForSessionSpy.mockReset();
@@ -299,7 +299,7 @@ describe('endSession — Tauri error propagation (#242)', () => {
   });
 
   it('continues ending session when removeWorktree throws (worktree may be gone)', async () => {
-    // removeWorktree failure must not abort endSession — it's best-effort.
+    // removeWorktree failure must not abort endSession, it's best-effort.
     removeWorktreeSpy.mockRejectedValue(new Error('worktree not found'));
 
     const useAppStore = await importStore();
@@ -331,7 +331,7 @@ describe('endSession — Tauri error propagation (#242)', () => {
       ],
     });
 
-    // endSession should throw — the caller (EndSessionDialog) will handle it
+    // endSession should throw, the caller (EndSessionDialog) will handle it
     await expect(useAppStore.getState().endSession(SESSION_ID)).rejects.toMatchObject({
       message: 'database is locked',
     });

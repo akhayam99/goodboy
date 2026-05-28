@@ -14,11 +14,11 @@ import type {
 } from '@goodboy/types';
 import type { MergeResult } from '@goodboy/core';
 
-// Module mocks — hoisted before subject imports.
-// Tauri invoke — stubbed per-test.
+// Module mocks, hoisted before subject imports.
+// Tauri invoke, stubbed per-test.
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-// Tauri event — captures listener so tests can drive envelopes.
+// Tauri event, captures listener so tests can drive envelopes.
 type TurnEnvelope = {
   runId: string;
   type: 'line' | 'end' | 'error';
@@ -44,17 +44,17 @@ const phaseRunInsertSpy = vi.fn();
 const phaseRunUpdateStatusSpy = vi.fn();
 const phaseRunListSpy = vi.fn();
 
-vi.mock('../features/phases/phases', () => ({
-  invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
-  invokeParallelPhaseGroupUpdateCompletedAt: (id: string, at: string) =>
+vi.mock('../features/workflows/workflows', () => ({
+  invokeParallelGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
+  invokeParallelGroupUpdateCompletedAt: (id: string, at: string) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
-  invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: string, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-  invokePhaseRunList: (sid: string) => phaseRunListSpy(sid),
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunDelete: vi.fn(),
+  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
+  invokeAgentUpdateStatus: (id: string, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
+  invokeAgentList: (sid: string) => phaseRunListSpy(sid),
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentDelete: vi.fn(),
 }));
 
 // Turn invocations.
@@ -69,7 +69,7 @@ vi.mock('../features/chat/turn', () => ({
   isAuthErrorMessage: () => false,
 }));
 
-// Core scheduler — we keep the REAL fanOut/awaitMerge/cancelGroup so the
+// Core scheduler, we keep the REAL fanOut/awaitMerge/cancelGroup so the
 // orchestration logic is exercised end-to-end. Only the Tauri surface is mocked.
 // detectConflicts + resolveConflicts stay real too.
 
@@ -159,7 +159,7 @@ function makeInputs(
   };
 }
 
-// Effects stub — captures appended events.
+// Effects stub, captures appended events.
 function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } {
   const events: TurnEvent[] = [];
   return {
@@ -212,7 +212,7 @@ function wirePhaseRunSpies(
   phaseRunListSpy.mockImplementation(async () => insertedPhaseRuns.slice());
 }
 
-describe('parallel e2e — fan-out/fan-in', () => {
+describe('parallel e2e, fan-out/fan-in', () => {
   beforeEach(() => {
     parallelPhaseGroupCreateSpy.mockReset();
     parallelPhaseGroupUpdateCompletedAtSpy.mockReset();
@@ -266,7 +266,7 @@ describe('parallel e2e — fan-out/fan-in', () => {
 
     const [idA, idB, idC] = spawnedRunIds as [string, string, string];
 
-    // Emit some text events from each run — distinct deltas per lane.
+    // Emit some text events from each run, distinct deltas per lane.
     emitLine(idA, 'run-a output');
     emitLine(idB, 'run-b output');
     emitLine(idC, 'run-c output');

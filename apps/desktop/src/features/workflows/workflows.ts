@@ -18,7 +18,7 @@ import type {
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 
-interface RawPhaseDefinitionRow {
+interface RawWorkflowStepRow {
   readonly id: string;
   readonly workflowId: string;
   readonly ordinal: number;
@@ -28,17 +28,17 @@ interface RawPhaseDefinitionRow {
   readonly modelOverride: string | null;
 }
 
-interface RawPhaseTemplateRow {
+interface RawWorkflowRow {
   readonly id: string;
   readonly workspaceId: string;
   readonly name: string;
   readonly description: string;
-  readonly steps: ReadonlyArray<RawPhaseDefinitionRow>;
+  readonly steps: ReadonlyArray<RawWorkflowStepRow>;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
-interface RawPhaseRunRow {
+interface RawAgentRow {
   readonly id: string;
   readonly sessionId: string;
   readonly stepId: string | null;
@@ -56,7 +56,7 @@ interface RawPhaseRunRow {
   readonly verbosity: string | null;
 }
 
-function rowToDefinition(row: RawPhaseDefinitionRow): Step {
+function rowToStep(row: RawWorkflowStepRow): Step {
   return {
     id: row.id as StepId,
     workflowId: row.workflowId as WorkflowId,
@@ -68,19 +68,19 @@ function rowToDefinition(row: RawPhaseDefinitionRow): Step {
   };
 }
 
-function rowToTemplate(row: RawPhaseTemplateRow): Workflow {
+function rowToWorkflow(row: RawWorkflowRow): Workflow {
   return {
     id: row.id as WorkflowId,
     workspaceId: row.workspaceId as WorkspaceId,
     name: row.name,
     description: row.description,
-    steps: row.steps.map(rowToDefinition),
+    steps: row.steps.map(rowToStep),
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
   };
 }
 
-function rowToPhaseRun(row: RawPhaseRunRow): Agent {
+function rowToAgent(row: RawAgentRow): Agent {
   return {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
@@ -101,12 +101,12 @@ function rowToPhaseRun(row: RawPhaseRunRow): Agent {
 }
 
 // Phase template commands (#155).
-export async function invokePhaseTemplateList(workspaceId: WorkspaceId): Promise<Workflow[]> {
-  const rows = await invoke<RawPhaseTemplateRow[]>('workflow_list', { workspaceId });
-  return rows.map(rowToTemplate);
+export async function invokeWorkflowList(workspaceId: WorkspaceId): Promise<Workflow[]> {
+  const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId });
+  return rows.map(rowToWorkflow);
 }
 
-export interface PhaseDefinitionUpsertArgs {
+export interface WorkflowStepUpsertArgs {
   readonly id?: StepId;
   readonly ordinal: number;
   readonly name: string;
@@ -115,16 +115,16 @@ export interface PhaseDefinitionUpsertArgs {
   readonly modelOverride?: string;
 }
 
-export interface PhaseTemplateUpsertArgs {
+export interface WorkflowUpsertArgs {
   readonly id?: WorkflowId;
   readonly workspaceId: WorkspaceId;
   readonly name: string;
   readonly description: string;
-  readonly steps: ReadonlyArray<PhaseDefinitionUpsertArgs>;
+  readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
 }
 
-export async function invokePhaseTemplateUpsert(args: PhaseTemplateUpsertArgs): Promise<Workflow> {
-  const row = await invoke<RawPhaseTemplateRow>('workflow_upsert', {
+export async function invokeWorkflowUpsert(args: WorkflowUpsertArgs): Promise<Workflow> {
+  const row = await invoke<RawWorkflowRow>('workflow_upsert', {
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
@@ -140,20 +140,20 @@ export async function invokePhaseTemplateUpsert(args: PhaseTemplateUpsertArgs): 
       })),
     },
   });
-  return rowToTemplate(row);
+  return rowToWorkflow(row);
 }
 
-export async function invokePhaseTemplateDelete(id: WorkflowId): Promise<void> {
+export async function invokeWorkflowDelete(id: WorkflowId): Promise<void> {
   return invoke<void>('workflow_delete', { id });
 }
 
 // Phase run commands (#156).
-export async function invokePhaseRunList(sessionId: SessionId): Promise<Agent[]> {
-  const rows = await invoke<RawPhaseRunRow[]>('agent_list_for_session', { sessionId });
-  return rows.map(rowToPhaseRun);
+export async function invokeAgentList(sessionId: SessionId): Promise<Agent[]> {
+  const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
+  return rows.map(rowToAgent);
 }
 
-export interface PhaseRunInsertArgs {
+export interface AgentInsertArgs {
   readonly id?: AgentId;
   readonly sessionId: SessionId;
   readonly stepId?: StepId;
@@ -168,8 +168,8 @@ export interface PhaseRunInsertArgs {
   readonly verbosity?: VerbosityLevel;
 }
 
-export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Agent> {
-  const row = await invoke<RawPhaseRunRow>('agent_insert', {
+export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
+  const row = await invoke<RawAgentRow>('agent_insert', {
     input: {
       id: run.id ?? null,
       sessionId: run.sessionId,
@@ -185,7 +185,7 @@ export async function invokePhaseRunInsert(run: PhaseRunInsertArgs): Promise<Age
       verbosity: run.verbosity ?? null,
     },
   });
-  return rowToPhaseRun(row);
+  return rowToAgent(row);
 }
 
 export async function invokeAgentSetKind(id: AgentId, kind: string | null): Promise<void> {
@@ -199,7 +199,7 @@ export async function invokeAgentSetVerbosity(
   return invoke<void>('agent_set_verbosity', { id, verbosity });
 }
 
-export interface PhaseRunUpdateFields {
+export interface AgentUpdateFields {
   readonly status: AgentStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
@@ -207,11 +207,11 @@ export interface PhaseRunUpdateFields {
   readonly completedAt?: IsoDateTime;
 }
 
-export async function invokePhaseRunUpdateStatus(
+export async function invokeAgentUpdateStatus(
   id: AgentId,
-  fields: PhaseRunUpdateFields,
+  fields: AgentUpdateFields,
 ): Promise<Agent> {
-  const row = await invoke<RawPhaseRunRow>('agent_update_status', {
+  const row = await invoke<RawAgentRow>('agent_update_status', {
     input: {
       id,
       status: fields.status,
@@ -221,10 +221,10 @@ export async function invokePhaseRunUpdateStatus(
       completedAt: fields.completedAt ?? null,
     },
   });
-  return rowToPhaseRun(row);
+  return rowToAgent(row);
 }
 
-export async function invokeSessionSetProviderSessionId(
+export async function invokeAgentSetProviderSessionId(
   id: AgentId,
   providerSessionId: string,
 ): Promise<void> {
@@ -234,7 +234,7 @@ export async function invokeSessionSetProviderSessionId(
   });
 }
 
-export async function invokeSessionMarkViewed(id: AgentId, at: IsoDateTime): Promise<void> {
+export async function invokeAgentMarkViewed(id: AgentId, at: IsoDateTime): Promise<void> {
   await invoke<void>('agent_mark_viewed', { id, at });
 }
 
@@ -244,7 +244,7 @@ export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<Worksp
 }
 
 // Parallel phase group commands (#207).
-interface RawParallelPhaseGroupRow {
+interface RawParallelGroupRow {
   readonly id: string;
   readonly sessionId: string;
   readonly ordinal: number;
@@ -253,7 +253,7 @@ interface RawParallelPhaseGroupRow {
   readonly completedAt: string | null;
 }
 
-function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelGroup {
+function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
   return {
     id: row.id as ParallelGroupId,
     sessionId: row.sessionId as SessionId,
@@ -264,7 +264,7 @@ function rowToParallelPhaseGroup(row: RawParallelPhaseGroupRow): ParallelGroup {
   };
 }
 
-export interface ParallelPhaseGroupCreateArgs {
+export interface ParallelGroupCreateArgs {
   readonly id?: ParallelGroupId;
   readonly sessionId: SessionId;
   readonly ordinal: number;
@@ -272,10 +272,10 @@ export interface ParallelPhaseGroupCreateArgs {
   readonly createdAt?: IsoDateTime;
 }
 
-export async function invokeParallelPhaseGroupCreate(
-  args: ParallelPhaseGroupCreateArgs,
+export async function invokeParallelGroupCreate(
+  args: ParallelGroupCreateArgs,
 ): Promise<ParallelGroup> {
-  const row = await invoke<RawParallelPhaseGroupRow>('parallel_group_create', {
+  const row = await invoke<RawParallelGroupRow>('parallel_group_create', {
     input: {
       id: args.id ?? null,
       sessionId: args.sessionId,
@@ -284,16 +284,16 @@ export async function invokeParallelPhaseGroupCreate(
       createdAt: args.createdAt ?? null,
     },
   });
-  return rowToParallelPhaseGroup(row);
+  return rowToParallelGroup(row);
 }
 
-export async function invokeParallelPhaseGroupUpdateCompletedAt(
+export async function invokeParallelGroupUpdateCompletedAt(
   id: ParallelGroupId,
   completedAt: IsoDateTime,
 ): Promise<ParallelGroup> {
-  const row = await invoke<RawParallelPhaseGroupRow>('parallel_group_update_completed_at', {
+  const row = await invoke<RawParallelGroupRow>('parallel_group_update_completed_at', {
     id,
     completedAt,
   });
-  return rowToParallelPhaseGroup(row);
+  return rowToParallelGroup(row);
 }

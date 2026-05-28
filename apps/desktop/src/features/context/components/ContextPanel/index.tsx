@@ -121,7 +121,7 @@ export function ContextPanel({
 
   // Files + GitHub data lifted to the panel so the tab badges stay live
   // regardless of the active tab, and the PR / diff-comment fetches fire
-  // even before the user visits those tabs — matching the behaviour of the
+  // even before the user visits those tabs, matching the behaviour of the
   // old SessionMetaFooter, which always rendered for the current session.
   const filesTouched = useFilesTouched(session.id, isActive);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
@@ -154,7 +154,7 @@ export function ContextPanel({
   // worktree, moving HEAD without going through changeSessionBranch, which
   // leaves the sidebar footer chip on a stale branch. Read the real branch off
   // worktree_status and write it back. Re-runs after each turn (summarizer
-  // tick) and on file-count changes — the moments a branch switch is likely.
+  // tick) and on file-count changes, the moments a branch switch is likely.
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   useEffect(() => {
     if (!isActive || !workingDir) return;
@@ -204,7 +204,7 @@ export function ContextPanel({
     [],
   );
 
-  // Count badges on the tab strip — at-a-glance counts beat hunting through.
+  // Count badges on the tab strip, at-a-glance counts beat hunting through.
   const plansBadge = plans.length > 0 ? plans.length : null;
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const filesBadge = filesTouched.count > 0 ? filesTouched.count : null;
@@ -279,7 +279,7 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* Tab content — Context / Plans / Questions / Files / GitHub / Terminal. Open
+        {/* Tab content, Context / Plans / Questions / Files / GitHub / Terminal. Open
             Questions is pinned across every tab via the sticky footer below.
             Terminal is always mounted (visibility toggled) so output is not
             lost when the user switches away mid-run. */}
@@ -336,9 +336,8 @@ export function ContextPanel({
 
         <Divider />
 
-        {/* Sticky footer — always-visible open questions entry point.
-            New-style: compact nav chip opens the Questions tab.
-            Legacy: falls back to the raw ContextSlot row. */}
+        {/* Sticky footer. Open questions are owned by the Questions tab now,
+            the footer is just a one-click entry point when any are unresolved. */}
         {questions.length > 0 ? (
           <button
             type="button"
@@ -353,19 +352,6 @@ export function ContextPanel({
             </span>
             <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
           </button>
-        ) : slotsByKey.get('open_questions')?.value ? (
-          <div className="flex shrink-0 flex-col gap-2.5 bg-subtle/30 px-4 py-3">
-            <ul className="flex flex-col">
-              <SlotRow
-                sessionId={session.id}
-                slotKey="open_questions"
-                slot={slotsByKey.get('open_questions')}
-                loading={loading.slots}
-                isSummarizing={summarizer.status === 'running'}
-                onCommit={(value) => void upsertSessionSlot(session.id, 'open_questions', value)}
-              />
-            </ul>
-          </div>
         ) : null}
       </div>
     </>
@@ -532,7 +518,7 @@ function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
             <button
               type="button"
               onClick={() => openModal(plan.id)}
-              title={`Open plan ${idx + 1} — ${plan.title}`}
+              title={`Open plan ${idx + 1}, ${plan.title}`}
               className="group flex w-full items-start gap-2 rounded-lg bg-muted/30 p-2.5 text-left ring-1 ring-border-soft transition-colors hover:bg-muted/60"
             >
               <span
@@ -733,7 +719,7 @@ function GithubTabContent({ sessionId, branch }: { sessionId: SessionId; branch:
 
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
-  // Branch is needed to even kick off a fetch — without one fall through to
+  // Branch is needed to even kick off a fetch, without one fall through to
   // the "no PR" state instead of pinning the card to "loading…".
   const prLoading = branch
     ? !github || github.loading || (github.fetchedAt === null && !github.error)
@@ -775,7 +761,7 @@ function GithubTabContent({ sessionId, branch }: { sessionId: SessionId; branch:
             </button>
           </div>
           <p className="text-[11px] leading-snug text-muted-foreground/70">
-            Open a PR from this session's branch — its review state, CI, and comments land here.
+            Open a PR from this session's branch, its review state, CI, and comments land here.
           </p>
         </div>
       ) : (
@@ -1019,7 +1005,7 @@ function SlotRow({
   // Per-slot skeleton: while the slots fetch is still in flight and this
   // particular slot hasn't materialized yet, show a placeholder. Sibling
   // slots that already arrived render their content independently. Must
-  // come after all hook calls — React requires a stable hook order across
+  // come after all hook calls, React requires a stable hook order across
   // renders, and slot can flip between undefined/defined on workspace switch.
   if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
 
@@ -1054,7 +1040,7 @@ function SlotRow({
 
   // Empty slot → blends into the panel bg (no surface). Slot with content →
   // a step brighter so it reads as "active / has signal." Same rule for every
-  // slot regardless of read-only — emptiness is the only switch.
+  // slot regardless of read-only, emptiness is the only switch.
   const inactive = !hasValue;
   const ringClass = inactive
     ? 'ring-border-soft/30'
@@ -1096,7 +1082,7 @@ function SlotRow({
           ) : null}
         </div>
         {/* History first, then chevron at the far right. The history button
-            stays hidden until we already have entries in cache — listing it
+            stays hidden until we already have entries in cache, listing it
             without loading would force a per-slot fetch on every render. */}
         {history.length > 0 ? (
           <button
@@ -1333,7 +1319,7 @@ function SummarizerBadge({
   const retrySummarizer = useAppStore((s) => s.retrySummarizer);
   const [retrying, setRetrying] = useState(false);
 
-  // Reset the retry-spin once the run actually kicks off — the store flips
+  // Reset the retry-spin once the run actually kicks off, the store flips
   // status to 'running' synchronously, but the icon-only spin is what tells
   // the user their click was registered.
   useEffect(() => {
@@ -1356,7 +1342,7 @@ function SummarizerBadge({
 
   // Running state: small spinner glyph next to the cost pill. Replaces the
   // earlier full-panel spin-border, which forced a 400×800px composite layer
-  // with a conic-gradient + mask-composite animation — the heaviest CSS shape
+  // with a conic-gradient + mask-composite animation, the heaviest CSS shape
   // possible on WKWebView. With 5 keep-alive ContextPanels each potentially
   // wearing one, the GPU compositor stalled for 200-300ms during cursor
   // movement (verified via Web Inspector perf trace). A 10px Loader2 is one
@@ -1383,7 +1369,7 @@ function SummarizerBadge({
             retrySummarizer(sessionId);
           }}
           disabled={!canRetry}
-          title={canRetry ? `${errorTitle} — click to retry` : errorTitle}
+          title={canRetry ? `${errorTitle}, click to retry` : errorTitle}
           aria-label={canRetry ? 'retry summarizer' : 'summarizer failed'}
           className={cn(
             'inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-2xs uppercase tracking-wide text-danger transition-colors',
@@ -1438,7 +1424,7 @@ function PlansEmpty() {
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground/70">
         No plans yet. Spawn a <span className="font-medium text-foreground">Plan</span> agent and
-        ask it to map the work — its output lands here, ready to feed an Implement agent.
+        ask it to map the work, its output lands here, ready to feed an Implement agent.
       </p>
     </section>
   );

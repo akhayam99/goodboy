@@ -66,7 +66,7 @@ export type TranscriptItem =
 /**
  * Returns distinct runIds from events, excluding the sentinel 'history' value
  * used for messages loaded from the DB. Two or more runIds indicates a parallel
- * phase group is active — the caller decides whether to show split-view.
+ * phase group is active, the caller decides whether to show split-view.
  */
 export function detectParallelRunIds(
   events: ReadonlyArray<TurnEvent>,

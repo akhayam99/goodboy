@@ -134,7 +134,7 @@ export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
             </div>
             <p className="text-2xs leading-relaxed text-muted-foreground">
               Read-only scope is enough. The token is stored encrypted in your operating system
-              keychain and never leaves this machine — Goodboy reads it from Rust only.
+              keychain and never leaves this machine, Goodboy reads it from Rust only.
             </p>
           </>
         )}

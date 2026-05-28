@@ -15,7 +15,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — hoisted before importing the store.
+// Module mocks, hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
 vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
@@ -47,7 +47,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-// Listener mock — captures the registered handler so tests can drive 'end' events.
+// Listener mock, captures the registered handler so tests can drive 'end' events.
 const listenHandlers: Array<(payload: unknown) => void> = [];
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async (_event: string, cb: (e: { payload: unknown }) => void) => {
@@ -143,15 +143,15 @@ const phaseRunListSpy = vi.fn<(sid: SessionId) => Promise<ReadonlyArray<Agent>>>
 const parallelPhaseGroupCreateSpy = vi.fn();
 const parallelPhaseGroupUpdateCompletedAtSpy = vi.fn();
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: (sid: SessionId) => phaseRunListSpy(sid),
-  invokePhaseRunInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokePhaseRunUpdateStatus: (id: AgentId, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-  invokeParallelPhaseGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
-  invokeParallelPhaseGroupUpdateCompletedAt: (id: ParallelGroupId, at: IsoDateTime) =>
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: (sid: SessionId) => phaseRunListSpy(sid),
+  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
+  invokeAgentUpdateStatus: (id: AgentId, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
+  invokeParallelGroupCreate: (args: unknown) => parallelPhaseGroupCreateSpy(args),
+  invokeParallelGroupUpdateCompletedAt: (id: ParallelGroupId, at: IsoDateTime) =>
     parallelPhaseGroupUpdateCompletedAtSpy(id, at),
 }));
 
@@ -278,7 +278,7 @@ function setupSession(
   });
 }
 
-describe('sendTurn — parallel agents branch', () => {
+describe('sendTurn, parallel agents branch', () => {
   beforeEach(() => {
     agentFeaturesMock.parallelAgents = false;
     agentFeaturesMock.maxParallelism = 4;

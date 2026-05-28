@@ -36,7 +36,7 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
   anthropic: 'https://docs.claude.com/en/docs/claude-code/overview',
-  // cursor-agent (CLI), NOT cursor IDE — point at the agent CLI install docs.
+  // cursor-agent (CLI), NOT cursor IDE, point at the agent CLI install docs.
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
 };

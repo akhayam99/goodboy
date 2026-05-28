@@ -13,7 +13,7 @@ const running: TurnState = { kind: 'running', runId, startedAt: at };
 const errored: TurnState = { kind: 'error', message: 'boom', failedAt: at };
 const ended: TurnState = { kind: 'ended', endedAt: at };
 
-describe('turnReducer — start', () => {
+describe('turnReducer, start', () => {
   it('draft → starting', () => {
     expect(turnReducer(draft, { kind: 'start', at })).toEqual({
       kind: 'starting',
@@ -26,7 +26,7 @@ describe('turnReducer — start', () => {
   });
 });
 
-describe('turnReducer — send', () => {
+describe('turnReducer, send', () => {
   it('starting → running', () => {
     expect(turnReducer(starting, { kind: 'send', runId, at: later })).toEqual({
       kind: 'running',
@@ -50,7 +50,7 @@ describe('turnReducer — send', () => {
   });
 });
 
-describe('turnReducer — receive_event', () => {
+describe('turnReducer, receive_event', () => {
   it('done → idle', () => {
     const event: TurnEvent = { kind: 'done', runId, at: later };
     expect(turnReducer(running, { kind: 'receive_event', event })).toEqual({
@@ -93,7 +93,7 @@ describe('turnReducer — receive_event', () => {
   });
 });
 
-describe('turnReducer — end', () => {
+describe('turnReducer, end', () => {
   it.each([draft, starting, idle, running, errored])('%s → ended', (state) => {
     expect(turnReducer(state, { kind: 'end', at: later })).toEqual({
       kind: 'ended',
@@ -108,7 +108,7 @@ describe('turnReducer — end', () => {
   });
 });
 
-describe('turnReducer — error', () => {
+describe('turnReducer, error', () => {
   it.each([draft, starting, idle, running, errored])('%s → error', (state) => {
     expect(turnReducer(state, { kind: 'error', message: 'x', at: later })).toEqual({
       kind: 'error',
@@ -124,7 +124,7 @@ describe('turnReducer — error', () => {
   });
 });
 
-describe('turnReducer — retry', () => {
+describe('turnReducer, retry', () => {
   it('error → idle', () => {
     expect(turnReducer(errored, { kind: 'retry', at: later })).toEqual({
       kind: 'idle',
@@ -139,7 +139,7 @@ describe('turnReducer — retry', () => {
   });
 });
 
-describe('turnReducer — purity', () => {
+describe('turnReducer, purity', () => {
   it('does not mutate input state', () => {
     const state: TurnState = { kind: 'draft' };
     const event: TurnLifecycleEvent = { kind: 'start', at };

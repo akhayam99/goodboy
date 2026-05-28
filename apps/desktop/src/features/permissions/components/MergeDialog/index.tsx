@@ -5,7 +5,7 @@ import { Button, Dialog } from '@goodboy/ui';
 // Sentinel used when the user chooses to skip resolution for a file.
 // The consumer (onResolve) receives picks[file] === SKIP_SENTINEL for skipped files.
 // Skipped files are included in the picks map so callers always have a full record
-// keyed by every conflict file — no ambiguity between "skipped" and "not yet picked".
+// keyed by every conflict file, no ambiguity between "skipped" and "not yet picked".
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
 
@@ -14,14 +14,22 @@ export interface MergeConflict {
   runIds: ReadonlyArray<ProviderRunId>;
 }
 
+export interface RunMeta {
+  readonly agentName?: string;
+  readonly stepName?: string;
+}
+
 export interface MergeDialogProps {
   open: boolean;
   conflicts: ReadonlyArray<MergeConflict>;
+  /** Per-run display metadata. When supplied, each option shows the agent and
+   *  step that produced the version, not just its opaque run id. */
+  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   onResolve: (picks: Record<string, MergeResolution>) => void;
   onCancel: () => void;
 }
 
-export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialogProps) {
+export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: MergeDialogProps) {
   const [picks, setPicks] = useState<Record<string, MergeResolution>>({});
 
   const setPick = (file: string, resolution: MergeResolution) => {
@@ -46,7 +54,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
       open={open}
       onClose={handleCancel}
       title="Resolve merge conflicts"
-      description="pick the winning version for each file, or skip to leave it unresolved."
+      description="Parallel agents produced different versions of the same file. Pick the version to keep for each conflict, or skip to leave the file with the auto-merged winner."
       size="lg"
       closeOnBackdrop={false}
       footer={
@@ -60,7 +68,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
             disabled={!allResolved}
             aria-disabled={!allResolved}
           >
-            Confirm
+            Apply merge
           </Button>
         </>
       }
@@ -73,6 +81,7 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
             <li key={conflict.file}>
               <ConflictRow
                 conflict={conflict}
+                runMeta={runMeta}
                 pick={picks[conflict.file]}
                 onPick={(resolution) => setPick(conflict.file, resolution)}
               />
@@ -80,28 +89,22 @@ export function MergeDialog({ open, conflicts, onResolve, onCancel }: MergeDialo
           ))}
         </ul>
       )}
-
-      {/* diff preview: [follow-on issue, not blocking merge]
-          Full side-by-side diff rendering is deferred — see #213 (or next follow-on).
-          The scheduler MergeResult payload does not yet carry raw diff hunks;
-          that wire-up lands in I1 #212. When available, replace this placeholder
-          with a per-conflict <DiffPreview> component rendered below the radio list. */}
-      {conflicts.length > 0 ? (
-        <p className="text-xs text-muted-foreground/60 italic">
-          diff preview: [follow-on issue, not blocking merge]
-        </p>
-      ) : null}
     </Dialog>
   );
 }
 
 interface ConflictRowProps {
   conflict: MergeConflict;
+  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   pick: MergeResolution | undefined;
   onPick: (resolution: MergeResolution) => void;
 }
 
-function ConflictRow({ conflict, pick, onPick }: ConflictRowProps) {
+function shortRunId(runId: ProviderRunId): string {
+  return runId.slice(-8);
+}
+
+function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
   const groupName = `conflict-${conflict.file}`;
 
   return (
@@ -112,11 +115,12 @@ function ConflictRow({ conflict, pick, onPick }: ConflictRowProps) {
       <ul role="radiogroup" aria-label={conflict.file} className="flex flex-col gap-1 pl-1">
         {conflict.runIds.map((runId, idx) => {
           const id = `${groupName}-run-${idx}`;
+          const meta = runMeta?.get(runId);
           return (
             <li key={runId}>
               <label
                 htmlFor={id}
-                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-muted"
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
               >
                 <input
                   id={id}
@@ -125,9 +129,23 @@ function ConflictRow({ conflict, pick, onPick }: ConflictRowProps) {
                   value={runId}
                   checked={pick === runId}
                   onChange={() => onPick(runId)}
-                  className="accent-primary"
+                  className="mt-0.5 accent-primary"
                 />
-                <span className="font-mono text-foreground">{runId}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-medium text-foreground">
+                      {meta?.agentName ?? `run ${idx + 1}`}
+                    </span>
+                    {meta?.stepName ? (
+                      <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary">
+                        {meta.stepName}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="font-mono text-[10px] text-muted-foreground/70">
+                    run …{shortRunId(runId)}
+                  </span>
+                </span>
               </label>
             </li>
           );
@@ -146,7 +164,7 @@ function ConflictRow({ conflict, pick, onPick }: ConflictRowProps) {
               onChange={() => onPick(SKIP_SENTINEL)}
               className="accent-primary"
             />
-            <span className="text-muted-foreground">skip (keep winner's version)</span>
+            <span className="text-muted-foreground">skip (keep the auto-merged winner)</span>
           </label>
         </li>
       </ul>

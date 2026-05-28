@@ -164,7 +164,7 @@ export function TerminalPanel({ sessionId, isActive, cwd }: TerminalPanelProps) 
 
     listenTerminalExit((payload) => {
       if (payload.sessionId !== sessionId) return;
-      if (mounted) term.writeln('\r\n\x1B[90m[shell exited — click ↻ to restart]\x1B[0m');
+      if (mounted) term.writeln('\r\n\x1B[90m[shell exited, click ↻ to restart]\x1B[0m');
     }).then((fn) => {
       if (mounted) unlistenExit = fn;
       else fn();

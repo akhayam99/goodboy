@@ -9,17 +9,17 @@ interface AutoRunToggleProps {
 
 /**
  * Compact icon toggle for the per-session autorun flag. Only meaningful when
- * the session has a workflow attached — without one the autorun loop has
+ * the session has a workflow attached, without one the autorun loop has
  * nothing to step through, so the control disables and dims.
  */
 export function AutoRunToggle({ session }: AutoRunToggleProps) {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const hasWorkflow = session.workflowIds.length > 0;
   const tooltip = !hasWorkflow
-    ? 'no workflow configured — auto-run unavailable'
+    ? 'no workflow configured, auto-run unavailable'
     : session.autoRun
-      ? 'autorun on — click to pause'
-      : 'autorun off — click to enable';
+      ? 'autorun on, click to pause'
+      : 'autorun off, click to enable';
   const ariaLabel = !hasWorkflow
     ? 'autorun unavailable'
     : session.autoRun

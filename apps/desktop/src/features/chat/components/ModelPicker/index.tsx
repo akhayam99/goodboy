@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import {
@@ -40,10 +41,15 @@ export interface ModelPickerProps {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly disabledTitle?: string;
+  /** Session-persistent defaults. When the effective provider/model differs, the
+   *  chip switches to "override" styling and exposes a reset affordance. */
+  readonly defaultProvider: ProviderId;
+  readonly defaultModel: string;
   readonly onSelectProvider: (id: ProviderId) => void;
   readonly onSelectModel: (id: string) => void;
   readonly onSelectEffort: (level: EffortLevel) => void;
   readonly onSelectVerbosity: (level: VerbosityLevel) => void;
+  readonly onResetToDefault: () => void;
 }
 
 export function ModelPicker({
@@ -56,13 +62,17 @@ export function ModelPicker({
   connectedProviders,
   disabled,
   disabledTitle,
+  defaultProvider,
+  defaultModel,
   onSelectProvider,
   onSelectModel,
   onSelectEffort,
   onSelectVerbosity,
+  onResetToDefault,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isOverride = provider !== defaultProvider || model !== defaultModel;
 
   useEffect(() => {
     if (!open) return;
@@ -79,6 +89,14 @@ export function ModelPicker({
       window.removeEventListener('keydown', onEsc);
     };
   }, [open]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (!disabled) setOpen(true);
+    };
+    window.addEventListener('goodboy:open-model-picker', handler);
+    return () => window.removeEventListener('goodboy:open-model-picker', handler);
+  }, [disabled]);
 
   const effortLevels = modelEffortLevels(model);
   const showEffort = provider === 'anthropic' && effortLevels !== null;
@@ -107,7 +125,21 @@ export function ModelPicker({
   }, [models]);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative flex items-center gap-1" ref={ref}>
+      {isOverride && !disabled ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onResetToDefault();
+          }}
+          title={`reset to session default (${PROVIDER_LABEL[defaultProvider]} · ${modelLabel(defaultModel)})`}
+          aria-label="reset model override"
+          className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <RotateCcw size={10} aria-hidden />
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => !disabled && setOpen((v) => !v)}
@@ -115,13 +147,19 @@ export function ModelPicker({
         title={
           disabled
             ? disabledTitle
-            : `Sending to ${PROVIDER_LABEL[provider]} · ${modelLabel(model)}${showEffort ? ` · ${EFFORT_LABEL[effort]} effort` : ''} · ${VERBOSITY_LABEL[verbosity]} replies. Click to change.`
+            : isOverride
+              ? `Override: ${PROVIDER_LABEL[provider]} · ${modelLabel(model)}${showEffort ? ` · ${EFFORT_LABEL[effort]} effort` : ''} · ${VERBOSITY_LABEL[verbosity]} replies. Click to change. Session default: ${PROVIDER_LABEL[defaultProvider]} · ${modelLabel(defaultModel)}.`
+              : `Sending to ${PROVIDER_LABEL[provider]} · ${modelLabel(model)}${showEffort ? ` · ${EFFORT_LABEL[effort]} effort` : ''} · ${VERBOSITY_LABEL[verbosity]} replies. Click to change.`
         }
         aria-haspopup="dialog"
         aria-expanded={open}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-0.5 text-xs transition-colors hover:bg-muted',
-          disabled && 'cursor-not-allowed opacity-60',
+          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs transition-colors',
+          disabled
+            ? 'cursor-not-allowed bg-subtle opacity-60'
+            : isOverride
+              ? 'bg-warning/15 ring-1 ring-warning/30 hover:bg-warning/25'
+              : 'bg-subtle hover:bg-muted',
         )}
       >
         <span className={cn('font-medium', PROVIDER_TEXT[provider])}>
@@ -155,6 +193,34 @@ export function ModelPicker({
           aria-label="model picker"
           className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-2 text-xs shadow-lg ring-1 ring-border-soft"
         >
+          {/* Session default banner: shows what each new turn falls back to when
+              no override is active. Surfaces "override active" status without
+              hunting through chip styles. */}
+          <div
+            className={cn(
+              'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-[10px] leading-relaxed',
+              isOverride ? 'bg-warning/10 text-warning' : 'bg-muted/40 text-muted-foreground',
+            )}
+          >
+            <span className="font-semibold uppercase tracking-wide">
+              {isOverride ? 'override' : 'session default'}
+            </span>
+            <span className="flex-1">
+              {isOverride
+                ? `next turn uses ${PROVIDER_LABEL[provider]} · ${modelLabel(model)}`
+                : `${PROVIDER_LABEL[defaultProvider]} · ${modelLabel(defaultModel)}`}
+            </span>
+            {isOverride ? (
+              <button
+                type="button"
+                onClick={onResetToDefault}
+                className="font-medium underline-offset-2 hover:underline"
+              >
+                reset
+              </button>
+            ) : null}
+          </div>
+
           {/* Provider */}
           <PickerSection label="Provider" hint="Which CLI agent runs your turns">
             <div className={CHIP_ROW}>
@@ -185,7 +251,7 @@ export function ModelPicker({
           </PickerSection>
           <PickerDivider />
 
-          {/* Model — family/subfamily/variant chip layout. */}
+          {/* Model, family/subfamily/variant chip layout. */}
           {[...groupedModels.entries()].map(([fam, subMap]) => {
             const subKeys = [...subMap.keys()];
             const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
@@ -235,7 +301,7 @@ export function ModelPicker({
           })}
           <PickerDivider />
 
-          {/* Effort — always visible */}
+          {/* Effort, always visible */}
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
               <div className={CHIP_ROW}>

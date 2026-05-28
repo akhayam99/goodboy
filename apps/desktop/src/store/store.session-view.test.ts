@@ -97,7 +97,7 @@ function flatIds(groups: ReadonlyArray<GroupedSessions>): SessionId[] {
 
 // ─── sort tests ─────────────────────────────────────────────────────────────
 
-describe('sortAndGroupSessions — updatedAt sort', () => {
+describe('sortAndGroupSessions, updatedAt sort', () => {
   const s1 = makeSession(sid(1), {
     updatedAt: '2024-01-03T00:00:00.000Z',
     createdAt: '2024-01-01T00:00:00.000Z',
@@ -142,7 +142,7 @@ describe('sortAndGroupSessions — updatedAt sort', () => {
   });
 });
 
-describe('sortAndGroupSessions — goal sort', () => {
+describe('sortAndGroupSessions, goal sort', () => {
   const prefs: SessionViewPrefs = { sort: 'goal', group: 'none' };
 
   it('orders A→Z case-insensitively', () => {
@@ -161,7 +161,7 @@ describe('sortAndGroupSessions — goal sort', () => {
   });
 });
 
-describe('sortAndGroupSessions — createdAt sort', () => {
+describe('sortAndGroupSessions, createdAt sort', () => {
   const prefs: SessionViewPrefs = { sort: 'createdAt', group: 'none' };
 
   it('orders oldest first', () => {
@@ -184,7 +184,7 @@ describe('sortAndGroupSessions — createdAt sort', () => {
 
 // ─── userStatus grouping ─────────────────────────────────────────────────────
 
-describe('sortAndGroupSessions — userStatus grouping', () => {
+describe('sortAndGroupSessions, userStatus grouping', () => {
   const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'userStatus' };
 
   it('produces groups in wip→waiting→blocked→done order', () => {
@@ -222,7 +222,7 @@ describe('sortAndGroupSessions — userStatus grouping', () => {
 
 // ─── PR grouping ─────────────────────────────────────────────────────────────
 
-describe('sortAndGroupSessions — pr grouping', () => {
+describe('sortAndGroupSessions, pr grouping', () => {
   const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'pr' };
 
   it('no PR → not-open bucket', () => {
@@ -382,7 +382,7 @@ function buildSlice(): { actions: SliceState; getState: () => SliceState } {
   return { actions, getState: get };
 }
 
-describe('createSessionViewSlice — getSessionViewPrefs', () => {
+describe('createSessionViewSlice, getSessionViewPrefs', () => {
   let ls: ReturnType<typeof buildLocalStorageMock>;
 
   beforeEach(() => {
@@ -401,7 +401,7 @@ describe('createSessionViewSlice — getSessionViewPrefs', () => {
     expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'userStatus' });
   });
 
-  it('caches result — second call does not re-read localStorage', () => {
+  it('caches result, second call does not re-read localStorage', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'pr' });
     const { actions } = buildSlice();
     actions.getSessionViewPrefs(WS);
@@ -411,7 +411,7 @@ describe('createSessionViewSlice — getSessionViewPrefs', () => {
   });
 });
 
-describe('createSessionViewSlice — setSessionSort', () => {
+describe('createSessionViewSlice, setSessionSort', () => {
   let ls: ReturnType<typeof buildLocalStorageMock>;
 
   beforeEach(() => {
@@ -449,7 +449,7 @@ describe('createSessionViewSlice — setSessionSort', () => {
   });
 });
 
-describe('createSessionViewSlice — setSessionGroup', () => {
+describe('createSessionViewSlice, setSessionGroup', () => {
   let ls: ReturnType<typeof buildLocalStorageMock>;
 
   beforeEach(() => {
@@ -478,7 +478,7 @@ describe('createSessionViewSlice — setSessionGroup', () => {
   });
 });
 
-describe('createSessionViewSlice — localStorage fault tolerance', () => {
+describe('createSessionViewSlice, localStorage fault tolerance', () => {
   let ls: ReturnType<typeof buildLocalStorageMock>;
 
   beforeEach(() => {
@@ -551,7 +551,7 @@ describe('createSessionViewSlice — localStorage fault tolerance', () => {
   });
 });
 
-describe('createSessionViewSlice — per-workspace isolation', () => {
+describe('createSessionViewSlice, per-workspace isolation', () => {
   const WS2 = 'ws-2' as WorkspaceId;
   let ls: ReturnType<typeof buildLocalStorageMock>;
 
@@ -579,7 +579,7 @@ describe('createSessionViewSlice — per-workspace isolation', () => {
 
 // ─── performance ─────────────────────────────────────────────────────────────
 
-describe('sortAndGroupSessions — performance', () => {
+describe('sortAndGroupSessions, performance', () => {
   it('handles 2000 sessions in under 500ms', () => {
     const sessions = Array.from({ length: 2000 }, (_, i) => {
       const day = String((i % 365) + 1).padStart(3, '0');

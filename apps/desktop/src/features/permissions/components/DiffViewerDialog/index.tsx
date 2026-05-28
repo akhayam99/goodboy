@@ -133,7 +133,7 @@ function emptyStateBlurb(view: DiffView, isGitAware: boolean): string | null {
     return 'No uncommitted edits and nothing staged.';
   }
   if (view.kind === 'commit') return 'No file changes were recorded for this commit.';
-  return 'Every commit on this branch is already reachable from main — nothing extra to review.';
+  return 'Every commit on this branch is already reachable from main, nothing extra to review.';
 }
 
 const LINE_PREFIX: Record<DiffHunkLine['kind'], string> = {
@@ -523,7 +523,7 @@ export function DiffViewerDialog({
     try {
       await openFileInWorkspace(root, absPath, editorBinary);
     } catch {
-      // swallow — error surfaced via console
+      // swallow, error surfaced via console
     }
   };
 

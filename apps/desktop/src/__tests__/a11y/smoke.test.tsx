@@ -2,7 +2,7 @@
 
 // Axe-core license deviation: MPL-2.0 (file-level copyleft, devDep only).
 // CLAUDE.md lists MIT/Apache/BSD/ISC only. Deviation is acceptable because:
-//   1. devDependency — never bundled or distributed with the app.
+//   1. devDependency, never bundled or distributed with the app.
 //   2. MPL-2.0 file-level copyleft only applies to modifications of axe-core source.
 //   3. axe-core is the de-facto standard for automated a11y testing (44M dl/week).
 // No whitelist exceptions needed for the current component set.
@@ -102,7 +102,7 @@ afterEach(cleanup);
 
 const WS_ID = 'ws-test' as WorkspaceId;
 
-describe('a11y smoke — NotificationCenter', () => {
+describe('a11y smoke, NotificationCenter', () => {
   it('no violations (empty state)', async () => {
     const { container } = render(<NotificationCenter />);
     const { violations } = await runA11yCheck(container);
@@ -110,7 +110,7 @@ describe('a11y smoke — NotificationCenter', () => {
   });
 });
 
-describe('a11y smoke — Toast / ToastProvider', () => {
+describe('a11y smoke, Toast / ToastProvider', () => {
   it('no violations (empty toast stack)', async () => {
     const { container } = render(
       <ToastProvider>
@@ -122,7 +122,7 @@ describe('a11y smoke — Toast / ToastProvider', () => {
   });
 });
 
-describe('a11y smoke — BootSplash', () => {
+describe('a11y smoke, BootSplash', () => {
   it('no violations (loading phase)', async () => {
     const { container } = render(<BootSplash phase="loading-settings" error={null} />);
     const { violations } = await runA11yCheck(container);
@@ -136,7 +136,7 @@ describe('a11y smoke — BootSplash', () => {
   });
 });
 
-describe('a11y smoke — WorkspacesSidebar', () => {
+describe('a11y smoke, WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
     const { container } = render(
       <WorkspacesSidebar
@@ -150,7 +150,7 @@ describe('a11y smoke — WorkspacesSidebar', () => {
   });
 });
 
-describe('a11y smoke — StatusBar', () => {
+describe('a11y smoke, StatusBar', () => {
   it('no violations (idle, no session)', async () => {
     const { container } = render(
       <ToastProvider>
@@ -162,7 +162,7 @@ describe('a11y smoke — StatusBar', () => {
   });
 });
 
-describe('a11y smoke — SkillsPanel', () => {
+describe('a11y smoke, SkillsPanel', () => {
   it('no violations (no skills)', async () => {
     const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
     const { violations } = await runA11yCheck(container);
@@ -170,7 +170,7 @@ describe('a11y smoke — SkillsPanel', () => {
   });
 });
 
-describe('a11y smoke — QuickActionsPopover', () => {
+describe('a11y smoke, QuickActionsPopover', () => {
   it('no violations (empty items)', async () => {
     const { container } = render(
       <QuickActionsPopover
@@ -185,11 +185,11 @@ describe('a11y smoke — QuickActionsPopover', () => {
   });
 });
 
-describe('a11y smoke — SettingsDialog', () => {
+describe('a11y smoke, SettingsDialog', () => {
   // KNOWN EXCEPTION: SettingsDialog violates `label` rule.
-  // The max-parallelism <input type="number"> has no <label> — Section renders
+  // The max-parallelism <input type="number"> has no <label>, Section renders
   // a <div> for the label text, not a proper <label htmlFor="...">.
-  // Filed: tracked in #279 — fixing the component is out of scope for this PR.
+  // Filed: tracked in #279, fixing the component is out of scope for this PR.
   const KNOWN_VIOLATIONS = ['label'];
 
   it('no new violations beyond whitelisted (dialog open)', async () => {

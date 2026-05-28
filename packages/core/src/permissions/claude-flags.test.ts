@@ -70,7 +70,7 @@ describe('buildClaudeFlags', () => {
     `);
   });
 
-  it('mixed scopes — both rendered, session deny alongside workspace allow', () => {
+  it('mixed scopes, both rendered, session deny alongside workspace allow', () => {
     const rules: PermissionRule[] = [
       makeRule({
         id: 'ws-allow' as PermissionRuleId,

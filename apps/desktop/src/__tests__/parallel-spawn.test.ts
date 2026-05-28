@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-// Module mocks — factories must not reference outer-scope variables (vi.mock
+// Module mocks, factories must not reference outer-scope variables (vi.mock
 // is hoisted before variable initialization).
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),

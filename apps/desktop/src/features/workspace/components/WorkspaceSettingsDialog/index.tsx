@@ -13,7 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { PhasesPanel } from '../../../../features/phases/components/PhasesPanel';
+import { WorkflowsPanel } from '../../../../features/workflows/components/WorkflowsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/config-selects';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
@@ -27,7 +27,7 @@ interface WorkspaceSettingsDialogProps {
   workspaceName: string;
   open: boolean;
   onClose: () => void;
-  /** Tab to open on — e.g. deep-linked from the command palette. */
+  /** Tab to open on, e.g. deep-linked from the command palette. */
   initialSection?: string;
 }
 
@@ -254,7 +254,7 @@ export function WorkspaceSettingsDialog({
           <SectionShell
             icon={<Terminal size={14} aria-hidden className="text-primary" />}
             title="Scripts"
-            subtitle="User-defined shell scripts you run by hand — copy env files, install deps, build. No agent, no tokens spent."
+            subtitle="User-defined shell scripts you run by hand, copy env files, install deps, build. No agent, no tokens spent."
           >
             <ScriptsPanel workspaceId={workspaceId} />
           </SectionShell>
@@ -267,7 +267,7 @@ export function WorkspaceSettingsDialog({
             subtitle="Multi-agent blueprints offered when creating a session. Each step spawns its own agent in order."
             beta
           >
-            <PhasesPanel workspaceId={workspaceId} />
+            <WorkflowsPanel workspaceId={workspaceId} />
           </SectionShell>
         ) : null}
 
@@ -497,7 +497,7 @@ function DangerSection({
       <SectionHeader
         icon={<AlertTriangle size={14} aria-hidden className="text-danger" />}
         title="Danger zone"
-        subtitle="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk — re-add the same path later and everything comes back."
+        subtitle="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk, re-add the same path later and everything comes back."
         tone="danger"
       />
 
@@ -514,7 +514,7 @@ function DangerSection({
               Disconnect workspace
             </div>
             <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-              Nothing is deleted. The repo and all its sessions stay in place — they just stop
+              Nothing is deleted. The repo and all its sessions stay in place, they just stop
               showing up in the sidebar until you re-add the path.
             </p>
           </div>

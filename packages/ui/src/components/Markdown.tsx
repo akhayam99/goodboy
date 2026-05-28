@@ -88,7 +88,7 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
 
 // Minimal markdown renderer for assistant output. Handwritten in lieu of a
 // dependency: react-markdown pulls a 30-package remark/rehype subtree, marked
-// has XSS surface, and LLMs only ever produce a small subset of CommonMark —
+// has XSS surface, and LLMs only ever produce a small subset of CommonMark:
 // fenced code, headings, lists (ordered + unordered, flat), blockquotes,
 // horizontal rules, gfm-style pipe tables, paragraphs, plus inline emphasis /
 // code / links. We also recognise the agent's <<ctx-*>>...</ctx-*>> markers
@@ -212,7 +212,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
     }
 
     // Custom <<tag>>...</tag>> callouts (e.g. <<ctx-decision>>...</ctx-decision>>)
-    // — agent emits these as inline structure markers. Render as a labelled
+    //, agent emits these as inline structure markers. Render as a labelled
     // block instead of leaking the raw tag delimiters into the prose.
     const calloutOpen = line.match(CALLOUT_OPEN_RE);
     if (calloutOpen) {
@@ -271,7 +271,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       while (i < lines.length) {
         const m = (lines[i] ?? '').match(re);
         if (!m) break;
-        // Indent depth (number of leading spaces) is currently unused — flat lists only.
+        // Indent depth (number of leading spaces) is currently unused, flat lists only.
         items.push({ content: m[2]!.trim(), children: [] });
         i++;
       }
@@ -309,7 +309,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   return blocks;
 }
 
-// Inline rendering — bold, italic, inline code, links. We tokenize manually
+// Inline rendering, bold, italic, inline code, links. We tokenize manually
 // instead of using regex with backreferences, which keeps nested emphasis
 // predictable and means an unmatched delimiter renders as a literal char
 // rather than swallowing the rest of the line.
@@ -330,7 +330,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
   while (i < input.length) {
     const ch = input[i];
 
-    // Inline ctx marker: <<tag>> (standalone, no body — full callouts handled at block level).
+    // Inline ctx marker: <<tag>> (standalone, no body, full callouts handled at block level).
     if (ch === '<' && input[i + 1] === '<') {
       const close = input.indexOf('>>', i + 2);
       if (close > i) {
@@ -358,7 +358,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Inline code: `...` (skip if it just wraps a <<tag>> marker — render as chip instead).
+    // Inline code: `...` (skip if it just wraps a <<tag>> marker, render as chip instead).
     if (ch === '`') {
       const end = input.indexOf('`', i + 1);
       if (end > i) {

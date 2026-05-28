@@ -19,27 +19,27 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'workspace',
     title: 'Connect a workspace',
-    why: 'Point Goodboy at a git repo — every session worktree lives off it.',
+    why: 'Point Goodboy at a git repo, every session worktree lives off it.',
   },
   {
     id: 'session',
-    title: 'Spin up your first session',
+    title: 'Create your first session',
     why: 'A session = one goal on its own worktree + branch. Pick something concrete.',
   },
   {
     id: 'agent',
-    title: 'Spawn your first agent',
-    why: 'Sessions host agents (planner, scout, implementer…). Spawn the one that fits the work.',
+    title: 'Create your first agent',
+    why: 'Sessions host agents (planner, scout, implementer…). Create the one that fits the work.',
   },
   {
     id: 'plan',
     title: 'Make your first plan',
-    why: 'Spawn a planner — it emits a structured plan you can hand off to an implementer.',
+    why: 'Spawn a planner, it emits a structured plan you can hand off to an implementer.',
   },
   {
     id: 'palette',
     title: 'Open the command palette',
-    why: '⌘K. Navigate workspaces, sessions, and agents — everything from one input.',
+    why: '⌘K. Navigate workspaces, sessions, and agents, everything from one input.',
   },
 ];
 

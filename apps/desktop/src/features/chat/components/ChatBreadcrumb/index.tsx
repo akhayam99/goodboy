@@ -1,28 +1,35 @@
 import { useMemo } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { Agent, AgentId, Session, WorkspaceId } from '@goodboy/types';
+import { ChevronRight, GitBranch } from 'lucide-react';
+import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,
-  AGENT_KIND_PALETTE,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../session/agent-kind';
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
 interface ChatBreadcrumbProps {
   readonly session: Session;
 }
 
+interface WorkflowProgress {
+  readonly workflow: Workflow;
+  readonly currentOrdinal: number;
+  readonly total: number;
+}
+
+const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
+
 /**
  * Sticky 32px breadcrumb header at the top of ChatView. Shows
  * workspace › session › agent · [kind] so the user always knows
- * which agent is talking — before this header the active agent's
+ * which agent is talking, before this header the active agent's
  * name was nowhere in the chat surface (only in the sidebar).
  *
  * Segments are interactive: workspace opens its settings, session
  * opens its settings, agent shows the kind chip. Open Linear-style
- * — segments are anchors, not just labels.
+ *, segments are anchors, not just labels.
  *
  * Per plan §A.4.
  */
@@ -36,7 +43,25 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_WORKFLOWS);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+
+  const workflowProgress: WorkflowProgress | null = useMemo(() => {
+    if (sessionWorkflows.length === 0) return null;
+    const workflow = sessionWorkflows[0];
+    if (!workflow) return null;
+    const total = workflow.steps.length;
+    if (total === 0) return null;
+    const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
+    let currentOrdinal = 0;
+    for (let i = 0; i < sorted.length; i += 1) {
+      const step = sorted[i]!;
+      const agent = phaseRuns.find((r) => r.stepId === step.id);
+      if (agent && agent.status !== 'pending') currentOrdinal = i + 1;
+    }
+    if (currentOrdinal === 0) currentOrdinal = 1;
+    return { workflow, currentOrdinal, total };
+  }, [sessionWorkflows, phaseRuns]);
 
   const selectedAgent: Agent | null = useMemo(() => {
     if (!selectedAgentId) return null;
@@ -83,26 +108,38 @@ export function ChatBreadcrumb({ session }: ChatBreadcrumbProps) {
         {sessionLabel}
       </span>
 
-      {/* agent — only when one is selected; the chat empties otherwise */}
-      {selectedAgent && agentKind ? (
+      {/* workflow, only when one is attached. Surfaces "step N/M" so the user
+          knows the workflow is driving and how far along it is. */}
+      {workflowProgress ? (
         <>
           <Separator />
           <span
-            className="inline-flex shrink-0 items-center gap-1 text-foreground/90"
-            title={`agent: ${selectedAgent.name}`}
+            className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+            title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
           >
-            <span
-              aria-hidden
-              className={cn('size-1.5 rounded-full', AGENT_KIND_PALETTE[agentKind].bg)}
-            />
-            <span className="font-medium">{selectedAgent.name}</span>
-            <span
-              className={cn('text-2xs uppercase tracking-wide', AGENT_KIND_PALETTE[agentKind].fg)}
-            >
-              {AGENT_KIND_META[agentKind].label}
+            <GitBranch size={9} aria-hidden />
+            <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
+            <span aria-hidden className="opacity-60">
+              ·
+            </span>
+            <span className="font-mono tabular-nums">
+              {workflowProgress.currentOrdinal}/{workflowProgress.total}
             </span>
           </span>
         </>
+      ) : null}
+
+      {/* Spacer pushes the dog to the far right. Just the silhouette: the
+          path on the left already says where you are, the dog is the quiet
+          "who am I talking to" cue. */}
+      <div className="flex-1" />
+
+      {selectedAgent && agentKind ? (
+        <AgentAvatar
+          kind={agentKind}
+          size="md"
+          title={`${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
+        />
       ) : null}
     </div>
   );

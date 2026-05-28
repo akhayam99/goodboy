@@ -101,14 +101,14 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
-  invokeSessionMarkViewed: (...args: unknown[]) => Promise.resolve(markViewedSpy(...args)),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
+  invokeAgentMarkViewed: (...args: unknown[]) => Promise.resolve(markViewedSpy(...args)),
   invokeWorkspacesWithUnread: vi.fn(async () => []),
 }));
 
@@ -240,7 +240,7 @@ describe('markAgentViewed', () => {
   });
 });
 
-describe('agentHasUnread — after markAgentViewed', () => {
+describe('agentHasUnread, after markAgentViewed', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });

@@ -50,7 +50,7 @@ export function RoutingIndicator({
   }
 
   // Only render when there's actually something the user needs to know about
-  // — fallbacks or budget warnings. The vanilla "claude / claude-opus-4-7"
+  //, fallbacks or budget warnings. The vanilla "claude / claude-opus-4-7"
   // routing label was redundant with the chips below the input.
   if (decision.reason !== 'fallback-budget' || !decision.fallbackFrom) return null;
 

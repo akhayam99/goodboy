@@ -17,13 +17,13 @@ interface ScriptResultRowProps {
 
 /**
  * Sticky result of a `$` quick-action script run, shown above the composer.
- * Never sent to the LLM — stays until dismissed or replaced by the next run.
+ * Never sent to the LLM, stays until dismissed or replaced by the next run.
  */
 export function ScriptResultRow({ state, onDismiss }: ScriptResultRowProps) {
   const { script, status, result } = state;
   const [outputOpen, setOutputOpen] = useState(false);
 
-  // Default the disclosure open on a failed run — the user almost always
+  // Default the disclosure open on a failed run, the user almost always
   // wants to see why. Successful runs stay collapsed.
   const prevResultRef = useRef<ScriptRunResult | null>(null);
   if (result !== prevResultRef.current) {

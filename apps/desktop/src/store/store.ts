@@ -233,18 +233,18 @@ import {
   type PermissionAuditInsertPayload,
 } from '../features/permissions/permissions';
 import {
-  invokePhaseTemplateList,
-  invokePhaseTemplateUpsert,
-  invokePhaseTemplateDelete,
-  invokePhaseRunList,
-  invokePhaseRunInsert,
-  invokePhaseRunUpdateStatus,
-  invokeSessionSetProviderSessionId,
-  invokeSessionMarkViewed,
+  invokeWorkflowList,
+  invokeWorkflowUpsert,
+  invokeWorkflowDelete,
+  invokeAgentList,
+  invokeAgentInsert,
+  invokeAgentUpdateStatus,
+  invokeAgentSetProviderSessionId,
+  invokeAgentMarkViewed,
   invokeAgentSetKind,
   invokeAgentSetVerbosity,
-  type PhaseTemplateUpsertArgs,
-} from '../features/phases/phases';
+  type WorkflowUpsertArgs,
+} from '../features/workflows/workflows';
 import {
   detectParallelGroup,
   runParallelBranch,
@@ -341,7 +341,7 @@ export interface AppState {
   // Archived sessions, loaded lazily per workspace when the user opens the
   // Archived tab. Kept separate from `sessions` so interactive surfaces
   // (palette, github polling, unread, workspace-switch eager loads) never see
-  // them — they exist only as historical info.
+  // them, they exist only as historical info.
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
@@ -382,8 +382,8 @@ export interface AppState {
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   /**
    * Runtime history of providerRunIds per agent (Agent). Populated as turns
-   * fire so the sidebar can aggregate telemetry across provider switches —
-   * agents whose `runId` only points at the *latest* provider run would
+   * fire so the sidebar can aggregate telemetry across provider switches.
+   * Agents whose `runId` only points at the *latest* provider run would
    * otherwise drop costs from previous providers when the user swaps mid-
    * session. Lives in-memory only; rebuilt from current state on hydrate.
    */
@@ -424,7 +424,7 @@ export interface AppState {
   /**
    * Per-session pending nudges surfaced to the chat input area. Cleared on
    * dismiss or when the user acts on the suggestion. Not persisted across
-   * app restarts on purpose — nudges expire with the session lifetime.
+   * app restarts on purpose, nudges expire with the session lifetime.
    */
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   /**
@@ -606,7 +606,7 @@ export interface AppActions {
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
-  savePhaseTemplate(template: PhaseTemplateUpsertArgs): Promise<void>;
+  savePhaseTemplate(template: WorkflowUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -811,7 +811,7 @@ function mergeSlots(
   return copy;
 }
 
-// The provider CLIs have no API content-block channel — images reach the model
+// The provider CLIs have no API content-block channel, images reach the model
 // only as files named in the prompt text. Paths stay worktree-relative so they
 // resolve against the CLI's cwd and never trip the worktree-scope guard.
 function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): string {
@@ -827,7 +827,7 @@ function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): str
 
 type SetFn = (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void;
 
-// Summarizer queue — one per task, max one in-flight + one queued (coalesced).
+// Summarizer queue, one per task, max one in-flight + one queued (coalesced).
 // Prevents stacking when the user iterates faster than the summarizer completes.
 interface SummarizerQueueEntry {
   readonly turnInput: string;
@@ -843,7 +843,7 @@ export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 
 // Run IDs cancelled by the user via cancelCurrentTurn. The stream-end
 // finalization in sendTurn checks this set and skips marking the agent as
-// `completed` — a cancelled turn must NOT count as a workflow step
+// `completed`, a cancelled turn must NOT count as a workflow step
 // completion, otherwise the next-step CTA appears prematurely.
 const cancelledRunIds = new Set<ProviderRunId>();
 
@@ -926,7 +926,7 @@ async function runSummarizer(
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-  // Mark running without a separate set — merged into the final batch below on success,
+  // Mark running without a separate set, merged into the final batch below on success,
   // or emitted immediately only on the error path. This avoids a spurious re-render at start.
   set((state) => {
     const prev = state.summarizerStatus[sessionId];
@@ -960,7 +960,7 @@ async function runSummarizer(
       : null;
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
 
-    // Parallel slot history + upsert writes — no serial await per slot.
+    // Parallel slot history + upsert writes, no serial await per slot.
     await Promise.all(
       result.delta.upserts.map(async (upsert) => {
         const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
@@ -986,7 +986,7 @@ async function runSummarizer(
     // If the summarizer carried a GitHub PR URL into any slot value and we
     // still have no PR cached for this session, pull the PR state now so the
     // polling sweep picks it up on its next tick. Complements the same regex
-    // run on raw assistant text post-turn — covers cases where the URL only
+    // run on raw assistant text post-turn, covers cases where the URL only
     // surfaces in the summarized context, not in the verbatim turn output.
     if (
       !get().sessionGithub[sessionId]?.pr &&
@@ -1047,7 +1047,7 @@ async function runSummarizer(
       invokeBudgetRuleList(),
     ]);
 
-    // Single batched set — one re-render for the entire summarizer completion.
+    // Single batched set, one re-render for the entire summarizer completion.
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
       sessionSummary,
@@ -1074,7 +1074,7 @@ async function runSummarizer(
       sessionId,
     });
   } catch (err) {
-    // never log api key — only the error message
+    // never log api key, only the error message
     const message = formatError(err);
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
@@ -1348,7 +1348,7 @@ let hydratePromise: Promise<void> | null = null;
 
 // Streaming providers can emit 50-200 turn_events per second. Persisting each
 // one with its own `insertTurnEvent` used to grab the Rust `Mutex<Connection>`
-// at the same cadence and block every concurrent reader — including a
+// at the same cadence and block every concurrent reader, including a
 // freshly-clicked workspace/session switch. The buffer below coalesces
 // non-critical events between microtasks and flushes them through a single
 // multi-row INSERT, collapsing the write storm to ~one IPC per frame.
@@ -1481,7 +1481,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         set({ bootPhase: 'ready', hydrated: true });
 
-        // Drain audit retry queue after boot — non-blocking, best-effort.
+        // Drain audit retry queue after boot, non-blocking, best-effort.
         void drainAuditRetryQueue(set);
 
         void get().refreshGithubStatus();
@@ -1502,7 +1502,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setCurrentWorkspace: async (id) => {
-    // Cancel any running turns before clearing state — orphaned Rust child processes
+    // Cancel any running turns before clearing state, orphaned Rust child processes
     // keep emitting turn_events into stale sessionIds if we don't stop them first.
     const runningSessions = get().sessions.filter((s) => s.state.kind === 'running');
     await Promise.all(
@@ -1515,7 +1515,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Option A: wipe all per-session maps unconditionally. Simpler than filtering by
     // workspaceId (Option B) and correct because setCurrentSession reloads from DB
-    // on demand — the cache is cheap to rebuild, stale cross-workspace data is not.
+    // on demand, the cache is cheap to rebuild, stale cross-workspace data is not.
     set({
       currentWorkspaceId: id,
       currentSessionId: null,
@@ -1567,7 +1567,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const tWsLoad = performance.now();
       const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
       // Boot-recovery: a session row in 'running' state is necessarily orphaned
-      // here — the Rust TurnRegistry is reset on every app start, so there is
+      // here, the Rust TurnRegistry is reset on every app start, so there is
       // no live process to reattach to. Normalize to 'idle' so the UI re-enables
       // the input. Persist the correction back to the DB.
       const recoveryNow = new Date().toISOString() as IsoDateTime;
@@ -1583,7 +1583,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       );
       // Batched per-session fan-out: 2 IN-clause queries instead of 2N round
       // trips through the Rust `Mutex<Connection>`. External-task hydration
-      // piggy-backs on the same batch — single query for the whole workspace.
+      // piggy-backs on the same batch, single query for the whole workspace.
       const sessionIds = sessions.map((s) => s.id);
       const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
@@ -1612,7 +1612,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       const externalTasksMap: Record<string, SessionExternalTask> = {};
       for (const task of externalTasks) externalTasksMap[task.sessionId] = task;
-      // First paint commit — sidebar can render the rail right now.
+      // First paint commit, sidebar can render the rail right now.
       set((state) => ({
         sessions,
         sessionWorktrees,
@@ -1624,7 +1624,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // eslint-disable-next-line no-console
       console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
 
-      // Deferred loads — fire AFTER first paint so the UI is interactive
+      // Deferred loads, fire AFTER first paint so the UI is interactive
       // immediately. Each resolves into its own `set` call when ready.
       void (async (): Promise<void> => {
         const tWsDefer = performance.now();
@@ -1634,7 +1634,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
             invokeBudgetRuleList().catch(() => []),
             invokeSkillList(id).catch(() => []),
-            invokePhaseTemplateList(id).catch(() => []),
+            invokeWorkflowList(id).catch(() => []),
           ]);
         // Workspace may have changed under us while these were inflight.
         if (get().currentWorkspaceId !== id) return;
@@ -1660,13 +1660,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else {
       set({ providerSpendBreakdown: [] });
     }
-    // Settings persistence — survives next launch as "last opened
+    // Settings persistence, survives next launch as "last opened
     // workspace/session". Fire-and-forget: no UI code awaits these, but
     // awaiting used to add 2 more mutex acquisitions to the click handler.
     void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     void get().refreshUnreadWorkspaces();
-    // Single-session workspaces don't have an activity rail — the user can't
+    // Single-session workspaces don't have an activity rail, the user can't
     // pick a session manually. Auto-select so the detail panel renders
     // instead of the empty state.
     const sessionsNow = get().sessions;
@@ -1683,7 +1683,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Immediately swap the visible session so the UI doesn't freeze while
     // heavy per-session data loads. Each block (agents/transcript/telemetry/
     // slots/plans/summary) loads independently and flips its own loading flag
-    // off when done — see SessionLoadingFlags. We intentionally do NOT await
+    // off when done, see SessionLoadingFlags. We intentionally do NOT await
     // these loaders here; the chat view and context panel render skeletons in
     // the meantime.
     const tSwitch = performance.now();
@@ -1767,7 +1767,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
 
     // GitHub PR: refresh head + detail for the opened session so its context
-    // panel shows fresh CI / review state on every visit. No `force` — the
+    // panel shows fresh CI / review state on every visit. No `force`, the
     // 60s/30s caches dedupe rapid back-and-forth between sessions.
     if (get().sessionBranches[id]) {
       void get()
@@ -1841,7 +1841,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     // Agents only: transcript is loaded lazily by ChatView when an agent is
-    // selected (via selectAgent). Keeps session switch fast — no per-agent
+    // selected (via selectAgent). Keeps session switch fast, no per-agent
     // history fetch blocks the UI.
     if (cached?.agents) {
       // Cached: phase runs + selected agent are already in store. transcript
@@ -1852,7 +1852,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const endPhaseRunList = perf('agents:phaseRunList');
       const endRunIds = perf('agents:runIds');
       void Promise.all([
-        invokePhaseRunList(id).finally(() => endPhaseRunList()),
+        invokeAgentList(id).finally(() => endPhaseRunList()),
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
       ])
         .then(([agents, agentRunIds]) => {
@@ -1869,7 +1869,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           // Seed agentRunHistory with EVERY provider run an agent ever spawned,
           // not just its latest. Recovered from turn_events (single source of
           // truth post restart) so aggregate token/cost counters in the sidebar
-          // reflect the full agent lifetime — birth to death — instead of the
+          // reflect the full agent lifetime, birth to death, instead of the
           // last turn.
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
@@ -2121,7 +2121,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const allAgents: Agent[] = [];
         for (const step of sortedSteps) {
           const kind = inferAgentKindFromName(step.name);
-          const agent = await invokePhaseRunInsert({
+          const agent = await invokeAgentInsert({
             sessionId: session.id,
             stepId: step.id,
             ordinal: step.ordinal,
@@ -2137,7 +2137,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         firstStepPromptPrefix = sortedSteps[0]!.promptPrefix;
         prespawnedRuns = allAgents;
       } else {
-        const fallback = await invokePhaseRunInsert({
+        const fallback = await invokeAgentInsert({
           sessionId: session.id,
           ordinal: 0,
           name: 'agent 1',
@@ -2149,7 +2149,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else if (firstAgentKind !== undefined) {
       const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
       const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model;
-      const singleAgent = await invokePhaseRunInsert({
+      const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,
         name: agentName,
@@ -2262,7 +2262,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   reconcileSessionBranch: async (sessionId, observedBranch) => {
     // Catch the branch cache up to git reality. changeSessionBranch keeps DB +
     // store in sync, but an agent running `git switch` directly in the worktree
-    // shell bypasses it — HEAD moves while sessionBranches stays frozen.
+    // shell bypasses it, HEAD moves while sessionBranches stays frozen.
     const trimmed = observedBranch.trim();
     if (!trimmed) return;
     if (get().sessionBranches[sessionId] === trimmed) return;
@@ -2324,7 +2324,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           agentId,
           event,
         });
-        void invokeSessionSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
+        void invokeAgentSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
           if (import.meta.env.DEV) {
             const message = formatError(err);
             console.warn(`[turn-events] persist provider_session_id failed: ${message}`);
@@ -2462,7 +2462,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       currentDef: Step;
       groupDefs: ReadonlyArray<Step>;
     } | null = null;
-    // Capture user prompt PRE phase build — needed if parallel branch fires, so per-def
+    // Capture user prompt PRE phase build, needed if parallel branch fires, so per-def
     // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
@@ -2471,7 +2471,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
       const template = templates.find((t) => t.id === activeWorkflowId) ?? null;
       if (template) {
-        const freshRuns = await invokePhaseRunList(sessionId);
+        const freshRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
         }));
@@ -2531,7 +2531,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
           phaseDefinition = nextDef;
 
-          // Detect parallel group — only when feature flag is on AND nextDef
+          // Detect parallel group, only when feature flag is on AND nextDef
           // belongs to a group with >= 2 siblings. Defer prompt rebuild for parallel
           // path: per-def prompts are built inside runParallelBranch using
           // userPromptForPhase + phasePromptCarryForward.
@@ -2614,8 +2614,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
 
     // The single-run setup (user message persist, provider run row, phase run row,
-    // session.state=running) is gated when the parallel branch will fire below —
-    // the parallel branch inserts its own phase_run rows (one per sibling) and
+    // session.state=running) is gated when the parallel branch will fire below.
+    // The parallel branch inserts its own phase_run rows (one per sibling) and
     // handles user-message + session-state itself. Without this gate we'd duplicate
     // every row. The runId allocated here is still used as a placeholder for the
     // gated paths so types stay consistent (it is unused if parallelDispatch fires).
@@ -2670,13 +2670,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const reusable = findReusableAgent(runsForSession, phaseDefinition.id);
       let resolved: Agent;
       if (reusable) {
-        resolved = await invokePhaseRunUpdateStatus(reusable.id, {
+        resolved = await invokeAgentUpdateStatus(reusable.id, {
           status: 'running',
           providerRunId: runId,
           startedAt: now(),
         });
       } else {
-        resolved = await invokePhaseRunInsert({
+        resolved = await invokeAgentInsert({
           sessionId,
           stepId: phaseDefinition.id,
           ordinal: phaseDefinition.ordinal,
@@ -2688,7 +2688,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         });
       }
       resolvedAgentId = resolved.id;
-      const refreshedRuns = await invokePhaseRunList(sessionId);
+      const refreshedRuns = await invokeAgentList(sessionId);
       set((state) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
       }));
@@ -2698,13 +2698,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } else if (!phaseDefinition && parallelDispatch === null) {
       const manualAgentId = get().selectedAgentId[sessionId] ?? null;
       if (manualAgentId) {
-        await invokePhaseRunUpdateStatus(manualAgentId, {
+        await invokeAgentUpdateStatus(manualAgentId, {
           status: 'running',
           providerRunId: runId,
           startedAt: now(),
         });
         resolvedAgentId = manualAgentId;
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -2756,12 +2756,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }
 
-    // Parallel-agents branch — triggered iff: enableParallelAgents on + phaseTemplate active + current
+    // Parallel-agents branch, triggered iff: enableParallelAgents on + phaseTemplate active + current
     // phase has parallelGroup with >= 2 siblings (already resolved above).
     // Pre-flight: aggregate cost = single-run estimate × N. Existing single-run
     // pre-flight is the routing decision itself (resolveProviderForTurn already
     // selected the cheapest viable provider). For N runs we can only enforce a
-    // soft N-multiplier check against budget rules — implemented as a guard
+    // soft N-multiplier check against budget rules, implemented as a guard
     // against runaway parallel spend if the user's session budget is set.
     if (parallelDispatch !== null) {
       const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
@@ -2829,7 +2829,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const effects: ParallelBranchEffects = {
         appendTurnEvent: (agentId, sid, ev) => get().appendTurnEvent(agentId, sid, ev),
         refreshPhaseRuns: async (sid) => {
-          const runs = await invokePhaseRunList(sid);
+          const runs = await invokeAgentList(sid);
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [sid]: runs },
           }));
@@ -2869,7 +2869,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         );
 
         if (result.allFailed) {
-          // Don't auto-cleanup worktrees on full failure — user inspects per-run state.
+          // Don't auto-cleanup worktrees on full failure, user inspects per-run state.
           // (Currently no per-run worktrees are created in v1; comment kept for the
           // follow-on that wires createParallelWorktrees end-to-end.)
           const errorState: TurnState = {
@@ -2916,7 +2916,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // this Session already learned, and (b) knows how to write back via
     // <<ctx-decision>> / <<ctx-question>> markers parsed in the auto-populate
     // step after the turn ends.
-    // Stale slots are acceptable: do NOT await the summarizer here — doing so
+    // Stale slots are acceptable: do NOT await the summarizer here, doing so
     // blocks user input for up to 2s between turns (#461). The summarizer pill
     // already signals in-flight status; the next turn may use previous-cycle
     // slots and that tradeoff is explicitly accepted.
@@ -2934,7 +2934,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     // M5: codex/cursor have no native --resume. inject recent turn text so
-    // they keep working memory. claude skips — duplicating context wastes tokens.
+    // they keep working memory. claude skips, duplicating context wastes tokens.
     const needsTextHistory = provider === 'cursor' || provider === 'codex';
     if (needsTextHistory) {
       const priorTranscripts = get().transcripts[activeAgentId] ?? [];
@@ -2954,7 +2954,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
-    // M4: soft-cap warning. heuristic only — exact tokenization requires wasm.
+    // M4: soft-cap warning. heuristic only, exact tokenization requires wasm.
     const estimated = estimateTokens(resolvedPrompt);
     const ctxWindow = getModelContextWindow(model);
     if (ctxWindow !== null) {
@@ -2986,12 +2986,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // keeps prior-turn context across one-shot CLI invocations.
     const resumeSessionId = agentRowEarly?.providerSessionId;
 
-    // M3: per-kind system prompt — biases planner/implementer/debugger toward
+    // M3: per-kind system prompt, biases planner/implementer/debugger toward
     // their role. Only claude consumes it today; other providers ignore the
     // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    // Worktree scope guard — claude/cursor/codex all accept absolute paths
+    // Worktree scope guard, claude/cursor/codex all accept absolute paths
     // in their Write/Edit tools and won't refuse to write outside cwd. The
     // session lives in an isolated git worktree (under
     // <repo>/.goodboy/worktrees/...) and edits MUST stay inside it,
@@ -3002,7 +3002,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       '[worktree-scope]',
       `You are operating inside an isolated git worktree at: ${workingDir}`,
       'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-      'NEVER write to absolute paths that exit this directory — especially not to the parent project checkout.',
+      'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
       'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
       '[/worktree-scope]',
     ].join('\n');
@@ -3082,7 +3082,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           try {
             await invokePermissionAuditInsert(auditPayload);
           } catch {
-            // Insert failed — persist to retry queue so the audit trail is
+            // Insert failed, persist to retry queue so the audit trail is
             // not silently dropped. JS single-threaded event loop makes the
             // sequential await sufficient as a single-writer guard.
             try {
@@ -3151,7 +3151,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
         }
       }
-      // Stream ended without a 'done'/'error' event — provider CLI exited
+      // Stream ended without a 'done'/'error' event, provider CLI exited
       // cleanly but didn't emit a `result` line, so the reducer never left
       // 'running'. Force-idle so input re-enables.
       const afterStream = get().sessions.find((s) => s.id === sessionId);
@@ -3179,12 +3179,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
           : { kind: 'succeeded', finishedAt: now() },
       );
       if (resolvedAgentId && !wasCancelled) {
-        await invokePhaseRunUpdateStatus(resolvedAgentId, {
+        await invokeAgentUpdateStatus(resolvedAgentId, {
           status: 'completed',
           outputSummary: assistantText.slice(0, 2000),
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => {
           if (!phaseDefinition) {
             return { sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns } };
@@ -3218,10 +3218,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (resolvedAgentId && wasCancelled) {
-        // Cancelled turn — agent stays `running`. It was activated and has
+        // Cancelled turn, agent stays `running`. It was activated and has
         // context; reverting to `pending` would re-surface the "force spawn"
         // dialog. We only block workflow advancement (no auto-advance call).
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -3229,7 +3229,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Auto-populate ContextPanel from this turn's output: file paths come
       // from file_edit events; <<ctx-decision>> / <<ctx-question>> markers come
-      // from the assistant text. Best-effort — slot writes failing must not
+      // from the assistant text. Best-effort, slot writes failing must not
       // mask the turn itself.
       try {
         // Resolve agent context so any open questions captured this turn are
@@ -3316,11 +3316,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         at: now(),
       });
       if (resolvedAgentId) {
-        await invokePhaseRunUpdateStatus(resolvedAgentId, {
+        await invokeAgentUpdateStatus(resolvedAgentId, {
           status: 'failed',
           completedAt: now(),
         });
-        const refreshedRuns = await invokePhaseRunList(sessionId);
+        const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
@@ -3485,7 +3485,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!session) throw new Error(`session not found: ${sessionId}`);
     if (session.state.kind === 'ended') return;
     if (session.state.kind === 'running') {
-      // Best-effort cancel — Rust TurnRegistry may have already removed the
+      // Best-effort cancel, Rust TurnRegistry may have already removed the
       // run (process exited, app restarted, etc). A "turn not found" error
       // here must not block end-session: the session row is the source of
       // truth, not the in-memory registry.
@@ -3499,7 +3499,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         try {
           await removeWorktree(workspace.rootPath, worktreePath);
         } catch (err) {
-          // worktree may already be gone — surface as warning, continue ending
+          // worktree may already be gone, surface as warning, continue ending
           console.warn(`worktree_remove failed: ${formatError(err)}`);
         }
       }
@@ -3561,7 +3561,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Refresh side caches owned by this workspace; sessions hydrate lazily
       // via setCurrentWorkspace when the user actually picks it.
       try {
-        const templates = await invokePhaseTemplateList(reactivated.id);
+        const templates = await invokeWorkflowList(reactivated.id);
         set((state) => ({
           phaseTemplates: { ...state.phaseTemplates, [reactivated.id]: templates },
         }));
@@ -3603,7 +3603,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Seed default workflow library so the new-task wizard always has presets.
     try {
       await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id);
-      const templates = await invokePhaseTemplateList(workspace.id);
+      const templates = await invokeWorkflowList(workspace.id);
       set((state) => ({
         phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates },
       }));
@@ -3832,28 +3832,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadPhaseTemplates: async (workspaceId) => {
-    const templates = await invokePhaseTemplateList(workspaceId);
+    const templates = await invokeWorkflowList(workspaceId);
     set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates } }));
   },
 
   savePhaseTemplate: async (template) => {
-    await invokePhaseTemplateUpsert(template);
-    const templates = await invokePhaseTemplateList(template.workspaceId);
+    await invokeWorkflowUpsert(template);
+    const templates = await invokeWorkflowList(template.workspaceId);
     set((state) => ({
       phaseTemplates: { ...state.phaseTemplates, [template.workspaceId]: templates },
     }));
   },
 
   deleteWorkflow: async (id, workspaceId) => {
-    await invokePhaseTemplateDelete(id);
-    const templates = await invokePhaseTemplateList(workspaceId);
+    await invokeWorkflowDelete(id);
+    const templates = await invokeWorkflowList(workspaceId);
     set((state) => ({
       phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates },
     }));
   },
 
   loadPhaseRunsForSession: async (sessionId) => {
-    const runs = await invokePhaseRunList(sessionId);
+    const runs = await invokeAgentList(sessionId);
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs } }));
   },
 
@@ -3868,7 +3868,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
 
     for (const id of stampAgents) {
-      void invokeSessionMarkViewed(id, stampedAt).catch(() => undefined);
+      void invokeAgentMarkViewed(id, stampedAt).catch(() => undefined);
     }
 
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
@@ -3990,7 +3990,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ),
       },
     }));
-    void invokeSessionMarkViewed(agentId, stampedAt).catch(() => undefined);
+    void invokeAgentMarkViewed(agentId, stampedAt).catch(() => undefined);
     void get().refreshUnreadWorkspaces();
   },
 
@@ -4024,7 +4024,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const workspaceVerbositySeed =
       state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
-    const inserted = await invokePhaseRunInsert({
+    const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
       ordinal: nextOrdinal,
@@ -4033,7 +4033,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     });
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       selectedAgentId: { ...s.selectedAgentId, [sessionId]: inserted.id },
@@ -4092,7 +4092,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const trimmed = name.trim();
     if (trimmed.length === 0) return;
     await tauriDatabase.execute('UPDATE agents SET name = ? WHERE id = ?', [trimmed, agentId]);
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
     }));
@@ -4160,9 +4160,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
-    const refreshed = await invokePhaseRunList(sessionId);
+    const refreshed = await invokeAgentList(sessionId);
     set((s) => {
-      // Clear selection — never auto-pick a sibling. Picking a 'fallback'
+      // Clear selection, never auto-pick a sibling. Picking a 'fallback'
       // dumps the user into a chat they didn't ask for; the empty-state
       // 'pick_agent' scenario already covers the no-selection case and is
       // explicit about what they can do next.
@@ -4493,13 +4493,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
 
     // Repopulate per-session caches we cleared on archive (only meaningful if
-    // we're on the same workspace — otherwise the next setCurrentWorkspace
+    // we're on the same workspace, otherwise the next setCurrentWorkspace
     // will hydrate fresh).
     if (get().currentWorkspaceId !== workspaceId) return;
     try {
       const [worktreeRows, runs] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
-        invokePhaseRunList(sessionId),
+        invokeAgentList(sessionId),
       ]);
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };
@@ -4697,7 +4697,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     for (let i = 0; i < sortedSteps.length; i += 1) {
       const step = sortedSteps[i]!;
       const kind = inferAgentKindFromName(step.name);
-      const agent = await invokePhaseRunInsert({
+      const agent = await invokeAgentInsert({
         sessionId,
         stepId: step.id,
         ordinal: baseOrdinal + 1 + i,

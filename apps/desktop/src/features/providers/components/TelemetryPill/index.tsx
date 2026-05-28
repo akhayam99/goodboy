@@ -1,10 +1,9 @@
 import { useState } from 'react';
+import { formatUsd } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { PricingDialog } from '../PricingDialog';
 
 const EMPTY_SPEND: ReadonlyArray<never> = [];
-
-const formatCost = (usd: number): string => (usd === 0 ? '$0' : `$${usd.toFixed(2)}`);
 
 const PROVIDER_DOT: Record<string, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
@@ -22,15 +21,15 @@ export function TelemetryPill() {
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
 
   const tooltipLines = [
-    `session: ${formatCost(sessionCost)}`,
-    `workspace: ${formatCost(workspaceCost)}`,
+    `session: ${formatUsd(sessionCost)}`,
+    `workspace: ${formatUsd(workspaceCost)}`,
     ...(providerSpend.length > 0
       ? [
           '',
           'per provider:',
           ...providerSpend.map(
             (p) =>
-              `· ${p.provider}: ${formatCost(p.spentUsd)}${p.capUsd !== null ? ` / ${formatCost(p.capUsd)}` : ''}`,
+              `· ${p.provider}: ${formatUsd(p.spentUsd)}${p.capUsd !== null ? ` / ${formatUsd(p.capUsd)}` : ''}`,
           ),
         ]
       : []),
@@ -45,12 +44,12 @@ export function TelemetryPill() {
         aria-label="open pricing breakdown"
         className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
       >
-        <span className="font-medium">{formatCost(sessionCost)}</span>
+        <span className="font-medium">{formatUsd(sessionCost)}</span>
         <span className="text-muted-foreground">session</span>
         <span aria-hidden className="text-muted-foreground">
           ·
         </span>
-        <span className="font-medium">{formatCost(workspaceCost)}</span>
+        <span className="font-medium">{formatUsd(workspaceCost)}</span>
         {providerSpend.length > 0 ? (
           <span aria-hidden className="ml-1 flex items-center -space-x-0.5">
             {providerSpend

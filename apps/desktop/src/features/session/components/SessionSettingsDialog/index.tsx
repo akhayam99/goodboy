@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Dialog, Divider, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -250,13 +250,12 @@ export function SessionSettingsDialog({
             onClick={onDeleteClick}
             disabled={busy}
             className={cn(
-              'gap-1.5',
+              'relative gap-1.5 overflow-hidden',
               !deleteArmed && 'text-danger/80 hover:bg-danger/10 hover:text-danger',
-              deleteArmed && 'animate-pulse',
             )}
             title={
               deleteArmed
-                ? 'click again to confirm — this cannot be undone'
+                ? 'click again to confirm, this cannot be undone'
                 : 'delete session (worktree, transcripts, branch)'
             }
           >
@@ -267,12 +266,19 @@ export function SessionSettingsDialog({
             ) : (
               <Trash2 size={13} aria-hidden />
             )}
-            {deleteArmed ? 'click again to confirm' : 'Delete'}
+            {deleteArmed ? 'Click again to confirm' : 'Delete'}
+            {deleteArmed ? (
+              <span
+                aria-hidden
+                className="shrink-bar absolute inset-x-0 bottom-0 h-0.5 bg-danger-foreground/70"
+                style={{ '--shrink-duration': `${DELETE_ARM_TIMEOUT_MS}ms` } as CSSProperties}
+              />
+            ) : null}
           </Button>
           {deleteArmed && !archived ? (
             <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
               <Archive size={11} aria-hidden className="text-warning" />
-              not sure? archive instead — reversible, keeps history.
+              not sure? archive instead, reversible, keeps history.
             </span>
           ) : (
             <div className="flex-1">
@@ -439,7 +445,7 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Branch — inline change */}
+      {/* Branch, inline change */}
       <Field
         label="Branch"
         hint="Switch this session to a different branch. Existing checkouts with uncommitted work require confirmation."
@@ -561,7 +567,7 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Provider — read-only */}
+      {/* Provider, read-only */}
       <Field
         label="Provider"
         hint="Set at creation time. Per-turn overrides happen in the chat composer."

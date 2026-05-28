@@ -121,8 +121,8 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
         title="What is Goodboy?"
         subtitle={
           SESSION_FEATURES.budget
-            ? 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with budget caps, audit logs, and structured workflows.'
-            : 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo — with audit logs and structured workflows.'
+            ? 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
+            : 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
         }
         accent="primary"
       />
@@ -130,7 +130,7 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
       <Callout tone="info" icon={<Sparkles size={13} />}>
         Goodboy does <strong className="text-foreground">not</strong> talk to AI providers directly.
         It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and
-        quotas live in the CLI itself — Goodboy just adds the workspace layer on top.
+        quotas live in the CLI itself, Goodboy just adds the workspace layer on top.
       </Callout>
 
       <div>
@@ -267,7 +267,7 @@ function TurnsSection() {
             },
             {
               term: 'tools inside a turn',
-              desc: 'When the agent calls grep, edit, run, etc., those are part of the same turn — not separate ones.',
+              desc: 'When the agent calls grep, edit, run, etc., those are part of the same turn, not separate ones.',
             },
             {
               term: 'queueing',
@@ -279,7 +279,7 @@ function TurnsSection() {
 
       <Callout tone="info" icon={<Lightbulb size={13} />}>
         Providers bill per token across the whole conversation, not per turn. But from a UX angle,
-        "I've sent 14 turns and we still don't have a working build" is a useful drift signal — time
+        "I've sent 14 turns and we still don't have a working build" is a useful drift signal, time
         to start a new session.
       </Callout>
     </div>
@@ -308,7 +308,7 @@ function ToolsSection() {
       <Block title="Permissions">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Goodboy proxies the CLI's permission system. Above the input you see{' '}
-          <InlineCode>permissions: X allow / Y deny</InlineCode> — the rule set the next turn will
+          <InlineCode>permissions: X allow / Y deny</InlineCode>, the rule set the next turn will
           run under. Click it to manage rules in settings.
         </p>
       </Block>
@@ -316,7 +316,7 @@ function ToolsSection() {
       {WORKSPACE_FEATURES.skills ? (
         <Block title="Skills">
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Type <InlineCode>/</InlineCode> in the input to invoke a workspace skill — a pre-defined
+            Type <InlineCode>/</InlineCode> in the input to invoke a workspace skill, a pre-defined
             prompt template stored in <InlineCode>.kay/skills/</InlineCode> or{' '}
             <InlineCode>.claude/skills/</InlineCode>. Useful for repeatable flows: release notes,
             security reviews, migration plans.
@@ -342,7 +342,7 @@ function TokensSection() {
           rows={[
             {
               term: 'input tokens',
-              desc: 'Everything sent into the model: system prompt, conversation history, tool results, your latest message. Grows every turn — that is why later turns cost more even if your message is short.',
+              desc: 'Everything sent into the model: system prompt, conversation history, tool results, your latest message. Grows every turn, that is why later turns cost more even if your message is short.',
             },
             {
               term: 'cached input tokens',
@@ -517,7 +517,7 @@ function LegendSection() {
         accent="primary"
       />
 
-      <LegendBlock title="Agent status — workflow steps">
+      <LegendBlock title="Agent status, workflow steps">
         <LegendaGrid
           rows={[
             { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
@@ -533,34 +533,34 @@ function LegendSection() {
         />
       </LegendBlock>
 
-      <LegendBlock title="Session & workspace cards — border signals">
+      <LegendBlock title="Session & workspace cards, border signals">
         <LegendaGrid
           rows={[
             {
               dot: 'bg-warning animate-soft-pulse',
               label: 'pending attention',
-              desc: 'amber pulse — agent replied or workspace has unread activity',
+              desc: 'amber pulse, agent replied or workspace has unread activity',
             },
             {
               dot: 'bg-info',
               label: 'running',
-              desc: 'info border — a turn is active in this session',
+              desc: 'info border, a turn is active in this session',
             },
             {
               dot: 'bg-danger',
               label: 'errored',
-              desc: 'danger border — the last turn ended with an error',
+              desc: 'danger border, the last turn ended with an error',
             },
             {
               dot: 'bg-transparent ring-1 ring-border-soft',
               label: 'idle',
-              desc: 'no border accent — nothing needs your attention',
+              desc: 'no border accent, nothing needs your attention',
             },
           ]}
         />
       </LegendBlock>
 
-      <LegendBlock title="Edit types — transcript">
+      <LegendBlock title="Edit types, transcript">
         <LegendaGrid
           rows={[
             { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
@@ -570,7 +570,7 @@ function LegendSection() {
         />
       </LegendBlock>
 
-      <LegendBlock title="Context window — CTX fill level">
+      <LegendBlock title="Context window, CTX fill level">
         <LegendaGrid
           rows={[
             { dot: 'bg-success', label: '< 50%', desc: 'comfortable: plenty of context remaining' },
@@ -581,7 +581,7 @@ function LegendSection() {
         />
       </LegendBlock>
 
-      <LegendBlock title="Verbosity — output density">
+      <LegendBlock title="Verbosity, output density">
         <LegendaGrid
           rows={[
             { dot: 'bg-success', label: 'brief', desc: 'bare minimum: one-liners only' },
@@ -591,7 +591,7 @@ function LegendSection() {
         />
       </LegendBlock>
 
-      <LegendBlock title="Permission mode — tool access">
+      <LegendBlock title="Permission mode, tool access">
         <LegendaGrid
           rows={[
             { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },

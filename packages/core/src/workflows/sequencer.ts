@@ -16,7 +16,7 @@ export function nextStep(template: Workflow, runs: ReadonlyArray<Agent>): Step |
  * Resolve the step that the next user message should be routed to.
  *
  * Replaces auto-advance: the orchestrator no longer skips to the next step
- * the moment a previous one completes — it stays on whichever step has an
+ * the moment a previous one completes, it stays on whichever step has an
  * existing in-flight or last-touched run. The user explicitly spawns a new
  * agent from the sidebar to move forward; until then, every message keeps
  * iterating with the same role.

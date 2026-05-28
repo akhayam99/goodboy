@@ -5,11 +5,11 @@ import type { ProviderId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type {
-  PhaseTemplateUpsertArgs,
-  PhaseDefinitionUpsertArgs,
-} from '../../../../features/phases/phases';
+  WorkflowUpsertArgs,
+  WorkflowStepUpsertArgs,
+} from '../../../../features/workflows/workflows';
 
-interface PhasesPanelProps {
+interface WorkflowsPanelProps {
   readonly workspaceId: WorkspaceId;
 }
 
@@ -59,7 +59,7 @@ function templateToForm(t: Workflow): TemplateForm {
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex'];
 
-export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
+export function WorkflowsPanel({ workspaceId }: WorkflowsPanelProps) {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
@@ -101,7 +101,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       return;
     }
 
-    const defs: PhaseDefinitionUpsertArgs[] = form.steps.map((d, i) => ({
+    const defs: WorkflowStepUpsertArgs[] = form.steps.map((d, i) => ({
       ...(d.id !== undefined ? { id: d.id } : {}),
       ordinal: i,
       name: d.name.trim(),
@@ -110,7 +110,7 @@ export function PhasesPanel({ workspaceId }: PhasesPanelProps) {
       ...(d.modelOverride.trim() ? { modelOverride: d.modelOverride.trim() } : {}),
     }));
 
-    const args: PhaseTemplateUpsertArgs = {
+    const args: WorkflowUpsertArgs = {
       ...(editing !== 'new' && editing ? { id: editing.id as WorkflowId } : {}),
       workspaceId,
       name: form.name.trim(),

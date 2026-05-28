@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks — must be hoisted before store import.
+// Module mocks, must be hoisted before store import.
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -63,13 +63,13 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -87,7 +87,7 @@ vi.mock('../features/providers/provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-// Summarizer mock — controlled resolve so we can simulate slow runs.
+// Summarizer mock, controlled resolve so we can simulate slow runs.
 let resolveSummarize: (() => void) | null = null;
 const summarizeSpy = vi.fn(
   () =>
@@ -191,7 +191,7 @@ async function importStore() {
   return mod;
 }
 
-describe('summarizer queue — coalescing and no-stack', () => {
+describe('summarizer queue, coalescing and no-stack', () => {
   beforeEach(() => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
@@ -227,7 +227,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
       ],
     });
 
-    // Pull enqueueSummarizer — it's not exported, so we test via summarizerQueues state.
+    // Pull enqueueSummarizer, it's not exported, so we test via summarizerQueues state.
     // Strategy: verify summarizerQueues holds at most 1 queued entry when in-flight.
     const state = useAppStore.getState();
     // Patch: call sendTurn is complex to set up; instead directly exercise queue invariant
@@ -306,7 +306,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     sq.delete(SESSION_ID);
   });
 
-  it('waitForSummarizerSettled is not exported — summarizer never blocks user actions (#461)', async () => {
+  it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
     // Regression: ensure the blocking barrier was removed and is not re-introduced.
     const storeModule = await import('./store');
     expect((storeModule as Record<string, unknown>)['waitForSummarizerSettled']).toBeUndefined();
@@ -324,7 +324,7 @@ describe('summarizer queue — coalescing and no-stack', () => {
     sq.set(SESSION_ID, queue);
 
     // A second "sendTurn" arriving while summarizer is in-flight must coalesce and return
-    // immediately — not await. We verify this by ensuring the queue mutation is synchronous.
+    // immediately, not await. We verify this by ensuring the queue mutation is synchronous.
     const before = Date.now();
     queue.queued = { turnInput: 'next-input', turnOutput: '' };
     const elapsed = Date.now() - before;

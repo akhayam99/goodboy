@@ -18,7 +18,7 @@ export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
         <button
           type="button"
           onClick={onFocusWorkspaces}
-          title="focus workspaces  ⌘1"
+          title="focus workspaces"
           className="text-foreground/80 hover:text-foreground hover:underline disabled:cursor-default disabled:no-underline"
           disabled={!onFocusWorkspaces}
         >

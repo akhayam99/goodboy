@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -97,13 +97,13 @@ vi.mock('../../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../../features/worktree/worktree', () => ({

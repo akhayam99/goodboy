@@ -9,7 +9,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks — hoisted before store import.
+// Module mocks, hoisted before store import.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -127,13 +127,13 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -202,7 +202,7 @@ async function* emptyStream(): AsyncIterable<TurnEvent> {
   // intentionally empty
 }
 
-describe('audit retry queue — sendTurn enqueue on failure', () => {
+describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
@@ -316,7 +316,7 @@ describe('audit retry queue — sendTurn enqueue on failure', () => {
   });
 });
 
-describe('audit retry queue — drain worker (happy path)', () => {
+describe('audit retry queue, drain worker (happy path)', () => {
   beforeEach(() => {
     runTurnSpy.mockImplementation(() => emptyStream());
     permissionRuleListSpy.mockResolvedValue([]);
@@ -361,7 +361,7 @@ describe('audit retry queue — drain worker (happy path)', () => {
 
     const mod = await import('./store');
     await mod.useAppStore.getState().hydrate();
-    // Drain is fired with void — yield microtask so it can settle.
+    // Drain is fired with void, yield microtask so it can settle.
     await Promise.resolve();
   }
 

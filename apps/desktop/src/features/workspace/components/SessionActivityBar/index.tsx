@@ -55,7 +55,7 @@ interface SessionActivityBarProps {
   onSelectSession: (id: SessionId) => void;
   onNewSession: () => void;
   // Fired when the user reveals the Archived tab. Triggers a lazy DB load
-  // of archived rows in the parent — archived sessions are never eager-
+  // of archived rows in the parent, archived sessions are never eager-
   // loaded so the rest of the app stays free of them.
   onArchivedTabOpen?: () => void;
 }
@@ -86,7 +86,7 @@ export function SessionActivityBar({
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1 px-1.5 py-1.5">
           {/* header strip: eyebrow title + display-options trigger. one row,
-              no decoration — DESIGN.md "compact: minimum chrome". */}
+              no decoration, DESIGN.md "compact: minimum chrome". */}
           <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions

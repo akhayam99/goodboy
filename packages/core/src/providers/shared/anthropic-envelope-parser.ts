@@ -38,7 +38,7 @@ interface UserMessage {
 }
 
 // Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
-// Cursor's stream-json — which is otherwise envelope-compatible — uses camelCase
+// Cursor's stream-json, which is otherwise envelope-compatible, uses camelCase
 // (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
 // Accept both forms so the shared parser can serve both adapters.
 interface UsagePayload {

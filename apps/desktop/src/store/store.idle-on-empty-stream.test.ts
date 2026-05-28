@@ -119,13 +119,13 @@ vi.mock('../features/skills/skills', () => ({
   resolveSkillInvocation: vi.fn(),
 }));
 
-vi.mock('../features/phases/phases', () => ({
-  invokePhaseTemplateList: vi.fn(async () => []),
-  invokePhaseTemplateUpsert: vi.fn(),
-  invokePhaseTemplateDelete: vi.fn(),
-  invokePhaseRunList: vi.fn(async () => []),
-  invokePhaseRunInsert: vi.fn(),
-  invokePhaseRunUpdateStatus: vi.fn(),
+vi.mock('../features/workflows/workflows', () => ({
+  invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowUpsert: vi.fn(),
+  invokeWorkflowDelete: vi.fn(),
+  invokeAgentList: vi.fn(async () => []),
+  invokeAgentInsert: vi.fn(),
+  invokeAgentUpdateStatus: vi.fn(),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -165,7 +165,7 @@ function buildSession(): Session {
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // CLI exits without emitting any event — no `done`, no `error`, no
+  // CLI exits without emitting any event, no `done`, no `error`, no
   // `assistant_text`. Mirrors a provider that runs to completion but
   // emits no parseable result line.
 }
@@ -178,7 +178,7 @@ async function* doneOnlyStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   };
 }
 
-describe('sendTurn — terminal state guarantees', () => {
+describe('sendTurn, terminal state guarantees', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();

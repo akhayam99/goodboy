@@ -1,6 +1,7 @@
 // Display helpers for the sidebar agent row telemetry pill.
 // Extracted so they can be unit-tested without rendering React.
 import type { TelemetryRecord } from '@goodboy/types';
+import { formatUsd } from '@goodboy/ui';
 
 export function formatTokens(n: number): string {
   if (n < 1000) return `${n}`;
@@ -8,12 +9,7 @@ export function formatTokens(n: number): string {
   return `${Math.round(n / 1000)}k`;
 }
 
-export function formatCost(usd: number): string {
-  if (usd === 0) return '$0';
-  if (usd < 0.01) return '<$0.01';
-  if (usd < 1) return `$${usd.toFixed(3)}`;
-  return `$${usd.toFixed(2)}`;
-}
+export const formatCost = formatUsd;
 
 export function shortModel(model: string): string {
   // claude-haiku-4-5 → haiku ; claude-opus-4-7 → opus ; claude-sonnet-4-6 → sonnet.

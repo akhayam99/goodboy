@@ -196,7 +196,7 @@ function TileAction({ info, onRefresh }: { info: ProviderInfo; onRefresh: () => 
     try {
       await providerAction(info.id as ProviderId, action);
     } catch {
-      // terminal launch failed — surface as no-op; user can retry
+      // terminal launch failed, surface as no-op; user can retry
     }
   };
 

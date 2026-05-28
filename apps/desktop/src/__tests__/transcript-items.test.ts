@@ -34,7 +34,7 @@ function permDecEvent(
   };
 }
 
-describe('reduceTranscript — permission_request', () => {
+describe('reduceTranscript, permission_request', () => {
   it('produces a permission_request item', () => {
     const items = reduceTranscript([permReqEvent()]);
     expect(items).toHaveLength(1);
@@ -62,7 +62,7 @@ describe('reduceTranscript — permission_request', () => {
   });
 });
 
-describe('reduceTranscript — permission_decision', () => {
+describe('reduceTranscript, permission_decision', () => {
   it('produces a permission_decision item with allow + ruleId', () => {
     const items = reduceTranscript([permDecEvent('tu-1', 'allow', RULE_ID, 'engine')]);
     expect(items).toHaveLength(1);
@@ -108,7 +108,7 @@ describe('reduceTranscript — permission_decision', () => {
   });
 });
 
-describe('reduceTranscript — request + decision pair', () => {
+describe('reduceTranscript, request + decision pair', () => {
   it('produces two items for a request followed by a decision', () => {
     const events: TurnEvent[] = [permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null, 'user')];
     const items = reduceTranscript(events);

@@ -425,7 +425,7 @@ function CommentsPane({ comments, pr, sessionId, onClose }: CommentsPaneProps) {
 
   // Only review threads (the ones with a 'resolve conversation' affordance
   // on github) make sense in this tab. Plain issue comments don't carry a
-  // thread id and can't be resolved from here — they belong on github proper.
+  // thread id and can't be resolved from here, they belong on github proper.
   const threads = useMemo(
     () => groupThreads(comments).filter((t) => t.head.source === 'review'),
     [comments],
@@ -715,7 +715,7 @@ function CommentThreadCard({
         <button
           type="button"
           onClick={() => void openUrl(head.url)}
-          title={`${head.path}${head.line ? ':' + head.line : ''} — open on github`}
+          title={`${head.path}${head.line ? ':' + head.line : ''}, open on github`}
           className="mt-1 inline-flex items-center gap-1 self-start rounded bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <FileCode2 size={9} aria-hidden />

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`snapshot — ContextPanel variants > collapsed: renders rail button, not slot content 1`] = `
+exports[`snapshot, ContextPanel variants > collapsed: renders rail button, not slot content 1`] = `
 <div
   class="flex h-full w-full justify-end pr-4 pt-4"
 >
@@ -41,7 +41,7 @@ exports[`snapshot — ContextPanel variants > collapsed: renders rail button, no
 </div>
 `;
 
-exports[`snapshot — ContextPanel variants > expanded: renders slot content, not rail button 1`] = `
+exports[`snapshot, ContextPanel variants > expanded: renders slot content, not rail button 1`] = `
 <div
   class="h-full w-full justify-end pr-4 pt-4 hidden"
 >

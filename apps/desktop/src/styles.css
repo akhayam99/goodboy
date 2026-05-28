@@ -5,7 +5,7 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", monospace;
 
-  /* Dark palette (default) — soft desaturated darks, lifted black base.
+  /* Dark palette (default), soft desaturated darks, lifted black base.
      Surface elevation ramp (brighter L = more elevated):
      background (canvas) < subtle (panels) < muted (rails, chips) < elevated (top cards). */
   --color-background: oklch(0.25 0.006 255);
@@ -17,11 +17,11 @@
   --color-border: oklch(0.40 0.012 255);
   --color-border-soft: oklch(0.32 0.010 255);
 
-  /* Brand accent — teal/cyan. */
+  /* Brand accent, teal/cyan. */
   --color-primary: oklch(0.74 0.11 200);
   --color-primary-foreground: oklch(0.13 0.02 200);
 
-  /* Semantic tokens — slightly softer chroma for dark mode. */
+  /* Semantic tokens, slightly softer chroma for dark mode. */
   --color-danger: oklch(0.63 0.17 22);
   --color-danger-foreground: oklch(0.95 0.01 22);
   --color-warning: oklch(0.76 0.13 78);
@@ -47,7 +47,7 @@
   --text-lg: 17px;
   --text-xl: 20px;
 
-  /* Density grade — name three opinionated triplets so siblings agree on
+  /* Density grade, name three opinionated triplets so siblings agree on
      font-size + gap + padding instead of drifting independently. Apply via
      `var(--density-<grade>-*)` from component CSS. The sidebar lives at
      `compact`, right-panel content at `cozy`, transcript prose at
@@ -75,7 +75,7 @@
     50% { opacity: 0.45; }
   }
 
-  /* Border-only pulse — anima il border-color, lascia il contenuto stabile.
+  /* Border-only pulse, anima il border-color, lascia il contenuto stabile.
      Usato sulle session card in pending: il bordo respira giallo per
      attirare l'occhio, ma il testo resta leggibile a opacità piena. */
   @keyframes border-pulse {
@@ -87,7 +87,7 @@
     to { --spin-angle: 360deg; }
   }
 
-  /* Tab / panel content swap — a quick fade + 2px rise so the new content
+  /* Tab / panel content swap, a quick fade + 2px rise so the new content
      arrives instead of snapping in. Gated by motion-safe at the call site. */
   --animate-fade-in: fade-in 120ms cubic-bezier(0.2, 0, 0, 1);
 
@@ -102,7 +102,7 @@
     }
   }
 
-  /* Dark shadows — subtle drop + faint inner highlight to lift cards on dark bg. */
+  /* Dark shadows, subtle drop + faint inner highlight to lift cards on dark bg. */
   --shadow-sm:
     0 1px 2px 0 oklch(0 0 0 / 0.28),
     inset 0 1px 0 0 oklch(1 0 0 / 0.03);
@@ -125,7 +125,7 @@
   --color-focus-ring: oklch(0.78 0 0 / 0.5);
 }
 
-/* Light palette — applied when html[data-theme="light"].
+/* Light palette, applied when html[data-theme="light"].
    Elevation model mirrors dark mode: brighter L = more elevated. Monotonic ramp:
    background (canvas) < subtle (panels) < muted (rails, chips) < elevated (top cards). */
 html[data-theme="light"] {
@@ -139,8 +139,8 @@ html[data-theme="light"] {
   --color-border-soft: oklch(0.91 0.004 250);
   --color-primary: oklch(0.50 0.13 200);
   --color-primary-foreground: oklch(0.99 0.003 200);
-  /* Semantic — tuned for AA on light bg (text use) and white-fg readability (bg use).
-     Warning hue shifted from pure yellow (78) to amber (55) — pure yellow at AA-passing
+  /* Semantic, tuned for AA on light bg (text use) and white-fg readability (bg use).
+     Warning hue shifted from pure yellow (78) to amber (55), pure yellow at AA-passing
      L is brownish; amber stays recognizable while clearing 4.5:1 against bg. */
   --color-danger: oklch(0.50 0.19 22);
   --color-danger-foreground: oklch(0.99 0 0);
@@ -158,7 +158,7 @@ html[data-theme="light"] {
   --color-provider-cursor: oklch(0.50 0.17 290);
   --color-provider-codex: oklch(0.48 0.15 148);
   --color-focus-ring: oklch(0.50 0.13 200 / 0.45);
-  /* Light shadows — softer, multi-layered for depth without harshness. */
+  /* Light shadows, softer, multi-layered for depth without harshness. */
   --shadow-sm:
     0 1px 2px 0 oklch(0 0 0 / 0.06),
     0 1px 3px 0 oklch(0 0 0 / 0.08);
@@ -239,7 +239,7 @@ dialog[open]::backdrop {
   }
 }
 
-/* Animated conic-gradient border — a calm "spinner" that traces the
+/* Animated conic-gradient border, a calm "spinner" that traces the
    card perimeter for running / auto-running states. The mask trick clips
    the gradient to a 1px ring so it doesn't bleed into the card body. */
 @property --spin-angle {
@@ -282,7 +282,7 @@ dialog[open]::backdrop {
   animation: border-pulse 2.8s ease-in-out infinite;
 }
 
-/* Slot-machine cost chip — outer success-tinted halo + a brief inner lift that
+/* Slot-machine cost chip, outer success-tinted halo + a brief inner lift that
    sells the "the meter just ticked" moment. Paired in JS with a per-digit roll
    so the glow peaks while the numbers are still settling, then fades as they
    lock in. Duration must match the JS roll (1100ms). */
@@ -309,6 +309,23 @@ dialog[open]::backdrop {
 
 .cost-chip-pulse {
   animation: cost-chip-pulse 1100ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Linear-shrinking countdown bar. Used for the delete-arm window in
+   SessionSettingsDialog so users see how long the confirmation arm stays
+   open before disarming. Duration set inline via --duration. */
+@keyframes shrink-bar {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.shrink-bar {
+  transform-origin: left center;
+  animation: shrink-bar var(--shrink-duration, 4s) linear forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
