@@ -14,8 +14,16 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd(usage, 'claude-opus-4-7')).toBeCloseTo(15 + 75);
   });
 
+  it('opus-4-6 is priced as opus, not the sonnet fallback', () => {
+    expect(computeCostUsd(usage, 'claude-opus-4-6')).toBeCloseTo(15 + 75);
+  });
+
   it('sonnet pricing', () => {
     expect(computeCostUsd(usage, 'claude-sonnet-4-6')).toBeCloseTo(3 + 15);
+  });
+
+  it('sonnet-4-5 is priced as sonnet', () => {
+    expect(computeCostUsd(usage, 'claude-sonnet-4-5')).toBeCloseTo(3 + 15);
   });
 
   it('haiku pricing', () => {

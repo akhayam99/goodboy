@@ -6,17 +6,25 @@ interface ModelPrice {
   readonly cachedInputPerMtok: number;
 }
 
+const OPUS_PRICE: ModelPrice = {
+  inputPerMtok: 15,
+  outputPerMtok: 75,
+  cachedInputPerMtok: 1.5,
+};
+const SONNET_PRICE: ModelPrice = {
+  inputPerMtok: 3,
+  outputPerMtok: 15,
+  cachedInputPerMtok: 0.3,
+};
+
+// Keep every model advertised in PROVIDER_CAPABILITIES (../capabilities.ts)
+// priced here. A model missing from this table silently bills at the sonnet
+// FALLBACK, which under-counts Opus spend ~5x.
 const PRICES: Record<string, ModelPrice> = {
-  'claude-opus-4-7': {
-    inputPerMtok: 15,
-    outputPerMtok: 75,
-    cachedInputPerMtok: 1.5,
-  },
-  'claude-sonnet-4-6': {
-    inputPerMtok: 3,
-    outputPerMtok: 15,
-    cachedInputPerMtok: 0.3,
-  },
+  'claude-opus-4-7': OPUS_PRICE,
+  'claude-opus-4-6': OPUS_PRICE,
+  'claude-sonnet-4-6': SONNET_PRICE,
+  'claude-sonnet-4-5': SONNET_PRICE,
   'claude-haiku-4-5': {
     inputPerMtok: 1,
     outputPerMtok: 5,
