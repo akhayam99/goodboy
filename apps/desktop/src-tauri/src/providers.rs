@@ -345,27 +345,58 @@ fn parse_claude_auth_output(output: &str) -> AuthState {
 
 fn check_cursor_auth() -> AuthState {
     match run_auth_command(&["cursor-agent", "status"]) {
-        Ok(out) => {
-            let output = out.stdout;
-            let lower = output.to_lowercase();
-            if lower.contains("not logged in") || lower.contains("not authenticated") {
-                return AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                };
-            }
-            let identity = extract_email(&output)
-                .or_else(|| extract_json_string(&output, "email"))
-                .or_else(|| extract_json_string(&output, "username"));
-            AuthState {
-                state: AuthStateKind::Connected,
-                identity,
-            }
-        }
+        // Use primary_text() so a non-TTY child that writes status to stderr is
+        // still read (cursor-agent, like codex, can route to stderr headless).
+        Ok(out) => parse_cursor_auth_output(out.primary_text()),
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
         },
+    }
+}
+
+fn parse_cursor_auth_output(output: &str) -> AuthState {
+    let stripped = strip_ansi(output);
+    let text = stripped.trim();
+    if text.is_empty() {
+        return AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        };
+    }
+    let lower = text.to_lowercase();
+    // Negative checks first: a "not logged in" line must never be read as positive.
+    if lower.contains("not logged in")
+        || lower.contains("not authenticated")
+        || lower.contains("not signed in")
+        || lower.contains("logged out")
+    {
+        return AuthState {
+            state: AuthStateKind::Disconnected,
+            identity: None,
+        };
+    }
+    let identity = extract_email(text)
+        .or_else(|| extract_json_string(text, "email"))
+        .or_else(|| extract_json_string(text, "username"));
+    // Only Connected on a positive signal (an identity or an explicit logged-in
+    // phrase). Unrecognized/empty output stays Unknown instead of silently
+    // reporting "connected" — the previous code fell through to Connected and
+    // showed a logged-out cursor as authenticated.
+    let positive = identity.is_some()
+        || lower.contains("logged in")
+        || lower.contains("signed in")
+        || lower.contains("authenticated as");
+    if positive {
+        AuthState {
+            state: AuthStateKind::Connected,
+            identity,
+        }
+    } else {
+        AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        }
     }
 }
 
@@ -777,6 +808,40 @@ mod tests {
             stderr: String::new(),
         };
         assert!(out.primary_text().trim().is_empty());
+    }
+
+    #[test]
+    fn cursor_not_logged_in_is_disconnected() {
+        let s = parse_cursor_auth_output("Not logged in\n");
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn cursor_empty_output_is_unknown_not_connected() {
+        // Regression: empty/odd output used to fall through to Connected.
+        let s = parse_cursor_auth_output("");
+        assert_eq!(s.state, AuthStateKind::Unknown);
+        let s2 = parse_cursor_auth_output("   \n  \n");
+        assert_eq!(s2.state, AuthStateKind::Unknown);
+    }
+
+    #[test]
+    fn cursor_unrecognized_output_is_unknown() {
+        let s = parse_cursor_auth_output("some unexpected banner line\n");
+        assert_eq!(s.state, AuthStateKind::Unknown);
+    }
+
+    #[test]
+    fn cursor_logged_in_with_email_is_connected() {
+        let s = parse_cursor_auth_output("Logged in as alice@example.com\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
+    }
+
+    #[test]
+    fn cursor_logged_in_phrase_without_identity_is_connected() {
+        let s = parse_cursor_auth_output("Signed in\n");
+        assert_eq!(s.state, AuthStateKind::Connected);
     }
 
     // Gemini auth is now creds-file-based (no subprocess), so the cli-output
