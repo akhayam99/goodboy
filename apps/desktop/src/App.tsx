@@ -15,6 +15,7 @@ import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
+import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import {
   useAppStore,
   useCurrentSession,
@@ -87,6 +88,7 @@ export function App() {
   }, [hydrate]);
 
   useGithubPolling();
+  useProviderRefreshOnFocus();
 
   useEffect(() => {
     const handler = (event: Event) => {

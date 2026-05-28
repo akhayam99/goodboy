@@ -10,6 +10,7 @@ mod path_env;
 mod permissions;
 mod planner;
 mod workflows;
+mod provider_lifecycle;
 mod providers;
 mod repo;
 mod scripts;
@@ -35,6 +36,7 @@ pub fn run() {
   let turn_registry = turn::TurnRegistry::new();
   let script_registry = scripts::ScriptRegistry::new();
   let terminal_registry = terminal::TerminalRegistry::new();
+  let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
   let linear_token_cache = linear::LinearTokenCache::new();
 
   tauri::Builder::default()
@@ -47,6 +49,7 @@ pub fn run() {
     .manage(turn_registry)
     .manage(script_registry)
     .manage(terminal_registry)
+    .manage(provider_lifecycle_registry)
     .manage(linear_token_cache)
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -93,6 +96,10 @@ pub fn run() {
       providers::refresh_gemini_status,
       providers::check_provider_auth,
       providers::provider_action,
+      provider_lifecycle::provider_lifecycle_run,
+      provider_lifecycle::provider_lifecycle_write,
+      provider_lifecycle::provider_lifecycle_resize,
+      provider_lifecycle::provider_lifecycle_cancel,
       turn::turn_spawn,
       turn::turn_cancel,
       attachment::attachment_write,
