@@ -88,7 +88,11 @@ import { createSessionViewSlice } from './slices/session-view';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
-import { createProvidersSlice } from './slices/providers';
+import {
+  createProvidersSlice,
+  INITIAL_LIFECYCLE_MAP,
+  type ProviderLifecycleMap,
+} from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
@@ -170,6 +174,7 @@ export interface AppState {
   readonly geminiStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providerLifecycle: ProviderLifecycleMap;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
   readonly error: string | null;
@@ -310,6 +315,10 @@ export interface AppActions {
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
+  installProvider(providerId: ProviderId): Promise<void>;
+  loginProvider(providerId: ProviderId): Promise<void>;
+  logoutProvider(providerId: ProviderId): Promise<void>;
+  cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
@@ -548,6 +557,7 @@ export const initialState: AppState = {
   geminiStatus: null,
   authResults: null,
   providers: buildProviderList({ anthropic: null, cursor: null, codex: null, gemini: null }),
+  providerLifecycle: INITIAL_LIFECYCLE_MAP,
   hydrated: false,
   bootPhase: 'pending',
   error: null,

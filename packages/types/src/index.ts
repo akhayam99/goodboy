@@ -53,6 +53,13 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
+export type {
+  ProviderLifecycleAction,
+  ProviderLifecycleCommands,
+  ProviderPlatform,
+  ProviderPlatformCommands,
+} from './provider-commands';
+export { PROVIDER_LIFECYCLE_COMMANDS } from './provider-commands';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
