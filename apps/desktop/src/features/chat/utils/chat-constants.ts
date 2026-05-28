@@ -62,6 +62,7 @@ const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'codex-latest': { weight: 20, tier: 'mid' },
   'claude-opus-4-6': { weight: 60, tier: 'expensive' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
+  'claude-opus-4-8': { weight: 80, tier: 'expensive' },
 };
 
 export const TIER_TEXT: Record<CostTier, string> = {
