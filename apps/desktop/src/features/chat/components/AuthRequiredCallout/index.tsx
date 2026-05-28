@@ -1,7 +1,7 @@
 import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
-import { useAppStore } from '../../../../store';
+import { openProviderModal } from '../../../providers/components/ProviderModalHost';
 
 interface Props {
   readonly providerId: ProviderId;
@@ -11,10 +11,12 @@ interface Props {
 
 export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) {
   const label = PROVIDER_LABEL_LOWER[providerId];
-  const loginProvider = useAppStore((s) => s.loginProvider);
 
   const onConnect = () => {
-    void loginProvider(providerId);
+    // Route through the global provider modal so the user sees the guide +
+    // embedded terminal + escape hatch, instead of firing a background
+    // login that surfaces nothing in the chat view.
+    openProviderModal({ providerId, action: 'login' });
   };
 
   return (

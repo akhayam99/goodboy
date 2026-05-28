@@ -31,13 +31,18 @@ function stringToBase64(s: string): string {
 interface Props {
   readonly runId: string;
   readonly isActive: boolean;
+  /** Tailwind height class for the terminal wrapper. Default `h-44`. */
+  readonly heightClass?: string;
 }
 
 // Wraps GenericTerminalPanel with a lifecycle-scoped driver. The driver
 // filters output/exit events by runId so concurrent lifecycle runs (e.g. user
 // installs claude then immediately starts codex install) never bleed into
 // each other's xterm view.
-export function InlineTerminal({ runId, isActive }: Props) {
+//
+// The same component is reused in the connect modal at a larger size by
+// overriding heightClass, see ProviderConnectModal.
+export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props) {
   const driver = useMemo<TerminalDriver>(
     () => ({
       write: (data) => {
@@ -61,7 +66,9 @@ export function InlineTerminal({ runId, isActive }: Props) {
   );
 
   return (
-    <div className="h-44 overflow-hidden rounded-md border border-border-soft bg-background">
+    <div
+      className={`${heightClass} overflow-hidden rounded-md border border-border-soft bg-background`}
+    >
       <GenericTerminalPanel terminalId={runId} driver={driver} isActive={isActive} exitMessage="" />
     </div>
   );

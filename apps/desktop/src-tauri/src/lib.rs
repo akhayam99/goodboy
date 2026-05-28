@@ -3,6 +3,7 @@ mod budget;
 mod config_export;
 mod db;
 mod editor;
+mod external_terminal;
 mod github;
 mod linear;
 mod parallel_groups;
@@ -99,6 +100,7 @@ pub fn run() {
       provider_lifecycle::provider_lifecycle_write,
       provider_lifecycle::provider_lifecycle_resize,
       provider_lifecycle::provider_lifecycle_cancel,
+      external_terminal::open_command_in_external_terminal,
       turn::turn_spawn,
       turn::turn_cancel,
       attachment::attachment_write,

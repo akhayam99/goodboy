@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import {
@@ -67,8 +68,11 @@ export function WorkspaceSettingsDialog({
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
 
-  const connectedProviderIds = useAppStore((s) =>
-    s.providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+  // useShallow because the selector derives a fresh array each call; without
+  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
+  // every render and React 19 bails into an infinite render loop.
+  const connectedProviderIds = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
 
   const [active, setActive] = useState<Section>('general');
@@ -517,7 +521,10 @@ function DefaultProviderPicker({
 /* ──────────────────────────────────────────────────────────────────── */
 
 function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore((s) => s.workspaceIntegrations[workspaceId] ?? []);
+  // Same snapshot-stability fix as connectedProviderIds: `?? []` returns a
+  // fresh array on every missing-key lookup, which causes useSyncExternalStore
+  // to loop.
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const [linearOpen, setLinearOpen] = useState(false);
 

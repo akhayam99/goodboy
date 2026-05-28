@@ -421,7 +421,7 @@ exports[`snapshot, empty states > ProvidersPanel: no providers (store returns []
       />
     </svg>
     <span>
-      Install and sign in straight from the app. Each step runs in an embedded terminal so you never leave Goodboy.
+      Install and sign in straight from Goodboy. Every step runs in a roomy modal with the embedded terminal, the per-provider playbook, and an escape hatch to your own shell.
     </span>
   </div>
 </div>
@@ -1604,16 +1604,16 @@ exports[`snapshot, error states > ProvidersPanel: provider in error state 1`] = 
     </span>
   </div>
   <div
-    class="grid grid-cols-3 gap-2.5"
+    class="grid grid-cols-2 gap-2.5"
   >
     <div
       class="relative flex flex-col gap-2 rounded-lg border bg-subtle p-3 shadow-sm transition-colors"
     >
       <div
-        class="flex gap-3 flex-col items-center"
+        class="flex flex-col items-center gap-2"
       >
         <div
-          class="flex items-center flex-col gap-2"
+          class="flex flex-col items-center gap-2"
         >
           <div
             aria-hidden="true"
@@ -1713,7 +1713,7 @@ exports[`snapshot, error states > ProvidersPanel: provider in error state 1`] = 
       />
     </svg>
     <span>
-      Install and sign in straight from the app. Each step runs in an embedded terminal so you never leave Goodboy.
+      Install and sign in straight from Goodboy. Every step runs in a roomy modal with the embedded terminal, the per-provider playbook, and an escape hatch to your own shell.
     </span>
   </div>
 </div>

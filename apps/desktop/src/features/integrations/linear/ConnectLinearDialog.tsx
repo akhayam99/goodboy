@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
@@ -22,7 +23,10 @@ interface Props {
  * picker just stops appearing in new sessions.
  */
 export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
-  const integrations = useAppStore((s) => s.workspaceIntegrations[workspaceId] ?? []);
+  // useShallow because `?? []` returns a fresh array on every missing-key
+  // lookup; without shallow comparison useSyncExternalStore loops on a
+  // snapshot mismatch in React 19.
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const connectLinear = useAppStore((s) => s.connectLinear);
   const disconnectLinear = useAppStore((s) => s.disconnectLinear);
