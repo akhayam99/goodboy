@@ -5,8 +5,6 @@ import { toggleSessionSlot } from './toggleSessionSlot';
 import { upsertSessionSlot } from './upsertSessionSlot';
 import type { GetFn, SetFn } from './types';
 
-export { mergeSlots } from './types';
-
 export function createSlotsSlice(set: SetFn, get: GetFn) {
   return {
     loadSessionTelemetry: loadSessionTelemetry(set),

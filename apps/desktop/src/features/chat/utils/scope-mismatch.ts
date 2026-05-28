@@ -1,6 +1,6 @@
 import type { AgentKind } from '../../session/agent-kind';
 
-export type ScopeMismatchKind = 'planner-asked-to-implement' | 'implementer-asked-to-plan';
+type ScopeMismatchKind = 'planner-asked-to-implement' | 'implementer-asked-to-plan';
 
 export interface ScopeMismatch {
   readonly kind: ScopeMismatchKind;

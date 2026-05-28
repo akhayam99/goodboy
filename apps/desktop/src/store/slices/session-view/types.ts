@@ -33,11 +33,11 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 5,
 };
 
-export interface SessionViewSliceState {
+interface SessionViewSliceState {
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
 }
 
-export interface SessionViewSliceActions {
+interface SessionViewSliceActions {
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;

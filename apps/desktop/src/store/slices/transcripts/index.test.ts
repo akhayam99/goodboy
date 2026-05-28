@@ -346,8 +346,6 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: vi.fn(async () => undefined),
   invokeScriptCancel: vi.fn(async () => undefined),
-  invokeScriptWrite: vi.fn(async () => undefined),
-  invokeScriptResize: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: vi.fn(async () => () => undefined),
 }));

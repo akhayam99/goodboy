@@ -2,9 +2,9 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
-export type NudgeSeverity = 'info' | 'warning' | 'success';
+type NudgeSeverity = 'info' | 'warning' | 'success';
 
-export interface NudgeAction {
+interface NudgeAction {
   readonly label: string;
   readonly onClick: () => void;
   readonly testId?: string;

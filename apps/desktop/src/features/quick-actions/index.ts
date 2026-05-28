@@ -1,5 +1,5 @@
 export { PREFIXES, parseQuery } from './grammar';
-export type { ParsedQuery, PrefixMeta, QuickActionGroup } from './grammar';
+export type { QuickActionGroup } from './grammar';
 export type { QuickActionItem } from './types';
 export {
   buildAgentActions,

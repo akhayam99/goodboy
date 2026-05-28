@@ -41,7 +41,7 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
   lg: 'size-6',
 };
 
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
+type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface Props {
   readonly kind: AgentKind;

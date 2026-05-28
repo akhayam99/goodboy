@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import { HelpCircle, Send, Undo2, ArrowDownRight } from 'lucide-react';
 import { ScrollArea, cn } from '@goodboy/ui';
-import type { Agent, AgentId, OpenQuestionId, SessionId, Workflow } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { QuestionCard } from './QuestionCard';
 import { buildQuestionClusters, type QuestionCluster } from './clusters';
@@ -199,6 +199,3 @@ export function QuestionsTab({ sessionId, onSubmit }: Props) {
     </div>
   );
 }
-
-// Re-exported so callers that prop-type their onSubmit can stay clean.
-export type { OpenQuestionId };

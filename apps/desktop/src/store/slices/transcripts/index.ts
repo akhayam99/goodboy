@@ -3,8 +3,6 @@ import { loadTranscript } from './loadTranscript';
 import { resetTranscript } from './resetTranscript';
 import type { GetFn, SetFn } from './types';
 
-export { queueTurnEventInsert } from './queue';
-
 export function createTranscriptsSlice(set: SetFn, _get: GetFn) {
   return {
     loadTranscript: loadTranscript(set),

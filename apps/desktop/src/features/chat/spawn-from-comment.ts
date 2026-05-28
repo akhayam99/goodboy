@@ -26,7 +26,7 @@ export function buildCommentAgentTitle(c: PrComment): string {
  * kind's systemPrompt (agent-kind.ts), so this prompt only supplies the
  * comment-specific context: PR + author + body + path + thread id.
  */
-export function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): string {
+function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): string {
   const lines: Array<string> = [];
   lines.push(`Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`);
   if (c.source === 'review' && c.path) {
@@ -54,7 +54,7 @@ export function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): str
  * single-comment variant; per-thread markers are not emitted because no
  * one thread owns the resulting commit.
  */
-export function buildReviewChangesAgentPrompt(
+function buildReviewChangesAgentPrompt(
   pr: PullRequestState,
   openComments: ReadonlyArray<PrComment>,
 ): string {

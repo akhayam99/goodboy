@@ -65,11 +65,9 @@ vi.mock('../store', () => ({
     .fn()
     .mockReturnValue({ status: 'idle', lastUpdate: null, error: null, lastUsage: null }),
   useSlotHistory: vi.fn().mockReturnValue([]),
-  useSessionNextActions: vi.fn().mockReturnValue([]),
   useDiffComments: vi.fn().mockReturnValue([]),
   useFilesTouched: vi.fn().mockReturnValue({ paths: [], count: 0 }),
   useSessionPlans: vi.fn().mockReturnValue([]),
-  useMostRecentPlan: vi.fn().mockReturnValue(null),
   useSessionLoading: vi.fn().mockReturnValue({
     agents: false,
     transcript: false,

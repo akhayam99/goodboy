@@ -13,7 +13,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
-import type { NextAction } from '@goodboy/core';
 import {
   useAppStore,
   type AppState,
@@ -21,8 +20,6 @@ import {
   type SummarizerSessionStatus,
 } from './store';
 import { sortAndGroupSessions, type GroupedSessions } from './slices/session-view';
-
-export type { GroupedSessions };
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'none' };
 
@@ -144,13 +141,6 @@ export const useSlotHistory = (
     sessionId ? (s.slotHistory[sessionId]?.[key] ?? EMPTY_HISTORY) : EMPTY_HISTORY,
   );
 
-const EMPTY_NEXT_ACTIONS: ReadonlyArray<NextAction> = [];
-
-export const useSessionNextActions = (sessionId: SessionId | null): ReadonlyArray<NextAction> =>
-  useAppStore((s) =>
-    sessionId ? (s.sessionNextActions[sessionId] ?? EMPTY_NEXT_ACTIONS) : EMPTY_NEXT_ACTIONS,
-  );
-
 const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
 
 export const useDiffComments = (sessionId: SessionId | null): ReadonlyArray<DiffComment> =>
@@ -160,11 +150,6 @@ const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = [];
 
 export const useSessionPlans = (sessionId: SessionId | null): ReadonlyArray<PlanWithCount> =>
   useAppStore((s) => (sessionId ? (s.sessionPlans[sessionId] ?? EMPTY_PLANS) : EMPTY_PLANS));
-
-export const useMostRecentPlan = (sessionId: SessionId | null): PlanWithCount | null => {
-  const plans = useSessionPlans(sessionId);
-  return plans[plans.length - 1] ?? null;
-};
 
 interface FilesTouched {
   readonly paths: ReadonlyArray<string>;

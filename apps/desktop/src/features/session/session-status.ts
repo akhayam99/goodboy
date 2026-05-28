@@ -8,8 +8,6 @@ export const SESSION_STATUS_ORDER: ReadonlyArray<SessionUserStatus> = [
   'done',
 ];
 
-export const SESSION_STATUS_DEFAULT: SessionUserStatus = 'wip';
-
 interface SessionStatusEntry {
   readonly label: string;
   readonly description: string;

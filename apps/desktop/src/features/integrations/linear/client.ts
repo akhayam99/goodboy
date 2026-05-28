@@ -11,7 +11,7 @@ export type LinearViewer = {
   };
 };
 
-export type LinearIssueState = {
+type LinearIssueState = {
   name: string;
   type: string;
 };

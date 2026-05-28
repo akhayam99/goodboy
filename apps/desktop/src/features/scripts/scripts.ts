@@ -37,16 +37,6 @@ export function invokeScriptRun(
   return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows });
 }
 
-/** Send keyboard input (base64-encoded) to a running pty. */
-export function invokeScriptWrite(runId: string, data: string): Promise<void> {
-  return invoke<void>('workspace_script_write', { runId, data });
-}
-
-/** Notify the pty of a terminal resize. */
-export function invokeScriptResize(runId: string, cols: number, rows: number): Promise<void> {
-  return invoke<void>('workspace_script_resize', { runId, cols, rows });
-}
-
 /** Interrupt an in-flight script run. No-op if the run already finished. */
 export function invokeScriptCancel(runId: string): Promise<void> {
   return invoke<void>('workspace_script_cancel', { runId });
