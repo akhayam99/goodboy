@@ -301,9 +301,15 @@ pub(crate) fn spawn_one(
     let registry_clone = Arc::clone(registry);
     let run_id_owned = args.run_id.to_string();
 
+    // Drain stderr on its own thread so it runs concurrently with stdout
+    // forwarding. Reading stderr only after stdout EOF used to deadlock: a CLI
+    // that writes >~64KB to stderr mid-stream fills the pipe buffer, blocks on
+    // the write, and stops producing stdout — so forward_lines waits forever.
+    let stderr_handle = thread::spawn(move || capture_stderr(stderr));
+
     thread::spawn(move || {
         forward_lines(&app_clone, &run_id_owned, stdout);
-        let stderr_buf = capture_stderr(stderr);
+        let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
         if codex_debug {
             eprintln!(
@@ -376,11 +382,41 @@ pub fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(),
     Ok(())
 }
 
+/// Kill the child registered under `run_id`, if present. No-op when the run is
+/// unknown or already reaped. Used by `parallel_agent_spawn` to roll back a
+/// partially-spawned batch so a mid-batch failure can't orphan live children.
+pub(crate) fn kill_run(registry: &ChildRegistry, run_id: &str) {
+    let slot = {
+        let Ok(map) = registry.lock() else {
+            return;
+        };
+        map.get(run_id).cloned()
+    };
+    if let Some(slot) = slot {
+        if let Ok(mut guard) = slot.lock() {
+            if let Some(child) = guard.as_mut() {
+                let _ = child.kill();
+            }
+        }
+    }
+}
+
 fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
-    let reader = BufReader::new(stdout);
-    for line in reader.lines() {
-        match line {
-            Ok(line) => {
+    let mut reader = BufReader::new(stdout);
+    let mut buf: Vec<u8> = Vec::new();
+    loop {
+        buf.clear();
+        // read_until + from_utf8_lossy instead of BufRead::lines(): lines()
+        // yields Err on the first non-UTF8 byte, and the old code `break`ed on
+        // that, abandoning the rest of the turn. A stray byte in passthrough
+        // tool output must not truncate the stream.
+        match reader.read_until(b'\n', &mut buf) {
+            Ok(0) => break,
+            Ok(_) => {
+                while matches!(buf.last(), Some(b'\n') | Some(b'\r')) {
+                    buf.pop();
+                }
+                let line = String::from_utf8_lossy(&buf).into_owned();
                 let _ = app.emit(
                     EVENT_NAME,
                     TurnEventEnvelope {

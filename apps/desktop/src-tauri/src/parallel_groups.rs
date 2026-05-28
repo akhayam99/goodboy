@@ -430,7 +430,7 @@ pub fn parallel_agent_spawn(
     let mut run_ids: Vec<String> = Vec::with_capacity(args.runs.len());
 
     for spec in &args.runs {
-        let run_id = spawn_one(
+        match spawn_one(
             &app,
             &state.0,
             SpawnOneArgs {
@@ -445,8 +445,19 @@ pub fn parallel_agent_spawn(
                 resume_session_id: None,
                 system_prompt: None,
             },
-        )?;
-        run_ids.push(run_id);
+        ) {
+            Ok(run_id) => run_ids.push(run_id),
+            Err(e) => {
+                // Roll back: kill the children already spawned in this batch.
+                // Returning Err with siblings still live would orphan them —
+                // the caller never learns their run_ids, so they'd run to
+                // completion untracked and uncancellable.
+                for spawned in &run_ids {
+                    crate::turn::kill_run(&state.0, spawned);
+                }
+                return Err(e);
+            }
+        }
     }
 
     Ok(run_ids)
