@@ -21,6 +21,7 @@ const SONNET_PRICE: ModelPrice = {
 // priced here. A model missing from this table silently bills at the sonnet
 // FALLBACK, which under-counts Opus spend ~5x.
 const PRICES: Record<string, ModelPrice> = {
+  'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
   'claude-opus-4-6': OPUS_PRICE,
   'claude-sonnet-4-6': SONNET_PRICE,

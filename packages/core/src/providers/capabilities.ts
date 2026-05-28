@@ -6,6 +6,7 @@ import { GEMINI_MODELS } from './gemini/constants';
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
   anthropic: {
     models: [
+      { id: 'claude-opus-4-8', tier: 'turn', contextWindow: 1_000_000 },
       { id: 'claude-opus-4-7', tier: 'turn', contextWindow: 1_000_000 },
       { id: 'claude-opus-4-6', tier: 'turn', contextWindow: 200_000 },
       { id: 'claude-sonnet-4-6', tier: 'turn', contextWindow: 200_000 },
