@@ -16,9 +16,11 @@ const { state, toastMock } = vi.hoisted(() => ({
     sessionSummary: null as null | { estimatedCostUsd: number },
     loadSessionBudget: vi.fn(async () => undefined),
     setSessionBudget: vi.fn(async () => undefined),
+    setSessionConfig: vi.fn(async () => undefined),
     renameTask: vi.fn(async () => undefined),
     deleteTask: vi.fn(async () => undefined),
     changeSessionBranch: vi.fn(async () => undefined),
+    providers: [] as ReadonlyArray<{ id: string; connection: string }>,
     workspaces: [{ id: 'ws-1', rootPath: '/repo' }] as ReadonlyArray<{
       id: string;
       rootPath: string;
