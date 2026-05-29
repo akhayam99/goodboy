@@ -93,6 +93,25 @@ Certificates", right-click the Developer ID cert, Export), then
 `base64 -i cert.p12 | gh secret set APPLE_CERTIFICATE --repo akhayam99/goodboy`
 and update `APPLE_CERTIFICATE_PASSWORD`.
 
+## Auto-update
+
+The app self-updates via `tauri-plugin-updater`. On launch (packaged builds
+only) it checks `releases/latest/download/latest.json`; when a newer version is
+found, a "Restart to update" control shows in the status bar and next to the
+sidebar logo, and clicking it downloads, installs, and relaunches.
+
+Update artifacts are signed with a dedicated **updater keypair** (separate from
+Apple code-signing). The public key lives in `tauri.conf.json`
+(`plugins.updater.pubkey`); the private key + password are repo secrets
+`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+`tauri-action` uses them to sign the `.app.tar.gz` and emit `latest.json`,
+which it attaches to the release.
+
+Because `latest.json` points at `releases/latest`, only a **published**
+(non-draft) release is visible to clients. The updater config must ship inside a
+release for older versions to update to it: never remove the pubkey or the
+plugin without a migration plan, or installed apps lose the ability to update.
+
 ## Homebrew tap
 
 Public install channel: `brew install --cask akhayam99/tap/goodboy`. For an

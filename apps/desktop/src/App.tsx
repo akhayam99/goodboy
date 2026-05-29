@@ -57,6 +57,7 @@ function writePersistedContextOpen(id: SessionId, open: boolean): void {
 
 export function App() {
   const hydrate = useAppStore((s) => s.hydrate);
+  const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
   const error = useAppStore((s) => s.error);
@@ -86,7 +87,9 @@ export function App() {
   useEffect(() => {
     void hydrate();
     void refreshPricingTable();
-  }, [hydrate]);
+    // Only meaningful in a packaged build; in dev there is no matching release.
+    if (import.meta.env.PROD) void checkForUpdates();
+  }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
   useProviderRefreshOnFocus();

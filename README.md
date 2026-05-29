@@ -56,28 +56,22 @@ One connected CLI is enough to start. Full guide:
 
 ## Install
 
-macOS (Intel and Apple Silicon, one universal build).
+macOS (Intel and Apple Silicon, one universal build). Signed and notarized by
+Apple, so it opens with no security prompts.
 
-**Homebrew (recommended).** Installs cleanly, no security prompt:
+**Homebrew (recommended).**
 
 ```bash
 brew install --cask akhayam99/tap/goodboy
 ```
 
 **Direct download.** Grab the `.dmg` from the
-[latest release](https://github.com/akhayam99/goodboy/releases/latest) and
-drag Goodboy to Applications.
+[latest release](https://github.com/akhayam99/goodboy/releases/latest) and drag
+Goodboy to Applications.
 
-> v0.1 is not yet notarized by Apple, so a direct-download `.dmg` triggers a
-> Gatekeeper prompt ("Apple could not verify..."). One-time fix after copying
-> the app to Applications:
->
-> ```bash
-> xattr -dr com.apple.quarantine /Applications/Goodboy.app
-> ```
->
-> Or: System Settings, Privacy and Security, then "Open Anyway". The Homebrew
-> install above avoids this entirely.
+**Updates are automatic.** When a new release ships, a "Restart to update"
+control appears in the status bar and next to the sidebar logo. One click
+downloads it and relaunches; Homebrew users can also `brew upgrade --cask goodboy`.
 
 ## Run it
 
