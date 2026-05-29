@@ -1,10 +1,31 @@
+import type { ReactNode } from 'react';
 import { LinkButton } from '../components/ui';
 
-const lines = [
+const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
+
+const brewLine = 'brew install --cask akhayam99/tap/goodboy';
+
+const sourceLines = [
   { prompt: '$', command: 'git clone https://github.com/akhayam99/goodboy.git', muted: false },
   { prompt: '$', command: 'cd goodboy && pnpm install', muted: false },
   { prompt: '$', command: 'pnpm tauri:build', muted: true },
 ];
+
+function TerminalFrame({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.22_0.007_255)] text-left">
+      <div className="flex items-center gap-2 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-danger" aria-hidden />
+        <span className="h-2.5 w-2.5 rounded-full bg-warning" aria-hidden />
+        <span className="h-2.5 w-2.5 rounded-full bg-success" aria-hidden />
+        <span className="ml-3 font-mono text-[10.5px] text-muted-foreground">{label}</span>
+      </div>
+      <div className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-[1.9]">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function CTA() {
   return (
@@ -14,37 +35,64 @@ export function CTA() {
           Open source &middot; MIT
         </p>
         <h2 className="mt-5 text-3xl sm:text-5xl leading-[1.02] tracking-[-0.03em] font-semibold text-foreground">
-          Clone, install, run it.
+          Install it, run it.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.65] text-muted-foreground">
-          No waitlist. No email. The repo is public. Bring your own Claude, Cursor, Codex or Gemini
-          subscription and you&apos;re running locally.
+          No waitlist. No email. Bring your own Claude, Cursor, Codex or Gemini subscription and
+          you&apos;re running locally.
         </p>
 
-        <div className="mx-auto mt-10 max-w-xl overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.22_0.007_255)] text-left">
-          <div className="flex items-center gap-2 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-4 py-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-danger" aria-hidden />
-            <span className="h-2.5 w-2.5 rounded-full bg-warning" aria-hidden />
-            <span className="h-2.5 w-2.5 rounded-full bg-success" aria-hidden />
-            <span className="ml-3 font-mono text-[10.5px] text-muted-foreground">~/work</span>
+        <div className="mx-auto mt-11 max-w-lg">
+          {/* macOS: the primary path */}
+          <LinkButton
+            href={RELEASES_LATEST}
+            target="_blank"
+            rel="noreferrer"
+            size="lg"
+            variant="primary"
+            className="w-full sm:w-auto"
+          >
+            Download for macOS
+          </LinkButton>
+          <p className="mt-3 text-[12px] text-muted-foreground/70">
+            Universal build &middot; Intel &amp; Apple Silicon
+          </p>
+
+          <div className="mt-5 flex items-center gap-3 text-left">
+            <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground/60">
+              or brew
+            </span>
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-border-soft bg-[oklch(0.22_0.007_255)] px-4 py-2.5 font-mono text-[12.5px] text-foreground">
+              {brewLine}
+            </code>
           </div>
-          <div className="px-5 py-4 font-mono text-[12.5px] leading-[1.9]">
-            {lines.map((l) => (
-              <div key={l.command} className="flex items-start gap-2">
-                <span className="shrink-0 select-none text-muted-foreground">{l.prompt}</span>
-                <span className={l.muted ? 'text-primary' : 'text-foreground'}>{l.command}</span>
-              </div>
-            ))}
+
+          {/* Linux & Windows: build from source */}
+          <div className="mt-9 text-left">
+            <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Linux &amp; Windows &middot; from source
+            </p>
+            <TerminalFrame label="~/work">
+              {sourceLines.map((l) => (
+                <div key={l.command} className="flex items-start gap-2 whitespace-nowrap">
+                  <span className="shrink-0 select-none text-muted-foreground">{l.prompt}</span>
+                  <span className={l.muted ? 'text-primary' : 'text-foreground'}>{l.command}</span>
+                </div>
+              ))}
+            </TerminalFrame>
+            <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
+              Needs a Rust toolchain &middot; prebuilt binaries coming later
+            </p>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"
             rel="noreferrer"
             size="lg"
-            variant="primary"
+            variant="secondary"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
               <path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.32c-2.23.48-2.7-1.07-2.7-1.07-.37-.93-.9-1.18-.9-1.18-.73-.5.06-.49.06-.49.81.06 1.24.83 1.24.83.72 1.23 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.96 0-.87.3-1.59.83-2.15-.08-.2-.36-1.02.08-2.13 0 0 .67-.22 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.82 1.28.82 2.15 0 3.08-1.87 3.76-3.65 3.96.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z" />
@@ -61,11 +109,6 @@ export function CTA() {
             Read the docs
           </LinkButton>
         </div>
-
-        <p className="mt-6 text-[12px] text-muted-foreground/70">
-          macOS, Windows, Linux &middot; Node 20+ &middot; pnpm 9+ &middot; Bring your own
-          subscription
-        </p>
       </div>
     </section>
   );

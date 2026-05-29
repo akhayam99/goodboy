@@ -35,7 +35,7 @@ export function Hero() {
             style={{ animationDelay: '180ms' }}
           >
             <LinkButton href="#cta" size="lg" variant="primary">
-              Clone &amp; run
+              Install
             </LinkButton>
             <LinkButton
               href="https://github.com/akhayam99/goodboy"
@@ -55,7 +55,8 @@ export function Hero() {
             className="rise mt-6 text-[12.5px] text-muted-foreground/75"
             style={{ animationDelay: '240ms' }}
           >
-            MIT licensed &middot; macOS, Windows, Linux &middot; Bring your own subscription
+            MIT licensed &middot; Prebuilt for macOS, source on Linux &amp; Windows &middot; Bring
+            your own subscription
           </p>
         </div>
 
