@@ -106,6 +106,8 @@ import { createWorkspacesSlice } from './slices/workspaces';
 import { createTurnSlice } from './slices/turn';
 import { createWorktreesSlice } from './slices/worktrees';
 import { createBootSlice } from './slices/boot';
+import { createUpdaterSlice } from './slices/updater';
+import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 
 export type BootPhase =
@@ -147,7 +149,7 @@ export type SessionNudge =
 import type { ProviderSpendEntry } from './slices/budget';
 export type { ProviderSpendEntry };
 
-export interface AppState {
+export interface AppState extends UpdaterState {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
@@ -303,6 +305,8 @@ export interface SummarizerSessionStatus {
 
 export interface AppActions {
   hydrate(): Promise<void>;
+  checkForUpdates(): Promise<void>;
+  installUpdate(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   setCurrentSession(id: SessionId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
@@ -542,6 +546,7 @@ export interface AppActions {
 export type AppStore = AppState & AppActions;
 
 export const initialState: AppState = {
+  ...initialUpdaterState,
   workspaces: [],
   workspaceIntegrations: {},
   sessionExternalTasks: {},
@@ -645,6 +650,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
   ...createBootSlice(set, get),
+  ...createUpdaterSlice(set, get),
 }));
 
 export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {

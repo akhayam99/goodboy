@@ -34,6 +34,7 @@ import { NotificationCenter } from '../../../../features/notifications/component
 import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
 import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
@@ -538,6 +539,7 @@ function SidebarLogo() {
     <span className="flex items-center gap-1.5">
       <DogMascot size={16} className="shrink-0 text-foreground" />
       <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
+      <UpdateIndicator variant="pip" />
     </span>
   );
 }

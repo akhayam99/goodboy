@@ -1,6 +1,7 @@
 import { CircleHelp } from 'lucide-react';
 import { useCurrentSession, useCurrentWorkspace } from '../../../store';
 import { TelemetryPill } from '../../../features/providers/components/TelemetryPill';
+import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 
 interface StatusBarProps {
   onFocusWorkspaces?: () => void;
@@ -27,6 +28,7 @@ export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
         <span className="text-muted-foreground">{sessionStateLabel}</span>
       </div>
       <div className="flex shrink-0 items-center gap-3">
+        <UpdateIndicator variant="bar" />
         <TelemetryPill />
         <span className="inline-flex items-center gap-1" title="open settings">
           <CircleHelp size={11} aria-hidden />

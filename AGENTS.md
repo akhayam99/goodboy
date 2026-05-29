@@ -127,6 +127,18 @@ Never bypass hooks (`--no-verify`, `--no-gpg-sign`, etc.).
 
 ---
 
+## Releasing
+
+When asked to cut a release ("do a release", "ship vX.Y.Z"), follow the runbook
+in [docs/release.md](./docs/release.md). Do not improvise the steps.
+
+In short: bump the version in all four manifests, validate with a throwaway
+`-rc.N` tag, then tag the real `vX.Y.Z`. A tag push builds a signed + notarized
+macOS universal `.dmg` and creates a draft GitHub Release; publishing it bumps
+the Homebrew cask. Signing runs under the personal Apple team (never Serenis).
+
+---
+
 ## Code rules
 
 - TypeScript strict mode.

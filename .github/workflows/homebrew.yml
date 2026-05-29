@@ -1,0 +1,59 @@
+name: homebrew
+
+# Bump the cask in akhayam99/homebrew-tap when a release is published.
+# Requires the HOMEBREW_TAP_TOKEN secret (fine-grained PAT, contents:write on
+# the tap repo). See docs/release.md.
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  bump:
+    name: bump cask
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: checkout (template)
+        uses: actions/checkout@v4
+
+      - name: resolve version and sha256
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${TAG#v}"
+          asset="Goodboy_${version}_universal.dmg"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir .
+          sha="$(shasum -a 256 "$asset" | cut -d' ' -f1)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: render cask
+        run: |
+          sed -e "s/:VERSION/\"${{ steps.meta.outputs.version }}\"/" \
+              -e "s/:SHA256/\"${{ steps.meta.outputs.sha256 }}\"/" \
+              packaging/goodboy.rb > goodboy.rb
+
+      - name: checkout tap
+        uses: actions/checkout@v4
+        with:
+          repository: akhayam99/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: commit cask
+        working-directory: tap
+        run: |
+          mkdir -p Casks
+          cp ../goodboy.rb Casks/goodboy.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "cask already up to date"
+            exit 0
+          fi
+          git add Casks/goodboy.rb
+          git commit -m "goodboy ${{ steps.meta.outputs.version }}"
+          git push

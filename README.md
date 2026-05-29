@@ -54,6 +54,25 @@ Bring your own subscription. The app drives the official CLIs locally, on
 One connected CLI is enough to start. Full guide:
 [docs/providers.md](./docs/providers.md).
 
+## Install
+
+macOS (Intel and Apple Silicon, one universal build). Signed and notarized by
+Apple, so it opens with no security prompts.
+
+**Homebrew (recommended).**
+
+```bash
+brew install --cask akhayam99/tap/goodboy
+```
+
+**Direct download.** Grab the `.dmg` from the
+[latest release](https://github.com/akhayam99/goodboy/releases/latest) and drag
+Goodboy to Applications.
+
+**Updates are automatic.** When a new release ships, a "Restart to update"
+control appears in the status bar and next to the sidebar logo. One click
+downloads it and relaunches; Homebrew users can also `brew upgrade --cask goodboy`.
+
 ## Run it
 
 ```bash
