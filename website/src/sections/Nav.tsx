@@ -4,8 +4,8 @@ import { LinkButton } from '../components/ui';
 const links = [
   { href: '#sessions', label: 'Sessions' },
   { href: '#agents', label: 'Agents' },
-  { href: '#context', label: 'Context' },
   { href: '#plans', label: 'Plans' },
+  { href: '#context', label: 'Context' },
   { href: '#linear', label: 'Linear' },
   { href: '#github', label: 'GitHub' },
   { href: '#compare', label: 'Compare' },
@@ -17,7 +17,7 @@ const links = [
 */
 export function Nav() {
   return (
-    <header className="relative z-30 border-b border-border-soft/40">
+    <header className="relative z-30 border-b border-border-soft/40 bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <a href="#" className="flex items-center">
           <Logo />

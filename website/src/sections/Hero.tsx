@@ -1,33 +1,35 @@
 import { DogMascot } from '../components/DogMascot';
+import { OrchestrationFlow } from '../components/OrchestrationFlow';
 import { LinkButton } from '../components/ui';
 import { AppOverviewSnapshot } from '../mockups/Snapshots';
 
 export function Hero() {
   return (
-    <section className="relative pt-16 pb-24 sm:pt-24 sm:pb-28">
-      <div className="relative mx-auto max-w-6xl px-6">
+    <section className="relative overflow-hidden pt-12 pb-24 sm:pt-16 sm:pb-28">
+      <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="rise relative mx-auto inline-flex flex-col pb-7">
-            <h1 className="flex items-center gap-2 sm:gap-3 text-[48px] sm:text-[68px] lg:text-[80px] leading-[0.95] tracking-[-0.035em] font-semibold text-foreground">
-              <DogMascot size={96} className="shrink-0 text-primary" />
-              <span>Goodboy</span>
-            </h1>
-
-            <p
-              className="rise absolute inset-x-0 top-full -mt-1 text-center text-[15px] sm:text-[17px] font-medium leading-[1.2] tracking-[-0.005em] text-primary"
-              style={{ animationDelay: '80ms' }}
-            >
-              AI workspace orchestrator.
-            </p>
+          {/* brand lockup */}
+          <div className="rise inline-flex items-center gap-2 text-[26px] font-semibold tracking-tight text-foreground">
+            <DogMascot size={34} className="text-primary" />
+            <span>Goodboy</span>
           </div>
 
+          {/* dominant tagline */}
+          <h1
+            className="rise mt-6 text-balance text-[42px] font-semibold leading-[0.98] tracking-[-0.035em] sm:text-[64px] lg:text-[76px]"
+            style={{ animationDelay: '60ms' }}
+          >
+            <span className="text-gradient">Every AI agent,</span>
+            <br />
+            <span className="text-foreground">one shared brain.</span>
+          </h1>
+
           <p
-            className="rise mx-auto mt-7 max-w-xl text-[15px] sm:text-[16px] leading-[1.6] text-muted-foreground"
+            className="rise mx-auto mt-6 max-w-xl text-[15px] leading-[1.6] text-muted-foreground sm:text-[17px]"
             style={{ animationDelay: '120ms' }}
           >
-            Stack workflows on one session. Route agents across Claude, Cursor, Codex, and Gemini
-            without re-explaining the goal. Shared context, structured plans, real-time cost.
-            Local-first. Your keys, your machine.
+            One local session runs Claude, Cursor, Codex and Gemini. They share context, plans and a
+            live cost meter, so the next agent already knows the goal.
           </p>
 
           <div
@@ -52,18 +54,24 @@ export function Hero() {
           </div>
 
           <p
-            className="rise mt-6 text-[12.5px] text-muted-foreground/75"
+            className="rise mt-5 text-[12.5px] text-muted-foreground/75"
             style={{ animationDelay: '240ms' }}
           >
-            MIT licensed &middot; Prebuilt for macOS, source on Linux &amp; Windows &middot; Bring
+            MIT licensed &middot; macOS prebuilt, Linux &amp; Windows from source &middot; Bring
             your own subscription
           </p>
         </div>
 
-        {/* One comprehensive snapshot of the running app: sidebar, chat,
-            context panel, all visible together. The deep-dives below zoom in
-            on each piece. */}
-        <div className="rise relative mx-auto mt-16 max-w-5xl" style={{ animationDelay: '320ms' }}>
+        {/* animated routing diagram */}
+        <div className="rise mt-14 sm:mt-16" style={{ animationDelay: '320ms' }}>
+          <OrchestrationFlow />
+        </div>
+
+        {/* one comprehensive snapshot of the running app */}
+        <div
+          className="rise float relative mx-auto mt-12 max-w-5xl sm:mt-14"
+          style={{ animationDelay: '420ms' }}
+        >
           <AppOverviewSnapshot />
         </div>
       </div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { LinkButton } from '../components/ui';
+import { useInView } from '../components/Reveal';
 
 const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
 
@@ -28,9 +29,14 @@ function TerminalFrame({ label, children }: { label: string; children: ReactNode
 }
 
 export function CTA() {
+  const { ref, inView } = useInView<HTMLElement>();
   return (
-    <section id="cta" className="relative py-28 sm:py-36">
-      <div className="mx-auto max-w-3xl px-6 text-center">
+    <section
+      id="cta"
+      ref={ref}
+      className={`reveal-group relative py-28 sm:py-36 ${inView ? 'is-visible' : ''}`}
+    >
+      <div className="reveal mx-auto max-w-3xl px-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
           Open source &middot; MIT
         </p>
