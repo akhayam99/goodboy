@@ -50,10 +50,13 @@ jobs:
           cp ../goodboy.rb Casks/goodboy.rb
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
+          git add Casks/goodboy.rb
+          # Stage first, then check the staged diff: a brand-new cask file is
+          # untracked, so `git diff --quiet` (working tree only) would miss it
+          # and skip the commit.
+          if git diff --cached --quiet; then
             echo "cask already up to date"
             exit 0
           fi
-          git add Casks/goodboy.rb
           git commit -m "goodboy ${{ steps.meta.outputs.version }}"
           git push
