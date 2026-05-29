@@ -5,6 +5,51 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Google Consent Mode v2 defaults: deny everything until the iubenda
+         banner records a choice. MUST run before GTM so no tag fires unconsented.
+         iubenda (with Google Consent Mode enabled in its dashboard) issues the
+         `consent update` on accept, which unblocks the GA4/GTM tags. -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
+    </script>
+    <!-- End Consent Mode defaults -->
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5NM3VX7Q');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- iubenda Cookie Solution + autoblocking for goodboy-ai.dev.
+         Only siteId + cookiePolicyId bootstrap here. Banner appearance,
+         applyStyles, framework geo and Google Consent Mode are governed by the
+         iubenda DASHBOARD (remote config confs/js/46359357.js), which overrides
+         inline banner settings — verified at runtime, so we don't duplicate them. -->
+    <script type="text/javascript">
+      var _iub = _iub || [];
+      _iub.csConfiguration = {
+        siteId: 4548648,
+        cookiePolicyId: 46359357,
+        lang: "it"
+      };
+    </script>
+    <script type="text/javascript" src="https://cs.iubenda.com/autoblocking/4548648.js"></script>
+    <script type="text/javascript" src="//cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
+    <!-- End iubenda Cookie Solution -->
+
     <!-- Primary -->
     <title>Goodboy: AI workspace orchestrator</title>
     <meta name="description" content="Route agents across Claude, Cursor, Codex, and Gemini. Share context, structure plans, track budgets in real time. Local-first desktop app. Your machine, your keys, your data." />
@@ -78,6 +123,11 @@
     </script>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5NM3VX7Q"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
