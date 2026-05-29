@@ -4,8 +4,8 @@ import { DogMascot } from '../components/DogMascot';
 const links = [
   { href: '#sessions', label: 'Sessions' },
   { href: '#agents', label: 'Agents' },
-  { href: '#context', label: 'Context' },
   { href: '#plans', label: 'Plans' },
+  { href: '#context', label: 'Context' },
   { href: '#linear', label: 'Linear' },
   { href: '#github', label: 'GitHub' },
   { href: '#compare', label: 'Compare' },

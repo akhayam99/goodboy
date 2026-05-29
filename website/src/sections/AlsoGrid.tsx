@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useInView } from '../components/Reveal';
 
 interface Item {
   readonly title: string;
@@ -98,17 +99,23 @@ const items: ReadonlyArray<Item> = [
    no per-card padding bloat: icon + label + one-line hint, period. Reads in a
    single mobile scroll. */
 export function AlsoGrid() {
+  const { ref, inView } = useInView<HTMLElement>();
   return (
-    <section id="also" className="relative py-20 sm:py-24">
+    <section
+      id="also"
+      ref={ref}
+      className={`reveal-group relative py-20 sm:py-24 ${inView ? 'is-visible' : ''}`}
+    >
       <div className="mx-auto max-w-6xl px-6">
-        <p className="pb-7 text-center text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+        <p className="reveal pb-7 text-center text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
           And also
         </p>
         <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-          {items.map((it) => (
+          {items.map((it, i) => (
             <li
               key={it.title}
-              className="flex items-start gap-3 rounded-lg border border-border-soft bg-subtle px-3.5 py-3 transition-colors hover:border-border"
+              className="reveal flex items-start gap-3 rounded-lg border border-border-soft bg-subtle px-3.5 py-3 transition-colors hover:border-border"
+              style={{ animationDelay: `${i * 70}ms` }}
             >
               <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border-soft bg-muted">
                 {it.icon}

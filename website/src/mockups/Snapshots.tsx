@@ -7,18 +7,18 @@
    Source map:
    - SessionsSnapshot           <- features/workspace/components/SessionActivityBar
                                    + features/workspace/components/SessionDetailPanel
-   - WorkflowStackSnapshot      <- WorkspacesSidebar AgentsSection (multi-workflow)
+   - WorkflowRunSnapshot        <- WorkspacesSidebar AgentsSection (self-playing run)
    - WorkflowSnapshot           <- features/workflows/components/WorkflowsPanel +
                                    features/workflows/components/WorkflowNextStepCta
    - ContextSnapshot            <- features/context/components/ContextPanel
-   - ChatHeaderSnapshot         <- features/chat/components/ChatBreadcrumb
-   - AgentPickerSnapshot        <- features/quick-actions/QuickActionsPopover
+   - AgentRosterSnapshot        <- features/session/agent-kind.ts AGENT_KIND_META
    - NewSessionLinearSnapshot   <- features/session/components/NewSessionDialog
                                    with features/integrations/linear/IssuePicker
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { useState, type ReactNode } from 'react';
+import { forwardRef, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { useInView } from '../components/Reveal';
 import {
   IconArrowDown,
   IconArrowUp,
@@ -60,16 +60,20 @@ const KIND = {
 /* Apps/desktop AgentKindChip pattern: width-locked colored pill with a tiny
    silhouette of the role's dog on the left, label on the right. Mirrors the
    exact 60px width used in the product sidebar. */
-function KindBadge({ kind }: { kind: keyof typeof KIND }) {
+function KindBadge({ kind, muted }: { kind: keyof typeof KIND; muted?: boolean }) {
   const k = KIND[kind];
   return (
     <span
       className={[
-        'inline-flex w-[3.75rem] shrink-0 items-center justify-center gap-1 rounded py-0.5 pl-1 pr-1.5 text-[9px] font-semibold uppercase leading-none tracking-wide text-zinc-950',
-        k.bg,
+        'inline-flex w-[3.75rem] shrink-0 items-center justify-center gap-1 rounded py-0.5 pl-1 pr-1.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
+        muted ? 'bg-muted-foreground/20 text-muted-foreground/60' : `${k.bg} text-zinc-950`,
       ].join(' ')}
     >
-      <AgentAvatar kind={k.kind} size={10} tint="bg-zinc-950/80" />
+      <AgentAvatar
+        kind={k.kind}
+        size={10}
+        tint={muted ? 'bg-muted-foreground/60' : 'bg-zinc-950/80'}
+      />
       <span>{k.label}</span>
     </span>
   );
@@ -175,8 +179,8 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
    The detail panel shows the same things the real product shows: a status
    icon next to the title, a list of agent rows with kind chip + token/turn/
    cost line, and a footer that pairs the branch chip with the session cost
-   chip. No "ACTIVE SESSION / Status / Branch / PR / Spend" label-value list
-   — that's marketing UI, not product UI.
+   chip. No "ACTIVE SESSION / Status / Branch / PR / Spend" label-value list:
+   that's marketing UI, not product UI.
 */
 export function SessionsSnapshot() {
   return (
@@ -1234,117 +1238,63 @@ function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
   );
 }
 
-/* ---------------------------- Chat header ---------------------------- */
+/* ---------------------------- Agent roster --------------------------- */
 
-/* Mirror of features/chat/components/ChatBreadcrumb. Path-on-the-left,
-   role-on-the-right. Labels are kept tight so the strip stays on a single
-   line at the snapshot's natural width: anything longer would wrap and the
-   composition stops reading as a header. */
-export function ChatHeaderSnapshot() {
-  return (
-    <SnapshotFrame className="max-w-[520px]">
-      <div className="flex h-9 items-center gap-1.5 whitespace-nowrap border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3 text-[11px]">
-        <span className="font-medium text-muted-foreground">web</span>
-        <Chevron />
-        <span className="font-medium text-muted-foreground">Reset flow</span>
-        <Chevron />
-        <span className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-          <IconBranch size={9} />
-          <span>Rollout</span>
-          <span aria-hidden className="opacity-60">
-            ·
-          </span>
-          <span className="font-mono tabular-nums">3/4</span>
-        </span>
-        <Chevron />
-        <span className="font-medium text-foreground/90">build endpoint</span>
-        <div className="flex-1" />
-        <AgentAvatar kind="implementer" size={20} />
-      </div>
-      <div className="flex items-center justify-center px-6 py-12 text-center">
-        <p className="max-w-[26ch] text-[12px] leading-relaxed text-muted-foreground">
-          Where you are on the left.
-          <br />
-          Who is driving this turn on the right.
-        </p>
-      </div>
-    </SnapshotFrame>
-  );
-}
-
-function Chevron() {
-  return (
-    <svg
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className="shrink-0 text-muted-foreground/40"
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
-/* ---------------------------- Agent picker --------------------------- */
-
-/* Mirror of QuickActionsPopover with the agent action set. Each row carries
-   the agent name on the left and a role badge + dog avatar on the right, so
-   even custom-named agents stay legible. Triggered by typing @ in the
-   composer. */
-const PICKER_AGENTS: ReadonlyArray<{
-  readonly name: string;
-  readonly status: 'pending' | 'running' | 'completed';
-  readonly kind: AgentKind;
+/* The seven default roles, lifted verbatim from apps/desktop AGENT_KIND_META
+   (label + hint). Not a showcase of agents at work: a reference card you can
+   scan in one pass. Each row is the role icon, its name, and the one line that
+   says what it may (and may not) touch. Order follows the natural lifecycle of
+   a task: scout -> plan -> implement -> debug -> test -> review -> docs. */
+const ROSTER: ReadonlyArray<{
+  readonly kind: keyof typeof KIND;
+  readonly tile: string;
+  readonly hint: string;
 }> = [
-  { name: 'locate auth surface', status: 'completed', kind: 'scout' },
-  { name: 'one-off: check mailer', status: 'running', kind: 'generic' },
-  { name: 'design reset flow', status: 'completed', kind: 'planner' },
-  { name: 'build endpoint + email', status: 'running', kind: 'implementer' },
-  { name: 'review PR #214', status: 'pending', kind: 'reviewer' },
-  { name: 'document reset endpoint', status: 'pending', kind: 'docs' },
+  {
+    kind: 'scout',
+    tile: 'bg-sky-400/15',
+    hint: 'Reads and searches the codebase. Never edits files',
+  },
+  {
+    kind: 'plan',
+    tile: 'bg-violet-400/15',
+    hint: 'Turns a goal into an ordered plan. No code, no edits',
+  },
+  {
+    kind: 'imple',
+    tile: 'bg-emerald-400/15',
+    hint: 'Writes code against the active plan. No re-planning',
+  },
+  { kind: 'debug', tile: 'bg-amber-400/15', hint: 'Reproduces and fixes bugs. No refactoring' },
+  { kind: 'test', tile: 'bg-teal-400/15', hint: 'Writes tests. Never touches production code' },
+  { kind: 'review', tile: 'bg-cyan-400/15', hint: 'Reviews diffs read-only. Suggests fixes' },
+  { kind: 'docs', tile: 'bg-orange-400/15', hint: 'Writes documentation. Never touches logic' },
 ];
 
-export function AgentPickerSnapshot() {
+export function AgentRosterSnapshot() {
   return (
     <SnapshotFrame className="max-w-[520px]">
       <FrameHeader
-        label="@ agents"
+        label="default roles"
         right={
-          <span className="font-mono text-[10px] text-muted-foreground/70">
-            ↑↓ to nav · ↵ to pick
-          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/70">7 ship by default</span>
         }
       />
       <ul className="divide-y divide-border-soft/40">
-        {PICKER_AGENTS.map((agent, i) => (
-          <li
-            key={agent.name}
-            className={[
-              'flex items-center gap-3 px-3 py-2',
-              i === 1 ? 'bg-muted/60' : 'hover:bg-muted/40',
-            ].join(' ')}
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="truncate text-[12px] font-medium text-foreground">{agent.name}</span>
-              <span className="text-[10px] text-muted-foreground">{agent.status}</span>
-            </div>
-            <span className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-              <span>{KIND_LABEL[agent.kind]}</span>
-              <AgentAvatar kind={agent.kind} size={14} />
+        {ROSTER.map((r) => (
+          <li key={r.kind} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40">
+            <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${r.tile}`}>
+              <AgentAvatar kind={KIND[r.kind].kind} size={18} />
             </span>
+            <div className="min-w-0 flex-1">
+              <span className="text-[13px] font-semibold text-foreground">
+                {KIND_LABEL[KIND[r.kind].kind]}
+              </span>
+              <p className="truncate text-[11.5px] leading-snug text-muted-foreground">{r.hint}</p>
+            </div>
           </li>
         ))}
       </ul>
-      <div className="flex items-center gap-2 border-t border-border-soft bg-[oklch(0.22_0.005_255)] px-3 py-2">
-        <span className="font-mono text-[12px] text-foreground">@</span>
-        <span className="text-[11px] text-muted-foreground/60">type to filter agents…</span>
-      </div>
     </SnapshotFrame>
   );
 }
@@ -1477,154 +1427,424 @@ function BranchMark() {
   return <IconBranch size={13} className="text-primary" />;
 }
 
-/* ---------------------------- Multi-workflow stack ------------------- */
+/* ---------------------------- Workflow run (animated) ---------------- */
 
-/* Mirror of WorkspacesSidebar AgentsSection when a session has two workflow
-   blocks attached. Each block lists its steps (with the per-step agent role
-   chip) and shows the "Attach another workflow" affordance below. The whole
-   stack lives in a single session: workflows are 1-to-many, not 1-to-1. */
-const STACK_WORKFLOWS = [
-  {
-    name: 'Password reset rollout',
-    progress: '2/4',
-    custom: false,
-    steps: [
-      {
-        kind: 'scout' as const,
-        name: 'Locate auth surface',
-        state: 'done' as const,
-        model: 'haiku-4-5',
-      },
-      {
-        kind: 'scout' as const,
-        name: 'Deep-scan token + mailer flow',
-        state: 'done' as const,
-        model: 'opus-4-7',
-      },
-      {
-        kind: 'imple' as const,
-        name: 'Build endpoint + email',
-        state: 'active' as const,
-        model: 'sonnet-4-5',
-      },
-      {
-        kind: 'review' as const,
-        name: 'Open PR for review',
-        state: 'pending' as const,
-        model: 'sonnet-4-5',
-      },
-    ],
-  },
-  {
-    name: 'Rate-limit follow-up',
-    progress: '0/3',
-    custom: true,
-    steps: [
-      {
-        kind: 'debug' as const,
-        name: 'Locate & analyze rate-limit gaps',
-        state: 'pending' as const,
-        model: 'haiku-4-5',
-      },
-      {
-        kind: 'plan' as const,
-        name: 'Pick a backoff strategy',
-        state: 'pending' as const,
-        model: 'opus-4-7',
-      },
-      {
-        kind: 'imple' as const,
-        name: 'Wrap mailer in limiter',
-        state: 'pending' as const,
-        model: 'sonnet-4-5',
-      },
-    ],
-  },
+/* Self-playing demo of the Plans & Workflows feature, mirroring the desktop
+   WorkspacesSidebar AgentsSection 1:1. There is no generic "run" button: the
+   next runnable step lights up (primary border + a pinging play dot) to invite
+   a click. A simulated cursor clicks that lit step; it runs (info spinner),
+   then settles done (green check) and the following step lights up. Partway
+   through, the cursor flips the Auto-run toggle in the header's top-right (the
+   real Zap control) and the remaining steps advance on their own. Loops while
+   in view; collapses to a static mid-run frame under reduced motion.
+   Illustrative only: the controls carry no handlers, the timeline drives all. */
+const RUN_STEPS = [
+  { kind: 'scout' as const, name: 'Locate auth surface', model: 'haiku-4-5' },
+  { kind: 'plan' as const, name: 'Draft reset flow + endpoints', model: 'opus-4-7' },
+  { kind: 'imple' as const, name: 'Build endpoint + email', model: 'sonnet-4-5' },
+  { kind: 'review' as const, name: 'Open PR for review', model: 'sonnet-4-5' },
 ];
 
-export function WorkflowStackSnapshot() {
-  return (
-    <SnapshotFrame className="max-w-[440px]">
-      <FrameHeader
-        label="Add password reset"
-        right={
-          <span className="font-mono text-[10px] text-muted-foreground/70">
-            {STACK_WORKFLOWS.length} workflows · 1 session
-          </span>
-        }
-      />
-      <div className="space-y-4 p-3">
-        {STACK_WORKFLOWS.map((wf) => (
-          <WorkflowBlock key={wf.name} workflow={wf} />
-        ))}
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-[11px] text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-        >
-          <IconPlus size={11} />
-          Attach another workflow
-        </button>
-      </div>
-    </SnapshotFrame>
-  );
+/* Mirrors the desktop step statuses: a future step waits on its predecessors,
+   the next step is `actionable` (lit, clickable), then `running`, then `done`. */
+type StepStatus = 'future' | 'actionable' | 'running' | 'done';
+
+interface RunState {
+  steps: StepStatus[];
+  autoRun: boolean;
+  cursor: { x: number; y: number };
+  cursorVisible: boolean;
+  pressing: boolean;
 }
 
-function WorkflowBlock({ workflow }: { workflow: (typeof STACK_WORKFLOWS)[number] }) {
+type RunAction =
+  | { type: 'cursor'; pos: { x: number; y: number } | null }
+  | { type: 'hide' }
+  | { type: 'press' }
+  | { type: 'start'; i: number }
+  | { type: 'finish'; i: number }
+  | { type: 'auto' }
+  | { type: 'reset' }
+  | { type: 'static' };
+
+const RUN_INITIAL: RunState = {
+  steps: ['actionable', 'future', 'future', 'future'],
+  autoRun: false,
+  cursor: { x: 24, y: 24 },
+  cursorVisible: false,
+  pressing: false,
+};
+
+function runReducer(s: RunState, a: RunAction): RunState {
+  switch (a.type) {
+    case 'cursor':
+      return a.pos
+        ? { ...s, cursor: a.pos, cursorVisible: true, pressing: false }
+        : { ...s, cursorVisible: false, pressing: false };
+    case 'hide':
+      return { ...s, cursorVisible: false, pressing: false };
+    case 'press':
+      return { ...s, pressing: true };
+    case 'start':
+      return { ...s, pressing: false, steps: s.steps.map((v, i) => (i === a.i ? 'running' : v)) };
+    case 'finish':
+      // Completing a step unlocks the next one, exactly like the real stepper.
+      return {
+        ...s,
+        pressing: false,
+        steps: s.steps.map((v, i) =>
+          i === a.i ? 'done' : i === a.i + 1 && v === 'future' ? 'actionable' : v,
+        ),
+      };
+    case 'auto':
+      return { ...s, pressing: false, autoRun: true };
+    case 'reset':
+      return RUN_INITIAL;
+    case 'static':
+      return {
+        steps: ['done', 'running', 'actionable', 'future'],
+        autoRun: true,
+        cursor: { x: 24, y: 24 },
+        cursorVisible: false,
+        pressing: false,
+      };
+    default:
+      return s;
+  }
+}
+
+/* Playback timeline: each beat waits `d` ms, then applies its action; the
+   driver loops back to the top after the final reset. Cursor targets are a
+   step index (the lit row) or the auto-run toggle. */
+type Beat =
+  | { t: 'cursor'; to: number | 'toggle' }
+  | { t: 'hide' }
+  | { t: 'press' }
+  | { t: 'start'; i: number }
+  | { t: 'finish'; i: number }
+  | { t: 'auto' }
+  | { t: 'reset' };
+
+const RUN_SCRIPT: ReadonlyArray<{ d: number; a: Beat }> = [
+  { d: 800, a: { t: 'cursor', to: 0 } },
+  { d: 560, a: { t: 'press' } },
+  { d: 240, a: { t: 'start', i: 0 } },
+  { d: 1500, a: { t: 'finish', i: 0 } },
+  { d: 660, a: { t: 'cursor', to: 1 } },
+  { d: 520, a: { t: 'press' } },
+  { d: 240, a: { t: 'start', i: 1 } },
+  { d: 1500, a: { t: 'finish', i: 1 } },
+  { d: 680, a: { t: 'cursor', to: 'toggle' } },
+  { d: 520, a: { t: 'press' } },
+  { d: 240, a: { t: 'auto' } },
+  { d: 520, a: { t: 'hide' } },
+  { d: 460, a: { t: 'start', i: 2 } },
+  { d: 1400, a: { t: 'finish', i: 2 } },
+  { d: 540, a: { t: 'start', i: 3 } },
+  { d: 1400, a: { t: 'finish', i: 3 } },
+  { d: 2400, a: { t: 'reset' } },
+];
+
+export function WorkflowRunSnapshot() {
+  const [state, dispatch] = useReducer(runReducer, RUN_INITIAL);
+  const { ref: inViewRef, inView } = useInView<HTMLDivElement>();
+  const stageRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!inView) return;
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      dispatch({ type: 'static' });
+      return;
+    }
+
+    const pointTo = (el: HTMLElement | null) => {
+      const stage = stageRef.current;
+      if (!stage || !el) return null;
+      const sr = stage.getBoundingClientRect();
+      const er = el.getBoundingClientRect();
+      return { x: er.left - sr.left + er.width / 2, y: er.top - sr.top + er.height / 2 };
+    };
+
+    let timer: ReturnType<typeof setTimeout>;
+    const apply = (a: Beat) => {
+      switch (a.t) {
+        case 'cursor':
+          dispatch({
+            type: 'cursor',
+            pos: pointTo(a.to === 'toggle' ? toggleRef.current : stepRefs.current[a.to]),
+          });
+          break;
+        case 'hide':
+          dispatch({ type: 'hide' });
+          break;
+        case 'press':
+          dispatch({ type: 'press' });
+          break;
+        case 'start':
+          dispatch({ type: 'start', i: a.i });
+          break;
+        case 'finish':
+          dispatch({ type: 'finish', i: a.i });
+          break;
+        case 'auto':
+          dispatch({ type: 'auto' });
+          break;
+        case 'reset':
+          dispatch({ type: 'reset' });
+          break;
+      }
+    };
+    const run = (i: number) => {
+      timer = setTimeout(() => {
+        apply(RUN_SCRIPT[i].a);
+        run((i + 1) % RUN_SCRIPT.length);
+      }, RUN_SCRIPT[i].d);
+    };
+    run(0);
+    return () => clearTimeout(timer);
+  }, [inView]);
+
+  const done = state.steps.filter((s) => s === 'done').length;
+
   return (
-    <div>
-      <div className="flex items-center gap-2 pb-2">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          <IconBranch size={10} className="text-primary" />
-          Workflow
-        </span>
-        <span className="font-mono text-[10px] text-muted-foreground/60">
-          {workflow.custom ? 'custom' : 'preset'}
-        </span>
-        <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <span className="font-mono tabular-nums">{workflow.progress}</span>
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        {workflow.steps.map((s, i) => (
-          <StackStepRow key={i} index={i + 1} step={s} />
-        ))}
-      </div>
+    <div ref={inViewRef}>
+      <SnapshotFrame className="max-w-[440px]">
+        <FrameHeader
+          label="Add password reset"
+          right={
+            <span className="font-mono text-[10px] text-muted-foreground/70">
+              <span className="tabular-nums text-foreground/80">{done}</span>/4 done
+            </span>
+          }
+        />
+        <div ref={stageRef} className="relative p-3">
+          {/* workflow header: label + preset, auto-run toggle in the top-right */}
+          <div className="flex items-center gap-2 pb-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <IconBranch size={10} className="text-primary" />
+              Workflow
+            </span>
+            <span className="flex-1" />
+            <span className="max-w-[8rem] truncate font-mono text-[10px] text-muted-foreground/70">
+              preset
+            </span>
+            <AutoRunPill ref={toggleRef} on={state.autoRun} />
+          </div>
+
+          {/* steps: the next runnable one lights up to be clicked */}
+          <div className="flex flex-col gap-1">
+            {RUN_STEPS.map((s, i) => (
+              <RunStepRow
+                key={i}
+                ref={(el) => {
+                  stepRefs.current[i] = el;
+                }}
+                index={i + 1}
+                step={s}
+                status={state.steps[i]}
+              />
+            ))}
+          </div>
+
+          {/* simulated cursor + click ripple */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-20 transition-[transform,opacity] duration-[450ms] ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{
+              transform: `translate(${state.cursor.x}px, ${state.cursor.y}px)`,
+              opacity: state.cursorVisible ? 1 : 0,
+            }}
+          >
+            {state.pressing && <span className="press-ring" />}
+            <svg width="16" height="22" viewBox="0 0 14 20" className="drop-shadow-md" aria-hidden>
+              <path
+                d="M1 1 L1 16 L4.8 12.4 L7.6 18.7 L10.1 17.5 L7.3 11.3 L12.6 11.1 Z"
+                fill="white"
+                stroke="oklch(0.2 0.01 255)"
+                strokeWidth="1"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+      </SnapshotFrame>
     </div>
   );
 }
 
-function StackStepRow({
-  index,
-  step,
-}: {
-  index: number;
-  step: (typeof STACK_WORKFLOWS)[number]['steps'][number];
-}) {
-  const done = step.state === 'done';
-  const active = step.state === 'active';
+const RunStepRow = forwardRef<
+  HTMLDivElement,
+  { index: number; step: (typeof RUN_STEPS)[number]; status: StepStatus }
+>(function RunStepRow({ index, step, status }, ref) {
+  const actionable = status === 'actionable';
+  const running = status === 'running';
+  const future = status === 'future';
   return (
     <div
+      ref={ref}
       className={[
-        'flex items-center gap-2 rounded px-2 py-1.5 text-[11px]',
-        active ? 'bg-muted/60 ring-1 ring-primary/30' : 'bg-subtle',
+        'relative flex items-center gap-2 overflow-hidden rounded border px-2.5 py-1.5 text-[11px] transition-colors duration-300',
+        running
+          ? 'border-info/60 bg-muted/40 text-foreground/80'
+          : actionable
+            ? 'border-primary/40 bg-primary/10 text-primary shadow-sm'
+            : future
+              ? 'border-transparent text-muted-foreground/40'
+              : 'border-border-soft/50 bg-muted/40 text-foreground/80',
       ].join(' ')}
     >
       <span
         className={[
-          'inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold',
-          done
-            ? 'bg-success/20 text-success'
-            : active
-              ? 'bg-primary/20 text-primary'
-              : 'bg-muted text-muted-foreground/70',
+          'w-3 shrink-0 text-right font-mono text-[9px] tabular-nums',
+          future ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
         ].join(' ')}
       >
-        {done ? <IconCheck size={9} /> : index}
+        {index}.
       </span>
-      <KindBadge kind={step.kind} />
-      <span className="min-w-0 flex-1 truncate font-medium text-foreground/90">{step.name}</span>
-      <span className="shrink-0 font-mono text-[10px] text-muted-foreground/70">{step.model}</span>
+      <StepStatusIcon status={status} />
+      <KindBadge kind={step.kind} muted={future} />
+      <span
+        className={[
+          'min-w-0 flex-1 truncate font-semibold transition-colors duration-300',
+          actionable ? 'text-primary' : future ? 'text-muted-foreground/45' : 'text-foreground/85',
+        ].join(' ')}
+      >
+        {step.name}
+      </span>
+      <span
+        className={[
+          'shrink-0 font-mono text-[10px]',
+          future ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
+        ].join(' ')}
+      >
+        {step.model}
+      </span>
+      {running && <span className="run-bar" />}
     </div>
+  );
+});
+
+/* Per-status icon, mirroring the desktop WorkflowStepRow: a pinging play dot
+   when the step is the lit next action, an info spinner while running, a green
+   check when done, a clock while waiting on predecessors. */
+function StepStatusIcon({ status }: { status: StepStatus }) {
+  if (status === 'actionable') {
+    return (
+      <span className="relative inline-flex size-3.5 shrink-0">
+        <span
+          className="absolute inset-0 animate-ping rounded-full bg-primary/30 opacity-75"
+          aria-hidden
+        />
+        <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/20">
+          <PlayIcon size={8} />
+        </span>
+      </span>
+    );
+  }
+  if (status === 'running') return <RunSpinner size={11} className="text-info" />;
+  if (status === 'done') {
+    return (
+      <span className="flex size-3.5 shrink-0 items-center justify-center rounded-full bg-success/20">
+        <IconCheck size={9} className="text-success" />
+      </span>
+    );
+  }
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-muted-foreground/50"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+/* The real per-session auto-run control: a compact icon toggle that lives in
+   the workflow header's top-right. Off shows a slashed bolt in muted grey; on
+   shows a filled bolt with the "auto" label sliding in, tinted danger. */
+const AutoRunPill = forwardRef<HTMLButtonElement, { on: boolean }>(function AutoRunPill(
+  { on },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      tabIndex={-1}
+      role="switch"
+      aria-checked={on}
+      aria-label="Auto-run"
+      title={on ? 'autorun on' : 'autorun off'}
+      className={[
+        'inline-flex h-6 shrink-0 items-center justify-end rounded-md px-1 transition-colors',
+        on ? 'bg-danger/10 text-danger' : 'text-muted-foreground/60',
+      ].join(' ')}
+    >
+      <span
+        aria-hidden
+        className={[
+          'overflow-hidden whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide',
+          'transition-[max-width,opacity,margin] duration-200 ease-out',
+          on ? 'mr-1 max-w-[2.5rem] opacity-100' : 'mr-0 max-w-0 opacity-0',
+        ].join(' ')}
+      >
+        auto
+      </span>
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill={on ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        {!on && <line x1="3" y1="3" x2="21" y2="21" />}
+      </svg>
+    </button>
+  );
+});
+
+function RunSpinner({ size = 10, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      className={['shrink-0 animate-spin', className ?? ''].join(' ')}
+      aria-hidden
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+function PlayIcon({ size = 10 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5v14l11-7z" />
+    </svg>
   );
 }
 
@@ -1648,7 +1868,7 @@ export function AppOverviewSnapshot() {
         <LayoutColumn
           eyebrow="Sessions"
           tag="rail + detail"
-          hint="Linked tickets, agents, scripts, PR state, branch + cost — collapsed into one rail."
+          hint="Linked tickets, agents, scripts, PR state, branch and cost, collapsed into one rail."
           body={<SessionsAbstract />}
           tone="primary"
         />
@@ -1663,7 +1883,7 @@ export function AppOverviewSnapshot() {
         <LayoutColumn
           eyebrow="Context"
           tag="five tabs"
-          hint="Goal, plans, files, GitHub, terminal — one click each. Open questions pinned below."
+          hint="Goal, plans, files, GitHub, terminal, one click each. Open questions pinned below."
           body={<ContextAbstract />}
           tone="info"
         />

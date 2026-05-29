@@ -29,8 +29,8 @@ export function App() {
         <LogoStrip />
         <SessionsDeepDive />
         <AgentsDeepDive />
-        <ContextDeepDive />
         <PlansDeepDive />
+        <ContextDeepDive />
         <LinearDeepDive />
         <GithubDeepDive />
         <RoutingDeepDive />
