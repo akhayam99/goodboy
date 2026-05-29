@@ -1683,7 +1683,6 @@ const RunStepRow = forwardRef<
 >(function RunStepRow({ index, step, status }, ref) {
   const actionable = status === 'actionable';
   const running = status === 'running';
-  const done = status === 'done';
   const future = status === 'future';
   return (
     <div
