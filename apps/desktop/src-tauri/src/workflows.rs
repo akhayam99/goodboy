@@ -12,6 +12,9 @@ pub struct StepRow {
     pub id: String,
     #[serde(rename = "workflowId")]
     pub workflow_id: String,
+    #[serde(rename = "libraryStepId")]
+    pub library_step_id: Option<String>,
+    pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -20,6 +23,56 @@ pub struct StepRow {
     pub provider_override: Option<String>,
     #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
+    pub effort: Option<String>,
+    pub verbosity: Option<String>,
+    #[serde(rename = "parallelGroup")]
+    pub parallel_group: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StepDefRow {
+    pub id: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "baseStepId")]
+    pub base_step_id: Option<String>,
+    pub role: String,
+    pub name: String,
+    #[serde(rename = "promptPrefix")]
+    pub prompt_prefix: String,
+    #[serde(rename = "providerDefault")]
+    pub provider_default: Option<String>,
+    #[serde(rename = "modelDefault")]
+    pub model_default: Option<String>,
+    #[serde(rename = "effortDefault")]
+    pub effort_default: Option<String>,
+    #[serde(rename = "verbosityDefault")]
+    pub verbosity_default: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StepDefUpsertInput {
+    pub id: Option<String>,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "baseStepId")]
+    pub base_step_id: Option<String>,
+    pub role: String,
+    pub name: String,
+    #[serde(rename = "promptPrefix")]
+    pub prompt_prefix: String,
+    #[serde(rename = "providerDefault")]
+    pub provider_default: Option<String>,
+    #[serde(rename = "modelDefault")]
+    pub model_default: Option<String>,
+    #[serde(rename = "effortDefault")]
+    pub effort_default: Option<String>,
+    #[serde(rename = "verbosityDefault")]
+    pub verbosity_default: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,11 +87,23 @@ pub struct WorkflowRow {
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+    // Epoch seconds when soft-deleted; None for live workflows. workflow_list
+    // only returns live ones, but workflows_for_session may return deleted ones
+    // still attached to a session.
+    #[serde(rename = "deletedAt")]
+    pub deleted_at: Option<i64>,
+    // True for reusable presets; false for one-off custom workflows that a
+    // session runs without being saved to the preset library.
+    #[serde(rename = "isPreset")]
+    pub is_preset: bool,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct StepInput {
     pub id: Option<String>,
+    #[serde(rename = "libraryStepId")]
+    pub library_step_id: Option<String>,
+    pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
     #[serde(rename = "promptPrefix")]
@@ -47,6 +112,10 @@ pub struct StepInput {
     pub provider_override: Option<String>,
     #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
+    pub effort: Option<String>,
+    pub verbosity: Option<String>,
+    #[serde(rename = "parallelGroup")]
+    pub parallel_group: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,6 +126,13 @@ pub struct PhaseTemplateUpsertInput {
     pub name: String,
     pub description: String,
     pub steps: Vec<StepInput>,
+    // Defaults to true when omitted so existing callers keep producing presets.
+    #[serde(rename = "isPreset", default = "default_true")]
+    pub is_preset: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -184,25 +260,32 @@ fn load_steps(
     workflow_id: &str,
 ) -> Result<Vec<StepRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override
+        "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
+                provider_override, model_override, effort, verbosity, parallel_group
          FROM steps
-         WHERE workflow_id = ?1
+         WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![workflow_id], |row| {
         Ok(StepRow {
             id: row.get(0)?,
             workflow_id: row.get(1)?,
-            ordinal: row.get(2)?,
-            name: row.get(3)?,
-            prompt_prefix: row.get(4)?,
-            provider_override: row.get(5)?,
-            model_override: row.get(6)?,
+            library_step_id: row.get(2)?,
+            role: row.get(3)?,
+            ordinal: row.get(4)?,
+            name: row.get(5)?,
+            prompt_prefix: row.get(6)?,
+            provider_override: row.get(7)?,
+            model_override: row.get(8)?,
+            effort: row.get(9)?,
+            verbosity: row.get(10)?,
+            parallel_group: row.get(11)?,
         })
     })?;
     rows.collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn row_to_template(
     conn: &rusqlite::Connection,
     id: String,
@@ -211,6 +294,8 @@ fn row_to_template(
     description: String,
     created_at: String,
     updated_at: String,
+    deleted_at: Option<i64>,
+    is_preset: bool,
 ) -> Result<WorkflowRow, rusqlite::Error> {
     let steps = load_steps(conn, &id)?;
     Ok(WorkflowRow {
@@ -221,6 +306,8 @@ fn row_to_template(
         steps,
         created_at,
         updated_at,
+        deleted_at,
+        is_preset,
     })
 }
 
@@ -235,13 +322,13 @@ pub fn workflow_list(
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, created_at, updated_at
+        "SELECT id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset
          FROM workflows
-         WHERE workspace_id = ?1
+         WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
          ORDER BY created_at ASC",
     )?;
-    let template_ids: Vec<(String, String, String, String, String, String)> = stmt
-        .query_map(rusqlite::params![workspace_id], |row| {
+    let template_ids: Vec<(String, String, String, String, String, String, Option<i64>, i64)> =
+        stmt.query_map(rusqlite::params![workspace_id], |row| {
             Ok((
                 row.get(0)?,
                 row.get(1)?,
@@ -249,15 +336,18 @@ pub fn workflow_list(
                 row.get(3)?,
                 row.get(4)?,
                 row.get(5)?,
+                row.get(6)?,
+                row.get(7)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(template_ids.len());
-    for (id, ws, name, desc, created, updated) in template_ids {
-        let template = row_to_template(&conn, id, ws, name, desc, created, updated)
-            .map_err(PhaseError::Db)?;
+    for (id, ws, name, desc, created, updated, deleted, is_preset) in template_ids {
+        let template =
+            row_to_template(&conn, id, ws, name, desc, created, updated, deleted, is_preset != 0)
+                .map_err(PhaseError::Db)?;
         result.push(template);
     }
     Ok(result)
@@ -270,7 +360,7 @@ pub fn workflow_get(
 ) -> Result<Option<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, created_at, updated_at
+        "SELECT id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset
          FROM workflows
          WHERE id = ?1
          LIMIT 1",
@@ -283,13 +373,18 @@ pub fn workflow_get(
             row.get::<_, String>(3)?,
             row.get::<_, String>(4)?,
             row.get::<_, String>(5)?,
+            row.get::<_, Option<i64>>(6)?,
+            row.get::<_, i64>(7)?,
         ))
     })?;
     match rows.next() {
         Some(r) => {
-            let (rid, ws, name, desc, created, updated) = r.map_err(PhaseError::Db)?;
-            let template = row_to_template(&conn, rid, ws, name, desc, created, updated)
-                .map_err(PhaseError::Db)?;
+            let (rid, ws, name, desc, created, updated, deleted, is_preset) =
+                r.map_err(PhaseError::Db)?;
+            let template = row_to_template(
+                &conn, rid, ws, name, desc, created, updated, deleted, is_preset != 0,
+            )
+            .map_err(PhaseError::Db)?;
             Ok(Some(template))
         }
         None => Ok(None),
@@ -335,12 +430,14 @@ pub fn workflow_upsert(
     };
 
     conn.execute(
-        "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, is_preset)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT(id) DO UPDATE SET
            name        = excluded.name,
            description = excluded.description,
-           updated_at  = excluded.updated_at",
+           updated_at  = excluded.updated_at,
+           is_preset   = excluded.is_preset,
+           deleted_at  = NULL",
         rusqlite::params![
             id,
             input.workspace_id,
@@ -348,42 +445,91 @@ pub fn workflow_upsert(
             input.description,
             created_at,
             now,
+            input.is_preset as i32,
         ],
     )?;
 
-    // Replace steps atomically.
-    conn.execute(
-        "DELETE FROM steps WHERE workflow_id = ?1",
-        rusqlite::params![id],
-    )?;
-
+    // Diff-based step persistence. We must PRESERVE step ids across edits:
+    // agents.step_id references steps(id), so deleting + reinserting (the old
+    // behaviour) silently nulled the linkage of every agent in every session
+    // that had run this preset. Instead: upsert provided steps by id, and
+    // soft-delete the ones the user removed.
+    let mut kept_ids: Vec<String> = Vec::with_capacity(input.steps.len());
     let mut steps = Vec::with_capacity(input.steps.len());
     for def in &input.steps {
         let def_id = def.id.clone().unwrap_or_else(uuid_v4);
         conn.execute(
             "INSERT INTO steps
-               (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+               (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
+                provider_override, model_override, effort, verbosity, parallel_group, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL)
+             ON CONFLICT(id) DO UPDATE SET
+               workflow_id      = excluded.workflow_id,
+               library_step_id  = excluded.library_step_id,
+               role             = excluded.role,
+               ordinal          = excluded.ordinal,
+               name             = excluded.name,
+               prompt_prefix    = excluded.prompt_prefix,
+               provider_override = excluded.provider_override,
+               model_override   = excluded.model_override,
+               effort           = excluded.effort,
+               verbosity        = excluded.verbosity,
+               parallel_group   = excluded.parallel_group,
+               deleted_at       = NULL",
             rusqlite::params![
                 def_id,
                 id,
+                def.library_step_id,
+                def.role,
                 def.ordinal,
                 def.name,
                 def.prompt_prefix,
                 def.provider_override,
                 def.model_override,
+                def.effort,
+                def.verbosity,
+                def.parallel_group,
             ],
         )?;
+        kept_ids.push(def_id.clone());
         steps.push(StepRow {
             id: def_id,
             workflow_id: id.clone(),
+            library_step_id: def.library_step_id.clone(),
+            role: def.role.clone(),
             ordinal: def.ordinal,
             name: def.name.clone(),
             prompt_prefix: def.prompt_prefix.clone(),
             provider_override: def.provider_override.clone(),
             model_override: def.model_override.clone(),
+            effort: def.effort.clone(),
+            verbosity: def.verbosity.clone(),
+            parallel_group: def.parallel_group,
         });
     }
+
+    // Soft-delete instances the user removed from the workflow (keep the rows
+    // so agents that ran them retain their step linkage / history).
+    let placeholders = if kept_ids.is_empty() {
+        "''".to_string()
+    } else {
+        kept_ids
+            .iter()
+            .map(|_| "?".to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let sql = format!(
+        "UPDATE steps SET deleted_at = strftime('%s','now')
+         WHERE workflow_id = ?1 AND deleted_at IS NULL AND id NOT IN ({})",
+        placeholders
+    );
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(kept_ids.len() + 1);
+    params.push(&id);
+    for k in &kept_ids {
+        params.push(k);
+    }
+    conn.execute(&sql, params.as_slice())?;
 
     Ok(WorkflowRow {
         id,
@@ -393,6 +539,8 @@ pub fn workflow_upsert(
         steps,
         created_at,
         updated_at: now,
+        deleted_at: None,
+        is_preset: input.is_preset,
     })
 }
 
@@ -414,11 +562,199 @@ pub fn workflow_delete(
         return Err(PhaseError::TemplateNotFound(id));
     }
 
-    // Cascade delete handled by FK ON DELETE CASCADE on steps.
+    // Soft-delete only. A hard DELETE used to cascade: it dropped the workflow's
+    // steps (and via session_workflows the attachment), so every session that
+    // had run this preset lost its workflow view and its agents' step linkage.
+    // Setting deleted_at hides it from the preset picker while keeping attached
+    // sessions fully intact.
     conn.execute(
-        "DELETE FROM workflows WHERE id = ?1",
+        "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
         rusqlite::params![id],
     )?;
+    Ok(())
+}
+
+/// Workflows attached to a session via `session_workflows`, INCLUDING ones that
+/// have since been soft-deleted from the workspace preset list. The session that
+/// started a workflow must keep seeing it even after it's deleted everywhere
+/// else, so this is loaded in addition to `workflow_list`.
+#[tauri::command]
+pub fn workflows_for_session(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<Vec<WorkflowRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let mut stmt = conn.prepare(
+        "SELECT w.id, w.workspace_id, w.name, w.description, w.created_at, w.updated_at,
+                w.deleted_at, w.is_preset
+         FROM workflows w
+         JOIN session_workflows sw ON sw.workflow_id = w.id
+         WHERE sw.session_id = ?1
+         ORDER BY sw.ordinal ASC",
+    )?;
+    let rows: Vec<(String, String, String, String, String, String, Option<i64>, i64)> = stmt
+        .query_map(rusqlite::params![session_id], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+                row.get(6)?,
+                row.get(7)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(PhaseError::Db)?;
+
+    let mut result = Vec::with_capacity(rows.len());
+    for (id, ws, name, desc, created, updated, deleted, is_preset) in rows {
+        let template =
+            row_to_template(&conn, id, ws, name, desc, created, updated, deleted, is_preset != 0)
+                .map_err(PhaseError::Db)?;
+        result.push(template);
+    }
+    Ok(result)
+}
+
+// ---------------------------------------------------------------------------
+// Commands — step library (reusable StepDef CRUD, soft-delete)
+// ---------------------------------------------------------------------------
+
+fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Error> {
+    Ok(StepDefRow {
+        id: row.get(0)?,
+        workspace_id: row.get(1)?,
+        base_step_id: row.get(2)?,
+        role: row.get(3)?,
+        name: row.get(4)?,
+        prompt_prefix: row.get(5)?,
+        provider_default: row.get(6)?,
+        model_default: row.get(7)?,
+        effort_default: row.get(8)?,
+        verbosity_default: row.get(9)?,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
+    })
+}
+
+const STEP_DEF_COLS: &str =
+    "id, workspace_id, base_step_id, role, name, prompt_prefix, provider_default, \
+     model_default, effort_default, verbosity_default, created_at, updated_at";
+
+/// The effective library for a workspace: every non-deleted global seed plus the
+/// workspace's own non-deleted steps. A workspace override (a local row with
+/// `base_step_id` pointing at a global) shadows that global, so the global is
+/// filtered out when an override exists.
+#[tauri::command]
+pub fn step_def_list(
+    state: State<'_, Db>,
+    workspace_id: String,
+) -> Result<Vec<StepDefRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let sql = format!(
+        "SELECT {cols} FROM step_library
+         WHERE deleted_at IS NULL
+           AND (
+             workspace_id = ?1
+             OR (
+               workspace_id IS NULL
+               AND id NOT IN (
+                 SELECT base_step_id FROM step_library
+                 WHERE workspace_id = ?1 AND base_step_id IS NOT NULL AND deleted_at IS NULL
+               )
+             )
+           )
+         ORDER BY (workspace_id IS NULL) DESC, name ASC",
+        cols = STEP_DEF_COLS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![workspace_id], map_step_def_row)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub fn step_def_upsert(
+    state: State<'_, Db>,
+    input: StepDefUpsertInput,
+) -> Result<StepDefRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let now = iso_now();
+    let id = input.id.clone().unwrap_or_else(uuid_v4);
+    let created_at: String = {
+        let mut stmt =
+            conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
+        match rows.next() {
+            Some(r) => r.map_err(PhaseError::Db)?,
+            None => now.clone(),
+        }
+    };
+
+    conn.execute(
+        "INSERT INTO step_library
+           (id, workspace_id, base_step_id, role, name, prompt_prefix,
+            provider_default, model_default, effort_default, verbosity_default,
+            created_at, updated_at, deleted_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL)
+         ON CONFLICT(id) DO UPDATE SET
+           workspace_id      = excluded.workspace_id,
+           base_step_id      = excluded.base_step_id,
+           role              = excluded.role,
+           name              = excluded.name,
+           prompt_prefix     = excluded.prompt_prefix,
+           provider_default  = excluded.provider_default,
+           model_default     = excluded.model_default,
+           effort_default    = excluded.effort_default,
+           verbosity_default = excluded.verbosity_default,
+           updated_at        = excluded.updated_at,
+           deleted_at        = NULL",
+        rusqlite::params![
+            id,
+            input.workspace_id,
+            input.base_step_id,
+            input.role,
+            input.name,
+            input.prompt_prefix,
+            input.provider_default,
+            input.model_default,
+            input.effort_default,
+            input.verbosity_default,
+            created_at,
+            now,
+        ],
+    )?;
+
+    Ok(StepDefRow {
+        id,
+        workspace_id: input.workspace_id,
+        base_step_id: input.base_step_id,
+        role: input.role,
+        name: input.name,
+        prompt_prefix: input.prompt_prefix,
+        provider_default: input.provider_default,
+        model_default: input.model_default,
+        effort_default: input.effort_default,
+        verbosity_default: input.verbosity_default,
+        created_at,
+        updated_at: now,
+    })
+}
+
+/// Soft-delete a library step. Workflows that already instanced it keep their
+/// `steps` rows (the instance carries its own copy), so existing presets are
+/// unaffected; the def just stops appearing in the library picker.
+#[tauri::command]
+pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE step_library SET deleted_at = strftime('%s','now') WHERE id = ?1",
+        rusqlite::params![id],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::TemplateNotFound(id));
+    }
     Ok(())
 }
 

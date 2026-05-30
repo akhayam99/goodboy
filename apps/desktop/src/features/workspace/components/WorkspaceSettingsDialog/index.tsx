@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { WorkflowsPanel } from '../../../../features/workflows/components/WorkflowsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
@@ -156,7 +155,6 @@ export function WorkspaceSettingsDialog({
       ? ([{ id: 'skills', label: 'Skills', icon: <Zap size={13} aria-hidden /> }] as const)
       : []),
     { id: 'scripts', label: 'Scripts', icon: <Terminal size={13} aria-hidden /> },
-    { id: 'phases', label: 'Workflows', icon: <GitBranch size={13} aria-hidden />, beta: true },
     {
       id: 'danger',
       label: 'Danger zone',
@@ -277,17 +275,6 @@ export function WorkspaceSettingsDialog({
             subtitle="User-defined shell scripts you run by hand, copy env files, install deps, build. No agent, no tokens spent."
           >
             <ScriptsPanel workspaceId={workspaceId} />
-          </SectionShell>
-        ) : null}
-
-        {active === 'phases' ? (
-          <SectionShell
-            icon={<GitBranch size={14} aria-hidden className="text-primary" />}
-            title="Workflows"
-            subtitle="Multi-agent blueprints offered when creating a session. Each step spawns its own agent in order."
-            beta
-          >
-            <WorkflowsPanel workspaceId={workspaceId} />
           </SectionShell>
         ) : null}
 

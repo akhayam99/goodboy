@@ -5,7 +5,13 @@ import type { ProviderId, Session, Workflow, WorkflowId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { WorkflowPlanner } from '../../../workflows/components/WorkflowPlanner';
 import { shortModel } from '../../agent-row-format';
-import { AGENT_KIND_PALETTE, inferAgentKindFromName } from '../../agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  AGENT_KIND_PALETTE,
+  inferAgentKindFromName,
+  ROLE_TO_KIND,
+} from '../../agent-kind';
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
@@ -28,6 +34,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
   const [presetId, setPresetId] = useState<WorkflowId | ''>('');
   const [customId, setCustomId] = useState<WorkflowId | ''>('');
   const [autoRun, setAutoRun] = useState(false);
+  const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +44,17 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
     setPresetId('');
     setCustomId('');
     setAutoRun(false);
+    setSaveAsPreset(false);
     setBusy(false);
     setError(null);
   }, [open]);
 
   const providerId: ProviderId = session.providerPreference.defaultProvider;
+
+  // Only reusable, non-deleted presets are pickable. A deleted-but-attached
+  // workflow (kept in phaseTemplates for in-session resolution) or a one-off
+  // custom workflow (isPreset === false) must not appear here.
+  const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
 
   const selectedId = mode === 'preset' ? presetId : customId;
   const selectedTemplate =
@@ -68,7 +81,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
       open={open}
       onClose={onClose}
       title="Start a workflow"
-      description="Pick a preset to drive this session step by step, or design one from a theme. You can always skip and add a workflow later from the session panel."
+      description="Pick a saved preset, or design a custom one. You can skip and add it later."
       size="xl"
       footer={
         <div className="flex w-full items-center gap-3">
@@ -87,6 +100,23 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
               </span>
             </span>
           </label>
+          {/* Only meaningful while composing a custom workflow; sits by Auto-run
+              instead of taking a row in the body. */}
+          {mode === 'custom' && customId === '' ? (
+            <label
+              className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
+              title="Keep this workflow reusable. Otherwise it runs once for this session."
+            >
+              <input
+                type="checkbox"
+                checked={saveAsPreset}
+                onChange={(e) => setSaveAsPreset(e.target.checked)}
+                className="accent-primary"
+                disabled={busy}
+              />
+              Save as preset
+            </label>
+          ) : null}
           <div className="flex-1">
             {error ? (
               <span className="inline-flex items-center gap-1 text-xs text-danger">
@@ -104,67 +134,84 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
-          <ModeCard
-            active={mode === 'preset'}
-            onClick={() => setMode('preset')}
-            icon={<Layers size={16} className="text-primary" aria-hidden />}
-            title="Preset"
-            description="Pick from saved workflows. Each step spawns its own agent."
-          />
-          <ModeCard
-            active={mode === 'custom'}
-            onClick={() => setMode('custom')}
-            icon={<Sparkles size={16} className="text-primary" aria-hidden />}
-            title="Custom"
-            description="Design a new workflow with the planner, then run it."
-            beta
-          />
-        </div>
+      {/* Tabs + caption stay pinned; only the content below scrolls, so the
+          mode switch never leaves the viewport. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3.5">
+        <ModeTabs mode={mode} onSelect={setMode} />
+        <p className="shrink-0 px-0.5 text-2xs leading-relaxed text-muted-foreground">
+          {mode === 'preset'
+            ? 'Saved pipelines. Each step spawns its own agent, in order.'
+            : 'Describe a goal; the planner drafts the steps. Tune models per step, then run.'}
+        </p>
 
-        <div>
-          {mode === 'preset' ? (
+        {/* All three panes stay mounted (toggled with `hidden`) so switching
+            Preset<->Custom never unmounts the planner: an in-flight plan keeps
+            generating and a generated plan survives the round-trip. */}
+        <div className="-mx-0.5 min-h-0 flex-1 overflow-y-auto px-0.5">
+          <div className={mode === 'preset' ? undefined : 'hidden'}>
             <PresetPicker
-              templates={phaseTemplates}
+              templates={presets}
               value={presetId}
               onChange={setPresetId}
               disabled={busy}
             />
-          ) : customId !== '' ? (
+          </div>
+          <div className={mode === 'custom' && customId === '' ? undefined : 'hidden'}>
+            <WorkflowPlanner
+              workspaceId={session.workspaceId}
+              providerId={providerId}
+              initialTheme={session.goal}
+              saveAsPreset={saveAsPreset}
+              onWorkflowReady={(workflowId) => setCustomId(workflowId)}
+            />
+          </div>
+          <div className={mode === 'custom' && customId !== '' ? undefined : 'hidden'}>
             <CustomReady
               template={phaseTemplates.find((t) => t.id === customId) ?? null}
               onReset={() => setCustomId('')}
             />
-          ) : (
-            <CustomIntro>
-              <WorkflowPlanner
-                workspaceId={session.workspaceId}
-                providerId={providerId}
-                initialTheme={session.goal}
-                onWorkflowReady={(workflowId) => setCustomId(workflowId)}
-              />
-            </CustomIntro>
-          )}
+          </div>
         </div>
       </div>
     </Dialog>
   );
 }
 
-function ModeCard({
+// ----------------------------------------------------------------------------
+// Mode switch — a compact segmented control rather than two large cards, so it
+// reads at a glance and leaves the room for the actual workflow content.
+// ----------------------------------------------------------------------------
+function ModeTabs({ mode, onSelect }: { mode: Mode; onSelect: (m: Mode) => void }) {
+  return (
+    <div className="flex shrink-0 gap-1 rounded-lg border border-border-soft bg-subtle p-1">
+      <ModeTab
+        active={mode === 'preset'}
+        onClick={() => onSelect('preset')}
+        icon={<Layers size={14} aria-hidden />}
+        label="Preset"
+      />
+      <ModeTab
+        active={mode === 'custom'}
+        onClick={() => onSelect('custom')}
+        icon={<Sparkles size={14} aria-hidden />}
+        label="Custom"
+        beta
+      />
+    </div>
+  );
+}
+
+function ModeTab({
   active,
   onClick,
   icon,
-  title,
-  description,
+  label,
   beta,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
-  title: string;
-  description: string;
+  label: string;
   beta?: boolean;
 }) {
   return (
@@ -173,92 +220,20 @@ function ModeCard({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex flex-col items-start gap-2 rounded-lg border p-4 text-left transition-colors',
+        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors',
         active
-          ? 'border-primary bg-primary/5'
-          : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+          ? 'bg-background text-foreground shadow-sm ring-1 ring-border-soft'
+          : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      <div className="flex w-full items-center gap-2">
-        {icon}
-        <span className="text-sm font-semibold text-foreground">{title}</span>
-        {beta ? (
-          <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
-            beta
-          </span>
-        ) : null}
-        {active ? <Check size={13} className="ml-auto text-primary" aria-hidden /> : null}
-      </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+      <span className={active ? 'text-primary' : undefined}>{icon}</span>
+      {label}
+      {beta ? (
+        <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
+          beta
+        </span>
+      ) : null}
     </button>
-  );
-}
-
-function CustomIntro({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-3">
-      {children}
-      <div className="grid grid-cols-3 gap-2">
-        <PlannerHint
-          tone="primary"
-          eyebrow="Step 1"
-          title="Describe the goal"
-          body="Paste a goal or refine the prefilled one."
-        />
-        <PlannerHint
-          tone="info"
-          eyebrow="Step 2"
-          title="Generate plan"
-          body="Cheap-tier model drafts ordered steps with roles."
-        />
-        <PlannerHint
-          tone="success"
-          eyebrow="Step 3"
-          title="Tweak & spawn"
-          body="Override models per step, then spawn the workflow."
-        />
-      </div>
-    </div>
-  );
-}
-
-const HINT_TONE_BG: Record<'primary' | 'info' | 'success', string> = {
-  primary: 'bg-primary/10',
-  info: 'bg-info/10',
-  success: 'bg-success/10',
-};
-
-const HINT_TONE_FG: Record<'primary' | 'info' | 'success', string> = {
-  primary: 'text-primary',
-  info: 'text-info',
-  success: 'text-success',
-};
-
-function PlannerHint({
-  tone,
-  eyebrow,
-  title,
-  body,
-}: {
-  tone: 'primary' | 'info' | 'success';
-  eyebrow: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-md border border-border-soft bg-background p-2.5">
-      <span
-        className={cn(
-          'w-fit rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider',
-          HINT_TONE_BG[tone],
-          HINT_TONE_FG[tone],
-        )}
-      >
-        {eyebrow}
-      </span>
-      <span className="text-xs font-semibold text-foreground">{title}</span>
-      <span className="text-2xs leading-relaxed text-muted-foreground">{body}</span>
-    </div>
   );
 }
 
@@ -275,7 +250,7 @@ function PresetPicker({
 }) {
   if (templates.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border-soft bg-subtle px-6 py-10 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft bg-subtle/60 px-6 py-10 text-center">
         <Layers size={22} className="text-muted-foreground/30" aria-hidden />
         <p className="text-sm font-medium text-foreground">No workflow presets yet</p>
         <p className="max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
@@ -287,113 +262,121 @@ function PresetPicker({
   }
   return (
     <ul className="flex flex-col gap-1.5">
-      {templates.map((t) => {
-        const active = value === t.id;
-        const sorted = [...t.steps].sort((a, b) => a.ordinal - b.ordinal);
-        return (
-          <li key={t.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onChange(active ? '' : t.id)}
-              className={cn(
-                'flex w-full flex-col gap-1.5 rounded-md border px-3 py-2.5 text-left transition-colors',
-                active
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
-                disabled && 'cursor-not-allowed opacity-50',
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex-1 truncate text-sm font-medium text-foreground">
-                  {t.name}
-                </span>
-                <span className="shrink-0 text-2xs text-muted-foreground">
-                  {t.steps.length} step{t.steps.length === 1 ? '' : 's'}
-                </span>
-                {active ? <Check size={12} className="shrink-0 text-primary" aria-hidden /> : null}
-              </div>
-              {t.description ? (
-                <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {t.description}
-                </p>
-              ) : null}
-              {sorted.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-1">
-                  {sorted.map((step, i) => {
-                    const kind = inferAgentKindFromName(step.name);
-                    const pal = AGENT_KIND_PALETTE[kind];
-                    return (
-                      <span key={step.id} className="flex items-center gap-0.5">
-                        {i > 0 ? (
-                          <span className="text-2xs text-muted-foreground/40">→</span>
-                        ) : null}
-                        <span
-                          className={cn(
-                            'inline-flex max-w-[8rem] items-center gap-1 truncate rounded bg-background px-1.5 py-0.5 text-2xs font-mono',
-                            pal.fg,
-                          )}
-                        >
-                          {step.name}
-                        </span>
-                      </span>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </button>
-          </li>
-        );
-      })}
+      {templates.map((t) => (
+        <li key={t.id}>
+          <PresetOption
+            template={t}
+            active={value === t.id}
+            disabled={disabled}
+            onClick={() => onChange(value === t.id ? '' : t.id)}
+          />
+        </li>
+      ))}
     </ul>
+  );
+}
+
+// One selectable preset, rendered with the same vocabulary as the Workflow
+// Studio preset card: ordinal · avatar · role-coloured name · model·verbosity.
+function PresetOption({
+  template,
+  active,
+  disabled,
+  onClick,
+}: {
+  template: Workflow;
+  active: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'flex w-full flex-col gap-2 rounded-lg border px-3.5 py-3 text-left transition-colors',
+        active
+          ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+          : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+        disabled && 'cursor-not-allowed opacity-50',
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 truncate text-sm font-semibold text-foreground">
+          {template.name}
+        </span>
+        {template.description ? (
+          <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground/70">
+            {template.description}
+          </span>
+        ) : (
+          <span className="flex-1" />
+        )}
+        <span className="shrink-0 text-2xs text-muted-foreground/50">
+          {steps.length} step{steps.length === 1 ? '' : 's'}
+        </span>
+        {active ? <Check size={14} className="shrink-0 text-primary" aria-hidden /> : null}
+      </div>
+      {steps.length > 0 ? (
+        <ol className="flex flex-col gap-1">
+          {steps.map((step, i) => (
+            <StepRow key={step.id} step={step} index={i} />
+          ))}
+        </ol>
+      ) : null}
+    </button>
+  );
+}
+
+// Shared step line used by preset cards and the custom-ready summary.
+function StepRow({ step, index }: { step: Workflow['steps'][number]; index: number }) {
+  const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+  const model = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+  const verbosity = step.verbosity ?? 'normal';
+  return (
+    <li className="flex items-center gap-2">
+      <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
+        {index + 1}
+      </span>
+      <AgentAvatar kind={kind} size="xs" />
+      <span className={cn('truncate text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
+        {step.name}
+      </span>
+      <span className="ml-auto shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
+        {shortModel(model)} · {verbosity}
+      </span>
+    </li>
   );
 }
 
 function CustomReady({ template, onReset }: { template: Workflow | null; onReset: () => void }) {
   if (!template) return null;
-  const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-1.5 text-xs">
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center gap-2">
         <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
-          <Check size={10} className="text-success" />
+          <Check size={10} className="text-success" aria-hidden />
         </span>
-        <span className="font-medium text-foreground">
-          Workflow ready · {sorted.length} step{sorted.length === 1 ? '' : 's'}
+        <span className="text-xs font-medium text-foreground">Workflow ready</span>
+        <span className="text-2xs text-muted-foreground/60">
+          {steps.length} step{steps.length === 1 ? '' : 's'}
         </span>
         <button
           type="button"
           onClick={onReset}
-          className="ml-auto flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
         >
           <Sparkles size={10} aria-hidden /> Re-design
         </button>
       </div>
-      <div className="rounded-md bg-subtle p-3">
+      <div className="rounded-lg border border-border-soft bg-subtle px-3.5 py-3">
         <ol className="flex flex-col gap-1">
-          {sorted.map((step, i) => {
-            const model = step.modelOverride ? shortModel(step.modelOverride) : null;
-            return (
-              <li
-                key={step.id}
-                className="flex items-center gap-2 rounded-md bg-background px-2 py-1 text-xs"
-              >
-                <span className="font-mono text-2xs text-muted-foreground">{i + 1}.</span>
-                <span
-                  className={cn(
-                    'size-1.5 shrink-0 rounded-full',
-                    AGENT_KIND_PALETTE[inferAgentKindFromName(step.name)].bg,
-                  )}
-                />
-                <span className="flex-1 truncate font-medium text-foreground">{step.name}</span>
-                {model ? (
-                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
-                    {model}
-                  </span>
-                ) : null}
-              </li>
-            );
-          })}
+          {steps.map((step, i) => (
+            <StepRow key={step.id} step={step} index={i} />
+          ))}
         </ol>
       </div>
     </div>

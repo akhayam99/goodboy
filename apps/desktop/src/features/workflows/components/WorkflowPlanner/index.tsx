@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { Check, Loader2, Pencil } from 'lucide-react';
 import { Button, Textarea, cn } from '@goodboy/ui';
 import { PlannerClient, type PlannerOutput, defaultsForRole } from '@goodboy/core';
 import type {
   AgentEffort,
+  AgentRole,
   ProviderId,
   Step,
   StepId,
@@ -16,7 +18,11 @@ import { useAppStore } from '../../../../store';
 import {
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
+  ROLE_LABEL,
+  ROLE_TO_KIND,
 } from '../../../../features/session/agent-kind';
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { shortModel } from '../../../../features/session/agent-row-format';
 import {
   type EffortLevel,
   modelEffortLevels,
@@ -37,6 +43,11 @@ interface Props {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialTheme: string;
+  // When false (default) the generated workflow is persisted but not added to
+  // the reusable preset library: the session that runs it keeps it, but it
+  // won't show up in the preset picker. Tick "save as preset" to make it
+  // reusable.
+  saveAsPreset?: boolean;
   onWorkflowReady: (workflowId: WorkflowId) => void;
   onPlanChange?: (hasPlan: boolean) => void;
 }
@@ -47,6 +58,7 @@ export function WorkflowPlanner({
   workspaceId,
   providerId,
   initialTheme,
+  saveAsPreset = false,
   onWorkflowReady,
   onPlanChange,
 }: Props) {
@@ -56,6 +68,9 @@ export function WorkflowPlanner({
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
   const [overrides, setOverrides] = useState<Record<number, StepOverrides>>({});
   const [error, setError] = useState<string | null>(null);
+  // The generated plan reads as a compact summary by default; "Edit" reveals
+  // the per-step model/effort/verbosity pickers.
+  const [editing, setEditing] = useState(false);
 
   const updateOverride = (index: number, patch: Partial<StepOverrides>) => {
     setOverrides((prev) => {
@@ -77,6 +92,7 @@ export function WorkflowPlanner({
     setError(null);
     setPlan(null);
     setOverrides({});
+    setEditing(false);
     setBusy(true);
     try {
       const client = new PlannerClient({ providerId, invokeFn: invoke });
@@ -129,6 +145,7 @@ export function WorkflowPlanner({
         name: plan.workflowName,
         description: plan.reasoning,
         steps,
+        isPreset: saveAsPreset,
         createdAt: now,
         updatedAt: now,
       };
@@ -145,19 +162,14 @@ export function WorkflowPlanner({
     }
   };
 
-  const planButtonLabel = (() => {
-    if (busy && !plan) return 'Planning…';
-    if (plan) return 'Re-plan';
-    return 'Generate plan';
-  })();
+  // While planning (initial or re-plan), `onPlan` clears `plan` first, so
+  // `busy && !plan` is the spinner state. A spinner reads as "working" at a
+  // glance, where a static "Planning…" label looked stuck.
+  const planning = busy && !plan;
+  const planButtonLabel = plan ? 'Re-plan' : 'Generate plan';
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="px-1 text-2xs leading-relaxed text-muted-foreground">
-        Generates a reusable workflow template (sequence of agent steps) from a theme. Workflows
-        live at the workspace level. Plans are session-scoped artifacts produced by planning agents
-        during a run.
-      </p>
       <div className="rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
         <div className="relative">
           <Textarea
@@ -170,8 +182,20 @@ export function WorkflowPlanner({
             className="min-h-24 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
           />
           <div className="absolute bottom-2.5 right-2.5">
-            <Button size="sm" onClick={onPlan} disabled={busy || theme.trim().length === 0}>
-              {planButtonLabel}
+            {/* Fixed min-width so swapping the label for the spinner doesn't
+                resize this right-anchored button (which read as the spinner
+                drifting). The spinner is centered by the button's flex. */}
+            <Button
+              size="sm"
+              onClick={onPlan}
+              disabled={busy || theme.trim().length === 0}
+              className="min-w-[6.5rem]"
+            >
+              {planning ? (
+                <Loader2 size={15} className="animate-spin" aria-label="planning" />
+              ) : (
+                planButtonLabel
+              )}
             </Button>
           </div>
         </div>
@@ -185,19 +209,44 @@ export function WorkflowPlanner({
         </p>
       ) : null}
       {plan ? (
-        <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-background p-3">
-          <div>
-            <div className="text-sm font-semibold">{plan.workflowName}</div>
-            {plan.reasoning ? (
-              <p className="mt-0.5 line-clamp-2 text-2xs leading-relaxed text-muted-foreground">
-                {plan.reasoning}
-              </p>
-            ) : null}
+        <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3.5">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-foreground">{plan.workflowName}</div>
+              {plan.reasoning ? (
+                <p className="mt-0.5 line-clamp-2 text-2xs leading-relaxed text-muted-foreground">
+                  {plan.reasoning}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditing((e) => !e)}
+              aria-pressed={editing}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-2xs font-medium transition-colors',
+                editing
+                  ? 'border-primary bg-primary/5 text-foreground'
+                  : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground',
+              )}
+            >
+              {editing ? (
+                <>
+                  <Check size={11} aria-hidden /> Done
+                </>
+              ) : (
+                <>
+                  <Pencil size={11} aria-hidden /> Edit
+                </>
+              )}
+            </button>
           </div>
-          <ol className="flex flex-col gap-2">
+          {/* One cohesive card, steps separated by hairlines. Compact by
+              default; "Edit" swaps each row for the per-step pickers. */}
+          <ol className="flex flex-col">
             {plan.steps.map((s, i) => {
               const ov = overrides[i];
-              return (
+              return editing ? (
                 <StepCard
                   key={`${i}-${s.name}`}
                   index={i}
@@ -208,11 +257,24 @@ export function WorkflowPlanner({
                   provider={providerId}
                   onChange={(patch) => updateOverride(i, patch)}
                 />
+              ) : (
+                <CompactStep
+                  key={`${i}-${s.name}`}
+                  index={i}
+                  name={s.name}
+                  role={s.role}
+                  model={ov?.model ?? defaultsForRole(s.role).model}
+                  verbosity={ov?.verbosity ?? DEFAULT_VERBOSITY}
+                />
               );
             })}
           </ol>
-          <Button size="sm" onClick={onSave} disabled={busy}>
-            {busy ? 'Saving…' : 'Use this workflow'}
+          <Button size="sm" onClick={onSave} disabled={busy} className="w-full">
+            {busy ? (
+              <Loader2 size={15} className="animate-spin" aria-label="saving" />
+            ) : (
+              'Use this workflow'
+            )}
           </Button>
         </div>
       ) : null}
@@ -237,20 +299,25 @@ function StepCard({
   provider: ProviderId;
   onChange: (patch: Partial<StepOverrides>) => void;
 }) {
-  const kindBg = AGENT_KIND_PALETTE[inferAgentKindFromName(name)].bg;
+  const kind = ROLE_TO_KIND[role as AgentRole] ?? inferAgentKindFromName(name);
+  const pal = AGENT_KIND_PALETTE[kind];
+  const roleLabel = ROLE_LABEL[role as AgentRole] ?? role;
 
   return (
-    <li className="flex flex-col gap-2 rounded-md bg-subtle px-3 py-2.5">
+    <li className="flex flex-col gap-2 border-t border-border-soft/50 pt-3 first:border-t-0 first:pt-0">
       <div className="flex items-center gap-2">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+        <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
           {index + 1}
         </span>
-        <span className={cn('size-2 shrink-0 rounded-full', kindBg)} />
-        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
-          {name}
-        </span>
-        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          {role}
+        <AgentAvatar kind={kind} size="xs" />
+        <span className={cn('min-w-0 flex-1 truncate text-xs font-semibold', pal.fg)}>{name}</span>
+        <span
+          className={cn(
+            'shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+            pal.fg,
+          )}
+        >
+          {roleLabel}
         </span>
       </div>
       {description ? (
@@ -283,6 +350,37 @@ function StepCard({
           </InlineField>
         </div>
       ) : null}
+    </li>
+  );
+}
+
+// Read-only one-line summary of a step: ordinal · avatar · role-coloured name ·
+// model·verbosity. Mirrors the preset cards so the custom plan reads the same.
+function CompactStep({
+  index,
+  name,
+  role,
+  model,
+  verbosity,
+}: {
+  index: number;
+  name: string;
+  role: string;
+  model: string;
+  verbosity: VerbosityLevel;
+}) {
+  const kind = ROLE_TO_KIND[role as AgentRole] ?? inferAgentKindFromName(name);
+  const pal = AGENT_KIND_PALETTE[kind];
+  return (
+    <li className="flex items-center gap-2 border-t border-border-soft/50 pt-2.5 first:border-t-0 first:pt-0">
+      <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
+        {index + 1}
+      </span>
+      <AgentAvatar kind={kind} size="xs" />
+      <span className={cn('min-w-0 flex-1 truncate text-2xs font-medium', pal.fg)}>{name}</span>
+      <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
+        {shortModel(model)} · {verbosity}
+      </span>
     </li>
   );
 }

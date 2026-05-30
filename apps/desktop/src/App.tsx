@@ -11,6 +11,7 @@ import { ToastProvider } from './app/components/Toast';
 import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
+import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
@@ -75,6 +76,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [leftCollapsed, setLeftCollapsed] = useState(
     () =>
       typeof localStorage !== 'undefined' &&
@@ -300,6 +302,7 @@ export function App() {
             <WorkspacesSidebar
               onOpenSettings={openSettings}
               onOpenPalette={openPalette}
+              onOpenWorkflows={() => setWorkflowStudioOpen(true)}
               collapsed={leftCollapsed}
               onToggleCollapse={toggleLeftSidebar}
             />
@@ -384,6 +387,13 @@ export function App() {
       ) : null}
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+      ) : null}
+      {workflowStudioOpen && currentWorkspace ? (
+        <WorkflowStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={() => setWorkflowStudioOpen(false)}
+        />
       ) : null}
       {currentSession && endOpen ? (
         <EndSessionDialog session={currentSession} open onClose={() => setEndOpen(false)} />

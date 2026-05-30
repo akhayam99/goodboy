@@ -232,6 +232,7 @@ describe('snapshot, empty states', () => {
       <WorkspacesSidebar
         onOpenSettings={vi.fn()}
         onOpenPalette={vi.fn()}
+        onOpenWorkflows={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
     );

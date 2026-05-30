@@ -23,7 +23,6 @@ import {
   Settings,
   Sparkles,
   Sun,
-  Terminal,
   Trash2,
   X,
 } from 'lucide-react';
@@ -96,6 +95,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
+  onOpenWorkflows: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
 }
@@ -109,6 +109,7 @@ const SECTION_LABEL =
 export function WorkspacesSidebar({
   onOpenSettings,
   onOpenPalette,
+  onOpenWorkflows,
   collapsed = false,
   onToggleCollapse,
 }: WorkspacesSidebarProps) {
@@ -245,7 +246,11 @@ export function WorkspacesSidebar({
       {/* quick actions, jump straight into the palette pre-scoped to a
           source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
       {currentWorkspace ? (
-        <QuickActionsRow onOpenPalette={onOpenPalette} skillsEnabled={WORKSPACE_FEATURES.skills} />
+        <QuickActionsRow
+          onOpenPalette={onOpenPalette}
+          onOpenWorkflows={onOpenWorkflows}
+          skillsEnabled={WORKSPACE_FEATURES.skills}
+        />
       ) : null}
 
       {/* sidebar footer, logo + onboarding chip + controls */}
@@ -360,9 +365,11 @@ function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
 
 function QuickActionsRow({
   onOpenPalette,
+  onOpenWorkflows,
   skillsEnabled,
 }: {
   onOpenPalette: (initialQuery?: string) => void;
+  onOpenWorkflows: () => void;
   skillsEnabled: boolean;
 }) {
   return (
@@ -374,15 +381,12 @@ function QuickActionsRow({
           onClick={() => onOpenPalette('/')}
         />
       ) : null}
+      {/* Single entry point to the global Workflow Studio. Scripts is reachable
+          from the composer ($ prefix) and the palette, so it's dropped here. */}
       <QuickAction
         icon={<Layers size={12} aria-hidden />}
-        label="Workflows"
-        onClick={() => onOpenPalette('~')}
-      />
-      <QuickAction
-        icon={<Terminal size={12} aria-hidden />}
-        label="Scripts"
-        onClick={() => onOpenPalette('$')}
+        label="Customize workflows"
+        onClick={onOpenWorkflows}
       />
     </div>
   );

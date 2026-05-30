@@ -22,7 +22,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
-import { invokeWorkflowList } from '../../../features/workflows/workflows';
+import {
+  invokeWorkflowList,
+  invokeWorkflowsForSession,
+  invokeStepDefList,
+} from '../../../features/workflows/workflows';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import {
   SETTING_LAST_SESSION_ID,
@@ -159,30 +163,54 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
       // immediately. Each resolves into its own `set` call when ready.
       void (async (): Promise<void> => {
         const tWsDefer = performance.now();
-        const [workspaceSummary, providerSummaries, budgetRules, skills, phaseTemplates] =
-          await Promise.all([
-            summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
-            summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
-            invokeBudgetRuleList().catch(() => []),
-            invokeSkillList(id).catch(() => []),
-            invokeWorkflowList(id).catch(() => []),
-          ]);
+        const [
+          workspaceSummary,
+          providerSummaries,
+          budgetRules,
+          skills,
+          phaseTemplates,
+          stepLibrary,
+        ] = await Promise.all([
+          summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
+          summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
+          invokeBudgetRuleList().catch(() => []),
+          invokeSkillList(id).catch(() => []),
+          invokeWorkflowList(id).catch(() => []),
+          invokeStepDefList(id).catch(() => []),
+        ]);
         // Workspace may have changed under us while these were inflight.
         if (get().currentWorkspaceId !== id) return;
         const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
+        // Backfill workflows that a session attached but which were later
+        // soft-deleted from the preset list: workflow_list excludes them, but
+        // the session must keep resolving them. They carry deletedAt so the
+        // preset picker still filters them out.
+        const extraById = new Map<string, Workflow>();
+        const needBackfill = get().sessions.filter((s) =>
+          s.workflowIds.some((wid) => !workflowById.has(wid)),
+        );
+        await Promise.all(
+          needBackfill.map(async (s) => {
+            const attached = await invokeWorkflowsForSession(s.id).catch(() => []);
+            for (const wf of attached) if (!workflowById.has(wf.id)) extraById.set(wf.id, wf);
+          }),
+        );
+        const resolveById = new Map<string, Workflow>([...workflowById, ...extraById]);
         const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
         for (const s of get().sessions) {
           const attached = s.workflowIds
-            .map((wid) => workflowById.get(wid) ?? null)
+            .map((wid) => resolveById.get(wid) ?? null)
             .filter((w): w is Workflow => w !== null);
           if (attached.length > 0) sessionWorkflows[s.id] = attached;
         }
+        const mergedTemplates = [...phaseTemplates, ...extraById.values()];
         set((state) => ({
           sessionWorkflows,
           workspaceSummary,
           providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
           skills: { ...state.skills, [id]: skills },
-          phaseTemplates: { ...state.phaseTemplates, [id]: phaseTemplates },
+          phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
+          stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },
         }));
         // eslint-disable-next-line no-console
         console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
