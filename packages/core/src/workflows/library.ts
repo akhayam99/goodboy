@@ -51,20 +51,20 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
   {
     slug: 'bug-fix',
     name: 'Bug fix',
-    description: 'Reproduce, diagnose, fix, verify.',
+    description: 'Reproduce with a failing test, diagnose, fix, verify.',
     steps: [
       {
         name: 'Reproduce',
-        role: 'investigator',
+        role: 'tester',
         promptPrefix:
-          'Find a minimal reproduction. Capture the failing input, expected output, and actual output. Add a failing test if feasible.',
-        expectedOutput: 'A reliable repro + a failing test (or a precise unwritten test plan).',
+          'Reproduce the bug and lock it in with a minimal FAILING test. Capture the failing input, expected output, and actual output. Do not fix anything yet.',
+        expectedOutput: 'A committed failing test that captures the bug.',
       },
       {
         name: 'Diagnose',
         role: 'investigator',
         promptPrefix:
-          'Trace the failure to its root cause. Identify the smallest set of files involved. Avoid speculation; back claims with code references.',
+          'Trace the failure to its root cause. Identify the smallest set of files involved. Avoid speculation; back every claim with a file:line reference.',
         expectedOutput: 'A root-cause statement with file:line references.',
       },
       {
@@ -84,48 +84,83 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     ],
   },
   {
-    slug: 'feature',
-    name: 'Feature',
-    description: 'Spec the change, design it, implement it, test it.',
+    slug: 'ship',
+    name: 'Ship it',
+    description: 'Plan, implement, test, review. End to end.',
     steps: [
       {
-        name: 'Spec',
-        role: 'product',
+        name: 'Plan',
+        role: 'planner',
         promptPrefix:
-          'Clarify the user-facing behavior in 5-10 bullets. List acceptance criteria. Flag open questions before any code is written.',
-        expectedOutput: 'A short spec with ACs and open questions.',
-      },
-      {
-        name: 'Design',
-        role: 'architect',
-        promptPrefix:
-          'Propose the technical approach. Identify the modules touched, new types, data flow, and any migrations. Keep alternatives short.',
-        expectedOutput: 'A design note with modules, types, data flow, and migration notes.',
+          'Turn the goal into a concrete, ordered plan: files to touch and the specific change per file. No code yet.',
+        expectedOutput: 'An ordered plan with file paths and per-file changes.',
       },
       {
         name: 'Implement',
         role: 'implementer',
         promptPrefix:
-          'Build the feature against the design. Stop at the first acceptance criterion that needs clarification. Keep diffs reviewable.',
-        expectedOutput: 'Working code that satisfies the ACs from the spec.',
+          'Execute the plan with minimal, correct changes. Stay in scope. Keep the diff reviewable.',
+        expectedOutput: 'Working code that follows the plan.',
+      },
+      {
+        name: 'Test',
+        role: 'tester',
+        promptPrefix:
+          'Cover the change with tests: happy path, edge cases, and a regression guard. Fix the code, never weaken a test.',
+        expectedOutput: 'A green test suite that exercises the change.',
+      },
+      {
+        name: 'Review',
+        role: 'reviewer',
+        promptPrefix:
+          'Review the full diff for correctness, security and scope creep. Report findings; do not rewrite unrelated code.',
+        expectedOutput: 'A pass/fail review with any follow-ups.',
+      },
+    ],
+  },
+  {
+    slug: 'feature',
+    name: 'Feature',
+    description: 'Survey, plan, implement, test.',
+    steps: [
+      {
+        name: 'Survey',
+        role: 'scout',
+        promptPrefix:
+          'Survey where this feature fits: the modules it touches, existing patterns to follow, and any constraints. Do not write code.',
+        expectedOutput: 'A short map of where the feature lands and what to reuse.',
+      },
+      {
+        name: 'Plan',
+        role: 'planner',
+        promptPrefix:
+          'Turn the goal into a concrete plan: user-facing behavior, acceptance criteria, modules to touch, new types and data flow. No code yet.',
+        expectedOutput: 'A plan with acceptance criteria and per-file changes.',
+      },
+      {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix:
+          'Build the feature against the plan. Stop at the first acceptance criterion that needs clarification. Keep diffs reviewable.',
+        expectedOutput: 'Working code that satisfies the acceptance criteria.',
       },
       {
         name: 'Test',
         role: 'tester',
         promptPrefix:
           'Cover the happy path, edge cases, and at least one regression case for prior bugs in the area. Prefer integration tests where they pay back.',
-        expectedOutput: 'A test suite that exercises the spec and guards regressions.',
+        expectedOutput: 'A test suite that exercises the feature and guards regressions.',
       },
     ],
   },
   {
     slug: 'exploration',
     name: 'Exploration',
-    description: 'Single open-ended chat with the active provider.',
+    description: 'Single open-ended agent.',
     steps: [
       {
         name: 'Explore',
-        role: 'explorer',
+        role: 'custom',
         promptPrefix: '',
         expectedOutput: '',
       },

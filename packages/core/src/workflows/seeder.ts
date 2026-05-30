@@ -1,7 +1,35 @@
-import type { IsoDateTime, Step, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentRole,
+  IsoDateTime,
+  Step,
+  StepDefId,
+  StepId,
+  Workflow,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { upsertWorkflow, type Database } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { defaultsForRole } from '../roles';
+
+// Global library seed ids created by db migration m045. Each canonical role has
+// one. Seeded preset steps point back to these so the preset composer + library
+// manager treat seeded steps as instances of the shared definitions.
+const SEEDED_ROLES = new Set<AgentRole>([
+  'scout',
+  'planner',
+  'implementer',
+  'reviewer',
+  'investigator',
+  'product',
+  'architect',
+  'tester',
+  'explorer',
+]);
+
+function libraryStepIdForRole(role: string): StepDefId | undefined {
+  return SEEDED_ROLES.has(role as AgentRole) ? (`seed_${role}` as StepDefId) : undefined;
+}
 
 export interface SeedWorkflowLibraryDeps {
   readonly db: Database;
@@ -37,9 +65,12 @@ export async function seedWorkflowLibrary(
       // sensibly-priced model out of the box. The user can still override at
       // the Step level later.
       const roleDefaults = defaultsForRole(s.role);
+      const libraryStepId = libraryStepIdForRole(s.role);
       return {
         id: makeStepId(entry.slug, s.name, workspaceId),
         workflowId,
+        ...(libraryStepId && { libraryStepId }),
+        role: s.role as AgentRole,
         ordinal,
         name: s.name,
         promptPrefix: s.promptPrefix,
