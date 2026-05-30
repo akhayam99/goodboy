@@ -27,6 +27,7 @@ import {
   IconClipboard,
   IconFolder,
   IconHelp,
+  IconLayers,
   IconList,
   IconPlus,
   IconPullRequest,
@@ -715,6 +716,112 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
         </p>
       ) : null}
     </div>
+  );
+}
+
+/* ------------------------- Workflow Studio ---------------------------- */
+
+/* The composer: a saved preset on the left, the reusable step library on the
+   right. Mirrors apps/desktop WorkflowsPanel (preset rail + step library
+   palette). Each composed step carries its own model. */
+const STUDIO_STEPS = [
+  { kind: 'scout' as const, name: 'Scout the area', model: 'haiku-4-5' },
+  { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
+  { kind: 'imple' as const, name: 'Refactor', model: 'sonnet-4-5' },
+  { kind: 'review' as const, name: 'Verify', model: 'sonnet-4-5' },
+];
+
+const STUDIO_LIBRARY: ReadonlyArray<keyof typeof KIND> = [
+  'scout',
+  'plan',
+  'imple',
+  'review',
+  'test',
+  'debug',
+];
+
+function GripDots() {
+  return (
+    <svg
+      width="6"
+      height="12"
+      viewBox="0 0 6 12"
+      aria-hidden
+      className="shrink-0 text-muted-foreground/40"
+    >
+      <g fill="currentColor">
+        <circle cx="1.5" cy="2" r="1" />
+        <circle cx="4.5" cy="2" r="1" />
+        <circle cx="1.5" cy="6" r="1" />
+        <circle cx="4.5" cy="6" r="1" />
+        <circle cx="1.5" cy="10" r="1" />
+        <circle cx="4.5" cy="10" r="1" />
+      </g>
+    </svg>
+  );
+}
+
+export function StudioComposeSnapshot() {
+  return (
+    <SnapshotFrame className="max-w-[460px]">
+      <FrameHeader
+        label="Workflow Studio"
+        right={
+          <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning">
+            beta
+          </span>
+        }
+      />
+      <div className="flex">
+        {/* composer: the preset being assembled */}
+        <div className="min-w-0 flex-1 p-3">
+          <div className="flex items-center gap-2 pb-2">
+            <span className="text-[11px] font-semibold text-foreground">Refactor</span>
+            <span className="text-[10px] text-muted-foreground/50">4 steps</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            {STUDIO_STEPS.map((s, i) => (
+              <div
+                key={s.kind}
+                className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-1.5"
+              >
+                <span className="w-3 shrink-0 text-right font-mono text-[10px] text-muted-foreground/40">
+                  {i + 1}
+                </span>
+                <KindBadge kind={s.kind} />
+                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground/90">
+                  {s.name}
+                </span>
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+                  {s.model}
+                </span>
+              </div>
+            ))}
+            <div className="mt-0.5 flex items-center gap-1.5 rounded-md border border-dashed border-primary/40 bg-primary/5 px-2 py-1.5 text-[10px] font-medium text-primary/80">
+              <IconPlus size={11} /> drop a step here
+            </div>
+          </div>
+        </div>
+
+        {/* step library: drag a module in */}
+        <div className="w-[124px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
+          <div className="pb-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Step library
+          </div>
+          <div className="flex flex-col gap-1">
+            {STUDIO_LIBRARY.map((k) => (
+              <div
+                key={k}
+                className="flex items-center gap-1 rounded-md border border-border-soft bg-subtle px-1.5 py-1"
+              >
+                <GripDots />
+                <KindBadge kind={k} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SnapshotFrame>
   );
 }
 
@@ -1626,7 +1733,7 @@ export function WorkflowRunSnapshot() {
           {/* workflow header: label + preset, auto-run toggle in the top-right */}
           <div className="flex items-center gap-2 pb-2">
             <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              <IconBranch size={10} className="text-primary" />
+              <IconLayers size={10} className="text-primary" />
               Workflow
             </span>
             <span className="flex-1" />
