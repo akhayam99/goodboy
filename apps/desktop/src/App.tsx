@@ -15,6 +15,7 @@ import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
+import { worktreeDiffCommit } from './features/worktree/worktree';
 import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
@@ -302,10 +303,21 @@ export function App() {
     window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
   }, []);
 
-  const commitDiffLoader = useCallback(
-    () => (commitDiff ? ghCommitDiff(commitDiff.repo, commitDiff.sha) : Promise.resolve('')),
-    [commitDiff],
-  );
+  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
+
+  const commitDiffLoader = useCallback(async () => {
+    if (!commitDiff) return '';
+    const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
+    if (worktree) {
+      try {
+        return await worktreeDiffCommit(worktree, commitDiff.sha);
+      } catch {
+        void 0;
+      }
+    }
+    return ghCommitDiff(commitDiff.repo, commitDiff.sha);
+  }, [commitDiff, currentSessionId, sessionWorktrees]);
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
