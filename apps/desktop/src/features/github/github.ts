@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
+import { detectRepoSlug, fetchPrDetail, listPrsForBranch } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
-import type { GhTokenStatus, GithubPrCacheEntry } from '@goodboy/types';
+import type { GhTokenStatus, GithubPrCacheEntry, PrDetail, PullRequestState } from '@goodboy/types';
 import {
   getGithubPrCache,
   upsertGithubPrCache,
@@ -71,6 +72,59 @@ export async function ghPrDiff(repo: string, pr: number, cwd?: string): Promise<
     const msg = formatError(err);
     throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
   }
+}
+
+export async function ghPrsForBranch(
+  cwd: string,
+  branch: string,
+): Promise<ReadonlyArray<PullRequestState>> {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd);
+  if (!slug) return [];
+  return listPrsForBranch(tauriGhRunner, slug, branch, { cwd });
+}
+
+export async function ghPrDetailByNumber(cwd: string, prNumber: number): Promise<PrDetail | null> {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd);
+  if (!slug) return null;
+  return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd });
+}
+
+export async function ghBaseBranches(
+  cwd: string,
+): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> {
+  const [def, list] = await Promise.all([
+    tauriGhRunner.run(
+      ['repo', 'view', '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'],
+      {
+        cwd,
+      },
+    ),
+    tauriGhRunner.run(['api', 'repos/{owner}/{repo}/branches?per_page=100', '--jq', '.[].name'], {
+      cwd,
+    }),
+  ]);
+  const defaultBranch = def.exitCode === 0 ? def.stdout.trim() || null : null;
+  const branches =
+    list.exitCode === 0
+      ? list.stdout
+          .split('\n')
+          .map((b) => b.trim())
+          .filter(Boolean)
+      : [];
+  return { defaultBranch, branches };
+}
+
+export async function ghCommitDiff(repo: string, sha: string): Promise<string> {
+  const res = await tauriGhRunner.run([
+    'api',
+    `repos/${repo}/commits/${sha}`,
+    '-H',
+    'Accept: application/vnd.github.diff',
+  ]);
+  if (res.exitCode !== 0) {
+    throw new Error(res.stderr.trim() || `gh api commit ${repo}@${sha} exited ${res.exitCode}`);
+  }
+  return res.stdout;
 }
 
 export const tauriGhRunner: GhRunner = {

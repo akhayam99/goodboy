@@ -233,6 +233,7 @@ describe('snapshot, empty states', () => {
         onOpenSettings={vi.fn()}
         onOpenPalette={vi.fn()}
         onOpenWorkflows={vi.fn()}
+        onOpenGithub={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
     );
