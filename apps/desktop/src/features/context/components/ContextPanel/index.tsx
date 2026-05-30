@@ -36,7 +36,6 @@ import type {
   PlanStatus,
   PlanWithCount,
   PrCheckRun,
-  PullRequestStateKind,
   Session,
   SessionId,
   TelemetryRecord,
@@ -46,7 +45,6 @@ import { QuestionsTab } from '../QuestionsTab';
 import { useOpenQuestions } from '../QuestionsTab/useOpenQuestions';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
-import { GithubDetailsDialog } from '../../../../features/github/components/GithubDetailsDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
 import { TerminalPanel } from '../../../../features/scripts/components/TerminalPanel';
@@ -78,7 +76,7 @@ type SummarizerStatusKind = 'idle' | 'running' | 'error';
 const ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-type PanelTab = 'context' | 'plans' | 'questions' | 'files' | 'github' | 'terminal';
+type PanelTab = 'context' | 'plans' | 'questions' | 'terminal';
 
 export function ContextPanel({
   session,
@@ -207,9 +205,7 @@ export function ContextPanel({
   // Count badges on the tab strip, at-a-glance counts beat hunting through.
   const plansBadge = plans.length > 0 ? plans.length : null;
   const hasActivePlan = plans.some((p) => p.status === 'active');
-  const filesBadge = filesTouched.count > 0 ? filesTouched.count : null;
   const questionsBadge = questions.length > 0 ? questions.length : null;
-  const prState = github?.pr?.state ?? null;
   const isTerminalOpen = useAppStore((s) => s.terminalSessions[session.id as SessionId] === 'open');
 
   return (
@@ -251,8 +247,6 @@ export function ContextPanel({
               plansWarning={hasActivePlan}
               summarizerRunning={summarizer.status === 'running'}
               questionsBadge={questionsBadge}
-              filesBadge={filesBadge}
-              prState={prState}
               isTerminalOpen={isTerminalOpen}
             />
             <div className="flex shrink-0 items-center gap-1">
@@ -298,37 +292,36 @@ export function ContextPanel({
               className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2 motion-safe:animate-fade-in"
             >
               {tab === 'context' ? (
-                <ul
-                  className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
-                  style={{ scrollbarGutter: 'stable' }}
-                >
-                  {visibleSlotKeys.map((key) => {
-                    const slot = slotsByKey.get(key);
-                    return (
-                      <SlotRow
-                        key={key}
-                        sessionId={session.id}
-                        slotKey={key}
-                        slot={slot}
-                        loading={loading.slots}
-                        isSummarizing={summarizer.status === 'running'}
-                        onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                      />
-                    );
-                  })}
-                </ul>
+                <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+                  <ul
+                    className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
+                    style={{ scrollbarGutter: 'stable' }}
+                  >
+                    {visibleSlotKeys.map((key) => {
+                      const slot = slotsByKey.get(key);
+                      return (
+                        <SlotRow
+                          key={key}
+                          sessionId={session.id}
+                          slotKey={key}
+                          slot={slot}
+                          loading={loading.slots}
+                          isSummarizing={summarizer.status === 'running'}
+                          onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                        />
+                      );
+                    })}
+                  </ul>
+                  <ChangesStrip
+                    sessionId={session.id}
+                    workingDir={workingDir}
+                    filesTouched={filesTouched}
+                  />
+                </div>
               ) : tab === 'plans' ? (
                 <PlansTabContent sessionId={session.id} />
-              ) : tab === 'questions' ? (
-                <QuestionsTab sessionId={session.id} onSubmit={onSubmitAnswers} />
-              ) : tab === 'files' ? (
-                <FilesTabContent
-                  sessionId={session.id}
-                  workingDir={workingDir}
-                  filesTouched={filesTouched}
-                />
               ) : (
-                <GithubTabContent sessionId={session.id} branch={branch} />
+                <QuestionsTab sessionId={session.id} onSubmit={onSubmitAnswers} />
               )}
             </div>
           ) : null}
@@ -365,20 +358,8 @@ interface TabStripProps {
   readonly plansWarning: boolean;
   readonly summarizerRunning: boolean;
   readonly questionsBadge: number | null;
-  readonly filesBadge: number | null;
-  readonly prState: PullRequestStateKind | null;
   readonly isTerminalOpen: boolean;
 }
-
-// PR state → tab-strip dot colour. Keeps GitHub status legible at a glance
-// without spending strip width on the full PullRequestChip.
-const PR_TAB_DOT: Record<PullRequestStateKind, string> = {
-  draft: 'bg-muted-foreground',
-  open: 'bg-success',
-  approved: 'bg-success',
-  merged: 'bg-merged',
-  closed: 'bg-danger',
-};
 
 function TabStrip({
   tab,
@@ -387,8 +368,6 @@ function TabStrip({
   plansWarning,
   summarizerRunning,
   questionsBadge,
-  filesBadge,
-  prState,
   isTerminalOpen,
 }: TabStripProps) {
   return (
@@ -415,20 +394,6 @@ function TabStrip({
         label="Questions"
         badge={questionsBadge}
         accentDot={questionsBadge ? 'bg-warning' : null}
-      />
-      <TabButton
-        active={tab === 'files'}
-        onClick={() => onPick('files')}
-        icon={<FileEdit size={11} aria-hidden />}
-        label="Files"
-        badge={filesBadge}
-      />
-      <TabButton
-        active={tab === 'github'}
-        onClick={() => onPick('github')}
-        icon={<GitPullRequest size={11} aria-hidden />}
-        label="GitHub"
-        accentDot={prState ? PR_TAB_DOT[prState] : null}
       />
       <TabButton
         active={tab === 'terminal'}
@@ -572,7 +537,7 @@ interface FilesTouchedShape {
   readonly deletions: number;
 }
 
-function FilesTabContent({
+function ChangesStrip({
   sessionId,
   workingDir,
   filesTouched,
@@ -581,229 +546,108 @@ function FilesTabContent({
   workingDir: string | null;
   filesTouched: FilesTouchedShape;
 }) {
-  const diffComments = useDiffComments(sessionId);
-  const loading = useSessionLoading(sessionId);
-  const summarizer = useSummarizerStatus(sessionId);
-  const [gitStatus, setGitStatus] = useState<WorktreeStatus | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
-  const [jumpToNotes, setJumpToNotes] = useState(false);
-
-  useEffect(() => {
-    if (!workingDir) {
-      setGitStatus(null);
-      return;
-    }
-    let cancelled = false;
-    worktreeStatus(workingDir)
-      .then((s) => {
-        if (!cancelled) setGitStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setGitStatus(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workingDir, filesTouched.count, summarizer.lastUpdate]);
-
-  // Branch-vs-base count is stable across pushes; fall back to working-tree
-  // dirt only when the branch diff is unavailable.
-  const count = filesTouched.count > 0 ? filesTouched.count : (gitStatus?.changed ?? 0);
-  const openNotes = useMemo(
-    () => diffComments.filter((c) => c.status === 'open').length,
-    [diffComments],
-  );
-  const isLoading = count === 0 && (loading.transcript || loading.agents);
-
-  const statusLine = useMemo(() => {
-    if (!gitStatus) return null;
-    const parts: string[] = [];
-    if (gitStatus.unstaged > 0) parts.push(`${gitStatus.unstaged} unstaged`);
-    if (gitStatus.staged > 0) parts.push(`${gitStatus.staged} staged`);
-    if (gitStatus.untracked > 0) parts.push(`${gitStatus.untracked} untracked`);
-    if (gitStatus.hasUpstream && (gitStatus.ahead > 0 || gitStatus.behind > 0)) {
-      parts.push(`ahead ${gitStatus.ahead} · behind ${gitStatus.behind}`);
-    }
-    return parts.length > 0 ? parts.join(' · ') : 'working tree clean';
-  }, [gitStatus]);
-
-  if (isLoading) {
-    return (
-      <div role="status" aria-label="loading files touched" className="flex flex-col gap-2 py-1">
-        <div className="h-3 w-24 rounded bg-muted/50" />
-        <div className="h-9 w-full rounded-lg bg-muted/50" />
-      </div>
-    );
-  }
+  const count = filesTouched.count;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1">
-      <button
-        type="button"
-        onClick={() => {
-          setJumpToNotes(false);
-          setDiffOpen(true);
-        }}
-        disabled={!workingDir || count === 0}
-        title={workingDir ? 'open the diff viewer' : 'no worktree for this session'}
-        className={cn(
-          'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-xs ring-1 transition-colors',
-          count === 0
-            ? 'cursor-default bg-transparent text-muted-foreground/60 ring-border-soft/30'
-            : 'bg-info/5 text-info ring-info/20 hover:bg-info/10',
-        )}
-      >
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <FileEdit size={12} aria-hidden />
-          <span className="truncate font-medium">
-            {count} file{count === 1 ? '' : 's'} touched
-          </span>
-        </span>
-        <span className="inline-flex shrink-0 items-center gap-2">
-          {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
-            <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
-              {filesTouched.additions > 0 ? (
-                <span className="text-success">+{filesTouched.additions}</span>
-              ) : null}
-              {filesTouched.deletions > 0 ? (
-                <span className="text-danger">−{filesTouched.deletions}</span>
-              ) : null}
-            </span>
-          ) : null}
-          {count > 0 ? <ArrowUpRight size={12} aria-hidden className="opacity-70" /> : null}
-        </span>
-      </button>
-
-      {openNotes > 0 ? (
+    <div className="flex shrink-0 flex-col gap-2 border-t border-border-soft/50 pt-2.5">
+      <GithubStrip sessionId={sessionId} />
+      {count > 0 ? (
         <button
           type="button"
-          onClick={() => {
-            setJumpToNotes(true);
-            setDiffOpen(true);
-          }}
-          className="flex items-center gap-1.5 self-start rounded-md bg-warning/10 px-2 py-1 text-2xs font-medium text-warning transition-colors hover:bg-warning/15"
+          onClick={() => setDiffOpen(true)}
+          disabled={!workingDir}
+          title={workingDir ? 'open the diff viewer' : 'no worktree for this session'}
+          className="flex w-full items-center justify-between gap-2 rounded-lg bg-info/5 px-3 py-2 text-xs text-info ring-1 ring-info/20 transition-colors hover:bg-info/10 disabled:cursor-default disabled:opacity-60"
         >
-          <MessageSquare size={11} aria-hidden />
-          {openNotes} open note{openNotes === 1 ? '' : 's'}
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <FileEdit size={12} aria-hidden />
+            <span className="truncate font-medium">
+              {count} file{count === 1 ? '' : 's'} touched
+            </span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-2">
+            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
+                {filesTouched.additions > 0 ? (
+                  <span className="text-success">+{filesTouched.additions}</span>
+                ) : null}
+                {filesTouched.deletions > 0 ? (
+                  <span className="text-danger">−{filesTouched.deletions}</span>
+                ) : null}
+              </span>
+            ) : null}
+            <ArrowUpRight size={12} aria-hidden className="opacity-70" />
+          </span>
         </button>
+      ) : (
+        <div className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-xs text-muted-foreground/60 ring-1 ring-border-soft/40">
+          <FileEdit size={12} aria-hidden />
+          <span className="font-medium">working tree clean</span>
+        </div>
+      )}
+      {count > 0 ? (
+        <DiffViewerDialog
+          open={diffOpen}
+          onClose={() => setDiffOpen(false)}
+          sessionId={sessionId}
+          title={`${count} file${count === 1 ? '' : 's'} touched`}
+          workingDir={workingDir ?? undefined}
+          worktreePath={workingDir ?? undefined}
+        />
       ) : null}
-
-      {statusLine ? (
-        <p className="px-0.5 text-[10px] leading-tight text-muted-foreground/60">{statusLine}</p>
-      ) : null}
-
-      {count === 0 ? (
-        <p className="px-0.5 text-[11px] leading-snug text-muted-foreground/70">
-          No files touched yet. Edits the agent makes in this session's worktree show up here.
-        </p>
-      ) : null}
-
-      <DiffViewerDialog
-        open={diffOpen}
-        onClose={() => setDiffOpen(false)}
-        sessionId={sessionId}
-        title={`${count} file${count === 1 ? '' : 's'} touched`}
-        workingDir={workingDir ?? undefined}
-        worktreePath={workingDir ?? undefined}
-        jumpToFirstCommented={jumpToNotes}
-      />
     </div>
   );
 }
 
-function GithubTabContent({ sessionId, branch }: { sessionId: SessionId; branch: string | null }) {
+function GithubStrip({ sessionId }: { sessionId: SessionId }) {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-
   const pr = github?.pr ?? null;
-  const detail = github?.detail ?? null;
-  // Branch is needed to even kick off a fetch, without one fall through to
-  // the "no PR" state instead of pinning the card to "loading…".
-  const prLoading = branch
-    ? !github || github.loading || (github.fetchedAt === null && !github.error)
-    : false;
-  const spinning = (github?.loading ?? false) || (github?.detailLoading ?? false);
+  const openStudio = () =>
+    window.dispatchEvent(new CustomEvent('goodboy:open-github-studio', { detail: { sessionId } }));
 
-  const onRefresh = () => {
-    void refreshSessionPr(sessionId, { force: true }).then(() =>
-      refreshSessionPrDetail(sessionId, { force: true }),
+  if (!pr) {
+    return (
+      <button
+        type="button"
+        onClick={openStudio}
+        title="open in github studio"
+        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground/70 ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <GitPullRequest size={12} aria-hidden />
+          <span>No PR yet</span>
+        </span>
+        <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-60" />
+      </button>
     );
-  };
+  }
 
+  const detail = github?.detail ?? null;
   const unresolvedComments = (detail?.comments ?? []).filter(
     (c) => c.source !== 'review' || c.resolved === false,
   ).length;
   const ciState = computeCiState(detail?.checks ?? []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1">
-      {prLoading ? (
-        <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground ring-1 ring-border-soft">
-          <Loader2 size={12} aria-hidden className="animate-spin" />
-          <span>loading github…</span>
-        </div>
-      ) : !pr ? (
-        <div className="flex flex-col gap-2 rounded-lg bg-transparent p-3 ring-1 ring-border-soft/30">
-          <div className="flex items-center gap-2">
-            <GitPullRequest size={13} aria-hidden className="shrink-0 text-muted-foreground/60" />
-            <span className="text-xs font-medium text-foreground">No pull request yet</span>
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={spinning}
-              title="refresh github status"
-              aria-label="refresh github status"
-              className="ml-auto shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed"
-            >
-              <RefreshCw size={11} aria-hidden className={cn(spinning && 'animate-spin')} />
-            </button>
-          </div>
-          <p className="text-[11px] leading-snug text-muted-foreground/70">
-            Open a PR from this session's branch, its review state, CI, and comments land here.
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5 rounded-lg bg-muted/30 p-3 ring-1 ring-border-soft">
-          <div className="flex items-center gap-2">
-            <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={spinning}
-              title="refresh github status"
-              aria-label="refresh github status"
-              className="ml-auto shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed"
-            >
-              <RefreshCw size={11} aria-hidden className={cn(spinning && 'animate-spin')} />
-            </button>
-          </div>
-          <div className="flex items-center gap-3 text-2xs">
-            <CiBadge state={ciState} />
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <MessageSquare size={11} aria-hidden />
-              <span className="tabular-nums">{unresolvedComments}</span>
-              <span>unresolved</span>
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDetailsOpen(true)}
-            className="flex items-center justify-center gap-1 rounded-md bg-background px-2.5 py-1.5 text-2xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/5"
-          >
-            Open PR details
-            <ChevronRight size={12} aria-hidden />
-          </button>
-        </div>
-      )}
-
-      <GithubDetailsDialog
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        sessionId={sessionId}
-      />
-    </div>
+    <button
+      type="button"
+      onClick={openStudio}
+      title="open in github studio"
+      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 ring-border-soft transition-colors hover:bg-foreground/5"
+    >
+      <span className="inline-flex min-w-0 items-center gap-2">
+        <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
+        {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
+        {unresolvedComments > 0 ? (
+          <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
+            <MessageSquare size={11} aria-hidden />
+            <span className="tabular-nums">{unresolvedComments}</span>
+          </span>
+        ) : null}
+      </span>
+      <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+    </button>
   );
 }
 
