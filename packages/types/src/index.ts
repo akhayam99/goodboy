@@ -10,6 +10,7 @@ export type {
   ProviderRunId,
   SessionId,
   SkillId,
+  StepDefId,
   StepId,
   TelemetryRecordId,
   WorkflowId,
@@ -83,6 +84,7 @@ export type {
   ParallelMergeStrategy,
   ParallelGroup,
   Step,
+  StepDef,
   StepTransition,
   Workflow,
 } from './workflow';

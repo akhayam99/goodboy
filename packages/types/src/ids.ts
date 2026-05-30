@@ -7,6 +7,7 @@ export type SkillId = string & { readonly __brand: 'SkillId' };
 export type WorkspaceScriptId = string & { readonly __brand: 'WorkspaceScriptId' };
 export type WorkflowId = string & { readonly __brand: 'WorkflowId' };
 export type StepId = string & { readonly __brand: 'StepId' };
+export type StepDefId = string & { readonly __brand: 'StepDefId' };
 export type AgentId = string & { readonly __brand: 'AgentId' };
 export type ParallelGroupId = string & { readonly __brand: 'ParallelGroupId' };
 export type ParallelAgentId = string & { readonly __brand: 'ParallelAgentId' };
