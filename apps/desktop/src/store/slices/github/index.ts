@@ -2,9 +2,11 @@ import { clearGithubToken } from './clearGithubToken';
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';
 import { createPrForSession } from './createPrForSession';
+import { editPr } from './editPr';
 import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
 import { reopenPr } from './reopenPr';
+import { requestReview } from './requestReview';
 import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
@@ -27,6 +29,8 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     mergePr: mergePr(set, get),
     closePr: closePr(set, get),
     reopenPr: reopenPr(set, get),
+    editPr: editPr(set, get),
+    requestReview: requestReview(set, get),
     sweepGithub: sweepGithub(set, get),
   };
 }

@@ -114,6 +114,18 @@ export async function ghBaseBranches(
   return { defaultBranch, branches };
 }
 
+export async function ghRepoCollaborators(cwd: string): Promise<ReadonlyArray<string>> {
+  const res = await tauriGhRunner.run(
+    ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
+    { cwd },
+  );
+  if (res.exitCode !== 0) return [];
+  return res.stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
 export async function ghCommitDiff(repo: string, sha: string): Promise<string> {
   const res = await tauriGhRunner.run([
     'api',
