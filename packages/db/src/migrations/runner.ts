@@ -76,8 +76,19 @@ async function applyMigrationSql(db: Database, migration: Migration): Promise<vo
   }
 }
 
+// Tauri serializes Rust DB errors as plain `{ kind, message }` objects, not
+// Error instances. `String(obj)` would be "[object Object]", so we must read the
+// `message` field explicitly or the self-healing below never triggers.
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
 function isAlreadyExistsError(err: unknown): boolean {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  const msg = errorMessage(err).toLowerCase();
   return msg.includes('duplicate column name') || msg.includes('already exists');
 }
 

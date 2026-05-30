@@ -245,8 +245,14 @@ describe('migrate', () => {
     expect(updated[0].outputSummary).toBe('Found issues');
 
     await deleteWorkflow(db, workflow.id);
+    // Soft-delete: the workflow drops out of the preset list, but the row
+    // survives (deletedAt stamped) so sessions that already attached it keep
+    // resolving it instead of losing the workflow entirely.
+    const listAfterDelete = await listWorkflows(db, workflow.workspaceId);
+    expect(listAfterDelete.find((w) => w.id === workflow.id)).toBeUndefined();
     const deleted = await getWorkflow(db, workflow.id);
-    expect(deleted).toBeNull();
+    expect(deleted).not.toBeNull();
+    expect(deleted?.deletedAt).toBeTruthy();
   });
 
   it('round-trips session_worktrees: insert, list, delete', async () => {
