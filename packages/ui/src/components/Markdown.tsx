@@ -435,6 +435,35 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
+    // Image: ![alt](url)
+    if (ch === '!' && input[i + 1] === '[') {
+      const closeBracket = input.indexOf(']', i + 2);
+      if (closeBracket > i && input[closeBracket + 1] === '(') {
+        const closeParen = input.indexOf(')', closeBracket + 2);
+        if (closeParen > closeBracket) {
+          const alt = input.slice(i + 2, closeBracket);
+          const url = input.slice(closeBracket + 2, closeParen).trim();
+          const safe = /^https?:/i.test(url);
+          flush();
+          out.push(
+            safe ? (
+              <img
+                key={nextKey()}
+                src={url}
+                alt={alt}
+                loading="lazy"
+                className="my-1.5 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
+              />
+            ) : (
+              alt
+            ),
+          );
+          i = closeParen + 1;
+          continue;
+        }
+      }
+    }
+
     // Link: [text](url)
     if (ch === '[') {
       const closeBracket = input.indexOf(']', i + 1);
