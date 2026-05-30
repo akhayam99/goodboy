@@ -1,8 +1,31 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { LinkButton } from '../components/ui';
 import { useInView } from '../components/Reveal';
 
 const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
+const LATEST_RELEASE_API = 'https://api.github.com/repos/akhayam99/goodboy/releases/latest';
+
+// The .dmg asset is version-stamped (Goodboy_<version>_universal.dmg), so no
+// static URL points at it. Resolve the latest release's dmg asset at runtime
+// and hand back its direct download link; fall back to the releases page if the
+// GitHub API is unreachable or rate-limited.
+function useLatestDmgUrl(): { href: string; direct: boolean } {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(LATEST_RELEASE_API, { headers: { Accept: 'application/vnd.github+json' } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data: { assets?: Array<{ name?: string; browser_download_url?: string }> }) => {
+        const dmg = data.assets?.find((a) => a.name?.toLowerCase().endsWith('.dmg'));
+        if (!cancelled && dmg?.browser_download_url) setUrl(dmg.browser_download_url);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return url ? { href: url, direct: true } : { href: RELEASES_LATEST, direct: false };
+}
 
 const brewLine = 'brew install --cask akhayam99/tap/goodboy';
 
@@ -30,6 +53,7 @@ function TerminalFrame({ label, children }: { label: string; children: ReactNode
 
 export function CTA() {
   const { ref, inView } = useInView<HTMLElement>();
+  const dmg = useLatestDmgUrl();
   return (
     <section
       id="cta"
@@ -49,11 +73,12 @@ export function CTA() {
         </p>
 
         <div className="mx-auto mt-11 max-w-lg">
-          {/* macOS: the primary path */}
+          {/* macOS: the primary path. dmg.direct → straight to the file; the
+              fallback releases page opens in a new tab. */}
           <LinkButton
-            href={RELEASES_LATEST}
-            target="_blank"
-            rel="noreferrer"
+            href={dmg.href}
+            target={dmg.direct ? undefined : '_blank'}
+            rel={dmg.direct ? undefined : 'noreferrer'}
             size="lg"
             variant="primary"
             className="w-full sm:w-auto"
