@@ -15,6 +15,25 @@ type ChipState =
   | { kind: 'resolved' }
   | { kind: 'dismissed' };
 
+const DISMISS_PREFIX = 'goodboy:comment-dismissed:';
+
+function readDismissed(threadId: string | undefined): boolean {
+  if (!threadId) return false;
+  try {
+    return localStorage.getItem(DISMISS_PREFIX + threadId) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistDismissed(threadId: string) {
+  try {
+    localStorage.setItem(DISMISS_PREFIX + threadId, '1');
+  } catch {
+    void 0;
+  }
+}
+
 /**
  * Renders alongside an assistant turn when the agent emitted a
  * `<<comment-resolved threadId="..." commit="...">>` marker after committing
@@ -25,14 +44,24 @@ type ChipState =
 export function CommentResolvedChip({ assistantText, sessionId }: Props) {
   const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
-  const [state, setState] = useState<ChipState>({ kind: 'idle' });
+  const resolvedOnGithub = useAppStore((s) => {
+    const tid = marker?.threadId;
+    if (!tid) return false;
+    return (
+      s.sessionGithub[sessionId]?.detail?.comments?.some(
+        (c) => c.threadId === tid && c.resolved === true,
+      ) ?? false
+    );
+  });
+  const [state, setState] = useState<ChipState>(() =>
+    readDismissed(marker?.threadId) ? { kind: 'dismissed' } : { kind: 'idle' },
+  );
 
   if (!marker) return null;
-  if (state.kind === 'dismissed') return null;
 
   const shaShort = marker.commitSha.slice(0, 7);
 
-  if (state.kind === 'resolved') {
+  if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
       <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">
         <CheckCheck size={11} aria-hidden />
@@ -43,6 +72,8 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
       </div>
     );
   }
+
+  if (state.kind === 'dismissed') return null;
 
   const onResolve = async () => {
     if (state.kind === 'resolving') return;
@@ -80,7 +111,10 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
         </button>
         <button
           type="button"
-          onClick={() => setState({ kind: 'dismissed' })}
+          onClick={() => {
+            persistDismissed(marker.threadId);
+            setState({ kind: 'dismissed' });
+          }}
           disabled={busy}
           title="keep the conversation open on github"
           aria-label="keep the conversation open on github"

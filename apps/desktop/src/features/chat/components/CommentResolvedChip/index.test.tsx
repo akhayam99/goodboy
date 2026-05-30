@@ -10,8 +10,12 @@ const { extractMock, resolveMock } = vi.hoisted(() => ({
 
 vi.mock('@goodboy/core', () => ({ extractCommentResolved: extractMock }));
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: { resolveGithubThread: typeof resolveMock }) => T) =>
-    selector({ resolveGithubThread: resolveMock }),
+  useAppStore: <T,>(
+    selector: (s: {
+      resolveGithubThread: typeof resolveMock;
+      sessionGithub: Record<string, unknown>;
+    }) => T,
+  ) => selector({ resolveGithubThread: resolveMock, sessionGithub: {} }),
 }));
 
 import { CommentResolvedChip } from './index';
