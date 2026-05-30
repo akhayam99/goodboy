@@ -493,7 +493,25 @@ export interface AppActions {
     threadId: string,
     closure?: { commitSha?: string; reason?: string },
   ): Promise<boolean>;
-  createPrForSession(sessionId: SessionId): Promise<void>;
+  createPrForSession(
+    sessionId: SessionId,
+    opts?: { title?: string; body?: string; base?: string; draft?: boolean },
+  ): Promise<void>;
+  markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
+  convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
+  mergePr(sessionId: SessionId, prNumber?: number): Promise<void>;
+  closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
+  reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
+  editPr(
+    sessionId: SessionId,
+    prNumber: number,
+    opts: { title?: string; body?: string },
+  ): Promise<void>;
+  requestReview(
+    sessionId: SessionId,
+    prNumber: number,
+    reviewers: ReadonlyArray<string>,
+  ): Promise<void>;
   clearSessionNextActions(sessionId: SessionId): void;
   resolvePermissionRequest(input: {
     sessionId: SessionId;

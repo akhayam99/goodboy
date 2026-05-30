@@ -12,6 +12,7 @@ import {
   DollarSign,
   FolderPlus,
   Gauge,
+  GitPullRequest,
   HelpCircle,
   Layers,
   Loader2,
@@ -96,6 +97,7 @@ interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
+  onOpenGithub: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
 }
@@ -110,6 +112,7 @@ export function WorkspacesSidebar({
   onOpenSettings,
   onOpenPalette,
   onOpenWorkflows,
+  onOpenGithub,
   collapsed = false,
   onToggleCollapse,
 }: WorkspacesSidebarProps) {
@@ -249,6 +252,7 @@ export function WorkspacesSidebar({
         <QuickActionsRow
           onOpenPalette={onOpenPalette}
           onOpenWorkflows={onOpenWorkflows}
+          onOpenGithub={onOpenGithub}
           skillsEnabled={WORKSPACE_FEATURES.skills}
         />
       ) : null}
@@ -366,10 +370,12 @@ function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
 function QuickActionsRow({
   onOpenPalette,
   onOpenWorkflows,
+  onOpenGithub,
   skillsEnabled,
 }: {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
+  onOpenGithub: () => void;
   skillsEnabled: boolean;
 }) {
   return (
@@ -385,8 +391,14 @@ function QuickActionsRow({
           from the composer ($ prefix) and the palette, so it's dropped here. */}
       <QuickAction
         icon={<Layers size={12} aria-hidden />}
-        label="Customize workflows"
+        label="Workflows"
         onClick={onOpenWorkflows}
+      />
+      <QuickAction
+        icon={<GitPullRequest size={12} aria-hidden />}
+        label="GitHub"
+        title="review and act on pull requests across this workspace"
+        onClick={onOpenGithub}
       />
     </div>
   );
@@ -395,17 +407,19 @@ function QuickActionsRow({
 function QuickAction({
   icon,
   label,
+  title,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
+  title?: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`browse ${label.toLowerCase()} in the command palette`}
+      title={title ?? `browse ${label.toLowerCase()} in the command palette`}
       className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-soft bg-muted/30 py-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
     >
       {icon}

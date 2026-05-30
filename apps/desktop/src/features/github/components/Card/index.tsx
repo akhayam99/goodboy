@@ -15,7 +15,7 @@ import {
   Sparkles,
   XCircle,
 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Markdown } from '@goodboy/ui';
 import type {
   PrCheckConclusion,
   PrCheckRun,
@@ -189,7 +189,7 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
   );
 }
 
-interface TabStatus {
+export interface TabStatus {
   readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
   readonly icon: ReactNode;
   readonly count?: number;
@@ -204,7 +204,7 @@ const TONE_PILL: Record<TabStatus['tone'], string> = {
   muted: 'bg-muted text-muted-foreground',
 };
 
-function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
   const hasCount = status.count != null && status.count > 0;
   return (
     <span
@@ -223,7 +223,7 @@ function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
   );
 }
 
-function computeTabStatus(
+export function computeTabStatus(
   pr: PullRequestState,
   detail: PrDetail | null,
 ): Record<GithubTabKey, TabStatus | null> {
@@ -380,7 +380,7 @@ function DetailSkeleton() {
   );
 }
 
-function CiPane({
+export function CiPane({
   checks,
   pr,
   onOpenUrl,
@@ -423,7 +423,7 @@ function CiPane({
 
 const COMMENT_DISPLAY_LIMIT = 5;
 
-function CommentsPane({
+export function CommentsPane({
   comments,
   pr,
   onOpenUrl,
@@ -657,7 +657,7 @@ function CommentThreadRow({
         >
           {head.body.trim() || '(empty)'}
         </button>
-        {expanded && replies.length > 0 ? (
+        {replies.length > 0 ? (
           <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
             {replies.map((r) => (
               <li key={r.id} className="flex flex-col gap-0.5">
@@ -667,9 +667,13 @@ function CommentThreadRow({
                   <span className="opacity-50">·</span>
                   <span>{formatRelative(Date.now() - new Date(r.createdAt).getTime())}</span>
                 </div>
-                <p className="whitespace-pre-wrap break-words text-[11px] text-foreground/90">
-                  {r.body.trim() || '(empty)'}
-                </p>
+                {r.body.trim() ? (
+                  <div className="text-[11px] text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+                    <Markdown text={r.body.trim()} className="text-[11px] leading-relaxed" />
+                  </div>
+                ) : (
+                  <p className="text-[11px] italic text-muted-foreground/70">(empty)</p>
+                )}
               </li>
             ))}
           </ul>
@@ -679,7 +683,7 @@ function CommentThreadRow({
   );
 }
 
-function ReviewPane({
+export function ReviewPane({
   reviews,
   requests,
   pr,

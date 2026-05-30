@@ -12,6 +12,10 @@ import { ProviderModalHost } from './features/providers/components/ProviderModal
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
+import { GitHubStudio } from './features/github/components/GitHubStudio';
+import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
+import { ghCommitDiff } from './features/github/github';
+import { worktreeDiffCommit } from './features/worktree/worktree';
 import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
@@ -30,8 +34,18 @@ import {
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
+import { openUrl } from './shared/lib/editor';
+import { applyStoredZoom, zoomIn, zoomOut, zoomReset } from './shared/lib/zoom';
 
 const CONTEXT_PANEL_KEY = (id: SessionId): string => `${STORAGE_PREFIXES.contextPanelOpen}${id}`;
+
+const ZOOM_ACTIONS: Record<string, () => Promise<void>> = {
+  '=': zoomIn,
+  '+': zoomIn,
+  '-': zoomOut,
+  _: zoomOut,
+  '0': zoomReset,
+};
 
 // Cap on retained ChatView instances. Five covers nearly all real navigation
 // patterns (recent N tabs) without unbounded memory growth from long sessions
@@ -77,6 +91,9 @@ export function App() {
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
+  const [githubStudioOpen, setGithubStudioOpen] = useState(false);
+  const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
+  const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(
     () =>
       typeof localStorage !== 'undefined' &&
@@ -97,6 +114,19 @@ export function App() {
   useProviderRefreshOnFocus();
 
   useEffect(() => {
+    void applyStoredZoom();
+    const onZoom = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const action = ZOOM_ACTIONS[e.key];
+      if (!action) return;
+      e.preventDefault();
+      void action();
+    };
+    window.addEventListener('keydown', onZoom);
+    return () => window.removeEventListener('keydown', onZoom);
+  }, []);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
       setSettingsInitialSection(detail?.section);
@@ -104,6 +134,38 @@ export function App() {
     };
     window.addEventListener('goodboy:open-settings', handler);
     return () => window.removeEventListener('goodboy:open-settings', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      setGithubStudioSession(detail?.sessionId ?? null);
+      setGithubStudioOpen(true);
+    };
+    window.addEventListener('goodboy:open-github-studio', handler);
+    return () => window.removeEventListener('goodboy:open-github-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+      const anchor = (e.target as HTMLElement | null)?.closest?.('a');
+      const href = anchor?.getAttribute('href');
+      if (!href) return;
+      const commit = href.match(COMMIT_RE);
+      if (commit) {
+        e.preventDefault();
+        setCommitDiff({ repo: commit[1] as string, sha: commit[2] as string });
+        return;
+      }
+      if (/^(https?:|mailto:)/i.test(href)) {
+        e.preventDefault();
+        void openUrl(href);
+      }
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
   }, []);
 
   // ESC on macOS exits native fullscreen, never wanted. preventDefault at the
@@ -241,6 +303,22 @@ export function App() {
     window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
   }, []);
 
+  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
+
+  const commitDiffLoader = useCallback(async () => {
+    if (!commitDiff) return '';
+    const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
+    if (worktree) {
+      try {
+        return await worktreeDiffCommit(worktree, commitDiff.sha);
+      } catch {
+        void 0;
+      }
+    }
+    return ghCommitDiff(commitDiff.repo, commitDiff.sha);
+  }, [commitDiff, currentSessionId, sessionWorktrees]);
+
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
@@ -303,6 +381,10 @@ export function App() {
               onOpenSettings={openSettings}
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
+              onOpenGithub={() => {
+                setGithubStudioSession(currentSession?.id ?? null);
+                setGithubStudioOpen(true);
+              }}
               collapsed={leftCollapsed}
               onToggleCollapse={toggleLeftSidebar}
             />
@@ -393,6 +475,21 @@ export function App() {
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
           onClose={() => setWorkflowStudioOpen(false)}
+        />
+      ) : null}
+      {githubStudioOpen && currentWorkspace ? (
+        <GitHubStudio
+          workspaceName={currentWorkspace.name}
+          initialSessionId={githubStudioSession}
+          onClose={() => setGithubStudioOpen(false)}
+        />
+      ) : null}
+      {commitDiff ? (
+        <DiffViewerDialog
+          open
+          onClose={() => setCommitDiff(null)}
+          title={`commit ${commitDiff.sha.slice(0, 7)}`}
+          loader={commitDiffLoader}
         />
       ) : null}
       {currentSession && endOpen ? (

@@ -146,6 +146,7 @@ the Homebrew cask. Signing runs under the personal Apple team (never Serenis).
 - No comments unless they explain WHY, not WHAT.
 - No dead code. Remove, do not comment out.
 - Rust: only for Tauri commands. Business logic stays in TS.
+- Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui` (a faded hairline), rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
 
 ---
 
@@ -181,6 +182,7 @@ Rules of thumb:
 ## Forbidden patterns
 
 - **Em-dashes** (`—`) anywhere in code, copy, commits, PRs, or docs. Use period, comma, colon, or parentheses.
+- **Borders as separators** (`border-t`/`border-r`/`border-b`/`border-l` on a container to divide regions). Use the `<Divider>` component instead. Control-outline borders (buttons, inputs, popovers, chips) are allowed.
 - **`any`** types. Use `unknown` + type guards.
 - **`export default`**. Named exports only.
 - **Dead code as comments**. Delete it.
