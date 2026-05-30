@@ -5,11 +5,13 @@ import type {
   ParallelGroupId,
   ProviderRunId,
   SessionId,
+  StepDefId,
   StepId,
   WorkflowId,
   WorkspaceId,
 } from './ids';
 import type { ProviderId } from './provider-registry';
+import type { VerbosityLevel } from './settings';
 
 export type AgentEffort = 'low' | 'medium' | 'high' | 'extra-high' | 'max';
 
@@ -29,17 +31,48 @@ export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skip
 
 export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
 
+/**
+ * Reusable step definition (the "Step" the user sees and composes). Lives in the
+ * step library. `workspaceId === null` is a global seed shared by every
+ * workspace; a workspace-scoped row with `baseStepId` set is a local override of
+ * a global definition. The default exec config (provider/model/effort/verbosity)
+ * is inherited by every `Step` instance unless that instance overrides it.
+ */
+export type StepDef = Readonly<{
+  id: StepDefId;
+  workspaceId: WorkspaceId | null;
+  baseStepId?: StepDefId;
+  role: AgentRole;
+  name: string;
+  promptPrefix: string;
+  providerDefault?: ProviderId;
+  modelDefault?: string;
+  effortDefault?: AgentEffort;
+  verbosityDefault?: VerbosityLevel;
+  deletedAt?: IsoDateTime;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}>;
+
+/**
+ * An instance of a `StepDef` placed inside one workflow, with its ordinal and
+ * per-instance overrides. `libraryStepId` points back to the `StepDef` it was
+ * composed from (absent only for legacy rows predating the library).
+ */
 export type Step = Readonly<{
   id: StepId;
   workflowId: WorkflowId;
+  libraryStepId?: StepDefId;
+  role?: AgentRole;
   ordinal: number;
   name: string;
   promptPrefix: string;
   providerOverride?: ProviderId;
   modelOverride?: string;
   effort?: AgentEffort;
-  verbosity?: 'brief' | 'normal' | 'verbose';
+  verbosity?: VerbosityLevel;
   parallelGroup?: number;
+  deletedAt?: IsoDateTime;
 }>;
 
 export type Workflow = Readonly<{
@@ -48,6 +81,10 @@ export type Workflow = Readonly<{
   name: string;
   description: string;
   steps: ReadonlyArray<Step>;
+  // Reusable preset (shows in the preset picker) vs a one-off custom workflow a
+  // session runs without saving. Absent on legacy/seeded rows = treat as preset.
+  isPreset?: boolean;
+  deletedAt?: IsoDateTime;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

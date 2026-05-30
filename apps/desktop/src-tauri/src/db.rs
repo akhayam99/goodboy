@@ -10,6 +10,7 @@ use thiserror::Error;
 
 const APP_DIR: &str = ".goodboy";
 const DB_FILE: &str = "data.db";
+const DB_FILE_DEV: &str = "data.dev.db";
 
 #[derive(Debug, Error)]
 pub enum DbError {
@@ -61,9 +62,30 @@ pub fn open() -> Result<Db, DbError> {
     Ok(Db(Mutex::new(conn)))
 }
 
+/// Resolves the SQLite file. Precedence:
+///   1. `GOODBOY_DB_FILE` env (absolute path verbatim, relative under `~/.goodboy`).
+///   2. Debug builds (`pnpm tauri dev`) -> `data.dev.db`, a private playground.
+///   3. Release builds (the shipped app) -> `data.db`, the production file.
+/// Splitting on `debug_assertions` keeps local experiments off the prod DB
+/// automatically, with no env setup required.
 fn resolve_db_path() -> Result<PathBuf, DbError> {
     let home = dirs::home_dir().ok_or(DbError::NoHomeDir)?;
-    Ok(home.join(APP_DIR).join(DB_FILE))
+    let dir = home.join(APP_DIR);
+
+    if let Ok(custom) = std::env::var("GOODBOY_DB_FILE") {
+        let custom = custom.trim();
+        if !custom.is_empty() {
+            let p = PathBuf::from(custom);
+            return Ok(if p.is_absolute() { p } else { dir.join(p) });
+        }
+    }
+
+    let file = if cfg!(debug_assertions) {
+        DB_FILE_DEV
+    } else {
+        DB_FILE
+    };
+    Ok(dir.join(file))
 }
 
 #[derive(Debug, Deserialize)]

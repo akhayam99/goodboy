@@ -5,7 +5,11 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  ROLE_TO_KIND,
+  inferAgentKindFromName,
+} from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
 interface Options {
@@ -39,7 +43,7 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
     const agentKindOverrides: Record<string, string> = {};
     for (let i = 0; i < sortedSteps.length; i += 1) {
       const step = sortedSteps[i]!;
-      const kind = inferAgentKindFromName(step.name);
+      const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
       const agent = await invokeAgentInsert({
         sessionId,
         stepId: step.id,

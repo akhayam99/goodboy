@@ -1,4 +1,5 @@
 import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@goodboy/core';
+import type { AgentRole } from '@goodboy/types';
 
 export type AgentKind = AgentKindLabel;
 
@@ -63,45 +64,48 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
     },
   };
 
+// `fg` deliberately mirrors the `bg` hue so an icon (tinted via `bg`) and its
+// label text always read as the same colour. Using semantic tokens for `fg`
+// (text-primary/info/...) drifted from the tint and looked broken.
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   scout: {
     bg: 'bg-sky-400',
-    fg: 'text-info',
+    fg: 'text-sky-400',
     label: 'scout',
   },
   planner: {
     bg: 'bg-violet-400',
-    fg: 'text-primary',
+    fg: 'text-violet-400',
     label: 'plan',
   },
   implementer: {
     bg: 'bg-emerald-400',
-    fg: 'text-success',
+    fg: 'text-emerald-400',
     label: 'imple',
   },
   debugger: {
     bg: 'bg-amber-400',
-    fg: 'text-warning',
+    fg: 'text-amber-400',
     label: 'debug',
   },
   tester: {
     bg: 'bg-teal-400',
-    fg: 'text-success',
+    fg: 'text-teal-400',
     label: 'test',
   },
   reviewer: {
     bg: 'bg-cyan-400',
-    fg: 'text-info',
+    fg: 'text-cyan-400',
     label: 'review',
   },
   docs: {
     bg: 'bg-orange-400',
-    fg: 'text-warning',
+    fg: 'text-orange-400',
     label: 'docs',
   },
   resolver: {
     bg: 'bg-lime-400',
-    fg: 'text-success',
+    fg: 'text-lime-400',
     label: 'resolve',
   },
   generic: {
@@ -109,6 +113,65 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
     fg: 'text-rose-400',
     label: 'agent',
   },
+};
+
+// Roles the user can assign to a workflow step. Curated to exactly the agents
+// that are spawnable from the main "Create agent" menu (AGENT_KIND_ORDER where
+// visible !== false), so the picker never offers a role that isn't a real
+// agent. architect/product/explorer were dropped: they aren't distinct
+// spawnable kinds (they collapsed onto planner/generic/scout). 'custom' = the
+// generic agent. ROLE_TO_KIND/ROLE_LABEL still cover the dropped values so any
+// legacy step that used them still renders.
+export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
+  'scout',
+  'planner',
+  'implementer',
+  'reviewer',
+  'tester',
+  'investigator',
+  'custom',
+];
+
+// Maps a workflow role to the persona kind used for the icon/colour/system
+// prompt. Roles without a 1:1 kind fall back to the closest visual match.
+export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
+  scout: 'scout',
+  planner: 'planner',
+  architect: 'planner',
+  product: 'generic',
+  implementer: 'implementer',
+  reviewer: 'reviewer',
+  tester: 'tester',
+  investigator: 'debugger',
+  explorer: 'scout',
+  custom: 'generic',
+};
+
+// Inverse of ROLE_TO_KIND, used to seed a role for legacy steps that only have
+// a name (the kind is inferred from the name, then mapped back to a role).
+export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
+  scout: 'scout',
+  planner: 'planner',
+  implementer: 'implementer',
+  debugger: 'investigator',
+  tester: 'tester',
+  reviewer: 'reviewer',
+  docs: 'custom',
+  resolver: 'custom',
+  generic: 'custom',
+};
+
+export const ROLE_LABEL: Record<AgentRole, string> = {
+  scout: 'Scout',
+  planner: 'Planner',
+  architect: 'Architect',
+  product: 'Product',
+  implementer: 'Implementer',
+  reviewer: 'Reviewer',
+  tester: 'Tester',
+  investigator: 'Debugger',
+  explorer: 'Explorer',
+  custom: 'Custom',
 };
 
 export const AGENT_KIND_DEFAULTS: Record<
@@ -184,7 +247,10 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
 };
 
-const ROLE_TO_KIND: Record<string, AgentKind> = {
+// Loose lookup for arbitrary role strings coming from WorkflowLibraryStep.role
+// (a free-form string), distinct from the strict AgentRole-keyed ROLE_TO_KIND
+// above. Keeps extra synonyms (writer, docs, resolver) the strict map omits.
+const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
   scout: 'scout',
   explorer: 'scout',
   investigator: 'debugger',
@@ -201,7 +267,7 @@ const ROLE_TO_KIND: Record<string, AgentKind> = {
 
 export function inferAgentKindFromStep(step: WorkflowLibraryStep): AgentKind {
   const role = step.role.toLowerCase();
-  return ROLE_TO_KIND[role] ?? 'generic';
+  return STEP_ROLE_KIND_LOOKUP[role] ?? 'generic';
 }
 
 export function inferAgentKindFromName(name: string): AgentKind {

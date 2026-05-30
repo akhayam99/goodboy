@@ -9,6 +9,7 @@ import { SessionsDeepDive } from './sections/SessionsDeepDive';
 import { AgentsDeepDive } from './sections/AgentsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
 import { PlansDeepDive } from './sections/PlansDeepDive';
+import { StudioDeepDive } from './sections/StudioDeepDive';
 import { LinearDeepDive } from './sections/LinearDeepDive';
 import { RoutingDeepDive } from './sections/RoutingDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
@@ -30,6 +31,7 @@ export function App() {
         <SessionsDeepDive />
         <AgentsDeepDive />
         <PlansDeepDive />
+        <StudioDeepDive />
         <ContextDeepDive />
         <LinearDeepDive />
         <GithubDeepDive />

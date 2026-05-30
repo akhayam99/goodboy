@@ -5,6 +5,7 @@ const links = [
   { href: '#sessions', label: 'Sessions' },
   { href: '#agents', label: 'Agents' },
   { href: '#plans', label: 'Plans' },
+  { href: '#studio', label: 'Studio' },
   { href: '#context', label: 'Context' },
   { href: '#linear', label: 'Linear' },
   { href: '#github', label: 'GitHub' },

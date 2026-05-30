@@ -107,8 +107,12 @@ vi.mock('../features/skills/skills', () => ({
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
+  invokeWorkflowsForSession: vi.fn(async () => []),
   invokeWorkflowUpsert: vi.fn(),
   invokeWorkflowDelete: vi.fn(),
+  invokeStepDefList: vi.fn(async () => []),
+  invokeStepDefUpsert: vi.fn(),
+  invokeStepDefDelete: vi.fn(),
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),

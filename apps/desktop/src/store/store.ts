@@ -33,6 +33,8 @@ import type {
   SessionUserStatus,
   SessionBudget,
   SessionProviderPreference,
+  StepDef,
+  StepDefId,
   Workflow,
   WorkflowId,
   ProviderId,
@@ -73,7 +75,7 @@ import { AGENT_FEATURES } from '../shared/lib/features';
 import { type CreatedWorktree } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult, ScriptRunRecord } from '../features/scripts/scripts';
-import { type WorkflowUpsertArgs } from '../features/workflows/workflows';
+import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
@@ -203,6 +205,7 @@ export interface AppState extends UpdaterState {
     Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
   >;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
+  readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -422,6 +425,10 @@ export interface AppActions {
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
+  loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
+  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
+  deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
+  resetWorkflows(workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -584,6 +591,7 @@ export const initialState: AppState = {
   workspaceScripts: {},
   scriptRuns: {},
   phaseTemplates: {},
+  stepLibrary: {},
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   selectedAgentId: {},
