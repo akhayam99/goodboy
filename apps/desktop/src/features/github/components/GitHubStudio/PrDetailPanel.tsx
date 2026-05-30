@@ -1,21 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { PrComment, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import {
-  ArrowRight,
-  ExternalLink,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestDraft,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Send,
-  XCircle,
-} from 'lucide-react';
-import { GithubCard } from '../Card';
-import { PullRequestChip } from '../PullRequestChip';
+import { Divider } from '@goodboy/ui';
+import { AlertCircle, GitPullRequest, Loader2, Plus, RefreshCw } from 'lucide-react';
 import {
   buildCommentAgentArgs,
   buildReviewChangesAgentArgs,
@@ -26,17 +12,16 @@ import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
 import { CreatePrDialog } from './CreatePrDialog';
-import { PrSwitcher } from './PrSwitcher';
+import { PrActionBar, type ActionBusy } from './PrActionBar';
+import { PrChecks } from './PrChecks';
+import { PrConversation } from './PrConversation';
+import { PrOverview } from './PrOverview';
+import { PrSidebar, type PrSection } from './PrSidebar';
 
 interface Props {
   readonly sessionId: SessionId | null;
   readonly onClose: () => void;
 }
-
-const TOOLBAR_BTN =
-  'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
-
-type Busy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null;
 
 export function PrDetailPanel({ sessionId, onClose }: Props) {
   const sessions = useSessions();
@@ -54,13 +39,15 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
   const mergePr = useAppStore((s) => s.mergePr);
   const closePr = useAppStore((s) => s.closePr);
   const reopenPr = useAppStore((s) => s.reopenPr);
+  const requestReview = useAppStore((s) => s.requestReview);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
 
-  const [busy, setBusy] = useState<Busy>(null);
+  const [busy, setBusy] = useState<ActionBusy>(null);
   const [mergeConfirm, setMergeConfirm] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [section, setSection] = useState<PrSection>('overview');
   const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([]);
   const [prsTick, setPrsTick] = useState(0);
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
@@ -78,7 +65,6 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
   const detail = isPrimary ? (github?.detail ?? null) : localDetail;
   const detailLoading = isPrimary ? !!github?.detailLoading : localDetailLoading;
   const detailError = isPrimary ? (github?.detailError ?? null) : localDetailError;
-  const detailFetchedAt = isPrimary ? (github?.detailFetchedAt ?? null) : null;
 
   const fetchLocalDetail = useCallback(
     async (num: number) => {
@@ -102,6 +88,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     setLocalDetailError(null);
     setMergeConfirm(false);
     setCreateOpen(false);
+    setSection('overview');
   }, [sessionId]);
 
   useEffect(() => {
@@ -156,6 +143,11 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     else void fetchLocalDetail(activePr.number);
   };
 
+  const onMutated = () => {
+    setPrsTick((t) => t + 1);
+    refreshActive();
+  };
+
   const runResolve = async (args: CommentAgentArgs) => {
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
@@ -182,13 +174,12 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     void runResolve(buildReviewChangesAgentArgs(activePr, open));
   };
 
-  const run = async (kind: Exclude<Busy, null>, fn: () => Promise<void>) => {
+  const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(kind);
     try {
       await fn();
-      setPrsTick((t) => t + 1);
-      refreshActive();
+      onMutated();
     } catch {
       void 0;
     } finally {
@@ -197,246 +188,176 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     }
   };
 
-  const activeNumber = activePr?.number;
-  const isMerged = activePr?.state === 'merged';
-  const isClosed = activePr?.state === 'closed';
-  const isDraft = !!activePr?.isDraft;
-  const isTerminal = isMerged || isClosed;
-  const canMerge = !!activePr && !isTerminal && !isDraft && activePr.mergeable !== false;
-  const mergeReason = !activePr
-    ? ''
-    : isDraft
-      ? 'mark the PR ready before merging'
-      : activePr.mergeable === false
-        ? 'PR has conflicts, resolve them first'
-        : 'squash merge this PR';
+  const onAddReviewers = (logins: ReadonlyArray<string>) => {
+    if (!activePr) return;
+    void (async () => {
+      try {
+        await requestReview(sessionId, activePr.number, logins);
+      } catch {
+        void 0;
+      }
+      onMutated();
+    })();
+  };
+
+  if (!activePr) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <GitPullRequest size={26} aria-hidden className="text-muted-foreground/50" />
+        <p className="text-sm text-foreground">Ready to open a pull request.</p>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Plus size={14} aria-hidden />
+          Create PR
+        </button>
+        <p className="text-2xs text-muted-foreground/60">
+          Compose the title and description, or let AI draft it.
+        </p>
+        {createOpen ? (
+          <CreatePrDialog
+            sessionId={sessionId}
+            defaultTitle={session.goal}
+            onClose={() => setCreateOpen(false)}
+            onStudioClose={onClose}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  const isTerminal = activePr.state === 'merged' || activePr.state === 'closed';
+  const isClosed = activePr.state === 'closed';
+  const isDraft = activePr.isDraft;
+  const canMerge = !isTerminal && !isDraft && activePr.mergeable !== false;
+  const mergeReason = isDraft
+    ? 'mark the PR ready before merging'
+    : activePr.mergeable === false
+      ? 'PR has conflicts, resolve them first'
+      : 'squash merge this PR';
+  const num = activePr.number;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 flex-col gap-2 px-5 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {options.length > 1 ? (
-            <PrSwitcher prs={options} selected={selected} onSelect={setSelectedNumber} />
-          ) : activePr ? (
-            <PullRequestChip
-              state={activePr.state}
-              variant="badge"
-              number={activePr.number}
-              iconSize={12}
-            />
+    <div className="flex h-full min-h-0">
+      <PrSidebar
+        pr={activePr}
+        options={options}
+        selected={selected}
+        onSelectPr={setSelectedNumber}
+        detail={detail}
+        section={section}
+        onSection={setSection}
+        workspaceRoot={workspaceRoot}
+        onAddReviewers={onAddReviewers}
+      />
+
+      <Divider orientation="vertical" />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PrActionBar
+          pr={activePr}
+          busy={busy}
+          detailLoading={detailLoading}
+          mergeConfirm={mergeConfirm}
+          canMerge={canMerge}
+          mergeReason={mergeReason}
+          onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
+          onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
+          onClose={() => void run('close', () => closePr(sessionId, num))}
+          onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
+          onCreateNew={() => setCreateOpen(true)}
+          onMerge={() => void run('merge', () => mergePr(sessionId, num))}
+          onSetMergeConfirm={setMergeConfirm}
+          onOpenGithub={() => void openUrl(activePr.url)}
+          onRefresh={refreshActive}
+        />
+
+        <Divider />
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {section === 'overview' ? (
+            <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <GitPullRequest size={10} aria-hidden />
-              No PR
-            </span>
+            <SectionBody
+              detailLoading={detailLoading}
+              detailError={detailError}
+              detail={detail}
+              onRetry={refreshActive}
+            >
+              {section === 'comments' ? (
+                <PrConversation
+                  comments={detail?.comments ?? []}
+                  pr={activePr}
+                  changesRequested={activePr.reviewDecision === 'changes_requested'}
+                  onOpenUrl={(u) => void openUrl(u)}
+                  onSpawnFromComment={onSpawnFromComment}
+                  onSpawnFromReviewChanges={onSpawnFromReviewChanges}
+                />
+              ) : (
+                <PrChecks
+                  checks={detail?.checks ?? []}
+                  pr={activePr}
+                  onOpenUrl={(u) => void openUrl(u)}
+                />
+              )}
+            </SectionBody>
           )}
-          <h2
-            className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground"
-            title={activePr?.title ?? session.goal}
-          >
-            {activePr?.title ?? session.goal}
-          </h2>
         </div>
-        {activePr ? (
-          <p className="flex items-center gap-1 truncate font-mono text-2xs text-muted-foreground/70">
-            <span className="truncate">{activePr.headBranch}</span>
-            <ArrowRight size={9} aria-hidden className="shrink-0" />
-            <span className="truncate">{activePr.baseBranch}</span>
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {isDraft ? (
-            <button
-              type="button"
-              onClick={() =>
-                activeNumber != null &&
-                void run('ready', () => markPrReady(sessionId, activeNumber))
-              }
-              disabled={busy !== null}
-              className={TOOLBAR_BTN}
-            >
-              {busy === 'ready' ? (
-                <Loader2 size={13} aria-hidden className="animate-spin" />
-              ) : (
-                <Send size={13} aria-hidden />
-              )}
-              Mark ready
-            </button>
-          ) : activePr && !isTerminal ? (
-            <button
-              type="button"
-              onClick={() =>
-                activeNumber != null &&
-                void run('undraft', () => convertPrToDraft(sessionId, activeNumber))
-              }
-              disabled={busy !== null}
-              className={TOOLBAR_BTN}
-            >
-              {busy === 'undraft' ? (
-                <Loader2 size={13} aria-hidden className="animate-spin" />
-              ) : (
-                <GitPullRequestDraft size={13} aria-hidden />
-              )}
-              Convert to draft
-            </button>
-          ) : null}
-
-          {isClosed ? (
-            <>
-              <button
-                type="button"
-                onClick={() =>
-                  activeNumber != null &&
-                  void run('reopen', () => reopenPr(sessionId, activeNumber))
-                }
-                disabled={busy !== null}
-                className={TOOLBAR_BTN}
-              >
-                {busy === 'reopen' ? (
-                  <Loader2 size={13} aria-hidden className="animate-spin" />
-                ) : (
-                  <RotateCcw size={13} aria-hidden />
-                )}
-                Reopen
-              </button>
-              <button type="button" onClick={() => setCreateOpen(true)} className={TOOLBAR_BTN}>
-                <Plus size={13} aria-hidden />
-                Create new PR
-              </button>
-            </>
-          ) : null}
-
-          {activePr && !isTerminal ? (
-            <button
-              type="button"
-              onClick={() =>
-                activeNumber != null && void run('close', () => closePr(sessionId, activeNumber))
-              }
-              disabled={busy !== null}
-              className={TOOLBAR_BTN}
-            >
-              {busy === 'close' ? (
-                <Loader2 size={13} aria-hidden className="animate-spin" />
-              ) : (
-                <XCircle size={13} aria-hidden />
-              )}
-              Close
-            </button>
-          ) : null}
-
-          {activePr ? (
-            <>
-              <button
-                type="button"
-                onClick={() => void openUrl(activePr.url)}
-                className={TOOLBAR_BTN}
-              >
-                <ExternalLink size={13} aria-hidden />
-                Open on GitHub
-              </button>
-              <button
-                type="button"
-                onClick={refreshActive}
-                disabled={detailLoading}
-                className={TOOLBAR_BTN}
-                aria-label="refresh pr data"
-              >
-                <RefreshCw size={13} aria-hidden className={cn(detailLoading && 'animate-spin')} />
-                Refresh
-              </button>
-            </>
-          ) : null}
-
-          {activePr && !isTerminal ? (
-            <div className="ml-auto">
-              {mergeConfirm ? (
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/10 px-2 py-1 text-xs">
-                  <span className="text-foreground">Squash merge?</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      activeNumber != null &&
-                      void run('merge', () => mergePr(sessionId, activeNumber))
-                    }
-                    disabled={busy !== null}
-                    className="rounded bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground hover:opacity-90 disabled:opacity-50"
-                  >
-                    {busy === 'merge' ? 'merging' : 'confirm'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMergeConfirm(false)}
-                    className="rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
-                  >
-                    cancel
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setMergeConfirm(true)}
-                  disabled={!canMerge || busy !== null}
-                  title={mergeReason}
-                  className={cn(
-                    TOOLBAR_BTN,
-                    canMerge &&
-                      'border-success/40 text-success hover:bg-success/10 hover:text-success',
-                  )}
-                >
-                  <GitMerge size={13} aria-hidden />
-                  Merge
-                </button>
-              )}
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
-        {activePr ? (
-          <GithubCard
-            pr={activePr}
-            detail={detail}
-            detailLoading={detailLoading}
-            detailError={detailError}
-            detailFetchedAt={detailFetchedAt}
-            branchLastActivity={null}
-            onOpenUrl={(url) => void openUrl(url)}
-            onRefresh={refreshActive}
-            onSpawnFromComment={onSpawnFromComment}
-            onSpawnFromReviewChanges={onSpawnFromReviewChanges}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft px-6 py-10 text-center">
-            <GitPullRequest size={24} aria-hidden className="text-muted-foreground/50" />
-            <p className="text-sm text-foreground">Ready to open a pull request.</p>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Plus size={14} aria-hidden />
-              Create PR
-            </button>
-            <p className="text-2xs text-muted-foreground/60">
-              Compose the title and description, or let AI draft it.
-            </p>
-          </div>
-        )}
       </div>
 
       {createOpen ? (
         <CreatePrDialog
           sessionId={sessionId}
           defaultTitle={session.goal}
-          closedPr={
-            isClosed && activePr ? { number: activePr.number, url: activePr.url } : undefined
-          }
+          closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
           onClose={() => setCreateOpen(false)}
           onStudioClose={onClose}
         />
       ) : null}
+    </div>
+  );
+}
+
+function SectionBody({
+  detail,
+  detailLoading,
+  detailError,
+  onRetry,
+  children,
+}: {
+  detail: PrDetail | null;
+  detailLoading: boolean;
+  detailError: string | null;
+  onRetry: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-8 py-6">
+      {detailError ? (
+        <div className="flex items-center gap-1.5 text-xs text-danger">
+          <AlertCircle size={13} aria-hidden />
+          <span className="min-w-0 flex-1 truncate" title={detailError}>
+            {detailError}
+          </span>
+          <button
+            type="button"
+            onClick={onRetry}
+            aria-label="retry"
+            className="rounded p-0.5 hover:bg-muted"
+          >
+            <RefreshCw size={12} aria-hidden />
+          </button>
+        </div>
+      ) : detailLoading && !detail ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 size={13} aria-hidden className="animate-spin" />
+          loading
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }

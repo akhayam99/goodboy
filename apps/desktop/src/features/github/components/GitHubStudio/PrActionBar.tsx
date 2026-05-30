@@ -1,0 +1,206 @@
+import type { PullRequestState } from '@goodboy/types';
+import { cn, Divider } from '@goodboy/ui';
+import {
+  ExternalLink,
+  GitMerge,
+  GitPullRequestDraft,
+  Loader2,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Send,
+  XCircle,
+} from 'lucide-react';
+
+export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null;
+
+const BTN =
+  'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+const ICON_BTN =
+  'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+
+const TONE = {
+  neutral:
+    'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground',
+  success: 'border-success/40 text-success hover:bg-success/10',
+  danger: 'border-danger/40 text-danger hover:bg-danger/10',
+  primary: 'border-primary/40 text-primary hover:bg-primary/10',
+  warning: 'border-warning/40 text-warning hover:bg-warning/10',
+} as const;
+
+interface Props {
+  readonly pr: PullRequestState;
+  readonly busy: ActionBusy;
+  readonly detailLoading: boolean;
+  readonly mergeConfirm: boolean;
+  readonly canMerge: boolean;
+  readonly mergeReason: string;
+  readonly onMarkReady: () => void;
+  readonly onConvertDraft: () => void;
+  readonly onClose: () => void;
+  readonly onReopen: () => void;
+  readonly onCreateNew: () => void;
+  readonly onMerge: () => void;
+  readonly onSetMergeConfirm: (v: boolean) => void;
+  readonly onOpenGithub: () => void;
+  readonly onRefresh: () => void;
+}
+
+export function PrActionBar({
+  pr,
+  busy,
+  detailLoading,
+  mergeConfirm,
+  canMerge,
+  mergeReason,
+  onMarkReady,
+  onConvertDraft,
+  onClose,
+  onReopen,
+  onCreateNew,
+  onMerge,
+  onSetMergeConfirm,
+  onOpenGithub,
+  onRefresh,
+}: Props) {
+  const isTerminal = pr.state === 'merged' || pr.state === 'closed';
+  const isClosed = pr.state === 'closed';
+  const isDraft = pr.isDraft;
+  const spin = (k: ActionBusy) => busy === k;
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5 px-5 py-2.5">
+      {!isTerminal && isDraft ? (
+        <button
+          type="button"
+          onClick={onMarkReady}
+          disabled={busy !== null}
+          className={cn(BTN, TONE.success)}
+        >
+          {spin('ready') ? (
+            <Loader2 size={13} aria-hidden className="animate-spin" />
+          ) : (
+            <Send size={13} aria-hidden />
+          )}
+          Mark ready
+        </button>
+      ) : !isTerminal ? (
+        <button
+          type="button"
+          onClick={onConvertDraft}
+          disabled={busy !== null}
+          className={cn(BTN, TONE.warning)}
+        >
+          {spin('undraft') ? (
+            <Loader2 size={13} aria-hidden className="animate-spin" />
+          ) : (
+            <GitPullRequestDraft size={13} aria-hidden />
+          )}
+          Convert to draft
+        </button>
+      ) : null}
+
+      {!isTerminal ? (
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={busy !== null}
+          className={cn(BTN, TONE.danger)}
+        >
+          {spin('close') ? (
+            <Loader2 size={13} aria-hidden className="animate-spin" />
+          ) : (
+            <XCircle size={13} aria-hidden />
+          )}
+          Close
+        </button>
+      ) : null}
+
+      {isClosed ? (
+        <>
+          <button
+            type="button"
+            onClick={onReopen}
+            disabled={busy !== null}
+            className={cn(BTN, TONE.success)}
+          >
+            {spin('reopen') ? (
+              <Loader2 size={13} aria-hidden className="animate-spin" />
+            ) : (
+              <RotateCcw size={13} aria-hidden />
+            )}
+            Reopen
+          </button>
+          <button type="button" onClick={onCreateNew} className={cn(BTN, TONE.primary)}>
+            <Plus size={13} aria-hidden />
+            Create new PR
+          </button>
+        </>
+      ) : null}
+
+      <div className="ml-auto flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onOpenGithub}
+          title="open on github"
+          aria-label="open on github"
+          className={ICON_BTN}
+        >
+          <ExternalLink size={14} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={detailLoading}
+          title="refresh"
+          aria-label="refresh"
+          className={ICON_BTN}
+        >
+          <RefreshCw size={14} aria-hidden className={cn(detailLoading && 'animate-spin')} />
+        </button>
+
+        {!isTerminal ? (
+          <>
+            <Divider orientation="vertical" className="mx-0.5 h-5" />
+            {mergeConfirm ? (
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/10 px-2 py-1 text-xs">
+                <span className="text-foreground">Squash merge?</span>
+                <button
+                  type="button"
+                  onClick={onMerge}
+                  disabled={busy !== null}
+                  className="rounded bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {spin('merge') ? 'merging' : 'confirm'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSetMergeConfirm(false)}
+                  className="rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onSetMergeConfirm(true)}
+                disabled={!canMerge || busy !== null}
+                title={mergeReason}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  canMerge
+                    ? 'border-success bg-success text-success-foreground hover:bg-success/90'
+                    : 'border-border-soft text-muted-foreground',
+                )}
+              >
+                <GitMerge size={13} aria-hidden />
+                Merge
+              </button>
+            )}
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}

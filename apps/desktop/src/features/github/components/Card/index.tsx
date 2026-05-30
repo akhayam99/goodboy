@@ -189,7 +189,7 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
   );
 }
 
-interface TabStatus {
+export interface TabStatus {
   readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
   readonly icon: ReactNode;
   readonly count?: number;
@@ -204,7 +204,7 @@ const TONE_PILL: Record<TabStatus['tone'], string> = {
   muted: 'bg-muted text-muted-foreground',
 };
 
-function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
   const hasCount = status.count != null && status.count > 0;
   return (
     <span
@@ -223,7 +223,7 @@ function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
   );
 }
 
-function computeTabStatus(
+export function computeTabStatus(
   pr: PullRequestState,
   detail: PrDetail | null,
 ): Record<GithubTabKey, TabStatus | null> {
@@ -380,7 +380,7 @@ function DetailSkeleton() {
   );
 }
 
-function CiPane({
+export function CiPane({
   checks,
   pr,
   onOpenUrl,
@@ -423,7 +423,7 @@ function CiPane({
 
 const COMMENT_DISPLAY_LIMIT = 5;
 
-function CommentsPane({
+export function CommentsPane({
   comments,
   pr,
   onOpenUrl,
@@ -683,7 +683,7 @@ function CommentThreadRow({
   );
 }
 
-function ReviewPane({
+export function ReviewPane({
   reviews,
   requests,
   pr,
