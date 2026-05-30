@@ -13,6 +13,7 @@ export {
 export {
   detectRepoSlug,
   fetchLinkedIssues,
+  listPrsForBranch,
   parseLinkedIssuesFromBody,
   resolvePrForBranch,
 } from './resolver';

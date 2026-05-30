@@ -130,6 +130,43 @@ export async function resolvePrForBranch(
   return head ? toPullRequestState(head) : null;
 }
 
+export async function listPrsForBranch(
+  runner: GhRunner,
+  repo: string,
+  branch: string,
+  opts: { cwd?: string; token?: string } = {},
+): Promise<ReadonlyArray<PullRequestState>> {
+  const args = [
+    'pr',
+    'list',
+    '--repo',
+    repo,
+    '--head',
+    branch,
+    '--state',
+    'all',
+    '--limit',
+    '20',
+    '--json',
+    PR_FIELDS.join(','),
+  ];
+  let raw: ReadonlyArray<RawPullRequest>;
+  try {
+    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+  } catch (err) {
+    if (err instanceof GhCliError) return [];
+    throw err;
+  }
+  return [...raw]
+    .sort((a, b) => {
+      const aTerminal = a.state === 'OPEN' ? 0 : 1;
+      const bTerminal = b.state === 'OPEN' ? 0 : 1;
+      if (aTerminal !== bTerminal) return aTerminal - bTerminal;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    })
+    .map(toPullRequestState);
+}
+
 const LINKED_KEYWORD_RE =
   /\b(close[sd]?|fix(?:es|ed)?|resolve[sd]?|ref(?:s|erence[sd]?)?)\s+#(\d+)/gi;
 
