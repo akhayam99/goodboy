@@ -3,5 +3,11 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default", "updater:default", "process:default"]
+  "permissions": [
+    "core:default",
+    "core:webview:allow-set-webview-zoom",
+    "dialog:default",
+    "updater:default",
+    "process:default"
+  ]
 }
