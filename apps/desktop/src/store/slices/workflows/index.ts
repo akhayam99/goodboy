@@ -4,6 +4,7 @@ import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
+import { discardWorkflow } from './discardWorkflow';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
@@ -26,6 +27,7 @@ export function createWorkflowsSlice(set: SetFn, get: GetFn) {
     loadPhaseRunsForSession: loadPhaseRunsForSession(set),
     attachWorkflowToSession: attachWorkflowToSession(set, get),
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),
+    discardWorkflow: discardWorkflow(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),

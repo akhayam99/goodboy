@@ -98,6 +98,19 @@ export async function updateWorkflowOrder(
   }
 }
 
+export async function discardWorkflowInSession(
+  db: Database,
+  sessionId: SessionId,
+  workflowId: WorkflowId,
+  discardedAt: IsoDateTime,
+): Promise<void> {
+  await db.execute(
+    'UPDATE session_workflows SET discarded_at = ? WHERE session_id = ? AND workflow_id = ?',
+    [discardedAt, sessionId, workflowId],
+  );
+  await bumpSessionUpdatedAt(db, sessionId, discardedAt);
+}
+
 export async function updateSessionWorkflowStep(
   db: Database,
   sessionId: SessionId,

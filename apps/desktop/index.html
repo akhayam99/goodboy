@@ -1,10 +1,28 @@
 <!doctype html>
-<html lang="en" class="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
     <title>Goodboy</title>
+    <style>
+      html {
+        background: oklch(0.25 0.006 255);
+        color-scheme: dark;
+      }
+      html[data-theme='light'] {
+        background: oklch(0.948 0.004 250);
+        color-scheme: light;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('goodboy:theme') === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-background text-foreground antialiased">
     <div id="root"></div>

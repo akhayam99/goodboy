@@ -367,6 +367,7 @@ export interface AppActions {
     options?: { autoRun?: boolean },
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowId: WorkflowId): Promise<void>;
+  discardWorkflow(sessionId: SessionId, workflowId: WorkflowId): Promise<void>;
   reorderSessionWorkflows(
     sessionId: SessionId,
     workflowIds: ReadonlyArray<WorkflowId>,

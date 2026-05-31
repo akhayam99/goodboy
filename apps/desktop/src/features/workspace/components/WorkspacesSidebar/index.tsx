@@ -5,8 +5,10 @@ import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
+  Ban,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Clock,
   DollarSign,
@@ -457,23 +459,53 @@ function QuickAction({
   );
 }
 
-function WorkflowKindLabel({ workflow }: { workflow: Workflow }) {
-  const presetName = useMemo(() => {
-    const needle = workflow.name.trim().toLowerCase();
-    if (!needle) return null;
-    const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
-    return match?.name.toLowerCase() ?? null;
-  }, [workflow.name]);
+function workflowKindName(workflow: Workflow): string {
+  const needle = workflow.name.trim().toLowerCase();
+  if (!needle) return 'custom';
+  const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
+  return match?.name.toLowerCase() ?? 'custom';
+}
 
-  const label = presetName ?? 'custom';
-  const isPreset = presetName !== null;
+function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  if (confirming) {
+    return (
+      <span className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm">
+        <span className="px-0.5 text-2xs text-muted-foreground">Discard?</span>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(false);
+            onConfirm();
+          }}
+          title="confirm discard"
+          aria-label="confirm discard workflow"
+          className="rounded p-0.5 text-danger transition-colors hover:bg-danger/10"
+        >
+          <Check size={12} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          title="cancel"
+          aria-label="cancel discard workflow"
+          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <X size={12} aria-hidden />
+        </button>
+      </span>
+    );
+  }
   return (
-    <span
-      title={isPreset ? `${label} preset` : 'custom workflow'}
-      className="min-w-0 max-w-[8rem] truncate text-2xs text-muted-foreground/70"
+    <button
+      type="button"
+      onClick={() => setConfirming(true)}
+      title="discard workflow"
+      aria-label="discard workflow"
+      className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-danger/10 hover:text-danger"
     >
-      {label}
-    </span>
+      <Ban size={11} aria-hidden />
+    </button>
   );
 }
 
@@ -524,7 +556,9 @@ function PlanReadySuggestion({ task }: { task: Session }) {
     return null;
   }
 
+  const discarded = new Set(task.discardedWorkflowIds ?? []);
   for (const wid of task.workflowIds) {
+    if (discarded.has(wid)) continue;
     const workflow = phaseTemplates.find((t) => t.id === wid);
     if (!workflow) continue;
     const nextStep = pickNextWorkflowStep(workflow, phaseRuns);
@@ -692,14 +726,22 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
-  const attachedWorkflows = useMemo<ReadonlyArray<Workflow>>(
-    () =>
-      task.workflowIds
-        .map((wid) => phaseTemplates.find((t) => t.id === wid))
-        .filter((t): t is Workflow => t !== undefined),
-    [task.workflowIds, phaseTemplates],
+  const sessionWorkflows = useAppStore(
+    (s) => s.sessionWorkflows[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
-  const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
+  const attachedWorkflows = useMemo<ReadonlyArray<Workflow>>(() => {
+    const byId = new Map<string, Workflow>();
+    for (const w of phaseTemplates) byId.set(w.id, w);
+    for (const w of sessionWorkflows) byId.set(w.id, w);
+    return task.workflowIds
+      .map((wid) => byId.get(wid))
+      .filter((t): t is Workflow => t !== undefined);
+  }, [task.workflowIds, phaseTemplates, sessionWorkflows]);
+  const discardedWorkflowIds = useMemo(
+    () => new Set(task.discardedWorkflowIds ?? EMPTY_ARRAY),
+    [task.discardedWorkflowIds],
+  );
+  const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const openQuestions = useSessionOpenQuestions(task.id);
   const loading = useSessionLoading(task.id);
@@ -707,6 +749,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
+  const [workflowExpand, setWorkflowExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const toggleWorkflowExpand = useCallback((id: string, isDiscarded: boolean) => {
+    setWorkflowExpand((prev) => {
+      const next = new Map(prev);
+      next.set(id, !(prev.get(id) ?? !isDiscarded));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -757,11 +807,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const actionableStepIdByWorkflowId = useMemo(() => {
     const map = new Map<string, string | null>();
     for (const wf of attachedWorkflows) {
+      if (discardedWorkflowIds.has(wf.id)) {
+        map.set(wf.id, null);
+        continue;
+      }
       const wfAgents = agentsByWorkflowId.get(wf.id) ?? EMPTY_ARRAY;
       map.set(wf.id, pickNextWorkflowStep(wf, wfAgents)?.id ?? null);
     }
     return map;
-  }, [attachedWorkflows, agentsByWorkflowId]);
+  }, [attachedWorkflows, agentsByWorkflowId, discardedWorkflowIds]);
   const blockReasonByWorkflowId = useMemo(() => {
     const map = new Map<string, WorkflowBlockReason | null>();
     for (const wf of attachedWorkflows) {
@@ -775,15 +829,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [attachedWorkflows, openQuestions, summarizerBusy]);
 
-  const onDetachWorkflow = useCallback(
+  const onDiscardWorkflow = useCallback(
     async (workflowId: string) => {
       try {
-        await detachWorkflowFromSession(task.id, workflowId as Workflow['id']);
+        await discardWorkflow(task.id, workflowId as Workflow['id']);
       } catch (err) {
         setSpawnError(formatError(err));
       }
     },
-    [detachWorkflowFromSession, task.id],
+    [discardWorkflow, task.id],
   );
 
   const onReorderWorkflow = useCallback(
@@ -959,141 +1013,166 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   const hasAnyWorkflow = attachedWorkflows.length > 0;
-  const renderWorkflowBlock = (workflow: Workflow, idx: number) => {
+  const renderWorkflowRow = (workflow: Workflow, idx: number) => {
+    const isDiscarded = discardedWorkflowIds.has(workflow.id);
+    const expanded = workflowExpand.get(workflow.id) ?? !isDiscarded;
     const wfAgents = agentsByWorkflowId.get(workflow.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByWorkflowId.get(workflow.id) ?? null;
     const wfBlockReason = blockReasonByWorkflowId.get(workflow.id) ?? null;
     const canMoveUp = idx > 0;
     const canMoveDown = idx < attachedWorkflows.length - 1;
+    const name = workflowKindName(workflow);
+    const total = workflow.steps.length;
+    const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     return (
-      <div key={workflow.id} className={cn('flex flex-col', idx > 0 && 'mt-4')}>
-        <header className="flex items-center gap-2 pb-1.5">
-          <span className={SECTION_LABEL}>
-            <Layers size={11} aria-hidden className="text-primary" />
-            Workflow
-          </span>
-          <span className="flex-1" />
-          <WorkflowKindLabel workflow={workflow} />
-          {attachedWorkflows.length > 1 ? (
-            <div className="flex shrink-0 items-center">
-              <button
-                type="button"
-                disabled={!canMoveUp}
-                onClick={() => void onReorderWorkflow(workflow.id, 'up')}
-                title="move workflow up"
-                aria-label="move workflow up"
-                className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <ChevronUp size={11} aria-hidden />
-              </button>
-              <button
-                type="button"
-                disabled={!canMoveDown}
-                onClick={() => void onReorderWorkflow(workflow.id, 'down')}
-                title="move workflow down"
-                aria-label="move workflow down"
-                className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <ChevronDown size={11} aria-hidden />
-              </button>
-            </div>
-          ) : null}
+      <div key={workflow.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
-            onClick={() => void onDetachWorkflow(workflow.id)}
-            title="detach workflow"
-            aria-label="detach workflow"
-            className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-danger/10 hover:text-danger"
+            onClick={() => toggleWorkflowExpand(workflow.id, isDiscarded)}
+            title={workflow.name || name}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
-            <X size={11} aria-hidden />
+            {expanded ? (
+              <ChevronDown size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+            ) : (
+              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+            )}
+            <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+              {name}
+            </span>
+            {isDiscarded ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <Ban size={10} aria-hidden /> discarded
+              </span>
+            ) : total > 0 ? (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
+                {done}/{total}
+              </span>
+            ) : null}
           </button>
-          {idx === 0 ? <AutoRunToggle session={task} /> : null}
-        </header>
-        {wfAgents.length > 0 ? (
-          <div className="flex flex-col gap-1 pl-2">
-            {wfAgents.map((run, index) => {
-              const isActionable = run.stepId === actionableStepId && run.status === 'pending';
-              const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
-              const resolvedModel =
-                agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
-              const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
-              return (
-                <Fragment key={run.id}>
-                  <WorkflowStepRow
-                    run={run}
-                    kind={kind}
-                    index={index}
-                    resolvedModel={resolvedModel}
-                    isActionable={isActionable}
-                    blockReason={isActionable ? wfBlockReason : null}
-                    isSelected={run.id === selectedAgentId}
-                    isEditing={editingId === run.id}
-                    telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                    aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                    turns={turnsByAgentId.get(run.id) ?? 0}
-                    turnsLoading={run.id === selectedAgentId && loading.transcript}
-                    onStart={() => void onSpawn(run.stepId!, undefined)}
-                    onSelect={() => onPickAgent(run.id)}
-                    onRenameStart={() => setEditingId(run.id)}
-                    onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                    onRenameCancel={() => setEditingId(null)}
-                  />
-                  {clusterChildren.length > 0 ? (
-                    <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-                      <span className="px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50">
-                        clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
-                        {clusterChildren.length}
-                      </span>
-                      {clusterChildren.map((child, ci) => (
-                        <ClusterChildRow
-                          key={child.id}
-                          child={child}
-                          index={ci}
-                          total={clusterChildren.length}
-                          costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
-                          isSelected={child.id === selectedAgentId}
-                          onSelect={() => onPickAgent(child.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                </Fragment>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="pl-2 text-2xs text-muted-foreground/60">no agents yet for this workflow.</p>
-        )}
+          {!isDiscarded ? (
+            <div className="flex shrink-0 items-center">
+              <AutoRunToggle session={task} />
+              {attachedWorkflows.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={!canMoveUp}
+                    onClick={() => void onReorderWorkflow(workflow.id, 'up')}
+                    title="move workflow up"
+                    aria-label="move workflow up"
+                    className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronUp size={11} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canMoveDown}
+                    onClick={() => void onReorderWorkflow(workflow.id, 'down')}
+                    title="move workflow down"
+                    aria-label="move workflow down"
+                    className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronDown size={11} aria-hidden />
+                  </button>
+                </>
+              ) : null}
+              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(workflow.id)} />
+            </div>
+          ) : null}
+        </div>
+        {expanded ? (
+          wfAgents.length > 0 ? (
+            <div className="flex flex-col gap-1 pb-1 pl-5">
+              {wfAgents.map((run, index) => {
+                const isActionable = run.stepId === actionableStepId && run.status === 'pending';
+                const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                const resolvedModel =
+                  agentModelOverride[run.id] ??
+                  run.modelOverride ??
+                  AGENT_KIND_DEFAULTS[kind].model;
+                const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+                return (
+                  <Fragment key={run.id}>
+                    <WorkflowStepRow
+                      run={run}
+                      kind={kind}
+                      index={index}
+                      resolvedModel={resolvedModel}
+                      isActionable={isActionable}
+                      blockReason={isActionable ? wfBlockReason : null}
+                      isSelected={run.id === selectedAgentId}
+                      isEditing={editingId === run.id}
+                      telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                      aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                      turns={turnsByAgentId.get(run.id) ?? 0}
+                      turnsLoading={run.id === selectedAgentId && loading.transcript}
+                      onStart={() => void onSpawn(run.stepId!, undefined)}
+                      onSelect={() => onPickAgent(run.id)}
+                      onRenameStart={() => setEditingId(run.id)}
+                      onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                      onRenameCancel={() => setEditingId(null)}
+                    />
+                    {clusterChildren.length > 0 ? (
+                      <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+                        <span className="px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50">
+                          clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
+                          {clusterChildren.length}
+                        </span>
+                        {clusterChildren.map((child, ci) => (
+                          <ClusterChildRow
+                            key={child.id}
+                            child={child}
+                            index={ci}
+                            total={clusterChildren.length}
+                            costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
+                            isSelected={child.id === selectedAgentId}
+                            onSelect={() => onPickAgent(child.id)}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="pb-1 pl-5 text-2xs text-muted-foreground/60">
+              no agents yet for this workflow.
+            </p>
+          )
+        ) : null}
       </div>
     );
   };
 
   return (
     <section className="mt-2 flex flex-col px-3 pb-3">
+      <header className="flex items-center justify-between gap-2 pb-1.5">
+        <span className={SECTION_LABEL}>
+          <Layers size={11} aria-hidden className="text-primary" />
+          Workflow
+        </span>
+      </header>
       {!hasAnyWorkflow ? (
-        <div className="flex flex-col gap-1.5">
-          <header className="flex items-center justify-between gap-2 pb-1.5">
-            <span className={SECTION_LABEL}>
-              <Layers size={11} aria-hidden className="text-primary" />
-              Workflow
-            </span>
-          </header>
-          <button
-            type="button"
-            onClick={() => setStartWorkflowOpen(true)}
-            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-          >
-            <Plus size={13} aria-hidden />
-            Start a workflow
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setStartWorkflowOpen(true)}
+          className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+        >
+          <Plus size={13} aria-hidden />
+          Start a workflow
+        </button>
       ) : (
         <>
-          {attachedWorkflows.map(renderWorkflowBlock)}
+          <div className="flex flex-col gap-0.5">{attachedWorkflows.map(renderWorkflowRow)}</div>
           <button
             type="button"
             onClick={() => setStartWorkflowOpen(true)}
-            className="mt-2 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
           >
             <Plus size={11} aria-hidden />
             Attach another workflow
