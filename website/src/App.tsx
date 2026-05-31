@@ -3,12 +3,12 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Nav } from './sections/Nav';
 import { FloatingNav } from './sections/FloatingNav';
 import { Hero } from './sections/Hero';
-import { Letter } from './sections/Letter';
 import { SessionsDeepDive } from './sections/SessionsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
 import { StudioDeepDive } from './sections/StudioDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
 import { MoreBriefly } from './sections/MoreBriefly';
+import { Letter } from './sections/Letter';
 import { Comparison } from './sections/Comparison';
 import { CTA } from './sections/CTA';
 import { Footer } from './sections/Footer';
@@ -21,14 +21,14 @@ export function App() {
       <main>
         {/* above the fold: the reason + install/github + app overview */}
         <Hero />
-        {/* the human note, sets the voice before the features */}
-        <Letter />
-        {/* the key points */}
+        {/* the key points first: features carry the page */}
         <SessionsDeepDive />
         <ContextDeepDive />
         <StudioDeepDive />
         <GithubDeepDive />
         <MoreBriefly />
+        {/* the human note, after the features, before the close */}
+        <Letter />
         {/* close */}
         <Comparison />
         <CTA />
