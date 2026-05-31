@@ -1,11 +1,11 @@
-import type { IsoDateTime, SessionId, TurnState } from '@goodboy/types';
+import type { IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
 import { turnReducer } from '@goodboy/core';
 import { deleteWorktreesForSession, updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeWorktree } from '../../../features/worktree/worktree';
 import { formatError } from '../../../shared/lib/errors';
-import { applySessionUpdate } from '../../session-mutators';
+import { applySessionUpdate, cancelledRunIds } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
 export function endSession(set: SetFn, get: GetFn) {
@@ -13,12 +13,16 @@ export function endSession(set: SetFn, get: GetFn) {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
     if (session.state.kind === 'ended') return;
-    if (session.state.kind === 'running') {
-      // Best-effort cancel, Rust TurnRegistry may have already removed the
-      // run (process exited, app restarted, etc). A "turn not found" error
-      // here must not block end-session: the session row is the source of
-      // truth, not the in-memory registry.
-      await cancelTurn(session.state.runId).catch(() => undefined);
+    const toCancel = new Set<ProviderRunId>();
+    if (session.state.kind === 'running') toCancel.add(session.state.runId);
+    const turnStates = get().agentTurnState;
+    for (const agent of get().sessionPhaseRuns[sessionId] ?? []) {
+      const st = turnStates[agent.id];
+      if (st?.kind === 'running') toCancel.add(st.runId);
+    }
+    for (const rid of toCancel) {
+      cancelledRunIds.add(rid);
+      await cancelTurn(rid).catch(() => undefined);
     }
 
     const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
