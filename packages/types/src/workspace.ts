@@ -77,7 +77,7 @@ export type Session = Readonly<{
 
 /**
  * A user-defined shell script attached to a workspace. Run manually by the
- * user from the Scripts panel — never executed by an agent.
+ * user from the Scripts panel - never executed by an agent.
  */
 export type WorkspaceScript = Readonly<{
   id: WorkspaceScriptId;

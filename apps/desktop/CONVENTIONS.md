@@ -1,4 +1,4 @@
-# Conventions — @goodboy/desktop
+# Conventions - @goodboy/desktop
 
 Tauri 2 desktop app. React 19 + Vite + Tailwind v4 + Zustand. Consumes all internal packages.
 
@@ -54,7 +54,7 @@ src/
 ## Tauri command patterns
 
 - One thin wrapper per command in `features/<x>/tauri.ts`. Components never call `invoke` directly.
-- Commands return `Result<T, E>`-shaped payloads — Rust serializes both arms. The wrapper unwraps and throws a typed domain error, or returns `T`.
+- Commands return `Result<T, E>`-shaped payloads - Rust serializes both arms. The wrapper unwraps and throws a typed domain error, or returns `T`.
   ```ts
   type CommandResult<T, E> = { ok: true; value: T } | { ok: false; error: E };
   ```
@@ -73,11 +73,11 @@ src/
 ## State (Zustand)
 
 - One store per feature slice. Compose at the app root if needed.
-- No `useEffect` to sync props into store state — derive at read time, or pass explicitly.
+- No `useEffect` to sync props into store state - derive at read time, or pass explicitly.
 - Selectors with `useStore(state => state.x)`. No object-identity selectors that re-render on every change.
 - Async actions live in the store; components dispatch and react to derived state.
 - Persistence via `zustand/middleware/persist` only for UI prefs. Domain data lives in SQLite.
-- No singletons constructed at module top-level — create stores in a factory if test isolation matters.
+- No singletons constructed at module top-level - create stores in a factory if test isolation matters.
 
 ## React 19 patterns
 

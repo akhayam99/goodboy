@@ -1,5 +1,5 @@
 /**
- * m031 — consolidated refactor:
+ * m031 - consolidated refactor:
  *   A) Rename DB tables to match UI nomenclature:
  *        tasks            -> sessions       (top-level entity)
  *        sessions         -> agents         (AI runner inside a session)
@@ -59,7 +59,7 @@ ALTER TABLE task_worktrees RENAME TO session_worktrees;
 
 -- ============================================================
 -- PHASE 2: Rename FK columns task_id -> session_id
--- (notifications.session_id is already correctly named — refers
+-- (notifications.session_id is already correctly named - refers
 -- to the top-level entity which we just renamed to sessions.)
 -- ============================================================
 
@@ -299,7 +299,7 @@ CREATE INDEX idx_sessions_archived
   ON sessions(workspace_id, archived_at DESC)
   WHERE deleted_at IS NULL AND archived_at IS NOT NULL;
 
--- messages (no standalone session_id / agent_id idx — composite covers)
+-- messages (no standalone session_id / agent_id idx - composite covers)
 CREATE INDEX idx_messages_session_created ON messages(session_id, created_at);
 CREATE INDEX idx_messages_agent_created ON messages(agent_id, created_at);
 

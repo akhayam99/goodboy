@@ -119,7 +119,7 @@ All tokens live in `apps/desktop/src/styles.css` under `@theme`. Reference them 
 | `--text-base` | 14px  | `text-base` |
 | `--text-lg`   | 16px  | `text-lg`   |
 
-`text-2xs` and `text-xs` replace ad-hoc `text-[10px]` / `text-[11px]` usage. `text-xs` was already 11px in this project (not Tailwind's default 13px) — no regression.
+`text-2xs` and `text-xs` replace ad-hoc `text-[10px]` / `text-[11px]` usage. `text-xs` was already 11px in this project (not Tailwind's default 13px) - no regression.
 
 ### Motion durations
 
@@ -144,7 +144,7 @@ All animation and transition classes **must** be gated with the `motion-safe:` T
 // correct
 <div className="motion-safe:transition-opacity motion-safe:duration-[--motion-normal]" />
 
-// wrong — plays regardless of OS accessibility setting
+// wrong - plays regardless of OS accessibility setting
 <div className="transition-opacity duration-200" />
 ```
 
@@ -152,4 +152,4 @@ Rule: no bare `transition-*`, `animate-*`, or `duration-*` class without `motion
 
 ### Focus ring
 
-`--color-focus-ring` is `oklch(0.55 0.18 265 / 0.55)` — primary hue at 55% opacity. Sufficient contrast on both white and muted backgrounds. Used automatically by the global `:focus-visible` rule.
+`--color-focus-ring` is `oklch(0.55 0.18 265 / 0.55)` - primary hue at 55% opacity. Sufficient contrast on both white and muted backgrounds. Used automatically by the global `:focus-visible` rule.

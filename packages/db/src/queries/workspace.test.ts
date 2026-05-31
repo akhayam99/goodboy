@@ -132,7 +132,7 @@ describe('touchWorkspaceLastAccessed', () => {
     expect(accessed).toBeLessThanOrEqual(after);
   });
 
-  it('is idempotent — second touch advances timestamp', async () => {
+  it('is idempotent - second touch advances timestamp', async () => {
     const db = await makeDb();
     const ws = makeWorkspace({ lastAccessedAt: iso(1_000_000) });
     await insertWorkspace(db, ws);

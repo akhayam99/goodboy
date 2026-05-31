@@ -325,7 +325,7 @@ async function hydrateSessions(
   });
 }
 
-// Active sessions only — archived rows are returned by
+// Active sessions only - archived rows are returned by
 // `listArchivedSessionsForWorkspace` and live in a separate, lazily-loaded
 // slice of the store. The split keeps archived sessions out of every
 // interactive surface (palette, github polling, unread, eager loads) by
@@ -342,7 +342,7 @@ export async function listSessionsForWorkspace(
 }
 
 // Archived sessions for a workspace, sorted by archival time. Loaded lazily
-// when the Archived tab is opened — never participates in palette search,
+// when the Archived tab is opened - never participates in palette search,
 // github polling, unread dots, or workspace-switch eager loads.
 export async function listArchivedSessionsForWorkspace(
   db: Database,

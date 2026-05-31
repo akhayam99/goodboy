@@ -1,5 +1,5 @@
 /**
- * m045 — reusable step library.
+ * m045 - reusable step library.
  *
  * Decouples the "what a step is" (reusable, shareable) from "a step's place in
  * one workflow" (ordinal + per-instance overrides). Before this migration a

@@ -2,7 +2,7 @@
 
 Tauri 2 desktop app for Goodboy. React 19 + Vite + Tailwind v4 + Zustand.
 
-The orchestrator UI: workspaces, providers, tasks, balance. Local-only — no servers, no telemetry.
+The orchestrator UI: workspaces, providers, tasks, balance. Local-only - no servers, no telemetry.
 
 ## Dev
 

@@ -6,7 +6,7 @@ import type { SetFn } from './types';
 
 export function appendTurnEvent(set: SetFn) {
   return (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => {
-    // The set updater stays PURE — it only derives next state. The side effects
+    // The set updater stays PURE - it only derives next state. The side effects
     // (DB queue + provider-session-id persist) run after, never inside the
     // updater: Zustand updaters can be re-invoked (React strict mode), and
     // queueing inside one used to double-insert the row.

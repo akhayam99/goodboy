@@ -5,7 +5,7 @@ export type MessageRole = 'user' | 'assistant' | 'system';
 
 // An image written to disk and referenced by the spawned provider CLI. The CLI
 // reads it from `relPath` (resolved against the session worktree, its cwd) to
-// see the image — providers have no API content-block channel here.
+// see the image - providers have no API content-block channel here.
 export type MessageAttachment = Readonly<{
   id: string;
   kind: 'image';

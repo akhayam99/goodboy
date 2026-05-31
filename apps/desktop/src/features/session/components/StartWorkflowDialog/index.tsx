@@ -178,7 +178,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
 }
 
 // ----------------------------------------------------------------------------
-// Mode switch — a compact segmented control rather than two large cards, so it
+// Mode switch - a compact segmented control rather than two large cards, so it
 // reads at a glance and leaves the room for the actual workflow content.
 // ----------------------------------------------------------------------------
 function ModeTabs({ mode, onSelect }: { mode: Mode; onSelect: (m: Mode) => void }) {

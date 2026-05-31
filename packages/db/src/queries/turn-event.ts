@@ -85,7 +85,7 @@ export async function listTurnEventsForAgent(
   agentId: AgentId,
   opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<TurnEvent>> {
-  // When a limit is set we return the *last* N events in ASC order — DESC +
+  // When a limit is set we return the *last* N events in ASC order - DESC +
   // reverse keeps SQLite using the agent_id+created_at index efficiently.
   // Used for fast initial paint of long sessions; background full fetch
   // follows to fill in older history without blocking the first frame.

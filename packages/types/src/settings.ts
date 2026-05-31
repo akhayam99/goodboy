@@ -21,7 +21,7 @@ export type ResolvedSettings = Readonly<{
   defaultVerbosity: VerbosityLevel;
 }>;
 
-/** Global settings (non-nullable — always has a value). */
+/** Global settings (non-nullable - always has a value). */
 export type GlobalSettings = Readonly<{
   defaultProviderId: ProviderId;
   defaultWorkflowId: WorkflowId | null;

@@ -611,7 +611,7 @@ describe('store contract', () => {
       store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, ev);
       const run = store.getState().sessionPhaseRuns[SESSION_ID]?.find((r) => r.id === AGENT_ID);
       expect(run?.providerSessionId).toBe('sess-xyz');
-      // Persisted exactly once — the side effect runs outside the (pure) set updater.
+      // Persisted exactly once - the side effect runs outside the (pure) set updater.
       expect(invokeAgentSetProviderSessionIdSpy).toHaveBeenCalledTimes(1);
       expect(invokeAgentSetProviderSessionIdSpy).toHaveBeenCalledWith(AGENT_ID, 'sess-xyz');
     });
