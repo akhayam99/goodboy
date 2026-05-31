@@ -1,5 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { parseModelId } from '../features/chat/utils/chat-constants';
+import { parseModelId, suggestLighterModel } from '../features/chat/utils/chat-constants';
+
+const ANTHROPIC = [
+  'claude-haiku-4-5',
+  'claude-sonnet-4-5',
+  'claude-sonnet-4-6',
+  'claude-opus-4-6',
+  'claude-opus-4-7',
+  'claude-opus-4-8',
+];
+
+describe('suggestLighterModel', () => {
+  it('Opus 4.8 → Sonnet 4.6 (drops to cheapest non-floor tier, most capable in it)', () => {
+    expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).toBe('claude-sonnet-4-6');
+  });
+
+  it('Opus 4.6 → Sonnet 4.6 (same target from a lighter Opus)', () => {
+    expect(suggestLighterModel('claude-opus-4-6', ANTHROPIC)).toBe('claude-sonnet-4-6');
+  });
+
+  it('never suggests below the Haiku floor', () => {
+    expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).not.toMatch(/haiku/);
+  });
+
+  it('no nag when already mid-tier (gap below threshold)', () => {
+    expect(suggestLighterModel('claude-sonnet-4-6', ANTHROPIC)).toBeNull();
+  });
+
+  it('no suggestion when the only lighter options are floored out', () => {
+    expect(
+      suggestLighterModel('claude-sonnet-4-6', ['claude-sonnet-4-6', 'claude-haiku-4-5']),
+    ).toBeNull();
+  });
+});
 
 describe('parseModelId', () => {
   it('canonical anthropic ids: family/subfamily/variant', () => {
