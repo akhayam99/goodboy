@@ -7,6 +7,7 @@ import { SessionsDeepDive } from './sections/SessionsDeepDive';
 import { ContextDeepDive } from './sections/ContextDeepDive';
 import { StudioDeepDive } from './sections/StudioDeepDive';
 import { GithubDeepDive } from './sections/GithubDeepDive';
+import { LinearDeepDive } from './sections/LinearDeepDive';
 import { MoreBriefly } from './sections/MoreBriefly';
 import { Letter } from './sections/Letter';
 import { Comparison } from './sections/Comparison';
@@ -26,6 +27,7 @@ export function App() {
         <ContextDeepDive />
         <StudioDeepDive />
         <GithubDeepDive />
+        <LinearDeepDive />
         <MoreBriefly />
         {/* the human note, after the features, before the close */}
         <Letter />

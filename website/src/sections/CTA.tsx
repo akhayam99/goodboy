@@ -64,10 +64,7 @@ export function CTA() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
           Open source &middot; MIT
         </p>
-        <h2 className="mt-5 text-3xl sm:text-5xl leading-[1.02] tracking-[-0.03em] font-semibold text-foreground">
-          So, my friend: stop re-explaining yourself.
-        </h2>
-        <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.65] text-muted-foreground">
+        <p className="mx-auto mt-7 max-w-xl text-[18px] leading-[1.5] text-foreground/85 sm:text-[20px]">
           No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or Gemini you already
           pay for and you&apos;re running on your own machine in a minute.
         </p>

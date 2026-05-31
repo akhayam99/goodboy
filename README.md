@@ -47,8 +47,12 @@ bucketed by state (draft, in review, approved, merged). Open one and you've
 got the body, the lifecycle controls and the unresolved comments in a single
 view. Reply yourself, or hand a comment to an agent to resolve.
 
-**Linear in the side panel.** Pick an issue and the goal and branch fill
-themselves in. A proper Linear Studio is on the way.
+**Linear Studio.** Every open issue assigned to you, bucketed by Linear
+state. Pick one and the goal is already written, the branch is named, the
+linked PR is recognized. Hit launch and a session is on it, with the issue
+tagged in the rail above. Already shipped a PR for that issue? Pick
+"Continue on PR" instead of "Start fresh" and the same branch comes back,
+ready for the next round.
 
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.

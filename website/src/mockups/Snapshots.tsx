@@ -1280,6 +1280,202 @@ export function GithubStudioSnapshot() {
   );
 }
 
+/* ---------------------------- Linear Studio ------------------------- */
+
+/* Mirrors apps/desktop/src/features/integrations/linear/LinearStudio:
+   left rail = IssueInbox (search, issues grouped by Linear state, state dots,
+   PR/session badges), right pane = IssueDetailPanel (identifier + state chip,
+   open-in-linear, title, linked PR chip, description excerpt, Goal field,
+   Branch mode tabs with PR adoption, launch button). Compressed to one screen;
+   the real surface is taller. */
+const LINEAR_INBOX: ReadonlyArray<{
+  readonly label: string;
+  readonly dot: string;
+  readonly rows: ReadonlyArray<{
+    readonly id: string;
+    readonly title: string;
+    readonly active?: boolean;
+    readonly hasPr?: boolean;
+    readonly hasSession?: boolean;
+  }>;
+}> = [
+  {
+    label: 'In progress',
+    dot: 'bg-primary',
+    rows: [
+      { id: 'GOOD-214', title: 'Password reset via email link', active: true, hasPr: true },
+      { id: 'GOOD-211', title: 'Rate limiter on /auth/*', hasSession: true },
+    ],
+  },
+  {
+    label: 'Todo',
+    dot: 'bg-info',
+    rows: [
+      { id: 'GOOD-218', title: 'Workspace switcher in command bar' },
+      { id: 'GOOD-220', title: 'Retry policy for webhook deliveries' },
+    ],
+  },
+  {
+    label: 'Backlog',
+    dot: 'bg-muted-foreground/50',
+    rows: [{ id: 'GOOD-231', title: 'Inline diffs in PR conversation' }],
+  },
+];
+
+export function LinearStudioSnapshot() {
+  return (
+    <SnapshotFrame className="max-w-[560px]">
+      <FrameHeader
+        label="Linear · goodboy"
+        right={
+          <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning">
+            beta
+          </span>
+        }
+      />
+      <div className="flex">
+        {/* inbox: open issues assigned to you, grouped by state */}
+        <div className="w-[196px] shrink-0 border-r border-border-soft">
+          {/* search */}
+          <div className="px-2 pt-2 pb-1.5">
+            <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 text-[10px] text-muted-foreground/60">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="shrink-0"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <span>Search issues…</span>
+            </div>
+          </div>
+          <div className="space-y-2.5 px-2 pb-2.5">
+            {LINEAR_INBOX.map((g) => (
+              <div key={g.label} className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1 px-1 pb-0.5">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {g.label}
+                  </span>
+                  <span className="text-[9px] tabular-nums text-muted-foreground/50">
+                    {g.rows.length}
+                  </span>
+                  <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+                </div>
+                {g.rows.map((r) => (
+                  <div
+                    key={r.id}
+                    className={[
+                      'flex items-center gap-1.5 rounded-md px-1.5 py-1',
+                      r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
+                    ].join(' ')}
+                  >
+                    <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${g.dot}`} />
+                    <span className="shrink-0 font-mono text-[9px] text-muted-foreground/70">
+                      {r.id}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/85">
+                      {r.title}
+                    </span>
+                    {r.hasPr ? (
+                      <IconPullRequest size={9} className="shrink-0 text-muted-foreground/70" />
+                    ) : null}
+                    {r.hasSession ? (
+                      <span
+                        aria-hidden
+                        title="session launched"
+                        className="size-1.5 shrink-0 rounded-full bg-success"
+                      />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* detail: focused issue, launch session right here */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+            <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
+            <span className="chip bg-muted text-muted-foreground">In progress</span>
+            <span className="flex-1" />
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
+              Open in Linear
+              <svg
+                width="9"
+                height="9"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M15 3h6v6M10 14 21 3M21 14v7H3V3h7" />
+              </svg>
+            </span>
+          </div>
+          <p className="px-3 pb-2 text-[12px] font-semibold leading-snug text-foreground">
+            Password reset via email link
+          </p>
+          <div className="flex items-center gap-1.5 px-3 pb-2">
+            <span className="chip chip-success inline-flex items-center gap-1">
+              <IconPullRequest size={9} aria-hidden /> #214 · open
+            </span>
+          </div>
+          <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-muted-foreground/80">
+            Add a password reset flow: request endpoint, hashed token with TTL, email template, form
+            on the marketing site. Keep the existing login UI untouched.
+          </p>
+
+          {/* launch panel: goal + branch + button */}
+          <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+              <IconTarget size={10} aria-hidden className="text-primary" /> Goal
+            </div>
+            <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5 text-[10.5px] leading-relaxed text-foreground/85">
+              Password reset via email link. Add request endpoint, hashed token, email template.
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-1 text-[10px] font-semibold text-foreground">
+              <IconBranch size={10} aria-hidden className="text-success" /> Branch
+            </div>
+            <div className="inline-flex rounded-md border border-border-soft p-0.5 text-[9.5px]">
+              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                Continue on PR #214
+              </span>
+              <span className="px-1.5 py-0.5 text-muted-foreground/70">Start fresh</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1 font-mono text-[10px] text-foreground/85">
+              <IconBranch size={9} aria-hidden className="text-muted-foreground" />
+              <span className="truncate">ak/password-reset</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <span aria-hidden className="size-2.5 rounded-sm border border-muted-foreground/40" />
+              Set up workflow next
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+              Launch session →
+            </span>
+          </div>
+        </div>
+      </div>
+    </SnapshotFrame>
+  );
+}
+
 /* ---------------------------- Session cost --------------------------- */
 
 /* Mirrors apps/desktop/src/features/providers/components/CostBadge +
