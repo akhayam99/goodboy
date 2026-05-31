@@ -1,12 +1,17 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Dialog, Input, Textarea, cn } from '@goodboy/ui';
-import { GitBranch, Loader2, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import { AlertTriangle, GitBranch, Loader2, Target, Wand2 } from 'lucide-react';
+import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
+import {
+  listLocalBranches,
+  removeWorktree,
+  type LocalBranchInfo,
+} from '../../../../features/worktree/worktree';
+import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
@@ -169,6 +174,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
 
 export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }: Props) {
   const createSession = useAppStore((s) => s.createSession);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const providers = useAppStore((s) => s.providers);
   const { showToast } = useToast();
@@ -270,15 +276,36 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
       });
   };
 
+  const conflict = useBranchConflict(
+    branchMode === 'existing' ? existingBranch.trim() || null : null,
+    workspace?.rootPath ?? null,
+  );
+  const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
+  const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null;
+
   const branchReady =
     branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
   const goalReady = goal.trim().length > 0;
-  const canCreate = goalReady && branchReady && !busy && !noProviderConnected;
+  const canCreate =
+    goalReady &&
+    branchReady &&
+    !busy &&
+    !noProviderConnected &&
+    conflictSessionId === null &&
+    conflictWorktreePath === null;
 
-  const onCreate = async () => {
+  const onOpenConflictSession = (id: SessionId) => {
+    void setCurrentSession(id);
+    onClose();
+  };
+
+  const onCreate = async (eraseWorktreePath?: string) => {
     setError(null);
     setBusy(true);
     try {
+      if (eraseWorktreePath && workspace?.rootPath) {
+        await removeWorktree(workspace.rootPath, eraseWorktreePath);
+      }
       const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0;
       const { session } = await createSession({
         workspaceId,
@@ -349,16 +376,37 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={() => void onCreate()} disabled={!canCreate}>
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
-                Creating…
-              </>
-            ) : (
-              'Create session'
-            )}
-          </Button>
+          {conflictSessionId ? (
+            <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
+              Open session
+            </Button>
+          ) : conflictWorktreePath ? (
+            <Button
+              variant="danger"
+              onClick={() => void onCreate(conflictWorktreePath)}
+              disabled={busy || !goalReady}
+            >
+              {busy ? (
+                <>
+                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                  Working…
+                </>
+              ) : (
+                'Erase worktree & create'
+              )}
+            </Button>
+          ) : (
+            <Button onClick={() => void onCreate()} disabled={!canCreate}>
+              {busy ? (
+                <>
+                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                  Creating…
+                </>
+              ) : (
+                'Create session'
+              )}
+            </Button>
+          )}
         </div>
       }
     >
@@ -475,14 +523,31 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
                 </button>
               </div>
             ) : (
-              <BranchCombobox
-                branches={existingBranches}
-                value={existingBranch}
-                onChange={setExistingBranch}
-                disabled={busy || branchesLoading}
-                loading={branchesLoading}
-                openDirection="up"
-              />
+              <div className="flex flex-col gap-1.5">
+                <BranchCombobox
+                  branches={existingBranches}
+                  value={existingBranch}
+                  onChange={setExistingBranch}
+                  disabled={busy || branchesLoading}
+                  loading={branchesLoading}
+                  openDirection="up"
+                />
+                {conflictSessionId ? (
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    This branch is already used by an open session. Open it instead of creating a
+                    duplicate.
+                  </p>
+                ) : conflictWorktreePath ? (
+                  <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+                    <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
+                    <span>
+                      Checked out in another worktree (
+                      <span className="break-all font-mono">{conflictWorktreePath}</span>). Creating
+                      erases that worktree and recreates it here.
+                    </span>
+                  </p>
+                ) : null}
+              </div>
             )}
           </div>
         </Section>

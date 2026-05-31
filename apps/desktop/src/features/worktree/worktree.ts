@@ -25,6 +25,17 @@ export async function removeWorktree(repoPath: string, worktreePath: string): Pr
   await invoke('worktree_remove', { repoPath, worktreePath });
 }
 
+export interface WorktreeEntry {
+  readonly path: string;
+  readonly branch: string | null;
+  readonly head: string;
+  readonly isMain: boolean;
+}
+
+export async function worktreeList(repoPath: string): Promise<ReadonlyArray<WorktreeEntry>> {
+  return invoke<ReadonlyArray<WorktreeEntry>>('worktree_list', { repoPath });
+}
+
 export async function worktreeDiff(worktreePath: string, base?: string): Promise<string> {
   return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
 }
