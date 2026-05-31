@@ -17,11 +17,11 @@ export function Footer() {
           >
             GitHub
           </a>
-          <a href="#features" className="transition-colors hover:text-foreground">
+          <a href="#sessions" className="transition-colors hover:text-foreground">
             Features
           </a>
-          <a href="#stack" className="transition-colors hover:text-foreground">
-            Stack
+          <a href="#compare" className="transition-colors hover:text-foreground">
+            Why Goodboy
           </a>
           <a href="#cta" className="transition-colors hover:text-foreground">
             Install

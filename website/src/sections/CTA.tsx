@@ -65,11 +65,11 @@ export function CTA() {
           Open source &middot; MIT
         </p>
         <h2 className="mt-5 text-3xl sm:text-5xl leading-[1.02] tracking-[-0.03em] font-semibold text-foreground">
-          Install it, run it.
+          So, my friend: stop re-explaining yourself.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.65] text-muted-foreground">
-          No waitlist. No email. Bring your own Claude, Cursor, Codex or Gemini subscription and
-          you&apos;re running locally.
+          No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or Gemini you already
+          pay for and you&apos;re running on your own machine in a minute.
         </p>
 
         <div className="mx-auto mt-11 max-w-lg">
@@ -112,7 +112,7 @@ export function CTA() {
               ))}
             </TerminalFrame>
             <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Needs a Rust toolchain &middot; prebuilt binaries coming later
+              Needs a Rust toolchain &middot; prebuilt binaries coming soon
             </p>
           </div>
         </div>

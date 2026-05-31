@@ -1107,144 +1107,176 @@ function SlotCard({
   );
 }
 
-/* ---------------------------- GitHub panel (unified) ---------------- */
+/* ---------------------------- GitHub Studio --------------------------- */
 
-/* Single coherent screen mirroring features/github/components/Panel: the PR
-   header for the session (state, branch, diff stats, CI), then the review
-   thread with line-anchored comments from human teammates, the locally-run
-   claude reviewer, and you. Each comment exposes a one-click resolve that
-   spawns a resolver agent in the worktree. Replaces the older two-snapshot
-   split (overview list + review list) which read as two different products. */
-const REVIEW_COMMENTS = [
+/* Mirrors features/github/components/GitHubStudio: a full-screen PR command
+   center. Left, the inbox: every session's PR bucketed by what it needs from
+   you (draft, in review, approved...). Right, the focused PR with its
+   lifecycle actions (mark ready, close, squash-merge) and a review comment
+   you can hand straight to an agent. Compacted to two panes for the page. */
+const INBOX_GROUPS: ReadonlyArray<{
+  readonly label: string;
+  readonly rows: ReadonlyArray<{
+    readonly goal: string;
+    readonly num: number;
+    readonly tone: 'open' | 'approved' | 'draft';
+    readonly attention?: boolean;
+    readonly active?: boolean;
+  }>;
+}> = [
   {
-    author: 'sara.h',
-    avatar: 'oklch(0.72 0.16 150)',
-    file: 'src/auth/reset/handler.ts',
-    line: 28,
-    body: 'Wrap the token insert + audit log in `transaction()` so a flaky mailer never leaves a token without a paired log row.',
-    status: 'open' as const,
+    label: 'In review',
+    rows: [
+      { goal: 'Add password reset', num: 214, tone: 'open', attention: true, active: true },
+      { goal: 'Rate limiter', num: 211, tone: 'open' },
+    ],
   },
   {
-    author: 'claude-reviewer',
-    avatar: 'oklch(0.74 0.15 55)',
-    file: 'src/auth/reset/token.ts',
-    line: 42,
-    body: 'Hash with `argon2id` instead of sha256. Tokens are short-lived but the table will still get scraped if the DB leaks.',
-    status: 'open' as const,
+    label: 'Approved',
+    rows: [{ goal: 'Webhook retry backoff', num: 208, tone: 'approved' }],
   },
   {
-    author: 'you',
-    avatar: 'oklch(0.78 0.13 200)',
-    file: 'src/mail/templates/reset.tsx',
-    line: 11,
-    body: 'Link text reads "Reset password" but the button below already says that. Make the body line a sentence.',
-    status: 'resolved' as const,
-    resolvedBy: 'resolver-c3b7',
+    label: 'Draft',
+    rows: [{ goal: 'Drop legacy cookies', num: 205, tone: 'draft' }],
   },
 ];
 
-export function GithubPanelSnapshot() {
-  const unresolved = REVIEW_COMMENTS.filter((c) => c.status === 'open').length;
+const PR_TONE: Record<'open' | 'approved' | 'draft', string> = {
+  open: 'text-success',
+  approved: 'text-success',
+  draft: 'text-muted-foreground/60',
+};
+
+export function GithubStudioSnapshot() {
   return (
-    <SnapshotFrame className="max-w-[540px]">
+    <SnapshotFrame className="max-w-[560px]">
       <FrameHeader
-        label="GitHub"
+        label="GitHub Studio"
         right={
-          <span className="font-mono text-[10px] text-muted-foreground/70">last sync 12s ago</span>
+          <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wide text-warning">
+            beta
+          </span>
         }
       />
-
-      {/* PR header */}
-      <div className="border-b border-border-soft/60 px-3 py-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px] text-muted-foreground">#214</span>
-          <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-foreground">
-            feat(auth): password reset via email link
-          </span>
-          <span className="chip chip-success">open</span>
+      <div className="flex">
+        {/* inbox: every session's PR, bucketed by what it needs from you */}
+        <div className="w-[176px] shrink-0 space-y-2.5 border-r border-border-soft p-2">
+          {INBOX_GROUPS.map((g) => (
+            <div key={g.label} className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1 px-1 pb-0.5">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  {g.label}
+                </span>
+                <span className="text-[9px] tabular-nums text-muted-foreground/50">
+                  {g.rows.length}
+                </span>
+                <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+              </div>
+              {g.rows.map((r) => (
+                <div
+                  key={r.num}
+                  className={[
+                    'flex items-center gap-1.5 rounded-md px-1.5 py-1',
+                    r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
+                  ].join(' ')}
+                >
+                  <IconPullRequest size={11} className={['shrink-0', PR_TONE[r.tone]].join(' ')} />
+                  <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/85">
+                    {r.goal}
+                  </span>
+                  <span className="shrink-0 font-mono text-[9px] text-muted-foreground/50">
+                    #{r.num}
+                  </span>
+                  {r.attention ? (
+                    <span
+                      aria-hidden
+                      title="changes requested"
+                      className="size-1.5 shrink-0 rounded-full bg-danger"
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10.5px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <IconBranch size={10} />
-            <span className="truncate">ak/password-reset</span>
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-success">
-            <IconArrowUp size={9} />
-            180
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-danger">
-            <IconArrowDown size={9} />2
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-success" />6 / 6 checks
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-warning" />
-            {unresolved} unresolved
-          </span>
+
+        {/* detail: the focused PR, full lifecycle + a comment you can hand off */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+            <span className="font-mono text-[10px] text-muted-foreground">#214</span>
+            <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">
+              feat(auth): password reset via email link
+            </span>
+            <span className="chip chip-success shrink-0">open</span>
+          </div>
+
+          {/* section nav */}
+          <div className="flex items-center gap-1 px-3 pb-2 text-[10px]">
+            <span className="rounded px-1.5 py-0.5 text-muted-foreground/70">Overview</span>
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+              Conversation
+              <span className="rounded-full bg-warning/20 px-1 text-[8px] font-semibold text-warning">
+                2
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-muted-foreground/70">
+              Checks
+              <span aria-hidden className="size-1.5 rounded-full bg-success" />
+            </span>
+          </div>
+
+          {/* lifecycle action bar */}
+          <div className="flex items-center gap-1.5 border-y border-border-soft/60 px-3 py-2">
+            <span className="inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950">
+              <IconCheck size={10} /> Merge
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-medium text-muted-foreground">
+              Close
+            </span>
+            <span className="ml-auto inline-flex items-center gap-1 font-mono text-[9.5px] text-muted-foreground/60">
+              <IconBranch size={9} /> ak/password-reset → main
+            </span>
+          </div>
+
+          {/* one review comment, handed to an agent */}
+          <div className="flex flex-col gap-1.5 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <span
+                aria-hidden
+                className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
+                style={{ background: 'oklch(0.74 0.15 55)' }}
+              >
+                C
+              </span>
+              <span className="font-medium text-foreground/80">claude-reviewer</span>
+              <span>on</span>
+              <code className="font-mono text-primary">token.ts:42</code>
+            </div>
+            <p className="text-[11px] leading-relaxed text-foreground/85">
+              Hash with <code className="font-mono text-foreground/70">argon2id</code> instead of
+              sha256, the table gets scraped if the DB ever leaks.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                <IconSparkles size={10} /> resolve
+              </span>
+              <span className="text-[10px] text-muted-foreground/60">
+                hands the fix to an agent, replies on the thread
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[10.5px]">
+            <span className="inline-flex items-center gap-1.5 text-warning">
+              <IconSparkles size={11} /> Resolve all 2 with one agent
+            </span>
+            <span aria-hidden className="text-warning opacity-60">
+              →
+            </span>
+          </div>
         </div>
-      </div>
-
-      {/* Review thread */}
-      <ul className="flex flex-col divide-y divide-border-soft/40">
-        {REVIEW_COMMENTS.map((c, i) => (
-          <li key={i} className="px-3 py-2.5">
-            <ReviewCommentRow comment={c} />
-          </li>
-        ))}
-      </ul>
-
-      {/* Footer: batch resolve */}
-      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[11px]">
-        <span className="inline-flex items-center gap-1.5 text-warning">
-          <IconSparkles size={11} />
-          Resolve all {unresolved} with one agent batch
-        </span>
-        <span aria-hidden className="text-warning opacity-60">
-          →
-        </span>
       </div>
     </SnapshotFrame>
-  );
-}
-
-function ReviewCommentRow({ comment }: { comment: (typeof REVIEW_COMMENTS)[number] }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <span
-          aria-hidden
-          className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
-          style={{ background: comment.avatar }}
-        >
-          {comment.author[0]!.toUpperCase()}
-        </span>
-        <span className="font-medium text-foreground/80">{comment.author}</span>
-        <span>on</span>
-        <code className="font-mono text-primary">
-          {comment.file.split('/').pop()}:{comment.line}
-        </code>
-      </div>
-      <p className="text-[11.5px] leading-relaxed text-foreground/85">{comment.body}</p>
-      <div className="flex items-center gap-2">
-        {comment.status === 'resolved' ? (
-          <span className="inline-flex items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
-            <IconCheck size={10} />
-            resolved by {comment.resolvedBy}
-          </span>
-        ) : (
-          <>
-            <span className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-              <IconSparkles size={10} />
-              resolve
-            </span>
-            <span className="text-[10px] text-muted-foreground/60">
-              spawns a resolver agent on this comment
-            </span>
-          </>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -1975,14 +2007,14 @@ export function AppOverviewSnapshot() {
         <LayoutColumn
           eyebrow="Sessions"
           tag="rail + detail"
-          hint="Linked tickets, agents, scripts, PR state, branch and cost, collapsed into one rail."
+          hint="Every task you've got running, with its branch, agents and PR, in one rail."
           body={<SessionsAbstract />}
           tone="primary"
         />
         <LayoutColumn
           eyebrow="Conversation"
           tag="chat + composer"
-          hint="The transcript with the agent currently driving the turn. Switch role mid-flight."
+          hint="The chat, with whichever agent is talking right now. Hand the turn to another one without losing the thread."
           body={<ConversationAbstract />}
           tone="emerald"
           accent
@@ -1990,7 +2022,7 @@ export function AppOverviewSnapshot() {
         <LayoutColumn
           eyebrow="Context"
           tag="five tabs"
-          hint="Goal, plans, files, GitHub, terminal, one click each. Open questions pinned below."
+          hint="Goal, plans, files, the PR, a click each. Your open questions stay pinned so nothing slips."
           body={<ContextAbstract />}
           tone="info"
         />
