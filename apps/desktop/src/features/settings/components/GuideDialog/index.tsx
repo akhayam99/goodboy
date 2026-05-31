@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Dialog, Divider, cn } from '@goodboy/ui';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
   ArrowRight,
@@ -62,7 +62,7 @@ export function GuideDialog({ open, onClose }: Props) {
       }
     >
       <div className="flex h-full min-h-0">
-        <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border-soft bg-subtle/40 px-3 py-5">
+        <nav className="flex w-48 shrink-0 flex-col gap-0.5 bg-subtle/40 px-3 py-5">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -80,6 +80,7 @@ export function GuideDialog({ open, onClose }: Props) {
             </button>
           ))}
         </nav>
+        <Divider orientation="vertical" />
         <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
           <Content section={active} onJump={setActive} />
         </div>

@@ -18,7 +18,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Dialog, ScrollArea, Textarea, cn } from '@goodboy/ui';
+import { Dialog, Divider, ScrollArea, Textarea, cn } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type {
@@ -565,11 +565,14 @@ export function DiffViewerDialog({
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- dialog handles keyboard nav */}
       <div className="flex h-full min-h-0 flex-col" onKeyDown={handleKeyDown}>
         {isGitAware ? (
-          <GitStatusHeader
-            status={status}
-            onRefresh={() => setRefreshTick((t) => t + 1)}
-            refreshing={loading}
-          />
+          <>
+            <GitStatusHeader
+              status={status}
+              onRefresh={() => setRefreshTick((t) => t + 1)}
+              refreshing={loading}
+            />
+            <Divider />
+          </>
         ) : null}
         <Toolbar
           title={title}
@@ -635,13 +638,16 @@ export function DiffViewerDialog({
           ) : (
             <>
               {!sidebarCollapsed ? (
-                <FileRail
-                  files={files}
-                  selectedIdx={selectedIdx}
-                  onSelect={handleSelectFile}
-                  onStartFileComment={sessionId ? handleRailFileComment : undefined}
-                  commentCounts={openCommentsByFile}
-                />
+                <>
+                  <FileRail
+                    files={files}
+                    selectedIdx={selectedIdx}
+                    onSelect={handleSelectFile}
+                    onStartFileComment={sessionId ? handleRailFileComment : undefined}
+                    commentCounts={openCommentsByFile}
+                  />
+                  <Divider orientation="vertical" />
+                </>
               ) : null}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {selected ? (
@@ -671,11 +677,14 @@ export function DiffViewerDialog({
         </div>
 
         {sessionId && openComments.length > 0 ? (
-          <NotesFooter
-            openCount={openComments.length}
-            spawning={spawning}
-            onPropose={() => void handleProposeFixes()}
-          />
+          <>
+            <Divider />
+            <NotesFooter
+              openCount={openComments.length}
+              spawning={spawning}
+              onPropose={() => void handleProposeFixes()}
+            />
+          </>
         ) : null}
       </div>
     </Dialog>
@@ -704,7 +713,7 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
     }
   }
   return (
-    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-subtle/30 px-4 py-2">
+    <div className="flex shrink-0 items-start justify-between gap-3 bg-subtle/30 px-4 py-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex min-w-0 items-center gap-1.5 text-xs">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -749,7 +758,7 @@ interface NotesFooterProps {
 
 function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-subtle/30 px-4 py-2.5">
+    <div className="flex shrink-0 items-center justify-between gap-3 bg-subtle/30 px-4 py-2.5">
       <span className="text-xs text-muted-foreground">
         {openCount} open {openCount === 1 ? 'note' : 'notes'} · spawn a reviewer to propose fixes
       </span>
@@ -923,7 +932,7 @@ function FileRail({
   }, [selectedIdx]);
 
   return (
-    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto border-r border-border-soft bg-subtle/20">
+    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto bg-subtle/20">
       <div className="py-1">
         {tree.kind === 'dir' &&
           tree.children.map((child, i) => (

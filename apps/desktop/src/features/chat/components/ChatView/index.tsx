@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -98,13 +99,9 @@ function ParallelColumn({
   const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
 
   return (
-    <div
-      data-run-column={runId}
-      className="flex min-w-0 flex-col border-r border-border last:border-r-0"
-    >
-      <div className="border-b border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
-        p{index + 1}
-      </div>
+    <div data-run-column={runId} className="flex min-w-0 flex-1 flex-col">
+      <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">p{index + 1}</div>
+      <Divider />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div ref={scrollerRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-3 py-3">
           {items.length === 0 ? (
@@ -383,37 +380,36 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   if (isSplitView) {
     return (
       <div className="flex h-full flex-col">
-        <div
-          className="flex-1 overflow-hidden"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${parallelRunIds.length}, minmax(0, 1fr))`,
-          }}
-        >
+        <div className="flex flex-1 overflow-hidden">
           {parallelRunIds.map((runId, i) => (
-            <ParallelColumn
-              key={runId}
-              runId={runId}
-              index={i}
-              events={events}
-              workingDir={worktreePath}
-              onRefreshAuth={() => void refreshProviders()}
-              onOpenDiff={handleOpenDiff}
-            />
+            <Fragment key={runId}>
+              {i > 0 && <Divider orientation="vertical" />}
+              <ParallelColumn
+                runId={runId}
+                index={i}
+                events={events}
+                workingDir={worktreePath}
+                onRefreshAuth={() => void refreshProviders()}
+                onOpenDiff={handleOpenDiff}
+              />
+            </Fragment>
           ))}
         </div>
         {allParallelTerminal ? (
-          <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2">
-            <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
-            <button
-              type="button"
-              data-testid="merge-dialog-trigger"
-              className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
-              onClick={() => setMergeDialogOpen(true)}
-            >
-              Merge
-            </button>
-          </div>
+          <>
+            <Divider />
+            <div className="flex items-center justify-between bg-muted/40 px-4 py-2">
+              <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
+              <button
+                type="button"
+                data-testid="merge-dialog-trigger"
+                className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
+                onClick={() => setMergeDialogOpen(true)}
+              >
+                Merge
+              </button>
+            </div>
+          </>
         ) : null}
         <MergeDialog
           open={mergeDialogOpen}
@@ -422,17 +418,20 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
           onResolve={onMergeResolve}
           onCancel={() => setMergeDialogOpen(false)}
         />
-        {isEnded ? (
-          <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            session ended. no further turns. branch preserved.
-          </div>
-        ) : (
-          <ChatInput
-            key={session.id}
-            session={session}
-            providerDisconnected={isProviderDisconnected}
-          />
-        )}
+        <>
+          <Divider />
+          {isEnded ? (
+            <div className="px-4 py-3 text-xs text-muted-foreground">
+              session ended. no further turns. branch preserved.
+            </div>
+          ) : (
+            <ChatInput
+              key={session.id}
+              session={session}
+              providerDisconnected={isProviderDisconnected}
+            />
+          )}
+        </>
         <DiffViewerDialog
           open={diffJumpFile !== null}
           onClose={() => setDiffJumpFile(null)}
@@ -583,16 +582,21 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
           </button>
         ) : null}
       </div>
-      {isEnded ? (
-        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          session ended. no further turns. branch preserved.
-        </div>
-      ) : selectedAgentId ? (
-        <ChatInput
-          key={session.id}
-          session={session}
-          providerDisconnected={isProviderDisconnected}
-        />
+      {isEnded || selectedAgentId ? (
+        <>
+          <Divider />
+          {isEnded ? (
+            <div className="px-4 py-3 text-xs text-muted-foreground">
+              session ended. no further turns. branch preserved.
+            </div>
+          ) : (
+            <ChatInput
+              key={session.id}
+              session={session}
+              providerDisconnected={isProviderDisconnected}
+            />
+          )}
+        </>
       ) : null}
       <DiffViewerDialog
         open={diffJumpFile !== null}

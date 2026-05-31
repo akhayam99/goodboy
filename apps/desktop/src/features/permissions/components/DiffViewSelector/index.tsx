@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 
 interface Props {
@@ -221,7 +221,7 @@ export function DiffViewSelector({ view, onChange, commits, status, filesCount, 
           className="absolute left-0 top-[calc(100%+4px)] z-50 w-[440px] overflow-hidden rounded-md border border-border bg-subtle shadow-lg"
           onKeyDown={handleKey}
         >
-          <div className="border-b border-border-soft px-2 py-1.5">
+          <div className="px-2 py-1.5">
             <input
               ref={searchRef}
               value={query}
@@ -234,6 +234,7 @@ export function DiffViewSelector({ view, onChange, commits, status, filesCount, 
               aria-label="filter commits"
             />
           </div>
+          <Divider />
           <div className="max-h-[400px] overflow-y-auto py-1">
             {rows.map((row, i) => {
               if (row.kind === 'header') {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Check, Loader2, Pencil } from 'lucide-react';
-import { Button, Textarea, cn } from '@goodboy/ui';
+import { Button, Divider, Textarea, cn } from '@goodboy/ui';
 import { PlannerClient, type PlannerOutput, defaultsForRole } from '@goodboy/core';
 import type {
   AgentEffort,
@@ -304,53 +304,60 @@ function StepCard({
   const roleLabel = ROLE_LABEL[role as AgentRole] ?? role;
 
   return (
-    <li className="flex flex-col gap-2 border-t border-border-soft/50 pt-3 first:border-t-0 first:pt-0">
-      <div className="flex items-center gap-2">
-        <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
-          {index + 1}
-        </span>
-        <AgentAvatar kind={kind} size="xs" />
-        <span className={cn('min-w-0 flex-1 truncate text-xs font-semibold', pal.fg)}>{name}</span>
-        <span
-          className={cn(
-            'shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
-            pal.fg,
-          )}
-        >
-          {roleLabel}
-        </span>
-      </div>
-      {description ? (
-        <p className="line-clamp-1 text-2xs leading-relaxed text-muted-foreground">{description}</p>
-      ) : null}
-      {overrides ? (
-        <div className="grid grid-cols-3 gap-2">
-          <InlineField label="Model">
-            <ModelSelect
-              provider={provider}
-              value={overrides.model}
-              onChange={(model) => onChange({ model })}
-              disabled={false}
-            />
-          </InlineField>
-          <InlineField label="Effort">
-            <EffortSelect
-              model={overrides.model}
-              value={overrides.effort}
-              onChange={(effort) => onChange({ effort })}
-              disabled={false}
-            />
-          </InlineField>
-          <InlineField label="Verbosity">
-            <VerbositySelect
-              value={overrides.verbosity}
-              onChange={(verbosity) => onChange({ verbosity })}
-              disabled={false}
-            />
-          </InlineField>
+    <>
+      {index > 0 && <Divider />}
+      <li className="flex flex-col gap-2 pt-3">
+        <div className="flex items-center gap-2">
+          <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
+            {index + 1}
+          </span>
+          <AgentAvatar kind={kind} size="xs" />
+          <span className={cn('min-w-0 flex-1 truncate text-xs font-semibold', pal.fg)}>
+            {name}
+          </span>
+          <span
+            className={cn(
+              'shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+              pal.fg,
+            )}
+          >
+            {roleLabel}
+          </span>
         </div>
-      ) : null}
-    </li>
+        {description ? (
+          <p className="line-clamp-1 text-2xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+        {overrides ? (
+          <div className="grid grid-cols-3 gap-2">
+            <InlineField label="Model">
+              <ModelSelect
+                provider={provider}
+                value={overrides.model}
+                onChange={(model) => onChange({ model })}
+                disabled={false}
+              />
+            </InlineField>
+            <InlineField label="Effort">
+              <EffortSelect
+                model={overrides.model}
+                value={overrides.effort}
+                onChange={(effort) => onChange({ effort })}
+                disabled={false}
+              />
+            </InlineField>
+            <InlineField label="Verbosity">
+              <VerbositySelect
+                value={overrides.verbosity}
+                onChange={(verbosity) => onChange({ verbosity })}
+                disabled={false}
+              />
+            </InlineField>
+          </div>
+        ) : null}
+      </li>
+    </>
   );
 }
 
@@ -372,15 +379,18 @@ function CompactStep({
   const kind = ROLE_TO_KIND[role as AgentRole] ?? inferAgentKindFromName(name);
   const pal = AGENT_KIND_PALETTE[kind];
   return (
-    <li className="flex items-center gap-2 border-t border-border-soft/50 pt-2.5 first:border-t-0 first:pt-0">
-      <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
-        {index + 1}
-      </span>
-      <AgentAvatar kind={kind} size="xs" />
-      <span className={cn('min-w-0 flex-1 truncate text-2xs font-medium', pal.fg)}>{name}</span>
-      <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
-        {shortModel(model)} · {verbosity}
-      </span>
-    </li>
+    <>
+      {index > 0 && <Divider />}
+      <li className="flex items-center gap-2 pt-2.5">
+        <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
+          {index + 1}
+        </span>
+        <AgentAvatar kind={kind} size="xs" />
+        <span className={cn('min-w-0 flex-1 truncate text-2xs font-medium', pal.fg)}>{name}</span>
+        <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
+          {shortModel(model)} · {verbosity}
+        </span>
+      </li>
+    </>
   );
 }

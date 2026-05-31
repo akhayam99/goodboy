@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GhTokenStatus, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Dialog, Divider, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Check,
@@ -679,29 +679,32 @@ function DangerSection({
         </div>
 
         {confirmDisconnect ? (
-          <div className="flex items-center justify-end gap-2 border-t border-danger/20 pt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setConfirmDisconnect(false)}
-              disabled={disconnecting}
-            >
-              Cancel
-            </Button>
-            <Button variant="danger" size="sm" onClick={onDisconnect} disabled={disconnecting}>
-              {disconnecting ? (
-                <>
-                  <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
-                  Disconnecting…
-                </>
-              ) : (
-                <>
-                  <Check size={12} aria-hidden className="mr-1.5" />
-                  Confirm disconnect
-                </>
-              )}
-            </Button>
-          </div>
+          <>
+            <Divider />
+            <div className="flex items-center justify-end gap-2 pt-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDisconnect(false)}
+                disabled={disconnecting}
+              >
+                Cancel
+              </Button>
+              <Button variant="danger" size="sm" onClick={onDisconnect} disabled={disconnecting}>
+                {disconnecting ? (
+                  <>
+                    <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
+                    Disconnecting…
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} aria-hidden className="mr-1.5" />
+                    Confirm disconnect
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
         ) : null}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Button, Input, Textarea, cn } from '@goodboy/ui';
+import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
 import type { WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
 import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
@@ -142,7 +142,8 @@ export function ScriptsPanel({ workspaceId }: Props) {
                   onClick={() => void onDelete(script.id)}
                 />
               </div>
-              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
+              <Divider />
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
                 {script.body}
               </pre>
             </li>

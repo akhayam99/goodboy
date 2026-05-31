@@ -502,94 +502,99 @@ function GeneralSection(props: GeneralSectionProps) {
           </div>
 
           {branchEditOpen ? (
-            <div className="flex flex-col gap-3 border-t border-border-soft pt-3">
-              <div
-                role="tablist"
-                aria-label="branch source"
-                className="inline-flex w-fit rounded-md border border-border bg-background p-0.5"
-              >
-                {(['existing', 'new'] as const).map((m) => {
-                  const active = branchMode === m;
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setBranchMode(m)}
-                      disabled={busy}
-                      className={cn(
-                        'rounded px-2.5 py-0.5 text-2xs font-medium motion-safe:transition-colors',
-                        active
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {m === 'existing' ? 'pick existing' : 'create new'}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {branchMode === 'existing' ? (
-                <BranchCombobox
-                  branches={branches}
-                  value={branchTarget}
-                  onChange={setBranchTarget}
-                  disabled={busy}
-                  loading={branchesLoading}
-                  excludeNames={branch ? [branch] : undefined}
-                />
-              ) : (
-                <Input
-                  value={branchTarget}
-                  onChange={(e) => setBranchTarget(e.target.value)}
-                  placeholder="feat/something"
-                  disabled={busy}
-                  className="font-mono"
-                />
-              )}
-
-              {targetNeedsConfirm ? (
-                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
-                  <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold text-foreground">Heads up</span>
-                    <ul className="list-disc pl-4 text-muted-foreground">
-                      {targetOwnedByOtherSession ? (
-                        <li>Already attached to another kay.am session.</li>
-                      ) : null}
-                      {targetInUseElsewhere ? <li>Checked out in another git worktree.</li> : null}
-                      {targetDirty ? <li>That worktree has uncommitted changes.</li> : null}
-                    </ul>
-                    <span className="text-2xs text-warning/80">
-                      Click {confirmReuse ? '"Confirm switch"' : '"Switch branch"'} again to
-                      confirm.
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="flex items-center justify-end">
-                <Button
-                  size="sm"
-                  onClick={onChangeBranch}
-                  disabled={busy || branchesLoading || branchTarget.trim().length === 0}
-                  variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
+            <>
+              <Divider />
+              <div className="flex flex-col gap-3 pt-3">
+                <div
+                  role="tablist"
+                  aria-label="branch source"
+                  className="inline-flex w-fit rounded-md border border-border bg-background p-0.5"
                 >
-                  {busy ? (
-                    <>
-                      <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
-                      Switching…
-                    </>
-                  ) : targetNeedsConfirm && confirmReuse ? (
-                    'Confirm switch'
-                  ) : (
-                    'Switch branch'
-                  )}
-                </Button>
+                  {(['existing', 'new'] as const).map((m) => {
+                    const active = branchMode === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setBranchMode(m)}
+                        disabled={busy}
+                        className={cn(
+                          'rounded px-2.5 py-0.5 text-2xs font-medium motion-safe:transition-colors',
+                          active
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        {m === 'existing' ? 'pick existing' : 'create new'}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {branchMode === 'existing' ? (
+                  <BranchCombobox
+                    branches={branches}
+                    value={branchTarget}
+                    onChange={setBranchTarget}
+                    disabled={busy}
+                    loading={branchesLoading}
+                    excludeNames={branch ? [branch] : undefined}
+                  />
+                ) : (
+                  <Input
+                    value={branchTarget}
+                    onChange={(e) => setBranchTarget(e.target.value)}
+                    placeholder="feat/something"
+                    disabled={busy}
+                    className="font-mono"
+                  />
+                )}
+
+                {targetNeedsConfirm ? (
+                  <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
+                    <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-foreground">Heads up</span>
+                      <ul className="list-disc pl-4 text-muted-foreground">
+                        {targetOwnedByOtherSession ? (
+                          <li>Already attached to another kay.am session.</li>
+                        ) : null}
+                        {targetInUseElsewhere ? (
+                          <li>Checked out in another git worktree.</li>
+                        ) : null}
+                        {targetDirty ? <li>That worktree has uncommitted changes.</li> : null}
+                      </ul>
+                      <span className="text-2xs text-warning/80">
+                        Click {confirmReuse ? '"Confirm switch"' : '"Switch branch"'} again to
+                        confirm.
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center justify-end">
+                  <Button
+                    size="sm"
+                    onClick={onChangeBranch}
+                    disabled={busy || branchesLoading || branchTarget.trim().length === 0}
+                    variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
+                  >
+                    {busy ? (
+                      <>
+                        <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
+                        Switching…
+                      </>
+                    ) : targetNeedsConfirm && confirmReuse ? (
+                      'Confirm switch'
+                    ) : (
+                      'Switch branch'
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </>
           ) : null}
         </div>
       </Field>
