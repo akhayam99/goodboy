@@ -106,8 +106,7 @@ fn read_token(workspace_id: Option<&str>) -> Option<String> {
     secrets::read(TOKEN_KEY).ok().flatten()
 }
 
-#[tauri::command]
-pub fn gh_status(workspace_id: Option<String>) -> GhStatus {
+fn status_blocking(workspace_id: Option<String>) -> GhStatus {
     let ws = workspace_id.as_deref();
     if !gh_available() {
         return GhStatus {
@@ -153,20 +152,41 @@ pub fn gh_status(workspace_id: Option<String>) -> GhStatus {
 }
 
 #[tauri::command]
-pub fn gh_set_token(token: String, workspace_id: Option<String>) -> Result<GhStatus, GithubError> {
-    if token.trim().is_empty() {
-        return Err(GithubError::Validation("token is empty".to_string()));
-    }
-    let res = run_gh(&["api", "user", "-q", ".login"], None, Some(&token))?;
-    if res.exit_code != 0 {
-        return Err(GithubError::Validation(if res.stderr.is_empty() {
-            format!("gh exited with {}", res.exit_code)
-        } else {
-            res.stderr.trim().to_string()
-        }));
-    }
-    secrets::set(&token_key(workspace_id.as_deref()), &token)?;
-    Ok(gh_status(workspace_id))
+pub async fn gh_status(workspace_id: Option<String>) -> GhStatus {
+    tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id))
+        .await
+        .unwrap_or_else(|_| GhStatus {
+            available: false,
+            mode: "absent".to_string(),
+            version: None,
+            user: None,
+            scopes: Vec::new(),
+            scoped: false,
+        })
+}
+
+#[tauri::command]
+pub async fn gh_set_token(
+    token: String,
+    workspace_id: Option<String>,
+) -> Result<GhStatus, GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if token.trim().is_empty() {
+            return Err(GithubError::Validation("token is empty".to_string()));
+        }
+        let res = run_gh(&["api", "user", "-q", ".login"], None, Some(&token))?;
+        if res.exit_code != 0 {
+            return Err(GithubError::Validation(if res.stderr.is_empty() {
+                format!("gh exited with {}", res.exit_code)
+            } else {
+                res.stderr.trim().to_string()
+            }));
+        }
+        secrets::set(&token_key(workspace_id.as_deref()), &token)?;
+        Ok(status_blocking(workspace_id))
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
@@ -176,32 +196,40 @@ pub fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
 }
 
 #[tauri::command]
-pub fn gh_run(
+pub async fn gh_run(
     args: Vec<String>,
     cwd: Option<String>,
     workspace_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
-    let token = read_token(workspace_id.as_deref());
-    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
+    tauri::async_runtime::spawn_blocking(move || {
+        let token = read_token(workspace_id.as_deref());
+        let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+        run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub fn gh_pr_diff(
+pub async fn gh_pr_diff(
     repo: String,
     pr: u32,
     cwd: Option<String>,
     workspace_id: Option<String>,
 ) -> Result<String, GithubError> {
-    let token = read_token(workspace_id.as_deref());
-    let pr_str = pr.to_string();
-    let res = run_gh(
-        &["pr", "diff", &pr_str, "--repo", &repo],
-        cwd.as_deref(),
-        token.as_deref(),
-    )?;
-    if res.exit_code != 0 {
-        return Err(GithubError::Validation(res.stderr.trim().to_string()));
-    }
-    Ok(res.stdout)
+    tauri::async_runtime::spawn_blocking(move || {
+        let token = read_token(workspace_id.as_deref());
+        let pr_str = pr.to_string();
+        let res = run_gh(
+            &["pr", "diff", &pr_str, "--repo", &repo],
+            cwd.as_deref(),
+            token.as_deref(),
+        )?;
+        if res.exit_code != 0 {
+            return Err(GithubError::Validation(res.stderr.trim().to_string()));
+        }
+        Ok(res.stdout)
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
