@@ -38,7 +38,7 @@ export interface ResolvedThread {
 export async function resolveReviewThread(
   runner: GhRunner,
   threadId: string,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ResolvedThread> {
   const raw = await runJson<RawResolveReviewThreadResponse>(
     runner,
@@ -91,7 +91,7 @@ export async function addReviewThreadReply(
   runner: GhRunner,
   threadId: string,
   body: string,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<PostedThreadReply> {
   const raw = await runJson<RawAddThreadReplyResponse>(
     runner,

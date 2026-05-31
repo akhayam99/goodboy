@@ -7,6 +7,7 @@ export interface GhResult {
 export interface GhRunOptions {
   cwd?: string;
   token?: string;
+  workspaceId?: string;
   timeoutMs?: number;
 }
 

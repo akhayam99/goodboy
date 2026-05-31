@@ -135,7 +135,7 @@ export async function fetchPrDiff(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; token?: string } = {},
+  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
 ): Promise<PullRequestDiff> {
   const res = await runner.run(['pr', 'diff', String(prNumber), '--repo', repo], opts);
   if (res.exitCode !== 0) {
