@@ -1563,8 +1563,8 @@ function WorkflowStepRow({
         <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
           <p className="mb-2 font-medium text-foreground">
             {blockReason === 'summarizer'
-              ? 'the summarizer is running. wait for it to finish before starting this step.'
-              : 'open questions need resolution before starting this step.'}
+              ? 'the summarizer is still running.'
+              : 'open questions to resolve first.'}
           </p>
           <div className="flex gap-2">
             <button
