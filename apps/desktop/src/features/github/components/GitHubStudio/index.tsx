@@ -5,6 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import { InboxList } from './InboxList';
 import { PrDetailPanel } from './PrDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
+import { useStudioOverlay } from '../../../../shared/hooks/useStudioOverlay';
 
 interface Props {
   readonly workspaceName: string;
@@ -15,14 +16,7 @@ interface Props {
 export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props) {
   const groups = useGithubInbox();
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const { closing, requestClose } = useStudioOverlay(onClose);
 
   useEffect(() => {
     if (focused !== null) return;
@@ -31,7 +25,12 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
   }, [focused, groups]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex flex-col bg-background',
+        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+      )}
+    >
       <header className="flex shrink-0 items-center gap-3 px-6 py-3">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
           <GitPullRequest size={16} className="text-primary" aria-hidden />
@@ -48,11 +47,11 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
         <div className="flex-1" />
         <button
           type="button"
-          onClick={onClose}
+          onClick={requestClose}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5',
-            'text-xs font-medium text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground',
+            'inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5',
+            'text-xs font-semibold text-danger transition-colors',
+            'hover:border-danger/60 hover:bg-danger/15',
           )}
           aria-label="close github studio"
         >
@@ -67,7 +66,7 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
         </div>
         <Divider orientation="vertical" />
         <div className="min-h-0 flex-1">
-          <PrDetailPanel sessionId={focused} onClose={onClose} />
+          <PrDetailPanel sessionId={focused} onClose={requestClose} />
         </div>
       </div>
     </div>

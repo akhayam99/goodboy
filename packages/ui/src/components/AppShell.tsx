@@ -206,7 +206,7 @@ export function AppShell({
       >
         {hasLeftSidebar ? (
           <aside
-            className="m-3 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[6px] bg-subtle shadow-md"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
             style={{ gridArea: 'left' }}
           >
             {leftSidebar}
@@ -223,7 +223,7 @@ export function AppShell({
             className="group relative cursor-col-resize select-none"
             style={{ gridArea: 'lhandle' }}
           >
-            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
           </div>
         ) : null}
         <main
@@ -246,17 +246,12 @@ export function AppShell({
             )}
             style={{ gridArea: 'rhandle' }}
           >
-            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-border group-focus-visible:bg-primary" />
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
           </div>
         ) : null}
         {hasRightSidebar ? (
           <aside
-            className={cn(
-              'flex min-h-0 min-w-0 flex-col overflow-hidden transition-[margin,background-color,border-radius,box-shadow] duration-200 ease-out',
-              rightSidebarCollapsed
-                ? 'mr-3 mt-3 bg-background'
-                : 'm-3 rounded-[6px] bg-subtle shadow-md',
-            )}
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
             style={{ gridArea: 'right' }}
           >
             {rightSidebar}

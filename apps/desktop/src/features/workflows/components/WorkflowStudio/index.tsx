@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
 import { cn, Divider } from '@goodboy/ui';
 import { Layers, X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowsPanel } from '../WorkflowsPanel';
+import { useStudioOverlay } from '../../../../shared/hooks/useStudioOverlay';
 
 interface Props {
   readonly workspaceId: WorkspaceId;
@@ -10,20 +10,16 @@ interface Props {
   readonly onClose: () => void;
 }
 
-// Full-screen takeover for authoring multi-agent workflows. Replaces chat +
-// context entirely so the user focuses only on the blueprint. Opened from the
-// sidebar footer; Esc closes.
 export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const { closing, requestClose } = useStudioOverlay(onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex flex-col bg-background',
+        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+      )}
+    >
       <header className="flex shrink-0 items-center gap-3 px-6 py-3">
         <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
           <Layers size={16} className="text-primary" aria-hidden />
@@ -40,11 +36,11 @@ export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
         <div className="flex-1" />
         <button
           type="button"
-          onClick={onClose}
+          onClick={requestClose}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5',
-            'text-xs font-medium text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground',
+            'inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5',
+            'text-xs font-semibold text-danger transition-colors',
+            'hover:border-danger/60 hover:bg-danger/15',
           )}
           aria-label="close workflow studio"
         >
