@@ -22,21 +22,21 @@ Two voices in the codebase:
 
 ### Words to avoid
 
-- **"AI"** — say `agent`, `model`, `Claude`, `Codex`, `Cursor`, `Gemini`, or
+- **"AI"**. Say `agent`, `model`, `Claude`, `Codex`, `Cursor`, `Gemini`, or
   the specific behavior. "AI" is a marketing word; we don't need it.
 - **"powered by"**, **"intelligent"**, **"smart"**, **"seamless"**,
-  **"revolutionary"**, **"blazing fast"**, **"next-gen"** — fluff. Cut.
-- **"simply"**, **"just"**, **"obviously"**, **"basically"** — minimizers. If
+  **"revolutionary"**, **"blazing fast"**, **"next-gen"**. Fluff. Cut.
+- **"simply"**, **"just"**, **"obviously"**, **"basically"**. Minimizers. If
   the thing is simple, the reader can decide that. If it isn't, you're lying.
-- **"unlock"**, **"empower"**, **"leverage"**, **"streamline"** — sales-deck
+- **"unlock"**, **"empower"**, **"leverage"**, **"streamline"**. Sales-deck
   verbs. Use the actual verb.
-- **"enterprise-grade"**, **"world-class"**, **"best-in-class"** — empty
+- **"enterprise-grade"**, **"world-class"**, **"best-in-class"**. Empty
   superlatives. Be specific or stay quiet.
 
 ### Punctuation
 
-- **No em-dashes** (`—`). Use a period, comma, colon, or parens instead. Em-
-  dashes read as ChatGPT.
+- **No em-dashes** (`—`). Use a period, comma, colon, or parens instead.
+  Em-dashes read as ChatGPT.
 - **One sentence per idea.** Don't chain three clauses with semicolons.
 - **Sentence case** for headings. Not Title Case. Not ALL CAPS.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
