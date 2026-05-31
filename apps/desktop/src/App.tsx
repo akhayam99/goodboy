@@ -117,15 +117,20 @@ export function App() {
 
   useEffect(() => {
     void applyStoredZoom();
-    const onZoom = (e: KeyboardEvent) => {
+    const onShortcut = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        window.location.reload();
+        return;
+      }
       const action = ZOOM_ACTIONS[e.key];
       if (!action) return;
       e.preventDefault();
       void action();
     };
-    window.addEventListener('keydown', onZoom);
-    return () => window.removeEventListener('keydown', onZoom);
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
   }, []);
 
   useEffect(() => {
