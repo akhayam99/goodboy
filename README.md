@@ -11,7 +11,7 @@ you want to run next. Same goal, same memory, different model. Conversation,
 plans, decisions, PR state, all of it stays in a local SQLite on your
 machine. Your keys, your data, your bandwidth.
 
-<img width="4036" height="2270" alt="Goodboy screenshot" src="https://github.com/user-attachments/assets/f669511b-c09d-472b-9f30-3dcc88b7ceae" />
+<img width="3972" height="2234" alt="CleanShot 2026-05-31 at 05 31 42@2x" src="https://github.com/user-attachments/assets/1d6a4259-e205-4d9a-9fe8-eaf4c486d98d" />
 
 ## The honest pitch
 
