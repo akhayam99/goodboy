@@ -6,12 +6,14 @@ import {
   extractPlanFromMarker,
   Summarizer,
   type ExtractedHandoff,
+  type SlotKey,
 } from '@goodboy/core';
 import {
   insertContextSlotHistory,
   insertNudgeEvent,
   insertProviderRun,
   insertTelemetry,
+  listContextSlotHistory,
   listContextSlotsForSession,
   listTelemetryForSession,
   renameSession as renameSessionInDb,
@@ -178,28 +180,31 @@ async function runSummarizer(
       : null;
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
 
-    // Parallel slot history + upsert writes, no serial await per slot.
-    await Promise.all(
-      result.delta.upserts.map(async (upsert) => {
-        const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
-        if (existing && existing.value !== upsert.value) {
-          await insertContextSlotHistory(
-            tauriDatabase,
-            sessionId,
-            crypto.randomUUID(),
-            upsert.key,
-            existing.value,
-            'summarizer',
-          );
-        }
-        const next: ContextSlot = {
-          key: upsert.key,
-          value: upsert.value,
-          enabled: existing?.enabled ?? true,
-        };
-        await upsertContextSlot(tauriDatabase, sessionId, next);
-      }),
-    );
+    const changedKeys = (
+      await Promise.all(
+        result.delta.upserts.map(async (upsert) => {
+          const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
+          const prevValue = existing && existing.value !== upsert.value ? existing.value : null;
+          if (prevValue !== null) {
+            await insertContextSlotHistory(
+              tauriDatabase,
+              sessionId,
+              crypto.randomUUID(),
+              upsert.key,
+              prevValue,
+              'summarizer',
+            );
+          }
+          const next: ContextSlot = {
+            key: upsert.key,
+            value: upsert.value,
+            enabled: existing?.enabled ?? true,
+          };
+          await upsertContextSlot(tauriDatabase, sessionId, next);
+          return prevValue !== null ? upsert.key : null;
+        }),
+      )
+    ).filter((k): k is SlotKey => k !== null);
 
     // If the summarizer carried a GitHub PR URL into any slot value and we
     // still have no PR cached for this session, pull the PR state now so the
@@ -227,6 +232,7 @@ async function runSummarizer(
       telemetry,
       providerSummaries,
       budgetRules,
+      changedHistory,
     ] = await Promise.all([
       listContextSlotsForSession(tauriDatabase, sessionId),
       insertProviderRun(tauriDatabase, {
@@ -263,11 +269,24 @@ async function runSummarizer(
       listTelemetryForSession(tauriDatabase, sessionId),
       summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
       invokeBudgetRuleList(),
+      Promise.all(
+        changedKeys.map(
+          async (key) =>
+            [key, await listContextSlotHistory(tauriDatabase, sessionId, key)] as const,
+        ),
+      ),
     ]);
 
     // Single batched set, one re-render for the entire summarizer completion.
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
+      slotHistory: {
+        ...state.slotHistory,
+        [sessionId]: {
+          ...(state.slotHistory[sessionId] ?? {}),
+          ...Object.fromEntries(changedHistory),
+        },
+      },
       sessionSummary,
       workspaceSummary,
       sessionTelemetry: { ...state.sessionTelemetry, [sessionId]: telemetry },
