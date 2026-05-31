@@ -5,13 +5,15 @@ export function ContextDeepDive() {
   return (
     <Section
       id="context"
-      eyebrow="Shared context"
+      eyebrow="02 · Shared context"
       reverse
-      title={<>A scratchpad that survives the next agent.</>}
+      title={<>Your next agent shows up already briefed.</>}
       body={
         <p>
-          Five slots (goal, decisions, files touched, open questions, last output) live outside the
-          transcript and persist across agents. No re-explaining, no copy-paste, no drift.
+          The goal, the calls you&apos;ve already made, the files in play, the questions still open:
+          it all lives next to the chat, not buried inside it. So when the next agent takes over, it
+          already knows the story, whatever provider or model it runs on. You stop explaining
+          yourself twice.
         </p>
       }
     >

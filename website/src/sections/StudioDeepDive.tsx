@@ -5,20 +5,18 @@ export function StudioDeepDive() {
   return (
     <Section
       id="studio"
-      eyebrow="Workflow Studio"
-      reverse
-      title={<>Compose your own pipelines from reusable steps.</>}
+      eyebrow="03 · Workflow Studio"
+      title={<>Build the flow once. Reuse it forever.</>}
       body={
         <>
           <p>
-            Workflow Studio is a full-screen composer. Drag steps from a shared library (scout,
-            plan, implement, review, test, debug) into a preset, in any order. Every step picks its
-            own provider, model and effort, so a cheap model scouts while Opus plans and Codex
-            implements.
+            Refactor incoming? Line up a sequence: a cheap model to scout the area, a smart one to
+            plan it, a mid one to implement, another to review, a cheap one to open the PR. Each
+            step picks its own provider and model, so you&apos;re never paying Opus prices to run a
+            grep.
           </p>
           <p className="mt-4">
-            Save it as a preset to reuse across every session, or run it once as a one-off. Broke
-            something? Reset to defaults restores the built-ins; your custom presets stay put.
+            Don&apos;t like that flow? Drag the steps around, swap the models, save it as your own.
           </p>
         </>
       }

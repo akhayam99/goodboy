@@ -3,12 +3,9 @@ import { LinkButton } from '../components/ui';
 
 const links = [
   { href: '#sessions', label: 'Sessions' },
-  { href: '#agents', label: 'Agents' },
-  { href: '#plans', label: 'Plans' },
-  { href: '#studio', label: 'Studio' },
   { href: '#context', label: 'Context' },
-  { href: '#linear', label: 'Linear' },
-  { href: '#github', label: 'GitHub' },
+  { href: '#studio', label: 'Workflow Studio' },
+  { href: '#github', label: 'GitHub Studio' },
   { href: '#compare', label: 'Compare' },
 ];
 

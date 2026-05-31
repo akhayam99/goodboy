@@ -70,7 +70,9 @@ export function SectionTitle({ children, className }: { children: ReactNode; cla
   return (
     <h2
       className={cn(
-        'mt-4 text-3xl sm:text-4xl tracking-[-0.025em] leading-[1.05] font-semibold text-foreground',
+        // h2 scale benchmarked against mantine.dev: larger than body for a
+        // clear step, slightly looser line-height so two-line titles breathe.
+        'mt-4 text-pretty text-[30px] sm:text-[40px] tracking-[-0.02em] leading-[1.12] font-semibold text-foreground',
         className,
       )}
     >

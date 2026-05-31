@@ -34,7 +34,7 @@ export function Section({
           <div className="reveal min-w-0 max-w-lg">
             <Eyebrow>{eyebrow}</Eyebrow>
             <SectionTitle>{title}</SectionTitle>
-            <div className="mt-5 max-w-prose text-[16px] leading-[1.6] text-muted-foreground">
+            <div className="mt-5 max-w-prose text-pretty text-[16px] leading-[1.65] text-muted-foreground sm:text-[17px]">
               {body}
             </div>
           </div>
