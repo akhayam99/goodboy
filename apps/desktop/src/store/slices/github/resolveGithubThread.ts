@@ -24,9 +24,13 @@ export function resolveGithubThread(_set: SetFn, get: GetFn) {
       if (replyBody) {
         await addReviewThreadReply(tauriGhRunner, threadId, replyBody, {
           cwd: workspace?.rootPath,
+          workspaceId: session.workspaceId,
         });
       }
-      await resolveReviewThread(tauriGhRunner, threadId, { cwd: workspace?.rootPath });
+      await resolveReviewThread(tauriGhRunner, threadId, {
+        cwd: workspace?.rootPath,
+        workspaceId: session.workspaceId,
+      });
       await get().refreshSessionPrDetail(sessionId, { force: true });
       return true;
     } catch (err) {

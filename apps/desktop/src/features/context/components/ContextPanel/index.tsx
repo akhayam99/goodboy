@@ -602,26 +602,12 @@ function ChangesStrip({
 
 function GithubStrip({ sessionId }: { sessionId: SessionId }) {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const pr = github?.pr ?? null;
+  const loading = github?.loading ?? false;
+  const error = github?.error ?? null;
   const openStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-github-studio', { detail: { sessionId } }));
-
-  if (!pr) {
-    return (
-      <button
-        type="button"
-        onClick={openStudio}
-        title="open in github studio"
-        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground/70 ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground"
-      >
-        <span className="inline-flex items-center gap-1.5">
-          <GitPullRequest size={12} aria-hidden />
-          <span>No PR yet</span>
-        </span>
-        <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-60" />
-      </button>
-    );
-  }
 
   const detail = github?.detail ?? null;
   const unresolvedComments = (detail?.comments ?? []).filter(
@@ -630,24 +616,55 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
   const ciState = computeCiState(detail?.checks ?? []);
 
   return (
-    <button
-      type="button"
-      onClick={openStudio}
-      title="open in github studio"
-      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 ring-border-soft transition-colors hover:bg-foreground/5"
-    >
-      <span className="inline-flex min-w-0 items-center gap-2">
-        <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
-        {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
-        {unresolvedComments > 0 ? (
-          <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
-            <MessageSquare size={11} aria-hidden />
-            <span className="tabular-nums">{unresolvedComments}</span>
-          </span>
-        ) : null}
-      </span>
-      <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
-    </button>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={openStudio}
+          title="open in github studio"
+          className={cn(
+            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-foreground/5',
+            pr
+              ? 'ring-border-soft'
+              : 'text-muted-foreground/70 ring-border-soft/40 hover:text-foreground',
+          )}
+        >
+          {pr ? (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
+              {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
+              {unresolvedComments > 0 ? (
+                <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
+                  <MessageSquare size={11} aria-hidden />
+                  <span className="tabular-nums">{unresolvedComments}</span>
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <GitPullRequest size={12} aria-hidden />
+              <span>No PR yet</span>
+            </span>
+          )}
+          <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+        </button>
+        <button
+          type="button"
+          onClick={() => void refreshSessionPr(sessionId, { force: true })}
+          disabled={loading}
+          title={error ? `refresh failed: ${error}` : 'refresh PR status'}
+          aria-label="refresh PR status"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw size={12} aria-hidden className={loading ? 'animate-spin' : undefined} />
+        </button>
+      </div>
+      {error ? (
+        <span className="px-1 text-2xs text-danger" title={error}>
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

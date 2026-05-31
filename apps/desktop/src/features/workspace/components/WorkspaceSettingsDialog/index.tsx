@@ -1,12 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type { GhTokenStatus, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Check,
   FolderCode,
   GitBranch,
+  GitFork,
   Link2,
   Loader2,
   Sparkles,
@@ -19,6 +20,8 @@ import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
+import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog';
+import { ghStatus } from '../../../../features/github/github';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -540,6 +543,58 @@ function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
         workspaceId={workspaceId}
         open={linearOpen}
         onClose={() => setLinearOpen(false)}
+      />
+
+      <GithubCard workspaceId={workspaceId} />
+    </div>
+  );
+}
+
+function GithubCard({ workspaceId }: { workspaceId: WorkspaceId }) {
+  const [status, setStatus] = useState<GhTokenStatus | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      setStatus(await ghStatus(workspaceId));
+    } catch {
+      setStatus(null);
+    }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const scoped = status?.scoped ?? false;
+  const subtitle = scoped
+    ? `Connected as ${status?.user ?? '(unknown)'} · this workspace`
+    : status?.user
+      ? `Using system gh (${status.user}). Connect a token to override.`
+      : 'Resolve and act on pull requests for this workspace.';
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border-soft bg-subtle/30 p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
+          <GitFork size={16} aria-hidden />
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <span className="text-sm font-semibold text-foreground">GitHub</span>
+          <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
+        </div>
+      </div>
+      <Button variant={scoped ? 'ghost' : 'primary'} onClick={() => setOpen(true)}>
+        {scoped ? 'Manage' : 'Connect'}
+      </Button>
+
+      <ConnectGithubDialog
+        workspaceId={workspaceId}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          void refresh();
+        }}
       />
     </div>
   );

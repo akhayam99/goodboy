@@ -11,6 +11,7 @@ export function markPrReady(_set: SetFn, get: GetFn) {
     if (!workspace) return;
     const res = await tauriGhRunner.run(['pr', 'ready', String(num)], {
       cwd: workspace.rootPath,
+      workspaceId: session.workspaceId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr ready exited with ${res.exitCode}`;

@@ -32,7 +32,10 @@ export function createPrForSession(_set: SetFn, get: GetFn) {
     if (opts?.base?.trim()) args.push('--base', opts.base.trim());
     if ((opts?.draft ?? true) === true) args.push('--draft');
 
-    const res = await tauriGhRunner.run(args, { cwd: workspace.rootPath });
+    const res = await tauriGhRunner.run(args, {
+      cwd: workspace.rootPath,
+      workspaceId: session.workspaceId,
+    });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
       void get().emitNotification('error', 'error', 'PR creation failed', errMsg, {

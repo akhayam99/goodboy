@@ -19,7 +19,10 @@ export function editPr(_set: SetFn, get: GetFn) {
     if (opts.body !== undefined) args.push('--body', opts.body);
     if (args.length === 3) return;
 
-    const res = await tauriGhRunner.run(args, { cwd: workspace.rootPath });
+    const res = await tauriGhRunner.run(args, {
+      cwd: workspace.rootPath,
+      workspaceId: session.workspaceId,
+    });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`;
       void get().emitNotification('error', 'error', 'Edit failed', errMsg, {

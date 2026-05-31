@@ -33,6 +33,7 @@ pub struct GhStatus {
     pub version: Option<String>,
     pub user: Option<String>,
     pub scopes: Vec<String>,
+    pub scoped: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -89,12 +90,25 @@ fn parse_version(stdout: &str) -> Option<String> {
         .and_then(|rest| rest.split_whitespace().next().map(|s| s.to_string()))
 }
 
-fn read_token() -> Option<String> {
+fn token_key(workspace_id: Option<&str>) -> String {
+    match workspace_id {
+        Some(id) if !id.is_empty() => format!("{TOKEN_KEY}.{id}"),
+        _ => TOKEN_KEY.to_string(),
+    }
+}
+
+fn read_token(workspace_id: Option<&str>) -> Option<String> {
+    if let Some(id) = workspace_id.filter(|s| !s.is_empty()) {
+        if let Ok(Some(tok)) = secrets::read(&token_key(Some(id))) {
+            return Some(tok);
+        }
+    }
     secrets::read(TOKEN_KEY).ok().flatten()
 }
 
 #[tauri::command]
-pub fn gh_status() -> GhStatus {
+pub fn gh_status(workspace_id: Option<String>) -> GhStatus {
+    let ws = workspace_id.as_deref();
     if !gh_available() {
         return GhStatus {
             available: false,
@@ -102,14 +116,19 @@ pub fn gh_status() -> GhStatus {
             version: None,
             user: None,
             scopes: Vec::new(),
+            scoped: false,
         };
     }
     let version = run_gh(&["--version"], None, None)
         .ok()
         .and_then(|r| parse_version(&r.stdout));
 
-    let pat = read_token();
+    let pat = read_token(ws);
     let token_ref = pat.as_deref();
+    let scoped = ws
+        .filter(|s| !s.is_empty())
+        .map(|id| matches!(secrets::read(&token_key(Some(id))), Ok(Some(_))))
+        .unwrap_or(false);
 
     let user = run_gh(&["api", "user", "-q", ".login"], None, token_ref)
         .ok()
@@ -129,11 +148,12 @@ pub fn gh_status() -> GhStatus {
         version,
         user,
         scopes: Vec::new(),
+        scoped,
     }
 }
 
 #[tauri::command]
-pub fn gh_set_token(token: String) -> Result<GhStatus, GithubError> {
+pub fn gh_set_token(token: String, workspace_id: Option<String>) -> Result<GhStatus, GithubError> {
     if token.trim().is_empty() {
         return Err(GithubError::Validation("token is empty".to_string()));
     }
@@ -145,26 +165,35 @@ pub fn gh_set_token(token: String) -> Result<GhStatus, GithubError> {
             res.stderr.trim().to_string()
         }));
     }
-    secrets::set(TOKEN_KEY, &token)?;
-    Ok(gh_status())
+    secrets::set(&token_key(workspace_id.as_deref()), &token)?;
+    Ok(gh_status(workspace_id))
 }
 
 #[tauri::command]
-pub fn gh_clear_token() -> Result<(), GithubError> {
-    secrets::clear(TOKEN_KEY)?;
+pub fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
+    secrets::clear(&token_key(workspace_id.as_deref()))?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn gh_run(args: Vec<String>, cwd: Option<String>) -> Result<GhRunResult, GithubError> {
-    let token = read_token();
+pub fn gh_run(
+    args: Vec<String>,
+    cwd: Option<String>,
+    workspace_id: Option<String>,
+) -> Result<GhRunResult, GithubError> {
+    let token = read_token(workspace_id.as_deref());
     let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
 }
 
 #[tauri::command]
-pub fn gh_pr_diff(repo: String, pr: u32, cwd: Option<String>) -> Result<String, GithubError> {
-    let token = read_token();
+pub fn gh_pr_diff(
+    repo: String,
+    pr: u32,
+    cwd: Option<String>,
+    workspace_id: Option<String>,
+) -> Result<String, GithubError> {
+    let token = read_token(workspace_id.as_deref());
     let pr_str = pr.to_string();
     let res = run_gh(
         &["pr", "diff", &pr_str, "--repo", &repo],
