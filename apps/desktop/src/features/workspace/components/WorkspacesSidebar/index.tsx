@@ -762,13 +762,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     return map;
   }, [attachedWorkflows, agentsByWorkflowId]);
-  // Per-workflow block state: each workflow is gated by its own open
-  // questions (plus session-wide summarizer / orphan questions). Set true
-  // when the workflow can't auto-advance until the user resolves something.
-  const blockedByWorkflowId = useMemo(() => {
-    const map = new Map<string, boolean>();
+  const blockReasonByWorkflowId = useMemo(() => {
+    const map = new Map<string, WorkflowBlockReason | null>();
     for (const wf of attachedWorkflows) {
-      map.set(wf.id, workflowHasOpenQuestions(openQuestions, wf.id) || summarizerBusy);
+      const reason = workflowHasOpenQuestions(openQuestions, wf.id)
+        ? 'questions'
+        : summarizerBusy
+          ? 'summarizer'
+          : null;
+      map.set(wf.id, reason);
     }
     return map;
   }, [attachedWorkflows, openQuestions, summarizerBusy]);
@@ -960,7 +962,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const renderWorkflowBlock = (workflow: Workflow, idx: number) => {
     const wfAgents = agentsByWorkflowId.get(workflow.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByWorkflowId.get(workflow.id) ?? null;
-    const wfBlocked = blockedByWorkflowId.get(workflow.id) ?? false;
+    const wfBlockReason = blockReasonByWorkflowId.get(workflow.id) ?? null;
     const canMoveUp = idx > 0;
     const canMoveDown = idx < attachedWorkflows.length - 1;
     return (
@@ -1023,7 +1025,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                     index={index}
                     resolvedModel={resolvedModel}
                     isActionable={isActionable}
-                    isBlocked={isActionable && wfBlocked}
+                    blockReason={isActionable ? wfBlockReason : null}
                     isSelected={run.id === selectedAgentId}
                     isEditing={editingId === run.id}
                     telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
@@ -1323,13 +1325,15 @@ function ClusterChildRow({
   );
 }
 
+type WorkflowBlockReason = 'questions' | 'summarizer';
+
 interface WorkflowStepRowProps {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
-  readonly isBlocked: boolean;
+  readonly blockReason: WorkflowBlockReason | null;
   readonly isSelected: boolean;
   readonly isEditing: boolean;
   readonly telemetry: TelemetryRecord | null;
@@ -1349,7 +1353,7 @@ function WorkflowStepRow({
   index,
   resolvedModel,
   isActionable,
-  isBlocked,
+  blockReason,
   isSelected,
   isEditing,
   telemetry,
@@ -1362,6 +1366,7 @@ function WorkflowStepRow({
   onRenameCommit,
   onRenameCancel,
 }: WorkflowStepRowProps) {
+  const isBlocked = blockReason !== null;
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
@@ -1459,7 +1464,9 @@ function WorkflowStepRow({
 
   const stableTitle =
     isActionable && isBlocked
-      ? 'next workflow step. gated by open questions / summarizer (click to force)'
+      ? blockReason === 'summarizer'
+        ? 'next workflow step. waiting for the summarizer to finish (click to force)'
+        : 'next workflow step. gated by open questions (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
         : `agent ${run.ordinal + 1}: ${run.status}`;
@@ -1555,7 +1562,9 @@ function WorkflowStepRow({
       {pendingConfirm ? (
         <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
           <p className="mb-2 font-medium text-foreground">
-            open questions need resolution before starting this step.
+            {blockReason === 'summarizer'
+              ? 'the summarizer is running. wait for it to finish before starting this step.'
+              : 'open questions need resolution before starting this step.'}
           </p>
           <div className="flex gap-2">
             <button
@@ -1566,7 +1575,7 @@ function WorkflowStepRow({
               }}
               className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
             >
-              resolve first
+              {blockReason === 'summarizer' ? 'wait' : 'resolve first'}
             </button>
             <button
               type="button"
