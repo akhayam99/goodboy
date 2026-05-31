@@ -103,6 +103,32 @@
     }
   }
 
+  --animate-studio-in: studio-in 280ms cubic-bezier(0.2, 0, 0, 1);
+
+  @keyframes studio-in {
+    from {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  --animate-studio-out: studio-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+
+  @keyframes studio-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+  }
+
   /* Dark shadows, subtle drop + faint inner highlight to lift cards on dark bg. */
   --shadow-sm:
     0 1px 2px 0 oklch(0 0 0 / 0.28),
