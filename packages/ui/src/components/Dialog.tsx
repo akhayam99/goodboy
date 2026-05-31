@@ -4,7 +4,7 @@ import { Divider } from './Divider';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
-export interface DialogProps {
+export interface Props {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
@@ -89,7 +89,7 @@ export function Dialog({
   panel,
   panelWidthClass = 'w-48',
   panelClassName,
-}: DialogProps) {
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
   const titleId = title ? `${uid}-title` : undefined;

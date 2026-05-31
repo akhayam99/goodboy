@@ -20,6 +20,7 @@ const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   delete: 'deleted',
 };
 
+// TODO (@ak): split file
 interface TranscriptCardProps {
   readonly item: TranscriptItem;
   readonly sessionId?: SessionId | null;
@@ -124,6 +125,7 @@ export const TranscriptCard = memo(
     prev.onOpenDiff === next.onOpenDiff,
 );
 
+// TODO (@ak): split file
 interface FileEditBlockProps {
   path: string;
   editType: 'create' | 'modify' | 'delete';

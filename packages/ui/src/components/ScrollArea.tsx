@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 
-export type ScrollAreaProps = ComponentProps<'div'>;
+export type Props = ComponentProps<'div'>;
 
-export function ScrollArea({ className, ...rest }: ScrollAreaProps) {
+export function ScrollArea({ className, ...rest }: Props) {
   return (
     <div
       className={cn(

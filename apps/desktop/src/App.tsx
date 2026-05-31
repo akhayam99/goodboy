@@ -513,6 +513,7 @@ export function App() {
   );
 }
 
+// TODO (@ak): split file
 interface KeepAliveChatPanelProps {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
@@ -529,6 +530,7 @@ function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChat
   );
 }
 
+// TODO (@ak): split file
 interface KeepAliveContextPanelProps {
   readonly sessionId: SessionId;
   readonly isActive: boolean;

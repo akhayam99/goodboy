@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from './Button';
 
-export interface CopyButtonProps {
+export interface Props {
   value: string;
   label?: string;
 }
@@ -18,7 +18,7 @@ function fallbackCopy(text: string): void {
   document.body.removeChild(ta);
 }
 
-export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
+export function CopyButton({ value, label = 'text' }: Props) {
   const [state, setState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const onCopy = async () => {

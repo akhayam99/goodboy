@@ -106,6 +106,7 @@ export function ProviderLifecycleTile({ info }: Props) {
   );
 }
 
+// TODO (@ak): split file
 interface HeaderProps {
   readonly icon: LucideIcon;
   readonly color: string;
@@ -156,6 +157,7 @@ function PreActionCopy({ providerId, info }: { providerId: ProviderId; info: Pro
   return <InfoBanner text={copyFor(providerId, action)} />;
 }
 
+// TODO (@ak): split file
 interface InFlightPingProps {
   readonly onClick: () => void;
 }

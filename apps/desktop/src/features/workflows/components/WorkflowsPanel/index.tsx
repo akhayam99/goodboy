@@ -515,6 +515,7 @@ function EmptyEditorHint({ onNew, hasPresets }: { onNew: () => void; hasPresets:
 // Centre composer
 // ---------------------------------------------------------------------------
 
+// TODO (@ak): split file
 interface ComposerProps {
   form: TemplateForm;
   connectedProviders: ReadonlyArray<ProviderId>;

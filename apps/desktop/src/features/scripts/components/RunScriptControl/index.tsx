@@ -6,6 +6,7 @@ import { Play, ScrollText, Square, Terminal } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunRecord, ScriptRunStatus } from '../../scripts';
 
+// TODO (@ak): split file
 interface RunScriptControlProps {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
@@ -161,6 +162,7 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
   );
 }
 
+// TODO (@ak): split file
 interface ScriptRowProps {
   readonly script: WorkspaceScript;
   readonly run: ScriptRunRecord | null;

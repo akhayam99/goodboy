@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 
-export type KbdPillProps = ComponentProps<'kbd'>;
+export type Props = ComponentProps<'kbd'>;
 
-export function KbdPill({ className, ...rest }: KbdPillProps) {
+export function KbdPill({ className, ...rest }: Props) {
   return (
     <kbd
       className={cn(

@@ -99,14 +99,14 @@ function CompletedBody() {
   );
 }
 
-interface StepRowProps {
+interface Props {
   readonly id: OnboardingStepId;
   readonly title: string;
   readonly why: string;
   readonly done: boolean;
 }
 
-function StepRow({ title, why, done }: StepRowProps) {
+function StepRow({ title, why, done }: Props) {
   return (
     <li
       title={why}

@@ -24,6 +24,7 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 
+// TODO (@ak): split file
 interface SessionSettingsDialogProps {
   sessionId: SessionId;
   open: boolean;
@@ -384,6 +385,7 @@ export function SessionSettingsDialog({
 /* Section: General                                                      */
 /* ──────────────────────────────────────────────────────────────────── */
 
+// TODO (@ak): split file
 interface GeneralSectionProps {
   readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
   readonly goalDraft: string;
@@ -662,6 +664,7 @@ function SessionProviderPicker({
 /* Section: Budget                                                       */
 /* ──────────────────────────────────────────────────────────────────── */
 
+// TODO (@ak): split file
 interface BudgetSectionProps {
   readonly capDraft: string;
   readonly setCapDraft: (v: string) => void;

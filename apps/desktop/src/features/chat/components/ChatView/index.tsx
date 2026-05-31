@@ -43,6 +43,7 @@ import {
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 
+// TODO (@ak): split file
 interface ChatViewProps {
   session: Session;
   onRequestEnd?: () => void;
@@ -74,6 +75,7 @@ function useScrollPin(deps: ReadonlyArray<unknown>) {
   return { scrollerRef, pinned, setPinned, onScroll };
 }
 
+// TODO (@ak): split file
 interface ColumnProps {
   runId: ProviderRunId;
   index: number;
@@ -605,6 +607,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 }
 
+// TODO (@ak): split file
 interface ChatEmptyStateProps {
   selectedAgentId: AgentId | null;
   phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;

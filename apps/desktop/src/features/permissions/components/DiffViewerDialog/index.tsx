@@ -53,6 +53,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
 
+// TODO (@ak): split file
 interface DiffViewerDialogProps {
   open: boolean;
   onClose: () => void;
@@ -681,6 +682,7 @@ export function DiffViewerDialog({
   );
 }
 
+// TODO (@ak): split file
 interface GitStatusHeaderProps {
   status: WorktreeStatus | null;
   onRefresh: () => void;
@@ -738,6 +740,7 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
   );
 }
 
+// TODO (@ak): split file
 interface NotesFooterProps {
   openCount: number;
   spawning: boolean;
@@ -768,6 +771,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   );
 }
 
+// TODO (@ak): split file
 interface ToolbarProps {
   title?: string;
   prNumber?: number;
@@ -1181,6 +1185,7 @@ function anchorKey(a: DiffCommentAnchor): string {
   return `${a.side}:${a.lineNumber}`;
 }
 
+// TODO (@ak): split file
 interface FileDiffPaneProps {
   file: FileDiff;
   comments: ReadonlyArray<DiffComment>;

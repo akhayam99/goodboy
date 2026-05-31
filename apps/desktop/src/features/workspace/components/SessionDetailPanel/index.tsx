@@ -10,6 +10,7 @@ import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { PricingDialog } from '../../../providers/components/PricingDialog';
 
+// TODO (@ak): split file
 interface SessionDetailPanelProps {
   session: Session;
   onOpenSessionSettings: () => void;
@@ -351,6 +352,7 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
+// TODO (@ak): split file
 interface SessionMetaFooterProps {
   session: Session;
 }

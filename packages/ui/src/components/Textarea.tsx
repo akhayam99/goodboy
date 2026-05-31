@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, type ComponentProps } from 'react';
 import { cn } from '../cn';
 
-export type TextareaProps = ComponentProps<'textarea'> & {
+export type Props = ComponentProps<'textarea'> & {
   autoGrow?: boolean;
   maxRows?: number;
   minRows?: number;
@@ -19,7 +19,7 @@ export function Textarea({
   onChange,
   value,
   ...rest
-}: TextareaProps) {
+}: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const minPx = minRows * LINE_HEIGHT_PX + PADDING_PX;
   const maxPx = maxRows * LINE_HEIGHT_PX + PADDING_PX;

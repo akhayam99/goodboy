@@ -96,7 +96,7 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
 // strings only; we never dangerouslySetHTML so any unmatched delimiter just
 // shows literal characters.
 
-interface MarkdownProps {
+interface Props {
   readonly text: string;
   readonly className?: string;
 }
@@ -652,7 +652,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
   }
 }
 
-export function Markdown({ text, className }: MarkdownProps) {
+export function Markdown({ text, className }: Props) {
   const blocks = parseBlocks(text);
   return (
     <div className={cn('space-y-2 text-base text-foreground/85', className)}>

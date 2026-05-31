@@ -19,6 +19,7 @@ export interface RunMeta {
   readonly stepName?: string;
 }
 
+// TODO (@ak): split file
 export interface MergeDialogProps {
   open: boolean;
   conflicts: ReadonlyArray<MergeConflict>;
@@ -93,6 +94,7 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
   );
 }
 
+// TODO (@ak): split file
 interface ConflictRowProps {
   conflict: MergeConflict;
   runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;

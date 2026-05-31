@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 
-export interface PopoverProps {
+export interface Props {
   readonly children: ReactNode;
   readonly className?: string;
   readonly style?: CSSProperties;
@@ -18,7 +18,7 @@ export interface PopoverProps {
  * Positioning is the caller's responsibility, pass `style` for fixed/portal
  * placement or compose with absolute classes via `className`.
  */
-export function Popover({ children, className, style, role, ariaLabel, innerRef }: PopoverProps) {
+export function Popover({ children, className, style, role, ariaLabel, innerRef }: Props) {
   return (
     <div
       ref={innerRef}

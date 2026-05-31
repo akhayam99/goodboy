@@ -93,6 +93,7 @@ import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { useNow } from '../../../../shared/hooks/useNow';
 
+// TODO (@ak): split file
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
@@ -630,6 +631,7 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
+// TODO (@ak): split file
 interface AgentsSectionProps {
   task: Session;
 }
@@ -1097,6 +1099,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
 }
 
+// TODO (@ak): split file
 interface SpawnAgentControlProps {
   sessionId: SessionId;
 }
@@ -1222,6 +1225,7 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   );
 }
 
+// TODO (@ak): split file
 interface WorkflowStepRowProps {
   readonly run: Agent;
   readonly kind: AgentKind;
@@ -1485,6 +1489,7 @@ function WorkflowStepRow({
   );
 }
 
+// TODO (@ak): split file
 interface AgentRowProps {
   readonly run: Agent;
   readonly kind: AgentKind;

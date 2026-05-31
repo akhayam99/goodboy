@@ -56,6 +56,7 @@ export function ProviderConnectModal({ providerId, initialAction, onClose }: Pro
   );
 }
 
+// TODO (@ak): split file
 interface BodyProps {
   readonly providerId: ProviderId;
   readonly initialAction: ProviderLifecycleAction;

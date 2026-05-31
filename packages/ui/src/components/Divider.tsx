@@ -1,6 +1,6 @@
 import { cn } from '../cn';
 
-export interface DividerProps {
+export interface Props {
   readonly className?: string;
   readonly orientation?: 'horizontal' | 'vertical';
 }
@@ -9,7 +9,7 @@ export interface DividerProps {
  * Hairline rule that fades out at both ends, softer than a hard border.
  * Shared by sidebar section breaks, dialog separators, and chat turn rules.
  */
-export function Divider({ className, orientation = 'horizontal' }: DividerProps) {
+export function Divider({ className, orientation = 'horizontal' }: Props) {
   return (
     <div
       role="separator"

@@ -60,6 +60,7 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 
+// TODO (@ak): split file
 interface ContextPanelProps {
   session: Session;
   collapsed?: boolean;
@@ -351,6 +352,7 @@ export function ContextPanel({
   );
 }
 
+// TODO (@ak): split file
 interface TabStripProps {
   readonly tab: PanelTab;
   readonly onPick: (next: PanelTab) => void;
@@ -406,6 +408,7 @@ function TabStrip({
   );
 }
 
+// TODO (@ak): split file
 interface TabButtonProps {
   readonly active: boolean;
   readonly onClick: () => void;
@@ -818,6 +821,7 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
   return normalized === slot.value ? slot : { ...slot, value: normalized };
 }
 
+// TODO (@ak): split file
 interface SlotRowProps {
   sessionId: SessionId;
   slotKey: SlotKey;
@@ -1079,6 +1083,7 @@ function SlotRow({
   );
 }
 
+// TODO (@ak): split file
 interface SlotHistoryDialogProps {
   label: string;
   renderAsMarkdown: boolean;

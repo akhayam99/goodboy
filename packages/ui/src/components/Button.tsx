@@ -4,7 +4,7 @@ import { cn } from '../cn';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
 export type ButtonSize = 'sm' | 'md';
 
-export interface ButtonProps extends Omit<ComponentProps<'button'>, 'type'> {
+export interface Props extends Omit<ComponentProps<'button'>, 'type'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
@@ -29,7 +29,7 @@ export function Button({
   type = 'button',
   className,
   ...rest
-}: ButtonProps) {
+}: Props) {
   return (
     <button
       type={type}

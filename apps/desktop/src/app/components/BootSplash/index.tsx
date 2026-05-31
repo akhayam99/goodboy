@@ -6,7 +6,7 @@ import { DogMascot } from '../../../shared/components/DogMascot';
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
 
-interface BootSplashProps {
+interface Props {
   phase: BootPhase;
   error: string | null;
   onRetry?: () => void;
@@ -95,13 +95,7 @@ function stepForProgress(pct: number): BootStep {
   return STEPS.find((s) => pct < s.threshold) ?? LAST_STEP;
 }
 
-export function BootSplash({
-  phase,
-  error,
-  onRetry,
-  onSkipProviderDetection,
-  onFinished,
-}: BootSplashProps) {
+export function BootSplash({ phase, error, onRetry, onSkipProviderDetection, onFinished }: Props) {
   const hasError = error != null;
   const pct = useSmoothProgress(phase, hasError);
   const step = stepForProgress(pct);

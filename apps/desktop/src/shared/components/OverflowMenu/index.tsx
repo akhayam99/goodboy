@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import { MoreVertical } from 'lucide-react';
 import { Popover, cn } from '@goodboy/ui';
 
+// TODO (@ak): split file
 interface IconProps {
   readonly size?: number;
   readonly className?: string;
@@ -23,6 +24,7 @@ export type OverflowMenuItem =
   | { readonly kind: 'header'; readonly key: string; readonly label: string }
   | { readonly kind: 'empty'; readonly key: string; readonly label: string };
 
+// TODO (@ak): split file
 interface OverflowMenuProps {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;

@@ -18,6 +18,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 const AUTO_DISMISS_MS = 5000;
 
+// TODO (@ak): split file
 interface ToastProviderProps {
   children: React.ReactNode;
 }
@@ -50,6 +51,7 @@ export function useToast(): ToastContextValue {
   return ctx;
 }
 
+// TODO (@ak): split file
 interface ToastStackProps {
   toasts: ReadonlyArray<ToastItem>;
   onDismiss: (id: string) => void;
@@ -72,6 +74,7 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   );
 }
 
+// TODO (@ak): split file
 interface ToastCardProps {
   toast: ToastItem;
   onDismiss: (id: string) => void;

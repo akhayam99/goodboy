@@ -32,6 +32,7 @@ const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
 const MENU_WIDTH = 200;
 const VIEWPORT_MARGIN = 8;
 
+// TODO (@ak): split file
 interface SessionViewMenuProps {
   readonly workspaceId: WorkspaceId;
 }
@@ -153,6 +154,7 @@ export function SessionViewMenu({ workspaceId }: SessionViewMenuProps) {
   );
 }
 
+// TODO (@ak): split file
 interface MenuSectionProps {
   readonly title: string;
   readonly children: React.ReactNode;
@@ -169,6 +171,7 @@ function MenuSection({ title, children }: MenuSectionProps) {
   );
 }
 
+// TODO (@ak): split file
 interface MenuItemProps {
   readonly label: string;
   readonly hint: string;

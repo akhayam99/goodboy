@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 
-export type InputProps = ComponentProps<'input'>;
+export type Props = ComponentProps<'input'>;
 
-export function Input({ className, type = 'text', ...rest }: InputProps) {
+export function Input({ className, type = 'text', ...rest }: Props) {
   return (
     <input
       type={type}

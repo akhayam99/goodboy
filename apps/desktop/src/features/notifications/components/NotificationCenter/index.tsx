@@ -186,11 +186,11 @@ export function NotificationCenter() {
   );
 }
 
-interface NotificationItemProps {
+interface Props {
   notification: Notification;
 }
 
-function NotificationItem({ notification: n }: NotificationItemProps) {
+function NotificationItem({ notification: n }: Props) {
   return (
     <li className={cn('flex items-start gap-2 px-3 py-2.5', !n.read && 'bg-muted/40')}>
       <span className={cn('mt-0.5 shrink-0', severityClass(n.severity))}>

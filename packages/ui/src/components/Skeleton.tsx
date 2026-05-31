@@ -1,10 +1,10 @@
 import { cn } from '../cn';
 
-interface SkeletonProps {
+interface Props {
   className?: string;
 }
 
-export function Skeleton({ className }: SkeletonProps) {
+export function Skeleton({ className }: Props) {
   return (
     <div className={cn('motion-safe:animate-pulse rounded bg-muted', className)} aria-hidden />
   );

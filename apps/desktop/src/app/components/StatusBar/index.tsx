@@ -3,11 +3,11 @@ import { useCurrentSession, useCurrentWorkspace } from '../../../store';
 import { TelemetryPill } from '../../../features/providers/components/TelemetryPill';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 
-interface StatusBarProps {
+interface Props {
   onFocusWorkspaces?: () => void;
 }
 
-export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
+export function StatusBar({ onFocusWorkspaces }: Props) {
   const workspace = useCurrentWorkspace();
   const session = useCurrentSession();
   const sessionStateLabel = session?.state.kind ?? 'idle';

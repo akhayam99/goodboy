@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface AppShellProps {
+export interface Props {
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   main: ReactNode;
@@ -87,7 +87,7 @@ export function AppShell({
   rightSidebar,
   rightSidebarCollapsed = false,
   className,
-}: AppShellProps) {
+}: Props) {
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>

@@ -47,6 +47,7 @@ function groupLabel(key: string, groupMode: SessionGroupKey): string {
   return key;
 }
 
+// TODO (@ak): split file
 interface SessionActivityBarProps {
   workspaceId: WorkspaceId;
   sessions: ReadonlyArray<Session>;
@@ -171,6 +172,7 @@ export function SessionActivityBar({
   );
 }
 
+// TODO (@ak): split file
 interface SessionActivityItemProps {
   session: Session;
   isActive: boolean;
