@@ -17,6 +17,7 @@ mod repo;
 mod scripts;
 mod secrets;
 mod settings_overrides;
+mod shell;
 mod skills;
 mod summarize;
 mod terminal;

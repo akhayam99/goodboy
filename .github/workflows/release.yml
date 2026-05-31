@@ -5,17 +5,47 @@ on:
     tags:
       - 'v*'
 
-# Build the macOS universal (.dmg) on tag push and publish it as a draft
-# GitHub Release. Signing + notarization run automatically when the APPLE_*
-# secrets are present; if they are unset the build still produces an unsigned
-# .dmg. See docs/release.md.
+# Build macOS (universal .dmg), Linux (.AppImage + .deb + .rpm) and Windows
+# (.msi + nsis .exe) on tag push and attach them to a single draft GitHub
+# Release. A create-release job mints the draft first so the three build jobs
+# upload to one release (avoids the duplicate-draft race of matrix builds).
+# macOS signing + notarization run automatically when the APPLE_* secrets are
+# present; if unset the build still produces an unsigned .dmg. rc tags (e.g.
+# v0.1.4-rc.1) publish as prereleases; final tags do not. See docs/release.md.
 
 permissions:
   contents: write
 
 jobs:
+  create-release:
+    name: create draft release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.result }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: create draft release
+        id: create
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Goodboy ${tag}`,
+              draft: true,
+              prerelease: tag.includes('-rc.'),
+            });
+            return data.id;
+
   macos:
     name: build universal dmg
+    needs: create-release
     runs-on: macos-14
     # Apple notarization can be slow, especially the first submission from a new
     # Developer ID account. Keep generous headroom so the runner does not get
@@ -68,13 +98,114 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           # Updater signing: tauri-action signs the update artifacts and emits
           # latest.json (attached to the release) so the in-app updater can
-          # verify and apply new versions.
+          # verify and apply new versions. macOS is the only platform wired to
+          # the updater today; Windows/Linux skip it (see those jobs).
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Goodboy ${{ github.ref_name }}'
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target universal-apple-darwin
+
+  linux:
+    name: build linux (appimage + deb + rpm)
+    needs: create-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-linux-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-linux-
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build workspace deps
+        run: pnpm turbo run build --filter=@goodboy/desktop^...
+
+      - name: install linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: build, release (linux)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          # Multi-platform updater (merged latest.json) is not wired yet; skip
+          # the per-platform manifest so it does not clobber the macOS one.
+          includeUpdaterJson: false
+
+  windows:
+    name: build windows (msi + nsis)
+    needs: create-release
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-windows-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-windows-
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build workspace deps
+        run: pnpm turbo run build --filter=@goodboy/desktop^...
+
+      - name: build, release (windows)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          # Multi-platform updater (merged latest.json) is not wired yet; skip
+          # the per-platform manifest so it does not clobber the macOS one.
+          includeUpdaterJson: false

@@ -8,6 +8,7 @@ static RESOLVED_PATH: OnceLock<String> = OnceLock::new();
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
+const SEP: char = if cfg!(windows) { ';' } else { ':' };
 
 /// PATH inherited from the user's login shell, merged with the process's own
 /// PATH and common install locations, deduplicated, cached after first call.
@@ -38,14 +39,14 @@ fn compute_path() -> String {
     let mut parts: Vec<String> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
     for source in [shell.as_str(), inherited.as_str(), common.as_str()] {
-        for segment in source.split(':') {
+        for segment in source.split(SEP) {
             let segment = segment.trim();
             if !segment.is_empty() && seen.insert(segment.to_string()) {
                 parts.push(segment.to_string());
             }
         }
     }
-    parts.join(":")
+    parts.join(&SEP.to_string())
 }
 
 #[cfg(target_os = "macos")]
@@ -68,6 +69,8 @@ fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
 
 #[cfg(target_os = "windows")]
 fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
+    // Windows GUI processes already inherit the full user PATH, so falling back
+    // to the inherited PATH is correct and no login-shell probe is needed.
     &[]
 }
 
@@ -123,29 +126,52 @@ fn run_with_timeout(bin: &str, args: &[&str]) -> Option<String> {
 }
 
 fn common_install_paths() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
-    let mut parts: Vec<String> = vec![
-        "/opt/homebrew/bin".into(),
-        "/opt/homebrew/sbin".into(),
-        "/usr/local/bin".into(),
-        "/usr/local/sbin".into(),
-        "/usr/bin".into(),
-        "/bin".into(),
-        "/usr/sbin".into(),
-        "/sbin".into(),
-    ];
-    if !home.is_empty() {
-        for sub in &[
-            "/.bun/bin",
-            "/.cargo/bin",
-            "/.local/bin",
-            "/.deno/bin",
-            "/.volta/bin",
-        ] {
-            parts.push(format!("{}{}", home, sub));
+    let home = dirs::home_dir().and_then(|p| p.to_str().map(str::to_string));
+    let mut parts: Vec<String> = Vec::new();
+
+    #[cfg(not(windows))]
+    {
+        parts.extend(
+            [
+                "/opt/homebrew/bin",
+                "/opt/homebrew/sbin",
+                "/usr/local/bin",
+                "/usr/local/sbin",
+                "/usr/bin",
+                "/bin",
+                "/usr/sbin",
+                "/sbin",
+            ]
+            .map(String::from),
+        );
+        if let Some(home) = home.as_deref() {
+            for sub in &[
+                "/.bun/bin",
+                "/.cargo/bin",
+                "/.local/bin",
+                "/.deno/bin",
+                "/.volta/bin",
+            ] {
+                parts.push(format!("{}{}", home, sub));
+            }
         }
     }
-    parts.join(":")
+
+    #[cfg(windows)]
+    {
+        // npm global dir hosts the `npm install -g` shims (claude.cmd,
+        // codex.cmd, gemini.cmd); data_dir() resolves to %APPDATA% on Windows.
+        if let Some(npm) = dirs::data_dir().map(|p| p.join("npm")) {
+            if let Some(npm) = npm.to_str() {
+                parts.push(npm.to_string());
+            }
+        }
+        if let Some(home) = home {
+            parts.push(home);
+        }
+    }
+
+    parts.join(&SEP.to_string())
 }
 
 #[cfg(test)]
@@ -156,8 +182,9 @@ mod tests {
     fn resolved_path_is_non_empty_and_contains_bin() {
         let p = resolved_path();
         assert!(!p.is_empty(), "resolved PATH must not be empty");
+        #[cfg(not(windows))]
         assert!(
-            p.split(':').any(|seg| seg == "/bin"),
+            p.split(SEP).any(|seg| seg == "/bin"),
             "resolved PATH should include /bin, got: {}",
             p
         );
@@ -176,7 +203,7 @@ mod tests {
     #[test]
     fn compute_path_dedups_segments() {
         let merged = compute_path();
-        let segments: Vec<&str> = merged.split(':').collect();
+        let segments: Vec<&str> = merged.split(SEP).collect();
         let mut unique = HashSet::new();
         for s in &segments {
             assert!(unique.insert(*s), "duplicate segment in resolved PATH: {}", s);

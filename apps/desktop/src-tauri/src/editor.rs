@@ -37,7 +37,11 @@ fn detect_editors_inner() -> Vec<DetectedEditor> {
 }
 
 fn which_binary(binary: &str) -> Option<()> {
-    let status = crate::path_env::command("which").arg(binary).output().ok()?;
+    #[cfg(windows)]
+    let locate = "where";
+    #[cfg(not(windows))]
+    let locate = "which";
+    let status = crate::path_env::command(locate).arg(binary).output().ok()?;
     if status.status.success() { Some(()) } else { None }
 }
 

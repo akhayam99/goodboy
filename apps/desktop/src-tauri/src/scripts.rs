@@ -5,7 +5,7 @@ use std::thread;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
@@ -144,9 +144,7 @@ pub async fn workspace_script_run(
             })
             .map_err(|e| ScriptError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("bash");
-        cmd.arg("-c");
-        cmd.arg(&body);
+        let mut cmd = crate::shell::command_in_shell(&body);
         cmd.cwd(&cwd);
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");

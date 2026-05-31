@@ -174,7 +174,7 @@ type TreeNode =
 function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   const root: TreeNode = { kind: 'dir', name: '', children: [], additions: 0, deletions: 0 };
   files.forEach((f, idx) => {
-    const parts = f.path.split('/');
+    const parts = f.path.split(/[/\\]/);
     const fileName = parts.pop() ?? f.path;
     let cur = root as Extract<TreeNode, { kind: 'dir' }>;
     for (const part of parts) {

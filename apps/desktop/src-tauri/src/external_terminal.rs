@@ -48,7 +48,7 @@ fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
 #[cfg(target_os = "windows")]
 fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
     Command::new("cmd")
-        .args(["/c", "start", "cmd", "/k", command])
+        .args(["/c", "start", "", "cmd", "/k", command])
         .spawn()
         .map_err(|e| e.to_string())?;
     Ok(())

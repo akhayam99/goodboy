@@ -41,7 +41,8 @@ export function resolveLifecycleCommand(
 ): string {
   const entry = PROVIDER_LIFECYCLE_COMMANDS[providerId];
   if (action === 'install') return entry.install[platform];
-  return entry[action];
+  if (action === 'logout') return entry.logout[platform];
+  return entry.login;
 }
 
 export function invokeProviderLifecycleRun(args: {

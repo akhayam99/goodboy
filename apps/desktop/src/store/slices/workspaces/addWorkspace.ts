@@ -72,7 +72,7 @@ export function addWorkspace(set: SetFn, get: GetFn) {
     }
 
     const inferredName =
-      name?.trim() || resolvedRoot.split('/').filter(Boolean).at(-1) || 'workspace';
+      name?.trim() || resolvedRoot.split(/[/\\]/).filter(Boolean).at(-1) || 'workspace';
     const now = new Date().toISOString() as IsoDateTime;
     const workspace: Workspace = {
       id: crypto.randomUUID() as WorkspaceId,

@@ -13,7 +13,7 @@ export interface ProviderPlatformCommands {
 export interface ProviderLifecycleCommands {
   readonly install: ProviderPlatformCommands;
   readonly login: string;
-  readonly logout: string;
+  readonly logout: ProviderPlatformCommands;
 }
 
 // Cross-platform, npm-first. Cursor is the only non-npm exception because
@@ -27,7 +27,11 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
       win32: 'npm install -g @anthropic-ai/claude-code',
     },
     login: 'claude /login',
-    logout: 'claude /logout',
+    logout: {
+      darwin: 'claude /logout',
+      linux: 'claude /logout',
+      win32: 'claude /logout',
+    },
   },
   cursor: {
     install: {
@@ -36,7 +40,11 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
       win32: 'powershell -Command "irm https://cursor.com/install.ps1 | iex"',
     },
     login: 'cursor-agent login',
-    logout: 'cursor-agent logout',
+    logout: {
+      darwin: 'cursor-agent logout',
+      linux: 'cursor-agent logout',
+      win32: 'cursor-agent logout',
+    },
   },
   codex: {
     install: {
@@ -45,7 +53,11 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
       win32: 'npm install -g @openai/codex',
     },
     login: 'codex login',
-    logout: 'codex logout',
+    logout: {
+      darwin: 'codex logout',
+      linux: 'codex logout',
+      win32: 'codex logout',
+    },
   },
   gemini: {
     install: {
@@ -54,6 +66,11 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
       win32: 'npm install -g @google/gemini-cli',
     },
     login: 'gemini',
-    logout: 'rm -f ~/.gemini/oauth_creds.json && echo "gemini credentials removed"',
+    logout: {
+      darwin: 'rm -f ~/.gemini/oauth_creds.json && echo "gemini credentials removed"',
+      linux: 'rm -f ~/.gemini/oauth_creds.json && echo "gemini credentials removed"',
+      win32:
+        'del /f /q "%USERPROFILE%\\.gemini\\oauth_creds.json" 2>nul & echo gemini credentials removed',
+    },
   },
 };

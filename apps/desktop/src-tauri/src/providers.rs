@@ -24,6 +24,38 @@ pub struct ProviderStatus {
     pub error: Option<String>,
 }
 
+fn version_command(binary: &str) -> std::process::Command {
+    #[cfg(windows)]
+    {
+        let mut c = path_env::command("cmd");
+        c.arg("/C").arg(binary).arg("--version");
+        c
+    }
+    #[cfg(not(windows))]
+    {
+        let mut c = path_env::command(binary);
+        c.arg("--version");
+        c
+    }
+}
+
+// npm-installed CLIs land as .cmd shims on Windows, which CreateProcess cannot
+// launch directly; route auth subcommands through cmd so the shim resolves.
+fn auth_command(binary: &str, rest: &[&str]) -> std::process::Command {
+    #[cfg(windows)]
+    {
+        let mut c = path_env::command("cmd");
+        c.arg("/C").arg(binary).args(rest);
+        c
+    }
+    #[cfg(not(windows))]
+    {
+        let mut c = path_env::command(binary);
+        c.args(rest);
+        c
+    }
+}
+
 pub struct ProviderState(pub Mutex<ProviderStatus>);
 
 pub struct CursorState(pub Mutex<ProviderStatus>);
@@ -63,8 +95,7 @@ pub fn detect_gemini() -> ProviderStatus {
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
-    let mut child = match path_env::command(binary)
-        .arg("--version")
+    let mut child = match version_command(binary)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -157,8 +188,7 @@ impl AuthCommandOutput {
 
 fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
     let (binary, rest) = args.split_first().ok_or_else(|| "empty command".to_string())?;
-    let mut child = path_env::command(binary)
-        .args(rest)
+    let mut child = auth_command(binary, rest)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -452,7 +482,7 @@ fn extract_gemini_identity_from_creds() -> Option<String> {
     // an interactive login; the `email` field carries the user's Google identity.
     // Fallback paths covered: legacy `~/.config/gemini/auth.json`.
     let home = dirs::home_dir()?;
-    for rel in ["./.gemini/oauth_creds.json", "./.config/gemini/auth.json"] {
+    for rel in [".gemini/oauth_creds.json", ".config/gemini/auth.json"] {
         let path = home.join(rel);
         let Ok(content) = std::fs::read_to_string(&path) else {
             continue;

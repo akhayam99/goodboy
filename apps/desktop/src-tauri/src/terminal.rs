@@ -5,7 +5,7 @@ use std::thread;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
@@ -127,24 +127,27 @@ pub async fn terminal_open(
             })
             .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("/bin/bash");
-        cmd.arg("-l");
-        cmd.arg("-i");
+        let mut cmd = crate::shell::interactive_shell();
 
         let effective_cwd = cwd.unwrap_or_else(|| {
-            std::env::var("HOME").unwrap_or_else(|_| "/".to_string())
+            dirs::home_dir()
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "/".to_string())
         });
         cmd.cwd(&effective_cwd);
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
 
-        if let Ok(home) = std::env::var("HOME") {
-            cmd.env("HOME", home);
+        #[cfg(not(windows))]
+        {
+            if let Ok(home) = std::env::var("HOME") {
+                cmd.env("HOME", home);
+            }
+            if let Ok(user) = std::env::var("USER") {
+                cmd.env("USER", user);
+            }
+            cmd.env("SHELL", "/bin/bash");
         }
-        if let Ok(user) = std::env::var("USER") {
-            cmd.env("USER", user);
-        }
-        cmd.env("SHELL", "/bin/bash");
 
         let child = pair
             .slave
