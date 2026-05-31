@@ -111,42 +111,13 @@ import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
+import { type BootPhase } from './slices/boot/types';
+import { type SystemAlertKind, type SystemAlert } from './slices/settings/types';
+import { type SessionNudge } from './slices/nudges/types';
 
-export type BootPhase =
-  | 'pending'
-  | 'migrating'
-  | 'loading-settings'
-  | 'detecting-cli'
-  | 'loading-workspaces'
-  | 'restoring-session'
-  | 'ready'
-  | 'error';
-
-export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted' | 'context-soft-cap';
-
-export interface SystemAlert {
-  readonly id: string;
-  readonly kind: SystemAlertKind;
-  readonly message: string;
-  readonly createdAt: string;
-}
-
-export type SessionNudge =
-  | {
-      readonly kind: 'plan-ready';
-      readonly id: string;
-      readonly agentId: AgentId;
-      readonly planId: PlanId | null;
-      readonly planTitle: string;
-    }
-  | {
-      readonly kind: 'handoff-suggested';
-      readonly id: string;
-      readonly agentId: AgentId;
-      readonly targetKind: AgentKind;
-      readonly reason: string;
-      readonly planId: PlanId | null;
-    };
+export type { BootPhase };
+export type { SystemAlertKind, SystemAlert };
+export type { SessionNudge };
 
 import type { ProviderSpendEntry } from './slices/budget';
 export type { ProviderSpendEntry };
