@@ -1,8 +1,8 @@
 import { Eyebrow } from '../components/ui';
 import { useInView } from '../components/Reveal';
 
-/* The fifth "point": everything else, kept deliberately dry. One line each,
-   no mockups. The four sections above carry the weight; this is the tail. */
+/* The sixth "point": everything else, kept deliberately dry. One line each,
+   no mockups. The five sections above carry the weight; this is the tail. */
 const ITEMS: ReadonlyArray<{ k: string; v: string }> = [
   {
     k: 'Routing & cost',
@@ -15,10 +15,6 @@ const ITEMS: ReadonlyArray<{ k: string; v: string }> = [
   {
     k: 'Plans',
     v: 'Agents write the plan before they touch your code, and it stays put: something you can read and edit, not a message that scrolls away.',
-  },
-  {
-    k: 'Linear',
-    v: 'Pick a Linear issue and the goal and branch fill themselves in. A proper Linear Studio is on the way.',
   },
   {
     k: 'Local-first',
@@ -39,7 +35,7 @@ export function MoreBriefly() {
     >
       <div className="mx-auto max-w-5xl px-6">
         <div className="reveal max-w-2xl">
-          <Eyebrow>05 &middot; The rest, briefly</Eyebrow>
+          <Eyebrow>06 &middot; The rest, briefly</Eyebrow>
           <p className="mt-4 text-pretty text-[16px] leading-[1.6] text-muted-foreground sm:text-[17px]">
             The stuff that matters but doesn&apos;t need its own billboard.
           </p>

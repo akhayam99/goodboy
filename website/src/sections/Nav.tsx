@@ -6,6 +6,7 @@ const links = [
   { href: '#context', label: 'Context' },
   { href: '#studio', label: 'Workflow Studio' },
   { href: '#github', label: 'GitHub Studio' },
+  { href: '#linear', label: 'Linear Studio' },
   { href: '#compare', label: 'Compare' },
 ];
 
