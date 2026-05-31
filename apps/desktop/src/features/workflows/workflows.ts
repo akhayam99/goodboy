@@ -68,6 +68,7 @@ interface RawAgentRow {
   readonly id: string;
   readonly sessionId: string;
   readonly stepId: string | null;
+  readonly parentAgentId: string | null;
   readonly ordinal: number;
   readonly name: string;
   readonly status: string;
@@ -139,6 +140,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
     ...(row.stepId != null && { stepId: row.stepId as StepId }),
+    ...(row.parentAgentId != null && { parentAgentId: row.parentAgentId as AgentId }),
     ordinal: row.ordinal,
     name: row.name,
     status: row.status as AgentStatus,
@@ -272,6 +274,7 @@ export interface AgentInsertArgs {
   readonly id?: AgentId;
   readonly sessionId: SessionId;
   readonly stepId?: StepId;
+  readonly parentAgentId?: AgentId;
   readonly ordinal: number;
   readonly name: string;
   readonly status: AgentStatus;
@@ -289,6 +292,7 @@ export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
       id: run.id ?? null,
       sessionId: run.sessionId,
       stepId: run.stepId ?? null,
+      parentAgentId: run.parentAgentId ?? null,
       ordinal: run.ordinal,
       name: run.name,
       status: run.status,

@@ -93,6 +93,7 @@ export type Agent = Readonly<{
   id: AgentId;
   sessionId: SessionId;
   stepId?: StepId;
+  parentAgentId?: AgentId;
   ordinal: number;
   name: string;
   status: AgentStatus;

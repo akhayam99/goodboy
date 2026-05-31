@@ -128,6 +128,7 @@ export type {
   DiffCommentStatus,
 } from './diff-comment';
 export type {
+  ImplementationCluster,
   Plan,
   PlanConsumption,
   PlanConsumptionId,

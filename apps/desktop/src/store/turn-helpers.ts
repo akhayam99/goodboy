@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
   assessPlanReadiness,
+  extractClustersFromMarker,
   extractHandoff,
   extractPlanFromMarker,
   Summarizer,
@@ -326,11 +327,13 @@ export async function capturePlanFromTurn(
   try {
     const extracted = extractPlanFromMarker(assistantText);
     if (!extracted) return null;
+    const clusters = extractClustersFromMarker(assistantText);
     await invokeUpsertPlan({
       sessionId,
       agentId,
       title: extracted.title,
       bodyMd: extracted.bodyMd,
+      ...(clusters && { clusters }),
     });
     const refreshed = await invokeListPlansForSession(sessionId);
     set((state) => ({

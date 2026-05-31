@@ -6,6 +6,7 @@ import {
 } from '../../../features/plans/plans';
 import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
+import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 export function activateWorkflowAgent(set: SetFn, get: GetFn) {
@@ -49,10 +50,6 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
     const { section: planSection, plan: latestPlan } = isImplementer
       ? await buildPlanKickoffSection(sessionId)
       : { section: '', plan: null };
-    const kickoff = composeKickoff(planSection, promptPrefix);
-    if (kickoff.length > 0) {
-      void get().sendTurn({ sessionId, agentId, content: kickoff });
-    }
 
     if (isImplementer && latestPlan && latestPlan.status === 'active') {
       await invokeAddPlanConsumption(latestPlan.id, agentId);
@@ -62,6 +59,18 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
         planConsumptions: { ...state.planConsumptions, [latestPlan.id]: consumptions },
       }));
+    }
+
+    const clusters =
+      isImplementer && latestPlan?.status === 'active' ? latestPlan.clusters : undefined;
+    if (clusters && clusters.length >= 2) {
+      await fanOutClusters(set, get, sessionId, agent, clusters, latestPlan!.title);
+      return;
+    }
+
+    const kickoff = composeKickoff(planSection, promptPrefix);
+    if (kickoff.length > 0) {
+      void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
   };
 }

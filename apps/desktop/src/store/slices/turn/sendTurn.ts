@@ -942,52 +942,59 @@ export function sendTurn(set: SetFn, get: GetFn) {
           : { kind: 'succeeded', finishedAt: now() },
       );
       if (resolvedAgentId && !wasCancelled) {
-        await invokeAgentUpdateStatus(resolvedAgentId, {
-          status: 'completed',
-          outputSummary: assistantText.slice(0, 2000),
-          completedAt: now(),
-        });
-        const refreshedRuns = await invokeAgentList(sessionId);
-        set((state) => {
-          if (!phaseDefinition) {
-            return { sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns } };
-          }
-          const target = state.sessions.find((s) => s.id === sessionId);
-          // Resolve the workflow from the step's `workflowId` field, not the
-          // session's first attached workflow. Multi-workflow sessions can
-          // complete a step belonging to workflow #2+; pointing the cursor
-          // update at `workflowIds[0]` would advance the wrong workflow's
-          // `currentStepByWorkflow` map and skip the right one's update.
-          const wfId =
-            target && target.workflowIds.includes(phaseDefinition.workflowId)
-              ? phaseDefinition.workflowId
-              : null;
-          if (wfId) {
-            void updateSessionWorkflowStep(
-              tauriDatabase,
-              sessionId,
-              wfId,
-              phaseDefinition.ordinal,
-              new Date().toISOString() as IsoDateTime,
-            );
-          }
-          return {
-            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-            sessions: state.sessions.map((s) => {
-              if (s.id !== sessionId || !wfId) return s;
+        const ranAgent = get().sessionPhaseRuns[sessionId]?.find((r) => r.id === resolvedAgentId);
+        if (ranAgent?.parentAgentId) {
+          await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
+        } else {
+          await invokeAgentUpdateStatus(resolvedAgentId, {
+            status: 'completed',
+            outputSummary: assistantText.slice(0, 2000),
+            completedAt: now(),
+          });
+          const refreshedRuns = await invokeAgentList(sessionId);
+          set((state) => {
+            if (!phaseDefinition) {
               return {
-                ...s,
-                currentStepByWorkflow: {
-                  ...s.currentStepByWorkflow,
-                  [wfId]: phaseDefinition.ordinal,
-                },
+                sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
               };
-            }),
-          };
-        });
-        void get().refreshUnreadWorkspaces();
+            }
+            const target = state.sessions.find((s) => s.id === sessionId);
+            // Resolve the workflow from the step's `workflowId` field, not the
+            // session's first attached workflow. Multi-workflow sessions can
+            // complete a step belonging to workflow #2+; pointing the cursor
+            // update at `workflowIds[0]` would advance the wrong workflow's
+            // `currentStepByWorkflow` map and skip the right one's update.
+            const wfId =
+              target && target.workflowIds.includes(phaseDefinition.workflowId)
+                ? phaseDefinition.workflowId
+                : null;
+            if (wfId) {
+              void updateSessionWorkflowStep(
+                tauriDatabase,
+                sessionId,
+                wfId,
+                phaseDefinition.ordinal,
+                new Date().toISOString() as IsoDateTime,
+              );
+            }
+            return {
+              sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+              sessions: state.sessions.map((s) => {
+                if (s.id !== sessionId || !wfId) return s;
+                return {
+                  ...s,
+                  currentStepByWorkflow: {
+                    ...s.currentStepByWorkflow,
+                    [wfId]: phaseDefinition.ordinal,
+                  },
+                };
+              }),
+            };
+          });
+          void get().refreshUnreadWorkspaces();
 
-        void get().maybeAutoAdvanceWorkflow(sessionId);
+          void get().maybeAutoAdvanceWorkflow(sessionId);
+        }
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn, agent stays `running`. It was activated and has
         // context; reverting to `pending` would re-surface the "force spawn"

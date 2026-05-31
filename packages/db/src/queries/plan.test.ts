@@ -123,6 +123,39 @@ describe('session_plans queries', () => {
     expect(plans[plans.length - 1]!.title).toBe('newer');
   });
 
+  it('round-trips execution clusters through clusters_json', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'clustered plan',
+      bodyMd: 'body',
+      clusters: [
+        { title: 'move files to domain', instructions: 'relocate the files' },
+        { title: 'update imports', instructions: 'fix import paths' },
+      ],
+    });
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans[0]!.clusters).toEqual([
+      { title: 'move files to domain', instructions: 'relocate the files' },
+      { title: 'update imports', instructions: 'fix import paths' },
+    ]);
+  });
+
+  it('omits clusters when none were provided', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'plain plan',
+      bodyMd: 'body',
+    });
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans[0]!.clusters).toBeUndefined();
+  });
+
   it('updatePlanStatus changes the status', async () => {
     const db = await seedFixture();
     const plan = await upsertPlan(db, {

@@ -373,6 +373,11 @@ export interface AppActions {
   ): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  advanceClusterImplementation(
+    sessionId: SessionId,
+    childAgentId: AgentId,
+    assistantText: string,
+  ): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;

@@ -201,6 +201,79 @@ export function extractCommentResolved(assistantText: string): ExtractedCommentR
   return last;
 }
 
+const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
+const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
+
+export interface ExtractedCluster {
+  readonly title: string;
+  readonly instructions: string;
+}
+
+export function extractClustersFromMarker(
+  assistantText: string,
+): ReadonlyArray<ExtractedCluster> | null {
+  CLUSTERS_RE.lastIndex = 0;
+  let raw: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = CLUSTERS_RE.exec(assistantText)) !== null) {
+    const inner = (m[1] ?? '').trim();
+    if (inner.length > 0) raw = inner;
+  }
+  if (raw === null) return null;
+
+  const json = stripJsonFences(raw);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    const arr = extractJsonArray(json);
+    if (arr === null) return null;
+    try {
+      parsed = JSON.parse(arr);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed)) return null;
+
+  const out: ExtractedCluster[] = [];
+  for (const entry of parsed) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const title = typeof e.title === 'string' ? e.title.trim() : '';
+    const instructions = typeof e.instructions === 'string' ? e.instructions.trim() : '';
+    if (title.length === 0 || instructions.length === 0) continue;
+    out.push({ title, instructions });
+  }
+  return out.length > 0 ? out : null;
+}
+
+export function extractClusterDone(assistantText: string): { readonly id: string } | null {
+  CLUSTER_DONE_RE.lastIndex = 0;
+  let last: { id: string } | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = CLUSTER_DONE_RE.exec(assistantText)) !== null) {
+    const inner = m[1] ?? '';
+    const attrs = parseHandoffAttrs(inner);
+    const id = (attrs.id ?? '').trim();
+    if (id.length === 0) continue;
+    last = { id };
+  }
+  return last;
+}
+
+function stripJsonFences(raw: string): string {
+  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
+  return (fenced?.[1] ?? raw).trim();
+}
+
+function extractJsonArray(text: string): string | null {
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if (start === -1 || end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+}
+
 const PLAN_OPEN_QUESTION_RE =
   /\b(vuoi che|ti torna|che ne dici|should i|let me know|do you want|shall i|wdyt|preferisci)\b/i;
 const PLAN_INCOMPLETE_RE = /\b(TODO|TBD|FIXME|\?\?)\b/i;

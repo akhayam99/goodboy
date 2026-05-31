@@ -1,4 +1,5 @@
 import type {
+  ImplementationCluster,
   Plan,
   PlanConsumption,
   PlanConsumptionId,
@@ -29,6 +30,7 @@ export interface UpsertPlanArgs {
   readonly agentId: AgentId;
   readonly title: string;
   readonly bodyMd: string;
+  readonly clusters?: ReadonlyArray<ImplementationCluster>;
 }
 
 export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
@@ -39,6 +41,7 @@ export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
     agentId: args.agentId,
     title: args.title,
     bodyMd: args.bodyMd,
+    ...(args.clusters && { clusters: args.clusters }),
   });
 }
 
