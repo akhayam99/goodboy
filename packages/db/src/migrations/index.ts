@@ -44,6 +44,8 @@ import { m043WorkspaceIntegrations } from './m043-workspace-integrations';
 import { m044SessionExternalTask } from './m044-session-external-task';
 import { m045StepLibrary } from './m045-step-library';
 import { m046StepRole } from './m046-step-role';
+import { m047WidenWorkspaceIntegrations } from './m047-widen-workspace-integrations';
+import { m048WidenSessionExternalTask } from './m048-widen-session-external-task';
 
 export interface Migration {
   readonly version: number;
@@ -97,4 +99,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 44, sql: m044SessionExternalTask },
   { version: 45, sql: m045StepLibrary },
   { version: 46, sql: m046StepRole },
+  { version: 47, sql: m047WidenWorkspaceIntegrations },
+  { version: 48, sql: m048WidenSessionExternalTask },
 ];

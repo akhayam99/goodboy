@@ -89,7 +89,7 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear';
+export type WorkspaceIntegrationProvider = 'linear' | 'jira';
 
 /**
  * Snapshot of the connected Linear account + workspace, cached locally so
@@ -105,11 +105,27 @@ export type LinearIntegrationConfig = Readonly<{
   viewerName: string;
 }>;
 
+/**
+ * Snapshot of the connected Jira account, cached locally for offline display
+ * and to pass siteUrl + email to the Rust fetch commands without an extra
+ * roundtrip on every request.
+ */
+export type JiraIntegrationConfig = Readonly<{
+  /** Full tenant URL, e.g. "https://your-org.atlassian.net" */
+  siteUrl: string;
+  /** Atlassian account ID of the connected user. */
+  accountId: string;
+  /** Display name of the connected user. Cached for UI. */
+  viewerName: string;
+  /** Email address used for Basic auth. */
+  viewerEmail: string;
+}>;
+
 export type WorkspaceIntegration = Readonly<{
   id: WorkspaceIntegrationId;
   workspaceId: WorkspaceId;
   provider: WorkspaceIntegrationProvider;
-  config: LinearIntegrationConfig;
+  config: LinearIntegrationConfig | JiraIntegrationConfig;
   /**
    * Key used to retrieve the provider API token from Tauri's credential store.
    * Format: `goodboy.workspace.<workspaceId>.<provider>`
@@ -120,11 +136,11 @@ export type WorkspaceIntegration = Readonly<{
 }>;
 
 /**
- * 1:1 link between a session and an external task (Linear issue today).
+ * 1:1 link between a session and an external task (Linear or Jira issue).
  * Lets us navigate from a session back to its source issue, snapshot title
  * for offline display, and pre-fill the goal at session creation.
  */
-export type SessionExternalTaskProvider = 'linear';
+export type SessionExternalTaskProvider = 'linear' | 'jira';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;

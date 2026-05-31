@@ -111,6 +111,7 @@ import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
+import type { JiraSelf } from '../features/integrations/jira/client';
 
 export type BootPhase =
   | 'pending'
@@ -331,6 +332,13 @@ export interface AppActions {
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
+  connectJira(
+    workspaceId: WorkspaceId,
+    siteUrl: string,
+    email: string,
+    token: string,
+  ): Promise<JiraSelf>;
+  disconnectJira(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -349,6 +357,16 @@ export interface AppActions {
      * issue from the autocomplete.
      */
     linearIssue?: {
+      externalId: string;
+      identifier: string;
+      url: string;
+      title: string;
+    };
+    /**
+     * Optional Jira issue to link to the new session. Mirrors linearIssue;
+     * identifier is the Jira issue key (e.g. "PROJ-123").
+     */
+    jiraIssue?: {
       externalId: string;
       identifier: string;
       url: string;

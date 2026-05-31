@@ -23,6 +23,7 @@ export type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
+  JiraIntegrationConfig,
   LinearIntegrationConfig,
   Session,
   SessionExternalTask,

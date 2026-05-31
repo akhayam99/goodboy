@@ -47,6 +47,12 @@ interface Input {
     url: string;
     title: string;
   };
+  jiraIssue?: {
+    externalId: string;
+    identifier: string;
+    url: string;
+    title: string;
+  };
 }
 
 export function createSession(set: SetFn, get: GetFn) {
@@ -62,6 +68,7 @@ export function createSession(set: SetFn, get: GetFn) {
     firstAgentKind,
     firstAgentModel: requestedModel,
     linearIssue,
+    jiraIssue,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
@@ -113,14 +120,19 @@ export function createSession(set: SetFn, get: GetFn) {
     };
     await insertSession(tauriDatabase, session);
     let externalTask: SessionExternalTask | null = null;
-    if (linearIssue) {
+    const pickedIssue = linearIssue
+      ? { provider: 'linear' as const, ...linearIssue }
+      : jiraIssue
+        ? { provider: 'jira' as const, ...jiraIssue }
+        : null;
+    if (pickedIssue) {
       externalTask = {
         sessionId: session.id,
-        provider: 'linear',
-        externalId: linearIssue.externalId,
-        identifier: linearIssue.identifier,
-        url: linearIssue.url,
-        title: linearIssue.title,
+        provider: pickedIssue.provider,
+        externalId: pickedIssue.externalId,
+        identifier: pickedIssue.identifier,
+        url: pickedIssue.url,
+        title: pickedIssue.title,
         createdAt: now,
       };
       try {
