@@ -51,6 +51,7 @@ export {
   listWorkflowsForSession,
   attachWorkflowToSession,
   detachWorkflowFromSession,
+  discardWorkflowInSession,
   updateWorkflowOrder,
   updateSessionWorkflowStep,
   type SessionWorkflowEntry,

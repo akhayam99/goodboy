@@ -81,6 +81,7 @@ function toDomain(
   contextSlots: Session['contextSlots'],
   workflowIds: ReadonlyArray<WorkflowId> = [],
   currentStepByWorkflow: Readonly<Record<WorkflowId, number>> = {},
+  discardedWorkflowIds: ReadonlyArray<WorkflowId> = [],
 ): Session {
   return {
     id: row.id as SessionId,
@@ -92,6 +93,7 @@ function toDomain(
     permissionMode: toPermissionMode(row.permission_mode),
     workflowIds,
     currentStepByWorkflow,
+    ...(discardedWorkflowIds.length > 0 && { discardedWorkflowIds }),
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
     ...(row.archived_at != null && {
@@ -118,17 +120,24 @@ async function loadWorkflowsForSession(
 ): Promise<{
   workflowIds: ReadonlyArray<WorkflowId>;
   currentStepByWorkflow: Readonly<Record<WorkflowId, number>>;
+  discardedWorkflowIds: ReadonlyArray<WorkflowId>;
 }> {
-  const rows = await db.select<{ workflow_id: string; current_step_ordinal: number }>(
-    'SELECT workflow_id, current_step_ordinal FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+  const rows = await db.select<{
+    workflow_id: string;
+    current_step_ordinal: number;
+    discarded_at: string | null;
+  }>(
+    'SELECT workflow_id, current_step_ordinal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   const workflowIds = rows.map((r) => r.workflow_id as WorkflowId);
   const currentStepByWorkflow: Record<WorkflowId, number> = {};
+  const discardedWorkflowIds: WorkflowId[] = [];
   for (const r of rows) {
     currentStepByWorkflow[r.workflow_id as WorkflowId] = r.current_step_ordinal;
+    if (r.discarded_at != null) discardedWorkflowIds.push(r.workflow_id as WorkflowId);
   }
-  return { workflowIds, currentStepByWorkflow };
+  return { workflowIds, currentStepByWorkflow, discardedWorkflowIds };
 }
 
 export interface SessionConfigUpdate {
@@ -286,8 +295,9 @@ export async function getSessionById(db: Database, id: SessionId): Promise<Sessi
   const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
   const row = rows[0];
   if (!row) return null;
-  const { workflowIds, currentStepByWorkflow } = await loadWorkflowsForSession(db, id);
-  return toDomain(row, [], workflowIds, currentStepByWorkflow);
+  const { workflowIds, currentStepByWorkflow, discardedWorkflowIds } =
+    await loadWorkflowsForSession(db, id);
+  return toDomain(row, [], workflowIds, currentStepByWorkflow, discardedWorkflowIds);
 }
 
 async function hydrateSessions(
@@ -301,16 +311,21 @@ async function hydrateSessions(
     session_id: string;
     workflow_id: string;
     current_step_ordinal: number;
+    discarded_at: string | null;
   }>(
-    `SELECT session_id, workflow_id, current_step_ordinal FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    `SELECT session_id, workflow_id, current_step_ordinal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
 
-  type WorkflowEntry = { workflowId: WorkflowId; step: number };
+  type WorkflowEntry = { workflowId: WorkflowId; step: number; discarded: boolean };
   const workflowsBySession = new Map<string, WorkflowEntry[]>();
   for (const r of workflowRows) {
     const arr = workflowsBySession.get(r.session_id) ?? [];
-    arr.push({ workflowId: r.workflow_id as WorkflowId, step: r.current_step_ordinal });
+    arr.push({
+      workflowId: r.workflow_id as WorkflowId,
+      step: r.current_step_ordinal,
+      discarded: r.discarded_at != null,
+    });
     workflowsBySession.set(r.session_id, arr);
   }
 
@@ -318,10 +333,12 @@ async function hydrateSessions(
     const wf = workflowsBySession.get(row.id) ?? [];
     const workflowIds = wf.map((w) => w.workflowId);
     const currentStepByWorkflow: Record<WorkflowId, number> = {};
-    for (const { workflowId, step } of wf) {
+    const discardedWorkflowIds: WorkflowId[] = [];
+    for (const { workflowId, step, discarded } of wf) {
       currentStepByWorkflow[workflowId] = step;
+      if (discarded) discardedWorkflowIds.push(workflowId);
     }
-    return toDomain(row, [], workflowIds, currentStepByWorkflow);
+    return toDomain(row, [], workflowIds, currentStepByWorkflow, discardedWorkflowIds);
   });
 }
 

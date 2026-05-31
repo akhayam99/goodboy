@@ -38,7 +38,9 @@ export function runPlan(get: GetFn) {
     // C: resolve which attached workflow owns the creator step, that workflow is
     // the routing context. Without a match we fall back to free-spawn.
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
+    const discarded = new Set(session.discardedWorkflowIds ?? []);
     const attached = session.workflowIds
+      .filter((wid) => !discarded.has(wid))
       .map((wid) => templates.find((t) => t.id === wid))
       .filter((t): t is NonNullable<typeof t> => t !== undefined);
     const template =

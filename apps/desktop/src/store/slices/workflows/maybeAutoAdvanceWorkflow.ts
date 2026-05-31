@@ -10,7 +10,9 @@ export function maybeAutoAdvanceWorkflow(_set: SetFn, get: GetFn) {
     const session = state.sessions.find((s) => s.id === sessionId);
     if (!session || !session.autoRun || session.workflowIds.length === 0) return;
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
+    const discarded = new Set(session.discardedWorkflowIds ?? []);
     const attached = session.workflowIds
+      .filter((wid) => !discarded.has(wid))
       .map((wid) => templates.find((t) => t.id === wid))
       .filter((t): t is Workflow => t !== undefined);
     if (attached.length === 0) return;
