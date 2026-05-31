@@ -100,7 +100,7 @@ export async function resolvePrForBranch(
   runner: GhRunner,
   repo: string,
   branch: string,
-  opts: { cwd?: string; token?: string } = {},
+  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
 ): Promise<PullRequestState | null> {
   const args = [
     'pr',
@@ -134,7 +134,7 @@ export async function listPrsForBranch(
   runner: GhRunner,
   repo: string,
   branch: string,
-  opts: { cwd?: string; token?: string } = {},
+  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PullRequestState>> {
   const args = [
     'pr',
@@ -199,7 +199,7 @@ export async function fetchLinkedIssues(
   runner: GhRunner,
   repo: string,
   pr: PullRequestState,
-  opts: { cwd?: string; token?: string } = {},
+  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<LinkedIssue>> {
   const fromBody = parseLinkedIssuesFromBody(pr.body, pr.url);
   try {
@@ -235,12 +235,17 @@ export async function fetchLinkedIssues(
   }
 }
 
-export async function detectRepoSlug(runner: GhRunner, cwd: string): Promise<string | null> {
+export async function detectRepoSlug(
+  runner: GhRunner,
+  cwd: string,
+  workspaceId?: string,
+): Promise<string | null> {
   try {
     const res = await runner.run(
       ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'],
       {
         cwd,
+        workspaceId,
       },
     );
     if (res.exitCode !== 0) return null;

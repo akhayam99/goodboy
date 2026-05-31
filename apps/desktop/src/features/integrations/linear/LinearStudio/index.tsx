@@ -1,0 +1,112 @@
+import { useEffect, useMemo, useState } from 'react';
+import { cn, Divider } from '@goodboy/ui';
+import { RefreshCw, X } from 'lucide-react';
+import type { WorkspaceId } from '@goodboy/types';
+import { IssueInbox } from './IssueInbox';
+import { IssueDetailPanel } from './IssueDetailPanel';
+import { useLinearIssues } from './useLinearIssues';
+import type { LinearIssue } from '../client';
+
+interface Props {
+  readonly workspaceId: WorkspaceId;
+  readonly workspaceName: string;
+  readonly onClose: () => void;
+}
+
+export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
+  const { groups, loading, error, refetch } = useLinearIssues(workspaceId);
+  const [focused, setFocused] = useState<LinearIssue | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (focused !== null) return;
+    const first = groups[0]?.rows[0]?.issue ?? null;
+    if (first) setFocused(first);
+  }, [focused, groups]);
+
+  const focusedRow = useMemo(() => {
+    if (!focused) return null;
+    for (const group of groups) {
+      const row = group.rows.find((r) => r.issue.id === focused.id);
+      if (row) return row;
+    }
+    return null;
+  }, [focused, groups]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-[#5e6ad2]/10">
+          <span className="flex size-4 items-center justify-center rounded-sm bg-[#5e6ad2] text-[9px] font-bold text-white">
+            L
+          </span>
+        </span>
+        <div className="flex min-w-0 flex-col">
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-semibold text-foreground">Linear</h1>
+            <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
+              beta
+            </span>
+          </div>
+          <span className="truncate text-2xs text-muted-foreground">{workspaceName}</span>
+        </div>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={refetch}
+          disabled={loading}
+          title="refresh issues"
+          aria-label="refresh issues"
+          className={cn(
+            'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
+            'text-muted-foreground transition-colors',
+            'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+          )}
+        >
+          <RefreshCw size={13} aria-hidden className={loading ? 'animate-spin' : undefined} />
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5',
+            'text-xs font-medium text-muted-foreground transition-colors',
+            'hover:border-border hover:bg-muted/50 hover:text-foreground',
+          )}
+          aria-label="close linear studio"
+        >
+          <X size={13} aria-hidden /> Done
+        </button>
+      </header>
+      <Divider />
+
+      <div className="flex min-h-0 flex-1">
+        <div className="w-72 shrink-0">
+          <IssueInbox
+            groups={groups}
+            focusedIssueId={focused?.id ?? null}
+            onSelect={setFocused}
+            loading={loading}
+            error={error}
+          />
+        </div>
+        <Divider orientation="vertical" />
+        <div className="min-h-0 flex-1">
+          <IssueDetailPanel
+            issue={focused}
+            sessionId={focusedRow?.sessionId ?? null}
+            workspaceId={workspaceId}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -132,7 +132,7 @@ async function fetchIssueComments(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
   try {
     const raw = await runJson<ReadonlyArray<RawIssueComment>>(
@@ -186,7 +186,7 @@ async function fetchReviewThreads(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
   const [owner, name] = repo.split('/');
   if (!owner || !name) return [];
@@ -249,7 +249,7 @@ async function fetchPrViewDetail(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<RawPrViewForDetail> {
   try {
     return await runJson<RawPrViewForDetail>(
@@ -275,7 +275,7 @@ export async function fetchPrDetail(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<PrDetail> {
   const [issueComments, reviewComments, prView] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),

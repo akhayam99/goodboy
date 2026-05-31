@@ -52,7 +52,7 @@ export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId);
         if (!slug) {
           set((state) => ({
             sessionGithub: {
@@ -74,6 +74,7 @@ export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
         }
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
           cwd: workspace.rootPath,
+          workspaceId: session.workspaceId,
         });
         set((state) => ({
           sessionGithub: {

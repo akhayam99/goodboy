@@ -97,6 +97,7 @@ interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
+  onOpenLinear: () => void;
   onOpenGithub: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
@@ -112,12 +113,20 @@ export function WorkspacesSidebar({
   onOpenSettings,
   onOpenPalette,
   onOpenWorkflows,
+  onOpenLinear,
   onOpenGithub,
   collapsed = false,
   onToggleCollapse,
 }: WorkspacesSidebarProps) {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
+  // Linear Studio is gated on the workspace having a connected Linear
+  // integration; defensive `?.` because tests mock a shallow store.
+  const hasLinear = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'linear',
+    ),
+  );
   const currentSession = useCurrentSession();
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const onSelectSession = useCallback(
@@ -252,7 +261,9 @@ export function WorkspacesSidebar({
         <QuickActionsRow
           onOpenPalette={onOpenPalette}
           onOpenWorkflows={onOpenWorkflows}
+          onOpenLinear={onOpenLinear}
           onOpenGithub={onOpenGithub}
+          linearEnabled={hasLinear}
           skillsEnabled={WORKSPACE_FEATURES.skills}
         />
       ) : null}
@@ -370,12 +381,16 @@ function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
 function QuickActionsRow({
   onOpenPalette,
   onOpenWorkflows,
+  onOpenLinear,
   onOpenGithub,
+  linearEnabled,
   skillsEnabled,
 }: {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
+  onOpenLinear: () => void;
   onOpenGithub: () => void;
+  linearEnabled: boolean;
   skillsEnabled: boolean;
 }) {
   return (
@@ -394,6 +409,20 @@ function QuickActionsRow({
         label="Workflows"
         onClick={onOpenWorkflows}
       />
+      {/* Linear Studio: launch sessions straight from assigned issues. Shown
+          only when this workspace has Linear connected. */}
+      {linearEnabled ? (
+        <QuickAction
+          icon={
+            <span className="flex size-3 items-center justify-center rounded-[3px] bg-[#5e6ad2] text-[7px] font-bold text-white">
+              L
+            </span>
+          }
+          label="Linear"
+          title="launch a session from a Linear issue"
+          onClick={onOpenLinear}
+        />
+      ) : null}
       <QuickAction
         icon={<GitPullRequest size={12} aria-hidden />}
         label="GitHub"

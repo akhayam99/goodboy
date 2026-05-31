@@ -13,6 +13,7 @@ import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSid
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
+import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -91,6 +92,7 @@ export function App() {
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
+  const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
@@ -381,6 +383,7 @@ export function App() {
               onOpenSettings={openSettings}
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
+              onOpenLinear={() => setLinearStudioOpen(true)}
               onOpenGithub={() => {
                 setGithubStudioSession(currentSession?.id ?? null);
                 setGithubStudioOpen(true);
@@ -482,6 +485,13 @@ export function App() {
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           onClose={() => setGithubStudioOpen(false)}
+        />
+      ) : null}
+      {linearStudioOpen && currentWorkspace ? (
+        <LinearStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={() => setLinearStudioOpen(false)}
         />
       ) : null}
       {commitDiff ? (

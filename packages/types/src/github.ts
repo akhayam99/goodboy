@@ -6,6 +6,7 @@ export interface GhTokenStatus {
   version?: string;
   user?: string;
   scopes?: ReadonlyArray<string>;
+  scoped?: boolean;
 }
 
 export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'merged' | 'closed';

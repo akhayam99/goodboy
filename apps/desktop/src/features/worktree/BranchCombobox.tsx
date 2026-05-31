@@ -184,7 +184,7 @@ export function BranchCombobox({
                 highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
               )}
             >
-              <span className="min-w-0 truncate">{b.name}</span>
+              <span className="min-w-0 flex-1 truncate">{b.name}</span>
               {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
               {b.hasUncommitted ? (
                 <span className="shrink-0 text-2xs text-warning">dirty</span>

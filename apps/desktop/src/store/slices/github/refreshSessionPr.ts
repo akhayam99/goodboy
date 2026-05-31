@@ -48,7 +48,7 @@ export function refreshSessionPr(set: SetFn, get: GetFn) {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath);
+        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId);
         if (!slug) {
           set((state) => ({
             sessionGithub: {
@@ -71,10 +71,19 @@ export function refreshSessionPr(set: SetFn, get: GetFn) {
         const store = createTauriPrCacheStore(tauriDatabase);
         const pr = await getPrForBranch(
           { runner: tauriGhRunner, store },
-          { repoSlug: slug, branch, cwd: workspace.rootPath, force: opts?.force === true },
+          {
+            repoSlug: slug,
+            branch,
+            cwd: workspace.rootPath,
+            workspaceId: session.workspaceId,
+            force: opts?.force === true,
+          },
         );
         const linked = pr
-          ? await fetchLinkedIssues(tauriGhRunner, slug, pr, { cwd: workspace.rootPath })
+          ? await fetchLinkedIssues(tauriGhRunner, slug, pr, {
+              cwd: workspace.rootPath,
+              workspaceId: session.workspaceId,
+            })
           : [];
         set((state) => ({
           sessionGithub: {

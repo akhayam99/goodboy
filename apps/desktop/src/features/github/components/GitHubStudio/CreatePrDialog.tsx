@@ -33,6 +33,7 @@ export function CreatePrDialog({
     const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
     return ws?.rootPath ?? null;
   });
+  const workspaceId = useAppStore((s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId);
 
   const [title, setTitle] = useState(defaultTitle);
   const [body, setBody] = useState('');
@@ -45,7 +46,7 @@ export function CreatePrDialog({
   useEffect(() => {
     if (!workspaceRoot) return;
     let cancelled = false;
-    void ghBaseBranches(workspaceRoot).then(({ defaultBranch, branches: list }) => {
+    void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
       if (cancelled) return;
       setBranches(list);
       if (defaultBranch) setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
@@ -53,7 +54,7 @@ export function CreatePrDialog({
     return () => {
       cancelled = true;
     };
-  }, [workspaceRoot]);
+  }, [workspaceRoot, workspaceId]);
 
   const onCreate = async () => {
     if (busy) return;

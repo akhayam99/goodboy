@@ -22,6 +22,7 @@ export interface GetPrInput {
   branch: string;
   cwd?: string;
   token?: string;
+  workspaceId?: string;
   force?: boolean;
 }
 
@@ -41,6 +42,7 @@ export async function getPrForBranch(
   const fresh = await resolvePrForBranch(deps.runner, input.repoSlug, input.branch, {
     cwd: input.cwd,
     token: input.token,
+    workspaceId: input.workspaceId,
   });
   await deps.store.upsert({
     repoSlug: input.repoSlug,

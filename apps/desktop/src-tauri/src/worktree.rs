@@ -179,18 +179,36 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     std::fs::create_dir_all(&parent)?;
 
     if let Some(name) = existing_branch {
-        // Adopt the existing local branch as-is. Fails if the branch is
-        // already checked out elsewhere — caller is expected to surface that
-        // to the user.
-        git(
+        let local_exists = git(
             &repo_path,
-            &[
-                "worktree",
-                "add",
-                worktree_path.to_string_lossy().as_ref(),
-                name,
-            ],
-        )?;
+            &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{name}")],
+        )
+        .is_ok();
+        if local_exists {
+            git(
+                &repo_path,
+                &[
+                    "worktree",
+                    "add",
+                    worktree_path.to_string_lossy().as_ref(),
+                    name,
+                ],
+            )?;
+        } else {
+            let _ = git(&repo_path, &["fetch", "origin", name]);
+            git(
+                &repo_path,
+                &[
+                    "worktree",
+                    "add",
+                    "--track",
+                    "-b",
+                    name,
+                    worktree_path.to_string_lossy().as_ref(),
+                    &format!("origin/{name}"),
+                ],
+            )?;
+        }
     } else {
         // Cut from `origin/<base>`, not the local checkout, so a stale or
         // dirty local `main` cannot leak unrelated commits into the new

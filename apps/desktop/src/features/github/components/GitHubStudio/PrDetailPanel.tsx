@@ -33,6 +33,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
     return ws?.rootPath ?? null;
   });
+  const workspaceId = session?.workspaceId;
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const markPrReady = useAppStore((s) => s.markPrReady);
   const convertPrToDraft = useAppStore((s) => s.convertPrToDraft);
@@ -72,14 +73,14 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
       setLocalDetailLoading(true);
       setLocalDetailError(null);
       try {
-        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num));
+        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num, workspaceId));
       } catch (e) {
         setLocalDetailError(formatError(e));
       } finally {
         setLocalDetailLoading(false);
       }
     },
-    [workspaceRoot],
+    [workspaceRoot, workspaceId],
   );
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
       return;
     }
     let cancelled = false;
-    void ghPrsForBranch(workspaceRoot, branch)
+    void ghPrsForBranch(workspaceRoot, branch, workspaceId)
       .then((list) => {
         if (!cancelled) setPrs(list);
       })
@@ -107,7 +108,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [branch, workspaceRoot, prsTick]);
+  }, [branch, workspaceRoot, workspaceId, prsTick]);
 
   useEffect(() => {
     if (!sessionId || !isPrimary || !activePr) return;

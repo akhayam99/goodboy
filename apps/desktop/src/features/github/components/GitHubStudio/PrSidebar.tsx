@@ -17,6 +17,7 @@ import {
 import { PullRequestChip } from '../PullRequestChip';
 import { computeTabStatus, TabBadge } from '../Card';
 import { ghRepoCollaborators } from '../../github';
+import { useCurrentWorkspace } from '../../../../store';
 import { PrSwitcher } from './PrSwitcher';
 
 export type PrSection = 'overview' | 'comments' | 'ci';
@@ -170,6 +171,7 @@ function ReviewerPicker({
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const workspaceId = useCurrentWorkspace()?.id;
 
   useEffect(() => {
     if (!open) return;
@@ -183,11 +185,11 @@ function ReviewerPicker({
   useEffect(() => {
     if (!open || logins !== null || !workspaceRoot) return;
     setLoading(true);
-    void ghRepoCollaborators(workspaceRoot)
+    void ghRepoCollaborators(workspaceRoot, workspaceId)
       .then(setLogins)
       .catch(() => setLogins([]))
       .finally(() => setLoading(false));
-  }, [open, logins, workspaceRoot]);
+  }, [open, logins, workspaceRoot, workspaceId]);
 
   const candidates = (logins ?? [])
     .filter((l) => !exclude.has(l.toLowerCase()))

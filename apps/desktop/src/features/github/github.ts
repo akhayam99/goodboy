@@ -22,52 +22,55 @@ interface RawGhStatus {
   version: string | null;
   user: string | null;
   scopes: ReadonlyArray<string>;
+  scoped: boolean;
 }
 
-export async function ghStatus(): Promise<GhTokenStatus> {
+function toStatus(raw: RawGhStatus): GhTokenStatus {
+  return {
+    available: raw.available,
+    mode: raw.mode,
+    version: raw.version ?? undefined,
+    user: raw.user ?? undefined,
+    scopes: raw.scopes,
+    scoped: raw.scoped,
+  };
+}
+
+export async function ghStatus(workspaceId?: string): Promise<GhTokenStatus> {
   try {
-    const raw = await invoke<RawGhStatus>('gh_status');
-    return {
-      available: raw.available,
-      mode: raw.mode,
-      version: raw.version ?? undefined,
-      user: raw.user ?? undefined,
-      scopes: raw.scopes,
-    };
+    return toStatus(await invoke<RawGhStatus>('gh_status', { workspaceId }));
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh status check failed: ${msg}`, { cause: err });
   }
 }
 
-export async function ghSetToken(token: string): Promise<GhTokenStatus> {
+export async function ghSetToken(token: string, workspaceId?: string): Promise<GhTokenStatus> {
   try {
-    const raw = await invoke<RawGhStatus>('gh_set_token', { token });
-    return {
-      available: raw.available,
-      mode: raw.mode,
-      version: raw.version ?? undefined,
-      user: raw.user ?? undefined,
-      scopes: raw.scopes,
-    };
+    return toStatus(await invoke<RawGhStatus>('gh_set_token', { token, workspaceId }));
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh set token failed: ${msg}`, { cause: err });
   }
 }
 
-export async function ghClearToken(): Promise<void> {
+export async function ghClearToken(workspaceId?: string): Promise<void> {
   try {
-    await invoke('gh_clear_token');
+    await invoke('gh_clear_token', { workspaceId });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh clear token failed: ${msg}`, { cause: err });
   }
 }
 
-export async function ghPrDiff(repo: string, pr: number, cwd?: string): Promise<string> {
+export async function ghPrDiff(
+  repo: string,
+  pr: number,
+  cwd?: string,
+  workspaceId?: string,
+): Promise<string> {
   try {
-    return await invoke<string>('gh_pr_diff', { repo, pr, cwd });
+    return await invoke<string>('gh_pr_diff', { repo, pr, cwd, workspaceId });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
@@ -77,30 +80,67 @@ export async function ghPrDiff(repo: string, pr: number, cwd?: string): Promise<
 export async function ghPrsForBranch(
   cwd: string,
   branch: string,
+  workspaceId?: string,
 ): Promise<ReadonlyArray<PullRequestState>> {
-  const slug = await detectRepoSlug(tauriGhRunner, cwd);
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) return [];
-  return listPrsForBranch(tauriGhRunner, slug, branch, { cwd });
+  return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
 }
 
-export async function ghPrDetailByNumber(cwd: string, prNumber: number): Promise<PrDetail | null> {
-  const slug = await detectRepoSlug(tauriGhRunner, cwd);
+export async function ghPrDetailByNumber(
+  cwd: string,
+  prNumber: number,
+  workspaceId?: string,
+): Promise<PrDetail | null> {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) return null;
-  return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd });
+  return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd, workspaceId });
+}
+
+export async function ghPrHeadBranch(
+  cwd: string,
+  prNumber: number,
+  workspaceId?: string,
+): Promise<string> {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (!slug) throw new Error('could not detect a GitHub repository for this workspace');
+  const res = await tauriGhRunner.run(
+    [
+      'pr',
+      'view',
+      String(prNumber),
+      '--repo',
+      slug,
+      '--json',
+      'headRefName',
+      '--jq',
+      '.headRefName',
+    ],
+    { cwd, workspaceId },
+  );
+  if (res.exitCode !== 0) {
+    throw new Error(res.stderr.trim() || `gh pr view #${prNumber} exited ${res.exitCode}`);
+  }
+  const branch = res.stdout.trim();
+  if (!branch) throw new Error(`PR #${prNumber} has no head branch`);
+  return branch;
 }
 
 export async function ghBaseBranches(
   cwd: string,
+  workspaceId?: string,
 ): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> {
   const [def, list] = await Promise.all([
     tauriGhRunner.run(
       ['repo', 'view', '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'],
       {
         cwd,
+        workspaceId,
       },
     ),
     tauriGhRunner.run(['api', 'repos/{owner}/{repo}/branches?per_page=100', '--jq', '.[].name'], {
       cwd,
+      workspaceId,
     }),
   ]);
   const defaultBranch = def.exitCode === 0 ? def.stdout.trim() || null : null;
@@ -114,10 +154,13 @@ export async function ghBaseBranches(
   return { defaultBranch, branches };
 }
 
-export async function ghRepoCollaborators(cwd: string): Promise<ReadonlyArray<string>> {
+export async function ghRepoCollaborators(
+  cwd: string,
+  workspaceId?: string,
+): Promise<ReadonlyArray<string>> {
   const res = await tauriGhRunner.run(
     ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
-    { cwd },
+    { cwd, workspaceId },
   );
   if (res.exitCode !== 0) return [];
   return res.stdout
@@ -145,6 +188,7 @@ export const tauriGhRunner: GhRunner = {
       const raw = await invoke<RawGhRunResult>('gh_run', {
         args: [...args],
         cwd: opts.cwd,
+        workspaceId: opts.workspaceId,
       });
       return {
         stdout: raw.stdout,

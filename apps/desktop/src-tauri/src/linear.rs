@@ -167,6 +167,21 @@ pub struct LinearIssueTeam {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct LinearAttachment {
+    pub id: String,
+    pub title: Option<String>,
+    pub url: String,
+    #[serde(rename = "sourceType")]
+    pub source_type: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearAttachmentNodes {
+    pub nodes: Vec<LinearAttachment>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LinearIssue {
     pub id: String,
     pub identifier: String,
@@ -177,6 +192,9 @@ pub struct LinearIssue {
     pub team: LinearIssueTeam,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+    #[serde(rename = "branchName")]
+    pub branch_name: String,
+    pub attachments: LinearAttachmentNodes,
 }
 
 const ISSUES_QUERY: &str = r#"
@@ -191,6 +209,10 @@ query AssignedIssues($filter: IssueFilter!) {
       state { name type }
       team { key }
       updatedAt
+      branchName
+      attachments(first: 10) {
+        nodes { id title url sourceType metadata }
+      }
     }
   }
 }

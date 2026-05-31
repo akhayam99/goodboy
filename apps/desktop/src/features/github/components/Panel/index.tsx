@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { GitFork as GithubIcon, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { GitFork as GithubIcon, Check, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Button, Input, cn } from '@goodboy/ui';
 import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
+import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink';
 
 export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) {
   const status = useAppStore((s) => s.githubStatus);
@@ -14,10 +15,20 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
   const [token, setToken] = useState('');
   const [save, setSave] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!status) void refreshStatus();
   }, [status, refreshStatus]);
+
+  const onReload = async () => {
+    setChecking(true);
+    try {
+      await refreshStatus();
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const onConnect = async () => {
     if (!token.trim()) return;
@@ -47,12 +58,27 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
 
   return (
     <div className="flex flex-col gap-4">
-      {!hideSectionHeader ? (
-        <div className="flex items-center gap-2">
-          <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">GitHub</h2>
-        </div>
-      ) : null}
+      <div className="flex items-center gap-2">
+        {!hideSectionHeader ? (
+          <>
+            <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              GitHub
+            </h2>
+          </>
+        ) : null}
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => void onReload()}
+          disabled={checking}
+          title="refresh status"
+          aria-label="refresh GitHub status"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw size={13} aria-hidden className={checking ? 'animate-spin' : undefined} />
+        </button>
+      </div>
 
       {status === null ? (
         <p className="text-xs text-muted-foreground">checking gh status…</p>
@@ -61,8 +87,22 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
       ) : status.mode === 'absent' ? (
         <Absent token={token} setToken={setToken} onConnect={onConnect} save={save} error={error} />
       ) : (
-        <Connected status={status} onDisconnect={onDisconnect} save={save} />
+        <Connected
+          status={status}
+          onDisconnect={onDisconnect}
+          save={save}
+          token={token}
+          setToken={setToken}
+          onConnect={onConnect}
+          error={error}
+        />
       )}
+
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        This is your baseline (system gh / global token). To use a different token for a specific
+        repo (e.g. SSO-authorized for its org), connect one per-workspace in that workspace&apos;s
+        Settings → Integrations.
+      </p>
     </div>
   );
 }
@@ -138,6 +178,7 @@ function Absent({
           {error}
         </p>
       ) : null}
+      <CreateTokenLink />
       <p className="text-[10px] text-muted-foreground">
         token is stored in your OS keychain via the system credential store. it never leaves your
         machine.
@@ -150,11 +191,20 @@ function Connected({
   status,
   onDisconnect,
   save,
+  token,
+  setToken,
+  onConnect,
+  error,
 }: {
   status: { user?: string; mode: string; version?: string; scopes?: ReadonlyArray<string> };
   onDisconnect: () => void;
   save: SaveState;
+  token: string;
+  setToken: (v: string) => void;
+  onConnect: () => void;
+  error: string | null;
 }) {
+  const viaPat = status.mode === 'pat';
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-md border border-success/40 bg-success/10 px-3 py-2.5 text-xs text-success">
@@ -172,17 +222,54 @@ function Connected({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-end">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onDisconnect}
-          disabled={save === 'saving'}
-          className={cn(save === 'saving' && 'opacity-60')}
-        >
-          Disconnect
-        </Button>
-      </div>
+      {viaPat ? (
+        <div className="flex items-center justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onDisconnect}
+            disabled={save === 'saving'}
+            className={cn(save === 'saving' && 'opacity-60')}
+          >
+            Disconnect
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Using your system gh login, Goodboy is not storing a token. To disconnect, run{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono">gh auth logout</code> in a
+            terminal. To use a different token here (e.g. one authorized for your org via SSO),
+            connect one below.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              type="password"
+              placeholder="ghp_…"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="flex-1 font-mono text-xs"
+              aria-label="GitHub personal access token"
+            />
+            <Button
+              size="sm"
+              onClick={onConnect}
+              disabled={save === 'saving' || token.trim().length === 0}
+            >
+              {save === 'saving' ? (
+                <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
+              ) : null}
+              Use a token
+            </Button>
+          </div>
+          <CreateTokenLink />
+          {error ? (
+            <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+              {error}
+            </p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
