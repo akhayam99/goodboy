@@ -5,6 +5,7 @@ import {
   extractPlanFromMarker,
   Summarizer,
   type ExtractedHandoff,
+  type SlotKey,
 } from '@goodboy/core';
 import {
   insertContextSlotHistory,
@@ -202,7 +203,7 @@ async function runSummarizer(
           return prevValue !== null ? upsert.key : null;
         }),
       )
-    ).filter((k): k is string => k !== null);
+    ).filter((k): k is SlotKey => k !== null);
 
     // If the summarizer carried a GitHub PR URL into any slot value and we
     // still have no PR cached for this session, pull the PR state now so the

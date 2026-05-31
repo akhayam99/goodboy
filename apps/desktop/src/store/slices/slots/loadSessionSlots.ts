@@ -12,7 +12,7 @@ export function loadSessionSlots(set: SetFn) {
     const slotHistory: Record<string, ReadonlyArray<ContextSlotHistoryEntry>> = {};
     slots.forEach((slot, i) => {
       const entries = histories[i];
-      if (entries.length > 0) slotHistory[slot.key] = entries;
+      if (entries && entries.length > 0) slotHistory[slot.key] = entries;
     });
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: slots },
