@@ -247,6 +247,7 @@ function setupSession(
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
     sessionPhaseRuns: { [SESSION_ID]: [defaultAgent] },
     selectedAgentId: { [SESSION_ID]: defaultAgent.id },
+    agentTurnState: {},
     settings: {
       'experimental.enable_parallel_agents': 'true',
       'experimental.max_parallelism': '4',

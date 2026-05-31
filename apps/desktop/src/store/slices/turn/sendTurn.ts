@@ -91,7 +91,7 @@ import {
   type ParallelBranchEffects,
 } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
-import { applySessionUpdate, cancelledRunIds } from '../../session-mutators';
+import { applyAgentTurnState, applySessionUpdate, cancelledRunIds } from '../../session-mutators';
 import { buildProviderSpendBreakdown } from '../budget';
 import {
   applyHeuristicTitle,
@@ -488,16 +488,19 @@ export function sendTurn(set: SetFn, get: GetFn) {
     }
 
     if (parallelDispatch === null) {
-      let nextState: TurnState = session.state;
-      if (nextState.kind === 'draft') {
-        nextState = turnReducer(nextState, { kind: 'start', at: now() });
+      let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
+        kind: 'idle',
+        lastActivityAt: now(),
+      };
+      if (nextAgentState.kind === 'draft') {
+        nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
       }
-      if (nextState.kind === 'error') {
-        nextState = turnReducer(nextState, { kind: 'retry', at: now() });
+      if (nextAgentState.kind === 'error') {
+        nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
       }
-      nextState = turnReducer(nextState, { kind: 'send', runId, at: now() });
-      await updateSessionState(tauriDatabase, sessionId, nextState, now());
-      applySessionUpdate(set, sessionId, nextState, activeAgentId);
+      nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
+      const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
+      await updateSessionState(tauriDatabase, sessionId, derived, now());
     }
 
     const providerInfo = get().providers.find((p) => p.id === provider);
@@ -649,15 +652,15 @@ export function sendTurn(set: SetFn, get: GetFn) {
           await updateSessionState(tauriDatabase, sessionId, errorState, now());
           applySessionUpdate(set, sessionId, errorState, activeAgentId);
         } else {
-          await updateSessionState(
-            tauriDatabase,
-            sessionId,
-            turnReducer(get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP, {
+          const doneState = turnReducer(
+            get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP,
+            {
               kind: 'receive_event',
               event: { kind: 'done', runId: result.runIds[0]!, at: now() },
-            }),
-            now(),
+            },
           );
+          await updateSessionState(tauriDatabase, sessionId, doneState, now());
+          applySessionUpdate(set, sessionId, doneState, activeAgentId);
         }
       } catch (err) {
         const rawMessage = formatError(err);
@@ -902,23 +905,23 @@ export function sendTurn(set: SetFn, get: GetFn) {
           }
         }
 
-        const current = get().sessions.find((s) => s.id === sessionId);
-        if (current) {
-          const reduced = turnReducer(current.state, { kind: 'receive_event', event });
-          if (reduced !== current.state) {
-            await updateSessionState(tauriDatabase, sessionId, reduced, now());
-            applySessionUpdate(set, sessionId, reduced, activeAgentId);
+        const currentAgentState = get().agentTurnState[activeAgentId];
+        if (currentAgentState) {
+          const reduced = turnReducer(currentAgentState, { kind: 'receive_event', event });
+          if (reduced !== currentAgentState) {
+            const derived = applyAgentTurnState(set, sessionId, activeAgentId, reduced, now());
+            await updateSessionState(tauriDatabase, sessionId, derived, now());
           }
         }
       }
       // Stream ended without a 'done'/'error' event, provider CLI exited
       // cleanly but didn't emit a `result` line, so the reducer never left
       // 'running'. Force-idle so input re-enables.
-      const afterStream = get().sessions.find((s) => s.id === sessionId);
-      if (afterStream?.state.kind === 'running') {
+      const afterAgentState = get().agentTurnState[activeAgentId];
+      if (afterAgentState?.kind === 'running') {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
-        await updateSessionState(tauriDatabase, sessionId, idleState, now());
-        applySessionUpdate(set, sessionId, idleState, activeAgentId);
+        const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now());
+        await updateSessionState(tauriDatabase, sessionId, derived, now());
         if (assistantText.length === 0) {
           get().appendTurnEvent(activeAgentId, sessionId, {
             kind: 'error',
@@ -1063,8 +1066,8 @@ export function sendTurn(set: SetFn, get: GetFn) {
         message: rawMessage,
         failedAt: now(),
       };
-      await updateSessionState(tauriDatabase, sessionId, errorState, now());
-      applySessionUpdate(set, sessionId, errorState, activeAgentId);
+      const derived = applyAgentTurnState(set, sessionId, activeAgentId, errorState, now());
+      await updateSessionState(tauriDatabase, sessionId, derived, now());
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),

@@ -205,19 +205,27 @@ const SUGGESTION_FLOOR_PATTERN = /haiku|small|mini|nano|cursor-small/i;
 // for marginal savings like Sonnet 4.6 → 4.5).
 const MIN_WEIGHT_GAP = 20;
 
+const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
+
 export function suggestLighterModel(
   current: string,
   candidates: ReadonlyArray<string>,
 ): string | null {
   const currentWeight = modelWeight(current);
-  let best: { id: string; weight: number } | null = null;
-  for (const id of candidates) {
-    if (id === current) continue;
-    if (SUGGESTION_FLOOR_PATTERN.test(id)) continue;
+  const eligible = candidates.filter((id) => {
+    if (id === current) return false;
+    if (SUGGESTION_FLOOR_PATTERN.test(id)) return false;
     const w = modelWeight(id);
-    if (w >= currentWeight) continue;
-    if (currentWeight - w < MIN_WEIGHT_GAP) continue;
-    if (!best || w > best.weight) best = { id, weight: w };
+    return w < currentWeight && currentWeight - w >= MIN_WEIGHT_GAP;
+  });
+  if (eligible.length === 0) return null;
+  let best: { id: string; tierRank: number; weight: number } | null = null;
+  for (const id of eligible) {
+    const tierRank = TIER_RANK[modelTier(id)];
+    const weight = modelWeight(id);
+    if (!best || tierRank < best.tierRank || (tierRank === best.tierRank && weight > best.weight)) {
+      best = { id, tierRank, weight };
+    }
   }
   return best?.id ?? null;
 }
