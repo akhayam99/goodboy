@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
+  extractClusterDone,
+  extractClustersFromMarker,
   extractCommentResolved,
   extractFilesTouched,
   extractHandoff,
@@ -301,5 +303,63 @@ describe('assessPlanReadiness', () => {
   it('does not count open-question phrases that appear inside the plan body', () => {
     const text = `<<plan>>${body}\n\nshould i clarify before step 2?<</plan>>`;
     expect(assessPlanReadiness({ planBody: body, assistantText: text }).ready).toBe(true);
+  });
+});
+
+describe('extractClustersFromMarker', () => {
+  it('returns null when no marker present', () => {
+    expect(extractClustersFromMarker('just prose, no clusters')).toBeNull();
+  });
+
+  it('parses a JSON array of clusters', () => {
+    const text = `<<clusters>>[
+      {"title":"move files","instructions":"relocate domain files"},
+      {"title":"update imports","instructions":"fix import paths"}
+    ]<</clusters>>`;
+    expect(extractClustersFromMarker(text)).toEqual([
+      { title: 'move files', instructions: 'relocate domain files' },
+      { title: 'update imports', instructions: 'fix import paths' },
+    ]);
+  });
+
+  it('tolerates a json code fence', () => {
+    const text = '<<clusters>>```json\n[{"title":"a","instructions":"b"}]\n```<</clusters>>';
+    expect(extractClustersFromMarker(text)).toEqual([{ title: 'a', instructions: 'b' }]);
+  });
+
+  it('drops entries missing title or instructions', () => {
+    const text =
+      '<<clusters>>[{"title":"keep","instructions":"x"},{"title":"","instructions":"y"},{"title":"z"}]<</clusters>>';
+    expect(extractClustersFromMarker(text)).toEqual([{ title: 'keep', instructions: 'x' }]);
+  });
+
+  it('returns null on malformed json', () => {
+    expect(extractClustersFromMarker('<<clusters>>not json<</clusters>>')).toBeNull();
+  });
+
+  it('takes the last block when several appear', () => {
+    const text =
+      '<<clusters>>[{"title":"old","instructions":"x"}]<</clusters>> later <<clusters>>[{"title":"new","instructions":"y"}]<</clusters>>';
+    expect(extractClustersFromMarker(text)).toEqual([{ title: 'new', instructions: 'y' }]);
+  });
+});
+
+describe('extractClusterDone', () => {
+  it('returns null when no marker present', () => {
+    expect(extractClusterDone('done with the work')).toBeNull();
+  });
+
+  it('parses the cluster id', () => {
+    expect(extractClusterDone('all set <<cluster-done id="c2">>')).toEqual({ id: 'c2' });
+  });
+
+  it('takes the last marker when several appear', () => {
+    expect(extractClusterDone('<<cluster-done id="c1">> then <<cluster-done id="c2">>')).toEqual({
+      id: 'c2',
+    });
+  });
+
+  it('ignores a marker missing an id', () => {
+    expect(extractClusterDone('<<cluster-done reason="x">>')).toBeNull();
   });
 });

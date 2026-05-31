@@ -4,6 +4,11 @@ export type PlanId = string & { readonly __brand: 'PlanId' };
 
 export type PlanStatus = 'active' | 'consumed' | 'superseded' | 'discarded';
 
+export type ImplementationCluster = Readonly<{
+  title: string;
+  instructions: string;
+}>;
+
 export type Plan = Readonly<{
   id: PlanId;
   sessionId: SessionId;
@@ -11,6 +16,7 @@ export type Plan = Readonly<{
   title: string;
   bodyMd: string;
   status: PlanStatus;
+  clusters?: ReadonlyArray<ImplementationCluster>;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

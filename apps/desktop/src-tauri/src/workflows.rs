@@ -161,6 +161,8 @@ pub struct SessionRow {
     pub last_viewed_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
+    #[serde(rename = "parentAgentId")]
+    pub parent_agent_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -183,6 +185,8 @@ pub struct PhaseRunInsertInput {
     pub completed_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
+    #[serde(rename = "parentAgentId")]
+    pub parent_agent_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -771,7 +775,8 @@ pub fn agent_list_for_session(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity
+                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
+                parent_agent_id
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -793,6 +798,7 @@ pub fn agent_list_for_session(
             last_viewed_at: row.get(12)?,
             kind: row.get(13)?,
             verbosity: row.get(14)?,
+            parent_agent_id: row.get(15)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -809,8 +815,9 @@ pub fn agent_insert(
     conn.execute(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
-            provider_run_id, output_summary, started_at, completed_at, kind, verbosity)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
+            parent_agent_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         rusqlite::params![
             id,
             input.session_id,
@@ -824,6 +831,7 @@ pub fn agent_insert(
             input.completed_at,
             input.kind,
             input.verbosity,
+            input.parent_agent_id,
         ],
     )?;
 
@@ -843,6 +851,7 @@ pub fn agent_insert(
         last_viewed_at: None,
         kind: input.kind,
         verbosity: input.verbosity,
+        parent_agent_id: input.parent_agent_id,
     })
 }
 
@@ -883,7 +892,8 @@ pub fn agent_update_status(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity
+                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
+                parent_agent_id
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -905,6 +915,7 @@ pub fn agent_update_status(
             last_viewed_at: row.get(12)?,
             kind: row.get(13)?,
             verbosity: row.get(14)?,
+            parent_agent_id: row.get(15)?,
         })
     })?;
     match rows.next() {

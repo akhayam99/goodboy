@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  ImplementationCluster,
   IsoDateTime,
   Plan,
   PlanConsumption,
@@ -18,6 +19,7 @@ interface PlanRow {
   title: string;
   body_md: string;
   status: string;
+  clusters_json: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -26,7 +28,30 @@ interface PlanWithCountRow extends PlanRow {
   consumption_count: number;
 }
 
+function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster> | undefined {
+  if (!raw) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    const out = parsed.filter(
+      (c): c is ImplementationCluster =>
+        typeof c === 'object' &&
+        c !== null &&
+        typeof (c as { title?: unknown }).title === 'string' &&
+        typeof (c as { instructions?: unknown }).instructions === 'string',
+    );
+    return out.length > 0 ? out : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function serializeClusters(clusters?: ReadonlyArray<ImplementationCluster>): string | null {
+  return clusters && clusters.length > 0 ? JSON.stringify(clusters) : null;
+}
+
 function toDomain(row: PlanRow): Plan {
+  const clusters = parseClusters(row.clusters_json);
   return {
     id: row.id as PlanId,
     sessionId: row.session_id as SessionId,
@@ -34,6 +59,7 @@ function toDomain(row: PlanRow): Plan {
     title: row.title,
     bodyMd: row.body_md,
     status: row.status as PlanStatus,
+    ...(clusters && { clusters }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -49,7 +75,7 @@ export async function listPlansForSession(
 ): Promise<ReadonlyArray<PlanWithCount>> {
   const rows = await db.select<PlanWithCountRow>(
     `SELECT p.id, p.session_id, p.agent_id, p.title, p.body_md, p.status,
-            p.created_at, p.updated_at,
+            p.clusters_json, p.created_at, p.updated_at,
             COUNT(c.id) AS consumption_count
      FROM session_plans p
      LEFT JOIN plan_consumptions c ON c.plan_id = p.id
@@ -67,10 +93,12 @@ export interface UpsertPlanInput {
   readonly agentId: AgentId;
   readonly title: string;
   readonly bodyMd: string;
+  readonly clusters?: ReadonlyArray<ImplementationCluster>;
 }
 
 export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<Plan> {
   const now = Date.now();
+  const clustersJson = serializeClusters(input.clusters);
   const existing = await db.select<{ id: string }>(
     `SELECT id FROM session_plans
      WHERE session_id = ? AND status = 'active'
@@ -80,11 +108,11 @@ export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<
   const activeId = existing[0]?.id;
   if (activeId) {
     await db.execute(
-      `UPDATE session_plans SET title = ?, body_md = ?, updated_at = ? WHERE id = ?`,
-      [input.title, input.bodyMd, now, activeId],
+      `UPDATE session_plans SET title = ?, body_md = ?, clusters_json = ?, updated_at = ? WHERE id = ?`,
+      [input.title, input.bodyMd, clustersJson, now, activeId],
     );
     const rows = await db.select<PlanRow>(
-      `SELECT id, session_id, agent_id, title, body_md, status, created_at, updated_at
+      `SELECT id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at
        FROM session_plans WHERE id = ?`,
       [activeId],
     );
@@ -93,12 +121,12 @@ export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<
     return toDomain(row);
   }
   await db.execute(
-    `INSERT INTO session_plans (id, session_id, agent_id, title, body_md, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
-    [input.id, input.sessionId, input.agentId, input.title, input.bodyMd, now, now],
+    `INSERT INTO session_plans (id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+    [input.id, input.sessionId, input.agentId, input.title, input.bodyMd, clustersJson, now, now],
   );
   const rows = await db.select<PlanRow>(
-    `SELECT id, session_id, agent_id, title, body_md, status, created_at, updated_at
+    `SELECT id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at
      FROM session_plans WHERE id = ?`,
     [input.id],
   );

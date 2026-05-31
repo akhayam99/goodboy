@@ -44,6 +44,8 @@ import { m043WorkspaceIntegrations } from './m043-workspace-integrations';
 import { m044SessionExternalTask } from './m044-session-external-task';
 import { m045StepLibrary } from './m045-step-library';
 import { m046StepRole } from './m046-step-role';
+import { m047AgentParent } from './m047-agent-parent';
+import { m048PlanClusters } from './m048-plan-clusters';
 
 export interface Migration {
   readonly version: number;
@@ -97,4 +99,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 44, sql: m044SessionExternalTask },
   { version: 45, sql: m045StepLibrary },
   { version: 46, sql: m046StepRole },
+  { version: 47, sql: m047AgentParent },
+  { version: 48, sql: m048PlanClusters },
 ];

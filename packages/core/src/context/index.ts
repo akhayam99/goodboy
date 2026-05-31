@@ -10,6 +10,8 @@ export {
 } from './slots';
 export {
   assessPlanReadiness,
+  extractClusterDone,
+  extractClustersFromMarker,
   extractCommentResolved,
   extractFilesTouched,
   extractHandoff,
@@ -17,6 +19,7 @@ export {
   extractPlanFromMarker,
   mergeIntoSlot,
   removeFromSlot,
+  type ExtractedCluster,
   type ExtractedCommentResolution,
   type ExtractedHandoff,
   type ExtractedPlan,

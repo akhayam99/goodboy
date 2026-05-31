@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
 import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
@@ -737,8 +737,21 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     return map;
   }, [attachedWorkflows, sorted, stepWorkflowById]);
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string, Agent[]>();
+    for (const r of sorted) {
+      if (r.parentAgentId == null) continue;
+      const bucket = map.get(r.parentAgentId) ?? [];
+      bucket.push(r);
+      map.set(r.parentAgentId, bucket);
+    }
+    return map;
+  }, [sorted]);
   const adHocAgents = useMemo(
-    () => sorted.filter((r) => r.stepId == null || !stepWorkflowById.has(r.stepId)),
+    () =>
+      sorted.filter(
+        (r) => r.parentAgentId == null && (r.stepId == null || !stepWorkflowById.has(r.stepId)),
+      ),
     [sorted, stepWorkflowById],
   );
   const actionableStepIdByWorkflowId = useMemo(() => {
@@ -853,6 +866,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
         turns += 1;
       }
       map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns });
+    }
+    for (const run of phaseRuns) {
+      if (run.parentAgentId == null) continue;
+      const parent = map.get(run.parentAgentId);
+      const child = map.get(run.id);
+      if (!parent || !child) continue;
+      parent.inputTokens += child.inputTokens;
+      parent.outputTokens += child.outputTokens;
+      parent.estimatedCostUsd += child.estimatedCostUsd;
+      parent.turns += child.turns;
     }
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
@@ -991,27 +1014,48 @@ function AgentsSection({ task }: AgentsSectionProps) {
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
               const resolvedModel =
                 agentModelOverride[run.id] ?? run.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+              const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
               return (
-                <WorkflowStepRow
-                  key={run.id}
-                  run={run}
-                  kind={kind}
-                  index={index}
-                  resolvedModel={resolvedModel}
-                  isActionable={isActionable}
-                  isBlocked={isActionable && wfBlocked}
-                  isSelected={run.id === selectedAgentId}
-                  isEditing={editingId === run.id}
-                  telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                  aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                  turns={turnsByAgentId.get(run.id) ?? 0}
-                  turnsLoading={run.id === selectedAgentId && loading.transcript}
-                  onStart={() => void onSpawn(run.stepId!, undefined)}
-                  onSelect={() => onPickAgent(run.id)}
-                  onRenameStart={() => setEditingId(run.id)}
-                  onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                  onRenameCancel={() => setEditingId(null)}
-                />
+                <Fragment key={run.id}>
+                  <WorkflowStepRow
+                    run={run}
+                    kind={kind}
+                    index={index}
+                    resolvedModel={resolvedModel}
+                    isActionable={isActionable}
+                    isBlocked={isActionable && wfBlocked}
+                    isSelected={run.id === selectedAgentId}
+                    isEditing={editingId === run.id}
+                    telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                    aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                    turns={turnsByAgentId.get(run.id) ?? 0}
+                    turnsLoading={run.id === selectedAgentId && loading.transcript}
+                    onStart={() => void onSpawn(run.stepId!, undefined)}
+                    onSelect={() => onPickAgent(run.id)}
+                    onRenameStart={() => setEditingId(run.id)}
+                    onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                    onRenameCancel={() => setEditingId(null)}
+                  />
+                  {clusterChildren.length > 0 ? (
+                    <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+                      <span className="px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50">
+                        clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
+                        {clusterChildren.length}
+                      </span>
+                      {clusterChildren.map((child, ci) => (
+                        <ClusterChildRow
+                          key={child.id}
+                          child={child}
+                          index={ci}
+                          total={clusterChildren.length}
+                          costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
+                          isSelected={child.id === selectedAgentId}
+                          onSelect={() => onPickAgent(child.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </Fragment>
               );
             })}
           </div>
@@ -1219,6 +1263,63 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       </button>
       {menu}
     </div>
+  );
+}
+
+interface ClusterChildRowProps {
+  readonly child: Agent;
+  readonly index: number;
+  readonly total: number;
+  readonly costUsd: number;
+  readonly isSelected: boolean;
+  readonly onSelect: () => void;
+}
+
+function ClusterChildRow({
+  child,
+  index,
+  total,
+  costUsd,
+  isSelected,
+  onSelect,
+}: ClusterChildRowProps) {
+  const icon =
+    child.status === 'running' ? (
+      <Loader2 size={10} className="animate-spin text-info" aria-hidden />
+    ) : child.status === 'completed' ? (
+      <span className="flex size-3 items-center justify-center rounded-full bg-success/15">
+        <Check size={8} className="text-success" aria-hidden />
+      </span>
+    ) : child.status === 'failed' ? (
+      <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+    ) : (
+      <Clock size={10} className="text-muted-foreground/60" aria-hidden />
+    );
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        'flex w-full items-center gap-2 rounded px-2 py-1 text-2xs font-medium transition-colors',
+        isSelected
+          ? 'bg-elevated text-foreground'
+          : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground',
+      )}
+    >
+      <span className="tabular-nums text-muted-foreground/50">
+        {index + 1}/{total}
+      </span>
+      {icon}
+      <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
+      {costUsd > 0 ? (
+        <span
+          className="shrink-0 tabular-nums text-muted-foreground/60"
+          title={`$${costUsd.toFixed(4)}`}
+        >
+          ${costUsd.toFixed(2)}
+        </span>
+      ) : null}
+    </button>
   );
 }
 

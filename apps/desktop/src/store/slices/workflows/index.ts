@@ -1,4 +1,5 @@
 import { activateWorkflowAgent } from './activateWorkflowAgent';
+import { advanceClusterImplementation } from './clusterImplementation';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
@@ -27,6 +28,7 @@ export function createWorkflowsSlice(set: SetFn, get: GetFn) {
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
+    advanceClusterImplementation: advanceClusterImplementation(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
   };
 }
