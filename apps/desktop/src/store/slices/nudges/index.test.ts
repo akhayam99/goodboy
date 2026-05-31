@@ -572,5 +572,118 @@ describe('store contract', () => {
       await store.getState().dismissSessionNudge(SESSION_ID);
       expect(updateNudgeOutcomeSpy).not.toHaveBeenCalled();
     });
+
+    describe('acceptSessionNudgeHandoff', () => {
+      it('plan-ready with planId: clears nudge, records outcome, spawns implementer with plan', async () => {
+        const store = await getStore();
+        const spawnAgent = vi.fn(async () => undefined);
+        store.setState({
+          spawnAgent,
+          sessionNudges: {
+            [SESSION_ID]: {
+              kind: 'plan-ready',
+              id: 'n1',
+              agentId: AGENT_ID,
+              planId: PLAN_ID,
+              planTitle: 't',
+            },
+          },
+        });
+        await store.getState().acceptSessionNudgeHandoff(SESSION_ID);
+        expect(store.getState().sessionNudges[SESSION_ID]).toBeNull();
+        expect(updateNudgeOutcomeSpy).toHaveBeenCalledWith(
+          expect.anything(),
+          'n1',
+          'accepted',
+          expect.any(String),
+        );
+        expect(spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
+          triggeredPlanId: PLAN_ID,
+          kindOverride: 'implementer',
+        });
+      });
+
+      it('plan-ready without planId: spawns implementer with no triggeredPlanId', async () => {
+        const store = await getStore();
+        const spawnAgent = vi.fn(async () => undefined);
+        store.setState({
+          spawnAgent,
+          sessionNudges: {
+            [SESSION_ID]: {
+              kind: 'plan-ready',
+              id: 'n2',
+              agentId: AGENT_ID,
+              planId: null,
+              planTitle: 't',
+            },
+          },
+        });
+        await store.getState().acceptSessionNudgeHandoff(SESSION_ID);
+        expect(store.getState().sessionNudges[SESSION_ID]).toBeNull();
+        expect(spawnAgent).toHaveBeenCalledWith(SESSION_ID, { kindOverride: 'implementer' });
+        expect(spawnAgent).not.toHaveBeenCalledWith(
+          SESSION_ID,
+          expect.objectContaining({ triggeredPlanId: expect.anything() }),
+        );
+      });
+
+      it('handoff-suggested with planId: spawns target kind with triggeredPlanId', async () => {
+        const store = await getStore();
+        const spawnAgent = vi.fn(async () => undefined);
+        store.setState({
+          spawnAgent,
+          sessionNudges: {
+            [SESSION_ID]: {
+              kind: 'handoff-suggested',
+              id: 'n3',
+              agentId: AGENT_ID,
+              targetKind: 'planner',
+              reason: 'needs planning',
+              planId: PLAN_ID,
+            },
+          },
+        });
+        await store.getState().acceptSessionNudgeHandoff(SESSION_ID);
+        expect(store.getState().sessionNudges[SESSION_ID]).toBeNull();
+        expect(spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
+          kindOverride: 'planner',
+          triggeredPlanId: PLAN_ID,
+        });
+      });
+
+      it('handoff-suggested without planId: spawns target kind only', async () => {
+        const store = await getStore();
+        const spawnAgent = vi.fn(async () => undefined);
+        store.setState({
+          spawnAgent,
+          sessionNudges: {
+            [SESSION_ID]: {
+              kind: 'handoff-suggested',
+              id: 'n4',
+              agentId: AGENT_ID,
+              targetKind: 'planner',
+              reason: 'needs planning',
+              planId: null,
+            },
+          },
+        });
+        await store.getState().acceptSessionNudgeHandoff(SESSION_ID);
+        expect(store.getState().sessionNudges[SESSION_ID]).toBeNull();
+        expect(spawnAgent).toHaveBeenCalledWith(SESSION_ID, { kindOverride: 'planner' });
+        expect(spawnAgent).not.toHaveBeenCalledWith(
+          SESSION_ID,
+          expect.objectContaining({ triggeredPlanId: expect.anything() }),
+        );
+      });
+
+      it('is a no-op when no nudge is present', async () => {
+        const store = await getStore();
+        const spawnAgent = vi.fn(async () => undefined);
+        store.setState({ spawnAgent, sessionNudges: {} });
+        await store.getState().acceptSessionNudgeHandoff(SESSION_ID);
+        expect(spawnAgent).not.toHaveBeenCalled();
+        expect(updateNudgeOutcomeSpy).not.toHaveBeenCalled();
+      });
+    });
   });
 });
