@@ -992,7 +992,7 @@ export function ContextSnapshot() {
       </div>
 
       <div ref={stageRef} className="relative">
-        <div className="min-h-[272px]">
+        <div className="h-[320px] overflow-hidden">
           {state.tab === 'context' ? (
             <ContextTabBody state={state} registerTarget={registerTarget} />
           ) : null}
@@ -1547,7 +1547,7 @@ export function GithubStudioSnapshot() {
             </span>
           </div>
 
-          <div className="min-h-[184px]">
+          <div className="h-[188px] overflow-hidden">
             {state.tab === 'overview' ? (
               <div className="px-3 py-3 text-[11px] leading-relaxed text-foreground/80">
                 <p>
@@ -1909,7 +1909,7 @@ export function LinearStudioSnapshot() {
           </div>
         </div>
 
-        <div className="flex min-h-[316px] min-w-0 flex-1 flex-col">
+        <div className="flex h-[320px] min-w-0 flex-1 flex-col overflow-hidden">
           {state.stage === 'detail' ? (
             <LinearDetail launchRef={registerTarget('launch-btn')} />
           ) : null}
