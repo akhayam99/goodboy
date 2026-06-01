@@ -35,77 +35,8 @@ import {
   IconTarget,
   IconTerminal,
 } from '../components/Icons';
-import { AgentAvatar, KIND_LABEL, type AgentKind } from '../components/AgentAvatar';
-
-/* ---------------------------- tokens --------------------------------- */
-
-/* The desktop's SessionActivityBar uses bg-muted/40 for inactive cards and
-   bg-elevated for the active one. We mirror those literal classes here so a
-   reader of the desktop source can spot the same structure. */
-
-/* Same palette + short labels as apps/desktop/src/features/session/agent-kind.ts
-   AGENT_KIND_PALETTE. Local `kind` keys here are the short forms used in chip
-   labels (`plan` for the `planner` kind, `imple` for `implementer`, etc.) so
-   the rendered text matches the real UI exactly. */
-const KIND = {
-  scout: { bg: 'bg-sky-400', label: 'scout', kind: 'scout' as AgentKind },
-  plan: { bg: 'bg-violet-400', label: 'plan', kind: 'planner' as AgentKind },
-  imple: { bg: 'bg-emerald-400', label: 'imple', kind: 'implementer' as AgentKind },
-  review: { bg: 'bg-cyan-400', label: 'review', kind: 'reviewer' as AgentKind },
-  debug: { bg: 'bg-amber-400', label: 'debug', kind: 'debugger' as AgentKind },
-  test: { bg: 'bg-teal-400', label: 'test', kind: 'tester' as AgentKind },
-  docs: { bg: 'bg-orange-400', label: 'docs', kind: 'docs' as AgentKind },
-  generic: { bg: 'bg-rose-400', label: 'agent', kind: 'generic' as AgentKind },
-} as const;
-
-/* Apps/desktop AgentKindChip pattern: width-locked colored pill with a tiny
-   silhouette of the role's dog on the left, label on the right. Mirrors the
-   exact 60px width used in the product sidebar. */
-function KindBadge({ kind, muted }: { kind: keyof typeof KIND; muted?: boolean }) {
-  const k = KIND[kind];
-  return (
-    <span
-      className={[
-        'inline-flex w-[3.75rem] shrink-0 items-center justify-center gap-1 rounded py-0.5 pl-1 pr-1.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
-        muted ? 'bg-muted-foreground/20 text-muted-foreground/60' : `${k.bg} text-zinc-950`,
-      ].join(' ')}
-    >
-      <AgentAvatar
-        kind={k.kind}
-        size={10}
-        tint={muted ? 'bg-muted-foreground/60' : 'bg-zinc-950/80'}
-      />
-      <span>{k.label}</span>
-    </span>
-  );
-}
-
-/* Shared frame used by every snapshot. Drops chrome dots, sits flush with
-   the page surface (the page itself is the "app"), but keeps the border +
-   shadow rhythm of the real desktop surface. */
-function SnapshotFrame({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={[
-        'relative overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.25_0.006_255)] shadow-md',
-        className ?? '',
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FrameHeader({ label, right }: { label: string; right?: ReactNode }) {
-  return (
-    <div className="flex h-8 items-center justify-between gap-2 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-        {label}
-      </span>
-      {right}
-    </div>
-  );
-}
+import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar';
+import { KIND, KindBadge, SnapshotFrame, FrameHeader } from './primitives';
 
 /* ---------------------------- Sessions -------------------------------- */
 
