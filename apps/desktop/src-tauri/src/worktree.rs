@@ -298,6 +298,11 @@ pub fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeErro
             message: "branch name is empty".to_string(),
         });
     }
+    if trimmed.starts_with('-') {
+        return Err(WorktreeError::Git {
+            message: "branch name cannot start with '-'".to_string(),
+        });
+    }
     if args.create_new {
         git(wt, &["switch", "-c", trimmed])?;
     } else {
