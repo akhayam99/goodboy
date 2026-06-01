@@ -90,6 +90,8 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
       agentKindOverride: { ...state.agentKindOverride, ...agentKindOverrides },
     }));
 
+    void get().reprocessGoalForWorkflow(sessionId);
+
     if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
   };
 }

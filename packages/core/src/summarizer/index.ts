@@ -18,3 +18,9 @@ export {
   type NextActionKind,
   type NextActionsPrState,
 } from './next-actions';
+export {
+  rewriteWorkflowGoal,
+  buildGoalRewriteUserPrompt,
+  type GoalRewriteDeps,
+  type GoalRewriteInput,
+} from './goal-rewrite';

@@ -10,6 +10,7 @@ import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
+import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
 import { saveStepDef } from './saveStepDef';
@@ -29,6 +30,7 @@ export function createWorkflowsSlice(set: SetFn, get: GetFn) {
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),
     discardWorkflow: discardWorkflow(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
+    reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
