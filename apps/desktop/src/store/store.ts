@@ -380,6 +380,7 @@ export interface AppActions {
     assistantText: string,
   ): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
+  reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;
   resetTranscript(agentId: AgentId): void;

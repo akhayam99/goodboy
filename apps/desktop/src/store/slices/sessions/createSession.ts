@@ -268,6 +268,8 @@ export function createSession(set: SetFn, get: GetFn) {
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
+    if (workflowId) void get().reprocessGoalForWorkflow(session.id);
+
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
     } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
