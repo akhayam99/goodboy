@@ -9,10 +9,6 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
-// ---------------------------------------------------------------------------
-// PTY session slot
-// ---------------------------------------------------------------------------
-
 struct TerminalSession {
     writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
@@ -34,10 +30,6 @@ struct TerminalExitPayload {
     exit_code: i32,
 }
 
-// ---------------------------------------------------------------------------
-// Registry — one shell per session
-// ---------------------------------------------------------------------------
-
 type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 
 #[derive(Default)]
@@ -48,10 +40,6 @@ impl TerminalRegistry {
         Self::default()
     }
 }
-
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, thiserror::Error)]
 pub enum TerminalError {
@@ -85,10 +73,6 @@ impl TerminalError {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Login shell resolution
-// ---------------------------------------------------------------------------
-
 fn login_shell() -> String {
     if let Ok(shell) = std::env::var("SHELL") {
         let shell = shell.trim();
@@ -119,14 +103,6 @@ fn shell_fallbacks() -> &'static [&'static str] {
     &["/bin/sh"]
 }
 
-// ---------------------------------------------------------------------------
-// Command — open (idempotent) an interactive login-shell session
-// ---------------------------------------------------------------------------
-
-/// Spawns the user's login shell (`$SHELL -l -i`) in a pty keyed by
-/// `session_id`. Idempotent: if a live shell already exists for this session
-/// the command is a no-op. Output streams as `terminal-output` events
-/// (base64). `terminal-exit` fires when the shell dies.
 #[tauri::command]
 pub async fn terminal_open(
     app: AppHandle,
@@ -136,7 +112,6 @@ pub async fn terminal_open(
     cols: u16,
     rows: u16,
 ) -> Result<(), TerminalError> {
-    // Idempotent: if slot exists and child is alive, return.
     {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
         if let Some(slot) = map.get(&session_id) {
@@ -166,9 +141,8 @@ pub async fn terminal_open(
         cmd.arg("-l");
         cmd.arg("-i");
 
-        let effective_cwd = cwd.unwrap_or_else(|| {
-            std::env::var("HOME").unwrap_or_else(|_| "/".to_string())
-        });
+        let effective_cwd =
+            cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
         cmd.cwd(&effective_cwd);
 
         for (key, value) in std::env::vars() {
@@ -263,10 +237,6 @@ pub async fn terminal_open(
     .map_err(|e| TerminalError::Io(e.to_string()))?
 }
 
-// ---------------------------------------------------------------------------
-// Command — send keyboard input to a terminal session
-// ---------------------------------------------------------------------------
-
 #[tauri::command]
 pub fn terminal_write(
     registry: State<'_, TerminalRegistry>,
@@ -291,10 +261,6 @@ pub fn terminal_write(
     }
     Ok(())
 }
-
-// ---------------------------------------------------------------------------
-// Command — resize the pty window
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub fn terminal_resize(
@@ -323,12 +289,6 @@ pub fn terminal_resize(
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// Command — close/kill a terminal session
-// ---------------------------------------------------------------------------
-
-/// Kills the shell child and removes it from the registry. Dropping the master
-/// sends SIGHUP to the pty process group, cleaning up descendants.
 #[tauri::command]
 pub fn terminal_close(
     registry: State<'_, TerminalRegistry>,
@@ -342,7 +302,6 @@ pub fn terminal_close(
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
                 let _ = session.child.kill();
-                // Dropping session.master sends SIGHUP to the pty process group.
             }
         }
     }
