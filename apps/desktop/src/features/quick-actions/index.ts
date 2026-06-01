@@ -9,4 +9,3 @@ export {
 } from './registry';
 export { QuickActionsPopover } from './QuickActionsPopover';
 export { ScriptResultRow } from './ScriptResultRow';
-export type { ScriptResultState } from './ScriptResultRow';

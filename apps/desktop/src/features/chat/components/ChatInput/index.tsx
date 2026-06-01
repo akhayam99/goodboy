@@ -45,7 +45,6 @@ import {
   buildWorkflowActions,
   parseQuery,
   type QuickActionItem,
-  type ScriptResultState,
 } from '../../../quick-actions';
 import { type VerbosityLevel } from '../../../../features/settings/verbosity';
 import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from '../../utils/chat-constants';
@@ -185,7 +184,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const workspaceScripts = useAppStore(
     useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
   );
-  const runScript = useAppStore((s) => s.runScript);
+  const runWorkspaceScript = useAppStore((s) => s.runWorkspaceScript);
+  const dismissScriptResult = useAppStore((s) => s.dismissScriptResult);
+  const scriptResult = useAppStore((s) => s.sessionScriptResult[session.id] ?? null);
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const workspaceWorkflows = useAppStore(
@@ -243,9 +244,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     );
   });
   const [showPopover, setShowPopover] = useState(false);
-  const [scriptResult, setScriptResult] = useState<ScriptResultState | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const runSeqRef = useRef(0);
 
   const parsed = useMemo(() => parseQuery(value), [value]);
   const inPrefixMode = CHAT_PREFIX_RE.test(value);
@@ -320,33 +319,16 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   };
 
   const onPickScript = useCallback(
-    async (script: WorkspaceScript) => {
+    (script: WorkspaceScript) => {
       if (!sessionWorktree) {
         showToast('warning', `${script.name}, open a session worktree to run scripts`);
         return;
       }
-      const seq = ++runSeqRef.current;
       setValue('');
       setShowPopover(false);
-      setScriptResult({ script, status: 'pending', result: null });
-      try {
-        const result = await runScript(session.id, script.id, sessionWorktree);
-        if (runSeqRef.current !== seq) return;
-        setScriptResult({
-          script,
-          status: result.exitCode === 0 ? 'ok' : 'error',
-          result,
-        });
-      } catch (err) {
-        if (runSeqRef.current !== seq) return;
-        setScriptResult({
-          script,
-          status: 'error',
-          result: { stdout: '', stderr: formatError(err), exitCode: -1 },
-        });
-      }
+      void runWorkspaceScript(session.id, script, sessionWorktree);
     },
-    [runScript, setValue, session.id, sessionWorktree, showToast],
+    [runWorkspaceScript, setValue, session.id, sessionWorktree, showToast],
   );
 
   const onPickSkill = useCallback(
@@ -902,11 +884,6 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
 
-  // Script results are session-scoped, drop them when the session changes.
-  useEffect(() => {
-    setScriptResult(null);
-  }, [session.id]);
-
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
       popoverOpen &&
@@ -1050,7 +1027,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
         ) : null}
         <SuggestionStack items={suggestions} />
         {scriptResult ? (
-          <ScriptResultRow state={scriptResult} onDismiss={() => setScriptResult(null)} />
+          <ScriptResultRow state={scriptResult} onDismiss={() => dismissScriptResult(session.id)} />
         ) : null}
         <div
           ref={composerRef}

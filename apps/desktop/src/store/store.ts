@@ -74,7 +74,11 @@ import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
 import { type CreatedWorktree } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
-import type { ScriptRunResult, ScriptRunRecord } from '../features/scripts/scripts';
+import type {
+  ScriptRunResult,
+  ScriptRunRecord,
+  ScriptResultState,
+} from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
 import { createNotificationsSlice } from './slices/notifications';
@@ -204,6 +208,7 @@ export interface AppState extends UpdaterState {
   readonly scriptRuns: Readonly<
     Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
   >;
+  readonly sessionScriptResult: Readonly<Record<SessionId, ScriptResultState | null>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
@@ -428,6 +433,8 @@ export interface AppActions {
     rows?: number,
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
+  runWorkspaceScript(sessionId: SessionId, script: WorkspaceScript, cwd: string): Promise<void>;
+  dismissScriptResult(sessionId: SessionId): void;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<void>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -614,6 +621,7 @@ export const initialState: AppState = {
   skills: {},
   workspaceScripts: {},
   scriptRuns: {},
+  sessionScriptResult: {},
   phaseTemplates: {},
   stepLibrary: {},
   sessionWorkflows: {},

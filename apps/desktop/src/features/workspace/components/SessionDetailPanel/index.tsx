@@ -25,7 +25,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const scripts = useAppStore((s) => s.workspaceScripts[session.workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
-  const runScript = useAppStore((s) => s.runScript);
+  const runWorkspaceScript = useAppStore((s) => s.runWorkspaceScript);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
 
   const onRunScript = (script: WorkspaceScript) => {
     if (!worktreePath) return;
-    void runScript(session.id as SessionId, script.id, worktreePath);
+    void runWorkspaceScript(session.id as SessionId, script, worktreePath);
   };
 
   const onEndSession = () => {

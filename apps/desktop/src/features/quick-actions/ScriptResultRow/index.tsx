@@ -1,14 +1,7 @@
 import { useRef, useState } from 'react';
 import { ScrollText, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { WorkspaceScript } from '@goodboy/types';
-import type { ScriptRunResult } from '../../scripts';
-
-export interface ScriptResultState {
-  readonly script: WorkspaceScript;
-  readonly status: 'pending' | 'ok' | 'error';
-  readonly result: ScriptRunResult | null;
-}
+import type { ScriptResultState, ScriptRunResult } from '../../scripts';
 
 interface Props {
   readonly state: ScriptResultState;
