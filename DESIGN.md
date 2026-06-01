@@ -118,6 +118,5 @@ before sending, a running total after.
 
 ---
 
-See [VISION.md](./VISION.md) for what Goodboy is, [ROADMAP.md](./ROADMAP.md)
-for where it's going, and [CONVENTIONS.md](./CONVENTIONS.md) + [CLAUDE.md](./CLAUDE.md)
-for code rules.
+See [VISION.md](./VISION.md) for what Goodboy is, and
+[CONVENTIONS.md](./CONVENTIONS.md) + [CLAUDE.md](./CLAUDE.md) for code rules.
