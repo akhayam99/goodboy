@@ -17,7 +17,7 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { forwardRef, type ReactNode } from 'react';
+import { Fragment, forwardRef, type ReactNode } from 'react';
 import {
   IconBranch,
   IconCheck,
@@ -114,13 +114,17 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
 */
 interface SessionRun {
   steps: StepStatus[];
+  clusters: StepStatus[];
   autoRun: boolean;
   prOpen: boolean;
   cost: number;
 }
 
+const SESSION_CLUSTERS = ['token model', 'request handler', 'email template'];
+
 type SessionAction =
   | { type: 'start'; i: number }
+  | { type: 'cluster'; i: number }
   | { type: 'finish'; i: number }
   | { type: 'auto' };
 
@@ -128,6 +132,7 @@ const SESSION_COST_AT = [0.04, 0.16, 0.3, 0.34];
 
 const SESSION_INITIAL: SessionRun = {
   steps: ['actionable', 'future', 'future', 'future'],
+  clusters: ['future', 'future', 'future'],
   autoRun: false,
   prOpen: false,
   cost: 0,
@@ -135,6 +140,7 @@ const SESSION_INITIAL: SessionRun = {
 
 const SESSION_STATIC: SessionRun = {
   steps: ['done', 'done', 'running', 'actionable'],
+  clusters: ['done', 'running', 'running'],
   autoRun: true,
   prOpen: false,
   cost: 0.3,
@@ -143,7 +149,16 @@ const SESSION_STATIC: SessionRun = {
 function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun {
   switch (action.type) {
     case 'start':
-      return { ...state, steps: state.steps.map((v, i) => (i === action.i ? 'running' : v)) };
+      return {
+        ...state,
+        steps: state.steps.map((v, i) => (i === action.i ? 'running' : v)),
+        clusters: action.i === 2 ? ['running', 'running', 'running'] : state.clusters,
+      };
+    case 'cluster':
+      return {
+        ...state,
+        clusters: state.clusters.map((v, i) => (i === action.i ? 'done' : v)),
+      };
     case 'finish':
       return {
         ...state,
@@ -174,8 +189,11 @@ const SESSION_SCRIPT: ReadonlyArray<Beat<SessionAction>> = [
   { d: 240, kind: 'act', act: { type: 'auto' } },
   { d: 520, kind: 'move', to: null },
   { d: 460, kind: 'act', act: { type: 'start', i: 2 } },
-  { d: 1400, kind: 'act', act: { type: 'finish', i: 2 } },
-  { d: 540, kind: 'act', act: { type: 'start', i: 3 } },
+  { d: 820, kind: 'act', act: { type: 'cluster', i: 0 } },
+  { d: 640, kind: 'act', act: { type: 'cluster', i: 1 } },
+  { d: 700, kind: 'act', act: { type: 'cluster', i: 2 } },
+  { d: 640, kind: 'act', act: { type: 'finish', i: 2 } },
+  { d: 560, kind: 'act', act: { type: 'start', i: 3 } },
   { d: 1400, kind: 'act', act: { type: 'finish', i: 3 } },
   { d: 2400, kind: 'reset' },
 ];
@@ -255,13 +273,21 @@ export function SessionsSnapshot() {
             </div>
             <div className="flex flex-col gap-1">
               {RUN_STEPS.map((s, i) => (
-                <RunStepRow
-                  key={i}
-                  ref={registerTarget(`step-${i}`)}
-                  index={i + 1}
-                  step={s}
-                  status={state.steps[i]}
-                />
+                <Fragment key={i}>
+                  <RunStepRow
+                    ref={registerTarget(`step-${i}`)}
+                    index={i + 1}
+                    step={s}
+                    status={state.steps[i]}
+                  />
+                  {i === 2 && state.steps[2] === 'running' ? (
+                    <div className="ml-7 flex flex-col gap-1 border-l border-border-soft/60 pl-2.5">
+                      {SESSION_CLUSTERS.map((c, ci) => (
+                        <ClusterRow key={c} name={c} status={state.clusters[ci]} />
+                      ))}
+                    </div>
+                  ) : null}
+                </Fragment>
               ))}
             </div>
             <SimCursor cursor={cursor} />
@@ -289,6 +315,25 @@ export function SessionsSnapshot() {
         </div>
       </div>
     </SnapshotFrame>
+  );
+}
+
+function ClusterRow({ name, status }: { name: string; status: StepStatus }) {
+  const done = status === 'done';
+  return (
+    <div className="flex items-center gap-1.5 text-[10px]">
+      {done ? (
+        <span className="flex size-3 shrink-0 items-center justify-center rounded-full bg-success/20">
+          <IconCheck size={7} className="text-success" />
+        </span>
+      ) : (
+        <RunSpinner size={9} className="text-info" />
+      )}
+      <span className={done ? 'text-foreground/55' : 'text-foreground/85'}>{name}</span>
+      <span className="text-[8.5px] uppercase tracking-wide text-muted-foreground/40">
+        subagent
+      </span>
+    </div>
   );
 }
 
