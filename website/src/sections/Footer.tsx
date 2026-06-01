@@ -17,6 +17,14 @@ export function Footer() {
           >
             GitHub
           </a>
+          <a
+            href="https://www.linkedin.com/company/goodboy-ai/"
+            target="_blank"
+            rel="noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            LinkedIn
+          </a>
           <a href="#sessions" className="transition-colors hover:text-foreground">
             Features
           </a>
