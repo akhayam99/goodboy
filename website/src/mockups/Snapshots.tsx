@@ -1674,7 +1674,91 @@ const LINEAR_INBOX: ReadonlyArray<{
   },
 ];
 
+type LinearStage = 'detail' | 'picker' | 'run';
+
+interface LinearState {
+  stage: LinearStage;
+  preset: number | null;
+  steps: StepStatus[];
+}
+
+type LinearAction =
+  | { type: 'launch' }
+  | { type: 'pick'; i: number }
+  | { type: 'start' }
+  | { type: 'advance'; i: number };
+
+const LINEAR_PRESETS = [
+  { name: 'plan → ship', count: 4 },
+  { name: 'fix-it', count: 3 },
+];
+
+const LINEAR_RUN_STEPS = [
+  { kind: 'scout' as const, name: 'Scout the surface', model: 'haiku-4-5' },
+  { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
+  { kind: 'imple' as const, name: 'Implement', model: 'sonnet-4-5' },
+  { kind: 'review' as const, name: 'Open PR', model: 'sonnet-4-5' },
+];
+
+const LINEAR_INITIAL: LinearState = {
+  stage: 'detail',
+  preset: null,
+  steps: ['future', 'future', 'future', 'future'],
+};
+const LINEAR_STATIC: LinearState = {
+  stage: 'run',
+  preset: 0,
+  steps: ['done', 'running', 'future', 'future'],
+};
+
+function linearReducer(state: LinearState, action: LinearAction): LinearState {
+  switch (action.type) {
+    case 'launch':
+      return { ...state, stage: 'picker' };
+    case 'pick':
+      return { ...state, preset: action.i };
+    case 'start':
+      return { ...state, stage: 'run', steps: ['running', 'future', 'future', 'future'] };
+    case 'advance':
+      return {
+        ...state,
+        steps: state.steps.map((v, idx) =>
+          idx === action.i ? 'done' : idx === action.i + 1 ? 'running' : v,
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
+const LINEAR_SCRIPT: ReadonlyArray<Beat<LinearAction>> = [
+  { d: 800, kind: 'move', to: 'issue-row' },
+  { d: 480, kind: 'press' },
+  { d: 700, kind: 'move', to: 'launch-btn' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'launch' } },
+  { d: 760, kind: 'move', to: 'preset-0' },
+  { d: 480, kind: 'press' },
+  { d: 200, kind: 'act', act: { type: 'pick', i: 0 } },
+  { d: 760, kind: 'move', to: 'start-wf' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'start' } },
+  { d: 520, kind: 'move', to: null },
+  { d: 1200, kind: 'act', act: { type: 'advance', i: 0 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 1 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 2 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 3 } },
+  { d: 2200, kind: 'reset' },
+];
+
 export function LinearStudioSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: LINEAR_INITIAL,
+    reducer: linearReducer,
+    script: LINEAR_SCRIPT,
+    staticState: LINEAR_STATIC,
+  });
+
   return (
     <SnapshotFrame className="max-w-[560px]">
       <FrameHeader
@@ -1685,10 +1769,8 @@ export function LinearStudioSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* inbox: open issues assigned to you, grouped by state */}
+      <div ref={stageRef} className="relative flex">
         <div className="w-[196px] shrink-0 border-r border-border-soft">
-          {/* search */}
           <div className="px-2 pt-2 pb-1.5">
             <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 text-[10px] text-muted-foreground/60">
               <svg
@@ -1724,6 +1806,7 @@ export function LinearStudioSnapshot() {
                 {g.rows.map((r) => (
                   <div
                     key={r.id}
+                    ref={r.active ? registerTarget('issue-row') : undefined}
                     className={[
                       'flex items-center gap-1.5 rounded-md px-1.5 py-1',
                       r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
@@ -1739,7 +1822,7 @@ export function LinearStudioSnapshot() {
                     {r.hasPr ? (
                       <IconPullRequest size={9} className="shrink-0 text-muted-foreground/70" />
                     ) : null}
-                    {r.hasSession ? (
+                    {r.hasSession || (r.active && state.stage === 'run') ? (
                       <span
                         aria-hidden
                         title="session launched"
@@ -1753,78 +1836,192 @@ export function LinearStudioSnapshot() {
           </div>
         </div>
 
-        {/* detail: focused issue, launch session right here */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-            <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
-            <span className="chip bg-muted text-muted-foreground">In progress</span>
-            <span className="flex-1" />
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
-              Open in Linear
-              <svg
-                width="9"
-                height="9"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M15 3h6v6M10 14 21 3M21 14v7H3V3h7" />
-              </svg>
-            </span>
-          </div>
-          <p className="px-3 pb-2 text-[12px] font-semibold leading-snug text-foreground">
-            Password reset via email link
-          </p>
-          <div className="flex items-center gap-1.5 px-3 pb-2">
-            <span className="chip chip-success inline-flex items-center gap-1">
-              <IconPullRequest size={9} aria-hidden /> #214 · open
-            </span>
-          </div>
-          <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-muted-foreground/80">
-            Add a password reset flow: request endpoint, hashed token with TTL, email template, form
-            on the marketing site. Keep the existing login UI untouched.
-          </p>
-
-          {/* launch panel: goal + branch + button */}
-          <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
-              <IconTarget size={10} aria-hidden className="text-primary" /> Goal
-            </div>
-            <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5 text-[10.5px] leading-relaxed text-foreground/85">
-              Password reset via email link. Add request endpoint, hashed token, email template.
-            </div>
-
-            <div className="flex items-center gap-1.5 pt-1 text-[10px] font-semibold text-foreground">
-              <IconBranch size={10} aria-hidden className="text-success" /> Branch
-            </div>
-            <div className="inline-flex rounded-md border border-border-soft p-0.5 text-[9.5px]">
-              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                Continue on PR #214
-              </span>
-              <span className="px-1.5 py-0.5 text-muted-foreground/70">Start fresh</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1 font-mono text-[10px] text-foreground/85">
-              <IconBranch size={9} aria-hidden className="text-muted-foreground" />
-              <span className="truncate">ak/password-reset</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
-            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <span aria-hidden className="size-2.5 rounded-sm border border-muted-foreground/40" />
-              Set up workflow next
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
-              Launch session →
-            </span>
-          </div>
+          {state.stage === 'detail' ? (
+            <LinearDetail launchRef={registerTarget('launch-btn')} />
+          ) : null}
+          {state.stage === 'picker' ? (
+            <LinearPicker
+              picked={state.preset}
+              presetRef={registerTarget('preset-0')}
+              startRef={registerTarget('start-wf')}
+            />
+          ) : null}
+          {state.stage === 'run' ? <LinearRun steps={state.steps} /> : null}
         </div>
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
+  return (
+    <>
+      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+        <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
+        <span className="chip bg-muted text-muted-foreground">In progress</span>
+        <span className="flex-1" />
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
+          Open in Linear
+          <svg
+            width="9"
+            height="9"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M15 3h6v6M10 14 21 3M21 14v7H3V3h7" />
+          </svg>
+        </span>
+      </div>
+      <p className="px-3 pb-2 text-[12px] font-semibold leading-snug text-foreground">
+        Password reset via email link
+      </p>
+      <div className="flex items-center gap-1.5 px-3 pb-2">
+        <span className="chip chip-success inline-flex items-center gap-1">
+          <IconPullRequest size={9} aria-hidden /> #214 · open
+        </span>
+      </div>
+      <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-muted-foreground/80">
+        Add a password reset flow: request endpoint, hashed token with TTL, email template, form on
+        the marketing site. Keep the existing login UI untouched.
+      </p>
+
+      <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+          <IconTarget size={10} aria-hidden className="text-primary" /> Goal
+        </div>
+        <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5 text-[10.5px] leading-relaxed text-foreground/85">
+          Password reset via email link. Add request endpoint, hashed token, email template.
+        </div>
+
+        <div className="flex items-center gap-1.5 pt-1 text-[10px] font-semibold text-foreground">
+          <IconBranch size={10} aria-hidden className="text-success" /> Branch
+        </div>
+        <div className="inline-flex rounded-md border border-border-soft p-0.5 text-[9.5px]">
+          <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+            Continue on PR #214
+          </span>
+          <span className="px-1.5 py-0.5 text-muted-foreground/70">Start fresh</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1 font-mono text-[10px] text-foreground/85">
+          <IconBranch size={9} aria-hidden className="text-muted-foreground" />
+          <span className="truncate">ak/password-reset</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span
+            aria-hidden
+            className="size-2.5 rounded-sm border border-primary/60 bg-primary/20"
+          />
+          Set up workflow next
+        </span>
+        <span
+          ref={launchRef}
+          className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
+        >
+          Launch session →
+        </span>
+      </div>
+    </>
+  );
+}
+
+function LinearPicker({
+  picked,
+  presetRef,
+  startRef,
+}: {
+  picked: number | null;
+  presetRef: TargetRef;
+  startRef: TargetRef;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+        <IconLayers size={12} className="text-primary" aria-hidden />
+        <span className="text-[12px] font-semibold text-foreground">Start a workflow</span>
+      </div>
+      <p className="px-3 pb-2 text-[10px] text-muted-foreground/70">
+        Pick a saved preset. Each step spawns its own agent, in order.
+      </p>
+      <div className="flex flex-col gap-1.5 px-3">
+        {LINEAR_PRESETS.map((p, i) => (
+          <div
+            key={p.name}
+            ref={i === 0 ? presetRef : undefined}
+            className={[
+              'rounded-md border p-2 transition-colors',
+              picked === i
+                ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'
+                : 'border-border-soft bg-subtle',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-1.5 pb-1">
+              <span className="text-[11px] font-semibold text-foreground">{p.name}</span>
+              <span className="text-[9px] text-muted-foreground/50">{p.count} steps</span>
+              {picked === i ? <IconCheck size={11} className="ml-auto text-primary" /> : null}
+            </div>
+            {i === 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {LINEAR_RUN_STEPS.map((s) => (
+                  <KindBadge key={s.kind} kind={s.kind} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span
+            aria-hidden
+            className="size-2.5 rounded-sm border border-primary/60 bg-primary/20"
+          />
+          Auto-run
+        </span>
+        <span
+          ref={startRef}
+          className={[
+            'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors',
+            picked != null
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border-soft text-muted-foreground/50',
+          ].join(' ')}
+        >
+          Start workflow
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LinearRun({ steps }: { steps: StepStatus[] }) {
+  return (
+    <div className="flex h-full flex-col px-3 py-3">
+      <div className="flex items-center gap-2 pb-2">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <IconLayers size={10} className="text-primary" /> Workflow
+        </span>
+        <span className="flex-1" />
+        <span className="font-mono text-[10px] text-muted-foreground/70">plan → ship</span>
+        <AutoRunPill on />
+      </div>
+      <div className="flex flex-col gap-1">
+        {LINEAR_RUN_STEPS.map((s, i) => (
+          <RunStepRow key={s.kind} index={i + 1} step={s} status={steps[i]} />
+        ))}
+      </div>
+      <p className="pt-2 text-[10px] text-success/80">workflow started on GOOD-214</p>
+    </div>
   );
 }
 
