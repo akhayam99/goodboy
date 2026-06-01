@@ -33,7 +33,7 @@ import {
   IconTerminal,
 } from '../components/Icons';
 import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar';
-import { KIND, KindBadge, SnapshotFrame, FrameHeader } from './primitives';
+import { KIND, KindBadge, SnapshotFrame, FrameHeader, type KindKey } from './primitives';
 import { useAutoplay, SimCursor, type Beat } from './autoplay';
 
 /* ---------------------------- Sessions -------------------------------- */
@@ -555,20 +555,89 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
 /* The composer: a saved preset on the left, the reusable step library on the
    right. Mirrors apps/desktop WorkflowsPanel (preset rail + step library
    palette). Each composed step carries its own model. */
-const STUDIO_STEPS = [
-  { kind: 'scout' as const, name: 'Scout the area', model: 'haiku-4-5' },
-  { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
-  { kind: 'imple' as const, name: 'Refactor', model: 'sonnet-4-5' },
-  { kind: 'review' as const, name: 'Verify', model: 'sonnet-4-5' },
+interface StudioStep {
+  kind: KindKey;
+  name: string;
+  role: string;
+  model: string;
+  prompt: string;
+}
+
+const STUDIO_STEPS: ReadonlyArray<StudioStep> = [
+  {
+    kind: 'scout',
+    name: 'Scout',
+    role: 'Scout',
+    model: 'haiku-4-5',
+    prompt: 'Survey the code in scope. List the files, key abstractions, callers and tests.',
+  },
+  {
+    kind: 'plan',
+    name: 'Plan',
+    role: 'Planner',
+    model: 'opus-4-7',
+    prompt: 'Propose a refactor plan. Order changes by risk. Say what stays, moves, gets deleted.',
+  },
+  {
+    kind: 'imple',
+    name: 'Refactor',
+    role: 'Implementer',
+    model: 'sonnet-4-5',
+    prompt:
+      'Apply the refactor in small commits. Keep behavior unchanged. Update tests in lock-step.',
+  },
+  {
+    kind: 'review',
+    name: 'Verify',
+    role: 'Reviewer',
+    model: 'sonnet-4-5',
+    prompt: 'Run the suite and review the diff against the plan. Flag anything that drifted.',
+  },
 ];
 
-const STUDIO_LIBRARY: ReadonlyArray<keyof typeof KIND> = [
-  'scout',
-  'plan',
-  'imple',
-  'review',
-  'test',
-  'debug',
+const STUDIO_LIBRARY: ReadonlyArray<{ kind: KindKey; name: string; prompt: string }> = [
+  { kind: 'scout', name: 'Scout', prompt: 'Survey the code in scope.' },
+  { kind: 'plan', name: 'Plan', prompt: 'Draft an ordered plan.' },
+  { kind: 'imple', name: 'Refactor', prompt: 'Apply changes in small commits.' },
+  { kind: 'review', name: 'Verify', prompt: 'Review the diff against the plan.' },
+  { kind: 'test', name: 'Test', prompt: 'Write and run tests.' },
+  { kind: 'debug', name: 'Diagnose', prompt: 'Reproduce and isolate a bug.' },
+];
+
+interface StudioState {
+  placed: number;
+  dragging: number | null;
+}
+
+type StudioAction = { type: 'grab'; i: number } | { type: 'drop' };
+
+const STUDIO_INITIAL: StudioState = { placed: 0, dragging: null };
+const STUDIO_STATIC: StudioState = { placed: 2, dragging: null };
+
+function studioReducer(state: StudioState, action: StudioAction): StudioState {
+  switch (action.type) {
+    case 'grab':
+      return { ...state, dragging: action.i };
+    case 'drop':
+      return { placed: Math.min(state.placed + 1, STUDIO_STEPS.length), dragging: null };
+    default:
+      return state;
+  }
+}
+
+const STUDIO_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [0, 1, 2, 3].flatMap((i) => [
+  { d: i === 0 ? 800 : 560, kind: 'move' as const, to: `lib-${i}` },
+  { d: 460, kind: 'press' as const },
+  { d: 200, kind: 'act' as const, act: { type: 'grab' as const, i } },
+  { d: 620, kind: 'move' as const, to: 'dropzone' },
+  { d: 360, kind: 'act' as const, act: { type: 'drop' as const } },
+]);
+const STUDIO_FULL_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [
+  ...STUDIO_SCRIPT,
+  { d: 700, kind: 'move', to: 'save' },
+  { d: 520, kind: 'press' },
+  { d: 1900, kind: 'move', to: null },
+  { d: 600, kind: 'reset' },
 ];
 
 function GripDots() {
@@ -593,8 +662,16 @@ function GripDots() {
 }
 
 export function StudioComposeSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: STUDIO_INITIAL,
+    reducer: studioReducer,
+    script: STUDIO_FULL_SCRIPT,
+    staticState: STUDIO_STATIC,
+  });
+  const full = state.placed >= STUDIO_STEPS.length;
+
   return (
-    <SnapshotFrame className="max-w-[460px]">
+    <SnapshotFrame className="max-w-[520px]">
       <FrameHeader
         label="Workflow Studio"
         right={
@@ -603,56 +680,116 @@ export function StudioComposeSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* composer: the preset being assembled */}
-        <div className="min-w-0 flex-1 p-3">
+      <div ref={stageRef} className="relative flex">
+        <div className="flex min-w-0 flex-1 flex-col p-3">
           <div className="flex items-center gap-2 pb-2">
             <span className="text-[11px] font-semibold text-foreground">Refactor</span>
-            <span className="text-[10px] text-muted-foreground/50">4 steps</span>
+            <span className="text-[10px] tabular-nums text-muted-foreground/50">
+              {state.placed} {state.placed === 1 ? 'step' : 'steps'}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
-            {STUDIO_STEPS.map((s, i) => (
-              <div
-                key={s.kind}
-                className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-1.5"
-              >
-                <span className="w-3 shrink-0 text-right font-mono text-[10px] text-muted-foreground/40">
-                  {i + 1}
-                </span>
-                <KindBadge kind={s.kind} />
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground/90">
-                  {s.name}
-                </span>
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
-                  {s.model}
+            {STUDIO_STEPS.slice(0, state.placed).map((s, i) => (
+              <StudioStepCard key={s.kind} step={s} index={i + 1} />
+            ))}
+            <div
+              ref={registerTarget('dropzone')}
+              className={[
+                'mt-0.5 flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-[10px] font-medium transition-colors',
+                state.dragging != null
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border-soft/70 bg-transparent text-muted-foreground/50',
+              ].join(' ')}
+            >
+              <IconPlus size={11} /> {state.dragging != null ? 'drop here' : 'drag a step here'}
+            </div>
+            {full ? (
+              <div className="mt-1.5 flex justify-end">
+                <span
+                  ref={registerTarget('save')}
+                  className={[
+                    'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                    'bg-primary text-primary-foreground',
+                  ].join(' ')}
+                >
+                  Save workflow
                 </span>
               </div>
-            ))}
-            <div className="mt-0.5 flex items-center gap-1.5 rounded-md border border-dashed border-primary/40 bg-primary/5 px-2 py-1.5 text-[10px] font-medium text-primary/80">
-              <IconPlus size={11} /> drop a step here
-            </div>
+            ) : null}
           </div>
         </div>
 
-        {/* step library: drag a module in */}
-        <div className="w-[124px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
+        <div className="w-[164px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
           <div className="pb-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Step library
           </div>
           <div className="flex flex-col gap-1">
-            {STUDIO_LIBRARY.map((k) => (
+            {STUDIO_LIBRARY.map((s, i) => (
               <div
-                key={k}
-                className="flex items-center gap-1 rounded-md border border-border-soft bg-subtle px-1.5 py-1"
+                key={s.kind}
+                ref={i < 4 ? registerTarget(`lib-${i}`) : undefined}
+                className={[
+                  'flex items-start gap-1.5 rounded-md border border-border-soft bg-subtle px-1.5 py-1.5 transition-opacity',
+                  state.dragging === i ? 'opacity-40' : 'opacity-100',
+                ].join(' ')}
               >
-                <GripDots />
-                <KindBadge kind={k} />
+                <span className="pt-0.5">
+                  <GripDots />
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <KindBadge kind={s.kind} />
+                  <span className="line-clamp-2 text-[9px] leading-tight text-muted-foreground/70">
+                    {s.prompt}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         </div>
+
+        {state.dragging != null ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-30 transition-transform duration-[450ms] ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{ transform: `translate(${cursor.x + 10}px, ${cursor.y + 8}px)` }}
+          >
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/50 bg-background px-1.5 py-1 text-[10px] font-medium text-foreground shadow-lg">
+              <IconPlus size={10} className="text-primary" />
+              {STUDIO_LIBRARY[state.dragging].name}
+            </span>
+          </div>
+        ) : null}
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function StudioStepCard({ step, index }: { step: StudioStep; index: number }) {
+  return (
+    <div className="flex items-stretch gap-2 rounded-md border border-border-soft bg-subtle py-1.5 pl-1.5 pr-2">
+      <span
+        className={['w-0.5 shrink-0 self-stretch rounded-full', KIND[step.kind].bg].join(' ')}
+      />
+      <span className="w-3 shrink-0 pt-0.5 text-right font-mono text-[10px] text-muted-foreground/40">
+        {index}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <KindBadge kind={step.kind} />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground/90">
+            {step.name}
+          </span>
+          <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+            {step.model}
+          </span>
+        </div>
+        <span className="line-clamp-1 pl-0.5 text-[10px] leading-tight text-muted-foreground/65">
+          {step.prompt}
+        </span>
+      </div>
+    </div>
   );
 }
 
