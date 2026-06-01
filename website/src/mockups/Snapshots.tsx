@@ -17,10 +17,8 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { forwardRef, useState, type ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import {
-  IconArrowDown,
-  IconArrowUp,
   IconBranch,
   IconCheck,
   IconClipboard,
@@ -660,93 +658,424 @@ export function StudioComposeSnapshot() {
 
 /* ---------------------------- Context --------------------------------- */
 
-type ContextTabKey = 'context' | 'plans' | 'files' | 'github' | 'terminal';
+type CtxTab = 'context' | 'plans' | 'questions' | 'terminal';
+type TargetRef = (node: HTMLElement | null) => void;
 
-const CTX_TABS: ReadonlyArray<{
-  readonly key: ContextTabKey;
-  readonly label: string;
-  readonly icon: typeof IconTarget;
-  readonly badge: number | null;
-}> = [
-  { key: 'context', label: 'Context', icon: IconTarget, badge: null },
-  { key: 'plans', label: 'Plans', icon: IconClipboard, badge: 2 },
-  { key: 'files', label: 'Files', icon: IconFolder, badge: 3 },
-  { key: 'github', label: 'GitHub', icon: IconPullRequest, badge: null },
-  { key: 'terminal', label: 'Term', icon: IconTerminal, badge: null },
+const CTX_TABS: ReadonlyArray<{ key: CtxTab; label: string; icon: typeof IconTarget }> = [
+  { key: 'context', label: 'Context', icon: IconList },
+  { key: 'plans', label: 'Plans', icon: IconClipboard },
+  { key: 'questions', label: 'Questions', icon: IconHelp },
+  { key: 'terminal', label: 'Terminal', icon: IconTerminal },
 ];
 
-const SLOTS = [
-  {
-    key: 'goal',
-    label: 'Goal',
-    icon: IconTarget,
-    body: 'Add password reset via email link. Reuse existing transactional mailer. Keep the login UI untouched.',
-  },
-  {
-    key: 'decisions',
-    label: 'Decisions',
-    icon: IconList,
-    body: 'Token TTL 60 minutes, single-use, hashed before storage. Rate-limit per email at 3 per hour.',
-  },
-  {
-    key: 'last_output_summary',
-    label: 'Last output',
-    icon: IconSparkles,
-    body: 'POST /auth/reset-request live. Email template wired. Endpoint + handler tests green.',
-  },
+const CTX_GOAL =
+  'Add password reset via email link. Reuse the existing mailer. Keep the login UI untouched.';
+const CTX_DECISIONS = [
+  'Token TTL 60 minutes, single-use.',
+  'Rate-limit requests per email at 3 per hour.',
+];
+const CTX_DECISION_ADDED = 'Hash tokens with argon2id, not sha256.';
+const CTX_LAST_OUTPUT =
+  'POST /auth/reset-request is live. Email template wired. Endpoint and handler tests green.';
+const CTX_QUESTION = 'Cap reset tokens at one active per account, or allow several in flight?';
+const CTX_SUGGESTIONS = ['One active at a time', 'Allow up to three'];
+
+interface ContextState {
+  tab: CtxTab;
+  decisionsOpen: boolean;
+  decisionEditing: boolean;
+  decisionAdded: boolean;
+  questionOpen: boolean;
+  picked: number | null;
+  sent: boolean;
+}
+
+type ContextAction =
+  | { type: 'tab'; tab: CtxTab }
+  | { type: 'openDecisions' }
+  | { type: 'editDecision' }
+  | { type: 'commitDecision' }
+  | { type: 'raiseQuestion' }
+  | { type: 'pick'; i: number }
+  | { type: 'send' };
+
+const CTX_INITIAL: ContextState = {
+  tab: 'context',
+  decisionsOpen: false,
+  decisionEditing: false,
+  decisionAdded: false,
+  questionOpen: false,
+  picked: null,
+  sent: false,
+};
+
+const CTX_STATIC: ContextState = {
+  tab: 'context',
+  decisionsOpen: true,
+  decisionEditing: false,
+  decisionAdded: true,
+  questionOpen: true,
+  picked: null,
+  sent: false,
+};
+
+function contextReducer(state: ContextState, action: ContextAction): ContextState {
+  switch (action.type) {
+    case 'tab':
+      return { ...state, tab: action.tab };
+    case 'openDecisions':
+      return { ...state, decisionsOpen: true };
+    case 'editDecision':
+      return { ...state, decisionsOpen: true, decisionEditing: true };
+    case 'commitDecision':
+      return { ...state, decisionEditing: false, decisionAdded: true };
+    case 'raiseQuestion':
+      return { ...state, questionOpen: true };
+    case 'pick':
+      return { ...state, picked: action.i };
+    case 'send':
+      return { ...state, sent: true, questionOpen: false, tab: 'context' };
+    default:
+      return state;
+  }
+}
+
+const CTX_SCRIPT: ReadonlyArray<Beat<ContextAction>> = [
+  { d: 900, kind: 'move', to: 'decisions-head' },
+  { d: 560, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'openDecisions' } },
+  { d: 880, kind: 'move', to: 'decisions-body' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'editDecision' } },
+  { d: 1600, kind: 'act', act: { type: 'commitDecision' } },
+  { d: 820, kind: 'move', to: null },
+  { d: 500, kind: 'act', act: { type: 'raiseQuestion' } },
+  { d: 720, kind: 'move', to: 'footer' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'questions' } },
+  { d: 900, kind: 'move', to: 'suggestion' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'pick', i: 0 } },
+  { d: 820, kind: 'move', to: 'send' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'send' } },
+  { d: 2200, kind: 'reset' },
 ];
 
-/* Interactive context snapshot. Tabs are real buttons: click to switch panel.
-   Each tab renders a faithful slice of the real ContextPanel surfaces. The
-   sticky open-questions footer stays put across tabs, like the product. */
 export function ContextSnapshot() {
-  const [tab, setTab] = useState<ContextTabKey>('context');
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: CTX_INITIAL,
+    reducer: contextReducer,
+    script: CTX_SCRIPT,
+    staticState: CTX_STATIC,
+  });
+  const questionCount = state.questionOpen && !state.sent ? 1 : 0;
 
   return (
     <SnapshotFrame className="max-w-[460px]">
       <div className="flex h-9 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
         {CTX_TABS.map((t) => (
-          <TabButton
+          <CtxTabButton
             key={t.key}
             label={t.label}
             icon={t.icon}
-            badge={t.badge}
-            active={tab === t.key}
-            onClick={() => setTab(t.key)}
+            badge={t.key === 'plans' ? 2 : t.key === 'questions' ? questionCount || null : null}
+            active={state.tab === t.key}
           />
         ))}
       </div>
 
-      <div className="min-h-[260px]">
-        {tab === 'context' ? <ContextTabBody /> : null}
-        {tab === 'plans' ? <PlansTabBody /> : null}
-        {tab === 'files' ? <FilesTabBody /> : null}
-        {tab === 'github' ? <GithubTabBody /> : null}
-        {tab === 'terminal' ? <TerminalTabBody /> : null}
-      </div>
+      <div ref={stageRef} className="relative">
+        <div className="min-h-[272px]">
+          {state.tab === 'context' ? (
+            <ContextTabBody state={state} registerTarget={registerTarget} />
+          ) : null}
+          {state.tab === 'plans' ? <PlansTabBody /> : null}
+          {state.tab === 'questions' ? (
+            <QuestionsTabBody state={state} registerTarget={registerTarget} />
+          ) : null}
+          {state.tab === 'terminal' ? <TerminalTabBody /> : null}
+        </div>
 
-      <button
-        type="button"
-        onClick={() => setTab('context')}
-        className="flex w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning transition-colors hover:bg-warning/10"
-      >
-        <span className="inline-flex items-center gap-1.5 font-medium">
-          <IconHelp size={11} />1 open question
-        </span>
-        <span aria-hidden className="opacity-60">
-          →
-        </span>
-      </button>
+        {state.tab === 'context' && questionCount > 0 ? (
+          <div
+            ref={registerTarget('footer')}
+            className="flex w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
+          >
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <IconHelp size={11} />1 open question
+            </span>
+            <span aria-hidden className="opacity-60">
+              →
+            </span>
+          </div>
+        ) : null}
+
+        <SimCursor cursor={cursor} />
+      </div>
     </SnapshotFrame>
   );
 }
 
-function ContextTabBody() {
+function CtxTabButton({
+  label,
+  icon: Icon,
+  badge,
+  active,
+}: {
+  label: string;
+  icon: typeof IconTarget;
+  badge: number | null;
+  active: boolean;
+}) {
+  return (
+    <span
+      className={[
+        'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+        active ? 'bg-muted text-foreground shadow-sm' : 'text-muted-foreground',
+      ].join(' ')}
+    >
+      <Icon size={11} aria-hidden />
+      <span className={active ? '' : 'sr-only'}>{label}</span>
+      {badge ? (
+        <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground">
+          {badge}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function ContextTabBody({
+  state,
+  registerTarget,
+}: {
+  state: ContextState;
+  registerTarget: (key: string) => TargetRef;
+}) {
+  const decisions = state.decisionAdded ? [...CTX_DECISIONS, CTX_DECISION_ADDED] : CTX_DECISIONS;
   return (
     <div className="flex flex-col gap-2 p-3">
-      {SLOTS.map(({ key, ...rest }) => (
-        <SlotCard key={key} {...rest} />
-      ))}
+      <SlotCard tone="primary" label="goal" icon={<IconTarget size={11} />}>
+        <p className="text-[11.5px] font-medium leading-relaxed text-foreground/90">{CTX_GOAL}</p>
+      </SlotCard>
+
+      <SlotCard
+        tone="success"
+        label="decisions"
+        icon={<IconCheck size={11} />}
+        count={decisions.length}
+        open={state.decisionsOpen}
+        headRef={registerTarget('decisions-head')}
+      >
+        {!state.decisionsOpen ? (
+          <p className="truncate text-[11px] text-foreground/70">{CTX_DECISIONS[0]}</p>
+        ) : state.decisionEditing ? (
+          <div
+            ref={registerTarget('decisions-body')}
+            className="rounded border border-primary/40 bg-background/50 p-2 font-mono text-[10.5px] leading-relaxed text-foreground/85"
+          >
+            {CTX_DECISIONS.map((d) => (
+              <div key={d}>- {d}</div>
+            ))}
+            <div className="text-foreground">
+              - {CTX_DECISION_ADDED}
+              <span
+                aria-hidden
+                className="ml-0.5 inline-block h-3 w-1 translate-y-0.5 animate-pulse bg-primary/70"
+              />
+            </div>
+          </div>
+        ) : (
+          <ul
+            ref={registerTarget('decisions-body')}
+            className="flex flex-col gap-1 text-[11px] leading-relaxed text-foreground/85"
+          >
+            {decisions.map((d, i) => (
+              <li
+                key={d}
+                className={[
+                  'flex gap-1.5',
+                  state.decisionAdded && i === decisions.length - 1 ? 'text-success' : '',
+                ].join(' ')}
+              >
+                <span aria-hidden className="text-success/60">
+                  ·
+                </span>
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SlotCard>
+
+      <SlotCard tone="info" label="last output summary" icon={<ActivityMark />}>
+        <p className="line-clamp-2 text-[11px] leading-relaxed text-foreground/70">
+          {CTX_LAST_OUTPUT}
+        </p>
+      </SlotCard>
+
+      <div className="mt-0.5 flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 rounded-md bg-success/5 px-2 py-1.5 text-[10.5px] ring-1 ring-success/15">
+          <IconPullRequest size={11} className="shrink-0 text-success" />
+          <span className="font-mono text-success">#214</span>
+          <span className="text-muted-foreground">open</span>
+          <span className="inline-flex items-center gap-1 text-success">
+            <span className="size-1.5 rounded-full bg-success" aria-hidden />6 / 6 checks
+          </span>
+          <span aria-hidden className="ml-auto text-muted-foreground/50">
+            ↗
+          </span>
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-info/5 px-2 py-1.5 text-[10.5px] ring-1 ring-info/15">
+          <IconFolder size={11} className="shrink-0 text-info" />
+          <span className="text-foreground/80">4 files touched</span>
+          <span className="font-mono text-success">+180</span>
+          <span className="font-mono text-danger">−2</span>
+          <span aria-hidden className="ml-auto text-muted-foreground/50">
+            ↗
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestionsTabBody({
+  state,
+  registerTarget,
+}: {
+  state: ContextState;
+  registerTarget: (key: string) => TargetRef;
+}) {
+  return (
+    <div className="flex flex-col gap-2 p-3">
+      <div className="flex items-center gap-1.5 pb-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+          open questions
+        </span>
+        <span
+          className={[
+            'rounded-full px-1.5 text-[9px] font-semibold',
+            state.sent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+          ].join(' ')}
+        >
+          {state.sent ? '1 / 1' : '0 / 1'}
+        </span>
+      </div>
+      <div
+        className={[
+          'rounded-md border bg-muted/20 p-2.5 transition-colors',
+          state.sent ? 'border-primary/40 bg-primary/5' : 'border-border/30',
+        ].join(' ')}
+      >
+        <div className="flex items-center gap-1.5 pb-1.5 text-[10px] text-muted-foreground">
+          <span className="uppercase tracking-wide text-muted-foreground/60">will be sent to</span>
+          <KindBadge kind="review" />
+        </div>
+        <p className="pb-2 text-[11.5px] leading-relaxed text-foreground/85">{CTX_QUESTION}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {CTX_SUGGESTIONS.map((s, i) => (
+            <span
+              key={s}
+              ref={i === 0 ? registerTarget('suggestion') : undefined}
+              className={[
+                'rounded-full border px-2.5 py-0.5 text-[10.5px] transition-colors',
+                state.picked === i
+                  ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/30'
+                  : 'border-border/40 bg-muted/40 text-muted-foreground',
+              ].join(' ')}
+            >
+              {s}
+            </span>
+          ))}
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10.5px] text-muted-foreground/70">
+            <IconPlus size={9} /> other
+          </span>
+        </div>
+        {state.picked != null ? (
+          <div className="mt-2.5 flex justify-end">
+            <span
+              ref={registerTarget('send')}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
+            >
+              send 1 answer → reviewer
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ActivityMark() {
+  return (
+    <svg
+      width={11}
+      height={11}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 12h4l3 8 4-16 3 8h4" />
+    </svg>
+  );
+}
+
+function SlotCard({
+  tone,
+  label,
+  icon,
+  count,
+  open,
+  headRef,
+  children,
+}: {
+  tone: 'primary' | 'success' | 'info';
+  label: string;
+  icon: ReactNode;
+  count?: number;
+  open?: boolean;
+  headRef?: TargetRef;
+  children: ReactNode;
+}) {
+  const ring =
+    tone === 'primary'
+      ? 'ring-primary/15'
+      : tone === 'success'
+        ? 'ring-success/15'
+        : 'ring-info/15';
+  const chip =
+    tone === 'primary'
+      ? 'bg-primary/10 text-primary'
+      : tone === 'success'
+        ? 'bg-success/10 text-success'
+        : 'bg-info/10 text-info';
+  return (
+    <div className={['rounded-lg bg-muted/30 p-2.5 ring-1', ring].join(' ')}>
+      <div ref={headRef} className="flex items-center gap-1.5 pb-1.5">
+        <span
+          className={['inline-flex size-4 items-center justify-center rounded', chip].join(' ')}
+        >
+          {icon}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground/80">
+          {label}
+        </span>
+        {count != null ? (
+          <span className="text-[10px] text-muted-foreground/60">· {count} items</span>
+        ) : null}
+        {open != null ? (
+          <span aria-hidden className="ml-auto text-[11px] text-muted-foreground/50">
+            {open ? '⌄' : '›'}
+          </span>
+        ) : null}
+      </div>
+      {children}
     </div>
   );
 }
@@ -790,76 +1119,6 @@ function PlansTabBody() {
   );
 }
 
-const FILES_DATA = [
-  { path: 'src/auth/reset/token.ts', adds: 56, dels: 0, edit: 'created' as const },
-  { path: 'src/auth/reset/handler.ts', adds: 84, dels: 0, edit: 'created' as const },
-  { path: 'src/mail/templates/reset.tsx', adds: 34, dels: 0, edit: 'created' as const },
-  { path: 'src/auth/routes.ts', adds: 6, dels: 2, edit: 'modified' as const },
-];
-
-function FilesTabBody() {
-  return (
-    <ul className="flex flex-col divide-y divide-border-soft/40">
-      {FILES_DATA.map((f) => (
-        <li key={f.path} className="flex items-center gap-2 px-3 py-2 text-[11px]">
-          <span
-            className={[
-              'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
-              f.edit === 'created' ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
-            ].join(' ')}
-          >
-            {f.edit}
-          </span>
-          <code className="min-w-0 flex-1 truncate font-mono text-foreground/85">{f.path}</code>
-          <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-success">
-            <IconArrowUp size={9} />
-            {f.adds}
-          </span>
-          {f.dels > 0 ? (
-            <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-danger">
-              <IconArrowDown size={9} />
-              {f.dels}
-            </span>
-          ) : null}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function GithubTabBody() {
-  return (
-    <div className="flex flex-col gap-2 p-3">
-      <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10.5px] text-muted-foreground">#214</span>
-          <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
-            feat(auth): password reset via email link
-          </span>
-          <span className="chip chip-success">open</span>
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <IconBranch size={9} />
-            <span className="truncate">ak/password-reset</span>
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-success">
-            <IconArrowUp size={9} />
-            180
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-danger">
-            <IconArrowDown size={9} />2
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-success" />6 / 6 checks
-          </span>
-        </div>
-      </div>
-      <p className="text-[10px] text-muted-foreground/60">last sync 12s ago · click to refresh</p>
-    </div>
-  );
-}
-
 const TERMINAL_LINES = [
   { p: '$', t: 'pnpm test src/auth/reset', tone: 'cmd' as const },
   { p: '·', t: 'token.test.ts  ✓ 7 passed', tone: 'ok' as const },
@@ -879,63 +1138,6 @@ function TerminalTabBody() {
         </div>
       ))}
       <span aria-hidden className="mt-1 inline-block h-3 w-1.5 animate-pulse bg-primary/60" />
-    </div>
-  );
-}
-
-function TabButton({
-  label,
-  icon: Icon,
-  badge,
-  active,
-  onClick,
-}: {
-  label: string;
-  icon: typeof IconTarget;
-  badge: number | null;
-  active: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-        active
-          ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-      ].join(' ')}
-    >
-      <Icon size={11} aria-hidden />
-      <span>{label}</span>
-      {badge ? (
-        <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground">
-          {badge}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function SlotCard({
-  label,
-  icon: Icon,
-  body,
-}: {
-  label: string;
-  icon: typeof IconTarget;
-  body: string;
-}) {
-  return (
-    <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-      <div className="flex items-center gap-1.5 pb-1">
-        <Icon size={11} className="text-muted-foreground" aria-hidden />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-          {label}
-        </span>
-      </div>
-      <p className="text-[11.5px] leading-relaxed text-foreground/85">{body}</p>
     </div>
   );
 }
