@@ -194,14 +194,12 @@ export function WorkspacesSidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* workspace select */}
       <div className="shrink-0">
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
       <Divider />
 
-      {/* unified master-detail card, sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
@@ -225,12 +223,10 @@ export function WorkspacesSidebar({
                     onArchivedTabOpen={onArchivedTabOpen}
                   />
                 </div>
-                {/* Inset hairline divider between rail and detail. */}
                 <div
                   aria-hidden
                   className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
                 />
-                {/* selected-session detail */}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
@@ -274,7 +270,6 @@ export function WorkspacesSidebar({
         />
       ) : null}
 
-      {/* sidebar footer, logo + onboarding chip + controls */}
       <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
         <div className="flex-1" />
@@ -361,9 +356,6 @@ export function WorkspacesSidebar({
   );
 }
 
-// Collapsed left sidebar, a minimal rail (just an expand affordance), the
-// left-side mirror of the ContextPanel's collapsed state. The rail width is
-// fixed by AppShell's LEFT_RAIL_WIDTH.
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
   // Logo pinned top, expand control pinned bottom, the expand button holds
   // the same bottom slot it occupies in the expanded sidebar's footer, so it
@@ -423,8 +415,6 @@ function QuickActionsRow({
         title="connect and manage AI provider accounts"
         onClick={onOpenProviders}
       />
-      {/* Linear Studio: launch sessions straight from assigned issues. Shown
-          only when this workspace has Linear connected. */}
       {linearEnabled ? (
         <QuickAction
           icon={

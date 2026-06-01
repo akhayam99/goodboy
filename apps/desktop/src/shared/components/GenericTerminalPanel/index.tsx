@@ -9,16 +9,13 @@ import { useThemeStore } from '../../lib/theme';
 // long-lived session shell (TerminalPanel) or a transient lifecycle PTY
 // (LifecycleTerminalPanel) without duplicating ~150 lines of setup.
 export interface TerminalDriver {
-  /** Send keyboard input (raw UTF-8 string) into the underlying PTY. */
   write(data: string): void;
-  /** Notify PTY about a window resize. */
   resize(cols: number, rows: number): void;
   /**
    * Subscribe to output chunks. The driver is responsible for any filtering
    * (e.g. by sessionId or runId) before invoking the handler.
    */
   onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
-  /** Subscribe to the PTY exit event. */
   onExit(handler: (exitCode: number) => void): Promise<() => void>;
 }
 
@@ -88,9 +85,7 @@ interface Props {
   readonly readOnly?: boolean;
   /** Optional message appended on exit. Empty string suppresses it. */
   readonly exitMessage?: string;
-  /** Optional restart action. Renders the ↻ button when provided. */
   readonly onRestart?: () => void;
-  /** Optional notification when the PTY exits. */
   readonly onExit?: (exitCode: number) => void;
 }
 

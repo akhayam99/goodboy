@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-// Snapshot baseline for empty + error states.
 // Purpose: catch unintentional regressions during pre-0.1.0 IA refactor.
 // Update snapshots intentionally with: vitest run --update-snapshots
 
