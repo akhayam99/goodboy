@@ -526,11 +526,14 @@ export function sendTurn(set: SetFn, get: GetFn) {
           permissionMode: flags.permissionMode,
         };
       } catch (err) {
-        console.error('permission rule load failed; falling back to empty rule set', err);
+        console.error(
+          'permission rule load failed; using session permission mode with no rules',
+          err,
+        );
         claudeFlags = {
           allowedTools: [],
           disallowedTools: [],
-          permissionMode: 'bypassPermissions',
+          permissionMode: session.permissionMode,
         };
       }
     }
