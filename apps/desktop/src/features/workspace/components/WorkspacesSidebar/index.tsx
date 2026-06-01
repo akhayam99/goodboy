@@ -757,6 +757,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
       return next;
     });
   }, []);
+  const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const toggleClusterExpand = useCallback((id: string) => {
+    setClusterExpand((prev) => {
+      const next = new Map(prev);
+      next.set(id, !(prev.get(id) ?? false));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -1024,6 +1032,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     const name = workflowKindName(workflow);
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
+    const isCompleted = !isDiscarded && total > 0 && done >= total;
     return (
       <div key={workflow.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
         <div className="flex items-center gap-0.5">
@@ -1047,13 +1056,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
               <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 <Ban size={10} aria-hidden /> discarded
               </span>
+            ) : isCompleted ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
+                <Check size={10} aria-hidden /> completed
+              </span>
             ) : total > 0 ? (
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
                 {done}/{total}
               </span>
             ) : null}
           </button>
-          {!isDiscarded ? (
+          {!isDiscarded && !isCompleted ? (
             <div className="flex shrink-0 items-center">
               <AutoRunToggle session={task} />
               {attachedWorkflows.length > 1 ? (
@@ -1095,6 +1108,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                   run.modelOverride ??
                   AGENT_KIND_DEFAULTS[kind].model;
                 const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+                const clustersExpanded = clusterExpand.get(run.id) ?? false;
                 return (
                   <Fragment key={run.id}>
                     <WorkflowStepRow
@@ -1118,21 +1132,34 @@ function AgentsSection({ task }: AgentsSectionProps) {
                     />
                     {clusterChildren.length > 0 ? (
                       <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-                        <span className="px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50">
+                        <button
+                          type="button"
+                          onClick={() => toggleClusterExpand(run.id)}
+                          aria-expanded={clustersExpanded}
+                          aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
+                          className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                        >
+                          {clustersExpanded ? (
+                            <ChevronDown size={10} aria-hidden className="shrink-0" />
+                          ) : (
+                            <ChevronRight size={10} aria-hidden className="shrink-0" />
+                          )}
                           clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
                           {clusterChildren.length}
-                        </span>
-                        {clusterChildren.map((child, ci) => (
-                          <ClusterChildRow
-                            key={child.id}
-                            child={child}
-                            index={ci}
-                            total={clusterChildren.length}
-                            costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
-                            isSelected={child.id === selectedAgentId}
-                            onSelect={() => onPickAgent(child.id)}
-                          />
-                        ))}
+                        </button>
+                        {clustersExpanded
+                          ? clusterChildren.map((child, ci) => (
+                              <ClusterChildRow
+                                key={child.id}
+                                child={child}
+                                index={ci}
+                                total={clusterChildren.length}
+                                costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
+                                isSelected={child.id === selectedAgentId}
+                                onSelect={() => onPickAgent(child.id)}
+                              />
+                            ))
+                          : null}
                       </div>
                     ) : null}
                   </Fragment>
