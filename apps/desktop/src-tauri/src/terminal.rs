@@ -86,13 +86,47 @@ impl TerminalError {
 }
 
 // ---------------------------------------------------------------------------
-// Command — open (idempotent) an interactive bash session
+// Login shell resolution
 // ---------------------------------------------------------------------------
 
-/// Spawns `bash -l -i` in a pty keyed by `session_id`. Idempotent: if a live
-/// shell already exists for this session the command is a no-op. Output
-/// streams as `terminal-output` events (base64). `terminal-exit` fires when
-/// the shell dies.
+fn login_shell() -> String {
+    if let Ok(shell) = std::env::var("SHELL") {
+        let shell = shell.trim();
+        if !shell.is_empty() && std::path::Path::new(shell).exists() {
+            return shell.to_string();
+        }
+    }
+    for candidate in shell_fallbacks() {
+        if std::path::Path::new(candidate).exists() {
+            return (*candidate).to_string();
+        }
+    }
+    "/bin/sh".to_string()
+}
+
+#[cfg(target_os = "macos")]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/zsh", "/bin/bash"]
+}
+
+#[cfg(target_os = "linux")]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/bash", "/bin/zsh"]
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/sh"]
+}
+
+// ---------------------------------------------------------------------------
+// Command — open (idempotent) an interactive login-shell session
+// ---------------------------------------------------------------------------
+
+/// Spawns the user's login shell (`$SHELL -l -i`) in a pty keyed by
+/// `session_id`. Idempotent: if a live shell already exists for this session
+/// the command is a no-op. Output streams as `terminal-output` events
+/// (base64). `terminal-exit` fires when the shell dies.
 #[tauri::command]
 pub async fn terminal_open(
     app: AppHandle,
@@ -127,7 +161,8 @@ pub async fn terminal_open(
             })
             .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("/bin/bash");
+        let shell = login_shell();
+        let mut cmd = CommandBuilder::new(&shell);
         cmd.arg("-l");
         cmd.arg("-i");
 
@@ -135,16 +170,14 @@ pub async fn terminal_open(
             std::env::var("HOME").unwrap_or_else(|_| "/".to_string())
         });
         cmd.cwd(&effective_cwd);
+
+        for (key, value) in std::env::vars() {
+            cmd.env(key, value);
+        }
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
-
-        if let Ok(home) = std::env::var("HOME") {
-            cmd.env("HOME", home);
-        }
-        if let Ok(user) = std::env::var("USER") {
-            cmd.env("USER", user);
-        }
-        cmd.env("SHELL", "/bin/bash");
+        cmd.env("COLORTERM", "truecolor");
+        cmd.env("SHELL", &shell);
 
         let child = pair
             .slave
@@ -204,7 +237,7 @@ pub async fn terminal_open(
                     let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
                     g.as_mut()
                         .and_then(|r| r.child.wait().ok())
-                        .map(|s| if s.success() { 0_i32 } else { 1_i32 })
+                        .map(|s| s.exit_code() as i32)
                         .unwrap_or(-1)
                 } else {
                     -1
@@ -314,4 +347,19 @@ pub fn terminal_close(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn login_shell_returns_existing_executable() {
+        let shell = login_shell();
+        assert!(
+            std::path::Path::new(&shell).exists(),
+            "login_shell must return an existing path, got: {}",
+            shell
+        );
+    }
 }

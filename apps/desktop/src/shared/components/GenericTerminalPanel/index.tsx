@@ -123,6 +123,7 @@ export function GenericTerminalPanel({
       lineHeight: 1.4,
       theme: theme === 'dark' ? DARK_THEME : LIGHT_THEME,
       disableStdin: readOnly,
+      screenReaderMode: true,
     });
 
     const fitAddon = new FitAddon();
@@ -203,14 +204,20 @@ export function GenericTerminalPanel({
     if (isActive) {
       const id = requestAnimationFrame(() => {
         fitAddonRef.current?.fit();
+        if (!readOnly) termRef.current?.focus();
       });
       return () => cancelAnimationFrame(id);
     }
-  }, [isActive]);
+  }, [isActive, readOnly]);
 
   return (
-    <div className="relative size-full overflow-hidden">
-      <div ref={containerRef} className="size-full overflow-hidden" />
+    <div className="relative size-full overflow-hidden" inert={!isActive} aria-hidden={!isActive}>
+      <div
+        ref={containerRef}
+        role="group"
+        aria-label="Terminal"
+        className="size-full overflow-hidden"
+      />
       {onRestart ? (
         <button
           type="button"

@@ -14,6 +14,7 @@ import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLi
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
+import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -93,6 +94,7 @@ export function App() {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
+  const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
@@ -389,6 +391,7 @@ export function App() {
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
               onOpenLinear={() => setLinearStudioOpen(true)}
+              onOpenProviders={() => setProviderStudioOpen(true)}
               onOpenGithub={() => {
                 setGithubStudioSession(currentSession?.id ?? null);
                 setGithubStudioOpen(true);
@@ -490,6 +493,12 @@ export function App() {
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           onClose={() => setGithubStudioOpen(false)}
+        />
+      ) : null}
+      {providerStudioOpen && currentWorkspace ? (
+        <ProviderStudio
+          workspaceName={currentWorkspace.name}
+          onClose={() => setProviderStudioOpen(false)}
         />
       ) : null}
       {linearStudioOpen && currentWorkspace ? (

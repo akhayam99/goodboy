@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Play,
+  Plug,
   Plus,
   Settings,
   Sparkles,
@@ -100,6 +101,7 @@ interface WorkspacesSidebarProps {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenProviders: () => void;
   onOpenGithub: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
@@ -116,6 +118,7 @@ export function WorkspacesSidebar({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenProviders,
   onOpenGithub,
   collapsed = false,
   onToggleCollapse,
@@ -264,6 +267,7 @@ export function WorkspacesSidebar({
           onOpenPalette={onOpenPalette}
           onOpenWorkflows={onOpenWorkflows}
           onOpenLinear={onOpenLinear}
+          onOpenProviders={onOpenProviders}
           onOpenGithub={onOpenGithub}
           linearEnabled={hasLinear}
           skillsEnabled={WORKSPACE_FEATURES.skills}
@@ -384,6 +388,7 @@ function QuickActionsRow({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenProviders,
   onOpenGithub,
   linearEnabled,
   skillsEnabled,
@@ -391,6 +396,7 @@ function QuickActionsRow({
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenProviders: () => void;
   onOpenGithub: () => void;
   linearEnabled: boolean;
   skillsEnabled: boolean;
@@ -410,6 +416,12 @@ function QuickActionsRow({
         icon={<Layers size={12} aria-hidden />}
         label="Workflows"
         onClick={onOpenWorkflows}
+      />
+      <QuickAction
+        icon={<Plug size={12} aria-hidden />}
+        label="Providers"
+        title="connect and manage AI provider accounts"
+        onClick={onOpenProviders}
       />
       {/* Linear Studio: launch sessions straight from assigned issues. Shown
           only when this workspace has Linear connected. */}
