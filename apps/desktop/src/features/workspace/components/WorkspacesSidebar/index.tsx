@@ -393,11 +393,14 @@ function QuickActionsRow({
   linearEnabled: boolean;
   skillsEnabled: boolean;
 }) {
+  const noProviderConnected = useAppStore(
+    (s) => !s.providers.some((p) => p.connection === 'connected'),
+  );
   return (
     <div className="flex shrink-0 items-center gap-1 px-2.5 pt-2">
       {skillsEnabled ? (
         <QuickAction
-          icon={<Sparkles size={12} aria-hidden />}
+          icon={<Sparkles size={12} className="text-warning" aria-hidden />}
           label="Skills"
           onClick={() => onOpenPalette('/')}
         />
@@ -405,15 +408,16 @@ function QuickActionsRow({
       {/* Single entry point to the global Workflow Studio. Scripts is reachable
           from the composer ($ prefix) and the palette, so it's dropped here. */}
       <QuickAction
-        icon={<Layers size={12} aria-hidden />}
+        icon={<Layers size={12} className="text-primary" aria-hidden />}
         label="Workflows"
         onClick={onOpenWorkflows}
       />
       <QuickAction
-        icon={<Plug size={12} aria-hidden />}
+        icon={<Plug size={12} className="text-info" aria-hidden />}
         label="Providers"
         title="connect and manage AI provider accounts"
         onClick={onOpenProviders}
+        pulse={noProviderConnected}
       />
       {linearEnabled ? (
         <QuickAction
@@ -428,7 +432,7 @@ function QuickActionsRow({
         />
       ) : null}
       <QuickAction
-        icon={<GitPullRequest size={12} aria-hidden />}
+        icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
         label="GitHub"
         title="review and act on pull requests across this workspace"
         onClick={onOpenGithub}
@@ -442,18 +446,25 @@ function QuickAction({
   label,
   title,
   onClick,
+  pulse,
 }: {
   icon: ReactNode;
   label: string;
   title?: string;
   onClick: () => void;
+  pulse?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title ?? `browse ${label.toLowerCase()} in the command palette`}
-      className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-soft bg-muted/30 py-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
+      className={cn(
+        'flex flex-1 items-center justify-center gap-1.5 rounded-md border py-1.5 text-2xs font-medium transition-colors',
+        pulse
+          ? 'animate-soft-pulse border-info/55 bg-info/5 text-foreground hover:bg-info/10'
+          : 'border-border-soft bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground',
+      )}
     >
       {icon}
       <span>{label}</span>
