@@ -868,7 +868,6 @@ const CTX_DECISIONS = [
   'Rate-limit requests per email at 3 per hour.',
 ];
 const CTX_DECISION_ADDED = 'Hash tokens with argon2id, not sha256.';
-const CTX_DECISION_CHUNKS = ['Hash ', 'tokens ', 'with ', 'argon2id, ', 'not ', 'sha256.'];
 const CTX_LAST_OUTPUT =
   'POST /auth/reset-request is live. Email template wired. Endpoint and handler tests green.';
 const CTX_QUESTION = 'Cap reset tokens at one active per account, or allow several in flight?';
@@ -878,7 +877,6 @@ interface ContextState {
   tab: CtxTab;
   decisionsOpen: boolean;
   decisionEditing: boolean;
-  typed: number;
   decisionAdded: boolean;
   questionOpen: boolean;
   picked: number | null;
@@ -889,7 +887,6 @@ type ContextAction =
   | { type: 'tab'; tab: CtxTab }
   | { type: 'openDecisions' }
   | { type: 'editDecision' }
-  | { type: 'type' }
   | { type: 'commitDecision' }
   | { type: 'raiseQuestion' }
   | { type: 'pick'; i: number }
@@ -899,7 +896,6 @@ const CTX_INITIAL: ContextState = {
   tab: 'context',
   decisionsOpen: false,
   decisionEditing: false,
-  typed: 0,
   decisionAdded: false,
   questionOpen: false,
   picked: null,
@@ -910,7 +906,6 @@ const CTX_STATIC: ContextState = {
   tab: 'context',
   decisionsOpen: true,
   decisionEditing: false,
-  typed: CTX_DECISION_CHUNKS.length,
   decisionAdded: true,
   questionOpen: true,
   picked: null,
@@ -924,9 +919,7 @@ function contextReducer(state: ContextState, action: ContextAction): ContextStat
     case 'openDecisions':
       return { ...state, decisionsOpen: true };
     case 'editDecision':
-      return { ...state, decisionsOpen: true, decisionEditing: true, typed: 0 };
-    case 'type':
-      return { ...state, typed: Math.min(state.typed + 1, CTX_DECISION_CHUNKS.length) };
+      return { ...state, decisionsOpen: true, decisionEditing: true };
     case 'commitDecision':
       return { ...state, decisionEditing: false, decisionAdded: true };
     case 'raiseQuestion':
@@ -947,13 +940,7 @@ const CTX_SCRIPT: ReadonlyArray<Beat<ContextAction>> = [
   { d: 880, kind: 'move', to: 'decisions-body' },
   { d: 540, kind: 'press' },
   { d: 220, kind: 'act', act: { type: 'editDecision' } },
-  { d: 360, kind: 'act', act: { type: 'type' } },
-  { d: 300, kind: 'act', act: { type: 'type' } },
-  { d: 300, kind: 'act', act: { type: 'type' } },
-  { d: 320, kind: 'act', act: { type: 'type' } },
-  { d: 300, kind: 'act', act: { type: 'type' } },
-  { d: 340, kind: 'act', act: { type: 'type' } },
-  { d: 620, kind: 'act', act: { type: 'commitDecision' } },
+  { d: 1800, kind: 'act', act: { type: 'commitDecision' } },
   { d: 820, kind: 'move', to: null },
   { d: 500, kind: 'act', act: { type: 'raiseQuestion' } },
   { d: 720, kind: 'move', to: 'footer' },
@@ -1086,11 +1073,12 @@ function ContextTabBody({
             {CTX_DECISIONS.map((d) => (
               <div key={d}>- {d}</div>
             ))}
-            <div className="text-foreground">
-              - {CTX_DECISION_CHUNKS.slice(0, state.typed).join('')}
+            <div className="flex text-foreground">
+              <span className="shrink-0">-&nbsp;</span>
+              <span className="typewriter">{CTX_DECISION_ADDED}</span>
               <span
                 aria-hidden
-                className="ml-px inline-block h-3 w-1 translate-y-0.5 animate-pulse bg-primary/70"
+                className="ml-px inline-block h-3 w-1 shrink-0 translate-y-0.5 animate-pulse bg-primary/70"
               />
             </div>
           </div>
@@ -1099,14 +1087,8 @@ function ContextTabBody({
             ref={registerTarget('decisions-body')}
             className="flex flex-col gap-1 text-[11px] leading-relaxed text-foreground/85"
           >
-            {decisions.map((d, i) => (
-              <li
-                key={d}
-                className={[
-                  'flex gap-1.5 rounded',
-                  state.decisionAdded && i === decisions.length - 1 ? 'decision-flash' : '',
-                ].join(' ')}
-              >
+            {decisions.map((d) => (
+              <li key={d} className="flex gap-1.5">
                 <span aria-hidden className="text-success/60">
                   ·
                 </span>

@@ -329,16 +329,18 @@ body,
   animation: press-ring 420ms ease-out forwards;
 }
 
-@keyframes decision-flash {
-  from {
-    background-color: oklch(0.69 0.13 148 / 0.28);
-  }
+@keyframes typing {
   to {
-    background-color: transparent;
+    width: 38ch;
   }
 }
-.decision-flash {
-  animation: decision-flash 1.5s ease-out forwards;
+.typewriter {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  animation: typing 1.6s steps(38, end) forwards;
 }
 
 /* Marquee: a track duplicated twice, translated -50% on loop, so the row
