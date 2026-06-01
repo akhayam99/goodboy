@@ -1,6 +1,5 @@
 import { DogMascot } from '../components/DogMascot';
 import { LinkButton } from '../components/ui';
-import { AppOverviewSnapshot } from '../mockups/Snapshots';
 
 function GitHubGlyph() {
   return (
@@ -68,14 +67,6 @@ export function Hero() {
           >
             Free &amp; open source &middot; macOS &middot; bring your own subscription
           </p>
-        </div>
-
-        {/* one honest snapshot of the running app */}
-        <div
-          className="rise float relative mx-auto mt-14 max-w-5xl sm:mt-16"
-          style={{ animationDelay: '320ms' }}
-        >
-          <AppOverviewSnapshot />
         </div>
       </div>
     </section>
