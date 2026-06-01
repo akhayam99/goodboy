@@ -35,11 +35,52 @@ pub fn resolved_path() -> &'static str {
 /// `Command::new` whenever the target binary may live outside the minimal
 /// posix path set.
 pub fn command(binary: &str) -> Command {
+    #[cfg(windows)]
+    let mut cmd = match resolve_program(binary) {
+        Some(full) => Command::new(full),
+        None => Command::new(binary),
+    };
+    #[cfg(not(windows))]
     let mut cmd = Command::new(binary);
     cmd.env("PATH", resolved_path());
     #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
     cmd
+}
+
+// Command::new on Windows only finds <name>.exe by bare name; it does NOT find
+// the .cmd/.bat shims npm creates for global CLIs (claude.cmd, codex.cmd, ...),
+// so spawning "claude" directly fails with "program not found". Resolve the
+// bare name against the merged PATH using PATHEXT and hand Command a full path
+// it can launch. A resolved .cmd/.bat path is run by Rust via cmd with proper
+// argument escaping. Names that are already qualified (a path or an explicit
+// extension) are left untouched.
+#[cfg(windows)]
+fn resolve_program(binary: &str) -> Option<std::path::PathBuf> {
+    use std::path::Path;
+    let raw = Path::new(binary);
+    if raw.components().count() > 1 || raw.extension().is_some() {
+        return None;
+    }
+    let exts: Vec<String> = std::env::var("PATHEXT")
+        .unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".to_string())
+        .split(';')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    for dir in resolved_path().split(SEP) {
+        let dir = dir.trim();
+        if dir.is_empty() {
+            continue;
+        }
+        for ext in &exts {
+            let candidate = Path::new(dir).join(format!("{}{}", binary, ext));
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+    None
 }
 
 fn compute_path() -> String {
