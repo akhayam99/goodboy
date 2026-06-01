@@ -8,7 +8,10 @@ const { extractMock, resolveMock } = vi.hoisted(() => ({
   resolveMock: vi.fn(async () => true),
 }));
 
-vi.mock('@goodboy/core', () => ({ extractCommentResolved: extractMock }));
+vi.mock('@goodboy/core', () => ({
+  extractCommentResolved: extractMock,
+  isReviewThreadId: (id: string) => /^PRT_/.test(id),
+}));
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (s: {
@@ -33,13 +36,26 @@ describe('CommentResolvedChip', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('renders nothing when the marker references a local diff comment id', () => {
+    extractMock.mockReturnValue({
+      threadId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      commitSha: 'abcdef1234567890',
+    });
+    const { container } = render(
+      <CommentResolvedChip assistantText="x" sessionId={'s' as never} />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
   it('resolves the thread when the confirm button is clicked', async () => {
-    extractMock.mockReturnValue({ threadId: 'th-1', commitSha: 'abcdef1234567890' });
+    extractMock.mockReturnValue({ threadId: 'PRT_kwDOABC123', commitSha: 'abcdef1234567890' });
     render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
     await act(async () => {
       fireEvent.click(screen.getByTestId('comment-resolved-confirm'));
     });
-    expect(resolveMock).toHaveBeenCalledWith('s', 'th-1', { commitSha: 'abcdef1234567890' });
+    expect(resolveMock).toHaveBeenCalledWith('s', 'PRT_kwDOABC123', {
+      commitSha: 'abcdef1234567890',
+    });
     expect(screen.getByText(/conversation resolved/i)).toBeDefined();
   });
 });

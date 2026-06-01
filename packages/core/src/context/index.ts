@@ -17,6 +17,7 @@ export {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  isReviewThreadId,
   mergeIntoSlot,
   removeFromSlot,
   type ExtractedCluster,

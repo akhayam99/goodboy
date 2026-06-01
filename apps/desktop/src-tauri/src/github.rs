@@ -83,6 +83,34 @@ fn run_gh(
     })
 }
 
+fn run_git_push(args: &[&str], cwd: &str, token: Option<&str>) -> Result<GhRunResult, GithubError> {
+    let mut cmd = crate::path_env::command("git");
+    if gh_available() {
+        cmd.args([
+            "-c",
+            "credential.https://github.com.helper=",
+            "-c",
+            "credential.https://github.com.helper=!gh auth git-credential",
+        ]);
+    }
+    cmd.args(args);
+    if !cwd.is_empty() {
+        cmd.current_dir(cwd);
+    }
+    if let Some(t) = token {
+        if !t.is_empty() {
+            cmd.env("GH_TOKEN", t);
+            cmd.env("GITHUB_TOKEN", t);
+        }
+    }
+    let output = cmd.output()?;
+    Ok(GhRunResult {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
+}
+
 fn parse_version(stdout: &str) -> Option<String> {
     stdout
         .lines()
@@ -205,6 +233,25 @@ pub async fn gh_run(
         let token = read_token(workspace_id.as_deref());
         let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
+}
+
+#[tauri::command]
+pub async fn git_push(
+    cwd: String,
+    branch: Option<String>,
+    workspace_id: Option<String>,
+) -> Result<GhRunResult, GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let token = read_token(workspace_id.as_deref());
+        let mut args: Vec<&str> = vec!["push"];
+        if let Some(b) = branch.as_deref().filter(|b| !b.is_empty()) {
+            args.push("origin");
+            args.push(b);
+        }
+        run_git_push(&args, &cwd, token.as_deref())
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
