@@ -1319,7 +1319,67 @@ const PR_TONE: Record<'open' | 'approved' | 'draft', string> = {
   draft: 'text-muted-foreground/60',
 };
 
+type GhTab = 'overview' | 'conversation' | 'checks';
+type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved';
+const GH_SHA = 'a1b2c3d';
+
+interface GithubState {
+  tab: GhTab;
+  phase: GhPhase;
+}
+
+type GithubAction =
+  | { type: 'tab'; tab: GhTab }
+  | { type: 'resolve' }
+  | { type: 'commit' }
+  | { type: 'solved' };
+
+const GH_INITIAL: GithubState = { tab: 'overview', phase: 'open' };
+const GH_STATIC: GithubState = { tab: 'conversation', phase: 'committed' };
+
+function githubReducer(state: GithubState, action: GithubAction): GithubState {
+  switch (action.type) {
+    case 'tab':
+      return { ...state, tab: action.tab };
+    case 'resolve':
+      return { ...state, phase: 'resolving' };
+    case 'commit':
+      return { ...state, phase: 'committed' };
+    case 'solved':
+      return { ...state, phase: 'resolved' };
+    default:
+      return state;
+  }
+}
+
+const GH_SCRIPT: ReadonlyArray<Beat<GithubAction>> = [
+  { d: 800, kind: 'move', to: 'pr-row' },
+  { d: 500, kind: 'press' },
+  { d: 700, kind: 'move', to: 'tab-conversation' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'conversation' } },
+  { d: 900, kind: 'move', to: 'resolve-btn' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'resolve' } },
+  { d: 900, kind: 'move', to: null },
+  { d: 1500, kind: 'act', act: { type: 'commit' } },
+  { d: 700, kind: 'move', to: 'mark-solved' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'solved' } },
+  { d: 2200, kind: 'reset' },
+];
+
+const GH_CHECKS = ['build', 'unit tests', 'typecheck', 'lint'];
+
 export function GithubStudioSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: GH_INITIAL,
+    reducer: githubReducer,
+    script: GH_SCRIPT,
+    staticState: GH_STATIC,
+  });
+  const resolved = state.phase === 'resolved';
+
   return (
     <SnapshotFrame className="max-w-[560px]">
       <FrameHeader
@@ -1330,8 +1390,7 @@ export function GithubStudioSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* inbox: every session's PR, bucketed by what it needs from you */}
+      <div ref={stageRef} className="relative flex">
         <div className="w-[176px] shrink-0 space-y-2.5 border-r border-border-soft p-2">
           {INBOX_GROUPS.map((g) => (
             <div key={g.label} className="flex flex-col gap-0.5">
@@ -1347,6 +1406,7 @@ export function GithubStudioSnapshot() {
               {g.rows.map((r) => (
                 <div
                   key={r.num}
+                  ref={r.active ? registerTarget('pr-row') : undefined}
                   className={[
                     'flex items-center gap-1.5 rounded-md px-1.5 py-1',
                     r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
@@ -1359,7 +1419,7 @@ export function GithubStudioSnapshot() {
                   <span className="shrink-0 font-mono text-[9px] text-muted-foreground/50">
                     #{r.num}
                   </span>
-                  {r.attention ? (
+                  {r.attention && !(r.active && resolved) ? (
                     <span
                       aria-hidden
                       title="changes requested"
@@ -1372,7 +1432,6 @@ export function GithubStudioSnapshot() {
           ))}
         </div>
 
-        {/* detail: the focused PR, full lifecycle + a comment you can hand off */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2 px-3 pt-3 pb-2">
             <span className="font-mono text-[10px] text-muted-foreground">#214</span>
@@ -1382,22 +1441,29 @@ export function GithubStudioSnapshot() {
             <span className="chip chip-success shrink-0">open</span>
           </div>
 
-          {/* section nav */}
           <div className="flex items-center gap-1 px-3 pb-2 text-[10px]">
-            <span className="rounded px-1.5 py-0.5 text-muted-foreground/70">Overview</span>
-            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-              Conversation
-              <span className="rounded-full bg-warning/20 px-1 text-[8px] font-semibold text-warning">
-                2
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-muted-foreground/70">
-              Checks
-              <span aria-hidden className="size-1.5 rounded-full bg-success" />
-            </span>
+            <GhTabPill label="Overview" active={state.tab === 'overview'} />
+            <GhTabPill
+              label="Conversation"
+              active={state.tab === 'conversation'}
+              tabRef={registerTarget('tab-conversation')}
+              badge={
+                resolved ? (
+                  <IconCheck size={9} className="text-success" />
+                ) : (
+                  <span className="rounded-full bg-warning/20 px-1 text-[8px] font-semibold text-warning">
+                    1
+                  </span>
+                )
+              }
+            />
+            <GhTabPill
+              label="Checks"
+              active={state.tab === 'checks'}
+              badge={<span aria-hidden className="size-1.5 rounded-full bg-success" />}
+            />
           </div>
 
-          {/* lifecycle action bar */}
           <div className="flex items-center gap-1.5 border-y border-border-soft/60 px-3 py-2">
             <span className="inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950">
               <IconCheck size={10} /> Merge
@@ -1410,45 +1476,159 @@ export function GithubStudioSnapshot() {
             </span>
           </div>
 
-          {/* one review comment, handed to an agent */}
-          <div className="flex flex-col gap-1.5 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span
-                aria-hidden
-                className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
-                style={{ background: 'oklch(0.74 0.15 55)' }}
-              >
-                C
-              </span>
-              <span className="font-medium text-foreground/80">claude-reviewer</span>
-              <span>on</span>
-              <code className="font-mono text-primary">token.ts:42</code>
+          {state.tab === 'overview' ? (
+            <div className="px-3 py-3 text-[11px] leading-relaxed text-foreground/80">
+              <p>
+                Adds a password reset flow: a hashed single-use token, the request endpoint, an
+                email template and the reset form. Login UI untouched.
+              </p>
             </div>
-            <p className="text-[11px] leading-relaxed text-foreground/85">
-              Hash with <code className="font-mono text-foreground/70">argon2id</code> instead of
-              sha256, the table gets scraped if the DB ever leaks.
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                <IconSparkles size={10} /> resolve
-              </span>
-              <span className="text-[10px] text-muted-foreground/60">
-                hands the fix to an agent, replies on the thread
-              </span>
-            </div>
-          </div>
+          ) : null}
 
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[10.5px]">
-            <span className="inline-flex items-center gap-1.5 text-warning">
-              <IconSparkles size={11} /> Resolve all 2 with one agent
-            </span>
-            <span aria-hidden className="text-warning opacity-60">
-              →
-            </span>
-          </div>
+          {state.tab === 'checks' ? (
+            <div className="flex flex-col divide-y divide-border-soft/40 px-3">
+              {GH_CHECKS.map((c) => (
+                <div key={c} className="flex items-center gap-2 py-1.5 text-[10.5px]">
+                  <span className="flex size-3.5 items-center justify-center rounded-full bg-success/20">
+                    <IconCheck size={8} className="text-success" />
+                  </span>
+                  <span className="flex-1 text-foreground/80">{c}</span>
+                  <span className="font-mono text-[9.5px] text-muted-foreground/50">passed</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {state.tab === 'conversation' ? (
+            <div className="flex flex-col gap-2 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span
+                  aria-hidden
+                  className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
+                  style={{ background: 'oklch(0.74 0.15 55)' }}
+                >
+                  C
+                </span>
+                <span className="font-medium text-foreground/80">claude-reviewer</span>
+                <span>on</span>
+                <code className="font-mono text-primary">token.ts:42</code>
+                <span
+                  className={[
+                    'ml-auto rounded-full px-1.5 py-px text-[8.5px] font-semibold',
+                    resolved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
+                  ].join(' ')}
+                >
+                  {resolved ? 'resolved' : 'open'}
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-foreground/85">
+                Hash with <code className="font-mono text-foreground/70">argon2id</code> instead of
+                sha256, the table gets scraped if the DB ever leaks.
+              </p>
+
+              {state.phase === 'open' ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    ref={registerTarget('resolve-btn')}
+                    className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent"
+                  >
+                    <IconSparkles size={10} /> resolve
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/60">
+                    hands the fix to an agent, replies on the thread
+                  </span>
+                </div>
+              ) : null}
+
+              {state.phase === 'resolving' ? (
+                <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5 text-[10px]">
+                  <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                    <span className="size-2 rounded-sm bg-lime-400" aria-hidden /> Resolve
+                  </span>
+                  <RunSpinner size={10} className="text-accent" />
+                  <span className="text-muted-foreground/70">
+                    reading token.ts, editing, running tests
+                  </span>
+                </div>
+              ) : null}
+
+              {state.phase === 'committed' || resolved ? (
+                <div className="flex flex-col gap-1.5 rounded-md border border-success/30 bg-success/5 px-2.5 py-2">
+                  <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-success">
+                    <IconCheck size={11} /> fix committed locally
+                    <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-px font-mono text-[9.5px] text-foreground/80">
+                      <CommitMark /> {GH_SHA}
+                    </span>
+                  </div>
+                  {resolved ? (
+                    <span className="inline-flex w-fit items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                      <IconCheck size={9} /> conversation resolved
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground/70">
+                        mark this review conversation as solved on github?
+                      </span>
+                      <span
+                        ref={registerTarget('mark-solved')}
+                        className="ml-auto inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[10px] font-semibold text-zinc-950"
+                      >
+                        Mark as Solved
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function GhTabPill({
+  label,
+  active,
+  badge,
+  tabRef,
+}: {
+  label: string;
+  active: boolean;
+  badge?: ReactNode;
+  tabRef?: TargetRef;
+}) {
+  return (
+    <span
+      ref={tabRef}
+      className={[
+        'inline-flex items-center gap-1 rounded px-1.5 py-0.5',
+        active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground/70',
+      ].join(' ')}
+    >
+      {label}
+      {badge}
+    </span>
+  );
+}
+
+function CommitMark() {
+  return (
+    <svg
+      width="9"
+      height="9"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+      className="text-muted-foreground/70"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M1.05 12H8M16 12h6.95" strokeLinecap="round" />
+    </svg>
   );
 }
 
