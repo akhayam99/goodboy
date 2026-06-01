@@ -124,7 +124,6 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md): how Goodboy talks
 - [VISION.md](./VISION.md): the why, at length
 - [DESIGN.md](./DESIGN.md): how it looks and behaves
-- [ROADMAP.md](./ROADMAP.md): milestones and what shipped
 - [CONVENTIONS.md](./CONVENTIONS.md) · [CLAUDE.md](./CLAUDE.md): contributor rules
 
 ## License
