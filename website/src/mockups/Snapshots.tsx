@@ -1382,14 +1382,15 @@ const INBOX_GROUPS: ReadonlyArray<{
   },
 ];
 
-const PR_TONE: Record<'open' | 'approved' | 'draft', string> = {
+const PR_TONE: Record<'open' | 'approved' | 'draft' | 'merged', string> = {
   open: 'text-success',
   approved: 'text-success',
   draft: 'text-muted-foreground/60',
+  merged: 'text-merged',
 };
 
 type GhTab = 'overview' | 'conversation' | 'checks';
-type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved';
+type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved' | 'merged';
 const GH_SHA = 'a1b2c3d';
 
 interface GithubState {
@@ -1401,10 +1402,11 @@ type GithubAction =
   | { type: 'tab'; tab: GhTab }
   | { type: 'resolve' }
   | { type: 'commit' }
-  | { type: 'solved' };
+  | { type: 'solved' }
+  | { type: 'merge' };
 
 const GH_INITIAL: GithubState = { tab: 'overview', phase: 'open' };
-const GH_STATIC: GithubState = { tab: 'conversation', phase: 'committed' };
+const GH_STATIC: GithubState = { tab: 'conversation', phase: 'resolved' };
 
 function githubReducer(state: GithubState, action: GithubAction): GithubState {
   switch (action.type) {
@@ -1416,6 +1418,8 @@ function githubReducer(state: GithubState, action: GithubAction): GithubState {
       return { ...state, phase: 'committed' };
     case 'solved':
       return { ...state, phase: 'resolved' };
+    case 'merge':
+      return { ...state, phase: 'merged' };
     default:
       return state;
   }
@@ -1435,6 +1439,9 @@ const GH_SCRIPT: ReadonlyArray<Beat<GithubAction>> = [
   { d: 700, kind: 'move', to: 'mark-solved' },
   { d: 540, kind: 'press' },
   { d: 220, kind: 'act', act: { type: 'solved' } },
+  { d: 800, kind: 'move', to: 'merge-btn' },
+  { d: 560, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'merge' } },
   { d: 2200, kind: 'reset' },
 ];
 
@@ -1447,7 +1454,9 @@ export function GithubStudioSnapshot() {
     script: GH_SCRIPT,
     staticState: GH_STATIC,
   });
-  const resolved = state.phase === 'resolved';
+  const merged = state.phase === 'merged';
+  const resolved = state.phase === 'resolved' || merged;
+  const canMerge = state.phase === 'resolved';
 
   return (
     <SnapshotFrame className="max-w-[560px]">
@@ -1481,7 +1490,13 @@ export function GithubStudioSnapshot() {
                     r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
                   ].join(' ')}
                 >
-                  <IconPullRequest size={11} className={['shrink-0', PR_TONE[r.tone]].join(' ')} />
+                  <IconPullRequest
+                    size={11}
+                    className={[
+                      'shrink-0',
+                      r.active && merged ? PR_TONE.merged : PR_TONE[r.tone],
+                    ].join(' ')}
+                  />
                   <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/85">
                     {r.goal}
                   </span>
@@ -1505,9 +1520,13 @@ export function GithubStudioSnapshot() {
           <div className="flex items-center gap-2 px-3 pt-3 pb-2">
             <span className="font-mono text-[10px] text-muted-foreground">#214</span>
             <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">
-              feat(auth): password reset via email link
+              feat(auth): password reset
             </span>
-            <span className="chip chip-success shrink-0">open</span>
+            <span
+              className={['shrink-0', merged ? 'chip chip-merged' : 'chip chip-success'].join(' ')}
+            >
+              {merged ? 'merged' : 'open'}
+            </span>
           </div>
 
           <div className="flex items-center gap-1 px-3 pb-2 text-[10px]">
@@ -1534,12 +1553,28 @@ export function GithubStudioSnapshot() {
           </div>
 
           <div className="flex items-center gap-1.5 border-y border-border-soft/60 px-3 py-2">
-            <span className="inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950">
-              <IconCheck size={10} /> Merge
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-medium text-muted-foreground">
-              Close
-            </span>
+            {merged ? (
+              <span className="inline-flex items-center gap-1 rounded-md border border-merged/40 bg-merged/10 px-2 py-1 text-[10px] font-semibold text-merged">
+                <IconCheck size={10} /> Merged
+              </span>
+            ) : (
+              <>
+                <span
+                  ref={registerTarget('merge-btn')}
+                  title={canMerge ? 'squash merge' : 'resolve the open comment first'}
+                  className={
+                    canMerge
+                      ? 'inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950'
+                      : 'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-semibold text-muted-foreground/40'
+                  }
+                >
+                  <IconCheck size={10} /> Merge
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                  Close
+                </span>
+              </>
+            )}
             <span className="ml-auto inline-flex items-center gap-1 font-mono text-[9.5px] text-muted-foreground/60">
               <IconBranch size={9} /> ak/password-reset → main
             </span>
@@ -1593,7 +1628,7 @@ export function GithubStudioSnapshot() {
                 </div>
                 <p className="text-[11px] leading-relaxed text-foreground/85">
                   Hash with <code className="font-mono text-foreground/70">argon2id</code> instead
-                  of sha256, the table gets scraped if the DB ever leaks.
+                  of sha256.
                 </p>
 
                 {state.phase === 'open' ? (
