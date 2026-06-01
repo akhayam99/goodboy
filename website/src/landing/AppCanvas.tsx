@@ -185,11 +185,22 @@ function Chat({ view, registerRegion }: CanvasProps) {
 
       <Pipeline steps={view.steps} />
 
-      <div className="flex min-h-0 flex-1 flex-col justify-end gap-2.5 overflow-hidden px-4 py-3">
-        {shown.map((turn) => (
-          <ChatBubble key={turn.id} role={turn.role} kind={turn.kind} text={turn.text} />
-        ))}
-        {showDock ? <ClusterDock clusters={view.clusters} /> : null}
+      <div
+        className={[
+          'flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden px-4 py-3',
+          view.chatCount === 0 ? 'justify-center' : 'justify-end',
+        ].join(' ')}
+      >
+        {view.chatCount === 0 ? (
+          <EmptyChat />
+        ) : (
+          <>
+            {shown.map((turn) => (
+              <ChatBubble key={turn.id} role={turn.role} kind={turn.kind} text={turn.text} />
+            ))}
+            {showDock ? <ClusterDock clusters={view.clusters} /> : null}
+          </>
+        )}
       </div>
 
       <div className="flex h-[52px] shrink-0 items-center gap-2 border-t border-border-soft px-4">
@@ -240,6 +251,15 @@ function ChatBubble({
           {text}
         </div>
       </div>
+    </div>
+  );
+}
+
+function EmptyChat() {
+  return (
+    <div className="flex flex-col items-center gap-2 text-center opacity-40">
+      <AgentAvatar kind="generic" size={34} />
+      <p className="text-[11.5px] text-muted-foreground">Set a goal to start a session.</p>
     </div>
   );
 }

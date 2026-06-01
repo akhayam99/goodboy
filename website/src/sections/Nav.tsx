@@ -2,10 +2,8 @@ import { Logo } from '../components/Logo';
 import { LinkButton } from '../components/ui';
 
 const links = [
-  { href: '#sessions', label: 'Sessions' },
-  { href: '#context', label: 'Context' },
+  { href: '#tour', label: 'Tour' },
   { href: '#studio', label: 'Workflow Studio' },
-  { href: '#github', label: 'GitHub Studio' },
   { href: '#linear', label: 'Linear Studio' },
   { href: '#compare', label: 'Compare' },
 ];

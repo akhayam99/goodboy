@@ -5,7 +5,7 @@ export function LinearDeepDive() {
   return (
     <Section
       id="linear"
-      eyebrow="05 · Linear Studio"
+      eyebrow="08 · Linear Studio"
       title={<>Your Linear backlog, one click from a session.</>}
       body={
         <>

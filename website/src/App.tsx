@@ -4,10 +4,7 @@ import { Nav } from './sections/Nav';
 import { FloatingNav } from './sections/FloatingNav';
 import { Hero } from './sections/Hero';
 import { ScrollTour } from './landing';
-import { SessionsDeepDive } from './sections/SessionsDeepDive';
-import { ContextDeepDive } from './sections/ContextDeepDive';
 import { StudioDeepDive } from './sections/StudioDeepDive';
-import { GithubDeepDive } from './sections/GithubDeepDive';
 import { LinearDeepDive } from './sections/LinearDeepDive';
 import { MoreBriefly } from './sections/MoreBriefly';
 import { Letter } from './sections/Letter';
@@ -23,12 +20,10 @@ export function App() {
       <main>
         {/* above the fold: the reason + install/github + app overview */}
         <Hero />
+        {/* the whole flow as one scroll-driven walk through the app */}
         <ScrollTour />
-        {/* the key points first: features carry the page */}
-        <SessionsDeepDive />
-        <ContextDeepDive />
+        {/* the two studios the tour does not cover */}
         <StudioDeepDive />
-        <GithubDeepDive />
         <LinearDeepDive />
         <MoreBriefly />
         {/* the human note, after the features, before the close */}

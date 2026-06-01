@@ -35,7 +35,7 @@ export function MoreBriefly() {
     >
       <div className="mx-auto max-w-5xl px-6">
         <div className="reveal max-w-2xl">
-          <Eyebrow>06 &middot; The rest, briefly</Eyebrow>
+          <Eyebrow>09 &middot; The rest, briefly</Eyebrow>
           <p className="mt-4 text-pretty text-[16px] leading-[1.6] text-muted-foreground sm:text-[17px]">
             The stuff that matters but doesn&apos;t need its own billboard.
           </p>

@@ -5,7 +5,7 @@ export function StudioDeepDive() {
   return (
     <Section
       id="studio"
-      eyebrow="03 · Workflow Studio"
+      eyebrow="07 · Workflow Studio"
       title={<>Build the flow once. Reuse it forever.</>}
       body={
         <>
