@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { WorkspaceScriptId } from '@goodboy/types';
+import type { WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 
 export interface ScriptRunResult {
   readonly stdout: string;
@@ -14,6 +14,12 @@ export interface ScriptRunRecord {
   readonly status: ScriptRunStatus;
   readonly result: ScriptRunResult | null;
   readonly runId: string;
+}
+
+export interface ScriptResultState {
+  readonly script: WorkspaceScript;
+  readonly status: 'pending' | 'ok' | 'error';
+  readonly result: ScriptRunResult | null;
 }
 
 export interface ScriptOutputPayload {

@@ -13,7 +13,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
     workspaceScripts: {} as Record<string, ReadonlyArray<unknown>>,
     loadScripts: vi.fn(async () => undefined),
-    runScript: vi.fn(async () => ({ exitCode: 0 })),
+    runWorkspaceScript: vi.fn(async () => undefined),
     sessionBranches: {} as Record<string, string | null>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
   },

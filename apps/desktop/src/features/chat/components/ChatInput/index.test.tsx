@@ -37,6 +37,9 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     acceptSessionNudgeHandoff: () => Promise<void>;
     spawnAgent: () => Promise<void>;
     runScript: () => Promise<{ stdout: string; stderr: string; exitCode: number }>;
+    runWorkspaceScript: () => Promise<void>;
+    dismissScriptResult: () => void;
+    sessionScriptResult: Record<string, never>;
     loadScripts: () => Promise<void>;
     selectAgent: () => Promise<void>;
     attachWorkflowToSession: () => Promise<void>;
@@ -81,6 +84,9 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
     runScript: async () => ({ stdout: '', stderr: '', exitCode: 0 }),
+    runWorkspaceScript: async () => undefined,
+    dismissScriptResult: () => undefined,
+    sessionScriptResult: {},
     loadScripts: async () => undefined,
     selectAgent: async () => undefined,
     attachWorkflowToSession: async () => undefined,
