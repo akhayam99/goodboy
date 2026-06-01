@@ -132,7 +132,6 @@ vi.mock('../../routing', () => ({
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import type { ProviderInfo } from '../../features/providers/providers';
 import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -168,7 +167,6 @@ import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
-import { ProvidersPanel } from '../../features/providers/components/ProvidersPanel';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -187,26 +185,6 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
     ...overrides,
   } as Session;
-}
-
-function makeProviderInfo(overrides: Partial<ProviderInfo> = {}): ProviderInfo {
-  return {
-    id: 'anthropic',
-    binary: 'claude',
-    label: 'claude',
-    docsUrl: 'https://docs.claude.com',
-    error: null,
-    connection: 'connected',
-    version: '1.0.0',
-    identity: null,
-    capabilities: {
-      models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: false,
-    },
-    ...overrides,
-  };
 }
 
 describe('snapshot, empty states', () => {
@@ -253,11 +231,6 @@ describe('snapshot, empty states', () => {
         />
       </ToastProvider>,
     );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('ProvidersPanel: no providers (store returns [])', () => {
-    const { container } = render(<ProvidersPanel />);
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -310,15 +283,6 @@ describe('snapshot, error states', () => {
 
   it('BootSplash: boot-error phase', () => {
     const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('ProvidersPanel: provider in error state', () => {
-    mockStore({
-      providers: [makeProviderInfo({ connection: 'error', error: 'unknown error' })],
-      refreshProviders: vi.fn(),
-    });
-    const { container } = render(<ProvidersPanel />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

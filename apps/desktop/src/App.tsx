@@ -156,6 +156,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const handler = () => setProviderStudioOpen(true);
+    window.addEventListener('goodboy:open-provider-studio', handler);
+    return () => window.removeEventListener('goodboy:open-provider-studio', handler);
+  }, []);
+
+  useEffect(() => {
     const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
