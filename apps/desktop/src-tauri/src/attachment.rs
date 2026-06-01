@@ -11,7 +11,7 @@ use thiserror::Error;
 const ATTACH_SUBDIR: &str = ".goodboy/attachments";
 
 /// Hard ceiling on a single decoded attachment. Mirrors the composer-side
-/// check — the second guard exists because `rel_path`/payloads also arrive
+/// check - the second guard exists because `rel_path`/payloads also arrive
 /// from persisted turn events, not just the live UI.
 const MAX_BYTES: usize = 15 * 1024 * 1024;
 
@@ -36,7 +36,7 @@ impl serde::Serialize for AttachmentError {
 }
 
 /// Reduces an arbitrary file name to a flat, separator-free token. Drops any
-/// directory component and replaces anything outside `[A-Za-z0-9._-]` — both a
+/// directory component and replaces anything outside `[A-Za-z0-9._-]` - both a
 /// path-traversal guard and a defense against shell-hostile names.
 fn sanitize_segment(name: &str) -> String {
     let base = Path::new(name)
@@ -78,7 +78,7 @@ fn mime_for(path: &Path) -> &'static str {
 
 /// Writes a base64-encoded image into `<worktree>/.goodboy/attachments/` and
 /// returns the worktree-relative path. The stored name is `<id>-<file_name>`,
-/// both sanitized — `id` keeps names unique without a uuid crate.
+/// both sanitized - `id` keeps names unique without a uuid crate.
 #[tauri::command]
 pub fn attachment_write(
     worktree_dir: String,
@@ -118,7 +118,7 @@ pub struct DroppedAttachment {
 /// Reads a file the user dragged from the OS into the composer and returns the
 /// bytes as base64 so the frontend can reuse the existing attachment pipeline.
 /// Only image MIMEs are accepted, mirroring the composer-side `accept="image/*"`
-/// filter — the second guard exists because OS drag-drop bypasses the picker.
+/// filter - the second guard exists because OS drag-drop bypasses the picker.
 #[tauri::command]
 pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, AttachmentError> {
     let path = Path::new(&abs_path);

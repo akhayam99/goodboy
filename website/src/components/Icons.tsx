@@ -97,7 +97,7 @@ export const IconCheck = (p: P) => (
     <path d="M20 6 9 17l-5-5" />
   </S>
 );
-// lucide `layers` — the app's real workflow icon (sidebar + Workflow Studio).
+// lucide `layers` - the app's real workflow icon (sidebar + Workflow Studio).
 export const IconLayers = (p: P) => (
   <S {...p}>
     <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />

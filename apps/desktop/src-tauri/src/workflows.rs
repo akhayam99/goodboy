@@ -312,7 +312,7 @@ fn row_to_template(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — workflow CRUD
+// Commands - workflow CRUD
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -619,7 +619,7 @@ pub fn workflows_for_session(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — step library (reusable StepDef CRUD, soft-delete)
+// Commands - step library (reusable StepDef CRUD, soft-delete)
 // ---------------------------------------------------------------------------
 
 fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Error> {
@@ -759,7 +759,7 @@ pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
 }
 
 // ---------------------------------------------------------------------------
-// Commands — agent (= session row) lifecycle
+// Commands - agent (= session row) lifecycle
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -1011,7 +1011,7 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
 }
 
 // ---------------------------------------------------------------------------
-// Utilities (mirrors skills.rs — kept independent per module)
+// Utilities (mirrors skills.rs - kept independent per module)
 // ---------------------------------------------------------------------------
 
 fn uuid_v4() -> String {

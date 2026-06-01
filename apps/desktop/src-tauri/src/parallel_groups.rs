@@ -376,7 +376,7 @@ pub fn parallel_group_update_completed_at(
 // Parallel run spawn
 // ---------------------------------------------------------------------------
 
-/// One run within a parallel phase — carries the per-process identity.
+/// One run within a parallel phase - carries the per-process identity.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParallelRunSpec {
@@ -449,7 +449,7 @@ pub fn parallel_agent_spawn(
             Ok(run_id) => run_ids.push(run_id),
             Err(e) => {
                 // Roll back: kill the children already spawned in this batch.
-                // Returning Err with siblings still live would orphan them —
+                // Returning Err with siblings still live would orphan them -
                 // the caller never learns their run_ids, so they'd run to
                 // completion untracked and uncancellable.
                 for spawned in &run_ids {

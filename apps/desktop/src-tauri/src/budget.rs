@@ -179,7 +179,7 @@ fn current_month_window_ms() -> (i64, i64) {
         .expect("system clock before epoch")
         .as_millis() as i64;
 
-    // Days elapsed in epoch ÷ average — use integer arithmetic to find month boundaries.
+    // Days elapsed in epoch ÷ average - use integer arithmetic to find month boundaries.
     // Convert ms → seconds for easier calculation.
     let now_s = now_ms / 1000;
     // Approximate: find year+month via days since epoch.

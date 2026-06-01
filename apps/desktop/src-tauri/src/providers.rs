@@ -149,7 +149,7 @@ pub struct AuthCommandOutput {
 
 impl AuthCommandOutput {
     /// codex CLI v0.130 writes `codex login status` to stderr in non-TTY mode
-    /// (and Tauri children never have a TTY) — fall back when stdout is empty.
+    /// (and Tauri children never have a TTY) - fall back when stdout is empty.
     fn primary_text(&self) -> &str {
         if self.stdout.trim().is_empty() { &self.stderr } else { &self.stdout }
     }
@@ -381,7 +381,7 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
         .or_else(|| extract_json_string(text, "username"));
     // Only Connected on a positive signal (an identity or an explicit logged-in
     // phrase). Unrecognized/empty output stays Unknown instead of silently
-    // reporting "connected" — the previous code fell through to Connected and
+    // reporting "connected" - the previous code fell through to Connected and
     // showed a logged-out cursor as authenticated.
     let positive = identity.is_some()
         || lower.contains("logged in")
@@ -476,8 +476,8 @@ fn check_gemini_auth() -> AuthState {
     // gemini-cli (v0.x) has no `auth status`-like subcommand. Past attempts to
     // probe `gemini auth status`/`whoami` either hung interactively (no TTY)
     // or printed help, costing 3 × AUTH_TIMEOUT per refresh. The credentials
-    // file is the actual ground truth — gemini writes it on every successful
-    // login and removes it on logout — so we read it directly. Fast, accurate,
+    // file is the actual ground truth - gemini writes it on every successful
+    // login and removes it on logout - so we read it directly. Fast, accurate,
     // no subprocess.
     if let Some(identity) = extract_gemini_identity_from_creds() {
         return AuthState {
@@ -861,7 +861,7 @@ mod tests {
         let auth = check_codex_auth();
         assert!(
             !matches!(auth.state, AuthStateKind::Unknown),
-            "expected Connected or Disconnected, got Unknown — \
+            "expected Connected or Disconnected, got Unknown - \
              auth detection regressed (likely back to stdout-only routing)"
         );
     }

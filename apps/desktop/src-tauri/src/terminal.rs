@@ -35,7 +35,7 @@ struct TerminalExitPayload {
 }
 
 // ---------------------------------------------------------------------------
-// Registry — one shell per session
+// Registry - one shell per session
 // ---------------------------------------------------------------------------
 
 type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
@@ -86,7 +86,7 @@ impl TerminalError {
 }
 
 // ---------------------------------------------------------------------------
-// Command — open (idempotent) an interactive bash session
+// Command - open (idempotent) an interactive bash session
 // ---------------------------------------------------------------------------
 
 /// Spawns `bash -l -i` in a pty keyed by `session_id`. Idempotent: if a live
@@ -231,7 +231,7 @@ pub async fn terminal_open(
 }
 
 // ---------------------------------------------------------------------------
-// Command — send keyboard input to a terminal session
+// Command - send keyboard input to a terminal session
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -260,7 +260,7 @@ pub fn terminal_write(
 }
 
 // ---------------------------------------------------------------------------
-// Command — resize the pty window
+// Command - resize the pty window
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -291,7 +291,7 @@ pub fn terminal_resize(
 }
 
 // ---------------------------------------------------------------------------
-// Command — close/kill a terminal session
+// Command - close/kill a terminal session
 // ---------------------------------------------------------------------------
 
 /// Kills the shell child and removes it from the registry. Dropping the master

@@ -104,7 +104,7 @@ impl From<DbError> for ScriptError {
 }
 
 // ---------------------------------------------------------------------------
-// Command — run a workspace script in a pty
+// Command - run a workspace script in a pty
 // ---------------------------------------------------------------------------
 
 /// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
@@ -236,7 +236,7 @@ pub async fn workspace_script_run(
 }
 
 // ---------------------------------------------------------------------------
-// Command — send keyboard input to a running pty
+// Command - send keyboard input to a running pty
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -265,7 +265,7 @@ pub fn workspace_script_write(
 }
 
 // ---------------------------------------------------------------------------
-// Command — resize the pty window
+// Command - resize the pty window
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -296,7 +296,7 @@ pub fn workspace_script_resize(
 }
 
 // ---------------------------------------------------------------------------
-// Command — interrupt an in-flight workspace script
+// Command - interrupt an in-flight workspace script
 // ---------------------------------------------------------------------------
 
 /// Removes the run from the registry and kills the pty child. Dropping the

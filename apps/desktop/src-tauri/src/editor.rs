@@ -92,7 +92,7 @@ pub fn open_in_editor(path: String, editor: Option<String>) -> Result<(), Editor
 
 /// Opens a single file inside an existing workspace window of the editor.
 /// For VS Code / Cursor this means passing the workspace path first so the
-/// existing window is focused, then `-g <file>` to navigate to the file —
+/// existing window is focused, then `-g <file>` to navigate to the file -
 /// avoiding the "new standalone window per file" behavior of `open_in_editor`,
 /// which forces `--new-window`.
 #[tauri::command]

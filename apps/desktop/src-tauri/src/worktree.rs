@@ -372,7 +372,7 @@ pub fn worktree_changed_files(
     // `origin/<base>` first so the count matches what GitHub will show on the
     // PR (target = origin/main on the server). The local ref and master
     // variants are fallbacks for unusual setups. Must match the order in
-    // `worktree_diff` above — otherwise the chip count and the dialog body
+    // `worktree_diff` above - otherwise the chip count and the dialog body
     // can resolve different merge-bases and disagree.
     let candidates = [
         format!("origin/{user_base}"),
@@ -392,7 +392,7 @@ pub fn worktree_changed_files(
     let mut deletions: u32 = 0;
     let mut set: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     for line in numstat.lines() {
-        // numstat format: "<adds>\t<dels>\t<path>" — binary files show "-\t-\t<path>"
+        // numstat format: "<adds>\t<dels>\t<path>" - binary files show "-\t-\t<path>"
         let mut parts = line.splitn(3, '\t');
         let add_s = parts.next().unwrap_or("");
         let del_s = parts.next().unwrap_or("");
@@ -590,7 +590,7 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
 
 /// Range argument for `git log` that lists only commits unique to the current
 /// branch (i.e. since divergence from `main`). Falls back to `HEAD` when no
-/// merge-base can be resolved — typical for a brand-new repo without `main`.
+/// merge-base can be resolved - typical for a brand-new repo without `main`.
 fn resolve_branch_range(cwd: &Path) -> String {
     for base in ["main", "origin/main"] {
         if let Ok(out) = git(cwd, &["merge-base", "HEAD", base]) {
@@ -716,7 +716,7 @@ fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeE
 
 /// Best-effort fetch of `origin/<base>`. Silently swallows errors so that
 /// offline sessions or repos without an `origin` remote still let the user
-/// create a worktree — they just fall back to whatever `origin/<base>` already
+/// create a worktree - they just fall back to whatever `origin/<base>` already
 /// points at locally (or to the local branch as a last resort).
 fn try_fetch_origin(repo_path: &Path, base: &str) {
     let _ = git(repo_path, &["fetch", "origin", base]);

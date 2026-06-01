@@ -157,7 +157,7 @@ impl From<DbError> for SkillError {
 }
 
 // ---------------------------------------------------------------------------
-// Commands — CRUD
+// Commands - CRUD
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -348,7 +348,7 @@ pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillE
                     .map_err(|e| SkillError::Io(e.to_string()))?;
             }
         } else if path.exists() {
-            // skills_dir gone — refuse to remove arbitrary path without guard
+            // skills_dir gone - refuse to remove arbitrary path without guard
             return Err(SkillError::PathTraversal(file_path));
         }
     } else {
@@ -511,7 +511,7 @@ pub fn skill_rescan(
 }
 
 // ---------------------------------------------------------------------------
-// Command — script runner (for TS SkillExecutor)
+// Command - script runner (for TS SkillExecutor)
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
@@ -521,7 +521,7 @@ pub struct SkillRunScriptInput {
     pub args: Vec<String>,
     #[serde(rename = "workingDir")]
     pub working_dir: String,
-    /// Workspace root — used to derive the allowed prefix for path guard.
+    /// Workspace root - used to derive the allowed prefix for path guard.
     #[serde(rename = "workspaceRoot")]
     pub workspace_root: String,
 }

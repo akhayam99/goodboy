@@ -245,7 +245,7 @@ pub(crate) fn spawn_one(
         && args.disallowed_tools.is_empty()
     {
         eprintln!(
-            "[spawn_one] permission_mode=bypassPermissions with no rules — \
+            "[spawn_one] permission_mode=bypassPermissions with no rules - \
              relying on claude CLI native bypass; --dangerously-skip-permissions intentionally not set"
         );
     }
@@ -304,7 +304,7 @@ pub(crate) fn spawn_one(
     // Drain stderr on its own thread so it runs concurrently with stdout
     // forwarding. Reading stderr only after stdout EOF used to deadlock: a CLI
     // that writes >~64KB to stderr mid-stream fills the pipe buffer, blocks on
-    // the write, and stops producing stdout — so forward_lines waits forever.
+    // the write, and stops producing stdout - so forward_lines waits forever.
     let stderr_handle = thread::spawn(move || capture_stderr(stderr));
 
     thread::spawn(move || {

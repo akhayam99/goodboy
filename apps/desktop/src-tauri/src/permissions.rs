@@ -168,7 +168,7 @@ impl From<DbError> for PermissionError {
 }
 
 // ---------------------------------------------------------------------------
-// Commands — permission rules
+// Commands - permission rules
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -385,7 +385,7 @@ pub fn permission_rule_delete(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — permission audit log
+// Commands - permission audit log
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -562,7 +562,7 @@ pub fn permission_audit_clear(
 }
 
 // ---------------------------------------------------------------------------
-// Commands — permission audit retry queue (#196)
+// Commands - permission audit retry queue (#196)
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -665,7 +665,7 @@ pub fn permission_audit_retry_delete(
 }
 
 // ---------------------------------------------------------------------------
-// Utilities (mirrors phases.rs — kept independent per module)
+// Utilities (mirrors phases.rs - kept independent per module)
 // ---------------------------------------------------------------------------
 
 fn uuid_v4() -> String {
