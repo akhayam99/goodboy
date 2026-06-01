@@ -102,6 +102,7 @@ fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
     {
         Ok(child) => child,
         Err(err) => {
+            log::warn!("provider detect '{}': spawn failed: {}", binary, err);
             return ProviderStatus {
                 id: id.to_string(),
                 binary: binary.to_string(),
@@ -124,6 +125,7 @@ fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
                     .trim()
                     .to_string();
                 if status.success() {
+                    log::info!("provider detect '{}': available ({})", binary, stdout);
                     return ProviderStatus {
                         id: id.to_string(),
                         binary: binary.to_string(),
@@ -132,18 +134,28 @@ fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
                         error: None,
                     };
                 } else {
+                    let stderr = child
+                        .stderr
+                        .take()
+                        .map(read_to_string)
+                        .unwrap_or_default()
+                        .trim()
+                        .to_string();
+                    let code = status.code().unwrap_or(-1);
+                    log::warn!("provider detect '{}': exit {} stderr: {}", binary, code, stderr);
                     return ProviderStatus {
                         id: id.to_string(),
                         binary: binary.to_string(),
                         available: false,
                         version: None,
-                        error: Some(format!("exited with code {}", status.code().unwrap_or(-1))),
+                        error: Some(format!("exited with code {}: {}", code, stderr)),
                     };
                 }
             }
             Ok(None) => {
                 if Instant::now() >= deadline {
                     let _ = child.kill();
+                    log::warn!("provider detect '{}': timed out", binary);
                     return ProviderStatus {
                         id: id.to_string(),
                         binary: binary.to_string(),
@@ -188,11 +200,17 @@ impl AuthCommandOutput {
 
 fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
     let (binary, rest) = args.split_first().ok_or_else(|| "empty command".to_string())?;
-    let mut child = auth_command(binary, rest)
+    let mut child = match auth_command(binary, rest)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| e.to_string())?;
+    {
+        Ok(c) => c,
+        Err(e) => {
+            log::warn!("provider auth '{}': spawn failed: {}", args.join(" "), e);
+            return Err(e.to_string());
+        }
+    };
 
     let deadline = Instant::now() + AUTH_TIMEOUT;
     loop {
@@ -213,8 +231,15 @@ fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
                     .trim()
                     .to_string();
                 if status.success() {
+                    log::info!("provider auth '{}': ok", args.join(" "));
                     return Ok(AuthCommandOutput { stdout, stderr });
                 } else {
+                    log::warn!(
+                        "provider auth '{}': exit {} stderr: {}",
+                        args.join(" "),
+                        status.code().unwrap_or(-1),
+                        stderr
+                    );
                     let msg = if stderr.is_empty() { stdout } else { stderr };
                     return Err(msg);
                 }
@@ -222,6 +247,7 @@ fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
             Ok(None) => {
                 if Instant::now() >= deadline {
                     let _ = child.kill();
+                    log::warn!("provider auth '{}': timed out", args.join(" "));
                     return Err("auth check timed out".to_string());
                 }
                 std::thread::sleep(POLL_INTERVAL);

@@ -4,11 +4,20 @@ use std::process::{Command, Stdio};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 static RESOLVED_PATH: OnceLock<String> = OnceLock::new();
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 const SEP: char = if cfg!(windows) { ';' } else { ':' };
+
+// CREATE_NO_WINDOW: a GUI (windows-subsystem) process spawning a console child
+// allocates a console window for it, which flashes on screen. This suppresses
+// it. Applies to both .spawn() and .output().
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// PATH inherited from the user's login shell, merged with the process's own
 /// PATH and common install locations, deduplicated, cached after first call.
@@ -28,6 +37,8 @@ pub fn resolved_path() -> &'static str {
 pub fn command(binary: &str) -> Command {
     let mut cmd = Command::new(binary);
     cmd.env("PATH", resolved_path());
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
     cmd
 }
 
@@ -95,13 +106,15 @@ fn probe_login_shell_path() -> Option<String> {
 }
 
 fn run_with_timeout(bin: &str, args: &[&str]) -> Option<String> {
-    let mut child = Command::new(bin)
+    let mut builder = Command::new(bin);
+    builder
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
-        .stdin(Stdio::null())
-        .spawn()
-        .ok()?;
+        .stdin(Stdio::null());
+    #[cfg(windows)]
+    builder.creation_flags(CREATE_NO_WINDOW);
+    let mut child = builder.spawn().ok()?;
 
     let deadline = Instant::now() + PROBE_TIMEOUT;
     loop {
@@ -159,8 +172,17 @@ fn common_install_paths() -> String {
 
     #[cfg(windows)]
     {
-        // npm global dir hosts the `npm install -g` shims (claude.cmd,
-        // codex.cmd, gemini.cmd); data_dir() resolves to %APPDATA% on Windows.
+        // Discover npm's real global prefix and add it: on Windows the
+        // `npm install -g` shims (claude.cmd, codex.cmd, gemini.cmd) live
+        // directly there. Probing covers non-default prefixes (nvm-windows,
+        // volta, scoop, or a custom `npm config set prefix`) that data_dir()
+        // would miss. data_dir()/npm stays as the default fallback.
+        if let Some(prefix) = run_with_timeout("cmd", &["/C", "npm", "config", "get", "prefix"]) {
+            let prefix = prefix.trim();
+            if !prefix.is_empty() {
+                parts.push(prefix.to_string());
+            }
+        }
         if let Some(npm) = dirs::data_dir().map(|p| p.join("npm")) {
             if let Some(npm) = npm.to_str() {
                 parts.push(npm.to_string());
