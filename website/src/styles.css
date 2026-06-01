@@ -329,6 +329,20 @@ body,
   animation: press-ring 420ms ease-out forwards;
 }
 
+@keyframes typing {
+  to {
+    width: 38ch;
+  }
+}
+.typewriter {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  animation: typing 1.6s steps(38, end) forwards;
+}
+
 /* Marquee: a track duplicated twice, translated -50% on loop, so the row
    scrolls forever with no seam. Always animating, no hover pause. */
 @keyframes marquee {

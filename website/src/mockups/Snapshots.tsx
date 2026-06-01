@@ -17,11 +17,8 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { forwardRef, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
-import { useInView } from '../components/Reveal';
+import { Fragment, forwardRef, type ReactNode } from 'react';
 import {
-  IconArrowDown,
-  IconArrowUp,
   IconBranch,
   IconCheck,
   IconClipboard,
@@ -35,77 +32,9 @@ import {
   IconTarget,
   IconTerminal,
 } from '../components/Icons';
-import { AgentAvatar, KIND_LABEL, type AgentKind } from '../components/AgentAvatar';
-
-/* ---------------------------- tokens --------------------------------- */
-
-/* The desktop's SessionActivityBar uses bg-muted/40 for inactive cards and
-   bg-elevated for the active one. We mirror those literal classes here so a
-   reader of the desktop source can spot the same structure. */
-
-/* Same palette + short labels as apps/desktop/src/features/session/agent-kind.ts
-   AGENT_KIND_PALETTE. Local `kind` keys here are the short forms used in chip
-   labels (`plan` for the `planner` kind, `imple` for `implementer`, etc.) so
-   the rendered text matches the real UI exactly. */
-const KIND = {
-  scout: { bg: 'bg-sky-400', label: 'scout', kind: 'scout' as AgentKind },
-  plan: { bg: 'bg-violet-400', label: 'plan', kind: 'planner' as AgentKind },
-  imple: { bg: 'bg-emerald-400', label: 'imple', kind: 'implementer' as AgentKind },
-  review: { bg: 'bg-cyan-400', label: 'review', kind: 'reviewer' as AgentKind },
-  debug: { bg: 'bg-amber-400', label: 'debug', kind: 'debugger' as AgentKind },
-  test: { bg: 'bg-teal-400', label: 'test', kind: 'tester' as AgentKind },
-  docs: { bg: 'bg-orange-400', label: 'docs', kind: 'docs' as AgentKind },
-  generic: { bg: 'bg-rose-400', label: 'agent', kind: 'generic' as AgentKind },
-} as const;
-
-/* Apps/desktop AgentKindChip pattern: width-locked colored pill with a tiny
-   silhouette of the role's dog on the left, label on the right. Mirrors the
-   exact 60px width used in the product sidebar. */
-function KindBadge({ kind, muted }: { kind: keyof typeof KIND; muted?: boolean }) {
-  const k = KIND[kind];
-  return (
-    <span
-      className={[
-        'inline-flex w-[3.75rem] shrink-0 items-center justify-center gap-1 rounded py-0.5 pl-1 pr-1.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
-        muted ? 'bg-muted-foreground/20 text-muted-foreground/60' : `${k.bg} text-zinc-950`,
-      ].join(' ')}
-    >
-      <AgentAvatar
-        kind={k.kind}
-        size={10}
-        tint={muted ? 'bg-muted-foreground/60' : 'bg-zinc-950/80'}
-      />
-      <span>{k.label}</span>
-    </span>
-  );
-}
-
-/* Shared frame used by every snapshot. Drops chrome dots, sits flush with
-   the page surface (the page itself is the "app"), but keeps the border +
-   shadow rhythm of the real desktop surface. */
-function SnapshotFrame({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={[
-        'relative overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.25_0.006_255)] shadow-md',
-        className ?? '',
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FrameHeader({ label, right }: { label: string; right?: ReactNode }) {
-  return (
-    <div className="flex h-8 items-center justify-between gap-2 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-        {label}
-      </span>
-      {right}
-    </div>
-  );
-}
+import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar';
+import { KIND, KindBadge, SnapshotFrame, FrameHeader, type KindKey } from './primitives';
+import { useAutoplay, SimCursor, type Beat } from './autoplay';
 
 /* ---------------------------- Sessions -------------------------------- */
 
@@ -183,11 +112,103 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
    chip. No "ACTIVE SESSION / Status / Branch / PR / Spend" label-value list:
    that's marketing UI, not product UI.
 */
+interface SessionRun {
+  steps: StepStatus[];
+  clusters: StepStatus[];
+  autoRun: boolean;
+  prOpen: boolean;
+  cost: number;
+}
+
+const SESSION_CLUSTERS = ['token model', 'request handler', 'email template'];
+
+type SessionAction =
+  | { type: 'start'; i: number }
+  | { type: 'cluster'; i: number }
+  | { type: 'finish'; i: number }
+  | { type: 'auto' };
+
+const SESSION_COST_AT = [0.04, 0.16, 0.3, 0.34];
+
+const SESSION_INITIAL: SessionRun = {
+  steps: ['actionable', 'future', 'future', 'future'],
+  clusters: ['future', 'future', 'future'],
+  autoRun: false,
+  prOpen: false,
+  cost: 0,
+};
+
+const SESSION_STATIC: SessionRun = {
+  steps: ['done', 'done', 'running', 'actionable'],
+  clusters: ['done', 'running', 'running'],
+  autoRun: true,
+  prOpen: false,
+  cost: 0.3,
+};
+
+function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun {
+  switch (action.type) {
+    case 'start':
+      return {
+        ...state,
+        steps: state.steps.map((v, i) => (i === action.i ? 'running' : v)),
+        clusters: action.i === 2 ? ['running', 'running', 'running'] : state.clusters,
+      };
+    case 'cluster':
+      return {
+        ...state,
+        clusters: state.clusters.map((v, i) => (i === action.i ? 'done' : v)),
+      };
+    case 'finish':
+      return {
+        ...state,
+        steps: state.steps.map((v, i) =>
+          i === action.i ? 'done' : i === action.i + 1 && v === 'future' ? 'actionable' : v,
+        ),
+        cost: SESSION_COST_AT[action.i] ?? state.cost,
+        prOpen: action.i >= 3 ? true : state.prOpen,
+      };
+    case 'auto':
+      return { ...state, autoRun: true };
+    default:
+      return state;
+  }
+}
+
+const SESSION_SCRIPT: ReadonlyArray<Beat<SessionAction>> = [
+  { d: 800, kind: 'move', to: 'step-0' },
+  { d: 560, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'start', i: 0 } },
+  { d: 1500, kind: 'act', act: { type: 'finish', i: 0 } },
+  { d: 660, kind: 'move', to: 'step-1' },
+  { d: 520, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'start', i: 1 } },
+  { d: 1500, kind: 'act', act: { type: 'finish', i: 1 } },
+  { d: 680, kind: 'move', to: 'toggle' },
+  { d: 520, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'auto' } },
+  { d: 520, kind: 'move', to: null },
+  { d: 460, kind: 'act', act: { type: 'start', i: 2 } },
+  { d: 820, kind: 'act', act: { type: 'cluster', i: 0 } },
+  { d: 640, kind: 'act', act: { type: 'cluster', i: 1 } },
+  { d: 700, kind: 'act', act: { type: 'cluster', i: 2 } },
+  { d: 640, kind: 'act', act: { type: 'finish', i: 2 } },
+  { d: 560, kind: 'act', act: { type: 'start', i: 3 } },
+  { d: 1400, kind: 'act', act: { type: 'finish', i: 3 } },
+  { d: 2400, kind: 'reset' },
+];
+
 export function SessionsSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: SESSION_INITIAL,
+    reducer: sessionRunReducer,
+    script: SESSION_SCRIPT,
+    staticState: SESSION_STATIC,
+  });
+
   return (
     <SnapshotFrame className="max-w-[460px]">
       <div className="flex">
-        {/* w-28 rail */}
         <div className="flex w-[112px] shrink-0 flex-col gap-1 p-1.5">
           <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -206,15 +227,12 @@ export function SessionsSnapshot() {
           ))}
         </div>
 
-        {/* hairline divider, exactly like the real WorkspacesSidebar. */}
         <div
           aria-hidden
           className="my-1 ml-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
         />
 
-        {/* detail panel: header + agents + footer (mirror SessionDetailPanel) */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* header: status icon + title + linear chip + overflow menu */}
           <div className="flex shrink-0 items-center gap-2 px-3 pt-3 pb-2">
             <span
               aria-hidden
@@ -234,64 +252,64 @@ export function SessionsSnapshot() {
               AUTH-142
             </a>
             <span
-              className="relative inline-flex shrink-0 items-center text-muted-foreground/80"
+              className="inline-flex shrink-0 items-center rounded p-0.5 text-muted-foreground/80"
               title="session actions"
             >
-              <span className="rounded bg-foreground/10 p-0.5">
-                <DotsVerticalIcon size={13} />
-              </span>
-              <SessionActionsMenu />
+              <DotsVerticalIcon size={13} />
             </span>
           </div>
 
-          {/* agent rows */}
-          <div className="flex flex-col gap-1.5 px-3 pb-1">
-            <AgentRow
-              num={1}
-              kind="scout"
-              name="locate auth surface"
-              tokensIn="1.2k"
-              tokensOut="240"
-              turns={3}
-              cost="$0.04"
-              age="14m"
-            />
-            <AgentRow
-              num={2}
-              kind="plan"
-              name="design reset flow"
-              tokensIn="3.1k"
-              tokensOut="890"
-              turns={5}
-              cost="$0.12"
-              age="6m"
-            />
-            <AgentRow
-              num={3}
-              kind="imple"
-              name="build endpoint + email"
-              tokensIn="4.5k"
-              tokensOut="1.1k"
-              turns={9}
-              cost="$0.18"
-              age="48s"
-              running
-              selected
-            />
+          <div ref={stageRef} className="relative px-3 pb-1">
+            <div className="flex items-center gap-2 pb-2">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <IconLayers size={10} className="text-primary" />
+                Workflow
+              </span>
+              <span className="flex-1" />
+              <span className="max-w-[8rem] truncate font-mono text-[10px] text-muted-foreground/70">
+                preset
+              </span>
+              <AutoRunPill ref={registerTarget('toggle')} on={state.autoRun} />
+            </div>
+            <div className="flex flex-col gap-1">
+              {RUN_STEPS.map((s, i) => (
+                <Fragment key={i}>
+                  <RunStepRow
+                    ref={registerTarget(`step-${i}`)}
+                    index={i + 1}
+                    step={s}
+                    status={state.steps[i]}
+                  />
+                  {i === 2 ? (
+                    <div className="ml-7 flex flex-col gap-1 border-l border-border-soft/60 pl-2.5">
+                      {SESSION_CLUSTERS.map((c, ci) => (
+                        <ClusterRow key={c} name={c} status={state.clusters[ci]} />
+                      ))}
+                    </div>
+                  ) : null}
+                </Fragment>
+              ))}
+            </div>
+            <SimCursor cursor={cursor} />
           </div>
 
-          {/* footer: branch chip + PR chip + cost chip */}
           <div className="mt-auto flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-3">
             <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
               <IconBranch size={10} aria-hidden className="shrink-0 text-muted-foreground" />
               <span className="truncate">ak/password-reset</span>
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
-              <span className="size-1.5 rounded-full bg-success" aria-hidden />
-              PR #214
-            </span>
+            {state.prOpen ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
+                <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                PR #214
+              </span>
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft/60 bg-muted/20 px-1.5 py-1 font-mono text-[10px] text-muted-foreground/60">
+                no PR yet
+              </span>
+            )}
             <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-[10px] tabular-nums text-success">
-              $0.34
+              ${state.cost.toFixed(2)}
             </span>
           </div>
         </div>
@@ -300,90 +318,33 @@ export function SessionsSnapshot() {
   );
 }
 
-/* Action menu mock that hangs below the ⋮ trigger in the session detail
-   header. Mirrors apps/desktop/src/shared/components/OverflowMenu items as
-   wired from SessionDetailPanel: detected editors first, scripts next, then
-   settings + end session. Renders open so the reader sees what is collapsed
-   behind the dots in the real product. */
-function SessionActionsMenu() {
+function ClusterRow({ name, status }: { name: string; status: StepStatus }) {
+  const done = status === 'done';
+  const running = status === 'running';
   return (
-    <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-border bg-muted text-[10.5px] shadow-lg">
-      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        Open in editor
-      </p>
-      <MenuItem
-        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
-        label="Cursor"
-      />
-      <MenuItem
-        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
-        label="VS Code"
-      />
-      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
-      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        Run script
-      </p>
-      <MenuItem
-        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
-        label="copy environments"
-      />
-      <MenuItem
-        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
-        label="deploy preview"
-      />
-      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
-      <MenuItem icon={<DotsVerticalIcon size={10} />} label="Session settings" />
-      <MenuItem
-        icon={<XIcon size={10} className="text-danger/90" />}
-        label="End session"
-        hint="⌘."
-        destructive
-      />
+    <div className="flex items-center gap-1.5 text-[10px]">
+      <span className="flex size-3 shrink-0 items-center justify-center">
+        {done ? (
+          <span className="flex size-3 items-center justify-center rounded-full bg-success/20">
+            <IconCheck size={7} className="text-success" />
+          </span>
+        ) : running ? (
+          <RunSpinner size={9} className="text-info" />
+        ) : (
+          <span aria-hidden className="size-1.5 rounded-full bg-muted-foreground/30" />
+        )}
+      </span>
+      <span
+        className={
+          done ? 'text-foreground/55' : running ? 'text-foreground/85' : 'text-muted-foreground/45'
+        }
+      >
+        {name}
+      </span>
+      <span className="text-[8.5px] uppercase tracking-wide text-muted-foreground/40">
+        subagent
+      </span>
     </div>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  hint,
-  destructive,
-}: {
-  icon: ReactNode;
-  label: string;
-  hint?: string;
-  destructive?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'flex items-center gap-2 px-2.5 py-1.5',
-        destructive ? 'text-danger/90' : 'text-foreground/85',
-      ].join(' ')}
-    >
-      <span className="shrink-0">{icon}</span>
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {hint ? <kbd className="font-mono text-[9px] text-muted-foreground/70">{hint}</kbd> : null}
-    </div>
-  );
-}
-
-function XIcon({ size = 10, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className={className}
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
   );
 }
 
@@ -504,80 +465,6 @@ function LinearIdChip({ id }: { id: string }) {
     >
       {id}
     </span>
-  );
-}
-
-function AgentRow({
-  num,
-  kind,
-  name,
-  tokensIn,
-  tokensOut,
-  turns,
-  cost,
-  age,
-  running,
-  selected,
-}: {
-  num: number;
-  kind: keyof typeof KIND;
-  name: string;
-  tokensIn: string;
-  tokensOut: string;
-  turns: number;
-  cost: string;
-  age: string;
-  running?: boolean;
-  selected?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'group flex flex-col gap-1 rounded border px-2 py-1.5 transition-colors',
-        selected
-          ? running
-            ? 'spin-border-info border-transparent bg-elevated'
-            : 'border-border bg-elevated'
-          : 'border-transparent bg-muted/40',
-      ].join(' ')}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60"
-        >
-          {num}.
-        </span>
-        <KindBadge kind={kind} />
-        <span className="min-w-0 flex-1 truncate text-[11.5px] text-foreground">{name}</span>
-      </div>
-      <div className="flex items-center gap-1.5 whitespace-nowrap pl-6 text-[10px] tabular-nums text-muted-foreground/80">
-        <span className="inline-flex items-baseline gap-0.5">
-          <span aria-hidden className="text-muted-foreground/60">
-            ↓
-          </span>
-          {tokensIn}
-        </span>
-        <span className="inline-flex items-baseline gap-0.5">
-          <span aria-hidden className="text-muted-foreground/60">
-            ↑
-          </span>
-          {tokensOut}
-        </span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span>{turns}t</span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span className="font-mono">{cost}</span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span className="font-mono text-muted-foreground/80">{age}</span>
-      </div>
-    </div>
   );
 }
 
@@ -724,20 +611,89 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
 /* The composer: a saved preset on the left, the reusable step library on the
    right. Mirrors apps/desktop WorkflowsPanel (preset rail + step library
    palette). Each composed step carries its own model. */
-const STUDIO_STEPS = [
-  { kind: 'scout' as const, name: 'Scout the area', model: 'haiku-4-5' },
-  { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
-  { kind: 'imple' as const, name: 'Refactor', model: 'sonnet-4-5' },
-  { kind: 'review' as const, name: 'Verify', model: 'sonnet-4-5' },
+interface StudioStep {
+  kind: KindKey;
+  name: string;
+  role: string;
+  model: string;
+  prompt: string;
+}
+
+const STUDIO_STEPS: ReadonlyArray<StudioStep> = [
+  {
+    kind: 'scout',
+    name: 'Scout',
+    role: 'Scout',
+    model: 'haiku-4-5',
+    prompt: 'Survey the code in scope. List the files, key abstractions, callers and tests.',
+  },
+  {
+    kind: 'plan',
+    name: 'Plan',
+    role: 'Planner',
+    model: 'opus-4-7',
+    prompt: 'Propose a refactor plan. Order changes by risk. Say what stays, moves, gets deleted.',
+  },
+  {
+    kind: 'imple',
+    name: 'Refactor',
+    role: 'Implementer',
+    model: 'sonnet-4-5',
+    prompt:
+      'Apply the refactor in small commits. Keep behavior unchanged. Update tests in lock-step.',
+  },
+  {
+    kind: 'review',
+    name: 'Verify',
+    role: 'Reviewer',
+    model: 'sonnet-4-5',
+    prompt: 'Run the suite and review the diff against the plan. Flag anything that drifted.',
+  },
 ];
 
-const STUDIO_LIBRARY: ReadonlyArray<keyof typeof KIND> = [
-  'scout',
-  'plan',
-  'imple',
-  'review',
-  'test',
-  'debug',
+const STUDIO_LIBRARY: ReadonlyArray<{ kind: KindKey; name: string; prompt: string }> = [
+  { kind: 'scout', name: 'Scout', prompt: 'Survey the code in scope.' },
+  { kind: 'plan', name: 'Plan', prompt: 'Draft an ordered plan.' },
+  { kind: 'imple', name: 'Refactor', prompt: 'Apply changes in small commits.' },
+  { kind: 'review', name: 'Verify', prompt: 'Review the diff against the plan.' },
+  { kind: 'test', name: 'Test', prompt: 'Write and run tests.' },
+  { kind: 'debug', name: 'Diagnose', prompt: 'Reproduce and isolate a bug.' },
+];
+
+interface StudioState {
+  placed: number;
+  dragging: number | null;
+}
+
+type StudioAction = { type: 'grab'; i: number } | { type: 'drop' };
+
+const STUDIO_INITIAL: StudioState = { placed: 0, dragging: null };
+const STUDIO_STATIC: StudioState = { placed: 2, dragging: null };
+
+function studioReducer(state: StudioState, action: StudioAction): StudioState {
+  switch (action.type) {
+    case 'grab':
+      return { ...state, dragging: action.i };
+    case 'drop':
+      return { placed: Math.min(state.placed + 1, STUDIO_STEPS.length), dragging: null };
+    default:
+      return state;
+  }
+}
+
+const STUDIO_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [0, 1, 2, 3].flatMap((i) => [
+  { d: i === 0 ? 800 : 560, kind: 'move' as const, to: `lib-${i}` },
+  { d: 460, kind: 'press' as const },
+  { d: 200, kind: 'act' as const, act: { type: 'grab' as const, i } },
+  { d: 620, kind: 'move' as const, to: 'dropzone' },
+  { d: 360, kind: 'act' as const, act: { type: 'drop' as const } },
+]);
+const STUDIO_FULL_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [
+  ...STUDIO_SCRIPT,
+  { d: 700, kind: 'move', to: 'save' },
+  { d: 520, kind: 'press' },
+  { d: 1900, kind: 'move', to: null },
+  { d: 600, kind: 'reset' },
 ];
 
 function GripDots() {
@@ -762,8 +718,16 @@ function GripDots() {
 }
 
 export function StudioComposeSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: STUDIO_INITIAL,
+    reducer: studioReducer,
+    script: STUDIO_FULL_SCRIPT,
+    staticState: STUDIO_STATIC,
+  });
+  const full = state.placed >= STUDIO_STEPS.length;
+
   return (
-    <SnapshotFrame className="max-w-[460px]">
+    <SnapshotFrame className="max-w-[520px]">
       <FrameHeader
         label="Workflow Studio"
         right={
@@ -772,148 +736,552 @@ export function StudioComposeSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* composer: the preset being assembled */}
-        <div className="min-w-0 flex-1 p-3">
+      <div ref={stageRef} className="relative flex">
+        <div className="flex min-w-0 flex-1 flex-col p-3">
           <div className="flex items-center gap-2 pb-2">
             <span className="text-[11px] font-semibold text-foreground">Refactor</span>
-            <span className="text-[10px] text-muted-foreground/50">4 steps</span>
+            <span className="text-[10px] tabular-nums text-muted-foreground/50">
+              {state.placed} {state.placed === 1 ? 'step' : 'steps'}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
-            {STUDIO_STEPS.map((s, i) => (
-              <div
-                key={s.kind}
-                className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-1.5"
-              >
-                <span className="w-3 shrink-0 text-right font-mono text-[10px] text-muted-foreground/40">
-                  {i + 1}
-                </span>
-                <KindBadge kind={s.kind} />
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground/90">
-                  {s.name}
-                </span>
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
-                  {s.model}
+            {STUDIO_STEPS.slice(0, state.placed).map((s, i) => (
+              <StudioStepCard key={s.kind} step={s} index={i + 1} />
+            ))}
+            <div
+              ref={registerTarget('dropzone')}
+              className={[
+                'mt-0.5 flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-[10px] font-medium transition-colors',
+                state.dragging != null
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border-soft/70 bg-transparent text-muted-foreground/50',
+              ].join(' ')}
+            >
+              <IconPlus size={11} /> {state.dragging != null ? 'drop here' : 'drag a step here'}
+            </div>
+            {full ? (
+              <div className="mt-1.5 flex justify-end">
+                <span
+                  ref={registerTarget('save')}
+                  className={[
+                    'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                    'bg-primary text-primary-foreground',
+                  ].join(' ')}
+                >
+                  Save workflow
                 </span>
               </div>
-            ))}
-            <div className="mt-0.5 flex items-center gap-1.5 rounded-md border border-dashed border-primary/40 bg-primary/5 px-2 py-1.5 text-[10px] font-medium text-primary/80">
-              <IconPlus size={11} /> drop a step here
-            </div>
+            ) : null}
           </div>
         </div>
 
-        {/* step library: drag a module in */}
-        <div className="w-[124px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
+        <div className="w-[164px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
           <div className="pb-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Step library
           </div>
           <div className="flex flex-col gap-1">
-            {STUDIO_LIBRARY.map((k) => (
+            {STUDIO_LIBRARY.map((s, i) => (
               <div
-                key={k}
-                className="flex items-center gap-1 rounded-md border border-border-soft bg-subtle px-1.5 py-1"
+                key={s.kind}
+                ref={i < 4 ? registerTarget(`lib-${i}`) : undefined}
+                className={[
+                  'flex items-start gap-1.5 rounded-md border border-border-soft bg-subtle px-1.5 py-1.5 transition-opacity',
+                  state.dragging === i ? 'opacity-40' : 'opacity-100',
+                ].join(' ')}
               >
-                <GripDots />
-                <KindBadge kind={k} />
+                <span className="pt-0.5">
+                  <GripDots />
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <KindBadge kind={s.kind} />
+                  <span className="line-clamp-2 text-[9px] leading-tight text-muted-foreground/70">
+                    {s.prompt}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         </div>
+
+        {state.dragging != null ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-30 transition-transform duration-[450ms] ease-[cubic-bezier(.4,0,.2,1)]"
+            style={{ transform: `translate(${cursor.x + 10}px, ${cursor.y + 8}px)` }}
+          >
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/50 bg-background px-1.5 py-1 text-[10px] font-medium text-foreground shadow-lg">
+              <IconPlus size={10} className="text-primary" />
+              {STUDIO_LIBRARY[state.dragging].name}
+            </span>
+          </div>
+        ) : null}
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function StudioStepCard({ step, index }: { step: StudioStep; index: number }) {
+  return (
+    <div className="flex items-stretch gap-2 rounded-md border border-border-soft bg-subtle py-1.5 pl-1.5 pr-2">
+      <span
+        className={['w-0.5 shrink-0 self-stretch rounded-full', KIND[step.kind].bg].join(' ')}
+      />
+      <span className="w-3 shrink-0 pt-0.5 text-right font-mono text-[10px] text-muted-foreground/40">
+        {index}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <KindBadge kind={step.kind} />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground/90">
+            {step.name}
+          </span>
+          <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+            {step.model}
+          </span>
+        </div>
+        <span className="line-clamp-1 pl-0.5 text-[10px] leading-tight text-muted-foreground/65">
+          {step.prompt}
+        </span>
+      </div>
+    </div>
   );
 }
 
 /* ---------------------------- Context --------------------------------- */
 
-type ContextTabKey = 'context' | 'plans' | 'files' | 'github' | 'terminal';
+type CtxTab = 'context' | 'plans' | 'questions' | 'terminal';
+type TargetRef = (node: HTMLElement | null) => void;
 
-const CTX_TABS: ReadonlyArray<{
-  readonly key: ContextTabKey;
-  readonly label: string;
-  readonly icon: typeof IconTarget;
-  readonly badge: number | null;
-}> = [
-  { key: 'context', label: 'Context', icon: IconTarget, badge: null },
-  { key: 'plans', label: 'Plans', icon: IconClipboard, badge: 2 },
-  { key: 'files', label: 'Files', icon: IconFolder, badge: 3 },
-  { key: 'github', label: 'GitHub', icon: IconPullRequest, badge: null },
-  { key: 'terminal', label: 'Term', icon: IconTerminal, badge: null },
+const CTX_TABS: ReadonlyArray<{ key: CtxTab; label: string; icon: typeof IconTarget }> = [
+  { key: 'context', label: 'Context', icon: IconList },
+  { key: 'plans', label: 'Plans', icon: IconClipboard },
+  { key: 'questions', label: 'Questions', icon: IconHelp },
+  { key: 'terminal', label: 'Terminal', icon: IconTerminal },
 ];
 
-const SLOTS = [
-  {
-    key: 'goal',
-    label: 'Goal',
-    icon: IconTarget,
-    body: 'Add password reset via email link. Reuse existing transactional mailer. Keep the login UI untouched.',
-  },
-  {
-    key: 'decisions',
-    label: 'Decisions',
-    icon: IconList,
-    body: 'Token TTL 60 minutes, single-use, hashed before storage. Rate-limit per email at 3 per hour.',
-  },
-  {
-    key: 'last_output_summary',
-    label: 'Last output',
-    icon: IconSparkles,
-    body: 'POST /auth/reset-request live. Email template wired. Endpoint + handler tests green.',
-  },
+const CTX_GOAL =
+  'Add password reset via email link. Reuse the existing mailer. Keep the login UI untouched.';
+const CTX_DECISIONS = [
+  'Token TTL 60 minutes, single-use.',
+  'Rate-limit requests per email at 3 per hour.',
+];
+const CTX_DECISION_ADDED = 'Hash tokens with argon2id, not sha256.';
+const CTX_LAST_OUTPUT =
+  'POST /auth/reset-request is live. Email template wired. Endpoint and handler tests green.';
+const CTX_QUESTION = 'Cap reset tokens at one active per account, or allow several in flight?';
+const CTX_SUGGESTIONS = ['One active at a time', 'Allow up to three'];
+
+interface ContextState {
+  tab: CtxTab;
+  decisionsOpen: boolean;
+  decisionEditing: boolean;
+  decisionAdded: boolean;
+  questionOpen: boolean;
+  picked: number | null;
+  sent: boolean;
+}
+
+type ContextAction =
+  | { type: 'tab'; tab: CtxTab }
+  | { type: 'openDecisions' }
+  | { type: 'editDecision' }
+  | { type: 'commitDecision' }
+  | { type: 'raiseQuestion' }
+  | { type: 'pick'; i: number }
+  | { type: 'send' };
+
+const CTX_INITIAL: ContextState = {
+  tab: 'context',
+  decisionsOpen: false,
+  decisionEditing: false,
+  decisionAdded: false,
+  questionOpen: false,
+  picked: null,
+  sent: false,
+};
+
+const CTX_STATIC: ContextState = {
+  tab: 'context',
+  decisionsOpen: true,
+  decisionEditing: false,
+  decisionAdded: true,
+  questionOpen: true,
+  picked: null,
+  sent: false,
+};
+
+function contextReducer(state: ContextState, action: ContextAction): ContextState {
+  switch (action.type) {
+    case 'tab':
+      return { ...state, tab: action.tab };
+    case 'openDecisions':
+      return { ...state, decisionsOpen: true };
+    case 'editDecision':
+      return { ...state, decisionsOpen: true, decisionEditing: true };
+    case 'commitDecision':
+      return { ...state, decisionEditing: false, decisionAdded: true };
+    case 'raiseQuestion':
+      return { ...state, questionOpen: true };
+    case 'pick':
+      return { ...state, picked: action.i };
+    case 'send':
+      return { ...state, sent: true, questionOpen: false, tab: 'context' };
+    default:
+      return state;
+  }
+}
+
+const CTX_SCRIPT: ReadonlyArray<Beat<ContextAction>> = [
+  { d: 900, kind: 'move', to: 'decisions-head' },
+  { d: 560, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'openDecisions' } },
+  { d: 880, kind: 'move', to: 'decisions-body' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'editDecision' } },
+  { d: 1800, kind: 'act', act: { type: 'commitDecision' } },
+  { d: 760, kind: 'move', to: 'tab-plans' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'plans' } },
+  { d: 1900, kind: 'move', to: 'tab-context' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'context' } },
+  { d: 820, kind: 'move', to: null },
+  { d: 500, kind: 'act', act: { type: 'raiseQuestion' } },
+  { d: 720, kind: 'move', to: 'footer' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'questions' } },
+  { d: 900, kind: 'move', to: 'suggestion' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'pick', i: 0 } },
+  { d: 820, kind: 'move', to: 'send' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'send' } },
+  { d: 2200, kind: 'reset' },
 ];
 
-/* Interactive context snapshot. Tabs are real buttons: click to switch panel.
-   Each tab renders a faithful slice of the real ContextPanel surfaces. The
-   sticky open-questions footer stays put across tabs, like the product. */
 export function ContextSnapshot() {
-  const [tab, setTab] = useState<ContextTabKey>('context');
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: CTX_INITIAL,
+    reducer: contextReducer,
+    script: CTX_SCRIPT,
+    staticState: CTX_STATIC,
+  });
+  const questionCount = state.questionOpen && !state.sent ? 1 : 0;
 
   return (
     <SnapshotFrame className="max-w-[460px]">
       <div className="flex h-9 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
         {CTX_TABS.map((t) => (
-          <TabButton
+          <CtxTabButton
             key={t.key}
             label={t.label}
             icon={t.icon}
-            badge={t.badge}
-            active={tab === t.key}
-            onClick={() => setTab(t.key)}
+            badge={t.key === 'plans' ? 2 : t.key === 'questions' ? questionCount || null : null}
+            active={state.tab === t.key}
+            tabRef={
+              t.key === 'plans'
+                ? registerTarget('tab-plans')
+                : t.key === 'context'
+                  ? registerTarget('tab-context')
+                  : undefined
+            }
           />
         ))}
       </div>
 
-      <div className="min-h-[260px]">
-        {tab === 'context' ? <ContextTabBody /> : null}
-        {tab === 'plans' ? <PlansTabBody /> : null}
-        {tab === 'files' ? <FilesTabBody /> : null}
-        {tab === 'github' ? <GithubTabBody /> : null}
-        {tab === 'terminal' ? <TerminalTabBody /> : null}
-      </div>
+      <div ref={stageRef} className="relative">
+        <div className="h-[320px] overflow-hidden">
+          {state.tab === 'context' ? (
+            <ContextTabBody state={state} registerTarget={registerTarget} />
+          ) : null}
+          {state.tab === 'plans' ? <PlansTabBody /> : null}
+          {state.tab === 'questions' ? (
+            <QuestionsTabBody state={state} registerTarget={registerTarget} />
+          ) : null}
+          {state.tab === 'terminal' ? <TerminalTabBody /> : null}
+        </div>
 
-      <button
-        type="button"
-        onClick={() => setTab('context')}
-        className="flex w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning transition-colors hover:bg-warning/10"
-      >
-        <span className="inline-flex items-center gap-1.5 font-medium">
-          <IconHelp size={11} />1 open question
-        </span>
-        <span aria-hidden className="opacity-60">
-          →
-        </span>
-      </button>
+        <div className="h-[37px]">
+          {state.tab === 'context' && questionCount > 0 ? (
+            <div
+              ref={registerTarget('footer')}
+              className="flex h-full w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
+            >
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <IconHelp size={11} />1 open question
+              </span>
+              <span aria-hidden className="opacity-60">
+                →
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <SimCursor cursor={cursor} />
+      </div>
     </SnapshotFrame>
   );
 }
 
-function ContextTabBody() {
+function CtxTabButton({
+  label,
+  icon: Icon,
+  badge,
+  active,
+  tabRef,
+}: {
+  label: string;
+  icon: typeof IconTarget;
+  badge: number | null;
+  active: boolean;
+  tabRef?: TargetRef;
+}) {
+  return (
+    <span
+      ref={tabRef}
+      className={[
+        'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+        active ? 'bg-muted text-foreground shadow-sm' : 'text-muted-foreground',
+      ].join(' ')}
+    >
+      <Icon size={11} aria-hidden />
+      <span className={active ? '' : 'sr-only'}>{label}</span>
+      {badge ? (
+        <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground">
+          {badge}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function ContextTabBody({
+  state,
+  registerTarget,
+}: {
+  state: ContextState;
+  registerTarget: (key: string) => TargetRef;
+}) {
+  const decisions = state.decisionAdded ? [...CTX_DECISIONS, CTX_DECISION_ADDED] : CTX_DECISIONS;
   return (
     <div className="flex flex-col gap-2 p-3">
-      {SLOTS.map(({ key, ...rest }) => (
-        <SlotCard key={key} {...rest} />
-      ))}
+      <SlotCard tone="primary" label="goal" icon={<IconTarget size={11} />}>
+        <p className="text-[11.5px] font-medium leading-relaxed text-foreground/90">{CTX_GOAL}</p>
+      </SlotCard>
+
+      <SlotCard
+        tone="success"
+        label="decisions"
+        icon={<IconCheck size={11} />}
+        count={decisions.length}
+        open={state.decisionsOpen}
+        headRef={registerTarget('decisions-head')}
+      >
+        {!state.decisionsOpen ? (
+          <p className="truncate text-[11px] text-foreground/70">{CTX_DECISIONS[0]}</p>
+        ) : state.decisionEditing ? (
+          <div
+            ref={registerTarget('decisions-body')}
+            className="rounded border border-primary/40 bg-background/50 p-2 font-mono text-[10.5px] leading-relaxed text-foreground/85"
+          >
+            {CTX_DECISIONS.map((d) => (
+              <div key={d}>- {d}</div>
+            ))}
+            <div className="flex text-foreground">
+              <span className="shrink-0">-&nbsp;</span>
+              <span className="typewriter">{CTX_DECISION_ADDED}</span>
+              <span
+                aria-hidden
+                className="ml-px inline-block h-3 w-1 shrink-0 translate-y-0.5 animate-pulse bg-primary/70"
+              />
+            </div>
+          </div>
+        ) : (
+          <ul
+            ref={registerTarget('decisions-body')}
+            className="flex flex-col gap-1 text-[11px] leading-relaxed text-foreground/85"
+          >
+            {decisions.map((d) => (
+              <li key={d} className="flex gap-1.5">
+                <span aria-hidden className="text-success/60">
+                  ·
+                </span>
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SlotCard>
+
+      <SlotCard tone="info" label="last output summary" icon={<ActivityMark />}>
+        <p className="line-clamp-2 text-[11px] leading-relaxed text-foreground/70">
+          {CTX_LAST_OUTPUT}
+        </p>
+      </SlotCard>
+
+      <div className="mt-0.5 flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 rounded-md bg-success/5 px-2 py-1.5 text-[10.5px] ring-1 ring-success/15">
+          <IconPullRequest size={11} className="shrink-0 text-success" />
+          <span className="font-mono text-success">#214</span>
+          <span className="text-muted-foreground">open</span>
+          <span className="inline-flex items-center gap-1 text-success">
+            <span className="size-1.5 rounded-full bg-success" aria-hidden />6 / 6 checks
+          </span>
+          <span aria-hidden className="ml-auto text-muted-foreground/50">
+            ↗
+          </span>
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-info/5 px-2 py-1.5 text-[10.5px] ring-1 ring-info/15">
+          <IconFolder size={11} className="shrink-0 text-info" />
+          <span className="text-foreground/80">4 files touched</span>
+          <span className="font-mono text-success">+180</span>
+          <span className="font-mono text-danger">−2</span>
+          <span aria-hidden className="ml-auto text-muted-foreground/50">
+            ↗
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestionsTabBody({
+  state,
+  registerTarget,
+}: {
+  state: ContextState;
+  registerTarget: (key: string) => TargetRef;
+}) {
+  return (
+    <div className="flex flex-col gap-2 p-3">
+      <div className="flex items-center gap-1.5 pb-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+          open questions
+        </span>
+        <span
+          className={[
+            'rounded-full px-1.5 text-[9px] font-semibold',
+            state.sent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+          ].join(' ')}
+        >
+          {state.sent ? '1 / 1' : '0 / 1'}
+        </span>
+      </div>
+      <div
+        className={[
+          'rounded-md border bg-muted/20 p-2.5 transition-colors',
+          state.sent ? 'border-primary/40 bg-primary/5' : 'border-border/30',
+        ].join(' ')}
+      >
+        <div className="flex items-center gap-1.5 pb-1.5 text-[10px] text-muted-foreground">
+          <span className="uppercase tracking-wide text-muted-foreground/60">will be sent to</span>
+          <KindBadge kind="review" />
+        </div>
+        <p className="pb-2 text-[11.5px] leading-relaxed text-foreground/85">{CTX_QUESTION}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {CTX_SUGGESTIONS.map((s, i) => (
+            <span
+              key={s}
+              ref={i === 0 ? registerTarget('suggestion') : undefined}
+              className={[
+                'rounded-full border px-2.5 py-0.5 text-[10.5px] transition-colors',
+                state.picked === i
+                  ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/30'
+                  : 'border-border/40 bg-muted/40 text-muted-foreground',
+              ].join(' ')}
+            >
+              {s}
+            </span>
+          ))}
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10.5px] text-muted-foreground/70">
+            <IconPlus size={9} /> other
+          </span>
+        </div>
+        {state.picked != null ? (
+          <div className="mt-2.5 flex justify-end">
+            <span
+              ref={registerTarget('send')}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
+            >
+              send 1 answer → reviewer
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ActivityMark() {
+  return (
+    <svg
+      width={11}
+      height={11}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 12h4l3 8 4-16 3 8h4" />
+    </svg>
+  );
+}
+
+function SlotCard({
+  tone,
+  label,
+  icon,
+  count,
+  open,
+  headRef,
+  children,
+}: {
+  tone: 'primary' | 'success' | 'info';
+  label: string;
+  icon: ReactNode;
+  count?: number;
+  open?: boolean;
+  headRef?: TargetRef;
+  children: ReactNode;
+}) {
+  const ring =
+    tone === 'primary'
+      ? 'ring-primary/15'
+      : tone === 'success'
+        ? 'ring-success/15'
+        : 'ring-info/15';
+  const chip =
+    tone === 'primary'
+      ? 'bg-primary/10 text-primary'
+      : tone === 'success'
+        ? 'bg-success/10 text-success'
+        : 'bg-info/10 text-info';
+  return (
+    <div className={['rounded-lg bg-muted/30 p-2.5 ring-1', ring].join(' ')}>
+      <div ref={headRef} className="flex items-center gap-1.5 pb-1.5">
+        <span
+          className={['inline-flex size-4 items-center justify-center rounded', chip].join(' ')}
+        >
+          {icon}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground/80">
+          {label}
+        </span>
+        {count != null ? (
+          <span className="text-[10px] text-muted-foreground/60">· {count} items</span>
+        ) : null}
+        {open != null ? (
+          <span aria-hidden className="ml-auto text-[11px] text-muted-foreground/50">
+            {open ? '⌄' : '›'}
+          </span>
+        ) : null}
+      </div>
+      {children}
     </div>
   );
 }
@@ -927,7 +1295,7 @@ const PLANS_DATA = [
   {
     title: 'Rate-limit transactional mail',
     status: 'consumed' as const,
-    body: 'consumed by build endpoint + email · 3/email/hour, exponential cooldown on abuse',
+    body: 'Consumed by the Implement step. Folded into the endpoint + email work.',
   },
 ];
 
@@ -957,76 +1325,6 @@ function PlansTabBody() {
   );
 }
 
-const FILES_DATA = [
-  { path: 'src/auth/reset/token.ts', adds: 56, dels: 0, edit: 'created' as const },
-  { path: 'src/auth/reset/handler.ts', adds: 84, dels: 0, edit: 'created' as const },
-  { path: 'src/mail/templates/reset.tsx', adds: 34, dels: 0, edit: 'created' as const },
-  { path: 'src/auth/routes.ts', adds: 6, dels: 2, edit: 'modified' as const },
-];
-
-function FilesTabBody() {
-  return (
-    <ul className="flex flex-col divide-y divide-border-soft/40">
-      {FILES_DATA.map((f) => (
-        <li key={f.path} className="flex items-center gap-2 px-3 py-2 text-[11px]">
-          <span
-            className={[
-              'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
-              f.edit === 'created' ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
-            ].join(' ')}
-          >
-            {f.edit}
-          </span>
-          <code className="min-w-0 flex-1 truncate font-mono text-foreground/85">{f.path}</code>
-          <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-success">
-            <IconArrowUp size={9} />
-            {f.adds}
-          </span>
-          {f.dels > 0 ? (
-            <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-danger">
-              <IconArrowDown size={9} />
-              {f.dels}
-            </span>
-          ) : null}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function GithubTabBody() {
-  return (
-    <div className="flex flex-col gap-2 p-3">
-      <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10.5px] text-muted-foreground">#214</span>
-          <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
-            feat(auth): password reset via email link
-          </span>
-          <span className="chip chip-success">open</span>
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <IconBranch size={9} />
-            <span className="truncate">ak/password-reset</span>
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-success">
-            <IconArrowUp size={9} />
-            180
-          </span>
-          <span className="inline-flex items-center gap-0.5 text-danger">
-            <IconArrowDown size={9} />2
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-success" />6 / 6 checks
-          </span>
-        </div>
-      </div>
-      <p className="text-[10px] text-muted-foreground/60">last sync 12s ago · click to refresh</p>
-    </div>
-  );
-}
-
 const TERMINAL_LINES = [
   { p: '$', t: 'pnpm test src/auth/reset', tone: 'cmd' as const },
   { p: '·', t: 'token.test.ts  ✓ 7 passed', tone: 'ok' as const },
@@ -1046,63 +1344,6 @@ function TerminalTabBody() {
         </div>
       ))}
       <span aria-hidden className="mt-1 inline-block h-3 w-1.5 animate-pulse bg-primary/60" />
-    </div>
-  );
-}
-
-function TabButton({
-  label,
-  icon: Icon,
-  badge,
-  active,
-  onClick,
-}: {
-  label: string;
-  icon: typeof IconTarget;
-  badge: number | null;
-  active: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-        active
-          ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-      ].join(' ')}
-    >
-      <Icon size={11} aria-hidden />
-      <span>{label}</span>
-      {badge ? (
-        <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground">
-          {badge}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function SlotCard({
-  label,
-  icon: Icon,
-  body,
-}: {
-  label: string;
-  icon: typeof IconTarget;
-  body: string;
-}) {
-  return (
-    <div className="rounded-md border border-border-soft bg-subtle p-2.5">
-      <div className="flex items-center gap-1.5 pb-1">
-        <Icon size={11} className="text-muted-foreground" aria-hidden />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-          {label}
-        </span>
-      </div>
-      <p className="text-[11.5px] leading-relaxed text-foreground/85">{body}</p>
     </div>
   );
 }
@@ -1141,13 +1382,82 @@ const INBOX_GROUPS: ReadonlyArray<{
   },
 ];
 
-const PR_TONE: Record<'open' | 'approved' | 'draft', string> = {
+const PR_TONE: Record<'open' | 'approved' | 'draft' | 'merged', string> = {
   open: 'text-success',
   approved: 'text-success',
   draft: 'text-muted-foreground/60',
+  merged: 'text-merged',
 };
 
+type GhTab = 'overview' | 'conversation' | 'checks';
+type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved' | 'merged';
+const GH_SHA = 'a1b2c3d';
+
+interface GithubState {
+  tab: GhTab;
+  phase: GhPhase;
+}
+
+type GithubAction =
+  | { type: 'tab'; tab: GhTab }
+  | { type: 'resolve' }
+  | { type: 'commit' }
+  | { type: 'solved' }
+  | { type: 'merge' };
+
+const GH_INITIAL: GithubState = { tab: 'overview', phase: 'open' };
+const GH_STATIC: GithubState = { tab: 'conversation', phase: 'resolved' };
+
+function githubReducer(state: GithubState, action: GithubAction): GithubState {
+  switch (action.type) {
+    case 'tab':
+      return { ...state, tab: action.tab };
+    case 'resolve':
+      return { ...state, phase: 'resolving' };
+    case 'commit':
+      return { ...state, phase: 'committed' };
+    case 'solved':
+      return { ...state, phase: 'resolved' };
+    case 'merge':
+      return { ...state, phase: 'merged' };
+    default:
+      return state;
+  }
+}
+
+const GH_SCRIPT: ReadonlyArray<Beat<GithubAction>> = [
+  { d: 800, kind: 'move', to: 'pr-row' },
+  { d: 500, kind: 'press' },
+  { d: 700, kind: 'move', to: 'tab-conversation' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'conversation' } },
+  { d: 900, kind: 'move', to: 'resolve-btn' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'resolve' } },
+  { d: 900, kind: 'move', to: null },
+  { d: 1500, kind: 'act', act: { type: 'commit' } },
+  { d: 700, kind: 'move', to: 'mark-solved' },
+  { d: 540, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'solved' } },
+  { d: 800, kind: 'move', to: 'merge-btn' },
+  { d: 560, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'merge' } },
+  { d: 2200, kind: 'reset' },
+];
+
+const GH_CHECKS = ['build', 'unit tests', 'typecheck', 'lint'];
+
 export function GithubStudioSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: GH_INITIAL,
+    reducer: githubReducer,
+    script: GH_SCRIPT,
+    staticState: GH_STATIC,
+  });
+  const merged = state.phase === 'merged';
+  const resolved = state.phase === 'resolved' || merged;
+  const canMerge = state.phase === 'resolved';
+
   return (
     <SnapshotFrame className="max-w-[560px]">
       <FrameHeader
@@ -1158,8 +1468,7 @@ export function GithubStudioSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* inbox: every session's PR, bucketed by what it needs from you */}
+      <div ref={stageRef} className="relative flex">
         <div className="w-[176px] shrink-0 space-y-2.5 border-r border-border-soft p-2">
           {INBOX_GROUPS.map((g) => (
             <div key={g.label} className="flex flex-col gap-0.5">
@@ -1175,19 +1484,26 @@ export function GithubStudioSnapshot() {
               {g.rows.map((r) => (
                 <div
                   key={r.num}
+                  ref={r.active ? registerTarget('pr-row') : undefined}
                   className={[
                     'flex items-center gap-1.5 rounded-md px-1.5 py-1',
                     r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
                   ].join(' ')}
                 >
-                  <IconPullRequest size={11} className={['shrink-0', PR_TONE[r.tone]].join(' ')} />
+                  <IconPullRequest
+                    size={11}
+                    className={[
+                      'shrink-0',
+                      r.active && merged ? PR_TONE.merged : PR_TONE[r.tone],
+                    ].join(' ')}
+                  />
                   <span className="min-w-0 flex-1 truncate text-[10.5px] text-foreground/85">
                     {r.goal}
                   </span>
                   <span className="shrink-0 font-mono text-[9px] text-muted-foreground/50">
                     #{r.num}
                   </span>
-                  {r.attention ? (
+                  {r.attention && !(r.active && resolved) ? (
                     <span
                       aria-hidden
                       title="changes requested"
@@ -1200,83 +1516,225 @@ export function GithubStudioSnapshot() {
           ))}
         </div>
 
-        {/* detail: the focused PR, full lifecycle + a comment you can hand off */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2 px-3 pt-3 pb-2">
             <span className="font-mono text-[10px] text-muted-foreground">#214</span>
             <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">
-              feat(auth): password reset via email link
+              feat(auth): password reset
             </span>
-            <span className="chip chip-success shrink-0">open</span>
+            <span
+              className={['shrink-0', merged ? 'chip chip-merged' : 'chip chip-success'].join(' ')}
+            >
+              {merged ? 'merged' : 'open'}
+            </span>
           </div>
 
-          {/* section nav */}
           <div className="flex items-center gap-1 px-3 pb-2 text-[10px]">
-            <span className="rounded px-1.5 py-0.5 text-muted-foreground/70">Overview</span>
-            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-              Conversation
-              <span className="rounded-full bg-warning/20 px-1 text-[8px] font-semibold text-warning">
-                2
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-muted-foreground/70">
-              Checks
-              <span aria-hidden className="size-1.5 rounded-full bg-success" />
-            </span>
+            <GhTabPill label="Overview" active={state.tab === 'overview'} />
+            <GhTabPill
+              label="Conversation"
+              active={state.tab === 'conversation'}
+              tabRef={registerTarget('tab-conversation')}
+              badge={
+                resolved ? (
+                  <IconCheck size={9} className="text-success" />
+                ) : (
+                  <span className="rounded-full bg-warning/20 px-1 text-[8px] font-semibold text-warning">
+                    1
+                  </span>
+                )
+              }
+            />
+            <GhTabPill
+              label="Checks"
+              active={state.tab === 'checks'}
+              badge={<span aria-hidden className="size-1.5 rounded-full bg-success" />}
+            />
           </div>
 
-          {/* lifecycle action bar */}
           <div className="flex items-center gap-1.5 border-y border-border-soft/60 px-3 py-2">
-            <span className="inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950">
-              <IconCheck size={10} /> Merge
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-medium text-muted-foreground">
-              Close
-            </span>
+            {merged ? (
+              <span className="inline-flex items-center gap-1 rounded-md border border-merged/40 bg-merged/10 px-2 py-1 text-[10px] font-semibold text-merged">
+                <IconCheck size={10} /> Merged
+              </span>
+            ) : (
+              <>
+                <span
+                  ref={registerTarget('merge-btn')}
+                  title={canMerge ? 'squash merge' : 'resolve the open comment first'}
+                  className={
+                    canMerge
+                      ? 'inline-flex items-center gap-1 rounded-md border border-success bg-success px-2 py-1 text-[10px] font-semibold text-zinc-950'
+                      : 'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-semibold text-muted-foreground/40'
+                  }
+                >
+                  <IconCheck size={10} /> Merge
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                  Close
+                </span>
+              </>
+            )}
             <span className="ml-auto inline-flex items-center gap-1 font-mono text-[9.5px] text-muted-foreground/60">
               <IconBranch size={9} /> ak/password-reset → main
             </span>
           </div>
 
-          {/* one review comment, handed to an agent */}
-          <div className="flex flex-col gap-1.5 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span
-                aria-hidden
-                className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
-                style={{ background: 'oklch(0.74 0.15 55)' }}
-              >
-                C
-              </span>
-              <span className="font-medium text-foreground/80">claude-reviewer</span>
-              <span>on</span>
-              <code className="font-mono text-primary">token.ts:42</code>
-            </div>
-            <p className="text-[11px] leading-relaxed text-foreground/85">
-              Hash with <code className="font-mono text-foreground/70">argon2id</code> instead of
-              sha256, the table gets scraped if the DB ever leaks.
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                <IconSparkles size={10} /> resolve
-              </span>
-              <span className="text-[10px] text-muted-foreground/60">
-                hands the fix to an agent, replies on the thread
-              </span>
-            </div>
-          </div>
+          <div className="h-[188px] overflow-hidden">
+            {state.tab === 'overview' ? (
+              <div className="px-3 py-3 text-[11px] leading-relaxed text-foreground/80">
+                <p>
+                  Adds a password reset flow: a hashed single-use token, the request endpoint, an
+                  email template and the reset form. Login UI untouched.
+                </p>
+              </div>
+            ) : null}
 
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-[10.5px]">
-            <span className="inline-flex items-center gap-1.5 text-warning">
-              <IconSparkles size={11} /> Resolve all 2 with one agent
-            </span>
-            <span aria-hidden className="text-warning opacity-60">
-              →
-            </span>
+            {state.tab === 'checks' ? (
+              <div className="flex flex-col divide-y divide-border-soft/40 px-3">
+                {GH_CHECKS.map((c) => (
+                  <div key={c} className="flex items-center gap-2 py-1.5 text-[10.5px]">
+                    <span className="flex size-3.5 items-center justify-center rounded-full bg-success/20">
+                      <IconCheck size={8} className="text-success" />
+                    </span>
+                    <span className="flex-1 text-foreground/80">{c}</span>
+                    <span className="font-mono text-[9.5px] text-muted-foreground/50">passed</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {state.tab === 'conversation' ? (
+              <div className="flex flex-col gap-2 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span
+                    aria-hidden
+                    className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
+                    style={{ background: 'oklch(0.74 0.15 55)' }}
+                  >
+                    C
+                  </span>
+                  <span className="font-medium text-foreground/80">claude-reviewer</span>
+                  <span>on</span>
+                  <code className="font-mono text-primary">token.ts:42</code>
+                  <span
+                    className={[
+                      'ml-auto rounded-full px-1.5 py-px text-[8.5px] font-semibold',
+                      resolved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
+                    ].join(' ')}
+                  >
+                    {resolved ? 'resolved' : 'open'}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-foreground/85">
+                  Hash with <code className="font-mono text-foreground/70">argon2id</code> instead
+                  of sha256.
+                </p>
+
+                {state.phase === 'open' ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      ref={registerTarget('resolve-btn')}
+                      className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent"
+                    >
+                      <IconSparkles size={10} /> resolve
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      hands the fix to an agent, replies on the thread
+                    </span>
+                  </div>
+                ) : null}
+
+                {state.phase === 'resolving' ? (
+                  <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5 text-[10px]">
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                      <span className="size-2 rounded-sm bg-lime-400" aria-hidden /> Resolve
+                    </span>
+                    <RunSpinner size={10} className="text-accent" />
+                    <span className="text-muted-foreground/70">
+                      reading token.ts, editing, running tests
+                    </span>
+                  </div>
+                ) : null}
+
+                {state.phase === 'committed' || resolved ? (
+                  <div className="flex flex-col gap-1.5 rounded-md border border-success/30 bg-success/5 px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-success">
+                      <IconCheck size={11} /> fix committed locally
+                      <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-px font-mono text-[9.5px] text-foreground/80">
+                        <CommitMark /> {GH_SHA}
+                      </span>
+                    </div>
+                    {resolved ? (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                        <IconCheck size={9} /> conversation resolved
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground/70">
+                          mark this review conversation as solved on github?
+                        </span>
+                        <span
+                          ref={registerTarget('mark-solved')}
+                          className="ml-auto inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[10px] font-semibold text-zinc-950"
+                        >
+                          Mark as Solved
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function GhTabPill({
+  label,
+  active,
+  badge,
+  tabRef,
+}: {
+  label: string;
+  active: boolean;
+  badge?: ReactNode;
+  tabRef?: TargetRef;
+}) {
+  return (
+    <span
+      ref={tabRef}
+      className={[
+        'inline-flex items-center gap-1 rounded px-1.5 py-0.5',
+        active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground/70',
+      ].join(' ')}
+    >
+      {label}
+      {badge}
+    </span>
+  );
+}
+
+function CommitMark() {
+  return (
+    <svg
+      width="9"
+      height="9"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+      className="text-muted-foreground/70"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M1.05 12H8M16 12h6.95" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -1322,7 +1780,91 @@ const LINEAR_INBOX: ReadonlyArray<{
   },
 ];
 
+type LinearStage = 'detail' | 'picker' | 'run';
+
+interface LinearState {
+  stage: LinearStage;
+  preset: number | null;
+  steps: StepStatus[];
+}
+
+type LinearAction =
+  | { type: 'launch' }
+  | { type: 'pick'; i: number }
+  | { type: 'start' }
+  | { type: 'advance'; i: number };
+
+const LINEAR_PRESETS = [
+  { name: 'plan → ship', count: 4 },
+  { name: 'fix-it', count: 3 },
+];
+
+const LINEAR_RUN_STEPS = [
+  { kind: 'scout' as const, name: 'Scout the surface', model: 'haiku-4-5' },
+  { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
+  { kind: 'imple' as const, name: 'Implement', model: 'sonnet-4-5' },
+  { kind: 'review' as const, name: 'Open PR', model: 'sonnet-4-5' },
+];
+
+const LINEAR_INITIAL: LinearState = {
+  stage: 'detail',
+  preset: null,
+  steps: ['future', 'future', 'future', 'future'],
+};
+const LINEAR_STATIC: LinearState = {
+  stage: 'run',
+  preset: 0,
+  steps: ['done', 'running', 'future', 'future'],
+};
+
+function linearReducer(state: LinearState, action: LinearAction): LinearState {
+  switch (action.type) {
+    case 'launch':
+      return { ...state, stage: 'picker' };
+    case 'pick':
+      return { ...state, preset: action.i };
+    case 'start':
+      return { ...state, stage: 'run', steps: ['running', 'future', 'future', 'future'] };
+    case 'advance':
+      return {
+        ...state,
+        steps: state.steps.map((v, idx) =>
+          idx === action.i ? 'done' : idx === action.i + 1 ? 'running' : v,
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
+const LINEAR_SCRIPT: ReadonlyArray<Beat<LinearAction>> = [
+  { d: 800, kind: 'move', to: 'issue-row' },
+  { d: 480, kind: 'press' },
+  { d: 700, kind: 'move', to: 'launch-btn' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'launch' } },
+  { d: 760, kind: 'move', to: 'preset-0' },
+  { d: 480, kind: 'press' },
+  { d: 200, kind: 'act', act: { type: 'pick', i: 0 } },
+  { d: 760, kind: 'move', to: 'start-wf' },
+  { d: 520, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'start' } },
+  { d: 520, kind: 'move', to: null },
+  { d: 1200, kind: 'act', act: { type: 'advance', i: 0 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 1 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 2 } },
+  { d: 1300, kind: 'act', act: { type: 'advance', i: 3 } },
+  { d: 2200, kind: 'reset' },
+];
+
 export function LinearStudioSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: LINEAR_INITIAL,
+    reducer: linearReducer,
+    script: LINEAR_SCRIPT,
+    staticState: LINEAR_STATIC,
+  });
+
   return (
     <SnapshotFrame className="max-w-[560px]">
       <FrameHeader
@@ -1333,10 +1875,8 @@ export function LinearStudioSnapshot() {
           </span>
         }
       />
-      <div className="flex">
-        {/* inbox: open issues assigned to you, grouped by state */}
+      <div ref={stageRef} className="relative flex">
         <div className="w-[196px] shrink-0 border-r border-border-soft">
-          {/* search */}
           <div className="px-2 pt-2 pb-1.5">
             <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 text-[10px] text-muted-foreground/60">
               <svg
@@ -1372,6 +1912,7 @@ export function LinearStudioSnapshot() {
                 {g.rows.map((r) => (
                   <div
                     key={r.id}
+                    ref={r.active ? registerTarget('issue-row') : undefined}
                     className={[
                       'flex items-center gap-1.5 rounded-md px-1.5 py-1',
                       r.active ? 'bg-primary/10 ring-1 ring-primary/30' : '',
@@ -1387,7 +1928,7 @@ export function LinearStudioSnapshot() {
                     {r.hasPr ? (
                       <IconPullRequest size={9} className="shrink-0 text-muted-foreground/70" />
                     ) : null}
-                    {r.hasSession ? (
+                    {r.hasSession || (r.active && state.stage === 'run') ? (
                       <span
                         aria-hidden
                         title="session launched"
@@ -1401,78 +1942,192 @@ export function LinearStudioSnapshot() {
           </div>
         </div>
 
-        {/* detail: focused issue, launch session right here */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-            <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
-            <span className="chip bg-muted text-muted-foreground">In progress</span>
-            <span className="flex-1" />
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
-              Open in Linear
-              <svg
-                width="9"
-                height="9"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M15 3h6v6M10 14 21 3M21 14v7H3V3h7" />
-              </svg>
-            </span>
-          </div>
-          <p className="px-3 pb-2 text-[12px] font-semibold leading-snug text-foreground">
-            Password reset via email link
-          </p>
-          <div className="flex items-center gap-1.5 px-3 pb-2">
-            <span className="chip chip-success inline-flex items-center gap-1">
-              <IconPullRequest size={9} aria-hidden /> #214 · open
-            </span>
-          </div>
-          <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-muted-foreground/80">
-            Add a password reset flow: request endpoint, hashed token with TTL, email template, form
-            on the marketing site. Keep the existing login UI untouched.
-          </p>
-
-          {/* launch panel: goal + branch + button */}
-          <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
-              <IconTarget size={10} aria-hidden className="text-primary" /> Goal
-            </div>
-            <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5 text-[10.5px] leading-relaxed text-foreground/85">
-              Password reset via email link. Add request endpoint, hashed token, email template.
-            </div>
-
-            <div className="flex items-center gap-1.5 pt-1 text-[10px] font-semibold text-foreground">
-              <IconBranch size={10} aria-hidden className="text-success" /> Branch
-            </div>
-            <div className="inline-flex rounded-md border border-border-soft p-0.5 text-[9.5px]">
-              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                Continue on PR #214
-              </span>
-              <span className="px-1.5 py-0.5 text-muted-foreground/70">Start fresh</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1 font-mono text-[10px] text-foreground/85">
-              <IconBranch size={9} aria-hidden className="text-muted-foreground" />
-              <span className="truncate">ak/password-reset</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
-            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <span aria-hidden className="size-2.5 rounded-sm border border-muted-foreground/40" />
-              Set up workflow next
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
-              Launch session →
-            </span>
-          </div>
+        <div className="flex h-[320px] min-w-0 flex-1 flex-col overflow-hidden">
+          {state.stage === 'detail' ? (
+            <LinearDetail launchRef={registerTarget('launch-btn')} />
+          ) : null}
+          {state.stage === 'picker' ? (
+            <LinearPicker
+              picked={state.preset}
+              presetRef={registerTarget('preset-0')}
+              startRef={registerTarget('start-wf')}
+            />
+          ) : null}
+          {state.stage === 'run' ? <LinearRun steps={state.steps} /> : null}
         </div>
+
+        <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
+  );
+}
+
+function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+        <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
+        <span className="chip bg-muted text-muted-foreground">In progress</span>
+        <span className="flex-1" />
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70">
+          Open in Linear
+          <svg
+            width="9"
+            height="9"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M15 3h6v6M10 14 21 3M21 14v7H3V3h7" />
+          </svg>
+        </span>
+      </div>
+      <p className="px-3 pb-2 text-[12px] font-semibold leading-snug text-foreground">
+        Password reset via email link
+      </p>
+      <div className="flex items-center gap-1.5 px-3 pb-2">
+        <span className="chip chip-success inline-flex items-center gap-1">
+          <IconPullRequest size={9} aria-hidden /> #214 · open
+        </span>
+      </div>
+      <p className="px-3 pb-3 text-[10.5px] leading-relaxed text-muted-foreground/80">
+        Add a password reset flow: request endpoint, hashed token with TTL, email template, form on
+        the marketing site. Keep the existing login UI untouched.
+      </p>
+
+      <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+          <IconTarget size={10} aria-hidden className="text-primary" /> Goal
+        </div>
+        <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5 text-[10.5px] leading-relaxed text-foreground/85">
+          Password reset via email link. Add request endpoint, hashed token, email template.
+        </div>
+
+        <div className="flex items-center gap-1.5 pt-1 text-[10px] font-semibold text-foreground">
+          <IconBranch size={10} aria-hidden className="text-success" /> Branch
+        </div>
+        <div className="inline-flex rounded-md border border-border-soft p-0.5 text-[9.5px]">
+          <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+            Continue on PR #214
+          </span>
+          <span className="px-1.5 py-0.5 text-muted-foreground/70">Start fresh</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1 font-mono text-[10px] text-foreground/85">
+          <IconBranch size={9} aria-hidden className="text-muted-foreground" />
+          <span className="truncate">ak/password-reset</span>
+        </div>
+      </div>
+
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span
+            aria-hidden
+            className="size-2.5 rounded-sm border border-primary/60 bg-primary/20"
+          />
+          Set up workflow next
+        </span>
+        <span
+          ref={launchRef}
+          className="inline-flex items-center gap-1 rounded-md border border-primary bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
+        >
+          Launch session →
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LinearPicker({
+  picked,
+  presetRef,
+  startRef,
+}: {
+  picked: number | null;
+  presetRef: TargetRef;
+  startRef: TargetRef;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+        <IconLayers size={12} className="text-primary" aria-hidden />
+        <span className="text-[12px] font-semibold text-foreground">Start a workflow</span>
+      </div>
+      <p className="px-3 pb-2 text-[10px] text-muted-foreground/70">
+        Pick a saved preset. Each step spawns its own agent, in order.
+      </p>
+      <div className="flex flex-col gap-1.5 px-3">
+        {LINEAR_PRESETS.map((p, i) => (
+          <div
+            key={p.name}
+            ref={i === 0 ? presetRef : undefined}
+            className={[
+              'rounded-md border p-2 transition-colors',
+              picked === i
+                ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'
+                : 'border-border-soft bg-subtle',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-1.5 pb-1">
+              <span className="text-[11px] font-semibold text-foreground">{p.name}</span>
+              <span className="text-[9px] text-muted-foreground/50">{p.count} steps</span>
+              {picked === i ? <IconCheck size={11} className="ml-auto text-primary" /> : null}
+            </div>
+            {i === 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {LINEAR_RUN_STEPS.map((s) => (
+                  <KindBadge key={s.kind} kind={s.kind} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span
+            aria-hidden
+            className="size-2.5 rounded-sm border border-primary/60 bg-primary/20"
+          />
+          Auto-run
+        </span>
+        <span
+          ref={startRef}
+          className={[
+            'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors',
+            picked != null
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border-soft text-muted-foreground/50',
+          ].join(' ')}
+        >
+          Start workflow
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LinearRun({ steps }: { steps: StepStatus[] }) {
+  return (
+    <div className="flex h-full flex-col px-3 py-3">
+      <div className="flex items-center gap-2 pb-2">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <IconLayers size={10} className="text-primary" /> Workflow
+        </span>
+        <span className="flex-1" />
+        <span className="font-mono text-[10px] text-muted-foreground/70">plan → ship</span>
+        <AutoRunPill on />
+      </div>
+      <div className="flex flex-col gap-1">
+        {LINEAR_RUN_STEPS.map((s, i) => (
+          <RunStepRow key={s.kind} index={i + 1} step={s} status={steps[i]} />
+        ))}
+      </div>
+      <p className="pt-2 text-[10px] text-success/80">workflow started on GOOD-214</p>
+    </div>
   );
 }
 
@@ -1762,17 +2417,6 @@ function BranchMark() {
   return <IconBranch size={13} className="text-primary" />;
 }
 
-/* ---------------------------- Workflow run (animated) ---------------- */
-
-/* Self-playing demo of the Plans & Workflows feature, mirroring the desktop
-   WorkspacesSidebar AgentsSection 1:1. There is no generic "run" button: the
-   next runnable step lights up (primary border + a pinging play dot) to invite
-   a click. A simulated cursor clicks that lit step; it runs (info spinner),
-   then settles done (green check) and the following step lights up. Partway
-   through, the cursor flips the Auto-run toggle in the header's top-right (the
-   real Zap control) and the remaining steps advance on their own. Loops while
-   in view; collapses to a static mid-run frame under reduced motion.
-   Illustrative only: the controls carry no handlers, the timeline drives all. */
 const RUN_STEPS = [
   { kind: 'scout' as const, name: 'Locate auth surface', model: 'haiku-4-5' },
   { kind: 'plan' as const, name: 'Draft reset flow + endpoints', model: 'opus-4-7' },
@@ -1783,234 +2427,6 @@ const RUN_STEPS = [
 /* Mirrors the desktop step statuses: a future step waits on its predecessors,
    the next step is `actionable` (lit, clickable), then `running`, then `done`. */
 type StepStatus = 'future' | 'actionable' | 'running' | 'done';
-
-interface RunState {
-  steps: StepStatus[];
-  autoRun: boolean;
-  cursor: { x: number; y: number };
-  cursorVisible: boolean;
-  pressing: boolean;
-}
-
-type RunAction =
-  | { type: 'cursor'; pos: { x: number; y: number } | null }
-  | { type: 'hide' }
-  | { type: 'press' }
-  | { type: 'start'; i: number }
-  | { type: 'finish'; i: number }
-  | { type: 'auto' }
-  | { type: 'reset' }
-  | { type: 'static' };
-
-const RUN_INITIAL: RunState = {
-  steps: ['actionable', 'future', 'future', 'future'],
-  autoRun: false,
-  cursor: { x: 24, y: 24 },
-  cursorVisible: false,
-  pressing: false,
-};
-
-function runReducer(s: RunState, a: RunAction): RunState {
-  switch (a.type) {
-    case 'cursor':
-      return a.pos
-        ? { ...s, cursor: a.pos, cursorVisible: true, pressing: false }
-        : { ...s, cursorVisible: false, pressing: false };
-    case 'hide':
-      return { ...s, cursorVisible: false, pressing: false };
-    case 'press':
-      return { ...s, pressing: true };
-    case 'start':
-      return { ...s, pressing: false, steps: s.steps.map((v, i) => (i === a.i ? 'running' : v)) };
-    case 'finish':
-      // Completing a step unlocks the next one, exactly like the real stepper.
-      return {
-        ...s,
-        pressing: false,
-        steps: s.steps.map((v, i) =>
-          i === a.i ? 'done' : i === a.i + 1 && v === 'future' ? 'actionable' : v,
-        ),
-      };
-    case 'auto':
-      return { ...s, pressing: false, autoRun: true };
-    case 'reset':
-      return RUN_INITIAL;
-    case 'static':
-      return {
-        steps: ['done', 'running', 'actionable', 'future'],
-        autoRun: true,
-        cursor: { x: 24, y: 24 },
-        cursorVisible: false,
-        pressing: false,
-      };
-    default:
-      return s;
-  }
-}
-
-/* Playback timeline: each beat waits `d` ms, then applies its action; the
-   driver loops back to the top after the final reset. Cursor targets are a
-   step index (the lit row) or the auto-run toggle. */
-type Beat =
-  | { t: 'cursor'; to: number | 'toggle' }
-  | { t: 'hide' }
-  | { t: 'press' }
-  | { t: 'start'; i: number }
-  | { t: 'finish'; i: number }
-  | { t: 'auto' }
-  | { t: 'reset' };
-
-const RUN_SCRIPT: ReadonlyArray<{ d: number; a: Beat }> = [
-  { d: 800, a: { t: 'cursor', to: 0 } },
-  { d: 560, a: { t: 'press' } },
-  { d: 240, a: { t: 'start', i: 0 } },
-  { d: 1500, a: { t: 'finish', i: 0 } },
-  { d: 660, a: { t: 'cursor', to: 1 } },
-  { d: 520, a: { t: 'press' } },
-  { d: 240, a: { t: 'start', i: 1 } },
-  { d: 1500, a: { t: 'finish', i: 1 } },
-  { d: 680, a: { t: 'cursor', to: 'toggle' } },
-  { d: 520, a: { t: 'press' } },
-  { d: 240, a: { t: 'auto' } },
-  { d: 520, a: { t: 'hide' } },
-  { d: 460, a: { t: 'start', i: 2 } },
-  { d: 1400, a: { t: 'finish', i: 2 } },
-  { d: 540, a: { t: 'start', i: 3 } },
-  { d: 1400, a: { t: 'finish', i: 3 } },
-  { d: 2400, a: { t: 'reset' } },
-];
-
-export function WorkflowRunSnapshot() {
-  const [state, dispatch] = useReducer(runReducer, RUN_INITIAL);
-  const { ref: inViewRef, inView } = useInView<HTMLDivElement>();
-  const stageRef = useRef<HTMLDivElement>(null);
-  const stepRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!inView) return;
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      dispatch({ type: 'static' });
-      return;
-    }
-
-    const pointTo = (el: HTMLElement | null) => {
-      const stage = stageRef.current;
-      if (!stage || !el) return null;
-      const sr = stage.getBoundingClientRect();
-      const er = el.getBoundingClientRect();
-      return { x: er.left - sr.left + er.width / 2, y: er.top - sr.top + er.height / 2 };
-    };
-
-    let timer: ReturnType<typeof setTimeout>;
-    const apply = (a: Beat) => {
-      switch (a.t) {
-        case 'cursor':
-          dispatch({
-            type: 'cursor',
-            pos: pointTo(a.to === 'toggle' ? toggleRef.current : stepRefs.current[a.to]),
-          });
-          break;
-        case 'hide':
-          dispatch({ type: 'hide' });
-          break;
-        case 'press':
-          dispatch({ type: 'press' });
-          break;
-        case 'start':
-          dispatch({ type: 'start', i: a.i });
-          break;
-        case 'finish':
-          dispatch({ type: 'finish', i: a.i });
-          break;
-        case 'auto':
-          dispatch({ type: 'auto' });
-          break;
-        case 'reset':
-          dispatch({ type: 'reset' });
-          break;
-      }
-    };
-    const run = (i: number) => {
-      timer = setTimeout(() => {
-        apply(RUN_SCRIPT[i].a);
-        run((i + 1) % RUN_SCRIPT.length);
-      }, RUN_SCRIPT[i].d);
-    };
-    run(0);
-    return () => clearTimeout(timer);
-  }, [inView]);
-
-  const done = state.steps.filter((s) => s === 'done').length;
-
-  return (
-    <div ref={inViewRef}>
-      <SnapshotFrame className="max-w-[440px]">
-        <FrameHeader
-          label="Add password reset"
-          right={
-            <span className="font-mono text-[10px] text-muted-foreground/70">
-              <span className="tabular-nums text-foreground/80">{done}</span>/4 done
-            </span>
-          }
-        />
-        <div ref={stageRef} className="relative p-3">
-          {/* workflow header: label + preset, auto-run toggle in the top-right */}
-          <div className="flex items-center gap-2 pb-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              <IconLayers size={10} className="text-primary" />
-              Workflow
-            </span>
-            <span className="flex-1" />
-            <span className="max-w-[8rem] truncate font-mono text-[10px] text-muted-foreground/70">
-              preset
-            </span>
-            <AutoRunPill ref={toggleRef} on={state.autoRun} />
-          </div>
-
-          {/* steps: the next runnable one lights up to be clicked */}
-          <div className="flex flex-col gap-1">
-            {RUN_STEPS.map((s, i) => (
-              <RunStepRow
-                key={i}
-                ref={(el) => {
-                  stepRefs.current[i] = el;
-                }}
-                index={i + 1}
-                step={s}
-                status={state.steps[i]}
-              />
-            ))}
-          </div>
-
-          {/* simulated cursor + click ripple */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-0 top-0 z-20 transition-[transform,opacity] duration-[450ms] ease-[cubic-bezier(.4,0,.2,1)]"
-            style={{
-              transform: `translate(${state.cursor.x}px, ${state.cursor.y}px)`,
-              opacity: state.cursorVisible ? 1 : 0,
-            }}
-          >
-            {state.pressing && <span className="press-ring" />}
-            <svg width="16" height="22" viewBox="0 0 14 20" className="drop-shadow-md" aria-hidden>
-              <path
-                d="M1 1 L1 16 L4.8 12.4 L7.6 18.7 L10.1 17.5 L7.3 11.3 L12.6 11.1 Z"
-                fill="white"
-                stroke="oklch(0.2 0.01 255)"
-                strokeWidth="1"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-        </div>
-      </SnapshotFrame>
-    </div>
-  );
-}
 
 const RunStepRow = forwardRef<
   HTMLDivElement,
@@ -2180,196 +2596,5 @@ function PlayIcon({ size = 10 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7z" />
     </svg>
-  );
-}
-
-/* ---------------------------- App layout (hero) ---------------------- */
-
-/* Abstract three-column hero. Reads as the app silhouette, not as a literal
-   screenshot. The deep-dive sections below carry the real detail. Each
-   column gets a label + bracketed hint of what lives there in the product:
-   sessions/agents/scripts on the left, conversation in the middle, the
-   context tabs on the right. No real names, no real prices. */
-export function AppOverviewSnapshot() {
-  return (
-    <SnapshotFrame className="w-full">
-      <div className="flex h-7 items-center gap-1.5 border-b border-border-soft bg-[oklch(0.22_0.006_255)] px-3">
-        <span className="h-2.5 w-2.5 rounded-full bg-danger/70" aria-hidden />
-        <span className="h-2.5 w-2.5 rounded-full bg-warning/70" aria-hidden />
-        <span className="h-2.5 w-2.5 rounded-full bg-success/70" aria-hidden />
-        <span className="ml-auto text-[10px] text-muted-foreground/60">Goodboy</span>
-      </div>
-      <div className="grid h-[420px] grid-cols-1 sm:grid-cols-[1fr_1.4fr_1fr]">
-        <LayoutColumn
-          eyebrow="Sessions"
-          tag="rail + detail"
-          hint="Every task you've got running, with its branch, agents and PR, in one rail."
-          body={<SessionsAbstract />}
-          tone="primary"
-        />
-        <LayoutColumn
-          eyebrow="Conversation"
-          tag="chat + composer"
-          hint="The chat, with whichever agent is talking right now. Hand the turn to another one without losing the thread."
-          body={<ConversationAbstract />}
-          tone="emerald"
-          accent
-        />
-        <LayoutColumn
-          eyebrow="Context"
-          tag="five tabs"
-          hint="Goal, plans, files, the PR, a click each. Your open questions stay pinned so nothing slips."
-          body={<ContextAbstract />}
-          tone="info"
-        />
-      </div>
-    </SnapshotFrame>
-  );
-}
-
-const COLUMN_TONE = {
-  primary: { eyebrow: 'text-primary', dot: 'bg-primary' },
-  emerald: { eyebrow: 'text-success', dot: 'bg-success' },
-  info: { eyebrow: 'text-info', dot: 'bg-info' },
-} as const;
-
-function LayoutColumn({
-  eyebrow,
-  tag,
-  hint,
-  body,
-  tone,
-  accent,
-}: {
-  eyebrow: string;
-  tag: string;
-  hint: string;
-  body: ReactNode;
-  tone: keyof typeof COLUMN_TONE;
-  accent?: boolean;
-}) {
-  const t = COLUMN_TONE[tone];
-  return (
-    <div
-      className={[
-        'flex min-h-0 flex-col gap-3 border-r border-border-soft/60 px-4 py-4 last:border-r-0',
-        accent ? 'bg-[oklch(0.26_0.006_255)]' : 'bg-[oklch(0.24_0.006_255)]',
-      ].join(' ')}
-    >
-      <div className="flex items-center gap-1.5">
-        <span aria-hidden className={['size-1.5 rounded-full', t.dot].join(' ')} />
-        <span
-          className={['text-[10px] font-semibold uppercase tracking-[0.10em]', t.eyebrow].join(' ')}
-        >
-          {eyebrow}
-        </span>
-        <span className="ml-auto font-mono text-[9.5px] text-muted-foreground/60">{tag}</span>
-      </div>
-      <p className="max-w-[28ch] text-[11.5px] leading-relaxed text-muted-foreground">{hint}</p>
-      <div className="mt-1 flex-1">{body}</div>
-    </div>
-  );
-}
-
-function AbstractBar({
-  width = 'w-3/4',
-  tone = 'bg-muted-foreground/30',
-  className,
-}: {
-  width?: string;
-  tone?: string;
-  className?: string;
-}) {
-  return <span className={['block h-1.5 rounded-full', width, tone, className].join(' ')} />;
-}
-
-const SESSIONS_ABSTRACT: ReadonlyArray<{ readonly dot: string; readonly glow: boolean }> = [
-  { dot: 'bg-sky-400/80', glow: true },
-  { dot: 'bg-violet-400/80', glow: false },
-  { dot: 'bg-orange-400/80', glow: false },
-  { dot: 'bg-emerald-400/80', glow: false },
-];
-
-function SessionsAbstract() {
-  return (
-    <div className="flex flex-col gap-2.5">
-      {SESSIONS_ABSTRACT.map((card, i) => (
-        <div
-          key={i}
-          className={[
-            'flex items-center gap-2.5 rounded-md border px-2.5 py-2',
-            card.glow ? 'border-primary/40 bg-primary/5' : 'border-border-soft/60 bg-subtle/60',
-          ].join(' ')}
-        >
-          <span className={['size-3 shrink-0 rounded-full', card.dot].join(' ')} aria-hidden />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <AbstractBar width="w-full" tone="bg-muted-foreground/40" />
-            <AbstractBar width="w-2/3" tone="bg-muted-foreground/20" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ConversationAbstract() {
-  return (
-    <div className="flex flex-col gap-4">
-      {/* user bubble right */}
-      <div className="ml-auto w-3/4 rounded-2xl rounded-br-md bg-primary/15 px-3 py-2">
-        <AbstractBar width="w-full" tone="bg-foreground/30" />
-        <span className="mt-1.5 block">
-          <AbstractBar width="w-2/3" tone="bg-foreground/20" />
-        </span>
-      </div>
-      {/* agent reply left */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 shrink-0 rounded-full bg-emerald-400/80" aria-hidden />
-          <AbstractBar width="w-20" tone="bg-foreground/30" />
-        </div>
-        <AbstractBar width="w-full" tone="bg-foreground/25" />
-        <AbstractBar width="w-11/12" tone="bg-foreground/25" />
-        <AbstractBar width="w-3/4" tone="bg-foreground/25" />
-      </div>
-      {/* composer chip */}
-      <div className="mt-auto rounded-xl border border-border-soft bg-[oklch(0.22_0.006_255)] px-3 py-2.5">
-        <p className="text-[10.5px] text-muted-foreground/60">$ ~ @ /</p>
-      </div>
-    </div>
-  );
-}
-
-function ContextAbstract() {
-  return (
-    <div className="flex flex-col gap-2">
-      {/* tab strip */}
-      <div className="flex items-center gap-1">
-        {['Ctx', 'Plans', 'Files', 'GH', 'Term'].map((t, i) => (
-          <span
-            key={t}
-            className={[
-              'rounded px-1.5 py-1 text-[9px] font-medium',
-              i === 0 ? 'bg-muted text-foreground' : 'text-muted-foreground/60',
-            ].join(' ')}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-      {/* slot cards abstract */}
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-md border border-border-soft bg-subtle p-2">
-          <AbstractBar width="w-12" tone="bg-muted-foreground/40" className="mb-1.5" />
-          <AbstractBar width="w-full" tone="bg-foreground/25" className="mb-1" />
-          <AbstractBar width="w-3/4" tone="bg-foreground/20" />
-        </div>
-      ))}
-      {/* open questions pin */}
-      <div className="mt-auto flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2 py-1.5 text-[10px] text-warning">
-        <IconHelp size={10} />
-        <span>1 open question</span>
-      </div>
-    </div>
   );
 }
