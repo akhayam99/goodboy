@@ -26,12 +26,12 @@ afterEach(cleanup);
 
 describe('PermissionModePicker', () => {
   it('shows the current mode label as trigger', () => {
-    render(<PermissionModePicker session={makeSession()} />);
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     expect(screen.getByText('Default')).toBeDefined();
   });
 
   it('opens a dialog with all 4 mode options when clicked', () => {
-    render(<PermissionModePicker session={makeSession()} />);
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     fireEvent.click(screen.getByRole('button', { name: /default/i }));
     expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
     expect(screen.getByText('Bypass')).toBeDefined();
@@ -40,10 +40,25 @@ describe('PermissionModePicker', () => {
   });
 
   it('updates session mode when a different option is picked', () => {
-    render(<PermissionModePicker session={makeSession()} />);
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     fireEvent.click(screen.getByRole('button', { name: /default/i }));
     fireEvent.click(screen.getByText('Edits'));
     expect(setModeMock).toHaveBeenCalledWith('sess-1', 'acceptEdits');
+  });
+
+  it.each(['cursor', 'gemini'] as const)(
+    'flags that the mode is not enforced for %s',
+    (provider) => {
+      render(<PermissionModePicker session={makeSession()} activeProvider={provider} />);
+      fireEvent.click(screen.getByRole('button', { name: /default/i }));
+      expect(screen.getByText(/not enforced for cursor and gemini/i)).toBeDefined();
+    },
+  );
+
+  it.each(['anthropic', 'codex'] as const)('does not flag enforcement for %s', (provider) => {
+    render(<PermissionModePicker session={makeSession()} activeProvider={provider} />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    expect(screen.queryByText(/not enforced for cursor and gemini/i)).toBeNull();
   });
 });
 
