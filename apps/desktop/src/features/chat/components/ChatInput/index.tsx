@@ -1135,7 +1135,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           <Divider />
           <div className="flex items-center justify-between gap-2 px-2.5 py-2">
             <div className="flex items-center gap-2">
-              <PermissionModePicker session={session} />
+              <PermissionModePicker session={session} activeProvider={effectiveProvider} />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}

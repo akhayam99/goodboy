@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { ClaudePermissionMode, Session } from '@goodboy/types';
+import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+
+const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 
 interface ModeMeta {
   readonly value: ClaudePermissionMode;
@@ -49,13 +51,15 @@ export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
 
 interface Props {
   readonly session: Session;
+  readonly activeProvider: ProviderId;
 }
 
-export function PermissionModePicker({ session }: Props) {
+export function PermissionModePicker({ session, activeProvider }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
   const current = permissionModeMeta(session.permissionMode);
+  const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
 
   useEffect(() => {
     if (!open) return;
@@ -89,7 +93,7 @@ export function PermissionModePicker({ session }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        title={current.description}
+        title={unenforced ? 'Not enforced for cursor and gemini' : current.description}
         aria-haspopup="dialog"
         aria-expanded={open}
         className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-0.5 text-xs transition-colors hover:bg-muted"
@@ -140,6 +144,11 @@ export function PermissionModePicker({ session }: Props) {
               </button>
             );
           })}
+          {unenforced ? (
+            <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground/80">
+              Not enforced for cursor and gemini.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
