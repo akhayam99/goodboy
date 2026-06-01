@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Cpu, DollarSign, FileDown, FolderCode, Keyboard, Link2, Trash2 } from 'lucide-react';
+import { DollarSign, FileDown, FolderCode, Keyboard, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input, KbdPill } from '@goodboy/ui';
-import { ProvidersPanel } from '../../../../features/providers/components/ProvidersPanel';
 import { BudgetRulesPanel } from '../../../../features/budget/components/BudgetRulesPanel';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
@@ -21,14 +20,7 @@ interface Props {
   initialSection?: string;
 }
 
-type NavSection =
-  | 'app'
-  | 'shortcuts'
-  | 'providers'
-  | 'budget'
-  | 'integrations'
-  | 'initialization'
-  | 'advanced';
+type NavSection = 'app' | 'shortcuts' | 'budget' | 'integrations' | 'initialization' | 'advanced';
 
 interface NavItem {
   id: NavSection;
@@ -42,7 +34,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} aria-hidden /> },
-  { id: 'providers', label: 'Providers', icon: <Cpu size={14} aria-hidden /> },
   ...(SESSION_FEATURES.budget
     ? [
         {
@@ -62,7 +53,6 @@ function isNavSection(value: string | undefined): value is NavSection {
   return (
     value === 'app' ||
     value === 'shortcuts' ||
-    value === 'providers' ||
     value === 'budget' ||
     value === 'integrations' ||
     value === 'initialization' ||
@@ -101,7 +91,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
   const importConfig = useAppStore((s) => s.importConfig);
   const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
 
-  const [activeSection, setActiveSection] = useState<NavSection>('providers');
+  const [activeSection, setActiveSection] = useState<NavSection>('app');
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -219,8 +209,6 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
             </ul>
           </div>
         );
-      case 'providers':
-        return <ProvidersPanel />;
       case 'budget':
         return <BudgetRulesPanel />;
       case 'integrations':

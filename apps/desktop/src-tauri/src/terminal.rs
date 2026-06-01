@@ -9,10 +9,6 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
-// ---------------------------------------------------------------------------
-// PTY session slot
-// ---------------------------------------------------------------------------
-
 struct TerminalSession {
     writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
@@ -34,10 +30,6 @@ struct TerminalExitPayload {
     exit_code: i32,
 }
 
-// ---------------------------------------------------------------------------
-// Registry — one shell per session
-// ---------------------------------------------------------------------------
-
 type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 
 #[derive(Default)]
@@ -48,10 +40,6 @@ impl TerminalRegistry {
         Self::default()
     }
 }
-
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, thiserror::Error)]
 pub enum TerminalError {
@@ -85,14 +73,36 @@ impl TerminalError {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Command — open (idempotent) an interactive bash session
-// ---------------------------------------------------------------------------
+fn login_shell() -> String {
+    if let Ok(shell) = std::env::var("SHELL") {
+        let shell = shell.trim();
+        if !shell.is_empty() && std::path::Path::new(shell).exists() {
+            return shell.to_string();
+        }
+    }
+    for candidate in shell_fallbacks() {
+        if std::path::Path::new(candidate).exists() {
+            return (*candidate).to_string();
+        }
+    }
+    "/bin/sh".to_string()
+}
 
-/// Spawns `bash -l -i` in a pty keyed by `session_id`. Idempotent: if a live
-/// shell already exists for this session the command is a no-op. Output
-/// streams as `terminal-output` events (base64). `terminal-exit` fires when
-/// the shell dies.
+#[cfg(target_os = "macos")]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/zsh", "/bin/bash"]
+}
+
+#[cfg(target_os = "linux")]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/bash", "/bin/zsh"]
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn shell_fallbacks() -> &'static [&'static str] {
+    &["/bin/sh"]
+}
+
 #[tauri::command]
 pub async fn terminal_open(
     app: AppHandle,
@@ -102,7 +112,6 @@ pub async fn terminal_open(
     cols: u16,
     rows: u16,
 ) -> Result<(), TerminalError> {
-    // Idempotent: if slot exists and child is alive, return.
     {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
         if let Some(slot) = map.get(&session_id) {
@@ -127,24 +136,22 @@ pub async fn terminal_open(
             })
             .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("/bin/bash");
+        let shell = login_shell();
+        let mut cmd = CommandBuilder::new(&shell);
         cmd.arg("-l");
         cmd.arg("-i");
 
-        let effective_cwd = cwd.unwrap_or_else(|| {
-            std::env::var("HOME").unwrap_or_else(|_| "/".to_string())
-        });
+        let effective_cwd =
+            cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
         cmd.cwd(&effective_cwd);
+
+        for (key, value) in std::env::vars() {
+            cmd.env(key, value);
+        }
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
-
-        if let Ok(home) = std::env::var("HOME") {
-            cmd.env("HOME", home);
-        }
-        if let Ok(user) = std::env::var("USER") {
-            cmd.env("USER", user);
-        }
-        cmd.env("SHELL", "/bin/bash");
+        cmd.env("COLORTERM", "truecolor");
+        cmd.env("SHELL", &shell);
 
         let child = pair
             .slave
@@ -204,7 +211,7 @@ pub async fn terminal_open(
                     let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
                     g.as_mut()
                         .and_then(|r| r.child.wait().ok())
-                        .map(|s| if s.success() { 0_i32 } else { 1_i32 })
+                        .map(|s| s.exit_code() as i32)
                         .unwrap_or(-1)
                 } else {
                     -1
@@ -230,10 +237,6 @@ pub async fn terminal_open(
     .map_err(|e| TerminalError::Io(e.to_string()))?
 }
 
-// ---------------------------------------------------------------------------
-// Command — send keyboard input to a terminal session
-// ---------------------------------------------------------------------------
-
 #[tauri::command]
 pub fn terminal_write(
     registry: State<'_, TerminalRegistry>,
@@ -258,10 +261,6 @@ pub fn terminal_write(
     }
     Ok(())
 }
-
-// ---------------------------------------------------------------------------
-// Command — resize the pty window
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub fn terminal_resize(
@@ -290,12 +289,6 @@ pub fn terminal_resize(
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// Command — close/kill a terminal session
-// ---------------------------------------------------------------------------
-
-/// Kills the shell child and removes it from the registry. Dropping the master
-/// sends SIGHUP to the pty process group, cleaning up descendants.
 #[tauri::command]
 pub fn terminal_close(
     registry: State<'_, TerminalRegistry>,
@@ -309,9 +302,23 @@ pub fn terminal_close(
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
                 let _ = session.child.kill();
-                // Dropping session.master sends SIGHUP to the pty process group.
             }
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn login_shell_returns_existing_executable() {
+        let shell = login_shell();
+        assert!(
+            std::path::Path::new(&shell).exists(),
+            "login_shell must return an existing path, got: {}",
+            shell
+        );
+    }
 }

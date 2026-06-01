@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Play,
+  Plug,
   Plus,
   Settings,
   Sparkles,
@@ -100,6 +101,7 @@ interface WorkspacesSidebarProps {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenProviders: () => void;
   onOpenGithub: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
@@ -116,6 +118,7 @@ export function WorkspacesSidebar({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenProviders,
   onOpenGithub,
   collapsed = false,
   onToggleCollapse,
@@ -191,14 +194,12 @@ export function WorkspacesSidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* workspace select */}
       <div className="shrink-0">
         <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
       </div>
 
       <Divider />
 
-      {/* unified master-detail card, sessions rail + selected-session detail */}
       <div className="flex min-h-0 flex-1">
         {currentWorkspace ? (
           (() => {
@@ -222,12 +223,10 @@ export function WorkspacesSidebar({
                     onArchivedTabOpen={onArchivedTabOpen}
                   />
                 </div>
-                {/* Inset hairline divider between rail and detail. */}
                 <div
                   aria-hidden
                   className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
                 />
-                {/* selected-session detail */}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
@@ -264,13 +263,13 @@ export function WorkspacesSidebar({
           onOpenPalette={onOpenPalette}
           onOpenWorkflows={onOpenWorkflows}
           onOpenLinear={onOpenLinear}
+          onOpenProviders={onOpenProviders}
           onOpenGithub={onOpenGithub}
           linearEnabled={hasLinear}
           skillsEnabled={WORKSPACE_FEATURES.skills}
         />
       ) : null}
 
-      {/* sidebar footer, logo + onboarding chip + controls */}
       <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
         <SidebarLogo />
         <div className="flex-1" />
@@ -357,9 +356,6 @@ export function WorkspacesSidebar({
   );
 }
 
-// Collapsed left sidebar, a minimal rail (just an expand affordance), the
-// left-side mirror of the ContextPanel's collapsed state. The rail width is
-// fixed by AppShell's LEFT_RAIL_WIDTH.
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
   // Logo pinned top, expand control pinned bottom, the expand button holds
   // the same bottom slot it occupies in the expanded sidebar's footer, so it
@@ -384,6 +380,7 @@ function QuickActionsRow({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenProviders,
   onOpenGithub,
   linearEnabled,
   skillsEnabled,
@@ -391,15 +388,19 @@ function QuickActionsRow({
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenProviders: () => void;
   onOpenGithub: () => void;
   linearEnabled: boolean;
   skillsEnabled: boolean;
 }) {
+  const noProviderConnected = useAppStore(
+    (s) => !s.providers.some((p) => p.connection === 'connected'),
+  );
   return (
     <div className="flex shrink-0 items-center gap-1 px-2.5 pt-2">
       {skillsEnabled ? (
         <QuickAction
-          icon={<Sparkles size={12} aria-hidden />}
+          icon={<Sparkles size={12} className="text-warning" aria-hidden />}
           label="Skills"
           onClick={() => onOpenPalette('/')}
         />
@@ -407,12 +408,17 @@ function QuickActionsRow({
       {/* Single entry point to the global Workflow Studio. Scripts is reachable
           from the composer ($ prefix) and the palette, so it's dropped here. */}
       <QuickAction
-        icon={<Layers size={12} aria-hidden />}
+        icon={<Layers size={12} className="text-primary" aria-hidden />}
         label="Workflows"
         onClick={onOpenWorkflows}
       />
-      {/* Linear Studio: launch sessions straight from assigned issues. Shown
-          only when this workspace has Linear connected. */}
+      <QuickAction
+        icon={<Plug size={12} className="text-info" aria-hidden />}
+        label="Providers"
+        title="connect and manage AI provider accounts"
+        onClick={onOpenProviders}
+        pulse={noProviderConnected}
+      />
       {linearEnabled ? (
         <QuickAction
           icon={
@@ -426,7 +432,7 @@ function QuickActionsRow({
         />
       ) : null}
       <QuickAction
-        icon={<GitPullRequest size={12} aria-hidden />}
+        icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
         label="GitHub"
         title="review and act on pull requests across this workspace"
         onClick={onOpenGithub}
@@ -440,21 +446,28 @@ function QuickAction({
   label,
   title,
   onClick,
+  pulse,
 }: {
   icon: ReactNode;
   label: string;
   title?: string;
   onClick: () => void;
+  pulse?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title ?? `browse ${label.toLowerCase()} in the command palette`}
-      className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border-soft bg-muted/30 py-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
+      className={cn(
+        'flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border px-1.5 py-1.5 text-2xs font-medium transition-colors',
+        pulse
+          ? 'animate-soft-pulse border-info/55 bg-info/5 text-foreground hover:bg-info/10'
+          : 'border-border-soft bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground',
+      )}
     >
       {icon}
-      <span>{label}</span>
+      <span className="min-w-0 truncate">{label}</span>
     </button>
   );
 }
