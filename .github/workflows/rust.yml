@@ -56,12 +56,10 @@ jobs:
       - name: fmt
         working-directory: apps/desktop/src-tauri
         run: cargo fmt --check
-        continue-on-error: true
 
       - name: clippy
         working-directory: apps/desktop/src-tauri
         run: cargo clippy --locked --all-targets -- -D warnings
-        continue-on-error: true
 
       - name: test
         working-directory: apps/desktop/src-tauri
