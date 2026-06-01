@@ -201,6 +201,12 @@ export function extractCommentResolved(assistantText: string): ExtractedCommentR
   return last;
 }
 
+const REVIEW_THREAD_ID_RE = /^PRT_/;
+
+export function isReviewThreadId(threadId: string): boolean {
+  return REVIEW_THREAD_ID_RE.test(threadId);
+}
+
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
 

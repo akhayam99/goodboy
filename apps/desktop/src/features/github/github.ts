@@ -77,6 +77,24 @@ export async function ghPrDiff(
   }
 }
 
+export async function gitPush(
+  cwd: string,
+  branch: string | null,
+  workspaceId?: string,
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  try {
+    const raw = await invoke<RawGhRunResult>('git_push', {
+      cwd,
+      branch: branch ?? undefined,
+      workspaceId,
+    });
+    return { stdout: raw.stdout, stderr: raw.stderr, exitCode: raw.exitCode };
+  } catch (err) {
+    const msg = formatError(err);
+    throw new Error(`git push failed: ${msg}`, { cause: err });
+  }
+}
+
 export async function ghPrsForBranch(
   cwd: string,
   branch: string,

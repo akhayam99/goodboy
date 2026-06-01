@@ -317,11 +317,15 @@ const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>
 }));
 const ghSetTokenSpy = vi.fn();
 const ghClearTokenSpy = vi.fn(async () => undefined);
+const gitPushSpy = vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
+const resolveThreadSpy = vi.fn(async () => undefined);
+const addReplySpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/github/github', () => ({
   ghStatus: ghStatusSpy,
   ghSetToken: ghSetTokenSpy,
   ghClearToken: ghClearTokenSpy,
+  gitPush: gitPushSpy,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
   createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
 }));
@@ -337,8 +341,8 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     getPrForBranch: vi.fn(async () => null),
     fetchPrDetail: vi.fn(async () => null),
     fetchLinkedIssues: vi.fn(async () => []),
-    resolveReviewThread: vi.fn(async () => undefined),
-    addReviewThreadReply: vi.fn(async () => undefined),
+    resolveReviewThread: resolveThreadSpy,
+    addReviewThreadReply: addReplySpy,
     seedWorkflowLibrary: vi.fn(async () => undefined),
   };
 });
@@ -604,6 +608,62 @@ describe('store contract', () => {
       // Should not throw or invoke any refresh paths.
       store.getState().sweepGithub();
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+    });
+
+    it('resolveGithubThread pushes the session branch before replying and resolving', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+      });
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
+      expect(ok).toBe(true);
+      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID);
+      const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0;
+      const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0;
+      expect(pushOrder).toBeGreaterThan(0);
+      expect(replyOrder).toBeGreaterThan(0);
+      expect(pushOrder).toBeLessThan(replyOrder);
+      expect(resolveThreadSpy).toHaveBeenCalled();
+    });
+
+    it('resolveGithubThread leaves the thread open and skips resolve when the push fails', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+      });
+      gitPushSpy.mockResolvedValueOnce({
+        stdout: '',
+        stderr: 'rejected: non-fast-forward',
+        exitCode: 1,
+      });
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
+      expect(ok).toBe(false);
+      expect(addReplySpy).not.toHaveBeenCalled();
+      expect(resolveThreadSpy).not.toHaveBeenCalled();
+    });
+
+    it('resolveGithubThread does not push for a reason-only closure', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+      });
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { reason: 'not applicable' });
+      expect(ok).toBe(true);
+      expect(gitPushSpy).not.toHaveBeenCalled();
+      expect(resolveThreadSpy).toHaveBeenCalled();
     });
   });
 });

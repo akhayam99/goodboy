@@ -9,6 +9,7 @@ import {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  isReviewThreadId,
   mergeIntoSlot,
 } from './extractors';
 
@@ -268,6 +269,19 @@ describe('extractCommentResolved', () => {
       threadId: 'PRT_2',
       commitSha: 'bbb',
     });
+  });
+});
+
+describe('isReviewThreadId', () => {
+  it('accepts github review thread node ids', () => {
+    expect(isReviewThreadId('PRT_kwDOABC123')).toBe(true);
+    expect(isReviewThreadId('PRT_1')).toBe(true);
+  });
+
+  it('rejects local diff comment uuids and other ids', () => {
+    expect(isReviewThreadId('f47ac10b-58cc-4372-a567-0e02b2c3d479')).toBe(false);
+    expect(isReviewThreadId('th-1')).toBe(false);
+    expect(isReviewThreadId('')).toBe(false);
   });
 });
 

@@ -183,6 +183,7 @@ pub fn run() {
       github::gh_set_token,
       github::gh_clear_token,
       github::gh_run,
+      github::git_push,
       github::gh_pr_diff,
       linear::linear_connect,
       linear::linear_disconnect,

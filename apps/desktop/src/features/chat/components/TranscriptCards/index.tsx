@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
 import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
+import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { readAttachment } from '../../turn';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -191,8 +192,9 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   // same corner of the assistant bubble crashes into that primary action
   // on short messages, and copying the marker prose isn't useful anyway.
   // Hide copy when the marker is present.
-  const hasCommentResolvedMarker = COMMENT_RESOLVED_MARKER_RE.test(text);
-  COMMENT_RESOLVED_MARKER_RE.lastIndex = 0;
+  const resolvedMarker = extractCommentResolved(text);
+  const hasCommentResolvedMarker =
+    resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
   return (
     <div className="group relative text-[13px]">
       {hasCommentResolvedMarker ? null : (

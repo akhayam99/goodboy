@@ -31,6 +31,7 @@ export {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  isReviewThreadId,
   isSlotKey,
   mergeIntoSlot,
   removeFromSlot,

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CheckCheck, GitCommit, Loader2, X } from 'lucide-react';
-import { extractCommentResolved } from '@goodboy/core';
+import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -57,7 +57,7 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
     readDismissed(marker?.threadId) ? { kind: 'dismissed' } : { kind: 'idle' },
   );
 
-  if (!marker) return null;
+  if (!marker || !isReviewThreadId(marker.threadId)) return null;
 
   const shaShort = marker.commitSha.slice(0, 7);
 
