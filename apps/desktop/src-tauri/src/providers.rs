@@ -302,13 +302,10 @@ fn extract_codex_identity_from_auth_json() -> Option<String> {
 fn check_claude_auth() -> AuthState {
     match run_auth_command(&["claude", "auth", "status"]) {
         Ok(out) => parse_claude_auth_output(&out.stdout),
-        Err(err) => {
-            eprintln!("[providers] check_claude_auth: command failed: {}", err);
-            AuthState {
-                state: AuthStateKind::Unknown,
-                identity: None,
-            }
-        }
+        Err(_) => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
     }
 }
 
@@ -316,10 +313,6 @@ fn parse_claude_auth_output(output: &str) -> AuthState {
     let value: serde_json::Value = match serde_json::from_str(output) {
         Ok(v) => v,
         Err(_) => {
-            eprintln!(
-                "[providers] parse_claude_auth_output: non-json output (first 120 chars): {}",
-                &output.chars().take(120).collect::<String>()
-            );
             return AuthState {
                 state: AuthStateKind::Unknown,
                 identity: None,
@@ -400,10 +393,6 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
     }
 }
 
-fn codex_debug_enabled() -> bool {
-    std::env::var("GOODBOY_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false)
-}
-
 fn check_codex_auth() -> AuthState {
     // Subcommand layout shifted across codex versions; try most recent first.
     let candidates: &[&[&str]] = &[
@@ -413,34 +402,15 @@ fn check_codex_auth() -> AuthState {
         &["codex", "whoami"],
         &["codex", "status"],
     ];
-    let debug = codex_debug_enabled();
     for cmd in candidates {
-        if debug {
-            eprintln!("[codex-debug] auth cmd: {:?}", cmd);
-        }
-        let result = run_auth_command(cmd);
-        match result {
-            Ok(out) => {
-                if debug {
-                    eprintln!(
-                        "[codex-debug] auth ok stdout={:?} stderr={:?}",
-                        out.stdout, out.stderr
-                    );
-                }
-                let text = out.primary_text();
-                if text.trim().is_empty() {
-                    continue;
-                }
-                return parse_codex_auth_output(text);
+        if let Ok(out) = run_auth_command(cmd) {
+            let text = out.primary_text();
+            if text.trim().is_empty() {
+                continue;
             }
-            Err(err) => {
-                if debug {
-                    eprintln!("[codex-debug] auth err {:?}: {}", cmd, err);
-                }
-            }
+            return parse_codex_auth_output(text);
         }
     }
-    eprintln!("[providers] check_codex_auth: all auth subcommands returned empty");
     AuthState {
         state: AuthStateKind::Unknown,
         identity: None,
@@ -529,10 +499,6 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         };
     }
 
-    eprintln!(
-        "[providers] parse_codex_auth_output: unrecognized verdict line: {:?}",
-        first_line
-    );
     AuthState {
         state: AuthStateKind::Unknown,
         identity: None,

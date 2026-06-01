@@ -240,16 +240,6 @@ pub(crate) fn spawn_one(
     registry: &ChildRegistry,
     args: SpawnOneArgs<'_>,
 ) -> Result<String, TurnError> {
-    if args.permission_mode == "bypassPermissions"
-        && args.allowed_tools.is_empty()
-        && args.disallowed_tools.is_empty()
-    {
-        eprintln!(
-            "[spawn_one] permission_mode=bypassPermissions with no rules — \
-             relying on claude CLI native bypass; --dangerously-skip-permissions intentionally not set"
-        );
-    }
-
     let mut command = crate::path_env::command(args.binary);
     command
         .current_dir(args.working_dir)
@@ -266,15 +256,6 @@ pub(crate) fn spawn_one(
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
         command.arg(a);
-    }
-
-    let codex_debug = args.binary == "codex"
-        && std::env::var("GOODBOY_DEBUG_CODEX").map(|v| !v.is_empty()).unwrap_or(false);
-    if codex_debug {
-        eprintln!(
-            "[codex-debug] turn args binary={:?} cwd={:?} cli_args={:?}",
-            args.binary, args.working_dir, cli_args
-        );
     }
 
     let mut child = command
@@ -311,14 +292,6 @@ pub(crate) fn spawn_one(
         forward_lines(&app_clone, &run_id_owned, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
-        if codex_debug {
-            eprintln!(
-                "[codex-debug] turn exit={:?} stderr_bytes={} stderr_tail={:?}",
-                exit_code,
-                stderr_buf.len(),
-                stderr_buf.lines().rev().take(5).collect::<Vec<_>>(),
-            );
-        }
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
