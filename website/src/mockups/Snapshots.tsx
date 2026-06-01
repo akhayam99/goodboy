@@ -17,8 +17,7 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { forwardRef, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
-import { useInView } from '../components/Reveal';
+import { forwardRef, useState, type ReactNode } from 'react';
 import {
   IconArrowDown,
   IconArrowUp,
@@ -37,6 +36,7 @@ import {
 } from '../components/Icons';
 import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar';
 import { KIND, KindBadge, SnapshotFrame, FrameHeader } from './primitives';
+import { useAutoplay, SimCursor, type Beat } from './autoplay';
 
 /* ---------------------------- Sessions -------------------------------- */
 
@@ -114,11 +114,85 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
    chip. No "ACTIVE SESSION / Status / Branch / PR / Spend" label-value list:
    that's marketing UI, not product UI.
 */
+interface SessionRun {
+  steps: StepStatus[];
+  autoRun: boolean;
+  prOpen: boolean;
+  cost: number;
+}
+
+type SessionAction =
+  | { type: 'start'; i: number }
+  | { type: 'finish'; i: number }
+  | { type: 'auto' };
+
+const SESSION_COST_AT = [0.04, 0.16, 0.3, 0.34];
+
+const SESSION_INITIAL: SessionRun = {
+  steps: ['actionable', 'future', 'future', 'future'],
+  autoRun: false,
+  prOpen: false,
+  cost: 0,
+};
+
+const SESSION_STATIC: SessionRun = {
+  steps: ['done', 'done', 'running', 'actionable'],
+  autoRun: true,
+  prOpen: false,
+  cost: 0.3,
+};
+
+function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun {
+  switch (action.type) {
+    case 'start':
+      return { ...state, steps: state.steps.map((v, i) => (i === action.i ? 'running' : v)) };
+    case 'finish':
+      return {
+        ...state,
+        steps: state.steps.map((v, i) =>
+          i === action.i ? 'done' : i === action.i + 1 && v === 'future' ? 'actionable' : v,
+        ),
+        cost: SESSION_COST_AT[action.i] ?? state.cost,
+        prOpen: action.i >= 3 ? true : state.prOpen,
+      };
+    case 'auto':
+      return { ...state, autoRun: true };
+    default:
+      return state;
+  }
+}
+
+const SESSION_SCRIPT: ReadonlyArray<Beat<SessionAction>> = [
+  { d: 800, kind: 'move', to: 'step-0' },
+  { d: 560, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'start', i: 0 } },
+  { d: 1500, kind: 'act', act: { type: 'finish', i: 0 } },
+  { d: 660, kind: 'move', to: 'step-1' },
+  { d: 520, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'start', i: 1 } },
+  { d: 1500, kind: 'act', act: { type: 'finish', i: 1 } },
+  { d: 680, kind: 'move', to: 'toggle' },
+  { d: 520, kind: 'press' },
+  { d: 240, kind: 'act', act: { type: 'auto' } },
+  { d: 520, kind: 'move', to: null },
+  { d: 460, kind: 'act', act: { type: 'start', i: 2 } },
+  { d: 1400, kind: 'act', act: { type: 'finish', i: 2 } },
+  { d: 540, kind: 'act', act: { type: 'start', i: 3 } },
+  { d: 1400, kind: 'act', act: { type: 'finish', i: 3 } },
+  { d: 2400, kind: 'reset' },
+];
+
 export function SessionsSnapshot() {
+  const { state, cursor, stageRef, registerTarget } = useAutoplay({
+    initial: SESSION_INITIAL,
+    reducer: sessionRunReducer,
+    script: SESSION_SCRIPT,
+    staticState: SESSION_STATIC,
+  });
+
   return (
     <SnapshotFrame className="max-w-[460px]">
       <div className="flex">
-        {/* w-28 rail */}
         <div className="flex w-[112px] shrink-0 flex-col gap-1 p-1.5">
           <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -137,15 +211,12 @@ export function SessionsSnapshot() {
           ))}
         </div>
 
-        {/* hairline divider, exactly like the real WorkspacesSidebar. */}
         <div
           aria-hidden
           className="my-1 ml-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
         />
 
-        {/* detail panel: header + agents + footer (mirror SessionDetailPanel) */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* header: status icon + title + linear chip + overflow menu */}
           <div className="flex shrink-0 items-center gap-2 px-3 pt-3 pb-2">
             <span
               aria-hidden
@@ -165,156 +236,61 @@ export function SessionsSnapshot() {
               AUTH-142
             </a>
             <span
-              className="relative inline-flex shrink-0 items-center text-muted-foreground/80"
+              className="inline-flex shrink-0 items-center rounded p-0.5 text-muted-foreground/80"
               title="session actions"
             >
-              <span className="rounded bg-foreground/10 p-0.5">
-                <DotsVerticalIcon size={13} />
-              </span>
-              <SessionActionsMenu />
+              <DotsVerticalIcon size={13} />
             </span>
           </div>
 
-          {/* agent rows */}
-          <div className="flex flex-col gap-1.5 px-3 pb-1">
-            <AgentRow
-              num={1}
-              kind="scout"
-              name="locate auth surface"
-              tokensIn="1.2k"
-              tokensOut="240"
-              turns={3}
-              cost="$0.04"
-              age="14m"
-            />
-            <AgentRow
-              num={2}
-              kind="plan"
-              name="design reset flow"
-              tokensIn="3.1k"
-              tokensOut="890"
-              turns={5}
-              cost="$0.12"
-              age="6m"
-            />
-            <AgentRow
-              num={3}
-              kind="imple"
-              name="build endpoint + email"
-              tokensIn="4.5k"
-              tokensOut="1.1k"
-              turns={9}
-              cost="$0.18"
-              age="48s"
-              running
-              selected
-            />
+          <div ref={stageRef} className="relative px-3 pb-1">
+            <div className="flex items-center gap-2 pb-2">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <IconLayers size={10} className="text-primary" />
+                Workflow
+              </span>
+              <span className="flex-1" />
+              <span className="max-w-[8rem] truncate font-mono text-[10px] text-muted-foreground/70">
+                preset
+              </span>
+              <AutoRunPill ref={registerTarget('toggle')} on={state.autoRun} />
+            </div>
+            <div className="flex flex-col gap-1">
+              {RUN_STEPS.map((s, i) => (
+                <RunStepRow
+                  key={i}
+                  ref={registerTarget(`step-${i}`)}
+                  index={i + 1}
+                  step={s}
+                  status={state.steps[i]}
+                />
+              ))}
+            </div>
+            <SimCursor cursor={cursor} />
           </div>
 
-          {/* footer: branch chip + PR chip + cost chip */}
           <div className="mt-auto flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-3">
             <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md border border-border-soft bg-muted/30 px-2 py-1 font-mono text-[10px] text-foreground/80">
               <IconBranch size={10} aria-hidden className="shrink-0 text-muted-foreground" />
               <span className="truncate">ak/password-reset</span>
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
-              <span className="size-1.5 rounded-full bg-success" aria-hidden />
-              PR #214
-            </span>
+            {state.prOpen ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-1 font-mono text-[10px] text-success">
+                <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                PR #214
+              </span>
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft/60 bg-muted/20 px-1.5 py-1 font-mono text-[10px] text-muted-foreground/60">
+                no PR yet
+              </span>
+            )}
             <span className="ml-auto inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-[10px] tabular-nums text-success">
-              $0.34
+              ${state.cost.toFixed(2)}
             </span>
           </div>
         </div>
       </div>
     </SnapshotFrame>
-  );
-}
-
-/* Action menu mock that hangs below the ⋮ trigger in the session detail
-   header. Mirrors apps/desktop/src/shared/components/OverflowMenu items as
-   wired from SessionDetailPanel: detected editors first, scripts next, then
-   settings + end session. Renders open so the reader sees what is collapsed
-   behind the dots in the real product. */
-function SessionActionsMenu() {
-  return (
-    <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-md border border-border bg-muted text-[10.5px] shadow-lg">
-      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        Open in editor
-      </p>
-      <MenuItem
-        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
-        label="Cursor"
-      />
-      <MenuItem
-        icon={<IconFolder size={10} className="text-muted-foreground/70" />}
-        label="VS Code"
-      />
-      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
-      <p className="px-2.5 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-        Run script
-      </p>
-      <MenuItem
-        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
-        label="copy environments"
-      />
-      <MenuItem
-        icon={<IconTerminal size={10} className="text-muted-foreground/70" />}
-        label="deploy preview"
-      />
-      <div className="my-0.5 h-px bg-border-soft" aria-hidden />
-      <MenuItem icon={<DotsVerticalIcon size={10} />} label="Session settings" />
-      <MenuItem
-        icon={<XIcon size={10} className="text-danger/90" />}
-        label="End session"
-        hint="⌘."
-        destructive
-      />
-    </div>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  hint,
-  destructive,
-}: {
-  icon: ReactNode;
-  label: string;
-  hint?: string;
-  destructive?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'flex items-center gap-2 px-2.5 py-1.5',
-        destructive ? 'text-danger/90' : 'text-foreground/85',
-      ].join(' ')}
-    >
-      <span className="shrink-0">{icon}</span>
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {hint ? <kbd className="font-mono text-[9px] text-muted-foreground/70">{hint}</kbd> : null}
-    </div>
-  );
-}
-
-function XIcon({ size = 10, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className={className}
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
   );
 }
 
@@ -435,80 +411,6 @@ function LinearIdChip({ id }: { id: string }) {
     >
       {id}
     </span>
-  );
-}
-
-function AgentRow({
-  num,
-  kind,
-  name,
-  tokensIn,
-  tokensOut,
-  turns,
-  cost,
-  age,
-  running,
-  selected,
-}: {
-  num: number;
-  kind: keyof typeof KIND;
-  name: string;
-  tokensIn: string;
-  tokensOut: string;
-  turns: number;
-  cost: string;
-  age: string;
-  running?: boolean;
-  selected?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        'group flex flex-col gap-1 rounded border px-2 py-1.5 transition-colors',
-        selected
-          ? running
-            ? 'spin-border-info border-transparent bg-elevated'
-            : 'border-border bg-elevated'
-          : 'border-transparent bg-muted/40',
-      ].join(' ')}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60"
-        >
-          {num}.
-        </span>
-        <KindBadge kind={kind} />
-        <span className="min-w-0 flex-1 truncate text-[11.5px] text-foreground">{name}</span>
-      </div>
-      <div className="flex items-center gap-1.5 whitespace-nowrap pl-6 text-[10px] tabular-nums text-muted-foreground/80">
-        <span className="inline-flex items-baseline gap-0.5">
-          <span aria-hidden className="text-muted-foreground/60">
-            ↓
-          </span>
-          {tokensIn}
-        </span>
-        <span className="inline-flex items-baseline gap-0.5">
-          <span aria-hidden className="text-muted-foreground/60">
-            ↑
-          </span>
-          {tokensOut}
-        </span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span>{turns}t</span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span className="font-mono">{cost}</span>
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        <span className="font-mono text-muted-foreground/80">{age}</span>
-      </div>
-    </div>
   );
 }
 
@@ -1693,17 +1595,6 @@ function BranchMark() {
   return <IconBranch size={13} className="text-primary" />;
 }
 
-/* ---------------------------- Workflow run (animated) ---------------- */
-
-/* Self-playing demo of the Plans & Workflows feature, mirroring the desktop
-   WorkspacesSidebar AgentsSection 1:1. There is no generic "run" button: the
-   next runnable step lights up (primary border + a pinging play dot) to invite
-   a click. A simulated cursor clicks that lit step; it runs (info spinner),
-   then settles done (green check) and the following step lights up. Partway
-   through, the cursor flips the Auto-run toggle in the header's top-right (the
-   real Zap control) and the remaining steps advance on their own. Loops while
-   in view; collapses to a static mid-run frame under reduced motion.
-   Illustrative only: the controls carry no handlers, the timeline drives all. */
 const RUN_STEPS = [
   { kind: 'scout' as const, name: 'Locate auth surface', model: 'haiku-4-5' },
   { kind: 'plan' as const, name: 'Draft reset flow + endpoints', model: 'opus-4-7' },
@@ -1714,234 +1605,6 @@ const RUN_STEPS = [
 /* Mirrors the desktop step statuses: a future step waits on its predecessors,
    the next step is `actionable` (lit, clickable), then `running`, then `done`. */
 type StepStatus = 'future' | 'actionable' | 'running' | 'done';
-
-interface RunState {
-  steps: StepStatus[];
-  autoRun: boolean;
-  cursor: { x: number; y: number };
-  cursorVisible: boolean;
-  pressing: boolean;
-}
-
-type RunAction =
-  | { type: 'cursor'; pos: { x: number; y: number } | null }
-  | { type: 'hide' }
-  | { type: 'press' }
-  | { type: 'start'; i: number }
-  | { type: 'finish'; i: number }
-  | { type: 'auto' }
-  | { type: 'reset' }
-  | { type: 'static' };
-
-const RUN_INITIAL: RunState = {
-  steps: ['actionable', 'future', 'future', 'future'],
-  autoRun: false,
-  cursor: { x: 24, y: 24 },
-  cursorVisible: false,
-  pressing: false,
-};
-
-function runReducer(s: RunState, a: RunAction): RunState {
-  switch (a.type) {
-    case 'cursor':
-      return a.pos
-        ? { ...s, cursor: a.pos, cursorVisible: true, pressing: false }
-        : { ...s, cursorVisible: false, pressing: false };
-    case 'hide':
-      return { ...s, cursorVisible: false, pressing: false };
-    case 'press':
-      return { ...s, pressing: true };
-    case 'start':
-      return { ...s, pressing: false, steps: s.steps.map((v, i) => (i === a.i ? 'running' : v)) };
-    case 'finish':
-      // Completing a step unlocks the next one, exactly like the real stepper.
-      return {
-        ...s,
-        pressing: false,
-        steps: s.steps.map((v, i) =>
-          i === a.i ? 'done' : i === a.i + 1 && v === 'future' ? 'actionable' : v,
-        ),
-      };
-    case 'auto':
-      return { ...s, pressing: false, autoRun: true };
-    case 'reset':
-      return RUN_INITIAL;
-    case 'static':
-      return {
-        steps: ['done', 'running', 'actionable', 'future'],
-        autoRun: true,
-        cursor: { x: 24, y: 24 },
-        cursorVisible: false,
-        pressing: false,
-      };
-    default:
-      return s;
-  }
-}
-
-/* Playback timeline: each beat waits `d` ms, then applies its action; the
-   driver loops back to the top after the final reset. Cursor targets are a
-   step index (the lit row) or the auto-run toggle. */
-type Beat =
-  | { t: 'cursor'; to: number | 'toggle' }
-  | { t: 'hide' }
-  | { t: 'press' }
-  | { t: 'start'; i: number }
-  | { t: 'finish'; i: number }
-  | { t: 'auto' }
-  | { t: 'reset' };
-
-const RUN_SCRIPT: ReadonlyArray<{ d: number; a: Beat }> = [
-  { d: 800, a: { t: 'cursor', to: 0 } },
-  { d: 560, a: { t: 'press' } },
-  { d: 240, a: { t: 'start', i: 0 } },
-  { d: 1500, a: { t: 'finish', i: 0 } },
-  { d: 660, a: { t: 'cursor', to: 1 } },
-  { d: 520, a: { t: 'press' } },
-  { d: 240, a: { t: 'start', i: 1 } },
-  { d: 1500, a: { t: 'finish', i: 1 } },
-  { d: 680, a: { t: 'cursor', to: 'toggle' } },
-  { d: 520, a: { t: 'press' } },
-  { d: 240, a: { t: 'auto' } },
-  { d: 520, a: { t: 'hide' } },
-  { d: 460, a: { t: 'start', i: 2 } },
-  { d: 1400, a: { t: 'finish', i: 2 } },
-  { d: 540, a: { t: 'start', i: 3 } },
-  { d: 1400, a: { t: 'finish', i: 3 } },
-  { d: 2400, a: { t: 'reset' } },
-];
-
-export function WorkflowRunSnapshot() {
-  const [state, dispatch] = useReducer(runReducer, RUN_INITIAL);
-  const { ref: inViewRef, inView } = useInView<HTMLDivElement>();
-  const stageRef = useRef<HTMLDivElement>(null);
-  const stepRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!inView) return;
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      dispatch({ type: 'static' });
-      return;
-    }
-
-    const pointTo = (el: HTMLElement | null) => {
-      const stage = stageRef.current;
-      if (!stage || !el) return null;
-      const sr = stage.getBoundingClientRect();
-      const er = el.getBoundingClientRect();
-      return { x: er.left - sr.left + er.width / 2, y: er.top - sr.top + er.height / 2 };
-    };
-
-    let timer: ReturnType<typeof setTimeout>;
-    const apply = (a: Beat) => {
-      switch (a.t) {
-        case 'cursor':
-          dispatch({
-            type: 'cursor',
-            pos: pointTo(a.to === 'toggle' ? toggleRef.current : stepRefs.current[a.to]),
-          });
-          break;
-        case 'hide':
-          dispatch({ type: 'hide' });
-          break;
-        case 'press':
-          dispatch({ type: 'press' });
-          break;
-        case 'start':
-          dispatch({ type: 'start', i: a.i });
-          break;
-        case 'finish':
-          dispatch({ type: 'finish', i: a.i });
-          break;
-        case 'auto':
-          dispatch({ type: 'auto' });
-          break;
-        case 'reset':
-          dispatch({ type: 'reset' });
-          break;
-      }
-    };
-    const run = (i: number) => {
-      timer = setTimeout(() => {
-        apply(RUN_SCRIPT[i].a);
-        run((i + 1) % RUN_SCRIPT.length);
-      }, RUN_SCRIPT[i].d);
-    };
-    run(0);
-    return () => clearTimeout(timer);
-  }, [inView]);
-
-  const done = state.steps.filter((s) => s === 'done').length;
-
-  return (
-    <div ref={inViewRef}>
-      <SnapshotFrame className="max-w-[440px]">
-        <FrameHeader
-          label="Add password reset"
-          right={
-            <span className="font-mono text-[10px] text-muted-foreground/70">
-              <span className="tabular-nums text-foreground/80">{done}</span>/4 done
-            </span>
-          }
-        />
-        <div ref={stageRef} className="relative p-3">
-          {/* workflow header: label + preset, auto-run toggle in the top-right */}
-          <div className="flex items-center gap-2 pb-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              <IconLayers size={10} className="text-primary" />
-              Workflow
-            </span>
-            <span className="flex-1" />
-            <span className="max-w-[8rem] truncate font-mono text-[10px] text-muted-foreground/70">
-              preset
-            </span>
-            <AutoRunPill ref={toggleRef} on={state.autoRun} />
-          </div>
-
-          {/* steps: the next runnable one lights up to be clicked */}
-          <div className="flex flex-col gap-1">
-            {RUN_STEPS.map((s, i) => (
-              <RunStepRow
-                key={i}
-                ref={(el) => {
-                  stepRefs.current[i] = el;
-                }}
-                index={i + 1}
-                step={s}
-                status={state.steps[i]}
-              />
-            ))}
-          </div>
-
-          {/* simulated cursor + click ripple */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-0 top-0 z-20 transition-[transform,opacity] duration-[450ms] ease-[cubic-bezier(.4,0,.2,1)]"
-            style={{
-              transform: `translate(${state.cursor.x}px, ${state.cursor.y}px)`,
-              opacity: state.cursorVisible ? 1 : 0,
-            }}
-          >
-            {state.pressing && <span className="press-ring" />}
-            <svg width="16" height="22" viewBox="0 0 14 20" className="drop-shadow-md" aria-hidden>
-              <path
-                d="M1 1 L1 16 L4.8 12.4 L7.6 18.7 L10.1 17.5 L7.3 11.3 L12.6 11.1 Z"
-                fill="white"
-                stroke="oklch(0.2 0.01 255)"
-                strokeWidth="1"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-        </div>
-      </SnapshotFrame>
-    </div>
-  );
-}
 
 const RunStepRow = forwardRef<
   HTMLDivElement,
