@@ -280,7 +280,7 @@ export function SessionsSnapshot() {
                     step={s}
                     status={state.steps[i]}
                   />
-                  {i === 2 && state.steps[2] === 'running' ? (
+                  {i === 2 ? (
                     <div className="ml-7 flex flex-col gap-1 border-l border-border-soft/60 pl-2.5">
                       {SESSION_CLUSTERS.map((c, ci) => (
                         <ClusterRow key={c} name={c} status={state.clusters[ci]} />
@@ -320,16 +320,27 @@ export function SessionsSnapshot() {
 
 function ClusterRow({ name, status }: { name: string; status: StepStatus }) {
   const done = status === 'done';
+  const running = status === 'running';
   return (
     <div className="flex items-center gap-1.5 text-[10px]">
-      {done ? (
-        <span className="flex size-3 shrink-0 items-center justify-center rounded-full bg-success/20">
-          <IconCheck size={7} className="text-success" />
-        </span>
-      ) : (
-        <RunSpinner size={9} className="text-info" />
-      )}
-      <span className={done ? 'text-foreground/55' : 'text-foreground/85'}>{name}</span>
+      <span className="flex size-3 shrink-0 items-center justify-center">
+        {done ? (
+          <span className="flex size-3 items-center justify-center rounded-full bg-success/20">
+            <IconCheck size={7} className="text-success" />
+          </span>
+        ) : running ? (
+          <RunSpinner size={9} className="text-info" />
+        ) : (
+          <span aria-hidden className="size-1.5 rounded-full bg-muted-foreground/30" />
+        )}
+      </span>
+      <span
+        className={
+          done ? 'text-foreground/55' : running ? 'text-foreground/85' : 'text-muted-foreground/45'
+        }
+      >
+        {name}
+      </span>
       <span className="text-[8.5px] uppercase tracking-wide text-muted-foreground/40">
         subagent
       </span>
@@ -979,19 +990,21 @@ export function ContextSnapshot() {
           {state.tab === 'terminal' ? <TerminalTabBody /> : null}
         </div>
 
-        {state.tab === 'context' && questionCount > 0 ? (
-          <div
-            ref={registerTarget('footer')}
-            className="flex w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
-          >
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <IconHelp size={11} />1 open question
-            </span>
-            <span aria-hidden className="opacity-60">
-              →
-            </span>
-          </div>
-        ) : null}
+        <div className="h-[37px]">
+          {state.tab === 'context' && questionCount > 0 ? (
+            <div
+              ref={registerTarget('footer')}
+              className="flex h-full w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
+            >
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <IconHelp size={11} />1 open question
+              </span>
+              <span aria-hidden className="opacity-60">
+                →
+              </span>
+            </div>
+          ) : null}
+        </div>
 
         <SimCursor cursor={cursor} />
       </div>
@@ -1521,111 +1534,113 @@ export function GithubStudioSnapshot() {
             </span>
           </div>
 
-          {state.tab === 'overview' ? (
-            <div className="px-3 py-3 text-[11px] leading-relaxed text-foreground/80">
-              <p>
-                Adds a password reset flow: a hashed single-use token, the request endpoint, an
-                email template and the reset form. Login UI untouched.
-              </p>
-            </div>
-          ) : null}
-
-          {state.tab === 'checks' ? (
-            <div className="flex flex-col divide-y divide-border-soft/40 px-3">
-              {GH_CHECKS.map((c) => (
-                <div key={c} className="flex items-center gap-2 py-1.5 text-[10.5px]">
-                  <span className="flex size-3.5 items-center justify-center rounded-full bg-success/20">
-                    <IconCheck size={8} className="text-success" />
-                  </span>
-                  <span className="flex-1 text-foreground/80">{c}</span>
-                  <span className="font-mono text-[9.5px] text-muted-foreground/50">passed</span>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {state.tab === 'conversation' ? (
-            <div className="flex flex-col gap-2 px-3 py-2.5">
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span
-                  aria-hidden
-                  className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
-                  style={{ background: 'oklch(0.74 0.15 55)' }}
-                >
-                  C
-                </span>
-                <span className="font-medium text-foreground/80">claude-reviewer</span>
-                <span>on</span>
-                <code className="font-mono text-primary">token.ts:42</code>
-                <span
-                  className={[
-                    'ml-auto rounded-full px-1.5 py-px text-[8.5px] font-semibold',
-                    resolved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
-                  ].join(' ')}
-                >
-                  {resolved ? 'resolved' : 'open'}
-                </span>
+          <div className="min-h-[184px]">
+            {state.tab === 'overview' ? (
+              <div className="px-3 py-3 text-[11px] leading-relaxed text-foreground/80">
+                <p>
+                  Adds a password reset flow: a hashed single-use token, the request endpoint, an
+                  email template and the reset form. Login UI untouched.
+                </p>
               </div>
-              <p className="text-[11px] leading-relaxed text-foreground/85">
-                Hash with <code className="font-mono text-foreground/70">argon2id</code> instead of
-                sha256, the table gets scraped if the DB ever leaks.
-              </p>
+            ) : null}
 
-              {state.phase === 'open' ? (
-                <div className="flex items-center gap-2">
+            {state.tab === 'checks' ? (
+              <div className="flex flex-col divide-y divide-border-soft/40 px-3">
+                {GH_CHECKS.map((c) => (
+                  <div key={c} className="flex items-center gap-2 py-1.5 text-[10.5px]">
+                    <span className="flex size-3.5 items-center justify-center rounded-full bg-success/20">
+                      <IconCheck size={8} className="text-success" />
+                    </span>
+                    <span className="flex-1 text-foreground/80">{c}</span>
+                    <span className="font-mono text-[9.5px] text-muted-foreground/50">passed</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {state.tab === 'conversation' ? (
+              <div className="flex flex-col gap-2 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <span
-                    ref={registerTarget('resolve-btn')}
-                    className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent"
+                    aria-hidden
+                    className="inline-flex size-4 items-center justify-center rounded-full font-mono text-[8.5px] font-semibold text-zinc-950"
+                    style={{ background: 'oklch(0.74 0.15 55)' }}
                   >
-                    <IconSparkles size={10} /> resolve
+                    C
                   </span>
-                  <span className="text-[10px] text-muted-foreground/60">
-                    hands the fix to an agent, replies on the thread
-                  </span>
-                </div>
-              ) : null}
-
-              {state.phase === 'resolving' ? (
-                <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5 text-[10px]">
-                  <span className="inline-flex items-center gap-1 font-semibold text-accent">
-                    <span className="size-2 rounded-sm bg-lime-400" aria-hidden /> Resolve
-                  </span>
-                  <RunSpinner size={10} className="text-accent" />
-                  <span className="text-muted-foreground/70">
-                    reading token.ts, editing, running tests
+                  <span className="font-medium text-foreground/80">claude-reviewer</span>
+                  <span>on</span>
+                  <code className="font-mono text-primary">token.ts:42</code>
+                  <span
+                    className={[
+                      'ml-auto rounded-full px-1.5 py-px text-[8.5px] font-semibold',
+                      resolved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
+                    ].join(' ')}
+                  >
+                    {resolved ? 'resolved' : 'open'}
                   </span>
                 </div>
-              ) : null}
+                <p className="text-[11px] leading-relaxed text-foreground/85">
+                  Hash with <code className="font-mono text-foreground/70">argon2id</code> instead
+                  of sha256, the table gets scraped if the DB ever leaks.
+                </p>
 
-              {state.phase === 'committed' || resolved ? (
-                <div className="flex flex-col gap-1.5 rounded-md border border-success/30 bg-success/5 px-2.5 py-2">
-                  <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-success">
-                    <IconCheck size={11} /> fix committed locally
-                    <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-px font-mono text-[9.5px] text-foreground/80">
-                      <CommitMark /> {GH_SHA}
+                {state.phase === 'open' ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      ref={registerTarget('resolve-btn')}
+                      className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent"
+                    >
+                      <IconSparkles size={10} /> resolve
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      hands the fix to an agent, replies on the thread
                     </span>
                   </div>
-                  {resolved ? (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
-                      <IconCheck size={9} /> conversation resolved
+                ) : null}
+
+                {state.phase === 'resolving' ? (
+                  <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5 text-[10px]">
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                      <span className="size-2 rounded-sm bg-lime-400" aria-hidden /> Resolve
                     </span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground/70">
-                        mark this review conversation as solved on github?
-                      </span>
-                      <span
-                        ref={registerTarget('mark-solved')}
-                        className="ml-auto inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[10px] font-semibold text-zinc-950"
-                      >
-                        Mark as Solved
+                    <RunSpinner size={10} className="text-accent" />
+                    <span className="text-muted-foreground/70">
+                      reading token.ts, editing, running tests
+                    </span>
+                  </div>
+                ) : null}
+
+                {state.phase === 'committed' || resolved ? (
+                  <div className="flex flex-col gap-1.5 rounded-md border border-success/30 bg-success/5 px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-success">
+                      <IconCheck size={11} /> fix committed locally
+                      <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-px font-mono text-[9.5px] text-foreground/80">
+                        <CommitMark /> {GH_SHA}
                       </span>
                     </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                    {resolved ? (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                        <IconCheck size={9} /> conversation resolved
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground/70">
+                          mark this review conversation as solved on github?
+                        </span>
+                        <span
+                          ref={registerTarget('mark-solved')}
+                          className="ml-auto inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[10px] font-semibold text-zinc-950"
+                        >
+                          Mark as Solved
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <SimCursor cursor={cursor} />
@@ -1881,7 +1896,7 @@ export function LinearStudioSnapshot() {
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-[316px] min-w-0 flex-1 flex-col">
           {state.stage === 'detail' ? (
             <LinearDetail launchRef={registerTarget('launch-btn')} />
           ) : null}
@@ -1903,7 +1918,7 @@ export function LinearStudioSnapshot() {
 
 function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
   return (
-    <>
+    <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <span className="font-mono text-[10px] text-muted-foreground">GOOD-214</span>
         <span className="chip bg-muted text-muted-foreground">In progress</span>
@@ -1961,7 +1976,7 @@ function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <span
             aria-hidden
@@ -1976,7 +1991,7 @@ function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
           Launch session →
         </span>
       </div>
-    </>
+    </div>
   );
 }
 
