@@ -941,6 +941,12 @@ const CTX_SCRIPT: ReadonlyArray<Beat<ContextAction>> = [
   { d: 540, kind: 'press' },
   { d: 220, kind: 'act', act: { type: 'editDecision' } },
   { d: 1800, kind: 'act', act: { type: 'commitDecision' } },
+  { d: 760, kind: 'move', to: 'tab-plans' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'plans' } },
+  { d: 1900, kind: 'move', to: 'tab-context' },
+  { d: 480, kind: 'press' },
+  { d: 220, kind: 'act', act: { type: 'tab', tab: 'context' } },
   { d: 820, kind: 'move', to: null },
   { d: 500, kind: 'act', act: { type: 'raiseQuestion' } },
   { d: 720, kind: 'move', to: 'footer' },
@@ -974,6 +980,13 @@ export function ContextSnapshot() {
             icon={t.icon}
             badge={t.key === 'plans' ? 2 : t.key === 'questions' ? questionCount || null : null}
             active={state.tab === t.key}
+            tabRef={
+              t.key === 'plans'
+                ? registerTarget('tab-plans')
+                : t.key === 'context'
+                  ? registerTarget('tab-context')
+                  : undefined
+            }
           />
         ))}
       </div>
@@ -1017,14 +1030,17 @@ function CtxTabButton({
   icon: Icon,
   badge,
   active,
+  tabRef,
 }: {
   label: string;
   icon: typeof IconTarget;
   badge: number | null;
   active: boolean;
+  tabRef?: TargetRef;
 }) {
   return (
     <span
+      ref={tabRef}
       className={[
         'flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
         active ? 'bg-muted text-foreground shadow-sm' : 'text-muted-foreground',
@@ -1279,7 +1295,7 @@ const PLANS_DATA = [
   {
     title: 'Rate-limit transactional mail',
     status: 'consumed' as const,
-    body: 'consumed by build endpoint + email · 3/email/hour, exponential cooldown on abuse',
+    body: 'Consumed by the Implement step. Folded into the endpoint + email work.',
   },
 ];
 
