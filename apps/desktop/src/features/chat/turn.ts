@@ -87,6 +87,8 @@ interface SpawnArgs {
   readonly permissionMode?: ClaudePermissionMode;
   readonly resumeSessionId?: string;
   readonly systemPrompt?: string;
+  readonly apiKeyEnv?: string;
+  readonly credentialId?: string;
 }
 
 type RawTurnEnvelope =
@@ -251,6 +253,8 @@ export interface ParallelSpawnArgs {
   readonly permissionMode?: ClaudePermissionMode;
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
+  readonly apiKeyEnv?: string;
+  readonly credentialId?: string;
 }
 
 /**

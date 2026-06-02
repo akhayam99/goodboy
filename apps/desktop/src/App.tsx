@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { ProviderId, SessionId } from '@goodboy/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
@@ -95,6 +95,7 @@ export function App() {
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
+  const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
@@ -156,7 +157,11 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const handler = () => setProviderStudioOpen(true);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ providerId?: ProviderId }>).detail;
+      setProviderStudioFocus(detail?.providerId ?? null);
+      setProviderStudioOpen(true);
+    };
     window.addEventListener('goodboy:open-provider-studio', handler);
     return () => window.removeEventListener('goodboy:open-provider-studio', handler);
   }, []);
@@ -397,7 +402,10 @@ export function App() {
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
               onOpenLinear={() => setLinearStudioOpen(true)}
-              onOpenProviders={() => setProviderStudioOpen(true)}
+              onOpenProviders={() => {
+                setProviderStudioFocus(null);
+                setProviderStudioOpen(true);
+              }}
               onOpenGithub={() => {
                 setGithubStudioSession(currentSession?.id ?? null);
                 setGithubStudioOpen(true);
@@ -504,6 +512,7 @@ export function App() {
       {providerStudioOpen && currentWorkspace ? (
         <ProviderStudio
           workspaceName={currentWorkspace.name}
+          initialFocus={providerStudioFocus}
           onClose={() => setProviderStudioOpen(false)}
         />
       ) : null}

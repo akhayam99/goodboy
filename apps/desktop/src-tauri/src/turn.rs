@@ -78,6 +78,10 @@ pub struct SpawnArgs {
     // Used to bias planner/implementer/debugger agents toward their role.
     #[serde(default)]
     pub system_prompt: Option<String>,
+    #[serde(default)]
+    pub api_key_env: Option<String>,
+    #[serde(default)]
+    pub credential_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -228,6 +232,8 @@ pub struct SpawnOneArgs<'a> {
     pub disallowed_tools: &'a [String],
     pub resume_session_id: Option<&'a str>,
     pub system_prompt: Option<&'a str>,
+    pub api_key_env: Option<&'a str>,
+    pub credential_id: Option<&'a str>,
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -252,6 +258,12 @@ pub(crate) fn spawn_one(
         .env_remove("CLAUDECODE")
         .env_remove("CLAUDE_CODE_ENTRYPOINT")
         .env_remove("CLAUDE_AGENT_SDK_VERSION");
+
+    if let (Some(env_name), Some(cred_id)) = (args.api_key_env, args.credential_id) {
+        if let Ok(Some(secret)) = crate::secrets::read(&format!("provider_credential.{cred_id}")) {
+            command.env(env_name, secret);
+        }
+    }
 
     let cli_args = build_provider_cli_args(args.binary, &args);
     for a in &cli_args {
@@ -334,6 +346,8 @@ pub fn turn_spawn(
             disallowed_tools: &args.disallowed_tools,
             resume_session_id: args.resume_session_id.as_deref(),
             system_prompt: args.system_prompt.as_deref(),
+            api_key_env: args.api_key_env.as_deref(),
+            credential_id: args.credential_id.as_deref(),
         },
     )
 }
@@ -466,6 +480,8 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            api_key_env: None,
+            credential_id: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -488,6 +504,8 @@ mod tests {
             disallowed_tools: empty,
             resume_session_id: resume,
             system_prompt,
+            api_key_env: None,
+            credential_id: None,
         }
     }
 
@@ -596,6 +614,8 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            api_key_env: None,
+            credential_id: None,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

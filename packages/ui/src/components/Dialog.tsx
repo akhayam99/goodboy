@@ -159,6 +159,9 @@ export function Dialog({
     <dialog
       ref={ref}
       onClick={onBackdropClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') e.stopPropagation();
+      }}
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(

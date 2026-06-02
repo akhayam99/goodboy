@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, Divider } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -15,6 +15,9 @@ import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { openProviderModal } from '../ProviderModalHost';
+import { ProviderCredentialsSection } from './ProviderCredentialsSection';
+import { ProviderBindingsSection } from './ProviderBindingsSection';
+import { SectionHeader } from './SectionHeader';
 
 interface Props {
   readonly info: ProviderInfo | null;
@@ -58,7 +61,7 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-6 py-4">
+      <div className="flex items-center gap-3 px-8 py-4">
         <span
           className="flex size-11 items-center justify-center rounded-xl"
           style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`, color }}
@@ -82,50 +85,63 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
           <RotateCw size={14} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
         </button>
       </div>
+      <Divider />
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-        <p className="mb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Accounts
-        </p>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-8 py-6">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Account" />
+            {inFlight ? (
+              <InFlightCard
+                label={lifecycle.phase}
+                onView={() =>
+                  openProviderModal({ providerId: id, action: lifecycle.action ?? 'install' })
+                }
+              />
+            ) : info.connection === 'error' ? (
+              <ErrorCard
+                message={info.error}
+                onRetry={() => void onRefresh()}
+                retrying={refreshing}
+              />
+            ) : info.connection === 'missing' ? (
+              <EmptyCard
+                icon={Download}
+                title={`${info.label} CLI not installed`}
+                description="Install the CLI to connect an account from Goodboy."
+                ctaLabel={`Install ${info.label}`}
+                onCta={() => openProviderModal({ providerId: id, action: 'install' })}
+              />
+            ) : info.connection === 'connected' ? (
+              <ConnectedAccount
+                identity={info.identity}
+                confirmDisconnect={confirmDisconnect}
+                onReauth={() => openProviderModal({ providerId: id, action: 'login' })}
+                onAskDisconnect={() => setConfirmDisconnect(true)}
+                onCancelDisconnect={() => setConfirmDisconnect(false)}
+                onConfirmDisconnect={() => {
+                  setConfirmDisconnect(false);
+                  void logoutProvider(id);
+                }}
+              />
+            ) : (
+              <EmptyCard
+                icon={LogIn}
+                title="No account connected"
+                description="Sign in to connect an account. Every step runs in the embedded terminal."
+                ctaLabel="Connect account"
+                onCta={() => openProviderModal({ providerId: id, action: 'login' })}
+              />
+            )}
+          </section>
 
-        {inFlight ? (
-          <InFlightCard
-            label={lifecycle.phase}
-            onView={() =>
-              openProviderModal({ providerId: id, action: lifecycle.action ?? 'install' })
-            }
-          />
-        ) : info.connection === 'error' ? (
-          <ErrorCard message={info.error} onRetry={() => void onRefresh()} retrying={refreshing} />
-        ) : info.connection === 'missing' ? (
-          <EmptyCard
-            icon={Download}
-            title={`${info.label} CLI not installed`}
-            description="Install the CLI to connect an account from Goodboy."
-            ctaLabel={`Install ${info.label}`}
-            onCta={() => openProviderModal({ providerId: id, action: 'install' })}
-          />
-        ) : info.connection === 'connected' ? (
-          <ConnectedAccount
-            identity={info.identity}
-            confirmDisconnect={confirmDisconnect}
-            onReauth={() => openProviderModal({ providerId: id, action: 'login' })}
-            onAskDisconnect={() => setConfirmDisconnect(true)}
-            onCancelDisconnect={() => setConfirmDisconnect(false)}
-            onConfirmDisconnect={() => {
-              setConfirmDisconnect(false);
-              void logoutProvider(id);
-            }}
-          />
-        ) : (
-          <EmptyCard
-            icon={LogIn}
-            title="No account connected"
-            description="Sign in to connect an account. Every step runs in the embedded terminal."
-            ctaLabel="Connect account"
-            onCta={() => openProviderModal({ providerId: id, action: 'login' })}
-          />
-        )}
+          {info.connection !== 'missing' ? (
+            <>
+              <ProviderCredentialsSection providerId={id} />
+              <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -147,7 +163,7 @@ function ConnectedAccount({
   readonly onConfirmDisconnect: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-subtle p-4 shadow-sm">
+    <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
       <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden />
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-sm font-medium text-foreground">
@@ -207,7 +223,7 @@ function EmptyCard({
   readonly onCta: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-subtle/50 px-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-10 text-center">
       <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Icon size={18} aria-hidden />
       </span>

@@ -19,3 +19,5 @@ export type PermissionRequestId = string & { readonly __brand: 'PermissionReques
 
 export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' };
 export type WorkspaceIntegrationId = string & { readonly __brand: 'WorkspaceIntegrationId' };
+
+export type CredentialId = string & { readonly __brand: 'CredentialId' };

@@ -93,6 +93,9 @@ export function hydrate(set: SetFn, get: GetFn) {
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 
         set({ bootPhase: 'loading-workspaces' });
+        await get()
+          .loadCredentials()
+          .catch(() => {});
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
         // Hydrate integrations cache for every active workspace so the

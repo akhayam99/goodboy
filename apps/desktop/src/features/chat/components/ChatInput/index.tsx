@@ -524,7 +524,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const onSelectProvider = (id: ProviderId) => {
     if (!connectedProviderIds.includes(id)) {
-      window.dispatchEvent(new CustomEvent('goodboy:open-provider-studio'));
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-provider-studio', { detail: { providerId: id } }),
+      );
       return;
     }
     if (!allowOverride || isRunning) return;

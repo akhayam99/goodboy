@@ -406,6 +406,10 @@ pub struct ParallelSpawnArgs {
     pub allowed_tools: Vec<String>,
     #[serde(default)]
     pub disallowed_tools: Vec<String>,
+    #[serde(default)]
+    pub api_key_env: Option<String>,
+    #[serde(default)]
+    pub credential_id: Option<String>,
 }
 
 /// Spawn N child processes concurrently (one per `ParallelRunSpec`).
@@ -444,6 +448,8 @@ pub fn parallel_agent_spawn(
                 disallowed_tools: &args.disallowed_tools,
                 resume_session_id: None,
                 system_prompt: None,
+                api_key_env: args.api_key_env.as_deref(),
+                credential_id: args.credential_id.as_deref(),
             },
         ) {
             Ok(run_id) => run_ids.push(run_id),

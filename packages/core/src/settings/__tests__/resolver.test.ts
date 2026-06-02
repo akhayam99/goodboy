@@ -18,6 +18,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   defaultBranchPrefix: null,
   parallelEnabled: null,
   defaultVerbosity: null,
+  providerBindings: null,
 };
 
 describe('resolveSettings', () => {
@@ -36,6 +37,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
       defaultVerbosity: 'verbose',
+      providerBindings: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
@@ -52,6 +54,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
       defaultVerbosity: null,
+      providerBindings: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
@@ -68,6 +71,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: false,
       defaultVerbosity: 'verbose',
+      providerBindings: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
@@ -75,6 +79,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: 'sess-prefix',
       parallelEnabled: true,
       defaultVerbosity: null,
+      providerBindings: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -95,6 +100,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: 'ws-prefix',
       parallelEnabled: true,
       defaultVerbosity: 'verbose',
+      providerBindings: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
@@ -102,6 +108,7 @@ describe('resolveSettings', () => {
       defaultBranchPrefix: null,
       parallelEnabled: null,
       defaultVerbosity: null,
+      providerBindings: null,
     };
     const result = resolveSettings({
       global: GLOBAL,

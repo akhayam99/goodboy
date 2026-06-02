@@ -147,6 +147,12 @@ export {
   setSessionOverrides,
 } from './queries/settings-overrides';
 export {
+  listProviderCredentials,
+  insertProviderCredential,
+  renameProviderCredential,
+  deleteProviderCredential,
+} from './queries/provider-credential';
+export {
   getGithubPrCache,
   upsertGithubPrCache,
   deleteGithubPrCache,
