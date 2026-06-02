@@ -682,37 +682,19 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
-      <div
-        className={cn(
-          'relative flex size-28 items-center justify-center rounded-full',
-          agentVisual ? agentVisual.ringBg : 'bg-primary/10 text-primary',
-        )}
-      >
-        <span
-          aria-hidden
-          className={cn(
-            'absolute inset-0 animate-ping rounded-full opacity-50',
-            agentVisual ? agentVisual.pulseBg : 'bg-primary/15',
-          )}
-          style={{ animationDuration: '3.2s' }}
-        />
+      <div className="flex items-center justify-center">
         {agentVisual?.image ? (
-          <span
-            aria-hidden
-            className={cn('relative size-20', agentVisual.tint)}
-            style={{
-              maskImage: `url(${agentVisual.image})`,
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              maskSize: 'contain',
-              WebkitMaskImage: `url(${agentVisual.image})`,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              WebkitMaskSize: 'contain',
-            }}
-          />
+          <MaskedDog image={agentVisual.image} className={cn('size-32', agentVisual.tint)} />
+        ) : scenario === 'pick_agent' ? (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {Object.entries(KIND_ICON).map(([kind, visual]) =>
+              visual.image && kind !== 'generic' ? (
+                <MaskedDog key={kind} image={visual.image} className={cn('size-11', visual.tint)} />
+              ) : null,
+            )}
+          </div>
         ) : (
-          <DogMascot size={46} className="relative" />
+          <DogMascot size={128} className="text-primary" />
         )}
       </div>
       <div className="flex flex-col gap-1.5">
@@ -737,6 +719,25 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
   );
 }
 
+function MaskedDog({ image, className }: { image: string; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn('shrink-0', className)}
+      style={{
+        maskImage: `url(${image})`,
+        maskRepeat: 'no-repeat',
+        maskPosition: 'center',
+        maskSize: 'contain',
+        WebkitMaskImage: `url(${image})`,
+        WebkitMaskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        WebkitMaskSize: 'contain',
+      }}
+    />
+  );
+}
+
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
 interface KindVisual {
@@ -746,64 +747,44 @@ interface KindVisual {
   image: string | null;
   /** Tailwind background colour applied to the masked silhouette. */
   tint: string;
-  ringBg: string;
-  pulseBg: string;
 }
 
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   generic: {
     image: agentGoodboy,
     tint: 'bg-rose-400',
-    ringBg: 'bg-rose-400/10',
-    pulseBg: 'bg-rose-400/15',
   },
   scout: {
     image: agentScout,
     tint: 'bg-sky-400',
-    ringBg: 'bg-sky-400/10',
-    pulseBg: 'bg-sky-400/15',
   },
   planner: {
     image: agentPlanner,
     tint: 'bg-violet-400',
-    ringBg: 'bg-violet-400/10',
-    pulseBg: 'bg-violet-400/15',
   },
   implementer: {
     image: agentImplementer,
     tint: 'bg-emerald-400',
-    ringBg: 'bg-emerald-400/10',
-    pulseBg: 'bg-emerald-400/15',
   },
   debugger: {
     image: agentDebugger,
     tint: 'bg-amber-400',
-    ringBg: 'bg-amber-400/10',
-    pulseBg: 'bg-amber-400/15',
   },
   tester: {
     image: agentTester,
     tint: 'bg-teal-400',
-    ringBg: 'bg-teal-400/10',
-    pulseBg: 'bg-teal-400/15',
   },
   reviewer: {
     image: agentReviewer,
     tint: 'bg-cyan-400',
-    ringBg: 'bg-cyan-400/10',
-    pulseBg: 'bg-cyan-400/15',
   },
   docs: {
     image: agentDocs,
     tint: 'bg-orange-400',
-    ringBg: 'bg-orange-400/10',
-    pulseBg: 'bg-orange-400/15',
   },
   resolver: {
     image: null,
     tint: 'bg-lime-400',
-    ringBg: 'bg-lime-400/10',
-    pulseBg: 'bg-lime-400/15',
   },
 };
 
