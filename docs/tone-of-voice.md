@@ -39,6 +39,9 @@ Two voices in the codebase:
   Em-dashes read as ChatGPT.
 - **One sentence per idea.** Don't chain three clauses with semicolons.
 - **Sentence case** for headings. Not Title Case. Not ALL CAPS.
+- **No trailing period on titles, eyebrows, button labels, or list items.**
+  Body sentences keep theirs. A standalone hero line is the one exception: it
+  can keep its period for the spoken beat ("Stop re-explaining yourself.").
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 
@@ -55,6 +58,32 @@ Two voices in the codebase:
   the next paragraph.
 - **No feature inventory dumps.** Pick the few that matter, write them as
   scenarios, leave the rest in a short list with one line each.
+- **Don't echo the label in its own title.** The eyebrow already said "Workflow
+  Studio", so the title is "Build it once, reuse it forever", not "Build the
+  workflow once". The reader knows the topic. Spend the title on the payoff.
+- **Don't repeat a phrase across sections.** "In one place", then "in one rail",
+  then "all in one place" three sections running reads as a tic. Say the spatial
+  idea once, then vary it. The same goes for the headline's verbs and nouns.
+- **Don't leak internal names.** "Rail", "slice", "turn blob": clear in the
+  codebase, opaque on a landing page. Name what the reader sees on screen, not
+  what we call it in the source.
+- **Phrase titles to scale.** "Turn any issue into a session" outlives "Turn a
+  Linear issue into a session": when the next tracker lands, the headline still
+  holds. Pin the specific integration in the body, not the title.
+- **Thread the headline through the page.** If the hero promises "stop
+  re-explaining yourself", let that line resurface where it pays off, the
+  shared-context section, the founder note. A callback rewards the reader who
+  got that far.
+
+### Layout
+
+- **Put the reassurance next to the action.** "Goodboy is free and open source"
+  belongs right above the Install button, not five lines up. The reader commits
+  at the click, so the proof has to sit where the cursor already is, not in a
+  paragraph they scrolled past.
+- **Keep the sharp word.** "You micromanage which model gets which task" lands
+  harder than "you babysit". Between two true words, take the one with the most
+  edge, never the one that softens it.
 
 ### Honesty
 
@@ -83,7 +112,7 @@ Bad:
 
 Good:
 
-> Every pull request, in one inbox.
+> One inbox for every pull request
 
 ### Feature copy
 
@@ -94,9 +123,8 @@ Bad:
 
 Good:
 
-> Each task goes to the model that fits it, and Goodboy nudges you before you
-> burn Opus on a one-liner. Every session shows what it is costing you as it
-> runs.
+> Each task goes to the right model, and Goodboy gives you a heads-up before you
+> burn Opus on a one-liner. Every session shows its cost in real time.
 
 ### Workflow description
 
@@ -106,10 +134,10 @@ Bad:
 
 Good:
 
-> Refactor incoming? Line up a sequence: a cheap model to scout the area, a
-> smart one to plan it, a mid one to implement, another to review, a cheap one
-> to open the PR. Each step picks its own provider and model, so you're never
-> paying Opus prices to run a grep.
+> Refactor incoming? Set up a sequence: a cheap model to scout, a smart one to
+> plan, a mid one to implement, another to review, and a final one to open the
+> PR. Each step uses the right model, so you're never paying Opus prices to run
+> a grep.
 
 ### Install instructions
 
@@ -120,7 +148,7 @@ Bad:
 Good:
 
 > No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or
-> Gemini you already pay for and you're running on your own machine in a
+> Gemini you already pay for and you'll be running on your own machine in a
 > minute.
 
 ### In-app micro-copy
