@@ -281,7 +281,7 @@ export function SessionsSnapshot() {
                     status={state.steps[i]}
                   />
                   {i === 2 ? (
-                    <div className="ml-7 flex flex-col gap-1 border-l border-border-soft/60 pl-2.5">
+                    <div className="ml-7 flex flex-col gap-1 edge-l pl-2.5">
                       {SESSION_CLUSTERS.map((c, ci) => (
                         <ClusterRow key={c} name={c} status={state.clusters[ci]} />
                       ))}
@@ -775,7 +775,7 @@ export function StudioComposeSnapshot() {
           </div>
         </div>
 
-        <div className="w-[164px] shrink-0 border-l border-border-soft bg-[oklch(0.23_0.006_255)] p-2.5">
+        <div className="w-[164px] shrink-0 edge-l bg-[oklch(0.23_0.006_255)] p-2.5">
           <div className="pb-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Step library
           </div>
@@ -972,7 +972,7 @@ export function ContextSnapshot() {
 
   return (
     <SnapshotFrame className="max-w-[460px]">
-      <div className="flex h-9 items-center gap-0.5 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-2">
+      <div className="flex h-9 items-center gap-0.5 edge-b bg-[oklch(0.27_0.008_255)] px-2">
         {CTX_TABS.map((t) => (
           <CtxTabButton
             key={t.key}
@@ -1007,7 +1007,7 @@ export function ContextSnapshot() {
           {state.tab === 'context' && questionCount > 0 ? (
             <div
               ref={registerTarget('footer')}
-              className="flex h-full w-full items-center justify-between gap-2 border-t border-border-soft bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
+              className="flex h-full w-full items-center justify-between gap-2 edge-t bg-warning/5 px-3 py-2 text-left text-[11px] text-warning"
             >
               <span className="inline-flex items-center gap-1.5 font-medium">
                 <IconHelp size={11} />1 open question
@@ -1469,7 +1469,7 @@ export function GithubStudioSnapshot() {
         }
       />
       <div ref={stageRef} className="relative flex">
-        <div className="w-[176px] shrink-0 space-y-2.5 border-r border-border-soft p-2">
+        <div className="w-[176px] shrink-0 space-y-2.5 edge-r p-2">
           {INBOX_GROUPS.map((g) => (
             <div key={g.label} className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1 px-1 pb-0.5">
@@ -1876,7 +1876,7 @@ export function LinearStudioSnapshot() {
         }
       />
       <div ref={stageRef} className="relative flex">
-        <div className="w-[196px] shrink-0 border-r border-border-soft">
+        <div className="w-[196px] shrink-0 edge-r">
           <div className="px-2 pt-2 pb-1.5">
             <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 text-[10px] text-muted-foreground/60">
               <svg
@@ -1999,7 +1999,7 @@ function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
         the marketing site. Keep the existing login UI untouched.
       </p>
 
-      <div className="space-y-2 border-t border-border-soft/60 bg-subtle/40 px-3 py-2.5">
+      <div className="space-y-2 edge-t bg-subtle/40 px-3 py-2.5">
         <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
           <IconTarget size={10} aria-hidden className="text-primary" /> Goal
         </div>
@@ -2022,7 +2022,7 @@ function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+      <div className="mt-auto flex items-center justify-between gap-2 edge-t bg-primary/5 px-3 py-2 text-[10.5px]">
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <span
             aria-hidden
@@ -2086,7 +2086,7 @@ function LinearPicker({
           </div>
         ))}
       </div>
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft bg-primary/5 px-3 py-2 text-[10.5px]">
+      <div className="mt-auto flex items-center justify-between gap-2 edge-t bg-primary/5 px-3 py-2 text-[10.5px]">
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <span
             aria-hidden
@@ -2298,7 +2298,7 @@ export function AgentRosterSnapshot() {
 export function NewSessionLinearSnapshot() {
   return (
     <SnapshotFrame className="max-w-[560px]">
-      <div className="flex items-start gap-3 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-4 pt-3 pb-3">
+      <div className="flex items-start gap-3 edge-b bg-[oklch(0.27_0.008_255)] px-4 pt-3 pb-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
             New session
@@ -2355,7 +2355,7 @@ export function NewSessionLinearSnapshot() {
         </SectionRow>
 
         {/* Footer */}
-        <div className="-mx-4 -mb-4 mt-1 flex items-center gap-3 border-t border-border-soft bg-[oklch(0.22_0.005_255)] px-4 py-2.5 text-[11px]">
+        <div className="-mx-4 -mb-4 mt-1 flex items-center gap-3 edge-t bg-[oklch(0.22_0.005_255)] px-4 py-2.5 text-[11px]">
           <label className="inline-flex items-center gap-1.5 text-muted-foreground">
             <span className="inline-flex size-3 items-center justify-center rounded-sm border border-primary bg-primary/30">
               <IconCheck size={8} className="text-primary" />

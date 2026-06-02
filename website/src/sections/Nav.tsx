@@ -4,9 +4,9 @@ import { LinkButton } from '../components/ui';
 const links = [
   { href: '#sessions', label: 'Sessions' },
   { href: '#context', label: 'Context' },
-  { href: '#studio', label: 'Workflow Studio' },
-  { href: '#github', label: 'GitHub Studio' },
-  { href: '#linear', label: 'Linear Studio' },
+  { href: '#studio', label: 'Workflow' },
+  { href: '#github', label: 'GitHub' },
+  { href: '#linear', label: 'Linear' },
   { href: '#compare', label: 'Compare' },
 ];
 
@@ -26,7 +26,7 @@ export function Nav() {
             <a
               key={l.href}
               href={l.href}
-              className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+              className="whitespace-nowrap text-[13px] text-muted-foreground transition-colors hover:text-foreground"
             >
               {l.label}
             </a>

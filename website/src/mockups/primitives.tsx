@@ -43,7 +43,7 @@ export function SnapshotFrame({
   return (
     <div
       className={[
-        'relative overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.25_0.006_255)] shadow-md',
+        'relative mx-auto w-full overflow-hidden rounded-xl border border-border-soft bg-[oklch(0.25_0.006_255)] shadow-md',
         className ?? '',
       ].join(' ')}
     >
@@ -54,7 +54,7 @@ export function SnapshotFrame({
 
 export function FrameHeader({ label, right }: { label: string; right?: ReactNode }) {
   return (
-    <div className="flex h-8 items-center justify-between gap-2 border-b border-border-soft bg-[oklch(0.27_0.008_255)] px-3">
+    <div className="flex h-8 items-center justify-between gap-2 edge-b bg-[oklch(0.27_0.008_255)] px-3">
       <span className="text-[10px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
         {label}
       </span>

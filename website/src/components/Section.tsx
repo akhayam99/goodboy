@@ -31,7 +31,7 @@ export function Section({
         <div
           className={`grid items-center gap-14 lg:grid-cols-2 lg:gap-20 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}
         >
-          <div className="reveal min-w-0 max-w-lg">
+          <div className="reveal mx-auto min-w-0 max-w-lg lg:mx-0">
             <Eyebrow>{eyebrow}</Eyebrow>
             <SectionTitle>{title}</SectionTitle>
             <div className="mt-5 max-w-prose text-pretty text-[16px] leading-[1.65] text-muted-foreground sm:text-[17px]">

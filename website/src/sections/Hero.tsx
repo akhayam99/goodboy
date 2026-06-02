@@ -1,4 +1,5 @@
 import { DogMascot } from '../components/DogMascot';
+import { ProviderMarquee } from '../components/ProviderMarquee';
 import { LinkButton } from '../components/ui';
 
 function GitHubGlyph() {
@@ -14,13 +15,13 @@ export function Hero() {
     <section className="relative overflow-hidden pt-12 pb-20 sm:pt-16 sm:pb-24">
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="rise inline-flex items-center gap-2 text-[22px] font-semibold tracking-tight text-foreground">
-            <DogMascot size={30} className="text-primary" />
+          <div className="rise inline-flex items-center gap-2.5 text-[26px] font-semibold tracking-tight text-foreground">
+            <DogMascot size={34} className="text-primary" />
             <span>Goodboy</span>
           </div>
 
           <h1
-            className="rise mt-6 text-balance text-[42px] font-semibold leading-[1.02] tracking-[-0.035em] sm:text-[64px] lg:text-[72px]"
+            className="rise mt-6 text-balance text-[40px] font-semibold leading-[1.02] tracking-[-0.035em] sm:text-[58px] lg:text-[64px]"
             style={{ animationDelay: '60ms' }}
           >
             <span className="text-gradient">Stop re-explaining</span>
@@ -30,21 +31,51 @@ export function Hero() {
 
           <p
             className="rise mx-auto mt-6 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
-            style={{ animationDelay: '120ms' }}
+            style={{ animationDelay: '110ms' }}
           >
             Run Claude, Cursor, Codex and Gemini in one local workspace.
           </p>
+
+          <div className="rise mt-8" style={{ animationDelay: '150ms' }}>
+            <ProviderMarquee />
+          </div>
+
           <p
-            className="rise mx-auto mt-3 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
-            style={{ animationDelay: '160ms' }}
+            className="rise mx-auto mt-8 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
+            style={{ animationDelay: '180ms' }}
           >
             They share the same goal, plan and context, so the next agent picks up right where the
             last left off.
           </p>
 
           <div
-            className="rise mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            style={{ animationDelay: '180ms' }}
+            className="rise mt-8 flex flex-col items-center gap-3 pointer-fine:hidden"
+            style={{ animationDelay: '210ms' }}
+          >
+            <div className="flex w-full max-w-xs flex-col items-center gap-1.5">
+              <LinkButton
+                href="https://github.com/akhayam99/goodboy"
+                target="_blank"
+                rel="noreferrer"
+                size="lg"
+                variant="primary"
+                className="w-full"
+              >
+                <GitHubGlyph />
+                Star on GitHub
+              </LinkButton>
+              <p className="text-[12px] text-muted-foreground/75">
+                Save the repo for later, install on your Mac.
+              </p>
+            </div>
+            <LinkButton href="#cta" size="lg" variant="ghost">
+              How to install
+            </LinkButton>
+          </div>
+
+          <div
+            className="rise mt-8 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row"
+            style={{ animationDelay: '210ms' }}
           >
             <LinkButton href="#cta" size="lg" variant="primary">
               Install
@@ -62,10 +93,10 @@ export function Hero() {
           </div>
 
           <p
-            className="rise mt-5 text-[12.5px] text-muted-foreground/75"
+            className="rise mt-5 hidden text-[12.5px] text-muted-foreground/75 pointer-fine:block"
             style={{ animationDelay: '240ms' }}
           >
-            Free &amp; open source &middot; macOS &middot; bring your own subscription
+            Free and open source. Runs on macOS with the AI plans you already pay for.
           </p>
         </div>
       </div>

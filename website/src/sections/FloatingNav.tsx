@@ -4,9 +4,9 @@ import { DogMascot } from '../components/DogMascot';
 const links = [
   { href: '#sessions', label: 'Sessions' },
   { href: '#context', label: 'Context' },
-  { href: '#studio', label: 'Workflow Studio' },
-  { href: '#github', label: 'GitHub Studio' },
-  { href: '#linear', label: 'Linear Studio' },
+  { href: '#studio', label: 'Workflow' },
+  { href: '#github', label: 'GitHub' },
+  { href: '#linear', label: 'Linear' },
   { href: '#compare', label: 'Compare' },
 ];
 
@@ -43,7 +43,7 @@ export function FloatingNav() {
         className={[
           'flex items-center gap-1 rounded-full border border-border-soft bg-background/85 px-1.5 py-1.5 shadow-lg backdrop-blur-md',
           // The pill scales the gap on wide viewports so the labels can breathe.
-          'sm:gap-2 sm:px-2',
+          'md:gap-2 md:px-2',
         ].join(' ')}
       >
         <a
@@ -54,9 +54,9 @@ export function FloatingNav() {
           <DogMascot size={18} />
         </a>
 
-        <span aria-hidden className="hidden h-4 w-px bg-border-soft sm:block" />
+        <span aria-hidden className="hidden h-4 w-px bg-border-soft md:block" />
 
-        <div className="hidden items-center gap-0.5 sm:flex">
+        <div className="hidden items-center gap-0.5 md:flex">
           {links.map((l) => (
             <a
               key={l.href}
@@ -68,7 +68,7 @@ export function FloatingNav() {
           ))}
         </div>
 
-        <span aria-hidden className="hidden h-4 w-px bg-border-soft sm:block" />
+        <span aria-hidden className="hidden h-4 w-px bg-border-soft md:block" />
 
         <a
           href="https://github.com/akhayam99/goodboy"
