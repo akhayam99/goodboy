@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Divider } from '@goodboy/ui';
-import { Plug } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
+import { ProviderStudioIcon } from '../brand-icons';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -34,7 +34,7 @@ export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) 
 
   return (
     <StudioShell
-      icon={Plug}
+      icon={ProviderStudioIcon}
       title="Provider Studio"
       workspaceName={workspaceName}
       closeLabel="close provider studio"
