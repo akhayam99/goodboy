@@ -7,22 +7,22 @@ import { DogMascot } from '.';
 afterEach(cleanup);
 
 describe('DogMascot', () => {
-  it('renders an svg with the default size of 16', () => {
+  it('renders with the default size of 16', () => {
     const { container } = render(<DogMascot />);
-    const svg = container.querySelector('svg');
-    expect(svg).not.toBeNull();
-    expect(svg?.getAttribute('width')).toBe('16');
-    expect(svg?.getAttribute('height')).toBe('16');
+    const el = container.firstElementChild as HTMLElement | null;
+    expect(el).not.toBeNull();
+    expect(el?.style.width).toBe('16px');
+    expect(el?.style.height).toBe('16px');
   });
 
   it('honors a custom size', () => {
     const { container } = render(<DogMascot size={32} />);
-    const svg = container.querySelector('svg');
-    expect(svg?.getAttribute('width')).toBe('32');
+    const el = container.firstElementChild as HTMLElement | null;
+    expect(el?.style.width).toBe('32px');
   });
 
   it('is decorative (aria-hidden)', () => {
     const { container } = render(<DogMascot />);
-    expect(container.querySelector('svg[aria-hidden]')).not.toBeNull();
+    expect(container.querySelector('[aria-hidden]')).not.toBeNull();
   });
 });

@@ -695,7 +695,7 @@ function AppLayoutPreview() {
 function EmptyStateLogo() {
   return (
     <div className="relative">
-      <div className="absolute -inset-6 animate-pulse rounded-full bg-primary/10 blur-2xl" />
+      <div className="absolute -inset-6 rounded-full bg-primary/10 blur-2xl" />
       <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
         <DogMascot size={56} className="text-foreground" />
       </div>

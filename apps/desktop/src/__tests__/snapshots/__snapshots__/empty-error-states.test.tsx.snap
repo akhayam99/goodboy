@@ -570,25 +570,11 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
     <span
       class="flex items-center gap-1.5"
     >
-      <svg
+      <span
         aria-hidden="true"
-        class="shrink-0 text-foreground"
-        fill="currentColor"
-        height="16"
-        viewBox="0 0 24 24"
-        width="16"
-      >
-        <path
-          d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
-        />
-        <path
-          d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
-        />
-        <path
-          d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
-          fill-rule="evenodd"
-        />
-      </svg>
+        class="inline-block shrink-0 text-foreground"
+        style="width: 16px; height: 16px; background-color: currentcolor;"
+      />
       <span
         class="text-xs font-semibold tracking-tight text-foreground"
       >
@@ -872,25 +858,11 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
         class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
         style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
       >
-        <svg
+        <span
           aria-hidden="true"
-          class="text-primary motion-safe:animate-pulse"
-          fill="currentColor"
-          height="52"
-          viewBox="0 0 24 24"
-          width="52"
-        >
-          <path
-            d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
-          />
-          <path
-            d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
-          />
-          <path
-            d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
-            fill-rule="evenodd"
-          />
-        </svg>
+          class="inline-block shrink-0 text-primary motion-safe:animate-pulse"
+          style="width: 52px; height: 52px; background-color: currentcolor;"
+        />
       </div>
     </div>
     <div
@@ -976,25 +948,11 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
         class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
         style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
       >
-        <svg
+        <span
           aria-hidden="true"
-          class="text-primary motion-safe:animate-pulse"
-          fill="currentColor"
-          height="52"
-          viewBox="0 0 24 24"
-          width="52"
-        >
-          <path
-            d="M9 8.5Q4.3 7.7 3 11.5Q2.5 15.5 4.8 17.3Q6.8 18.2 7.2 15.3Q6.7 12.5 6.3 10.3Q6 8.9 9 8.5Z"
-          />
-          <path
-            d="M15 8.5Q19.7 7.7 21 11.5Q21.5 15.5 19.2 17.3Q17.2 18.2 16.8 15.3Q17.3 12.5 17.7 10.3Q18 8.9 15 8.5Z"
-          />
-          <path
-            d="M7.5 13a4.5 5.1 0 1 0 9 0a4.5 5.1 0 1 0-9 0ZM9.3 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM12.5 12a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0ZM10.7 14.4Q12 16.2 13.3 14.4Q12 13.7 10.7 14.4Z"
-            fill-rule="evenodd"
-          />
-        </svg>
+          class="inline-block shrink-0 text-primary motion-safe:animate-pulse"
+          style="width: 52px; height: 52px; background-color: currentcolor;"
+        />
       </div>
     </div>
     <div
