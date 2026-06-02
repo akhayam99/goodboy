@@ -49,7 +49,32 @@ export function Hero() {
           </p>
 
           <div
-            className="rise mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            className="rise mt-8 flex flex-col items-center gap-3 pointer-fine:hidden"
+            style={{ animationDelay: '210ms' }}
+          >
+            <div className="flex w-full max-w-xs flex-col items-center gap-1.5">
+              <LinkButton
+                href="https://github.com/akhayam99/goodboy"
+                target="_blank"
+                rel="noreferrer"
+                size="lg"
+                variant="primary"
+                className="w-full"
+              >
+                <GitHubGlyph />
+                Star on GitHub
+              </LinkButton>
+              <p className="text-[12px] text-muted-foreground/75">
+                Save the repo for later, install on your Mac.
+              </p>
+            </div>
+            <LinkButton href="#cta" size="lg" variant="ghost">
+              How to install
+            </LinkButton>
+          </div>
+
+          <div
+            className="rise mt-8 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row"
             style={{ animationDelay: '210ms' }}
           >
             <LinkButton href="#cta" size="lg" variant="primary">
@@ -68,7 +93,7 @@ export function Hero() {
           </div>
 
           <p
-            className="rise mt-5 text-[12.5px] text-muted-foreground/75"
+            className="rise mt-5 hidden text-[12.5px] text-muted-foreground/75 pointer-fine:block"
             style={{ animationDelay: '240ms' }}
           >
             Free and open source. Runs on macOS with the AI plans you already pay for.

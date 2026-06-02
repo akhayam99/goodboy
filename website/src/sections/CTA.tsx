@@ -69,7 +69,43 @@ export function CTA() {
           pay for and you&apos;re running on your own machine in a minute.
         </p>
 
-        <div className="mx-auto mt-11 max-w-lg">
+        <div className="mx-auto mt-11 max-w-lg pointer-fine:hidden">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            When you&apos;re on your Mac
+          </p>
+          <code className="mt-2.5 block overflow-x-auto whitespace-nowrap rounded-lg border border-border-soft bg-[oklch(0.22_0.007_255)] px-4 py-2.5 text-left font-mono text-[12.5px] text-foreground">
+            {brewLine}
+          </code>
+          <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
+            Or grab the .dmg from the GitHub releases.
+          </p>
+          <div className="mt-7 flex flex-col items-center gap-3">
+            <LinkButton
+              href="https://github.com/akhayam99/goodboy"
+              target="_blank"
+              rel="noreferrer"
+              size="lg"
+              variant="primary"
+              className="w-full max-w-xs"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+                <path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.32c-2.23.48-2.7-1.07-2.7-1.07-.37-.93-.9-1.18-.9-1.18-.73-.5.06-.49.06-.49.81.06 1.24.83 1.24.83.72 1.23 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.96 0-.87.3-1.59.83-2.15-.08-.2-.36-1.02.08-2.13 0 0 .67-.22 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.82 1.28.82 2.15 0 3.08-1.87 3.76-3.65 3.96.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z" />
+              </svg>
+              Star on GitHub
+            </LinkButton>
+            <LinkButton
+              href="https://github.com/akhayam99/goodboy/blob/main/README.md"
+              target="_blank"
+              rel="noreferrer"
+              size="lg"
+              variant="ghost"
+            >
+              Read the docs
+            </LinkButton>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-11 hidden max-w-lg pointer-fine:block">
           {/* macOS: the primary path. dmg.direct → straight to the file; the
               fallback releases page opens in a new tab. */}
           <LinkButton
@@ -114,7 +150,7 @@ export function CTA() {
           </div>
         </div>
 
-        <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-11 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row">
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"

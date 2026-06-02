@@ -173,6 +173,43 @@ body,
   );
 }
 
+.edge-t,
+.edge-b,
+.edge-l,
+.edge-r {
+  position: relative;
+}
+.edge-t::after,
+.edge-b::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border-soft), transparent);
+}
+.edge-t::after {
+  top: 0;
+}
+.edge-b::after {
+  bottom: 0;
+}
+.edge-l::after,
+.edge-r::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--color-border-soft), transparent);
+}
+.edge-l::after {
+  left: 0;
+}
+.edge-r::after {
+  right: 0;
+}
+
 /* Letter-set typography. Used only inside the founder note. */
 .letter {
   font-family: var(--font-serif);
