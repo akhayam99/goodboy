@@ -6,17 +6,16 @@ export function StudioDeepDive() {
     <Section
       id="studio"
       eyebrow="03 · Workflow Studio"
-      title={<>Build the flow once. Reuse it forever.</>}
+      title={<>Build it once, reuse it forever</>}
       body={
         <>
           <p>
-            Refactor incoming? Line up a sequence: a cheap model to scout the area, a smart one to
-            plan it, a mid one to implement, another to review, a cheap one to open the PR. Each
-            step picks its own provider and model, so you&apos;re never paying Opus prices to run a
-            grep.
+            Refactor incoming? Set up a sequence: a cheap model to scout, a smart one to plan, a mid
+            one to implement, another to review, and a final one to open the PR. Each step uses the
+            right model, so you&apos;re never paying Opus prices to run a grep.
           </p>
           <p className="mt-4">
-            Don&apos;t like that flow? Drag the steps around, swap the models, save it as your own.
+            Don&apos;t like that flow? Drag the steps around, swap models, and save it as your own.
           </p>
         </>
       }

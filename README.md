@@ -14,7 +14,6 @@ a local SQLite on your machine. Your keys, your data, your bandwidth.
 
 <img width="3972" height="2234" alt="CleanShot 2026-06-02 at 04 59 56@2x" src="https://github.com/user-attachments/assets/45ed6f2d-f22a-4c6a-9278-ee4cddc7533c" />
 
-
 ## Why it exists
 
 Switching between `Claude`, `Codex`, `Cursor` and `Gemini` ten times a day was
@@ -32,7 +31,7 @@ hand when the agents get it wrong. The next agent shows up already briefed.
 
 **Provider swap mid-task, without amnesia.** Each turn is rebuilt from the
 shared context, never resumed from a vendor's session blob. Drop Claude
-halfway, hand the same task to Cursor or Codex, watch it pick up clean.
+halfway, hand the same task to Cursor, Codex or Gemini, watch it pick up clean.
 
 **Workflows for the multi-step stuff.** Refactor incoming? Line up a sequence:
 a cheap model to scout the area, a smart one to plan it, a mid one to

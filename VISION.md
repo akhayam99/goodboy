@@ -46,7 +46,7 @@ After each agent turn, the summarizer infers what should happen next: scout (exp
 
 ### Provider routing & balance
 
-Register your AI providers (Anthropic, Cursor, Codex). Set priorities. Set budgets. Goodboy routes work to the right provider automatically.
+Register your AI providers (Anthropic, Cursor, Codex, Gemini). Set priorities. Set budgets. Goodboy routes work to the right provider automatically.
 
 - Provider 1 hits 75% budget → fallback to provider 2.
 - Quick task → fast cheap model. Complex architecture → best available model.

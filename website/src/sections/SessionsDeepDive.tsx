@@ -6,12 +6,12 @@ export function SessionsDeepDive() {
     <Section
       id="sessions"
       eyebrow="01 · Sessions"
-      title={<>Everything you have running, in one rail.</>}
+      title={<>Keep an eye on everything you&apos;re running</>}
       body={
         <p>
-          Each task keeps its own goal, branch, agents and PR, all in one place. One glance and you
-          know what&apos;s working and what&apos;s waiting on you, instead of digging through ten
-          terminal tabs trying to remember where you left each one.
+          Each task has its own goal, branch, agents, and PR all in one place. It&apos;s easy to see
+          what&apos;s working and what needs your attention: no need to dig through multiple tabs to
+          figure out where you left off.
         </p>
       }
     >

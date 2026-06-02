@@ -7,18 +7,18 @@ export function GithubDeepDive() {
       id="github"
       eyebrow="04 · GitHub Studio"
       reverse
-      title={<>Every pull request, in one place.</>}
+      title={<>One inbox for every pull request</>}
       body={
         <>
           <p>
-            Every session&apos;s PR lands in one inbox, sorted by what it needs from you: draft, in
-            review, changes requested, ready to merge. No more digging through github.com to find
-            the one that&apos;s blocking you.
+            Every session&apos;s PR lands in the same inbox, sorted by status: draft, in review,
+            changes requested, ready to merge. Forget about digging through GitHub to find
+            what&apos;s blocking you.
           </p>
           <p className="mt-4">
-            Open one and the conversation, the checks and the reviewers are right there, next to the
-            buttons that mark it ready or squash-merge it. A reviewer leaves a comment? Hand it to
-            an agent and it pushes the fix straight back to the thread.
+            Open one PR and everything is right there: conversation, checks, and reviewers. Merge or
+            squash when it&apos;s ready. A reviewer leaves a comment? Hand it to an agent and the
+            fix goes straight back into the thread.
           </p>
         </>
       }

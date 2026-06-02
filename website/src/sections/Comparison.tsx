@@ -14,20 +14,20 @@ const rows: ReadonlyArray<Row> = [
     goodboy: 'The next agent shows up already briefed',
   },
   {
-    stack: 'Each tool is locked to its own model',
+    stack: 'Each tool is tied to its own model',
     goodboy: 'Claude, Cursor, Codex and Gemini in one session',
   },
   {
-    stack: 'You babysit which model gets which task',
+    stack: 'You micromanage which model gets which task',
     goodboy: 'Goodboy taps your shoulder before you overpay',
   },
   {
-    stack: 'The PR lives in yet another browser tab',
+    stack: 'The PR lives in another browser tab',
     goodboy: 'Every PR sits in one inbox, next to the work',
   },
   {
-    stack: 'Your code and keys ride through someone’s cloud',
-    goodboy: 'Everything runs on your machine. Always',
+    stack: 'Your code and keys move through someone else’s cloud',
+    goodboy: 'Everything runs on your machine, always',
   },
 ];
 
@@ -75,10 +75,10 @@ export function Comparison() {
       <div className="mx-auto max-w-5xl px-6">
         <div className="reveal mb-12 max-w-2xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-            Why a layer, not another tool
+            A layer, not a tool
           </p>
           <h2 className="mt-4 text-pretty text-[30px] sm:text-[40px] leading-[1.12] tracking-[-0.02em] font-semibold text-foreground">
-            A step above the tools you already use.
+            A step above the tools you already use
           </h2>
           <p className="mt-5 max-w-prose text-pretty text-[16px] leading-[1.65] text-muted-foreground sm:text-[17px]">
             Keep your editor, keep your subscriptions. Goodboy doesn&apos;t replace any of it, it

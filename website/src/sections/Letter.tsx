@@ -11,24 +11,24 @@ export function Letter() {
 
         <div className="letter mt-10 space-y-6 text-[19px] text-foreground/90">
           <p>
-            Not too long ago I had three chats open. Claude for plans. Cursor for edits I trusted.
-            Codex when I needed a scaffold. Each one knew a slice of the work. None knew the whole.
+            Not too long ago, I had three chats open. Claude for plans. Cursor for edits. Codex for
+            scaffolding. Each one knew a piece of the work. None had the full picture.
           </p>
           <p>
             I would ship something half-built, then re-paste the goal into the next window because
-            the model that should review it had no idea what we&apos;d decided. By evening I had
-            spent more time re-explaining than building.
+            the model reviewing it had no idea what we&apos;d decided. By evening, I spent more time
+            re-explaining myself than building.
           </p>
           <p>
-            Goodboy is the tool I wanted that week and couldn&apos;t find. It sits above the
-            providers, not in place of them. The context lives outside the chat, so the next agent
-            arrives already briefed. The cost ticks live next to the work. The PR shows up where
-            I&apos;m already looking.
+            Goodboy is the tool I needed in that moment and couldn&apos;t find. It sits above all
+            providers, not in their place. The context lives outside the chat, so the next agent
+            shows up already briefed. Costs update in real time next to your work. The PR lands
+            where I&apos;m already looking.
           </p>
           <p>
-            It is open source because tools you trust to type into your terminal should be yours to
-            read. It is local-first because what runs on your machine stays there. It is opinionated
-            where it had to be, and quiet everywhere else.
+            It is open source because tools you trust in your terminal should be yours to read. It
+            is local-first because what runs on your machine stays there. It is opinionated where it
+            has to be, and quiet everywhere else.
           </p>
           <p>
             If you&apos;ve felt the same, clone it. Tell me what&apos;s broken. We&apos;ll fix it
