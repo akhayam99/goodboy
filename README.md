@@ -12,7 +12,8 @@ then hands them to whichever agent you want to run next. Same brief, same
 memory, different model. Conversation, plans, decisions and PR state stay in
 a local SQLite on your machine. Your keys, your data, your bandwidth.
 
-<img width="3972" height="2234" alt="Goodboy desktop app" src="https://github.com/user-attachments/assets/1d6a4259-e205-4d9a-9fe8-eaf4c486d98d" />
+<img width="3972" height="2234" alt="CleanShot 2026-06-02 at 04 59 56@2x" src="https://github.com/user-attachments/assets/45ed6f2d-f22a-4c6a-9278-ee4cddc7533c" />
+
 
 ## Why it exists
 
