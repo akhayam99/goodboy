@@ -12,12 +12,13 @@ const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 interface Props {
   readonly workspaceName: string;
+  readonly initialFocus?: ProviderId | null;
   readonly onClose: () => void;
 }
 
-export function ProviderStudio({ workspaceName, onClose }: Props) {
+export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) {
   const providers = useAppStore((s) => s.providers);
-  const [focused, setFocused] = useState<ProviderId | null>(null);
+  const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,

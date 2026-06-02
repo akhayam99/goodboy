@@ -1,5 +1,6 @@
 export type {
   AgentId,
+  CredentialId,
   IsoDateTime,
   MessageId,
   OpenQuestionId,
@@ -54,6 +55,9 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
+export { PROVIDER_API_KEY_ENV } from './provider-registry';
+export type { ProviderCredential } from './provider-credential';
+export { CLI_CREDENTIAL } from './provider-credential';
 export type {
   ProviderLifecycleAction,
   ProviderLifecycleCommands,
@@ -91,6 +95,7 @@ export type {
 export type {
   GlobalSettings,
   OverrideSettings,
+  ProviderBindings,
   ResolvedSettings,
   SettingsScope,
   VerbosityLevel,

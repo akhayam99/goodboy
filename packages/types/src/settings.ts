@@ -3,6 +3,8 @@ import type { ProviderId } from './provider-registry';
 
 export type VerbosityLevel = 'brief' | 'normal' | 'verbose';
 
+export type ProviderBindings = Partial<Record<ProviderId, string>>;
+
 /** Fields that can be overridden at workspace or session scope. Null = inherit from parent. */
 export type OverrideSettings = Readonly<{
   defaultProviderId: ProviderId | null;
@@ -10,6 +12,7 @@ export type OverrideSettings = Readonly<{
   defaultBranchPrefix: string | null;
   parallelEnabled: boolean | null;
   defaultVerbosity: VerbosityLevel | null;
+  providerBindings: ProviderBindings | null;
 }>;
 
 /** Fully-resolved settings after applying global → workspace → session cascade. */

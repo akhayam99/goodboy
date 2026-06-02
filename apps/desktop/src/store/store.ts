@@ -38,6 +38,8 @@ import type {
   Workflow,
   WorkflowId,
   ProviderId,
+  ProviderCredential,
+  CredentialId,
   ProviderRunId,
   ResolvedSettings,
   VerbosityLevel,
@@ -102,6 +104,7 @@ import {
 import { createAgentsSlice } from './slices/agents';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
+import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import { createSettingsSlice } from './slices/settings';
 import { createConflictsSlice } from './slices/conflicts';
@@ -183,6 +186,7 @@ export interface AppState extends UpdaterState {
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
+  readonly providerCredentials: ReadonlyArray<ProviderCredential>;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
   readonly error: string | null;
@@ -473,8 +477,21 @@ export interface AppActions {
   ): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
+  setWorkspaceProviderBinding(
+    workspaceId: WorkspaceId,
+    providerId: ProviderId,
+    credentialId: string | null,
+  ): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
   setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
+  loadCredentials(): Promise<void>;
+  createCredential(
+    providerId: ProviderId,
+    label: string,
+    apiKey: string,
+  ): Promise<ProviderCredential>;
+  deleteCredential(id: CredentialId): Promise<void>;
+  renameCredential(id: CredentialId, label: string): Promise<void>;
   setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
@@ -602,6 +619,7 @@ export const initialState: AppState = {
   authResults: null,
   providers: buildProviderList({ anthropic: null, cursor: null, codex: null, gemini: null }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
+  providerCredentials: [],
   hydrated: false,
   bootPhase: 'pending',
   error: null,
@@ -681,6 +699,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAgentsSlice(set, get),
   ...createSlotsSlice(set, get),
   ...createOverridesSlice(set, get),
+  ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
   ...createSettingsSlice(set, get),
   ...createConflictsSlice(set, get),

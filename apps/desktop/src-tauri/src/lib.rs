@@ -11,6 +11,7 @@ mod path_env;
 mod permissions;
 mod planner;
 mod workflows;
+mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
 mod repo;
@@ -101,6 +102,7 @@ pub fn run() {
       providers::get_gemini_status,
       providers::refresh_gemini_status,
       providers::check_provider_auth,
+      provider_credentials::provider_api_key_validate,
       provider_lifecycle::provider_lifecycle_run,
       provider_lifecycle::provider_lifecycle_write,
       provider_lifecycle::provider_lifecycle_resize,

@@ -51,6 +51,7 @@ import type {
   TurnState,
   Workflow,
 } from '@goodboy/types';
+import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
 import { useOpenQuestions } from '../../../features/context/components/QuestionsTab/useOpenQuestions';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
@@ -374,8 +375,16 @@ export function sendTurn(set: SetFn, get: GetFn) {
         ? phaseDefinition.modelOverride
         : (agentKindModel ?? routingDecision.selectedModel);
 
+    const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
+    const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
+    const boundCredentialId = { ...wsBindings, ...sessBindings }[provider];
+    const apiKeyBinding =
+      boundCredentialId && boundCredentialId !== CLI_CREDENTIAL
+        ? { apiKeyEnv: PROVIDER_API_KEY_ENV[provider], credentialId: boundCredentialId }
+        : undefined;
+
     const authState = get().authResults?.[provider] ?? null;
-    if (authState?.state === 'disconnected') {
+    if (authState?.state === 'disconnected' && !apiKeyBinding) {
       const runId = crypto.randomUUID() as ProviderRunId;
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'error',
@@ -642,6 +651,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
             ...(claudeFlags.disallowedTools !== undefined && {
               disallowedTools: claudeFlags.disallowedTools,
             }),
+            ...(apiKeyBinding ?? {}),
             effects,
           },
         );
@@ -794,6 +804,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
         binary: providerInfo?.binary,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
+        ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, sessionId, event);

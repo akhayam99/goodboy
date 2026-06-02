@@ -224,6 +224,8 @@ export interface RunParallelBranchDeps {
   readonly permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
+  readonly apiKeyEnv?: string;
+  readonly credentialId?: string;
   readonly effects: ParallelBranchEffects;
 }
 
@@ -370,6 +372,8 @@ export async function runParallelBranch(
       ...(deps.permissionMode !== undefined && { permissionMode: deps.permissionMode }),
       ...(deps.allowedTools !== undefined && { allowedTools: deps.allowedTools }),
       ...(deps.disallowedTools !== undefined && { disallowedTools: deps.disallowedTools }),
+      ...(deps.apiKeyEnv !== undefined && { apiKeyEnv: deps.apiKeyEnv }),
+      ...(deps.credentialId !== undefined && { credentialId: deps.credentialId }),
     });
   });
 

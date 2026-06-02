@@ -47,6 +47,8 @@ import { m046StepRole } from './m046-step-role';
 import { m047AgentParent } from './m047-agent-parent';
 import { m048PlanClusters } from './m048-plan-clusters';
 import { m049SessionWorkflowDiscard } from './m049-session-workflow-discard';
+import { m050ProviderCredentials } from './m050-provider-credentials';
+import { m051ProviderBindings } from './m051-provider-bindings';
 
 export interface Migration {
   readonly version: number;
@@ -103,4 +105,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 47, sql: m047AgentParent },
   { version: 48, sql: m048PlanClusters },
   { version: 49, sql: m049SessionWorkflowDiscard },
+  { version: 50, sql: m050ProviderCredentials },
+  { version: 51, sql: m051ProviderBindings },
 ];

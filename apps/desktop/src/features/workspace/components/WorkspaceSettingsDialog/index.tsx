@@ -135,6 +135,7 @@ export function WorkspaceSettingsDialog({
         defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
         parallelEnabled: wsOverrides?.parallelEnabled ?? null,
         defaultVerbosity: verbosity,
+        providerBindings: wsOverrides?.providerBindings ?? null,
       };
       await storeSetWorkspaceOverrides(workspaceId, mergedOverrides);
       setSavedVerbosity(verbosity);

@@ -1,5 +1,6 @@
 import type {
   OverrideSettings,
+  ProviderBindings,
   SessionId,
   VerbosityLevel,
   WorkflowId,
@@ -14,6 +15,7 @@ interface WorkspaceOverrideRow {
   default_branch_prefix: string | null;
   parallel_enabled: number | null;
   default_verbosity: string | null;
+  provider_bindings: string | null;
 }
 
 interface SessionOverrideRow {
@@ -21,6 +23,20 @@ interface SessionOverrideRow {
   default_workflow_id: string | null;
   default_branch_prefix: string | null;
   parallel_enabled: number | null;
+  provider_bindings: string | null;
+}
+
+function parseBindings(raw: string | null): ProviderBindings | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ProviderBindings;
+  } catch {
+    return null;
+  }
+}
+
+function serializeBindings(bindings: ProviderBindings | null): string | null {
+  return bindings && Object.keys(bindings).length > 0 ? JSON.stringify(bindings) : null;
 }
 
 function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
@@ -30,6 +46,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     defaultBranchPrefix: row.default_branch_prefix,
     parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
     defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
+    providerBindings: parseBindings(row.provider_bindings),
   };
 }
 
@@ -40,6 +57,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     defaultBranchPrefix: row.default_branch_prefix,
     parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
     defaultVerbosity: null,
+    providerBindings: parseBindings(row.provider_bindings),
   };
 }
 
@@ -48,7 +66,7 @@ export async function getWorkspaceOverrides(
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> {
   const rows = await db.select<WorkspaceOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -68,6 +86,7 @@ export async function setWorkspaceOverrides(
          default_branch_prefix = ?,
          parallel_enabled = ?,
          default_verbosity = ?,
+         provider_bindings = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -76,6 +95,7 @@ export async function setWorkspaceOverrides(
       overrides.defaultBranchPrefix,
       overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
       overrides.defaultVerbosity,
+      serializeBindings(overrides.providerBindings),
       Date.now(),
       workspaceId,
     ],
@@ -87,7 +107,7 @@ export async function getSessionOverrides(
   sessionId: SessionId,
 ): Promise<OverrideSettings | null> {
   const rows = await db.select<SessionOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, provider_bindings
      FROM sessions WHERE id = ?`,
     [sessionId],
   );
@@ -106,6 +126,7 @@ export async function setSessionOverrides(
          default_workflow_id = ?,
          default_branch_prefix = ?,
          parallel_enabled = ?,
+         provider_bindings = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -113,6 +134,7 @@ export async function setSessionOverrides(
       overrides.defaultWorkflowId,
       overrides.defaultBranchPrefix,
       overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
+      serializeBindings(overrides.providerBindings),
       Date.now(),
       sessionId,
     ],
