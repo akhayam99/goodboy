@@ -7,7 +7,7 @@ export function GithubDeepDive() {
       id="github"
       eyebrow="04 · GitHub Studio"
       reverse
-      title={<>Every pull request, in one inbox.</>}
+      title={<>Every pull request, in one place.</>}
       body={
         <>
           <p>

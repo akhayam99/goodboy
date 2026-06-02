@@ -29,7 +29,7 @@ export function Section({
     >
       <div className="mx-auto max-w-6xl px-6">
         <div
-          className={`grid items-center gap-14 lg:grid-cols-2 lg:gap-20 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}
+          className={`grid items-center justify-items-center gap-14 lg:grid-cols-2 lg:justify-items-stretch lg:gap-20 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}
         >
           <div className="reveal min-w-0 max-w-lg">
             <Eyebrow>{eyebrow}</Eyebrow>
