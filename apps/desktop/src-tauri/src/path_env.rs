@@ -37,7 +37,7 @@ pub fn resolved_path() -> &'static str {
 pub fn command(binary: &str) -> Command {
     #[cfg(windows)]
     let mut cmd = match resolve_program(binary) {
-        Some(full) => Command::new(full),
+        Some(full) => batch_aware_command(full),
         None => Command::new(binary),
     };
     #[cfg(not(windows))]
@@ -75,6 +75,52 @@ fn resolve_program(binary: &str) -> Option<std::path::PathBuf> {
         }
         for ext in &exts {
             let candidate = Path::new(dir).join(format!("{}{}", binary, ext));
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+    None
+}
+
+// npm .cmd/.bat shims run the real CLI as `node <cli.js> %*`. Routing args
+// through cmd (which a .cmd inherently does) cannot carry multi-line or some
+// special-char arguments, so a multi-line chat prompt would fail to spawn.
+// Spawn node + the target script directly instead: node.exe takes args the
+// standard way and the CLI sees the identical argv. Falls back to the shim
+// when the script cannot be located.
+#[cfg(windows)]
+fn batch_aware_command(full: std::path::PathBuf) -> Command {
+    let is_batch = matches!(
+        full.extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_ascii_lowercase())
+            .as_deref(),
+        Some("cmd") | Some("bat")
+    );
+    if is_batch {
+        if let Some(js) = shim_js_target(&full) {
+            let mut c = match resolve_program("node") {
+                Some(node) => Command::new(node),
+                None => Command::new("node"),
+            };
+            c.arg(js);
+            return c;
+        }
+    }
+    Command::new(full)
+}
+
+#[cfg(windows)]
+fn shim_js_target(shim: &std::path::Path) -> Option<std::path::PathBuf> {
+    let contents = std::fs::read_to_string(shim).ok()?;
+    let dir = shim.parent()?;
+    for token in contents.split('"') {
+        let lower = token.to_ascii_lowercase();
+        if lower.ends_with(".js") && (lower.contains("%dp0%") || lower.contains("%~dp0")) {
+            let rel = token.replace("%dp0%", "").replace("%~dp0", "");
+            let rel = rel.trim().trim_start_matches(|c| c == '\\' || c == '/');
+            let candidate = dir.join(rel);
             if candidate.is_file() {
                 return Some(candidate);
             }
