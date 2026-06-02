@@ -33,7 +33,7 @@ export function Hero() {
             className="rise mx-auto mt-6 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
             style={{ animationDelay: '110ms' }}
           >
-            Run Claude, Cursor, Codex and Gemini in one local workspace.
+            Run Claude, Cursor, Codex and Gemini in the same workspace.
           </p>
 
           <div className="rise mt-8" style={{ animationDelay: '150ms' }}>
@@ -44,14 +44,17 @@ export function Hero() {
             className="rise mx-auto mt-8 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
             style={{ animationDelay: '180ms' }}
           >
-            They share the same goal, plan and context, so the next agent picks up right where the
-            last left off.
+            Shared goals, plans, and context let the next agent pick up right where the last left
+            off.
           </p>
 
           <div
             className="rise mt-8 flex flex-col items-center gap-3 pointer-fine:hidden"
             style={{ animationDelay: '210ms' }}
           >
+            <p className="text-[13px] font-medium text-foreground/80">
+              Goodboy is free and open source.
+            </p>
             <div className="flex w-full max-w-xs flex-col items-center gap-1.5">
               <LinkButton
                 href="https://github.com/akhayam99/goodboy"
@@ -74,30 +77,31 @@ export function Hero() {
           </div>
 
           <div
-            className="rise mt-8 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row"
+            className="rise mt-8 hidden flex-col items-center justify-center gap-3 pointer-fine:flex"
             style={{ animationDelay: '210ms' }}
           >
-            <LinkButton href="#cta" size="lg" variant="primary">
-              Install
-            </LinkButton>
-            <LinkButton
-              href="https://github.com/akhayam99/goodboy"
-              target="_blank"
-              rel="noreferrer"
-              size="lg"
-              variant="secondary"
-            >
-              <GitHubGlyph />
-              GitHub
-            </LinkButton>
+            <p className="text-[13px] font-medium text-foreground/80">
+              Goodboy is free and open source.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <LinkButton href="#cta" size="lg" variant="primary">
+                Install
+              </LinkButton>
+              <LinkButton
+                href="https://github.com/akhayam99/goodboy"
+                target="_blank"
+                rel="noreferrer"
+                size="lg"
+                variant="secondary"
+              >
+                <GitHubGlyph />
+                GitHub
+              </LinkButton>
+            </div>
+            <p className="text-[12.5px] text-muted-foreground/75">
+              Runs on macOS with the AI plans you already pay for.
+            </p>
           </div>
-
-          <p
-            className="rise mt-5 hidden text-[12.5px] text-muted-foreground/75 pointer-fine:block"
-            style={{ animationDelay: '240ms' }}
-          >
-            Free and open source. Runs on macOS with the AI plans you already pay for.
-          </p>
         </div>
       </div>
     </section>

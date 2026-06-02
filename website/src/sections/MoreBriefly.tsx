@@ -5,24 +5,24 @@ import { useInView } from '../components/Reveal';
    no mockups. The five sections above carry the weight; this is the tail. */
 const ITEMS: ReadonlyArray<{ k: string; v: string }> = [
   {
-    k: 'Routing & cost',
-    v: 'Each task goes to the model that fits it, and Goodboy nudges you before you burn Opus on a one-liner. Every session shows what it is costing you as it runs.',
+    k: 'Costs',
+    v: 'Each task goes to the right model, and Goodboy gives you a heads-up before you burn Opus on a one-liner. Every session shows its cost in real time.',
   },
   {
-    k: 'Seven agent roles',
-    v: 'Scout, plan, implement, debug, test, review, docs. Each one sticks to its own job, so the reviewer never quietly rewrites your code.',
+    k: 'Seven agents',
+    v: 'Scout, plan, implement, debug, test, review, docs: each agent sticks to its role and no one steps into someone else’s job.',
   },
   {
     k: 'Plans',
-    v: 'Agents write the plan before they touch your code, and it stays put: something you can read and edit, not a message that scrolls away.',
+    v: 'Agents write the plan before touching your code. It stays in place: you can easily read and edit it. It’s not a message that scrolls away.',
   },
   {
     k: 'Local-first',
-    v: 'Runs on your machine, with your keys and your data. Bring the subscription you already pay for.',
+    v: 'Runs on your machine, with your keys and data. Just use the subscription you already have.',
   },
   {
     k: 'Open source',
-    v: 'MIT licensed, out in the open. Try it, break it, send feedback.',
+    v: 'MIT licensed, fully open. Try it, break it, send feedback.',
   },
 ];
 
@@ -35,9 +35,9 @@ export function MoreBriefly() {
     >
       <div className="mx-auto max-w-5xl px-6">
         <div className="reveal max-w-2xl">
-          <Eyebrow>06 &middot; The rest, briefly</Eyebrow>
+          <Eyebrow>06 &middot; Everything else</Eyebrow>
           <p className="mt-4 text-pretty text-[16px] leading-[1.6] text-muted-foreground sm:text-[17px]">
-            The stuff that matters but doesn&apos;t need its own billboard.
+            The stuff that matters, kept short.
           </p>
         </div>
         <dl

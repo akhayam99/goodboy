@@ -66,7 +66,7 @@ export function CTA() {
         </p>
         <p className="mx-auto mt-7 max-w-xl text-[18px] leading-[1.5] text-foreground/85 sm:text-[20px]">
           No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or Gemini you already
-          pay for and you&apos;re running on your own machine in a minute.
+          pay for and you&apos;ll be running on your own machine in a minute.
         </p>
 
         <div className="mx-auto mt-11 max-w-lg pointer-fine:hidden">

@@ -6,18 +6,17 @@ export function LinearDeepDive() {
     <Section
       id="linear"
       eyebrow="05 · Linear Studio"
-      title={<>Turn a Linear issue into a session.</>}
+      title={<>Turn any issue into a session</>}
       body={
         <>
           <p>
-            Every open issue assigned to you, bucketed by Linear state. Pick one and the goal is
-            already written, the branch is named, the linked PR is recognized. Hit launch and a
-            session is on it, with the issue tagged in the rail above.
+            Every issue assigned to you is grouped by state. Just pick one and the goal is set, the
+            branch is named, and the PR is automatically linked. Now hit launch and a session kicks
+            off, with the issue tracked above.
           </p>
           <p className="mt-4">
-            Already shipped a PR for that issue and got review comments? Pick &ldquo;Continue on
-            PR&rdquo; instead of &ldquo;Start fresh&rdquo; and the same branch comes back, ready to
-            push the next round.
+            Already shipped a PR and got review comments? Choose &ldquo;Continue on PR&rdquo;
+            instead of &ldquo;Start fresh&rdquo; and continue where you left off.
           </p>
         </>
       }
