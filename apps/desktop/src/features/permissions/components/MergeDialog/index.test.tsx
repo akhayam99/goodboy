@@ -45,7 +45,7 @@ describe('MergeDialog, rendering', () => {
 
   it('renders empty-state message when no conflicts', () => {
     render(<MergeDialog open={true} conflicts={[]} onResolve={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByText('no conflicts detected.')).toBeDefined();
+    expect(screen.getByText('no conflicts to resolve')).toBeDefined();
   });
 
   it('renders generic run labels when no run metadata is supplied', () => {

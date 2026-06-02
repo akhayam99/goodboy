@@ -555,7 +555,7 @@ function GeneralSection(props: GeneralSectionProps) {
                     <span className="font-semibold text-foreground">Heads up</span>
                     <ul className="list-disc pl-4 text-muted-foreground">
                       {targetOwnedByOtherSession ? (
-                        <li>Already attached to another kay.am session.</li>
+                        <li>Already attached to another session.</li>
                       ) : null}
                       {targetInUseElsewhere ? <li>Checked out in another git worktree.</li> : null}
                       {targetDirty ? <li>That worktree has uncommitted changes.</li> : null}

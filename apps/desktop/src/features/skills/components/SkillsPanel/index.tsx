@@ -169,7 +169,7 @@ export function SkillsPanel({ workspaceId }: Props) {
 
       {skills.length === 0 ? (
         <p className="text-2xs text-muted-foreground">
-          No skills for this workspace. Create one or rescan the workspace directory.
+          No skills in this workspace yet. Create one, or rescan to pick up skill files on disk.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">

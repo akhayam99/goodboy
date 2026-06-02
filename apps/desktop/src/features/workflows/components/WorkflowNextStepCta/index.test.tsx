@@ -124,7 +124,9 @@ describe('WorkflowNextStepCta', () => {
       <WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={onAdvance} hasOpenQuestions />,
     );
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
-    expect(screen.getByText(/open questions need resolution/i)).toBeDefined();
+    expect(
+      screen.getByText(/answer the open questions before you start the next agent/i),
+    ).toBeDefined();
     expect(onAdvance).not.toHaveBeenCalled();
   });
 });

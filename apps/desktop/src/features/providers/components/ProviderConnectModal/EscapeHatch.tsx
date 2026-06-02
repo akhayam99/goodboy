@@ -80,7 +80,7 @@ export function EscapeHatch({ command }: Props) {
       </div>
       {launchError ? (
         <span className="text-2xs text-danger">
-          Could not open external terminal: {launchError}
+          Could not open your system terminal: {launchError}
         </span>
       ) : null}
     </div>

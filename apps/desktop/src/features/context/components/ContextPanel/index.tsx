@@ -752,7 +752,7 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: Target,
     iconClass: 'text-primary',
     iconChipBg: 'bg-primary/10 ring-primary/20',
-    description: 'What this session is set out to achieve',
+    description: 'What this session is meant to achieve',
     emphasis: true,
     singleLine: true,
     emptyLabel: 'No goal yet',
@@ -782,7 +782,7 @@ const SLOT_META: Record<Exclude<SlotKey, 'files_touched'>, SlotMeta> = {
     icon: Activity,
     iconClass: 'text-info',
     iconChipBg: 'bg-info/10 ring-info/20',
-    description: "Summary of the assistant's most recent reply",
+    description: "Summary of the agent's most recent reply",
     collapsible: true,
     defaultCollapsed: true,
     emptyLabel: 'No output yet',
@@ -1114,7 +1114,7 @@ function SlotHistoryDialog({
                     entry.author === 'user' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
                   )}
                 >
-                  {entry.author === 'user' ? 'you' : 'ai'}
+                  {entry.author === 'user' ? 'you' : 'agent'}
                 </span>
                 <span className="text-2xs text-muted-foreground">
                   {formatRelative(entry.createdAt)}
@@ -1279,7 +1279,7 @@ function PlansEmpty() {
             Plans
           </span>
           <span className="text-[10px] leading-tight text-muted-foreground/60">
-            Step-by-step plans queued for this session
+            Step-by-step work queued for this session
           </span>
         </div>
       </div>

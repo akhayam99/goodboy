@@ -424,14 +424,14 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const popoverOpen = showPopover && inPrefixMode && quickItems !== null;
   const quickEmptyHint =
     parsed.prefix?.symbol === '$'
-      ? 'no scripts. add them in workspace settings.'
+      ? 'no scripts yet. add them in workspace settings'
       : parsed.prefix?.symbol === '~'
         ? session.workflowIds.length > 0
-          ? 'all available workflows are already attached.'
-          : 'no workflows. create one in workspace settings.'
+          ? 'every workflow is already attached'
+          : 'no workflows yet. create one in workspace settings'
         : parsed.prefix?.symbol === '@'
-          ? 'no agents in this session.'
-          : 'no skills. create one in settings.';
+          ? 'no agents in this session yet'
+          : 'no skills yet. create one in settings';
 
   const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
   const dismissPopover = useCallback(() => setShowPopover(false), []);
@@ -1074,11 +1074,11 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
               onPaste={onPaste}
               placeholder={
                 providerDisconnected
-                  ? 'Sign in to send a message.'
+                  ? 'Sign in to send a message'
                   : isRunning
                     ? queued
-                      ? 'Message queued. Type to replace.'
-                      : 'Turn running. Type to queue next message.'
+                      ? 'Message queued, type to replace it'
+                      : 'Turn running, type to queue the next message'
                     : CHAT_PLACEHOLDER
               }
               disabled={providerDisconnected}

@@ -44,15 +44,15 @@ export function BudgetRulesPanel() {
     const extraTokens = extraRaw === '' ? null : parseFloat(extraRaw);
 
     if (!isFinite(cap) || cap <= 0) {
-      setFormError('cap must be a positive number');
+      setFormError('Cap must be a positive number');
       return;
     }
     if (!isFinite(threshold) || threshold < 1 || threshold > 100) {
-      setFormError('threshold must be between 1 and 100');
+      setFormError('Threshold must be between 1 and 100');
       return;
     }
     if (extraTokens !== null && (!isFinite(extraTokens) || extraTokens < 0)) {
-      setFormError('extra-token budget must be empty or a non-negative integer');
+      setFormError('Extra-token budget must be empty or a non-negative integer');
       return;
     }
 
@@ -92,7 +92,7 @@ export function BudgetRulesPanel() {
 
       {budgetRules.length === 0 && !showForm && (
         <p className="text-xs text-muted-foreground">
-          No rules defined. Add one to cap monthly spend per provider.
+          No rules yet. Add one to cap monthly spend per provider.
         </p>
       )}
 
@@ -163,7 +163,7 @@ function AddRuleForm({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-foreground">provider</label>
+        <label className="text-xs font-semibold text-foreground">Provider</label>
         <Select
           size="sm"
           block
@@ -180,7 +180,7 @@ function AddRuleForm({
 
       <div className="flex gap-2">
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-xs font-semibold text-foreground">monthly cap (USD)</label>
+          <label className="text-xs font-semibold text-foreground">Monthly cap (USD)</label>
           <Input
             type="number"
             min="0.01"
@@ -191,7 +191,7 @@ function AddRuleForm({
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-xs font-semibold text-foreground">alert threshold (%)</label>
+          <label className="text-xs font-semibold text-foreground">Alert threshold (%)</label>
           <Input
             type="number"
             min="1"
@@ -206,18 +206,18 @@ function AddRuleForm({
 
       <div className="flex flex-1 flex-col gap-1.5">
         <label className="text-xs font-semibold text-foreground">
-          extra-token budget <span className="font-normal text-muted-foreground">(optional)</span>
+          Extra-token budget <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
         <Input
           type="number"
           min="0"
           step="1000"
-          placeholder="leave empty for no token cap"
+          placeholder="Leave empty for no token cap"
           value={form.extraTokensBudget}
           onChange={(e) => onChange({ ...form, extraTokensBudget: e.target.value })}
         />
         <p className="text-2xs text-muted-foreground">
-          additional token allowance per period. empty = no extra-token budget.
+          Extra tokens allowed per period. Empty means no extra-token budget.
         </p>
       </div>
 

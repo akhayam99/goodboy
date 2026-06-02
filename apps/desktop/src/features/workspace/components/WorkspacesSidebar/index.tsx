@@ -415,7 +415,7 @@ function QuickActionsRow({
       <QuickAction
         icon={<Plug size={12} className="text-info" aria-hidden />}
         label="Providers"
-        title="connect and manage AI provider accounts"
+        title="connect and manage your provider accounts"
         onClick={onOpenProviders}
         pulse={noProviderConnected}
       />
@@ -643,8 +643,8 @@ function SidebarDetailHint({ hasAnySession }: { hasAnySession: boolean }) {
     <div className="flex h-full items-center justify-center px-6 text-center">
       <p className="text-2xs leading-relaxed text-muted-foreground/70">
         {hasAnySession
-          ? 'Select a session from the rail.'
-          : 'Create your first session from the rail.'}
+          ? 'Pick a session from the list to the left.'
+          : 'Create your first session from the list to the left.'}
       </p>
     </div>
   );
@@ -662,7 +662,7 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
         <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          Add a git repo to create worktrees and start orchestrating sessions.
+          Point at a local git repo. Each session opens its own worktree off it.
         </p>
       </div>
       <button

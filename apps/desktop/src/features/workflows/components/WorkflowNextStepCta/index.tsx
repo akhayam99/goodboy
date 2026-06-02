@@ -132,7 +132,7 @@ export function WorkflowNextStepCta({
       {pendingConfirm ? (
         <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
           <p className="mb-2 font-medium text-foreground">
-            open questions need resolution before spawning an agent.
+            Answer the open questions before you start the next agent.
           </p>
           <div className="flex gap-2">
             <button
@@ -140,14 +140,14 @@ export function WorkflowNextStepCta({
               onClick={() => setPendingConfirm(false)}
               className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
             >
-              resolve first
+              answer first
             </button>
             <button
               type="button"
               onClick={() => void doAdvance()}
               className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
             >
-              force spawn
+              start anyway
             </button>
           </div>
         </div>

@@ -133,12 +133,12 @@ export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
               >
-                Create a PAT in Linear settings <ExternalLink size={10} aria-hidden />
+                Create a token in Linear settings <ExternalLink size={10} aria-hidden />
               </a>
             </div>
             <p className="text-2xs leading-relaxed text-muted-foreground">
               Read-only scope is enough. The token is stored encrypted in your operating system
-              keychain and never leaves this machine, Goodboy reads it from Rust only.
+              keychain and never leaves this machine.
             </p>
           </>
         )}

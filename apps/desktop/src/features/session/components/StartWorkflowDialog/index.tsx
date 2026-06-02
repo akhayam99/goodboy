@@ -141,7 +141,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
         <p className="shrink-0 px-0.5 text-2xs leading-relaxed text-muted-foreground">
           {mode === 'preset'
             ? 'Saved pipelines. Each step spawns its own agent, in order.'
-            : 'Describe a goal; the planner drafts the steps. Tune models per step, then run.'}
+            : 'Describe a goal and the planner drafts the steps. Tune models per step, then run.'}
         </p>
 
         {/* All three panes stay mounted (toggled with `hidden`) so switching

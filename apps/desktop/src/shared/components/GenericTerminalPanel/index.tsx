@@ -217,8 +217,8 @@ export function GenericTerminalPanel({
         <button
           type="button"
           onClick={onRestart}
-          title="restart shell"
-          aria-label="restart shell"
+          title="Restart shell"
+          aria-label="Restart shell"
           className="absolute right-2 top-2 z-10 rounded-sm bg-background/80 p-1 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           <RotateCcw size={12} aria-hidden />

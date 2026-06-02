@@ -202,7 +202,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
           title: issue.title,
         },
       });
-      showToast('success', `session created: ${session.goal}`);
+      showToast('success', `Session created: ${session.goal}`);
       onClose();
       if (setupWorkflow) {
         setTimeout(() => {
@@ -356,7 +356,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
                       ) : prBranch ? (
                         <span className="truncate text-foreground">{prBranch}</span>
                       ) : (
-                        <span className="truncate text-danger">{prError ?? 'no branch found'}</span>
+                        <span className="truncate text-danger">{prError ?? 'No branch found'}</span>
                       )}
                     </div>
                     <span className="text-2xs leading-relaxed text-muted-foreground/70">

@@ -158,7 +158,7 @@ export function BootSplash({
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-lg font-bold tracking-tight">Goodboy</span>
           <span className="text-[11px] uppercase tracking-widest text-muted-foreground/60">
-            AI workspace orchestrator
+            workspace orchestrator for coding agents
           </span>
         </div>
       </div>

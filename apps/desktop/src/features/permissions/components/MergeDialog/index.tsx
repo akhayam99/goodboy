@@ -74,7 +74,7 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
       }
     >
       {conflicts.length === 0 ? (
-        <p className="text-xs text-muted-foreground">no conflicts detected.</p>
+        <p className="text-xs text-muted-foreground">no conflicts to resolve</p>
       ) : (
         <ul className="flex flex-col gap-5">
           {conflicts.map((conflict) => (

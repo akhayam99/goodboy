@@ -121,16 +121,16 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
         title="What is Goodboy?"
         subtitle={
           SESSION_FEATURES.budget
-            ? 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
-            : 'Goodboy orchestrates AI coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
+            ? 'Goodboy orchestrates coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
+            : 'Goodboy orchestrates coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
         }
         accent="primary"
       />
 
       <Callout tone="info" icon={<Sparkles size={13} />}>
-        Goodboy does <strong className="text-foreground">not</strong> talk to AI providers directly.
-        It spawns the provider's CLI as a subprocess and streams events. Your usage, login, and
-        quotas live in the CLI itself, Goodboy just adds the workspace layer on top.
+        Goodboy does <strong className="text-foreground">not</strong> talk to providers directly. It
+        spawns the provider's CLI as a subprocess and streams events. Your usage, login, and quotas
+        live in the CLI itself. Goodboy adds the workspace layer on top.
       </Callout>
 
       <div>
@@ -292,7 +292,7 @@ function ToolsSection() {
       <SectionHeader
         icon={<Wrench size={14} aria-hidden className="text-warning" />}
         title="Tools"
-        subtitle="Actions the agent takes outside of just talking: reading files, running shell commands, editing code, fetching docs."
+        subtitle="Actions the agent takes beyond writing a reply: reading files, running shell commands, editing code, fetching docs."
         accent="warning"
       />
 

@@ -66,7 +66,7 @@ export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }:
         ) : filtered.length === 0 ? (
           <div className="flex h-full items-center justify-center px-6 text-center">
             <p className="text-2xs leading-relaxed text-muted-foreground/70">
-              {query.trim() ? 'No matching issues.' : 'No open issues assigned to you.'}
+              {query.trim() ? 'No matching issues' : 'No open issues assigned to you'}
             </p>
           </div>
         ) : (
