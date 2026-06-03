@@ -34,7 +34,6 @@ import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
-import { PricingDialog } from '../../../providers/components/PricingDialog';
 import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -103,6 +102,7 @@ interface WorkspacesSidebarProps {
   onOpenLinear: () => void;
   onOpenProviders: () => void;
   onOpenGithub: () => void;
+  onOpenBudget: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
 }
@@ -120,6 +120,7 @@ export function WorkspacesSidebar({
   onOpenLinear,
   onOpenProviders,
   onOpenGithub,
+  onOpenBudget,
   collapsed = false,
   onToggleCollapse,
 }: WorkspacesSidebarProps) {
@@ -143,7 +144,6 @@ export function WorkspacesSidebar({
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
-  const [pricingOpen, setPricingOpen] = useState(false);
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -286,9 +286,9 @@ export function WorkspacesSidebar({
           </button>
           <button
             type="button"
-            onClick={() => setPricingOpen(true)}
-            title="open spend & pricing"
-            aria-label="open spend and pricing"
+            onClick={onOpenBudget}
+            title="open budget studio"
+            aria-label="open budget studio"
             className={FOOTER_ICON_BTN}
           >
             <DollarSign size={14} aria-hidden />
@@ -325,15 +325,12 @@ export function WorkspacesSidebar({
       </div>
 
       {/* Mount these heavy dialogs only when open. Otherwise their inner
-          selectors (PricingDialog subscribes to session/workspace summaries,
-          sessionTelemetry, providerSpendBreakdown, GuideDialog walks a few
-          maps too) re-evaluate on every store update for a panel the user
-          almost never has open. */}
+          selectors (GuideDialog walks a few maps) re-evaluate on every store
+          update for a panel the user almost never has open. */}
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
       {guideOpen ? <GuideDialog open onClose={() => setGuideOpen(false)} /> : null}
-      {pricingOpen ? <PricingDialog open onClose={() => setPricingOpen(false)} /> : null}
       {currentWorkspace && newSessionOpen ? (
         <NewSessionDialog
           open

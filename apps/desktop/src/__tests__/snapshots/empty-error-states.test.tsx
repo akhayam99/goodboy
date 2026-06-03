@@ -165,7 +165,6 @@ import { EndSessionDialog } from '../../features/session/components/EndSessionDi
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
-import { BudgetRulesPanel } from '../../features/budget/components/BudgetRulesPanel';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -213,6 +212,7 @@ describe('snapshot, empty states', () => {
         onOpenLinear={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenGithub={vi.fn()}
+        onOpenBudget={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
     );
@@ -282,17 +282,6 @@ describe('snapshot, error states', () => {
 
   it('BootSplash: boot-error phase', () => {
     const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('BudgetRulesPanel: form error', () => {
-    mockStore({
-      budgetRules: [],
-      loadBudgetRules: vi.fn(),
-      saveBudgetRule: vi.fn().mockRejectedValue(new Error('cap must be positive')),
-      deleteBudgetRule: vi.fn(),
-    });
-    const { container } = render(<BudgetRulesPanel />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

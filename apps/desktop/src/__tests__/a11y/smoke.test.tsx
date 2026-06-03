@@ -146,6 +146,7 @@ describe('a11y smoke, WorkspacesSidebar', () => {
         onOpenLinear={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenGithub={vi.fn()}
+        onOpenBudget={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
     );

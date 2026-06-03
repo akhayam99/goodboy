@@ -15,6 +15,8 @@ import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
+import { BudgetStudio } from './features/budget/components/BudgetStudio';
+import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -98,6 +100,8 @@ export function App() {
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
+  const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
+  const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(
     () =>
@@ -164,6 +168,16 @@ export function App() {
     };
     window.addEventListener('goodboy:open-provider-studio', handler);
     return () => window.removeEventListener('goodboy:open-provider-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
+      setBudgetStudioScope(detail?.scope);
+      setBudgetStudioOpen(true);
+    };
+    window.addEventListener('goodboy:open-budget-studio', handler);
+    return () => window.removeEventListener('goodboy:open-budget-studio', handler);
   }, []);
 
   useEffect(() => {
@@ -410,6 +424,10 @@ export function App() {
                 setGithubStudioSession(currentSession?.id ?? null);
                 setGithubStudioOpen(true);
               }}
+              onOpenBudget={() => {
+                setBudgetStudioScope({ kind: 'overview' });
+                setBudgetStudioOpen(true);
+              }}
               collapsed={leftCollapsed}
               onToggleCollapse={toggleLeftSidebar}
             />
@@ -514,6 +532,13 @@ export function App() {
           workspaceName={currentWorkspace.name}
           initialFocus={providerStudioFocus}
           onClose={() => setProviderStudioOpen(false)}
+        />
+      ) : null}
+      {budgetStudioOpen && currentWorkspace ? (
+        <BudgetStudio
+          workspaceName={currentWorkspace.name}
+          initialScope={budgetStudioScope}
+          onClose={() => setBudgetStudioOpen(false)}
         />
       ) : null}
       {linearStudioOpen && currentWorkspace ? (

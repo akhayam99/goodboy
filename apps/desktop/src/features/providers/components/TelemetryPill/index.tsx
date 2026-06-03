@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { PricingDialog } from '../PricingDialog';
 
 const EMPTY_SPEND: ReadonlyArray<never> = [];
 
@@ -16,7 +14,6 @@ export function TelemetryPill() {
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const providerSpend = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
-  const [open, setOpen] = useState(false);
 
   const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
@@ -40,9 +37,9 @@ export function TelemetryPill() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio'))}
         title={tooltipLines}
-        aria-label="open pricing breakdown"
+        aria-label="open budget studio"
         className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
       >
         <span className="font-medium">{formatUsd(sessionCost)}</span>
@@ -65,7 +62,6 @@ export function TelemetryPill() {
           </span>
         ) : null}
       </button>
-      <PricingDialog open={open} onClose={() => setOpen(false)} />
     </>
   );
 }
