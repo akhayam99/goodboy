@@ -130,7 +130,7 @@ export function CreatePrDialog({
             type="button"
             onClick={() => void onCreateWithAi()}
             disabled={busy !== null}
-            title="let an agent draft the title and description, then open the PR"
+            title="hand it to an agent: it drafts the title and description, then opens the PR"
             className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:opacity-50"
           >
             {busy === 'ai' ? (
@@ -138,7 +138,7 @@ export function CreatePrDialog({
             ) : (
               <Sparkles size={13} aria-hidden />
             )}
-            Create with AI
+            Draft with an agent
           </button>
           <button
             type="button"

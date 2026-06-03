@@ -61,7 +61,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
         ))}
       </ul>
       <p className="text-[10px] leading-snug text-muted-foreground/60">
-        {progress.completedCount} of {progress.totalCount} steps done.
+        {progress.completedCount} of {progress.totalCount} steps done
       </p>
     </>
   );

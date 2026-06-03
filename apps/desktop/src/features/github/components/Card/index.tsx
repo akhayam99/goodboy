@@ -90,7 +90,7 @@ export function GithubCard({
         <span
           className="inline-flex rounded border border-border-soft bg-subtle"
           role="tablist"
-          aria-label="github card view"
+          aria-label="GitHub card view"
         >
           {TAB_KEYS.map((k) => {
             const isActive = k === active;
@@ -122,8 +122,8 @@ export function GithubCard({
             type="button"
             onClick={onRefresh}
             disabled={detailLoading}
-            title="refresh github data"
-            aria-label="refresh github data"
+            title="refresh GitHub data"
+            aria-label="refresh GitHub data"
             className={cn(TAB_ICON_BTN, 'disabled:opacity-40')}
           >
             <RefreshCw size={10} className={cn(detailLoading && 'animate-spin')} aria-hidden />
@@ -394,7 +394,7 @@ export function CiPane({
       <EmptyRow
         text="No CI runs yet"
         actionUrl={pr.url}
-        actionLabel="view on github"
+        actionLabel="view on GitHub"
         onOpenUrl={onOpenUrl}
       />
     );
@@ -469,7 +469,7 @@ export function CommentsPane({
         type="button"
         onClick={() => onOpenUrl(pr.url)}
         className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70 hover:text-foreground"
-        title="open general comments on github"
+        title="open general comments on GitHub"
       >
         {generalCount} general comment{generalCount === 1 ? '' : 's'}
         <ExternalLink size={9} aria-hidden />
@@ -765,7 +765,7 @@ export function ReviewPane({
           onClick={() => onOpenUrl(pr.url)}
           className="inline-flex w-fit items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
         >
-          view on github
+          view on GitHub
           <ExternalLink size={9} aria-hidden />
         </button>
       ) : null}

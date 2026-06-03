@@ -215,7 +215,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
           Create PR
         </button>
         <p className="text-2xs text-muted-foreground/60">
-          Compose the title and description, or let AI draft it.
+          Write the title and description, or hand it to an agent.
         </p>
         {createOpen ? (
           <CreatePrDialog

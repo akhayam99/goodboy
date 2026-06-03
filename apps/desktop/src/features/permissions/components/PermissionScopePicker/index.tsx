@@ -18,7 +18,7 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
   global: 'rule added: allow globally',
   workspace: 'rule added: allow for this workspace',
   session: 'rule added: allow for this session',
-  once: 'allowed once (volatile, not persisted)',
+  once: 'allowed once, not saved',
   deny: 'rule added: deny for this session',
 };
 

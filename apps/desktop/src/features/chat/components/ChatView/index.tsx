@@ -636,7 +636,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
         return {
           eyebrow: `${meta.label} agent · fresh transcript`,
           title: `You're talking to a ${meta.label} agent`,
-          body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Just say what you want next.`,
+          body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Say what you want next.`,
           hints: [
             selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
             selectedKind === 'planner' ? 'Try: "plan how to add X to Y"' : null,

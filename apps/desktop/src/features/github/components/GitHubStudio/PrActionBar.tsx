@@ -142,8 +142,8 @@ export function PrActionBar({
         <button
           type="button"
           onClick={onOpenGithub}
-          title="open on github"
-          aria-label="open on github"
+          title="open on GitHub"
+          aria-label="open on GitHub"
           className={ICON_BTN}
         >
           <ExternalLink size={14} aria-hidden />

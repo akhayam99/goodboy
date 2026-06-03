@@ -367,7 +367,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
           {presets.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border-soft bg-subtle/40 px-3 py-6 text-center text-2xs leading-relaxed text-muted-foreground">
-              No presets for this workspace. Create one to chain multiple agents per session.
+              No presets here yet. Create one to chain several agents in a single session.
             </p>
           ) : (
             <ul className="flex flex-col gap-1.5">
@@ -389,8 +389,8 @@ export function WorkflowsPanel({ workspaceId }: Props) {
           {confirmReset ? (
             <div className="flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/5 px-2.5 py-2">
               <span className="flex-1 text-2xs leading-tight text-muted-foreground">
-                Restore built-in presets? Edits to them are overwritten; your custom presets are
-                kept.
+                Restore the built-in presets? Your edits to them are overwritten. Custom presets you
+                made are kept.
               </span>
               <button
                 type="button"
@@ -1134,7 +1134,7 @@ function LibraryStepForm({
 
       {isGlobal ? (
         <p className="text-2xs leading-relaxed text-muted-foreground/70">
-          Editing a global step saves a workspace copy; the shared original stays unchanged.
+          Editing a global step saves a copy in this workspace. The shared original stays unchanged.
         </p>
       ) : null}
 

@@ -62,8 +62,8 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
           type="button"
           onClick={refetch}
           disabled={loading}
-          title="refresh issues"
-          aria-label="refresh issues"
+          title="Refresh issues"
+          aria-label="Refresh issues"
           className={cn(
             'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
             'text-muted-foreground transition-colors',
@@ -80,7 +80,7 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
             'text-xs font-medium text-muted-foreground transition-colors',
             'hover:border-border hover:bg-muted/50 hover:text-foreground',
           )}
-          aria-label="close linear studio"
+          aria-label="Close Linear studio"
         >
           <X size={13} aria-hidden /> Done
         </button>

@@ -24,7 +24,7 @@ export function UpdateIndicator({ variant }: Props) {
 
   const downloading = status === 'downloading';
   const title = downloading
-    ? 'Downloading update, the app will restart'
+    ? 'Downloading update. Goodboy restarts when it finishes'
     : `Update available${version ? ` (${version})` : ''}`;
   const Icon = downloading ? Loader2 : ArrowUpCircle;
 

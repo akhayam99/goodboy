@@ -72,7 +72,7 @@ export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
       open={open}
       onClose={onClose}
       title="Connect GitHub"
-      description="Per-workspace token (classic PAT, scope repo). Stored in your OS keychain."
+      description="Per-workspace token (classic, scope repo). Stored in your OS keychain."
       size="md"
       footer={
         <div className="flex w-full items-center justify-end gap-2">

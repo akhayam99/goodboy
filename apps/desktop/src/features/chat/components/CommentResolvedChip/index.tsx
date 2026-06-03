@@ -95,7 +95,7 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
         {shaShort}
       </span>
       <span className="text-muted-foreground/80">
-        mark this review conversation as solved on github?
+        mark this review conversation as solved on GitHub?
       </span>
       <div className="ml-auto flex items-center gap-1">
         <button
@@ -103,11 +103,11 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
           onClick={() => void onResolve()}
           disabled={busy}
           data-testid="comment-resolved-confirm"
-          aria-label="Mark as Solved"
+          aria-label="mark as solved"
           className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-semibold text-success-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? <Loader2 size={9} aria-hidden className="animate-spin" /> : null}
-          Mark as Solved
+          Mark as solved
         </button>
         <button
           type="button"
@@ -116,8 +116,8 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
             setState({ kind: 'dismissed' });
           }}
           disabled={busy}
-          title="keep the conversation open on github"
-          aria-label="keep the conversation open on github"
+          title="keep the conversation open on GitHub"
+          aria-label="keep the conversation open on GitHub"
           className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           <X size={10} aria-hidden />

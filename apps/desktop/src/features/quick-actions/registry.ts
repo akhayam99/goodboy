@@ -79,6 +79,6 @@ export function buildAgentActions(
     });
   return [
     ...switches,
-    { id: 'agent:spawn', label: '+ create new agent', group: 'agent', perform: onSpawn },
+    { id: 'agent:spawn', label: '+ new agent', group: 'agent', perform: onSpawn },
   ];
 }

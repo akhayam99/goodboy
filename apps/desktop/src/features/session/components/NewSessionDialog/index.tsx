@@ -415,14 +415,14 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
           <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
             <span className="mt-0.5 text-warning">⚠</span>
             <div className="flex-1 leading-relaxed text-foreground">
-              No provider is connected. Sessions need at least one of{' '}
+              No provider is connected. A session needs at least one of{' '}
               {PROVIDER_ORDER.map((id, i) => (
                 <span key={id}>
                   <span className="font-medium">{PROVIDER_LABELS[id]}</span>
                   {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
                 </span>
               ))}{' '}
-              connected before any agent can run.
+              connected to run.
               <button
                 type="button"
                 onClick={onOpenSettings}

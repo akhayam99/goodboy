@@ -626,7 +626,7 @@ export function DiffViewerDialog({
                 ) : null}
                 {isGitAware ? (
                   <span className="mt-1.5 text-[11px] text-muted-foreground/60">
-                    Use the selector above to switch view.
+                    Pick another view from the selector above.
                   </span>
                 ) : null}
               </div>

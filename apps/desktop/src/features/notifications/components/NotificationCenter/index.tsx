@@ -136,18 +136,18 @@ export function NotificationCenter() {
                 <header className="flex items-center justify-between gap-2 px-3 py-2">
                   <span className="text-xs font-semibold text-foreground">
                     {notifications.length}{' '}
-                    {notifications.length === 1 ? 'Notification' : 'Notifications'}
+                    {notifications.length === 1 ? 'notification' : 'notifications'}
                   </span>
                   {notifications.length > 0 ? (
                     <button
                       type="button"
                       onClick={() => void clearNotifications()}
                       className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-                      aria-label="clean up all notifications"
+                      aria-label="clear all notifications"
                       title="Clear all notifications"
                     >
                       <Trash2 size={11} aria-hidden />
-                      Clean up
+                      Clear all
                     </button>
                   ) : null}
                 </header>

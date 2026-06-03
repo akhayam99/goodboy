@@ -229,7 +229,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
             ) : null}
             {wipeState === 'done' ? (
               <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
-                Database wiped. Restart the app (or just reopen settings) to start fresh.
+                Database wiped. Restart the app (or reopen settings) to start fresh.
               </p>
             ) : null}
             {wipeState === 'confirm' ? (
@@ -295,7 +295,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
       open={open}
       onClose={onClose}
       title="Settings"
-      description="Configure providers, editor, and workspace defaults."
+      description="Editor, shortcuts, integrations, and workspace defaults."
       size="xl"
       fixedHeightClass="h-[640px]"
       bodyClassName="px-0 py-0 gap-0"

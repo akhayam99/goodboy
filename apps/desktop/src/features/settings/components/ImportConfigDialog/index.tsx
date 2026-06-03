@@ -21,9 +21,7 @@ export function ImportConfigDialog({ open, result, error, onClose }: Props) {
       open={open}
       onClose={onClose}
       title={title}
-      description={
-        result?.ok ? 'Config imported successfully.' : 'Review the issues below before retrying.'
-      }
+      description={result?.ok ? 'Config imported.' : 'Review the issues below before retrying.'}
       size="sm"
       footer={<Button onClick={onClose}>Close</Button>}
     >
