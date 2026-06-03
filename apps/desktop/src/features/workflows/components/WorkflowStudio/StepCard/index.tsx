@@ -52,7 +52,7 @@ export function StepCard({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border-soft bg-background">
+    <div className="relative overflow-hidden rounded-lg border border-border-soft bg-muted/10">
       <span
         className={cn('absolute inset-y-0 left-0 w-1', AGENT_KIND_PALETTE[kind].bg)}
         aria-hidden
@@ -73,7 +73,7 @@ export function StepCard({
           </span>
           <span
             className={cn(
-              'hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide sm:inline',
+              'hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] sm:inline',
               AGENT_KIND_PALETTE[kind].fg,
               'bg-foreground/5',
             )}

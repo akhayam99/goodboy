@@ -27,8 +27,8 @@ export function PresetCard({ template, active, onSelect, onDelete }: Props) {
         className={cn(
           'flex w-full flex-col gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors',
           active
-            ? 'border-primary bg-primary/5'
-            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+            ? 'border-border-soft bg-primary/10 ring-1 ring-primary/30'
+            : 'border-border-soft bg-muted/20 hover:border-border hover:bg-muted/40',
         )}
       >
         <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Divider, EmptyState, Input, SectionHeader, cn } from '@goodboy/ui';
 import { Check, Layers, Plus, RotateCcw, X } from 'lucide-react';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import type {
   AgentEffort,
   AgentRole,
@@ -307,7 +308,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
   return (
     <div className="flex h-full min-h-0">
       <aside className="flex w-72 shrink-0 flex-col">
-        <div className="shrink-0 px-4 pb-2.5 pt-4">
+        <div className="shrink-0 px-3 pb-2 pt-3">
           <SectionHeader
             label={`Presets (${presets.length})`}
             action={
@@ -317,8 +318,8 @@ export function WorkflowsPanel({ workspaceId }: Props) {
                 className={cn(
                   'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
                   editing === 'new'
-                    ? 'border-primary bg-primary/5 text-foreground'
-                    : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground',
+                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                    : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
                 )}
               >
                 <Plus size={11} aria-hidden /> New
@@ -327,7 +328,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
           />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <ScrollFade className="min-h-0 flex-1 px-3 pb-3">
           {presets.length === 0 ? (
             <EmptyState
               icon={Layers}
@@ -336,7 +337,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
               bordered
             />
           ) : (
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-2">
               {presets.map((t) => (
                 <PresetCard
                   key={t.id}
@@ -348,11 +349,11 @@ export function WorkflowsPanel({ workspaceId }: Props) {
               ))}
             </ul>
           )}
-        </div>
+        </ScrollFade>
 
-        <div className="shrink-0 px-4 pb-4 pt-1">
+        <div className="shrink-0 px-3 pb-3 pt-1">
           {confirmReset ? (
-            <div className="flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/5 px-2.5 py-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
               <span className="flex-1 text-2xs leading-tight text-muted-foreground">
                 Restore the built-in presets? Your edits to them are overwritten. Custom presets you
                 made are kept.
@@ -385,7 +386,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
               className={cn(
                 'inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1.5',
                 'border-border-soft text-2xs font-medium text-muted-foreground transition-colors',
-                'hover:border-border hover:bg-muted/50 hover:text-foreground',
+                'hover:border-border hover:bg-muted/40 hover:text-foreground',
               )}
             >
               <RotateCcw size={11} aria-hidden /> Restore defaults
@@ -396,26 +397,30 @@ export function WorkflowsPanel({ workspaceId }: Props) {
 
       <Divider orientation="vertical" />
 
-      <section className="flex min-w-0 flex-1 flex-col overflow-y-auto p-6">
+      <section className="flex min-w-0 flex-1 flex-col">
         {editing !== null ? (
-          <Composer
-            form={form}
-            connectedProviders={connectedProviders}
-            expandedIdx={expandedIdx}
-            isNew={editing === 'new'}
-            saving={saving}
-            error={formError}
-            dragging={drag !== null}
-            dropIndex={dropIndex}
-            onChangeMeta={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-            onAddBlank={() => insertStep(emptyDefinition(), form.steps.length)}
-            onToggleExpand={(idx) => setExpandedIdx((cur) => (cur === idx ? null : idx))}
-            onUpdateStep={updateStep}
-            onRemoveStep={removeStep}
-            onMoveStep={moveStep}
-            onSave={() => void onSave()}
-            onCancel={cancelEdit}
-          />
+          <ScrollFade className="min-h-0 flex-1">
+            <div className="mx-auto max-w-3xl px-8 py-6">
+              <Composer
+                form={form}
+                connectedProviders={connectedProviders}
+                expandedIdx={expandedIdx}
+                isNew={editing === 'new'}
+                saving={saving}
+                error={formError}
+                dragging={drag !== null}
+                dropIndex={dropIndex}
+                onChangeMeta={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                onAddBlank={() => insertStep(emptyDefinition(), form.steps.length)}
+                onToggleExpand={(idx) => setExpandedIdx((cur) => (cur === idx ? null : idx))}
+                onUpdateStep={updateStep}
+                onRemoveStep={removeStep}
+                onMoveStep={moveStep}
+                onSave={() => void onSave()}
+                onCancel={cancelEdit}
+              />
+            </div>
+          </ScrollFade>
         ) : (
           <EmptyEditorHint onNew={openNew} hasPresets={presets.length > 0} />
         )}
@@ -448,27 +453,21 @@ export function WorkflowsPanel({ workspaceId }: Props) {
 
 function EmptyEditorHint({ onNew, hasPresets }: { onNew: () => void; hasPresets: boolean }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-muted/40">
-        <Layers size={22} className="text-muted-foreground/40" aria-hidden />
-      </span>
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">
-          {hasPresets ? 'Pick a workflow to edit' : 'Design your first workflow'}
-        </p>
-        <p className="max-w-xs text-2xs leading-relaxed text-muted-foreground">
-          {hasPresets
+    <div className="flex h-full items-center justify-center p-8">
+      <EmptyState
+        icon={Layers}
+        title={hasPresets ? 'Pick a workflow to edit' : 'Design your first workflow'}
+        description={
+          hasPresets
             ? 'Select a preset on the left, or start a new one. Drag steps in from the library on the right.'
-            : 'Chain reusable steps, each with its own role, provider and model. Drag them in from the library on the right.'}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onNew}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        <Plus size={13} aria-hidden /> New workflow
-      </button>
+            : 'Chain reusable steps, each with its own role, provider and model. Drag them in from the library on the right.'
+        }
+        action={
+          <Button size="sm" onClick={onNew}>
+            <Plus size={13} aria-hidden /> New workflow
+          </Button>
+        }
+      />
     </div>
   );
 }
@@ -516,7 +515,7 @@ function Composer({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+          <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
             name
           </label>
           <Input
@@ -526,7 +525,7 @@ function Composer({
           />
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <label className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+          <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
             description
           </label>
           <Input
@@ -544,7 +543,7 @@ function Composer({
         action={
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
             onClick={onAddBlank}
           >
             <Plus size={11} aria-hidden /> blank step
@@ -608,8 +607,8 @@ function StepLibraryPalette({
   const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col">
-      <div className="shrink-0 px-4 pb-2.5 pt-4">
+    <aside className="flex w-72 shrink-0 flex-col">
+      <div className="shrink-0 px-3 pb-2 pt-3">
         <SectionHeader
           label="Step library"
           hint={
@@ -622,8 +621,8 @@ function StepLibraryPalette({
               className={cn(
                 'inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
                 editing === 'new'
-                  ? 'border-primary bg-primary/5 text-foreground'
-                  : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground',
+                  ? 'border-primary/30 bg-primary/10 text-foreground'
+                  : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
               )}
             >
               <Plus size={11} aria-hidden /> New
@@ -632,8 +631,8 @@ function StepLibraryPalette({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        <ul className="flex flex-col gap-1.5">
+      <ScrollFade className="min-h-0 flex-1 px-3 pb-3">
+        <ul className="flex flex-col gap-2">
           {editing === 'new' ? (
             <li>
               <LibraryStepForm
@@ -684,7 +683,7 @@ function StepLibraryPalette({
             ),
           )}
         </ul>
-      </div>
+      </ScrollFade>
     </aside>
   );
 }

@@ -1,4 +1,5 @@
 import type { PrCheckConclusion, PrCheckRun, PullRequestState } from '@goodboy/types';
+import { Button, EmptyState } from '@goodboy/ui';
 import {
   AlertCircle,
   Check,
@@ -20,18 +21,18 @@ interface Props {
 export function PrChecks({ checks, pr, onOpenUrl }: Props) {
   if (checks.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg bg-subtle px-6 py-12 text-center">
-        <ListChecks size={24} aria-hidden className="text-muted-foreground/40" />
-        <p className="text-sm text-foreground">No CI runs yet.</p>
-        <button
-          type="button"
-          onClick={() => onOpenUrl(pr.url)}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          view checks on GitHub
-          <ExternalLink size={12} aria-hidden />
-        </button>
-      </div>
+      <EmptyState
+        bordered
+        icon={ListChecks}
+        title="No CI runs yet"
+        description="Checks for this pull request will appear here once they start."
+        action={
+          <Button variant="ghost" size="sm" onClick={() => onOpenUrl(pr.url)}>
+            View checks on GitHub
+            <ExternalLink size={12} aria-hidden />
+          </Button>
+        }
+      />
     );
   }
 

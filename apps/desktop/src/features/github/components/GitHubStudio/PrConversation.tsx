@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { Divider, Markdown } from '@goodboy/ui';
+import { Button, Divider, EmptyState, Markdown } from '@goodboy/ui';
 import { CheckCheck, ExternalLink, MessageSquare, Sparkles } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 
@@ -32,18 +32,18 @@ export function PrConversation({
 
   if (threads.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg bg-subtle px-6 py-12 text-center">
-        <MessageSquare size={24} aria-hidden className="text-muted-foreground/40" />
-        <p className="text-sm text-foreground">No comments yet.</p>
-        <button
-          type="button"
-          onClick={() => onOpenUrl(pr.url)}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          view conversation on GitHub
-          <ExternalLink size={12} aria-hidden />
-        </button>
-      </div>
+      <EmptyState
+        bordered
+        icon={MessageSquare}
+        title="No comments yet"
+        description="Review comments and replies on this pull request will show up here."
+        action={
+          <Button variant="ghost" size="sm" onClick={() => onOpenUrl(pr.url)}>
+            View conversation on GitHub
+            <ExternalLink size={12} aria-hidden />
+          </Button>
+        }
+      />
     );
   }
 
@@ -101,7 +101,13 @@ function ConversationThread({
   const open = isReview && head.resolved === false;
 
   return (
-    <div className={resolved ? 'rounded-lg bg-subtle/60 p-3' : 'rounded-lg bg-subtle p-3'}>
+    <div
+      className={
+        resolved
+          ? 'rounded-xl border border-border-soft bg-muted/5 p-3'
+          : 'rounded-xl border border-border-soft bg-muted/10 p-3'
+      }
+    >
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Avatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="font-medium text-foreground">{head.author}</span>

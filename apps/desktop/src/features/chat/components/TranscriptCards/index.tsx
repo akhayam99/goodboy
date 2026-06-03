@@ -339,7 +339,7 @@ function UserText({
 }) {
   const images = attachments ?? [];
   return (
-    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-primary/10 bg-primary/15 px-4 pb-1.5 pt-2.5">
+    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-border-soft bg-muted/40 px-4 pb-1.5 pt-2.5">
       {images.length > 0 ? (
         <div className="flex flex-wrap justify-end gap-1.5">
           {images.map((a) => (
@@ -348,7 +348,9 @@ function UserText({
         </div>
       ) : null}
       {text.length > 0 ? (
-        <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+        <div className="text-sm text-foreground">
+          <Markdown text={text} />
+        </div>
       ) : null}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         <span className="font-mono">{formatHHMM(at)}</span>

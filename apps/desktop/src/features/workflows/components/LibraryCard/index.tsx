@@ -24,7 +24,7 @@ export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         onStartDrag(def, e);
       }}
       className={cn(
-        'group relative flex touch-none select-none items-start gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 transition-colors hover:border-border hover:bg-muted/50',
+        'group relative flex touch-none select-none items-start gap-2 rounded-lg border border-border-soft bg-muted/20 px-3 py-2 transition-colors hover:border-border hover:bg-muted/40',
         dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
       )}
     >
@@ -48,7 +48,7 @@ export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
         {isGlobal ? (
-          <span className="rounded bg-muted/60 px-1 text-[9px] uppercase tracking-wide text-muted-foreground/60 group-hover:hidden">
+          <span className="rounded bg-muted/60 px-1 text-[9px] uppercase tracking-[0.08em] text-muted-foreground/60 group-hover:hidden">
             global
           </span>
         ) : null}

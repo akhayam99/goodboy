@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Target } from 'lucide-react';
-import { Collapsible } from '@goodboy/ui';
+import { Collapsible, Markdown } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 
@@ -26,9 +26,9 @@ export function PhaseTransitionCard({ item }: Props) {
           </span>
         }
       >
-        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md bg-background p-2 text-xs text-muted-foreground">
-          {item.carryForwardContext}
-        </pre>
+        <div className="mt-1 overflow-x-auto rounded-md bg-background p-2 text-xs">
+          <Markdown text={item.carryForwardContext} />
+        </div>
         <p className="mt-1 text-right text-2xs text-muted-foreground">{timestamp}</p>
       </Collapsible>
     </div>
