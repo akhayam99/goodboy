@@ -1031,19 +1031,18 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
         ) : null}
         <div
           ref={composerRef}
-          className={`relative flex flex-col rounded-[6px] ring-1 transition-all focus-within:ring-foreground/15 dark:bg-muted/40 ${
+          className={`relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-primary/40 dark:bg-muted/40 ${
             isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft'
           }`}
-          style={{ boxShadow: '0 8px 32px -16px oklch(0 0 0 / 0.25)' }}
         >
           <div
-            className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[6px] bg-primary/5 transition-opacity duration-150 ${
+            className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md bg-primary/5 transition-opacity duration-150 ${
               isDragging ? 'opacity-100' : 'opacity-0'
             }`}
             aria-hidden
           >
             <div
-              className={`flex items-center gap-2 rounded-full bg-background/95 px-4 py-1.5 text-xs font-medium text-primary shadow-md ring-1 ring-primary/30 transition-transform duration-150 ${
+              className={`flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 ring-primary/30 transition-transform duration-150 ${
                 isDragging ? 'scale-100' : 'scale-95'
               }`}
             >
@@ -1084,7 +1083,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
               disabled={providerDisconnected}
               autoGrow
               maxRows={12}
-              className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-2 pr-12 text-sm leading-relaxed shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-2 pr-12 text-sm leading-relaxed text-info shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <button
@@ -1132,7 +1131,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 onChange={onFileInputChange}
               />
               {queued ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-2xs text-primary">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs text-primary">
                   queued
                   <button
                     type="button"

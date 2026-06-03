@@ -13,6 +13,7 @@ export function endSession(set: SetFn, get: GetFn) {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
     if (session.state.kind === 'ended') return;
+    get().closeSessionTerminals(sessionId);
     const toCancel = new Set<ProviderRunId>();
     if (session.state.kind === 'running') toCancel.add(session.state.runId);
     const turnStates = get().agentTurnState;

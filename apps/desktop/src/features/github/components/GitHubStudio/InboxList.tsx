@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import { GitBranch } from 'lucide-react';
+import { cn, EmptyState } from '@goodboy/ui';
+import { GitBranch, Inbox } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
 
@@ -13,10 +13,12 @@ interface Props {
 export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
   if (groups.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center px-6 text-center">
-        <p className="text-2xs leading-relaxed text-muted-foreground/70">
-          No sessions in this workspace yet.
-        </p>
+      <div className="flex h-full items-center justify-center p-3">
+        <EmptyState
+          icon={Inbox}
+          title="No sessions yet"
+          description="Sessions in this workspace will show up here."
+        />
       </div>
     );
   }

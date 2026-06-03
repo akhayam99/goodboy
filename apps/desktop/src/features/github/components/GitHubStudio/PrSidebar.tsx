@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrDetail, PrReview, PrReviewState, PullRequestState } from '@goodboy/types';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, SectionHeader } from '@goodboy/ui';
 import {
   AlertCircle,
   Check,
@@ -18,6 +18,7 @@ import { PullRequestChip } from '../PullRequestChip';
 import { computeTabStatus, TabBadge } from '../Card';
 import { ghRepoCollaborators } from '../../github';
 import { useCurrentWorkspace } from '../../../../store';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { PrSwitcher } from './PrSwitcher';
 
 export type PrSection = 'overview' | 'comments' | 'ci';
@@ -69,7 +70,7 @@ export function PrSidebar({
   );
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col">
+    <aside className="flex w-72 shrink-0 flex-col">
       <div className="flex flex-col gap-2 px-3 py-3">
         <div className="flex items-center gap-1.5">
           {options.length > 1 ? (
@@ -101,7 +102,7 @@ export function PrSidebar({
               className={cn(
                 'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium transition-colors',
                 active
-                  ? 'bg-primary/10 text-foreground ring-1 ring-primary/20'
+                  ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
@@ -115,44 +116,46 @@ export function PrSidebar({
 
       <Divider />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Reviewers
-          </span>
-          <ReviewerPicker
-            workspaceRoot={workspaceRoot}
-            exclude={known}
-            onAdd={(logins) => onAddReviewers(logins)}
+      <ScrollFade className="min-h-0 flex-1">
+        <div className="flex flex-col gap-1.5 px-3 py-3">
+          <SectionHeader
+            label="Reviewers"
+            action={
+              <ReviewerPicker
+                workspaceRoot={workspaceRoot}
+                exclude={known}
+                onAdd={(logins) => onAddReviewers(logins)}
+              />
+            }
           />
+          {reviewed.length === 0 && requests.length === 0 ? (
+            <span className="text-2xs text-muted-foreground/60">No reviewers yet.</span>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {reviewed.map((r) => (
+                <li key={r.author} className="flex items-center gap-1.5 text-xs text-foreground">
+                  <ReviewStateIcon state={r.state} />
+                  <Avatar url={r.authorAvatarUrl} alt={r.author} />
+                  <span className="min-w-0 flex-1 truncate">{r.author}</span>
+                </li>
+              ))}
+              {requests.map((r) => (
+                <li
+                  key={`${r.kind}-${r.login}`}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <CircleDashed size={12} aria-hidden className="shrink-0 text-info" />
+                  <Avatar url={r.avatarUrl} alt={r.login} />
+                  <span className="min-w-0 flex-1 truncate">{r.login}</span>
+                  <span className="shrink-0 text-[9px] uppercase tracking-wide opacity-60">
+                    awaiting
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        {reviewed.length === 0 && requests.length === 0 ? (
-          <span className="text-2xs text-muted-foreground/60">No reviewers yet.</span>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {reviewed.map((r) => (
-              <li key={r.author} className="flex items-center gap-1.5 text-xs text-foreground">
-                <ReviewStateIcon state={r.state} />
-                <Avatar url={r.authorAvatarUrl} alt={r.author} />
-                <span className="min-w-0 flex-1 truncate">{r.author}</span>
-              </li>
-            ))}
-            {requests.map((r) => (
-              <li
-                key={`${r.kind}-${r.login}`}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              >
-                <CircleDashed size={12} aria-hidden className="shrink-0 text-info" />
-                <Avatar url={r.avatarUrl} alt={r.login} />
-                <span className="min-w-0 flex-1 truncate">{r.login}</span>
-                <span className="shrink-0 text-[9px] uppercase tracking-wide opacity-60">
-                  awaiting
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      </ScrollFade>
     </aside>
   );
 }

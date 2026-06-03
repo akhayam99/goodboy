@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { SessionId } from '@goodboy/types';
 
 export interface TerminalOutputPayload {
   readonly sessionId: string;
@@ -12,33 +11,29 @@ export interface TerminalExitPayload {
   readonly exitCode: number;
 }
 
-/** Open (or reuse) an interactive bash session for the given sessionId. */
 export function invokeTerminalOpen(
-  sessionId: SessionId,
+  terminalId: string,
   cwd: string | null,
   cols: number,
   rows: number,
 ): Promise<void> {
-  return invoke<void>('terminal_open', { sessionId, cwd, cols, rows });
+  return invoke<void>('terminal_open', { sessionId: terminalId, cwd, cols, rows });
 }
 
-/** Send keyboard input (base64-encoded) to the terminal. */
-export function invokeTerminalWrite(sessionId: SessionId, data: string): Promise<void> {
-  return invoke<void>('terminal_write', { sessionId, data });
+export function invokeTerminalWrite(terminalId: string, data: string): Promise<void> {
+  return invoke<void>('terminal_write', { sessionId: terminalId, data });
 }
 
-/** Notify the pty of a resize. */
 export function invokeTerminalResize(
-  sessionId: SessionId,
+  terminalId: string,
   cols: number,
   rows: number,
 ): Promise<void> {
-  return invoke<void>('terminal_resize', { sessionId, cols, rows });
+  return invoke<void>('terminal_resize', { sessionId: terminalId, cols, rows });
 }
 
-/** Kill the terminal session. No-op if already closed. */
-export function invokeTerminalClose(sessionId: SessionId): Promise<void> {
-  return invoke<void>('terminal_close', { sessionId });
+export function invokeTerminalClose(terminalId: string): Promise<void> {
+  return invoke<void>('terminal_close', { sessionId: terminalId });
 }
 
 export function listenTerminalOutput(

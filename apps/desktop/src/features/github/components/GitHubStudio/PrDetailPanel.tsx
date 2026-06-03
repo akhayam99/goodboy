@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { PrComment, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { Divider } from '@goodboy/ui';
-import { AlertCircle, GitPullRequest, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { Button, Divider, EmptyState } from '@goodboy/ui';
+import { AlertCircle, GitPullRequest, Inbox, Loader2, Plus, RefreshCw } from 'lucide-react';
 import {
   buildCommentAgentArgs,
   buildReviewChangesAgentArgs,
   type CommentAgentArgs,
 } from '../../../chat/spawn-from-comment';
 import { openUrl } from '../../../../shared/lib/editor';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
@@ -132,8 +133,12 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
 
   if (!sessionId || !session) {
     return (
-      <div className="flex h-full items-center justify-center px-6 text-center">
-        <p className="text-sm text-muted-foreground/70">Pick a session from the inbox.</p>
+      <div className="flex h-full items-center justify-center px-6">
+        <EmptyState
+          icon={Inbox}
+          title="No session selected"
+          description="Pick a session from the inbox to see its pull request."
+        />
       </div>
     );
   }
@@ -203,20 +208,18 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
 
   if (!activePr) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-        <GitPullRequest size={26} aria-hidden className="text-muted-foreground/50" />
-        <p className="text-sm text-foreground">Ready to open a pull request.</p>
-        <button
-          type="button"
-          onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Plus size={14} aria-hidden />
-          Create PR
-        </button>
-        <p className="text-2xs text-muted-foreground/60">
-          Write the title and description, or hand it to an agent.
-        </p>
+      <div className="flex h-full items-center justify-center px-6">
+        <EmptyState
+          icon={GitPullRequest}
+          title="Ready to open a pull request"
+          description="Write the title and description, or hand it to an agent."
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus size={14} aria-hidden />
+              Create PR
+            </Button>
+          }
+        />
         {createOpen ? (
           <CreatePrDialog
             sessionId={sessionId}
@@ -277,7 +280,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
 
         <Divider />
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <ScrollFade className="min-h-0 flex-1">
           {section === 'overview' ? (
             <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
           ) : (
@@ -305,7 +308,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
               )}
             </SectionBody>
           )}
-        </div>
+        </ScrollFade>
       </div>
 
       {createOpen ? (

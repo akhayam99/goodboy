@@ -73,7 +73,7 @@ function TranscriptCardImpl({
       );
     case 'error':
       return (
-        <div className="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           {item.message}
         </div>
       );
@@ -158,7 +158,7 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
         onClick={() => onOpenDiff(path)}
         title="open diff"
         aria-label={`open the diff for ${rel}`}
-        className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1 transition-colors hover:border-info/40 hover:bg-info/10"
+        className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1 transition-colors hover:border-info/50 hover:bg-info/10"
       >
         {inner}
       </button>
@@ -166,7 +166,7 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
   }
 
   return (
-    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/20 bg-info/5 px-2 py-1">
+    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1">
       {inner}
     </div>
   );
@@ -196,7 +196,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
   return (
-    <div className="group relative text-[13px]">
+    <div className="group relative rounded-md bg-subtle/40 px-3 py-2 text-[13px]">
       {hasCommentResolvedMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
           <CopyButton value={text} label="message" />
@@ -339,7 +339,7 @@ function UserText({
 }) {
   const images = attachments ?? [];
   return (
-    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-2xl bg-primary/15 px-4 pb-1.5 pt-2.5 ring-1 ring-primary/20">
+    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
       {images.length > 0 ? (
         <div className="flex flex-wrap justify-end gap-1.5">
           {images.map((a) => (
@@ -348,7 +348,9 @@ function UserText({
         </div>
       ) : null}
       {text.length > 0 ? (
-        <p className="whitespace-pre-wrap text-sm text-foreground">{text}</p>
+        <div className="text-sm text-foreground">
+          <Markdown text={text} />
+        </div>
       ) : null}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         <span className="font-mono">{formatHHMM(at)}</span>
@@ -400,11 +402,11 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
       </button>
       {open ? (
         <div className="ml-[1.125rem] mt-0.5 flex min-w-0 flex-col gap-1">
-          <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-xs text-muted-foreground">
+          <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
             input: {JSON.stringify(item.input, null, 2)}
           </pre>
           {item.ended ? (
-            <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-subtle p-2 text-2xs text-muted-foreground">
+            <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
               output: {JSON.stringify(item.output, null, 2)}
             </pre>
           ) : null}

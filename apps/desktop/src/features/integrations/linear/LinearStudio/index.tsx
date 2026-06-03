@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw, X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
+import { useStudioOverlay } from '../../../../shared/hooks/useStudioOverlay';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
 import { useLinearIssues } from './useLinearIssues';
@@ -16,14 +17,7 @@ interface Props {
 export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const { closing, requestClose } = useStudioOverlay(onClose);
 
   useEffect(() => {
     if (focused !== null) return;
@@ -41,10 +35,15 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
   }, [focused, groups]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex flex-col bg-background',
+        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+      )}
+    >
       <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-[#5e6ad2]/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-[#5e6ad2] text-[9px] font-bold text-white">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-linear/10">
+          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
             L
           </span>
         </span>
@@ -74,13 +73,13 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
         </button>
         <button
           type="button"
-          onClick={onClose}
+          onClick={requestClose}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5',
-            'text-xs font-medium text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground',
+            'inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5',
+            'text-xs font-semibold text-danger transition-colors',
+            'hover:border-danger/60 hover:bg-danger/15',
           )}
-          aria-label="Close Linear studio"
+          aria-label="close linear studio"
         >
           <X size={13} aria-hidden /> Done
         </button>
@@ -103,7 +102,7 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
             issue={focused}
             sessionId={focusedRow?.sessionId ?? null}
             workspaceId={workspaceId}
-            onClose={onClose}
+            onClose={requestClose}
           />
         </div>
       </div>

@@ -6,6 +6,7 @@ import { InboxList } from './InboxList';
 import { PrDetailPanel } from './PrDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
 interface Props {
   readonly workspaceName: string;
@@ -33,9 +34,9 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
     >
       {(requestClose) => (
         <>
-          <div className="w-72 shrink-0 overflow-y-auto">
+          <ScrollFade className="w-72 shrink-0">
             <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
-          </div>
+          </ScrollFade>
           <Divider orientation="vertical" />
           <div className="min-h-0 flex-1">
             <PrDetailPanel sessionId={focused} onClose={requestClose} />

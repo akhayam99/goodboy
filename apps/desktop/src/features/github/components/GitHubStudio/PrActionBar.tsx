@@ -69,7 +69,7 @@ export function PrActionBar({
   const spin = (k: ActionBusy) => busy === k;
 
   return (
-    <div className="flex shrink-0 items-center gap-1.5 px-5 py-2.5">
+    <div className="flex shrink-0 items-center gap-1.5 px-6 py-3">
       {!isTerminal && isDraft ? (
         <button
           type="button"

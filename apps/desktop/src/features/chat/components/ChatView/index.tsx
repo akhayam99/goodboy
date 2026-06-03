@@ -57,6 +57,7 @@ const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 function useScrollPin(deps: ReadonlyArray<unknown>) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
+  const [atTop, setAtTop] = useState(true);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -69,9 +70,10 @@ function useScrollPin(deps: ReadonlyArray<unknown>) {
     if (!el) return;
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
     setPinned(distance < PIN_TOLERANCE_PX);
+    setAtTop(el.scrollTop < PIN_TOLERANCE_PX);
   };
 
-  return { scrollerRef, pinned, setPinned, onScroll };
+  return { scrollerRef, pinned, atTop, onScroll };
 }
 
 interface ColumnProps {
@@ -93,7 +95,7 @@ function ParallelColumn({
 }: ColumnProps) {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
   const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
-  const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
+  const { scrollerRef, pinned, onScroll } = useScrollPin([items]);
 
   return (
     <div
@@ -108,7 +110,7 @@ function ParallelColumn({
           {items.length === 0 ? (
             <p className="text-xs text-muted-foreground">no events yet for run p{index + 1}.</p>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-2.5">
               {items.map((item) => (
                 <li key={item.key}>
                   <TranscriptCard
@@ -127,11 +129,10 @@ function ParallelColumn({
             type="button"
             aria-label="jump to latest"
             title="jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
-              setPinned(true);
               const el = scrollerRef.current;
-              if (el) el.scrollTop = el.scrollHeight;
+              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
             }}
           >
             <ArrowDown size={14} aria-hidden />
@@ -272,7 +273,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   // setting write re-renders the whole chat view (and its transcript) if we
   // pull the entire object.
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
-  const { scrollerRef, pinned, setPinned, onScroll } = useScrollPin([items]);
+  const { scrollerRef, pinned, atTop, onScroll } = useScrollPin([items]);
 
   const provider = session.providerPreference.defaultProvider;
   const providerAuthState = authResults?.[provider]?.state ?? null;
@@ -448,12 +449,17 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     <div className="flex h-full flex-col">
       <ChatBreadcrumb session={session} />
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-background to-transparent" />
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-background to-transparent transition-opacity duration-200',
+            atTop ? 'opacity-0' : 'opacity-100',
+          )}
+        />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent" />
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="flex-1 overflow-y-auto px-10 py-6"
+          className="flex-1 overflow-y-auto px-6 pb-4 pt-6"
           style={{ scrollbarGutter: 'stable' }}
         >
           {transcriptStale || deferredItems.length === 0 ? (
@@ -510,15 +516,15 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     if (idx > 0 && !dayChanged) {
                       isTurnBreak = true;
                       node.push(
-                        <li key={`turn-${item.key}`} className="my-4">
+                        <li key={`turn-${item.key}`} className="my-2.5">
                           <Divider />
                         </li>,
                       );
                     }
                     if (dayChanged) {
                       node.push(
-                        <li key={`day-${day}-${idx}`} className="my-4 flex justify-center">
-                          <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                        <li key={`day-${day}-${idx}`} className="my-2.5 flex justify-center">
+                          <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
                             {formatDayLabel(item.at)}
                           </span>
                         </li>,
@@ -530,7 +536,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     if (tightToTool) return 'mt-0.5';
                     if (idx === 0) return '';
                     if (isTurnBreak) return '';
-                    return 'mt-4';
+                    return 'mt-2.5';
                   })();
                   node.push(
                     <li
@@ -558,7 +564,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                 });
               })()}
               {isThinking ? (
-                <li className="mt-4">
+                <li className="mt-2.5">
                   <ThinkingIndicator />
                 </li>
               ) : null}
@@ -570,11 +576,10 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
             type="button"
             aria-label="jump to latest"
             title="jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
-              setPinned(true);
               const el = scrollerRef.current;
-              if (el) el.scrollTop = el.scrollHeight;
+              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
             }}
           >
             <ArrowDown size={14} aria-hidden />
@@ -708,7 +713,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
         {copy.hints.map((hint) => (
           <span
             key={hint}
-            className="inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5"
+            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
           >
             <Sparkles size={10} aria-hidden />
             {hint}

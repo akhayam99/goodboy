@@ -22,7 +22,7 @@ import {
   ROLE_TO_KIND,
 } from '../../../../features/session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { shortModel } from '../../../../features/session/agent-row-format';
+import { StepRowCompact } from '../StepRowCompact';
 import {
   type EffortLevel,
   modelEffortLevels,
@@ -258,14 +258,18 @@ export function WorkflowPlanner({
                   onChange={(patch) => updateOverride(i, patch)}
                 />
               ) : (
-                <CompactStep
+                <li
                   key={`${i}-${s.name}`}
-                  index={i}
-                  name={s.name}
-                  role={s.role}
-                  model={ov?.model ?? defaultsForRole(s.role).model}
-                  verbosity={ov?.verbosity ?? DEFAULT_VERBOSITY}
-                />
+                  className="border-t border-border-soft/50 pt-2.5 first:border-t-0 first:pt-0"
+                >
+                  <StepRowCompact
+                    index={i}
+                    kind={ROLE_TO_KIND[s.role as AgentRole] ?? inferAgentKindFromName(s.name)}
+                    name={s.name}
+                    model={ov?.model ?? defaultsForRole(s.role).model}
+                    verbosity={ov?.verbosity ?? DEFAULT_VERBOSITY}
+                  />
+                </li>
               );
             })}
           </ol>
@@ -350,37 +354,6 @@ function StepCard({
           </InlineField>
         </div>
       ) : null}
-    </li>
-  );
-}
-
-// Read-only one-line summary of a step: ordinal · avatar · role-coloured name ·
-// model·verbosity. Mirrors the preset cards so the custom plan reads the same.
-function CompactStep({
-  index,
-  name,
-  role,
-  model,
-  verbosity,
-}: {
-  index: number;
-  name: string;
-  role: string;
-  model: string;
-  verbosity: VerbosityLevel;
-}) {
-  const kind = ROLE_TO_KIND[role as AgentRole] ?? inferAgentKindFromName(name);
-  const pal = AGENT_KIND_PALETTE[kind];
-  return (
-    <li className="flex items-center gap-2 border-t border-border-soft/50 pt-2.5 first:border-t-0 first:pt-0">
-      <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
-        {index + 1}
-      </span>
-      <AgentAvatar kind={kind} size="xs" />
-      <span className={cn('min-w-0 flex-1 truncate text-2xs font-medium', pal.fg)}>{name}</span>
-      <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
-        {shortModel(model)} · {verbosity}
-      </span>
     </li>
   );
 }

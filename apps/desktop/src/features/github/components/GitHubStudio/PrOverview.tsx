@@ -1,6 +1,6 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { cn, Markdown, Textarea } from '@goodboy/ui';
+import { cn, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { Check, ImagePlus, Loader2, Pencil, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -115,26 +115,26 @@ export function PrOverview({ pr, sessionId, onMutated }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Description
-          </span>
-          {editing === 'body' ? (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
-              <ImagePlus size={11} aria-hidden />
-              paste an image url to embed it
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setEditing('body')}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Pencil size={11} aria-hidden />
-              Edit
-            </button>
-          )}
-        </div>
+        <SectionHeader
+          label="Description"
+          action={
+            editing === 'body' ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                <ImagePlus size={11} aria-hidden />
+                paste an image url to embed it
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditing('body')}
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Pencil size={11} aria-hidden />
+                Edit
+              </button>
+            )
+          }
+        />
 
         {editing === 'body' ? (
           <div className="flex flex-col gap-2">

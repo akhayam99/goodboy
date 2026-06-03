@@ -83,6 +83,7 @@ import type {
 } from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
+import type { TerminalTab, TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createPlansSlice } from './slices/plans';
@@ -274,6 +275,8 @@ export interface AppState extends UpdaterState {
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
+  readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
+  readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;
 }
 
 export interface SessionLoadingFlags {
@@ -597,6 +600,11 @@ export interface AppActions {
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
+  addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
+  closeTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
+  setActiveTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
+  setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
+  closeSessionTerminals(sessionId: SessionId): void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -674,6 +682,8 @@ export const initialState: AppState = {
   sessionLoading: {},
   sessionViewPrefs: {},
   terminalSessions: {},
+  terminalTabs: {},
+  activeTerminalTab: {},
 };
 
 // Re-exported so existing test imports (`import { summarizerQueues } from './store'`)
