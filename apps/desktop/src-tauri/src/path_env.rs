@@ -36,9 +36,9 @@ pub fn resolved_path() -> &'static str {
 /// posix path set.
 pub fn command(binary: &str) -> Command {
     #[cfg(windows)]
-    let mut cmd = match resolve_program(binary) {
-        Some(full) => batch_aware_command(full),
-        None => Command::new(binary),
+    let mut cmd = {
+        let resolved = resolve_program(binary).unwrap_or_else(|| std::path::PathBuf::from(binary));
+        batch_aware_command(resolved)
     };
     #[cfg(not(windows))]
     let mut cmd = Command::new(binary);
@@ -100,6 +100,7 @@ fn batch_aware_command(full: std::path::PathBuf) -> Command {
     );
     if is_batch {
         if let Some(js) = shim_js_target(&full) {
+            log::info!("windows spawn: node-direct {} -> {}", full.display(), js.display());
             let mut c = match resolve_program("node") {
                 Some(node) => Command::new(node),
                 None => Command::new("node"),
@@ -107,25 +108,48 @@ fn batch_aware_command(full: std::path::PathBuf) -> Command {
             c.arg(js);
             return c;
         }
+        log::warn!(
+            "windows spawn: no node target found in shim {}; using batch (multi-line/special args may fail)",
+            full.display()
+        );
     }
     Command::new(full)
 }
 
+// Extract the real `node` entry script a .cmd/.bat shim runs. npm cmd-shims
+// reference it as a .js path prefixed with the shim dir (%dp0% / %~dp0), but the
+// exact layout varies across npm/pnpm/yarn/volta versions, so scan every
+// quote- or whitespace-delimited token for one ending in .js and resolve it
+// against the shim directory (or as an absolute path). Logs the shim head when
+// nothing resolves, so a still-failing setup is diagnosable from the app log.
 #[cfg(windows)]
 fn shim_js_target(shim: &std::path::Path) -> Option<std::path::PathBuf> {
     let contents = std::fs::read_to_string(shim).ok()?;
     let dir = shim.parent()?;
-    for token in contents.split('"') {
-        let lower = token.to_ascii_lowercase();
-        if lower.ends_with(".js") && (lower.contains("%dp0%") || lower.contains("%~dp0")) {
-            let rel = token.replace("%dp0%", "").replace("%~dp0", "");
-            let rel = rel.trim().trim_start_matches(|c| c == '\\' || c == '/');
-            let candidate = dir.join(rel);
-            if candidate.is_file() {
-                return Some(candidate);
-            }
+    for raw in contents.split(|c: char| c == '"' || c.is_whitespace()) {
+        let tok = raw.trim();
+        if tok.is_empty() || !tok.to_ascii_lowercase().ends_with(".js") {
+            continue;
+        }
+        let rel = tok
+            .replace("%~dp0", "")
+            .replace("%dp0%", "")
+            .replace("%CD%", "");
+        let rel = rel.trim_start_matches(|c| c == '\\' || c == '/');
+        let candidate = dir.join(rel);
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+        let abs = std::path::Path::new(tok);
+        if abs.is_absolute() && abs.is_file() {
+            return Some(abs.to_path_buf());
         }
     }
+    log::warn!(
+        "shim_js_target: no .js entry resolved in {}; head: {:?}",
+        shim.display(),
+        contents.chars().take(300).collect::<String>()
+    );
     None
 }
 
