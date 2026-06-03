@@ -8,7 +8,6 @@ import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
-import { PricingDialog } from '../../../providers/components/PricingDialog';
 
 interface SessionDetailPanelProps {
   session: Session;
@@ -251,7 +250,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
-  const [pricingOpen, setPricingOpen] = useState(false);
   const sessionCost = useMemo(() => {
     let sum = 0;
     for (const rec of telemetry) {
@@ -337,8 +335,14 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
     <>
       <button
         type="button"
-        onClick={() => setPricingOpen(true)}
-        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer), click for spend breakdown`}
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-budget-studio', {
+              detail: { scope: { kind: 'session', sessionId } },
+            }),
+          )
+        }
+        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer), click for budget studio`}
         className={cn(
           'inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15',
           animating && 'cost-chip-pulse',
@@ -346,7 +350,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
       >
         {displayLabel}
       </button>
-      <PricingDialog open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
   );
 }

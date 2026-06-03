@@ -36,7 +36,7 @@ afterEach(cleanup);
 describe('WorkflowsPanel', () => {
   it('renders the empty-state copy when no workflows exist', () => {
     render(<WorkflowsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByText(/no presets for this workspace/i)).toBeDefined();
+    expect(screen.getByText(/no presets here yet/i)).toBeDefined();
   });
 
   it('renders a New workflow button', () => {

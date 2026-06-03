@@ -41,10 +41,6 @@ vi.mock('../../../../shared/components/OverflowMenu', () => ({
   ),
 }));
 
-vi.mock('../../../providers/components/PricingDialog', () => ({
-  PricingDialog: () => null,
-}));
-
 vi.mock('../../../../shared/lib/editor', () => ({
   openInEditor: vi.fn(async () => undefined),
 }));

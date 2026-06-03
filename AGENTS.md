@@ -147,6 +147,7 @@ the Homebrew cask. Signing runs under the personal Apple team (never Serenis).
 - No dead code. Remove, do not comment out.
 - Rust: only for Tauri commands. Business logic stays in TS.
 - Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui` (a faded hairline), rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
+- Scrollable regions use the `<ScrollFade>` primitive (`apps/desktop/src/shared/components/ScrollFade`) instead of a bare `overflow-y-auto`. It owns the overflow and applies a top/bottom gradient mask that appears only on the edge that has hidden content, matching the chat scroll feel. Prefer a single page-level scroll (let the whole panel scroll) over many nested `max-h-* overflow` boxes.
 
 ---
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, FileDown, FolderCode, Keyboard, Link2, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input, KbdPill } from '@goodboy/ui';
-import { BudgetRulesPanel } from '../../../../features/budget/components/BudgetRulesPanel';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -210,7 +209,24 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
           </div>
         );
       case 'budget':
-        return <BudgetRulesPanel />;
+        return (
+          <div className="flex flex-col gap-4">
+            <SectionHeading>Budget</SectionHeading>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Spend breakdowns, per-provider and per-session usage, and budget alerts now live in
+              Budget Studio, a full-screen view with charts and live breakdowns across every
+              session.
+            </p>
+            <Button
+              onClick={() => {
+                onClose();
+                window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio'));
+              }}
+            >
+              <DollarSign size={14} aria-hidden /> Open Budget Studio
+            </Button>
+          </div>
+        );
       case 'integrations':
         return <GithubPanel />;
       case 'initialization':

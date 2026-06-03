@@ -21,11 +21,6 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../PricingDialog', () => ({
-  PricingDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="pricing-dialog-mock" /> : null,
-}));
-
 import { TelemetryPill } from './index';
 
 beforeEach(() => {
@@ -39,12 +34,15 @@ describe('TelemetryPill', () => {
   it('renders the session + workspace cost in the pill', () => {
     render(<TelemetryPill />);
     expect(screen.getByText(/session/i)).toBeDefined();
-    expect(screen.getByLabelText(/open pricing breakdown/i)).toBeDefined();
+    expect(screen.getByLabelText(/open budget studio/i)).toBeDefined();
   });
 
-  it('opens the pricing dialog when clicked', () => {
+  it('dispatches the open-budget-studio event when clicked', () => {
+    const spy = vi.fn();
+    window.addEventListener('goodboy:open-budget-studio', spy);
     render(<TelemetryPill />);
-    fireEvent.click(screen.getByLabelText(/open pricing breakdown/i));
-    expect(screen.getByTestId('pricing-dialog-mock')).toBeDefined();
+    fireEvent.click(screen.getByLabelText(/open budget studio/i));
+    expect(spy).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-budget-studio', spy);
   });
 });
