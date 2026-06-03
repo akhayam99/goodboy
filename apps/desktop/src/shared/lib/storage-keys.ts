@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
+  composerLiveMarkdown: `${PREFIX}composer-live-markdown`,
 } as const;
 
 export const STORAGE_PREFIXES = {

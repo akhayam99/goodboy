@@ -10,8 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { ImagePlus, Send, Square, X } from 'lucide-react';
-import { Divider, Textarea } from '@goodboy/ui';
+import { ImagePlus, Send, Sparkles, Square, X } from 'lucide-react';
+import { Divider, MarkdownTextarea } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -62,6 +62,7 @@ import {
   type AgentKind,
 } from '../../../session/agent-kind';
 import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch';
+import { useLiveMarkdownPref } from '../../hooks/useLiveMarkdownPref';
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -244,6 +245,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     );
   });
   const [showPopover, setShowPopover] = useState(false);
+  const [liveMarkdown, toggleLiveMarkdown] = useLiveMarkdownPref();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const parsed = useMemo(() => parseQuery(value), [value]);
@@ -1066,7 +1068,8 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 onDismiss={dismissPopover}
               />
             ) : null}
-            <Textarea
+            <MarkdownTextarea
+              live={liveMarkdown}
               value={value}
               onChange={(e) => onValueChange(e.target.value)}
               onKeyDown={onKeyDown}
@@ -1130,6 +1133,20 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 className="hidden"
                 onChange={onFileInputChange}
               />
+              <button
+                type="button"
+                onClick={toggleLiveMarkdown}
+                aria-pressed={liveMarkdown}
+                title="live markdown"
+                aria-label="toggle live markdown"
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                  liveMarkdown
+                    ? 'bg-muted text-primary'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+                }`}
+              >
+                <Sparkles size={15} aria-hidden />
+              </button>
               {queued ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs text-primary">
                   queued
