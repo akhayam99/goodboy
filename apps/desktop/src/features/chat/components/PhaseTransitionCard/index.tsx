@@ -14,14 +14,16 @@ export function PhaseTransitionCard({ item }: Props) {
   const timestamp = formatCardTime(item.at);
 
   return (
-    <div className="rounded-md border border-info/30 bg-info/5 px-2 py-1.5">
+    <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5">
       <Collapsible
         open={open}
         onOpenChange={setOpen}
         trigger={
           <span className="flex items-center gap-2 text-xs font-medium">
-            <Target size={11} aria-hidden className="text-info" />
-            <span className="text-2xs font-medium uppercase tracking-wide text-info/80">step</span>
+            <Target size={11} aria-hidden className="text-success" />
+            <span className="text-2xs font-medium uppercase tracking-wide text-success/80">
+              step
+            </span>
             <span className="text-foreground/85">{header}</span>
           </span>
         }
