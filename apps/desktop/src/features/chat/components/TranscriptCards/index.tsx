@@ -339,7 +339,7 @@ function UserText({
 }) {
   const images = attachments ?? [];
   return (
-    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-border-soft bg-muted/40 px-4 pb-1.5 pt-2.5">
+    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
       {images.length > 0 ? (
         <div className="flex flex-wrap justify-end gap-1.5">
           {images.map((a) => (
