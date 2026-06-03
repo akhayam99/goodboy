@@ -26,7 +26,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { Divider, ScrollArea, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
+import { Divider, ScrollArea, ScrollFade, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
   AgentId,
@@ -47,7 +47,7 @@ import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
-import { TerminalPanel } from '../../../../features/scripts/components/TerminalPanel';
+import { TerminalDock } from '../../../../features/terminal/components/TerminalDock';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -284,7 +284,7 @@ export function ContextPanel({
               tab !== 'terminal' && 'invisible pointer-events-none',
             )}
           >
-            <TerminalPanel sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
+            <TerminalDock sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
           {tab !== 'terminal' ? (
             <div
@@ -293,25 +293,24 @@ export function ContextPanel({
             >
               {tab === 'context' ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-                  <ul
-                    className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-1"
-                    style={{ scrollbarGutter: 'stable' }}
-                  >
-                    {visibleSlotKeys.map((key) => {
-                      const slot = slotsByKey.get(key);
-                      return (
-                        <SlotRow
-                          key={key}
-                          sessionId={session.id}
-                          slotKey={key}
-                          slot={slot}
-                          loading={loading.slots}
-                          isSummarizing={summarizer.status === 'running'}
-                          onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                        />
-                      );
-                    })}
-                  </ul>
+                  <ScrollFade className="flex-1" viewportClassName="p-1">
+                    <ul className="flex flex-col gap-2.5">
+                      {visibleSlotKeys.map((key) => {
+                        const slot = slotsByKey.get(key);
+                        return (
+                          <SlotRow
+                            key={key}
+                            sessionId={session.id}
+                            slotKey={key}
+                            slot={slot}
+                            loading={loading.slots}
+                            isSummarizing={summarizer.status === 'running'}
+                            onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                          />
+                        );
+                      })}
+                    </ul>
+                  </ScrollFade>
                   <ChangesStrip
                     sessionId={session.id}
                     workingDir={workingDir}

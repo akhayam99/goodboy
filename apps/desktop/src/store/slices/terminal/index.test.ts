@@ -353,6 +353,12 @@ vi.mock('../../../features/scripts/scripts', () => ({
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
   invokeTerminalClose: vi.fn(async () => undefined),
+  invokeTerminalWrite: vi.fn(async () => undefined),
+  invokeTerminalResize: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../shared/components/GenericTerminalPanel', () => ({
+  clearTerminalCache: vi.fn(() => undefined),
 }));
 
 vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', () => ({
@@ -536,6 +542,8 @@ describe('store contract', () => {
         sessionLoading: {},
         sessionViewPrefs: {},
         terminalSessions: {},
+        terminalTabs: {},
+        activeTerminalTab: {},
       };
     }
     store.setState(resetState as never);
@@ -560,6 +568,63 @@ describe('store contract', () => {
       store.setState({ terminalSessions: { [SESSION_ID]: 'open' } });
       await store.getState().closeTerminal(SESSION_ID);
       expect(store.getState().terminalSessions[SESSION_ID]).toBe('closed');
+    });
+  });
+
+  describe('terminal cmux', () => {
+    it('addTerminalTab appends a tab, sets it active, and returns the id', async () => {
+      const store = await getStore();
+      const id = store.getState().addTerminalTab(SESSION_ID, '/cwd');
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs).toHaveLength(1);
+      expect(tabs[0]?.id).toBe(id);
+      expect(tabs[0]?.status).toBe('running');
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(id);
+    });
+
+    it('a second addTerminalTab allocates a distinct id and becomes active', async () => {
+      const store = await getStore();
+      const first = store.getState().addTerminalTab(SESSION_ID, null);
+      const second = store.getState().addTerminalTab(SESSION_ID, null);
+      expect(second).not.toBe(first);
+      expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(2);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(second);
+    });
+
+    it('setActiveTerminalTab switches the active tab', async () => {
+      const store = await getStore();
+      const first = store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().setActiveTerminalTab(SESSION_ID, first);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
+    });
+
+    it('setTerminalTabStatus updates the tab status', async () => {
+      const store = await getStore();
+      const id = store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().setTerminalTabStatus(SESSION_ID, id, 'exited');
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs[0]?.status).toBe('exited');
+    });
+
+    it('closeTerminalTab removes the tab and reassigns active', async () => {
+      const store = await getStore();
+      const first = store.getState().addTerminalTab(SESSION_ID, null);
+      const second = store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().closeTerminalTab(SESSION_ID, second);
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs).toHaveLength(1);
+      expect(tabs[0]?.id).toBe(first);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
+    });
+
+    it('closeSessionTerminals clears the session tabs', async () => {
+      const store = await getStore();
+      store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().addTerminalTab(SESSION_ID, null);
+      store.getState().closeSessionTerminals(SESSION_ID);
+      expect(store.getState().terminalTabs[SESSION_ID]).toBeUndefined();
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBeUndefined();
     });
   });
 });

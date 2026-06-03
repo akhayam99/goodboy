@@ -9,6 +9,7 @@ export function deleteTask(set: SetFn, get: GetFn) {
   return async (sessionId: SessionId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
+    get().closeSessionTerminals(sessionId);
     if (session.state.kind === 'running') {
       await cancelTurn((session.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
         () => undefined,

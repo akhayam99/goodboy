@@ -40,6 +40,7 @@
   --color-provider-cursor: oklch(0.70 0.16 290);
   --color-provider-codex: oklch(0.72 0.16 150);
   --color-provider-gemini: oklch(0.72 0.16 240);
+  --color-provider-linear: oklch(0.57 0.16 277);
 
   --text-2xs: 11px;
   --text-xs: 12px;

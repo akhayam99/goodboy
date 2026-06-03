@@ -1412,7 +1412,7 @@ exports[`snapshot, error states > NewSessionDialog: form error 1`] = `
 
 exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
 <div
-  class="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger"
+  class="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger"
 >
   provider failed to respond
 </div>

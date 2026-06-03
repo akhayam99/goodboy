@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Input } from '@goodboy/ui';
+import { Button, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { SectionHeader } from './SectionHeader';
 
 interface Props {
   readonly providerId: ProviderId;

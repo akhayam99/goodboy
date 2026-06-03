@@ -523,7 +523,7 @@ function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3 rounded-lg border border-border-soft bg-subtle/30 p-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#5e6ad2] text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-provider-linear text-xs font-bold text-white">
             L
           </div>
           <div className="flex flex-col">

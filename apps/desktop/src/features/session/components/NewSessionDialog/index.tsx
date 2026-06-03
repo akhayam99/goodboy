@@ -437,7 +437,7 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
         {hasLinear ? (
           <Section
             icon={
-              <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#5e6ad2] text-[9px] font-bold text-white">
+              <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
                 L
               </span>
             }

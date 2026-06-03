@@ -108,7 +108,7 @@ function ParallelColumn({
           {items.length === 0 ? (
             <p className="text-xs text-muted-foreground">no events yet for run p{index + 1}.</p>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-2.5">
               {items.map((item) => (
                 <li key={item.key}>
                   <TranscriptCard
@@ -127,7 +127,7 @@ function ParallelColumn({
             type="button"
             aria-label="jump to latest"
             title="jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
@@ -453,7 +453,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="flex-1 overflow-y-auto px-10 py-6"
+          className="flex-1 overflow-y-auto px-6 py-4"
           style={{ scrollbarGutter: 'stable' }}
         >
           {transcriptStale || deferredItems.length === 0 ? (
@@ -510,15 +510,15 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     if (idx > 0 && !dayChanged) {
                       isTurnBreak = true;
                       node.push(
-                        <li key={`turn-${item.key}`} className="my-4">
+                        <li key={`turn-${item.key}`} className="my-2.5">
                           <Divider />
                         </li>,
                       );
                     }
                     if (dayChanged) {
                       node.push(
-                        <li key={`day-${day}-${idx}`} className="my-4 flex justify-center">
-                          <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                        <li key={`day-${day}-${idx}`} className="my-2.5 flex justify-center">
+                          <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
                             {formatDayLabel(item.at)}
                           </span>
                         </li>,
@@ -530,7 +530,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                     if (tightToTool) return 'mt-0.5';
                     if (idx === 0) return '';
                     if (isTurnBreak) return '';
-                    return 'mt-4';
+                    return 'mt-2.5';
                   })();
                   node.push(
                     <li
@@ -558,7 +558,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                 });
               })()}
               {isThinking ? (
-                <li className="mt-4">
+                <li className="mt-2.5">
                   <ThinkingIndicator />
                 </li>
               ) : null}
@@ -570,7 +570,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
             type="button"
             aria-label="jump to latest"
             title="jump to latest"
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-muted"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
               setPinned(true);
               const el = scrollerRef.current;
@@ -708,7 +708,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
         {copy.hints.map((hint) => (
           <span
             key={hint}
-            className="inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5"
+            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
           >
             <Sparkles size={10} aria-hidden />
             {hint}

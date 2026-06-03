@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
-import { Select } from '@goodboy/ui';
+import { SectionHeader, Select } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { SectionHeader } from './SectionHeader';
 
 interface Props {
   readonly providerId: ProviderId;

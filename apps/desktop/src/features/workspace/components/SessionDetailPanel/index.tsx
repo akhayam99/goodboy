@@ -193,7 +193,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
             target="_blank"
             rel="noreferrer"
             title={`${externalTask.identifier}: ${externalTask.title}`}
-            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-[#5e6ad2]/30 bg-[#5e6ad2]/5 px-1.5 py-0.5 text-[10px] font-medium text-[#5e6ad2] transition-colors hover:border-[#5e6ad2]/60 hover:bg-[#5e6ad2]/10"
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-provider-linear/30 bg-provider-linear/5 px-1.5 py-0.5 text-2xs font-medium text-provider-linear transition-colors hover:border-provider-linear/60 hover:bg-provider-linear/10"
             aria-label={`open ${externalTask.identifier} in linear`}
           >
             <span className="font-mono">{externalTask.identifier}</span>

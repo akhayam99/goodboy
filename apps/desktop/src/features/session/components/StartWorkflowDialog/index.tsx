@@ -4,14 +4,8 @@ import { Check, Layers, Sparkles, AlertTriangle } from 'lucide-react';
 import type { ProviderId, Session, Workflow, WorkflowId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { WorkflowPlanner } from '../../../workflows/components/WorkflowPlanner';
-import { shortModel } from '../../agent-row-format';
-import {
-  AGENT_KIND_DEFAULTS,
-  AGENT_KIND_PALETTE,
-  inferAgentKindFromName,
-  ROLE_TO_KIND,
-} from '../../agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { StepRowCompact } from '../../../workflows/components/StepRowCompact';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, ROLE_TO_KIND } from '../../agent-kind';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
@@ -330,23 +324,17 @@ function PresetOption({
   );
 }
 
-// Shared step line used by preset cards and the custom-ready summary.
 function StepRow({ step, index }: { step: Workflow['steps'][number]; index: number }) {
   const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-  const model = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
-  const verbosity = step.verbosity ?? 'normal';
   return (
-    <li className="flex items-center gap-2">
-      <span className="w-3 shrink-0 text-right font-mono text-2xs text-muted-foreground/40">
-        {index + 1}
-      </span>
-      <AgentAvatar kind={kind} size="xs" />
-      <span className={cn('truncate text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
-        {step.name}
-      </span>
-      <span className="ml-auto shrink-0 truncate font-mono text-[10px] text-muted-foreground/50">
-        {shortModel(model)} · {verbosity}
-      </span>
+    <li>
+      <StepRowCompact
+        index={index}
+        kind={kind}
+        name={step.name}
+        model={step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model}
+        verbosity={step.verbosity ?? 'normal'}
+      />
     </li>
   );
 }

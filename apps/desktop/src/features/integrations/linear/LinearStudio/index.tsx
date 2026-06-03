@@ -43,8 +43,8 @@ export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-[#5e6ad2]/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-[#5e6ad2] text-[9px] font-bold text-white">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-linear/10">
+          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
             L
           </span>
         </span>

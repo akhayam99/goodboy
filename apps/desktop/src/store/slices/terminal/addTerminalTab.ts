@@ -1,0 +1,34 @@
+import type { SessionId } from '@goodboy/types';
+import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
+import type { GetFn, SetFn } from './types';
+
+function nextOrdinal(tabs: readonly TerminalTab[]): number {
+  let max = 0;
+  for (const tab of tabs) {
+    const trailing = Number.parseInt(tab.id.slice(tab.id.lastIndexOf('t') + 1), 10);
+    const ordinal = Number.isNaN(trailing) ? 1 : trailing;
+    if (ordinal > max) max = ordinal;
+  }
+  return max + 1;
+}
+
+export function addTerminalTab(set: SetFn, get: GetFn) {
+  return (sessionId: SessionId, cwd: string | null): TerminalTabId => {
+    const tabs = get().terminalTabs[sessionId] ?? [];
+    const n = nextOrdinal(tabs);
+    const id = `${sessionId}::t${n}` as TerminalTabId;
+    const tab: TerminalTab = {
+      id,
+      sessionId,
+      title: `Terminal ${n}`,
+      cwd,
+      status: 'running',
+      createdAt: Date.now(),
+    };
+    set((s) => ({
+      terminalTabs: { ...s.terminalTabs, [sessionId]: [...tabs, tab] },
+      activeTerminalTab: { ...s.activeTerminalTab, [sessionId]: id },
+    }));
+    return id;
+  };
+}

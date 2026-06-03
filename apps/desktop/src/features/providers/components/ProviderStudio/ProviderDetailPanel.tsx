@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, SectionHeader } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -17,7 +17,6 @@ import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { openProviderModal } from '../ProviderModalHost';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
-import { SectionHeader } from './SectionHeader';
 
 interface Props {
   readonly info: ProviderInfo | null;

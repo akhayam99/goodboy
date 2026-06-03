@@ -25,9 +25,9 @@ export interface Props {
 }
 
 const SEVERITY_FRAME: Record<NudgeSeverity, string> = {
-  info: 'border-info/40 bg-info/10',
-  warning: 'border-warning/40 bg-warning/10',
-  success: 'border-success/40 bg-success/10',
+  info: 'border-info/30 bg-info/5',
+  warning: 'border-warning/30 bg-warning/5',
+  success: 'border-success/30 bg-success/5',
 };
 
 const SEVERITY_PRIMARY: Record<NudgeSeverity, string> = {
@@ -71,7 +71,7 @@ export function NudgeCard({
 
   return (
     <section
-      className={cn('relative rounded border px-2.5 py-2 text-[11px]', SEVERITY_FRAME[severity])}
+      className={cn('relative rounded-md border px-2.5 py-2 text-[11px]', SEVERITY_FRAME[severity])}
       data-testid={testId}
       aria-label={ariaLabel}
     >

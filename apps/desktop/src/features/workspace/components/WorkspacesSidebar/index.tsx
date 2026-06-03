@@ -1,7 +1,16 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
-import { Button, Dialog, Divider, Popover, ScrollArea, cn } from '@goodboy/ui';
+import {
+  Button,
+  Dialog,
+  Divider,
+  EmptyState,
+  Popover,
+  ScrollArea,
+  SectionHeader,
+  cn,
+} from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -19,6 +28,7 @@ import {
   Layers,
   Loader2,
   Moon,
+  MousePointerClick,
   PanelLeftClose,
   PanelLeftOpen,
   Play,
@@ -109,9 +119,6 @@ interface WorkspacesSidebarProps {
 
 const FOOTER_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
-
-const SECTION_LABEL =
-  'flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground' as const;
 
 export function WorkspacesSidebar({
   onOpenSettings,
@@ -223,10 +230,7 @@ export function WorkspacesSidebar({
                     onArchivedTabOpen={onArchivedTabOpen}
                   />
                 </div>
-                <div
-                  aria-hidden
-                  className="ml-1.5 my-1 w-px shrink-0 bg-gradient-to-b from-transparent via-border-soft via-30% to-transparent"
-                />
+                <Divider orientation="vertical" className="mx-1.5" />
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
@@ -234,6 +238,7 @@ export function WorkspacesSidebar({
                         session={currentSession}
                         onOpenSessionSettings={() => setSessionSettingsOpen(true)}
                       />
+                      <Divider />
                       <ScrollArea className="min-h-0 flex-1">
                         <AgentsSection task={currentSession} />
                       </ScrollArea>
@@ -419,7 +424,7 @@ function QuickActionsRow({
       {linearEnabled ? (
         <QuickAction
           icon={
-            <span className="flex size-3 items-center justify-center rounded-[3px] bg-[#5e6ad2] text-[7px] font-bold text-white">
+            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-linear text-[7px] font-bold text-white">
               L
             </span>
           }
@@ -637,12 +642,16 @@ function SidebarLogo() {
 
 function SidebarDetailHint({ hasAnySession }: { hasAnySession: boolean }) {
   return (
-    <div className="flex h-full items-center justify-center px-6 text-center">
-      <p className="text-2xs leading-relaxed text-muted-foreground/70">
-        {hasAnySession
-          ? 'Pick a session from the list to the left.'
-          : 'Create your first session from the list to the left.'}
-      </p>
+    <div className="flex h-full items-center justify-center">
+      <EmptyState
+        icon={hasAnySession ? MousePointerClick : Sparkles}
+        title={hasAnySession ? 'No session selected' : 'No sessions yet'}
+        description={
+          hasAnySession
+            ? 'Pick a session from the list to the left.'
+            : 'Create your first session from the list to the left.'
+        }
+      />
     </div>
   );
 }
@@ -1188,12 +1197,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
 
   return (
     <section className="mt-2 flex flex-col px-3 pb-3">
-      <header className="flex items-center justify-between gap-2 pb-1.5">
-        <span className={SECTION_LABEL}>
-          <Layers size={11} aria-hidden className="text-primary" />
-          Workflow
-        </span>
-      </header>
+      <SectionHeader
+        className="pb-1.5"
+        icon={<Layers size={11} aria-hidden className="text-primary" />}
+        label="Workflow"
+      />
       {!hasAnyWorkflow ? (
         <button
           type="button"
@@ -1217,12 +1225,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </>
       )}
 
-      <header className="mt-6 flex items-center gap-2 pb-1.5">
-        <span className={SECTION_LABEL}>
-          <DogMascot size={14} className="shrink-0 text-success" />
-          Agents
-        </span>
-      </header>
+      <SectionHeader
+        className="mt-6 pb-1.5"
+        icon={<DogMascot size={14} className="shrink-0 text-success" />}
+        label="Agents"
+      />
       {hasAnyWorkflow ? (
         adHocAgents.length > 0 ? (
           <ul className="flex flex-col gap-1 pl-2">{adHocAgents.map(renderAdHocRow)}</ul>
