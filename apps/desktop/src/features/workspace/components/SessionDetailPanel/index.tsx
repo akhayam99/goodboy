@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, FolderOpen, GitBranch, LogOut, Play, ScrollText, Settings2 } from 'lucide-react';
+import {
+  Archive,
+  Check,
+  FolderOpen,
+  GitBranch,
+  LogOut,
+  Play,
+  ScrollText,
+  Settings2,
+} from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord, WorkspaceScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -51,6 +60,10 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
 
   const onEndSession = () => {
     window.dispatchEvent(new CustomEvent('goodboy:end-session'));
+  };
+
+  const onArchiveSession = () => {
+    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
   };
 
   const actionItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -112,6 +125,14 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
       label: 'Session settings',
       icon: Settings2,
       onClick: onOpenSessionSettings,
+    });
+    items.push({
+      kind: 'item',
+      key: 'archive',
+      label: 'Archive session',
+      icon: Archive,
+      onClick: onArchiveSession,
+      hint: '⌘⇧A',
     });
     items.push({
       kind: 'item',

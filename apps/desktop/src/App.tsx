@@ -6,6 +6,7 @@ import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { EndSessionDialog } from './features/session/components/EndSessionDialog';
+import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ToastProvider } from './app/components/Toast';
 import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
@@ -91,6 +92,7 @@ export function App() {
     undefined,
   );
   const [endOpen, setEndOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
@@ -268,6 +270,9 @@ export function App() {
   const openEndSession = useCallback(() => {
     if (currentSession) setEndOpen(true);
   }, [currentSession]);
+  const openArchiveSession = useCallback(() => {
+    if (currentSession) setArchiveOpen(true);
+  }, [currentSession]);
 
   useEffect(() => {
     const handler = () => {
@@ -275,6 +280,14 @@ export function App() {
     };
     window.addEventListener('goodboy:end-session', handler);
     return () => window.removeEventListener('goodboy:end-session', handler);
+  }, [currentSession]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (currentSession) setArchiveOpen(true);
+    };
+    window.addEventListener('goodboy:archive-session', handler);
+    return () => window.removeEventListener('goodboy:archive-session', handler);
   }, [currentSession]);
   const openShortcutHelp = useCallback(() => {
     setSettingsInitialSection('shortcuts');
@@ -356,6 +369,7 @@ export function App() {
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
   useKeyboardShortcut('cmd+.', openEndSession);
+  useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+b', toggleLeftSidebar);
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
@@ -558,6 +572,9 @@ export function App() {
       ) : null}
       {currentSession && endOpen ? (
         <EndSessionDialog session={currentSession} open onClose={() => setEndOpen(false)} />
+      ) : null}
+      {currentSession && archiveOpen ? (
+        <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
       {/* App-level modal host so the provider connect modal can be summoned
           from any surface (providers panel, chat callout, future onboarding
