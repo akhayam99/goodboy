@@ -660,7 +660,7 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
       }
       case 'pick_agent':
         return {
-          eyebrow: `${phaseRuns.length} ${phaseRuns.length === 1 ? 'agent' : 'agents'} in this session`,
+          eyebrow: `${phaseRuns.length === 1 ? 'agent' : 'agents'} in this session`,
           title: 'Pick an agent on the left',
           body: 'Agents share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-agent. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
           hints: ['Select an agent to see its transcript', 'Spawn fresh, context travels with it'],
@@ -695,13 +695,9 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
         {agentVisual?.image ? (
           <MaskedDog image={agentVisual.image} className={cn('size-32', agentVisual.tint)} />
         ) : scenario === 'pick_agent' ? (
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {Object.entries(KIND_ICON).map(([kind, visual]) =>
-              visual.image && kind !== 'generic' ? (
-                <MaskedDog key={kind} image={visual.image} className={cn('size-11', visual.tint)} />
-              ) : null,
-            )}
-          </div>
+          <span className="text-7xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
+            {phaseRuns.length}
+          </span>
         ) : (
           <DogMascot size={128} className="text-primary" />
         )}
