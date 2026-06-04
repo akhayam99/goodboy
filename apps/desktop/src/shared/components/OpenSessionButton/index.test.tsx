@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from './index';
 
@@ -8,6 +8,8 @@ const openSession = vi.fn();
 vi.mock('../../hooks/useOpenSession', () => ({
   useOpenSession: () => openSession,
 }));
+
+afterEach(cleanup);
 
 describe('OpenSessionButton', () => {
   it('renders the default label', () => {
