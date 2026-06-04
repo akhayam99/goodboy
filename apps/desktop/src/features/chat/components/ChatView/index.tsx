@@ -54,10 +54,14 @@ interface ChatViewProps {
 const PIN_TOLERANCE_PX = 32;
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
-function useScrollPin(deps: ReadonlyArray<unknown>) {
+function useScrollPin(deps: ReadonlyArray<unknown>, resetKey?: unknown) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
   const [atTop, setAtTop] = useState(true);
+
+  useEffect(() => {
+    setPinned(true);
+  }, [resetKey]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -273,7 +277,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   // setting write re-renders the whole chat view (and its transcript) if we
   // pull the entire object.
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
-  const { scrollerRef, pinned, atTop, onScroll } = useScrollPin([items]);
+  const { scrollerRef, pinned, atTop, onScroll } = useScrollPin([deferredItems], selectedAgentId);
 
   const provider = session.providerPreference.defaultProvider;
   const providerAuthState = authResults?.[provider]?.state ?? null;
