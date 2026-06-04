@@ -28,6 +28,7 @@ import { StepDropZone } from '../WorkflowStudio/StepDropZone';
 import { PresetCard } from '../PresetCard';
 import { LibraryCard } from '../LibraryCard';
 import { LibraryStepForm } from '../LibraryStepForm';
+import { EmptyGuide } from './EmptyGuide';
 
 interface Props {
   readonly workspaceId: WorkspaceId;
@@ -422,7 +423,7 @@ export function WorkflowsPanel({ workspaceId }: Props) {
             </div>
           </ScrollFade>
         ) : (
-          <EmptyEditorHint onNew={openNew} hasPresets={presets.length > 0} />
+          <EmptyGuide onNew={openNew} hasPresets={presets.length > 0} />
         )}
       </section>
 
@@ -447,27 +448,6 @@ export function WorkflowsPanel({ workspaceId }: Props) {
           {drag.label}
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function EmptyEditorHint({ onNew, hasPresets }: { onNew: () => void; hasPresets: boolean }) {
-  return (
-    <div className="flex h-full items-center justify-center p-8">
-      <EmptyState
-        icon={Layers}
-        title={hasPresets ? 'Pick a workflow to edit' : 'Design your first workflow'}
-        description={
-          hasPresets
-            ? 'Select a preset on the left, or start a new one. Drag steps in from the library on the right.'
-            : 'Chain reusable steps, each with its own role, provider and model. Drag them in from the library on the right.'
-        }
-        action={
-          <Button size="sm" onClick={onNew}>
-            <Plus size={13} aria-hidden /> New workflow
-          </Button>
-        }
-      />
     </div>
   );
 }
