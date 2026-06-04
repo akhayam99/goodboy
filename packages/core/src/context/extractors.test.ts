@@ -274,14 +274,17 @@ describe('extractCommentResolved', () => {
 
 describe('isReviewThreadId', () => {
   it('accepts github review thread node ids', () => {
-    expect(isReviewThreadId('PRT_kwDOABC123')).toBe(true);
-    expect(isReviewThreadId('PRT_1')).toBe(true);
+    expect(isReviewThreadId('PRRT_kwDOABC123')).toBe(true);
+    expect(isReviewThreadId('PRRT_1')).toBe(true);
   });
 
-  it('rejects local diff comment uuids and other ids', () => {
+  it('rejects local diff comment uuids and neighbouring node-id prefixes', () => {
     expect(isReviewThreadId('f47ac10b-58cc-4372-a567-0e02b2c3d479')).toBe(false);
     expect(isReviewThreadId('th-1')).toBe(false);
     expect(isReviewThreadId('')).toBe(false);
+    expect(isReviewThreadId('PR_kwDOABC123')).toBe(false);
+    expect(isReviewThreadId('PRR_kwDOABC123')).toBe(false);
+    expect(isReviewThreadId('PRRC_kwDOABC123')).toBe(false);
   });
 });
 

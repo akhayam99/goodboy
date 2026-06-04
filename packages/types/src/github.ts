@@ -1,3 +1,5 @@
+import type { IsoDateTime, SessionId } from './ids';
+
 export type GhTokenMode = 'absent' | 'gh-cli' | 'pat';
 
 export interface GhTokenStatus {
@@ -144,4 +146,13 @@ export interface PrDetail {
   reviews: ReadonlyArray<PrReview>;
   reviewRequests: ReadonlyArray<PrReviewRequest>;
   checks: ReadonlyArray<PrCheckRun>;
+}
+
+export interface PendingResolution {
+  id: string;
+  sessionId: SessionId;
+  prNumber: number;
+  threadId: string;
+  commitSha: string;
+  createdAt: IsoDateTime;
 }

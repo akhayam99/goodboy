@@ -201,7 +201,7 @@ export function extractCommentResolved(assistantText: string): ExtractedCommentR
   return last;
 }
 
-const REVIEW_THREAD_ID_RE = /^PRT_/;
+const REVIEW_THREAD_ID_RE = /^PRRT_/;
 
 export function isReviewThreadId(threadId: string): boolean {
   return REVIEW_THREAD_ID_RE.test(threadId);
