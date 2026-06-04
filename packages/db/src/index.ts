@@ -166,6 +166,11 @@ export {
   deleteDiffComment,
 } from './queries/diff-comment';
 export {
+  queuePendingResolution,
+  listPendingResolutionsForSession,
+  deletePendingResolution,
+} from './queries/pending-resolution';
+export {
   insertNotification,
   listNotifications,
   markAllNotificationsRead,

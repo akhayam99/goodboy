@@ -59,6 +59,7 @@ import type {
   PullRequestState,
   LinkedIssue,
   PrDetail,
+  PendingResolution,
   SessionViewPrefs,
   SessionSortKey,
   SessionGroupKey,
@@ -243,6 +244,10 @@ export interface AppState extends UpdaterState {
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
+  // Review threads the user resolved locally but deferred publishing. Pushed
+  // and resolved as a batch (single push) via pushAllResolutions. Loaded lazily
+  // per session; undefined = not yet loaded.
+  readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
@@ -527,6 +532,15 @@ export interface AppActions {
     threadId: string,
     closure?: { commitSha?: string; reason?: string },
   ): Promise<boolean>;
+  queueResolution(
+    sessionId: SessionId,
+    args: { threadId: string; commitSha: string; prNumber: number },
+  ): Promise<void>;
+  dequeueResolution(sessionId: SessionId, threadId: string): Promise<void>;
+  loadPendingResolutions(sessionId: SessionId): Promise<void>;
+  pushAllResolutions(
+    sessionId: SessionId,
+  ): Promise<{ pushed: boolean; resolved: number; failed: number }>;
   createPrForSession(
     sessionId: SessionId,
     opts?: { title?: string; body?: string; base?: string; draft?: boolean },
@@ -669,6 +683,7 @@ export const initialState: AppState = {
   sidebarProviderFilter: [],
   githubStatus: null,
   sessionGithub: {},
+  sessionPendingResolutions: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentKindOverride: {},

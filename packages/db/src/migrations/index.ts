@@ -49,6 +49,7 @@ import { m048PlanClusters } from './m048-plan-clusters';
 import { m049SessionWorkflowDiscard } from './m049-session-workflow-discard';
 import { m050ProviderCredentials } from './m050-provider-credentials';
 import { m051ProviderBindings } from './m051-provider-bindings';
+import { m052PendingResolutions } from './m052-pending-resolutions';
 
 export interface Migration {
   readonly version: number;
@@ -107,4 +108,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 49, sql: m049SessionWorkflowDiscard },
   { version: 50, sql: m050ProviderCredentials },
   { version: 51, sql: m051ProviderBindings },
+  { version: 52, sql: m052PendingResolutions },
 ];

@@ -11,6 +11,10 @@ import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
 import { resolveGithubThread } from './resolveGithubThread';
+import { queueResolution } from './queueResolution';
+import { dequeueResolution } from './dequeueResolution';
+import { loadPendingResolutions } from './loadPendingResolutions';
+import { pushAllResolutions } from './pushAllResolutions';
 import { setGithubPat } from './setGithubPat';
 import { sweepGithub } from './sweepGithub';
 import type { GetFn, SetFn } from './types';
@@ -23,6 +27,10 @@ export function createGithubSlice(set: SetFn, get: GetFn) {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     resolveGithubThread: resolveGithubThread(set, get),
+    queueResolution: queueResolution(set, get),
+    dequeueResolution: dequeueResolution(set, get),
+    loadPendingResolutions: loadPendingResolutions(set, get),
+    pushAllResolutions: pushAllResolutions(set, get),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),
