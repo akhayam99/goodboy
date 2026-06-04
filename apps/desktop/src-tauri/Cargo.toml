@@ -23,7 +23,7 @@ tauri = { version = "2.11.1", features = [] }
 tauri-plugin-log = "2"
 keyring = { version = "3", features = ["apple-native", "linux-native", "windows-native"] }
 thiserror = "2"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 dirs = "5"
 regex = "1"
 sha2 = "0.10"
