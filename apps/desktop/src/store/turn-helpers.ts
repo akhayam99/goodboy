@@ -469,9 +469,10 @@ export async function applyHeuristicTitle(
 
     const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
     const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;
+    const isFoundingAgent = agentRecord?.ordinal === 0;
 
     const titleNow = new Date().toISOString() as IsoDateTime;
-    if (!session.titleUserEdited) {
+    if (isFoundingAgent && !session.titleUserEdited) {
       set((state) => ({
         sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title } : s)),
       }));
