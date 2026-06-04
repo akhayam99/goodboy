@@ -9,6 +9,7 @@ import {
 } from '../../../chat/spawn-from-comment';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
@@ -214,10 +215,13 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
           title="Ready to open a pull request"
           description="Write the title and description, or hand it to an agent."
           action={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={14} aria-hidden />
-              Create PR
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus size={14} aria-hidden />
+                Create PR
+              </Button>
+              <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="secondary" />
+            </div>
           }
         />
         {createOpen ? (
@@ -262,6 +266,8 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
       <div className="flex min-w-0 flex-1 flex-col">
         <PrActionBar
           pr={activePr}
+          sessionId={sessionId}
+          onOpenSession={onClose}
           busy={busy}
           detailLoading={detailLoading}
           mergeConfirm={mergeConfirm}
