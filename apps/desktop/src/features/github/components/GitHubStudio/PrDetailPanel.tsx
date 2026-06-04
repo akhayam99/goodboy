@@ -37,6 +37,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
   });
   const workspaceId = session?.workspaceId;
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const markPrReady = useAppStore((s) => s.markPrReady);
   const convertPrToDraft = useAppStore((s) => s.convertPrToDraft);
   const mergePr = useAppStore((s) => s.mergePr);
@@ -87,6 +88,7 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
 
   useEffect(() => {
     setSelectedNumber(null);
+    setPrs([]);
     setLocalDetail(null);
     setLocalDetailError(null);
     setMergeConfirm(false);
@@ -126,6 +128,12 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     github?.detailError,
     refreshSessionPrDetail,
   ]);
+
+  useEffect(() => {
+    if (!sessionId || prs.length === 0) return;
+    if ((prs[0]?.number ?? null) === primaryNumber) return;
+    void refreshSessionPr(sessionId, { force: true, silent: true });
+  }, [sessionId, prs, primaryNumber, refreshSessionPr]);
 
   useEffect(() => {
     if (!activePr || isPrimary) return;
