@@ -7,6 +7,7 @@ import {
   type AgentKind,
   inferAgentKindFromName,
   inferAgentKindFromStep,
+  kindConsumesPlan,
   resolveAgentKind,
 } from './agent-kind';
 
@@ -175,6 +176,20 @@ describe('inferAgentKindFromName', () => {
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
     expect(inferAgentKindFromName(name)).toBe(expected);
+  });
+});
+
+describe('kindConsumesPlan', () => {
+  const CONSUMING: ReadonlyArray<AgentKind> = ['implementer', 'debugger', 'generic'];
+
+  it.each(ALL_KINDS)('%s partitions into consumer vs passthrough', (kind) => {
+    expect(kindConsumesPlan(kind)).toBe(CONSUMING.includes(kind));
+  });
+
+  it('keeps read/test/doc roles as passthrough', () => {
+    for (const kind of ['scout', 'reviewer', 'tester', 'docs', 'planner', 'resolver'] as const) {
+      expect(kindConsumesPlan(kind)).toBe(false);
+    }
   });
 });
 

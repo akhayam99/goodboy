@@ -1,5 +1,9 @@
 import type { PlanId, SessionId } from '@goodboy/types';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  inferAgentKindFromName,
+  kindConsumesPlan,
+} from '../../../features/session/agent-kind';
 import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta';
 import type { GetFn } from './types';
 
@@ -63,8 +67,9 @@ export function runPlan(get: GetFn) {
       return;
     }
 
-    // E: next step must be an implementer, don't hijack reviewer/tester/etc.
-    if (inferAgentKindFromName(nextStep.name) !== 'implementer') {
+    // E: next step must execute the plan, don't hijack reviewer/scout/tester/docs.
+    const nextKind = inferAgentKindFromName(nextStep.name);
+    if (!kindConsumesPlan(nextKind)) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
@@ -78,7 +83,7 @@ export function runPlan(get: GetFn) {
     await get().spawnAgent(sessionId, {
       stepId: nextStep.id,
       triggeredPlanId: planId,
-      model: AGENT_KIND_DEFAULTS.implementer.model,
+      model: AGENT_KIND_DEFAULTS[nextKind].model,
     });
   };
 }

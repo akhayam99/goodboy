@@ -209,6 +209,29 @@ describe('runPlan, workflow-aware spawn routing', () => {
         });
       }
     });
+
+    it.each([
+      ['Debug', AGENT_KIND_DEFAULTS.debugger.model],
+      ['Execute commits', AGENT_KIND_DEFAULTS.generic.model],
+    ])('routes %s into the workflow slot (consuming kind)', async (name, model) => {
+      const state = defaultState({
+        phaseTemplates: {
+          [WS_ID]: [
+            makeWorkflow([
+              { id: STEP_PLAN, name: 'Plan', ordinal: 0 },
+              { id: STEP_IMPL, name, ordinal: 1 },
+            ]),
+          ],
+        },
+      });
+      const slice = buildSlice(state);
+
+      await slice.runPlan(SESSION_ID, PLAN_ID);
+
+      const [, args] = state.spawnAgent.mock.calls[0]!;
+      expect(args).toEqual({ stepId: STEP_IMPL, triggeredPlanId: PLAN_ID, model });
+      expect(args).not.toHaveProperty('kindOverride');
+    });
   });
 
   describe('gate A, session has no workflows attached → free-spawn', () => {
@@ -440,7 +463,6 @@ describe('runPlan, workflow-aware spawn routing', () => {
       ['Scout', 's-scout'],
       ['Plan', 's-plan2'],
       ['Docs', 's-docs'],
-      ['Debug', 's-debug'],
     ])('free-spawns when next step is %s', async (name, id) => {
       const stepId = id as StepId;
       const wf = makeWorkflow([
