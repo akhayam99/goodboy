@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
@@ -104,7 +105,6 @@ function prStatusTone(status: string | null): string {
 
 export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Props) {
   const createSession = useAppStore((s) => s.createSession);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const rootPath = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
@@ -185,11 +185,6 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
   }
 
   const openableSessionId = sessionId ?? branchSessionId;
-
-  const onOpenSession = (id: SessionId) => {
-    void setCurrentSession(id);
-    onClose();
-  };
 
   const branchReady =
     mode === 'pr' ? Boolean(prBranch) && !prResolving : isValidBranchSlug(branchSlug);
@@ -317,7 +312,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
                         : 'A session is already on this PR branch.'}
                     </span>
                   </div>
-                  <Button onClick={() => onOpenSession(openableSessionId)}>Open session</Button>
+                  <OpenSessionButton sessionId={openableSessionId} onOpened={onClose} />
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 rounded-xl border border-border-soft bg-muted/10 p-4">

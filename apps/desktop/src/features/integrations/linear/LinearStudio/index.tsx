@@ -11,19 +11,29 @@ import type { LinearIssue } from '../client';
 interface Props {
   readonly workspaceId: WorkspaceId;
   readonly workspaceName: string;
+  readonly initialIssueId?: string | null;
   readonly onClose: () => void;
 }
 
-export function LinearStudio({ workspaceId, workspaceName, onClose }: Props) {
+export function LinearStudio({ workspaceId, workspaceName, initialIssueId, onClose }: Props) {
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
   const { closing, requestClose } = useStudioOverlay(onClose);
 
   useEffect(() => {
     if (focused !== null) return;
+    if (initialIssueId) {
+      for (const group of groups) {
+        const row = group.rows.find((r) => r.issue.id === initialIssueId);
+        if (row) {
+          setFocused(row.issue);
+          return;
+        }
+      }
+    }
     const first = groups[0]?.rows[0]?.issue ?? null;
     if (first) setFocused(first);
-  }, [focused, groups]);
+  }, [focused, groups, initialIssueId]);
 
   const focusedRow = useMemo(() => {
     if (!focused) return null;

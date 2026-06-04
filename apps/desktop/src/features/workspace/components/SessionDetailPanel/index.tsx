@@ -188,16 +188,21 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
           )}
         </div>
         {externalTask ? (
-          <a
-            href={externalTask.url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-linear-studio', {
+                  detail: { issueExternalId: externalTask.externalId },
+                }),
+              )
+            }
             title={`${externalTask.identifier}: ${externalTask.title}`}
             className="shrink-0 inline-flex items-center gap-1 rounded-md border border-provider-linear/30 bg-provider-linear/5 px-1.5 py-0.5 text-2xs font-medium text-provider-linear transition-colors hover:border-provider-linear/60 hover:bg-provider-linear/10"
-            aria-label={`open ${externalTask.identifier} in linear`}
+            aria-label={`open ${externalTask.identifier} in linear studio`}
           >
             <span className="font-mono">{externalTask.identifier}</span>
-          </a>
+          </button>
         ) : null}
         <OverflowMenu items={actionItems} label="session actions" />
       </div>

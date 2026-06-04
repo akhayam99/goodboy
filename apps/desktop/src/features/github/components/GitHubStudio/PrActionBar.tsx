@@ -1,4 +1,4 @@
-import type { PullRequestState } from '@goodboy/types';
+import type { PullRequestState, SessionId } from '@goodboy/types';
 import { cn, Divider } from '@goodboy/ui';
 import {
   ExternalLink,
@@ -11,6 +11,7 @@ import {
   Send,
   XCircle,
 } from 'lucide-react';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 
 export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null;
 
@@ -30,6 +31,8 @@ const TONE = {
 
 interface Props {
   readonly pr: PullRequestState;
+  readonly sessionId: SessionId;
+  readonly onOpenSession: () => void;
   readonly busy: ActionBusy;
   readonly detailLoading: boolean;
   readonly mergeConfirm: boolean;
@@ -48,6 +51,8 @@ interface Props {
 
 export function PrActionBar({
   pr,
+  sessionId,
+  onOpenSession,
   busy,
   detailLoading,
   mergeConfirm,
@@ -139,6 +144,7 @@ export function PrActionBar({
       ) : null}
 
       <div className="ml-auto flex items-center gap-1.5">
+        <OpenSessionButton sessionId={sessionId} onOpened={onOpenSession} variant="ghost" />
         <button
           type="button"
           onClick={onOpenGithub}

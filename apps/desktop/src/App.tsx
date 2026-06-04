@@ -96,6 +96,7 @@ export function App() {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
+  const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
@@ -178,6 +179,16 @@ export function App() {
     };
     window.addEventListener('goodboy:open-budget-studio', handler);
     return () => window.removeEventListener('goodboy:open-budget-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setLinearStudioFocus(detail?.issueExternalId ?? null);
+      setLinearStudioOpen(true);
+    };
+    window.addEventListener('goodboy:open-linear-studio', handler);
+    return () => window.removeEventListener('goodboy:open-linear-studio', handler);
   }, []);
 
   useEffect(() => {
@@ -415,7 +426,10 @@ export function App() {
               onOpenSettings={openSettings}
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
-              onOpenLinear={() => setLinearStudioOpen(true)}
+              onOpenLinear={() => {
+                setLinearStudioFocus(null);
+                setLinearStudioOpen(true);
+              }}
               onOpenProviders={() => {
                 setProviderStudioFocus(null);
                 setProviderStudioOpen(true);
@@ -545,6 +559,7 @@ export function App() {
         <LinearStudio
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
+          initialIssueId={linearStudioFocus}
           onClose={() => setLinearStudioOpen(false)}
         />
       ) : null}

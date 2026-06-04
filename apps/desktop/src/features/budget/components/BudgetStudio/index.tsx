@@ -89,7 +89,7 @@ export function BudgetStudio({ workspaceName, initialScope, onClose }: Props) {
       closeLabel="close budget studio"
       onClose={onClose}
     >
-      {() => (
+      {(requestClose) => (
         <>
           <ScrollFade className="w-72 shrink-0">
             <ScopeRail
@@ -119,9 +119,11 @@ export function BudgetStudio({ workspaceName, initialScope, onClose }: Props) {
               />
             ) : selectedSession ? (
               <SessionPanel
+                sessionId={selectedSession.id}
                 goal={selectedSession.goal}
                 isCurrent={selectedSession.id === currentSessionId}
                 turns={turns.filter((t) => t.sessionId === selectedSession.id)}
+                onOpened={requestClose}
               />
             ) : null}
           </div>

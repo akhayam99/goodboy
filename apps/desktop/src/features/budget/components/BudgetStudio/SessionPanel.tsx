@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { formatUsdPrecise } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ModelTable } from './ModelTable';
 import { PanelShell } from './PanelShell';
 import { Sparkline } from './Sparkline';
@@ -9,12 +11,14 @@ import { Widget } from './Widget';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
 interface Props {
+  readonly sessionId: SessionId;
   readonly goal: string;
   readonly isCurrent: boolean;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
+  readonly onOpened: () => void;
 }
 
-export function SessionPanel({ goal, isCurrent, turns }: Props) {
+export function SessionPanel({ sessionId, goal, isCurrent, turns, onOpened }: Props) {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
@@ -31,7 +35,11 @@ export function SessionPanel({ goal, isCurrent, turns }: Props) {
   const providerCount = new Set(records.map((r) => r.provider)).size;
 
   return (
-    <PanelShell title={goal} subtitle={isCurrent ? 'current session' : 'session spend'}>
+    <PanelShell
+      title={goal}
+      subtitle={isCurrent ? 'current session' : 'session spend'}
+      action={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
+    >
       <div className="grid grid-cols-3 gap-3">
         <StatCard label="session cost" value={formatUsdPrecise(sessionCost)} />
         <StatCard label="summarizer" value={formatUsdPrecise(summarizer)} />
