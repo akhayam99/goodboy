@@ -13,7 +13,11 @@ import {
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
-import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
+import {
+  inferAgentKindFromName,
+  kindConsumesPlan,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import type { GetFn, SetFn } from './types';
 
@@ -90,9 +94,11 @@ export function spawnAgent(set: SetFn, get: GetFn) {
       (inserted.kind as AgentKind | undefined) ??
       inferAgentKindFromName(resolvedName);
     const isImplementer = effectiveKind === 'implementer';
+    const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
+    const engagePlan = isImplementer || (kindConsumesPlan(effectiveKind) && hasExplicitPlanContext);
     let planSection = '';
     let planToConsume: PlanWithCount | null = null;
-    if (isImplementer) {
+    if (engagePlan) {
       const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
       const explicitPlan =
         args.triggeredPlanId !== undefined

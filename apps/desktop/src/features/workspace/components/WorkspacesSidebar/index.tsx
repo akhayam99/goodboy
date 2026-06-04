@@ -55,6 +55,7 @@ import type {
   Session,
   SessionId,
   Step,
+  StepId,
   TelemetryRecord,
   TurnState,
   Workflow,
@@ -89,6 +90,7 @@ import {
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
+  kindConsumesPlan,
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
@@ -535,9 +537,9 @@ function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
  *     implementer attached; no need to suggest again)
  *   - no open questions on the session (the user owes the agent an answer
  *     first; a spawn CTA on top would be noise)
- *   - if the session has a workflow whose next un-spawned step is itself an
- *     implementer, defer to WorkflowNextStepCta, two CTAs for the same
- *     action would compete
+ *   - if any pending workflow step will consume the plan itself (a
+ *     plan-consuming kind: implementer/debugger/generic), defer to the
+ *     workflow, suggesting a free-spawn on top would be noise
  *
  * Click goes through the store's runPlan, which (since the runPlan fix in
  * this branch) seeds an implementer agent with the plan body as kickoff.
@@ -572,13 +574,19 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   }
 
   const discarded = new Set(task.discardedWorkflowIds ?? []);
+  const liveStepIds = new Set<StepId>();
   for (const wid of task.workflowIds) {
     if (discarded.has(wid)) continue;
-    const workflow = phaseTemplates.find((t) => t.id === wid);
-    if (!workflow) continue;
-    const nextStep = pickNextWorkflowStep(workflow, phaseRuns);
-    if (nextStep && inferAgentKindFromName(nextStep.name) === 'implementer') return null;
+    phaseTemplates.find((t) => t.id === wid)?.steps.forEach((s) => liveStepIds.add(s.id));
   }
+  const hasPendingConsumer = phaseRuns.some(
+    (a) =>
+      a.status === 'pending' &&
+      a.stepId !== undefined &&
+      liveStepIds.has(a.stepId) &&
+      kindConsumesPlan((a.kind as AgentKind | undefined) ?? inferAgentKindFromName(a.name)),
+  );
+  if (hasPendingConsumer) return null;
 
   const onSpawn = async () => {
     if (spawning) return;

@@ -4,7 +4,11 @@ import {
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
-import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
+import {
+  inferAgentKindFromName,
+  kindConsumesPlan,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
@@ -46,12 +50,12 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
 
     const effectiveKind: AgentKind =
       (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
-    const isImplementer = effectiveKind === 'implementer';
-    const { section: planSection, plan: latestPlan } = isImplementer
+    const consumesPlan = kindConsumesPlan(effectiveKind);
+    const { section: planSection, plan: latestPlan } = consumesPlan
       ? await buildPlanKickoffSection(sessionId)
       : { section: '', plan: null };
 
-    if (isImplementer && latestPlan && latestPlan.status === 'active') {
+    if (consumesPlan && latestPlan && latestPlan.status === 'active') {
       await invokeAddPlanConsumption(latestPlan.id, agentId);
       const refreshedPlans = await invokeListPlansForSession(sessionId);
       const consumptions = await invokeListConsumptionsForPlan(latestPlan.id);
@@ -62,7 +66,9 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
     }
 
     const clusters =
-      isImplementer && latestPlan?.status === 'active' ? latestPlan.clusters : undefined;
+      effectiveKind === 'implementer' && latestPlan?.status === 'active'
+        ? latestPlan.clusters
+        : undefined;
     if (clusters && clusters.length >= 2) {
       await fanOutClusters(set, get, sessionId, agent, clusters, latestPlan!.title);
       return;

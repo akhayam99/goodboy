@@ -15,6 +15,16 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'generic',
 ];
 
+export const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
+  'implementer',
+  'debugger',
+  'generic',
+]);
+
+export function kindConsumesPlan(kind: AgentKind): boolean {
+  return PLAN_CONSUMING_KINDS.has(kind);
+}
+
 export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
   {
     generic: {
