@@ -9,6 +9,8 @@ cask "goodboy" do
   desc "AI workspace orchestrator, local-first and provider-agnostic"
   homepage "https://github.com/akhayam99/goodboy"
 
+  auto_updates true
+
   app "Goodboy.app"
 
   zap trash: [
