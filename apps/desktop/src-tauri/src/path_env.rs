@@ -5,6 +5,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 static RESOLVED_PATH: OnceLock<String> = OnceLock::new();
+static RESOLVED_ENV: OnceLock<Vec<(String, String)>> = OnceLock::new();
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
@@ -26,6 +27,19 @@ pub fn resolved_path() -> &'static str {
 /// posix path set.
 pub fn command(binary: &str) -> Command {
     let mut cmd = Command::new(binary);
+    cmd.env("PATH", resolved_path());
+    cmd
+}
+
+pub fn resolved_env() -> &'static [(String, String)] {
+    RESOLVED_ENV.get_or_init(compute_env)
+}
+
+pub fn command_with_login_env(binary: &str) -> Command {
+    let mut cmd = Command::new(binary);
+    for (key, value) in resolved_env() {
+        cmd.env(key, value);
+    }
     cmd.env("PATH", resolved_path());
     cmd
 }
@@ -81,6 +95,46 @@ fn probe_login_shell_path() -> Option<String> {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
+        if let Some(out) = run_with_timeout(sh, args) {
+            let trimmed = out.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn compute_env() -> Vec<(String, String)> {
+    parse_env(&probe_login_shell_env().unwrap_or_default())
+}
+
+fn parse_env(raw: &str) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for line in raw.lines() {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.is_empty() || key.contains(char::is_whitespace) {
+            continue;
+        }
+        if seen.insert(key.to_string()) {
+            out.push((key.to_string(), value.to_string()));
+        }
+    }
+    out
+}
+
+fn probe_login_shell_env() -> Option<String> {
+    const LOGIN_ARGS: &[&str] = &["-ilc", "env"];
+    const POSIX_ARGS: &[&str] = &["-lc", "env"];
+    for (sh, _) in shell_candidates() {
+        if !std::path::Path::new(sh).exists() {
+            continue;
+        }
+        let args = if *sh == "/bin/sh" { POSIX_ARGS } else { LOGIN_ARGS };
         if let Some(out) = run_with_timeout(sh, args) {
             let trimmed = out.trim();
             if !trimmed.is_empty() {
@@ -181,5 +235,33 @@ mod tests {
         for s in &segments {
             assert!(unique.insert(*s), "duplicate segment in resolved PATH: {}", s);
         }
+    }
+
+    #[test]
+    fn parse_env_keeps_first_value_and_skips_malformed() {
+        let raw = "PATH=/usr/bin\nGITHUB_PACKAGES_TOKEN=abc=123\nNOEQUALS\n bad key=x\nPATH=/override\n";
+        let env = parse_env(raw);
+        assert_eq!(
+            env.iter()
+                .find(|(k, _)| k == "GITHUB_PACKAGES_TOKEN")
+                .map(|(_, v)| v.as_str()),
+            Some("abc=123")
+        );
+        assert!(env.iter().all(|(k, _)| k != "NOEQUALS"));
+        assert!(env.iter().all(|(k, _)| !k.contains(' ')));
+        assert_eq!(
+            env.iter().filter(|(k, _)| k == "PATH").count(),
+            1,
+            "duplicate keys collapse to the first occurrence"
+        );
+    }
+
+    #[test]
+    fn command_with_login_env_sets_path() {
+        let cmd = command_with_login_env("true");
+        let env = cmd.get_envs().find(|(k, _)| *k == std::ffi::OsStr::new("PATH"));
+        assert!(env.is_some(), "command must set PATH env var");
+        let (_, val) = env.unwrap();
+        assert_eq!(val, Some(std::ffi::OsStr::new(resolved_path())));
     }
 }
