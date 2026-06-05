@@ -19,7 +19,7 @@ export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
       onClose={onClose}
     >
       {() => (
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1">
           <WorkflowsPanel workspaceId={workspaceId} />
         </div>
       )}
