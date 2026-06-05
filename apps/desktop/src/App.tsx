@@ -38,6 +38,7 @@ import {
 } from './store';
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
+import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { STORAGE_PREFIXES } from './shared/lib/storage-keys';
 import { openUrl } from './shared/lib/editor';
 import { applyStoredZoom, zoomIn, zoomOut, zoomReset } from './shared/lib/zoom';
@@ -124,6 +125,7 @@ export function App() {
 
   useGithubPolling();
   useProviderRefreshOnFocus();
+  useUpdaterPolling();
 
   useEffect(() => {
     void applyStoredZoom();
