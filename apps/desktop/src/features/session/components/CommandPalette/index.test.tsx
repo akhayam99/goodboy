@@ -11,7 +11,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     agentKindOverride: {} as Record<string, string>,
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    requestWorkspaceSwitch: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
     runScript: vi.fn(async () => ({ exitCode: 0 })),

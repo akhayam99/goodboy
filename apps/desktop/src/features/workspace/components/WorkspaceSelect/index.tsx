@@ -23,7 +23,7 @@ interface WorkspaceTarget {
 export function WorkspaceSelect({ onAddWorkspace }: Props) {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const requestWorkspaceSwitch = useAppStore((s) => s.requestWorkspaceSwitch);
   // Two pieces of state instead of one nullable target so the dialog can
   // stay mounted across opens. Mount-on-first-click was racing with the
   // <dialog>.showModal() effect under React 19 strict mode and silently
@@ -80,7 +80,7 @@ export function WorkspaceSelect({ onAddWorkspace }: Props) {
             key={ws.id}
             workspace={ws}
             isActive={ws.id === currentWorkspace?.id}
-            onSelect={() => void setCurrentWorkspace(ws.id)}
+            onSelect={() => void requestWorkspaceSwitch(ws.id)}
             onOpenSettings={() => openSettings({ id: ws.id, name: ws.name })}
           />
         ))}

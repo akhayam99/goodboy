@@ -12,6 +12,7 @@ import { ToastProvider } from './app/components/Toast';
 import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
+import { WorkspaceSwitchDialog } from './features/workspace/components/WorkspaceSwitchDialog';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -319,16 +320,17 @@ export function App() {
     });
   }, []);
 
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const requestWorkspaceSwitch = useAppStore((s) => s.requestWorkspaceSwitch);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const pendingWorkspaceSwitch = useAppStore((s) => s.pendingWorkspaceSwitch);
   const currentWorkspaceSessions = useSessions();
 
   const selectWorkspaceByIndex = useCallback(
     (idx: number) => {
       const w = workspaces[idx];
-      if (w) void setCurrentWorkspace(w.id);
+      if (w) void requestWorkspaceSwitch(w.id);
     },
-    [workspaces, setCurrentWorkspace],
+    [workspaces, requestWorkspaceSwitch],
   );
 
   const navigateSession = useCallback(
@@ -591,6 +593,7 @@ export function App() {
       {currentSession && archiveOpen ? (
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
+      {pendingWorkspaceSwitch ? <WorkspaceSwitchDialog /> : null}
       {/* App-level modal host so the provider connect modal can be summoned
           from any surface (providers panel, chat callout, future onboarding
           cards) via a CustomEvent, without prop-drilling. */}
