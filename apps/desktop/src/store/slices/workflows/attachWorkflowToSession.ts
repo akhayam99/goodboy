@@ -1,8 +1,12 @@
-import type { Agent, IsoDateTime, SessionId, WorkflowId } from '@goodboy/types';
-import {
-  attachWorkflowToSession as attachWorkflowToSessionInDb,
-  updateSessionAutoRun,
-} from '@goodboy/db';
+import type {
+  Agent,
+  IsoDateTime,
+  SessionId,
+  WorkflowId,
+  WorkflowRun,
+  WorkflowRunId,
+} from '@goodboy/types';
+import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
@@ -20,20 +24,23 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, workflowId: WorkflowId, options?: Options) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
-    if (session.workflowIds.includes(workflowId)) {
-      throw new Error('workflow already attached to this session');
-    }
 
     const templates = get().phaseTemplates[session.workspaceId] ?? [];
     const template = templates.find((t) => t.id === workflowId);
     if (!template) throw new Error(`workflow not found: ${workflowId}`);
 
-    const autoRun = options?.autoRun === true;
+    const workflowRunId = crypto.randomUUID() as WorkflowRunId;
+    const autoRun = options?.autoRun ?? session.autoRun;
+    const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;
-    await attachWorkflowToSessionInDb(tauriDatabase, sessionId, workflowId, now);
-    if (autoRun !== session.autoRun) {
-      await updateSessionAutoRun(tauriDatabase, sessionId, autoRun, now);
-    }
+    await attachWorkflowToSessionInDb(
+      tauriDatabase,
+      sessionId,
+      workflowRunId,
+      workflowId,
+      autoRun,
+      now,
+    );
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
@@ -47,6 +54,7 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
       const agent = await invokeAgentInsert({
         sessionId,
         stepId: step.id,
+        workflowRunId,
         ordinal: baseOrdinal + 1 + i,
         name: step.name,
         status: 'pending',
@@ -56,6 +64,8 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
       agentKindOverrides[agent.id] = kind;
       newAgents.push(agent);
     }
+
+    const newRun: WorkflowRun = { id: workflowRunId, workflowId, ordinal, currentStep: 0, autoRun };
 
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
@@ -67,18 +77,14 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
     set((state) => ({
       sessions: state.sessions.map((s) =>
         s.id === sessionId
-          ? {
-              ...s,
-              workflowIds: [...s.workflowIds, workflowId],
-              currentStepByWorkflow: { ...s.currentStepByWorkflow, [workflowId]: 0 },
-              autoRun,
-              updatedAt: now,
-            }
+          ? { ...s, workflowRuns: [...s.workflowRuns, newRun], updatedAt: now }
           : s,
       ),
       sessionWorkflows: {
         ...state.sessionWorkflows,
-        [sessionId]: [...(state.sessionWorkflows[sessionId] ?? []), template],
+        [sessionId]: (state.sessionWorkflows[sessionId] ?? []).some((w) => w.id === workflowId)
+          ? (state.sessionWorkflows[sessionId] ?? [])
+          : [...(state.sessionWorkflows[sessionId] ?? []), template],
       },
       sessionPhaseRuns: {
         ...state.sessionPhaseRuns,

@@ -8,6 +8,7 @@ import type {
   StepDefId,
   StepId,
   WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from './ids';
 import type { ProviderId } from './provider-registry';
@@ -93,6 +94,7 @@ export type Agent = Readonly<{
   id: AgentId;
   sessionId: SessionId;
   stepId?: StepId;
+  workflowRunId?: WorkflowRunId;
   parentAgentId?: AgentId;
   ordinal: number;
   name: string;
@@ -124,6 +126,7 @@ export type Agent = Readonly<{
 }>;
 
 export type StepTransition = Readonly<{
+  workflowRunId?: WorkflowRunId;
   fromOrdinal: number;
   toOrdinal: number;
   carryForwardContext: string;
@@ -143,6 +146,7 @@ export interface ParallelAgent {
   readonly id: ParallelAgentId;
   readonly groupId: ParallelGroupId;
   readonly stepId: StepId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly parallelIndex: number;
   readonly runId: ProviderRunId;
   readonly status: AgentStatus;

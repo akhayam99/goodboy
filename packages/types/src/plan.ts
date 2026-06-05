@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId } from './ids';
+import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from './ids';
 
 export type PlanId = string & { readonly __brand: 'PlanId' };
 
@@ -13,6 +13,7 @@ export type Plan = Readonly<{
   id: PlanId;
   sessionId: SessionId;
   agentId: AgentId;
+  workflowRunId?: WorkflowRunId;
   title: string;
   bodyMd: string;
   status: PlanStatus;

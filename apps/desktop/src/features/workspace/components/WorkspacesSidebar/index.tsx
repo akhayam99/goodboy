@@ -39,8 +39,9 @@ import {
   Sun,
   Trash2,
   X,
+  Zap,
+  ZapOff,
 } from 'lucide-react';
-import { AutoRunToggle } from '../../../session/components/AutoRunToggle';
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
@@ -54,11 +55,12 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
-  Step,
   StepId,
   TelemetryRecord,
   TurnState,
   Workflow,
+  WorkflowRun,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import {
@@ -76,7 +78,10 @@ import {
 import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
 import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflows/components/WorkflowNextStepCta';
-import { workflowHasOpenQuestions } from '../../../../features/context/openQuestionsGate';
+import {
+  workflowHasOpenQuestions,
+  workflowRunHasOpenQuestions,
+} from '../../../../features/context/openQuestionsGate';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
@@ -573,11 +578,12 @@ function PlanReadySuggestion({ task }: { task: Session }) {
     return null;
   }
 
-  const discarded = new Set(task.discardedWorkflowIds ?? []);
   const liveStepIds = new Set<StepId>();
-  for (const wid of task.workflowIds) {
-    if (discarded.has(wid)) continue;
-    phaseTemplates.find((t) => t.id === wid)?.steps.forEach((s) => liveStepIds.add(s.id));
+  for (const run of task.workflowRuns) {
+    if (run.discardedAt) continue;
+    phaseTemplates
+      .find((t) => t.id === run.workflowId)
+      ?.steps.forEach((s) => liveStepIds.add(s.id));
   }
   const hasPendingConsumer = phaseRuns.some(
     (a) =>
@@ -756,20 +762,21 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const sessionWorkflows = useAppStore(
     (s) => s.sessionWorkflows[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
-  const attachedWorkflows = useMemo<ReadonlyArray<Workflow>>(() => {
+  const attachedRuns = useMemo<ReadonlyArray<{ run: WorkflowRun; workflow: Workflow }>>(() => {
     const byId = new Map<string, Workflow>();
     for (const w of phaseTemplates) byId.set(w.id, w);
     for (const w of sessionWorkflows) byId.set(w.id, w);
-    return task.workflowIds
-      .map((wid) => byId.get(wid))
-      .filter((t): t is Workflow => t !== undefined);
-  }, [task.workflowIds, phaseTemplates, sessionWorkflows]);
-  const discardedWorkflowIds = useMemo(
-    () => new Set(task.discardedWorkflowIds ?? EMPTY_ARRAY),
-    [task.discardedWorkflowIds],
-  );
+    return [...task.workflowRuns]
+      .sort((a, b) => a.ordinal - b.ordinal)
+      .map((run) => {
+        const workflow = byId.get(run.workflowId);
+        return workflow ? { run, workflow } : null;
+      })
+      .filter((e): e is { run: WorkflowRun; workflow: Workflow } => e !== null);
+  }, [task.workflowRuns, phaseTemplates, sessionWorkflows]);
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
+  const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
   const openQuestions = useSessionOpenQuestions(task.id);
   const loading = useSessionLoading(task.id);
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
@@ -805,23 +812,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
   }, [task.id]);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
-  const stepWorkflowById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const wf of attachedWorkflows) {
-      for (const step of wf.steps) map.set(step.id, wf.id);
+  const agentsByRunId = useMemo(() => {
+    const map = new Map<string, Agent[]>();
+    for (const r of sorted) {
+      if (r.stepId == null || r.workflowRunId == null) continue;
+      const bucket = map.get(r.workflowRunId) ?? [];
+      bucket.push(r);
+      map.set(r.workflowRunId, bucket);
     }
     return map;
-  }, [attachedWorkflows]);
-  const agentsByWorkflowId = useMemo(() => {
-    const map = new Map<string, ReadonlyArray<Agent>>();
-    for (const wf of attachedWorkflows) {
-      map.set(
-        wf.id,
-        sorted.filter((r) => r.stepId != null && stepWorkflowById.get(r.stepId) === wf.id),
-      );
-    }
-    return map;
-  }, [attachedWorkflows, sorted, stepWorkflowById]);
+  }, [sorted]);
   const childrenByParentId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
@@ -835,39 +835,39 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const adHocAgents = useMemo(
     () =>
       sorted.filter(
-        (r) => r.parentAgentId == null && (r.stepId == null || !stepWorkflowById.has(r.stepId)),
+        (r) => r.parentAgentId == null && !(r.workflowRunId != null && r.stepId != null),
       ),
-    [sorted, stepWorkflowById],
+    [sorted],
   );
-  const actionableStepIdByWorkflowId = useMemo(() => {
+  const actionableStepIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
-    for (const wf of attachedWorkflows) {
-      if (discardedWorkflowIds.has(wf.id)) {
-        map.set(wf.id, null);
+    for (const { run, workflow } of attachedRuns) {
+      if (run.discardedAt) {
+        map.set(run.id, null);
         continue;
       }
-      const wfAgents = agentsByWorkflowId.get(wf.id) ?? EMPTY_ARRAY;
-      map.set(wf.id, pickNextWorkflowStep(wf, wfAgents)?.id ?? null);
+      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
+      map.set(run.id, pickNextWorkflowStep(workflow, runAgents)?.id ?? null);
     }
     return map;
-  }, [attachedWorkflows, agentsByWorkflowId, discardedWorkflowIds]);
-  const blockReasonByWorkflowId = useMemo(() => {
+  }, [attachedRuns, agentsByRunId]);
+  const blockReasonByRunId = useMemo(() => {
     const map = new Map<string, WorkflowBlockReason | null>();
-    for (const wf of attachedWorkflows) {
-      const reason = workflowHasOpenQuestions(openQuestions, wf.id)
+    for (const { run } of attachedRuns) {
+      const reason = workflowRunHasOpenQuestions(openQuestions, run.id)
         ? 'questions'
         : summarizerBusy
           ? 'summarizer'
           : null;
-      map.set(wf.id, reason);
+      map.set(run.id, reason);
     }
     return map;
-  }, [attachedWorkflows, openQuestions, summarizerBusy]);
+  }, [attachedRuns, openQuestions, summarizerBusy]);
 
   const onDiscardWorkflow = useCallback(
-    async (workflowId: string) => {
+    async (runId: WorkflowRunId) => {
       try {
-        await discardWorkflow(task.id, workflowId as Workflow['id']);
+        await discardWorkflow(task.id, runId);
       } catch (err) {
         setSpawnError(formatError(err));
       }
@@ -876,9 +876,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
 
   const onReorderWorkflow = useCallback(
-    async (workflowId: string, direction: 'up' | 'down') => {
-      const ids = [...task.workflowIds];
-      const idx = ids.indexOf(workflowId as Workflow['id']);
+    async (runId: WorkflowRunId, direction: 'up' | 'down') => {
+      const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id);
+      const idx = ids.indexOf(runId);
       if (idx === -1) return;
       const swap = direction === 'up' ? idx - 1 : idx + 1;
       if (swap < 0 || swap >= ids.length) return;
@@ -889,7 +889,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         setSpawnError(formatError(err));
       }
     },
-    [reorderSessionWorkflows, task.id, task.workflowIds],
+    [reorderSessionWorkflows, task.id, task.workflowRuns],
   );
 
   const telemetryByRunId = useMemo(() => {
@@ -1000,17 +1000,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
     void selectAgent(task.id, sid);
   };
 
-  const onSpawn = async (stepId: Step['id'] | null, model?: string) => {
+  const onStartStepAgent = async (agent: Agent, model?: string) => {
     setSpawnError(null);
     try {
-      if (stepId) {
-        const existing = sorted.find((r) => r.stepId === stepId && r.status === 'pending');
-        if (existing) {
-          await activateWorkflowAgent(task.id, existing.id);
-          return;
-        }
+      if (agent.status === 'pending') {
+        await activateWorkflowAgent(task.id, agent.id);
+        return;
       }
-      await spawnAgent(task.id, stepId ? { stepId, ...(model !== undefined && { model }) } : {});
+      await spawnAgent(task.id, {
+        ...(agent.stepId != null && { stepId: agent.stepId }),
+        ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
+        ...(model !== undefined && { model }),
+      });
     } catch (err) {
       setSpawnError(formatError(err));
     }
@@ -1077,25 +1078,28 @@ function AgentsSection({ task }: AgentsSectionProps) {
     );
   };
 
-  const hasAnyWorkflow = attachedWorkflows.length > 0;
-  const renderWorkflowRow = (workflow: Workflow, idx: number) => {
-    const isDiscarded = discardedWorkflowIds.has(workflow.id);
-    const expanded = workflowExpand.get(workflow.id) ?? !isDiscarded;
-    const wfAgents = agentsByWorkflowId.get(workflow.id) ?? EMPTY_ARRAY;
-    const actionableStepId = actionableStepIdByWorkflowId.get(workflow.id) ?? null;
-    const wfBlockReason = blockReasonByWorkflowId.get(workflow.id) ?? null;
+  const hasAnyWorkflow = attachedRuns.length > 0;
+  const renderWorkflowRow = (
+    { run, workflow }: { run: WorkflowRun; workflow: Workflow },
+    idx: number,
+  ) => {
+    const isDiscarded = run.discardedAt != null;
+    const expanded = workflowExpand.get(run.id) ?? !isDiscarded;
+    const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
+    const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
+    const wfBlockReason = blockReasonByRunId.get(run.id) ?? null;
     const canMoveUp = idx > 0;
-    const canMoveDown = idx < attachedWorkflows.length - 1;
+    const canMoveDown = idx < attachedRuns.length - 1;
     const name = workflowKindName(workflow);
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
     return (
-      <div key={workflow.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
+      <div key={run.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
-            onClick={() => toggleWorkflowExpand(workflow.id, isDiscarded)}
+            onClick={() => toggleWorkflowExpand(run.id, isDiscarded)}
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
@@ -1125,13 +1129,27 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </button>
           {!isDiscarded && !isCompleted ? (
             <div className="flex shrink-0 items-center">
-              <AutoRunToggle session={task} />
-              {attachedWorkflows.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                title={run.autoRun ? 'autorun on, click to pause' : 'autorun off, click to enable'}
+                aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
+                aria-pressed={run.autoRun}
+                className={cn(
+                  'rounded p-0.5 transition-colors',
+                  run.autoRun
+                    ? 'text-danger hover:bg-danger/15'
+                    : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+                )}
+              >
+                {run.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
+              </button>
+              {attachedRuns.length > 1 ? (
                 <>
                   <button
                     type="button"
                     disabled={!canMoveUp}
-                    onClick={() => void onReorderWorkflow(workflow.id, 'up')}
+                    onClick={() => void onReorderWorkflow(run.id, 'up')}
                     title="move workflow up"
                     aria-label="move workflow up"
                     className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
@@ -1141,7 +1159,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                   <button
                     type="button"
                     disabled={!canMoveDown}
-                    onClick={() => void onReorderWorkflow(workflow.id, 'down')}
+                    onClick={() => void onReorderWorkflow(run.id, 'down')}
                     title="move workflow down"
                     aria-label="move workflow down"
                     className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
@@ -1150,7 +1168,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                   </button>
                 </>
               ) : null}
-              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(workflow.id)} />
+              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
             </div>
           ) : null}
         </div>
@@ -1181,7 +1199,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                       aggregate={aggregatesByAgentId.get(run.id) ?? null}
                       turns={turnsByAgentId.get(run.id) ?? 0}
                       turnsLoading={run.id === selectedAgentId && loading.transcript}
-                      onStart={() => void onSpawn(run.stepId!, undefined)}
+                      onStart={() => void onStartStepAgent(run)}
                       onSelect={() => onPickAgent(run.id)}
                       onRenameStart={() => setEditingId(run.id)}
                       onRenameCommit={(name) => void onRenameCommit(run.id, name)}
@@ -1262,7 +1280,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </button>
       ) : (
         <>
-          <div className="flex flex-col gap-0.5">{attachedWorkflows.map(renderWorkflowRow)}</div>
+          <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
           <button
             type="button"
             onClick={() => setStartWorkflowOpen(true)}

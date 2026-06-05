@@ -23,7 +23,7 @@ afterEach(() => {
 function makeSession(over: Partial<Session> = {}): Session {
   return {
     id: 's1',
-    workflowIds: [],
+    workflowRuns: [],
     autoRun: false,
     ...over,
   } as unknown as Session;
@@ -38,14 +38,23 @@ describe('AutoRunToggle', () => {
   });
 
   it('shows the off state and toggles to on when clicked', () => {
-    const session = makeSession({ workflowIds: ['w1' as never] });
+    const session = makeSession({
+      workflowRuns: [
+        { id: 'r1', workflowId: 'w1', ordinal: 0, currentStep: 0, autoRun: false },
+      ] as never,
+    });
     render(<AutoRunToggle session={session} />);
     fireEvent.click(screen.getByRole('button', { name: /autorun off/i }));
     expect(setAutoRunMock).toHaveBeenCalledWith('s1', true);
   });
 
   it('shows the on state and toggles to off when clicked', () => {
-    const session = makeSession({ workflowIds: ['w1' as never], autoRun: true });
+    const session = makeSession({
+      workflowRuns: [
+        { id: 'r1', workflowId: 'w1', ordinal: 0, currentStep: 0, autoRun: true },
+      ] as never,
+      autoRun: true,
+    });
     render(<AutoRunToggle session={session} />);
     fireEvent.click(screen.getByRole('button', { name: /autorun on/i }));
     expect(setAutoRunMock).toHaveBeenCalledWith('s1', false);

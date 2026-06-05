@@ -6,6 +6,7 @@ import type {
   OpenQuestionStatus,
   SessionId,
   WorkflowId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -13,6 +14,7 @@ interface OpenQuestionRow {
   id: string;
   session_id: string;
   workflow_id: string | null;
+  workflow_run_id: string | null;
   created_by_step_ordinal: number | null;
   owned_by_step_ordinal: number | null;
   created_by_agent_id: string | null;
@@ -30,6 +32,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
     id: row.id as OpenQuestionId,
     sessionId: row.session_id as SessionId,
     workflowId: row.workflow_id ? (row.workflow_id as WorkflowId) : undefined,
+    workflowRunId: row.workflow_run_id ? (row.workflow_run_id as WorkflowRunId) : undefined,
     createdByStepOrdinal: row.created_by_step_ordinal ?? undefined,
     ownedByStepOrdinal: row.owned_by_step_ordinal ?? undefined,
     createdByAgentId: row.created_by_agent_id ? (row.created_by_agent_id as AgentId) : undefined,
@@ -51,6 +54,7 @@ export interface InsertOpenQuestionInput {
   readonly id: OpenQuestionId;
   readonly sessionId: SessionId;
   readonly workflowId?: WorkflowId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly createdByStepOrdinal?: number;
   readonly ownedByStepOrdinal?: number;
   readonly createdByAgentId?: AgentId;
@@ -70,13 +74,14 @@ export async function insertOpenQuestion(
   const now = Date.now();
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
-       (id, session_id, workflow_id, created_by_step_ordinal, owned_by_step_ordinal,
+       (id, session_id, workflow_id, workflow_run_id, created_by_step_ordinal, owned_by_step_ordinal,
         created_by_agent_id, text, suggested_answers, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
     [
       input.id,
       input.sessionId,
       input.workflowId ?? null,
+      input.workflowRunId ?? null,
       input.createdByStepOrdinal ?? null,
       input.ownedByStepOrdinal ?? null,
       input.createdByAgentId ?? null,
@@ -189,14 +194,14 @@ export async function markOpenQuestionsResolvedByText(
 
 export async function transferOpenQuestionOwnership(
   db: Database,
-  workflowId: WorkflowId,
+  workflowRunId: WorkflowRunId,
   fromOrdinal: number,
   toOrdinal: number,
 ): Promise<void> {
   await db.execute(
     `UPDATE open_questions
      SET owned_by_step_ordinal = ?
-     WHERE workflow_id = ? AND owned_by_step_ordinal = ? AND status = 'open'`,
-    [toOrdinal, workflowId, fromOrdinal],
+     WHERE workflow_run_id = ? AND owned_by_step_ordinal = ? AND status = 'open'`,
+    [toOrdinal, workflowRunId, fromOrdinal],
   );
 }

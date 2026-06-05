@@ -6,6 +6,7 @@ export type TelemetryRecordId = string & { readonly __brand: 'TelemetryRecordId'
 export type SkillId = string & { readonly __brand: 'SkillId' };
 export type WorkspaceScriptId = string & { readonly __brand: 'WorkspaceScriptId' };
 export type WorkflowId = string & { readonly __brand: 'WorkflowId' };
+export type WorkflowRunId = string & { readonly __brand: 'WorkflowRunId' };
 export type StepId = string & { readonly __brand: 'StepId' };
 export type StepDefId = string & { readonly __brand: 'StepDefId' };
 export type AgentId = string & { readonly __brand: 'AgentId' };

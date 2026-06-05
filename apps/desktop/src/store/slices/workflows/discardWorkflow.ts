@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId, TurnState, WorkflowId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId, TurnState, WorkflowRunId } from '@goodboy/types';
 import { discardWorkflowInSession, updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
@@ -6,19 +6,16 @@ import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
 export function discardWorkflow(set: SetFn, get: GetFn) {
-  return async (sessionId: SessionId, workflowId: WorkflowId) => {
+  return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session || !session.workflowIds.includes(workflowId)) return;
-    if (session.discardedWorkflowIds?.includes(workflowId)) return;
+    if (!session) return;
+    const run = session.workflowRuns.find((r) => r.id === workflowRunId);
+    if (!run || run.discardedAt) return;
 
-    const workflow =
-      (state.sessionWorkflows[sessionId] ?? []).find((w) => w.id === workflowId) ??
-      (state.phaseTemplates[session.workspaceId] ?? []).find((w) => w.id === workflowId);
-    const stepIds = new Set((workflow?.steps ?? []).map((s) => s.id));
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     const directIds = new Set(
-      runs.filter((r) => r.stepId != null && stepIds.has(r.stepId)).map((r) => r.id),
+      runs.filter((r) => r.workflowRunId === workflowRunId).map((r) => r.id),
     );
     const ownRuns = runs.filter(
       (r) => directIds.has(r.id) || (r.parentAgentId != null && directIds.has(r.parentAgentId)),
@@ -26,15 +23,15 @@ export function discardWorkflow(set: SetFn, get: GetFn) {
 
     const now = new Date().toISOString() as IsoDateTime;
     const frozen: Record<AgentId, TurnState> = {};
-    for (const run of ownRuns) {
-      const turn = state.agentTurnState[run.id];
+    for (const r of ownRuns) {
+      const turn = state.agentTurnState[r.id];
       if (turn?.kind !== 'running') continue;
       cancelledRunIds.add(turn.runId);
       await cancelTurn(turn.runId).catch(() => undefined);
-      frozen[run.id] = { kind: 'idle', lastActivityAt: now };
+      frozen[r.id] = { kind: 'idle', lastActivityAt: now };
     }
 
-    await discardWorkflowInSession(tauriDatabase, sessionId, workflowId, now);
+    await discardWorkflowInSession(tauriDatabase, sessionId, workflowRunId, now);
 
     let derived: TurnState | null = null;
     set((s) => {
@@ -50,7 +47,9 @@ export function discardWorkflow(set: SetFn, get: GetFn) {
           sess.id === sessionId
             ? {
                 ...sess,
-                discardedWorkflowIds: [...(sess.discardedWorkflowIds ?? []), workflowId],
+                workflowRuns: sess.workflowRuns.map((r) =>
+                  r.id === workflowRunId ? { ...r, discardedAt: now } : r,
+                ),
                 state: derived!,
                 updatedAt: now,
               }

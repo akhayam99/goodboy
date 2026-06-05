@@ -11,6 +11,7 @@ import type {
   SessionId,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   ProviderRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -167,6 +168,7 @@ vi.mock('../shared/lib/repo', () => ({
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const TEMPLATE_ID = 'template-1' as WorkflowId;
+const RUN_ID = 'run-1' as WorkflowRunId;
 
 function buildSession(): Session {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
@@ -181,8 +183,9 @@ function buildSession(): Session {
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',
-    workflowIds: [TEMPLATE_ID],
-    currentStepByWorkflow: {},
+    workflowRuns: [
+      { id: RUN_ID, workflowId: TEMPLATE_ID, ordinal: 0, currentStep: 0, autoRun: false },
+    ],
     createdAt: now,
     updatedAt: now,
   };
@@ -240,7 +243,7 @@ function setupSession(
     ordinal: 0,
     name: 'agent 1',
     status: 'pending',
-    ...(firstStep ? { stepId: firstStep.id } : {}),
+    ...(firstStep ? { stepId: firstStep.id, workflowRunId: RUN_ID } : {}),
   };
   useAppStore.setState({
     sessions: [buildSession()],

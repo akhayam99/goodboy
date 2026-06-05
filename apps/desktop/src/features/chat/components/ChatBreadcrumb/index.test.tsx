@@ -42,6 +42,7 @@ const session = {
   id: 'sess-1',
   workspaceId: 'ws-1',
   goal: 'fix tests',
+  workflowRuns: [],
 } as unknown as Session;
 
 describe('ChatBreadcrumb', () => {

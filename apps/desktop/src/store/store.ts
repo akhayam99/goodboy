@@ -37,6 +37,7 @@ import type {
   StepDefId,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   ProviderId,
   ProviderCredential,
   CredentialId,
@@ -385,16 +386,21 @@ export interface AppActions {
   ): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
+  setWorkflowRunAutoRun(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    autoRun: boolean,
+  ): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,
     workflowId: WorkflowId,
     options?: { autoRun?: boolean },
   ): Promise<void>;
-  detachWorkflowFromSession(sessionId: SessionId, workflowId: WorkflowId): Promise<void>;
-  discardWorkflow(sessionId: SessionId, workflowId: WorkflowId): Promise<void>;
+  detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  discardWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   reorderSessionWorkflows(
     sessionId: SessionId,
-    workflowIds: ReadonlyArray<WorkflowId>,
+    workflowRunIds: ReadonlyArray<WorkflowRunId>,
   ): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -470,6 +476,7 @@ export interface AppActions {
     sessionId: SessionId,
     args: {
       stepId?: StepId;
+      workflowRunId?: WorkflowRunId;
       name?: string;
       model?: string;
       effort?: string;

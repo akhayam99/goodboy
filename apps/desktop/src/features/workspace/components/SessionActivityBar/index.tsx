@@ -188,7 +188,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const isPending = hasUnread && !isActive;
   const isRunning = session.state.kind === 'running';
   const isErrored = session.state.kind === 'error';
-  const isAutoMode = session.autoRun === true;
+  const isAutoMode = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
   const StatusIcon = statusEntry.icon;
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);

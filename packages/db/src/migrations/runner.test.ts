@@ -97,8 +97,7 @@ describe('migrate', () => {
       autoRun: false,
       titleUserEdited: false,
       userStatus: 'wip',
-      workflowIds: [],
-      currentStepByWorkflow: {},
+      workflowRuns: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -134,8 +133,7 @@ describe('migrate', () => {
       autoRun: false,
       titleUserEdited: false,
       userStatus: 'wip',
-      workflowIds: [],
-      currentStepByWorkflow: {},
+      workflowRuns: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -170,8 +168,7 @@ describe('migrate', () => {
       autoRun: false,
       titleUserEdited: false,
       userStatus: 'wip',
-      workflowIds: [],
-      currentStepByWorkflow: {},
+      workflowRuns: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -279,8 +276,7 @@ describe('migrate', () => {
       autoRun: false,
       titleUserEdited: false,
       userStatus: 'wip',
-      workflowIds: [],
-      currentStepByWorkflow: {},
+      workflowRuns: [],
       createdAt: now(),
       updatedAt: now(),
     };
@@ -339,8 +335,7 @@ describe('migrate', () => {
       autoRun: false,
       titleUserEdited: false,
       userStatus: 'wip',
-      workflowIds: [],
-      currentStepByWorkflow: {},
+      workflowRuns: [],
       createdAt: now(),
       updatedAt: now(),
     };

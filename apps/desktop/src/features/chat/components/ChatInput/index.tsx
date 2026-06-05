@@ -380,9 +380,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
       return buildScriptActions(workspaceScripts, (script) => void onPickScript(script));
     }
     if (symbol === '~') {
-      const alreadyAttached = new Set(session.workflowIds);
-      const eligible = workspaceWorkflows.filter((w) => !alreadyAttached.has(w.id));
-      return buildWorkflowActions(eligible, (workflow) => void onPickWorkflow(workflow));
+      return buildWorkflowActions(workspaceWorkflows, (workflow) => void onPickWorkflow(workflow));
     }
     if (symbol === '@') {
       return buildAgentActions(
@@ -398,7 +396,6 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     return null;
   }, [
     parsed.prefix,
-    session.workflowIds,
     workspaceScripts,
     workspaceWorkflows,
     sessionAgents,
@@ -426,9 +423,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     parsed.prefix?.symbol === '$'
       ? 'no scripts yet. add them in workspace settings'
       : parsed.prefix?.symbol === '~'
-        ? session.workflowIds.length > 0
-          ? 'every workflow is already attached'
-          : 'no workflows yet. create one in workspace settings'
+        ? 'no workflows yet. create one in workspace settings'
         : parsed.prefix?.symbol === '@'
           ? 'no agents in this session yet'
           : 'no skills yet. create one in settings';
@@ -606,7 +601,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
       !isRunning &&
       scopePending === null &&
       activeAgentKind !== null &&
-      session.workflowIds.length === 0
+      session.workflowRuns.length === 0
     ) {
       const mismatch = detectScopeMismatch(content, activeAgentKind);
       if (mismatch) {
@@ -929,7 +924,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   // scope-mismatch > right-size. RoutingIndicator stays outside, it's a
   // status line, not an action card.
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
-  if (sessionNudge?.kind === 'plan-ready' && session.workflowIds.length === 0) {
+  if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
     suggestions.push({
       key: 'plan-ready',
       node: (

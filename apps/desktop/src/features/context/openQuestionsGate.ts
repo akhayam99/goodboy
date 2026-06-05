@@ -1,4 +1,4 @@
-import type { OpenQuestion, WorkflowId } from '@goodboy/types';
+import type { OpenQuestion, WorkflowId, WorkflowRunId } from '@goodboy/types';
 
 // Returns true when the workflow has at least one open question blocking
 // progress. Questions are blocking when:
@@ -16,6 +16,17 @@ export function workflowHasOpenQuestions(
   for (const q of questions) {
     if (q.status !== 'open') continue;
     if (!q.workflowId || q.workflowId === workflowId) return true;
+  }
+  return false;
+}
+
+export function workflowRunHasOpenQuestions(
+  questions: ReadonlyArray<OpenQuestion>,
+  workflowRunId: WorkflowRunId,
+): boolean {
+  for (const q of questions) {
+    if (q.status !== 'open') continue;
+    if (!q.workflowRunId || q.workflowRunId === workflowRunId) return true;
   }
   return false;
 }

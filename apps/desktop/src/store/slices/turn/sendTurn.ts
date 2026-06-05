@@ -6,6 +6,7 @@ import {
   buildStepPrompt,
   extractScoutSplit,
   findReusableAgent,
+  runsForWorkflowRun,
   parseSlashCommand,
   turnReducer,
   type ClaudeFlagSet,
@@ -51,6 +52,7 @@ import type {
   TurnProviderOverride,
   TurnState,
   Workflow,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
 import { useOpenQuestions } from '../../../features/context/components/QuestionsTab/useOpenQuestions';
@@ -229,6 +231,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
     }
 
     let phaseDefinition: Step | null = null;
+    let phaseWorkflowRunId: WorkflowRunId | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
     let parallelDispatch: {
@@ -240,7 +243,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
     // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
-    if (session.workflowIds.length > 0) {
+    if (session.workflowRuns.length > 0) {
       const freshRuns = await invokeAgentList(sessionId);
       set((state) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
@@ -256,19 +259,17 @@ export function sendTurn(set: SetFn, get: GetFn) {
         freshRuns.find((r) => r.id === activeAgentId) ??
         initialRuns.find((r) => r.id === activeAgentId) ??
         null;
-      // Multi-workflow sessions: locate the template that owns the active
-      // agent's stepId across ALL attached workflows. Hardcoding
-      // `workflowIds[0]` would silently drop phase context (carry-forward,
-      // step prompt, parallel detection, model override) for any agent
-      // belonging to workflow #2+.
+      const activeRun = activeAgentRow?.workflowRunId
+        ? session.workflowRuns.find((r) => r.id === activeAgentRow.workflowRunId)
+        : undefined;
       const templates = get().phaseTemplates[session.workspaceId] ?? [];
-      const template = activeAgentRow?.stepId
-        ? (templates.find(
-            (t) =>
-              session.workflowIds.includes(t.id) &&
-              t.steps.some((s) => s.id === activeAgentRow.stepId),
-          ) ?? null)
+      const template = activeRun
+        ? (templates.find((t) => t.id === activeRun.workflowId) ?? null)
         : null;
+      // Scope the run pool to the active agent's instance so prev-step,
+      // carry-forward and first-turn detection never read a sibling instance
+      // of the same template.
+      const runAgents = activeRun ? runsForWorkflowRun(freshRuns, activeRun.id) : freshRuns;
       if (template) {
         const nextDef = template.steps.find((s) => s.id === activeAgentRow!.stepId) ?? null;
         if (nextDef) {
@@ -277,17 +278,17 @@ export function sendTurn(set: SetFn, get: GetFn) {
             sortedDefs
               .filter((d) => d.ordinal < nextDef.ordinal)
               .reverse()
-              .find((d) => freshRuns.some((r) => r.stepId === d.id && r.status === 'completed')) ??
+              .find((d) => runAgents.some((r) => r.stepId === d.id && r.status === 'completed')) ??
             null;
           const prevRun = prevDef
-            ? (freshRuns.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
+            ? (runAgents.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
             : null;
           // Carry-forward + transition event only fire on the *first* turn of a
           // step. Subsequent iterations on the same step skip both, so the
           // prompt isn't bloated by duplicating the previous step's summary on
           // every message and the transcript doesn't show a phantom step
           // transition mid-conversation.
-          const isFirstTurnOfStep = !freshRuns.some(
+          const isFirstTurnOfStep = !runAgents.some(
             (r) => r.stepId === nextDef.id && r.status !== 'pending',
           );
           if (prevDef && prevRun && isFirstTurnOfStep) {
@@ -312,6 +313,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
             };
           }
           phaseDefinition = nextDef;
+          phaseWorkflowRunId = activeRun?.id ?? null;
 
           // Detect parallel group, only when feature flag is on AND nextDef
           // belongs to a group with >= 2 siblings. Defer prompt rebuild for parallel
@@ -457,7 +459,10 @@ export function sendTurn(set: SetFn, get: GetFn) {
       // it at the new providerRunId, instead of inserting a fresh row per
       // user message. New rows only appear when the user spawns a new agent.
       const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
-      const reusable = findReusableAgent(runsForSession, phaseDefinition.id);
+      const scopedRuns = phaseWorkflowRunId
+        ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
+        : runsForSession;
+      const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
       let resolved: Agent;
       if (reusable) {
         resolved = await invokeAgentUpdateStatus(reusable.id, {
@@ -469,6 +474,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
         resolved = await invokeAgentInsert({
           sessionId,
           stepId: phaseDefinition.id,
+          ...(phaseWorkflowRunId != null && { workflowRunId: phaseWorkflowRunId }),
           ordinal: phaseDefinition.ordinal,
           name: phaseDefinition.name,
           status: 'running',
@@ -985,20 +991,19 @@ export function sendTurn(set: SetFn, get: GetFn) {
               };
             }
             const target = state.sessions.find((s) => s.id === sessionId);
-            // Resolve the workflow from the step's `workflowId` field, not the
-            // session's first attached workflow. Multi-workflow sessions can
-            // complete a step belonging to workflow #2+; pointing the cursor
-            // update at `workflowIds[0]` would advance the wrong workflow's
-            // `currentStepByWorkflow` map and skip the right one's update.
-            const wfId =
-              target && target.workflowIds.includes(phaseDefinition.workflowId)
-                ? phaseDefinition.workflowId
+            // Advance the cursor of the run instance that owns the completed
+            // agent, keyed by workflowRunId. Keying by the template workflowId
+            // would advance the shared pointer for every instance of that
+            // template and skip the right one's update.
+            const runId2 =
+              phaseWorkflowRunId && target?.workflowRuns.some((r) => r.id === phaseWorkflowRunId)
+                ? phaseWorkflowRunId
                 : null;
-            if (wfId) {
+            if (runId2) {
               void updateSessionWorkflowStep(
                 tauriDatabase,
                 sessionId,
-                wfId,
+                runId2,
                 phaseDefinition.ordinal,
                 new Date().toISOString() as IsoDateTime,
               );
@@ -1006,13 +1011,12 @@ export function sendTurn(set: SetFn, get: GetFn) {
             return {
               sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
               sessions: state.sessions.map((s) => {
-                if (s.id !== sessionId || !wfId) return s;
+                if (s.id !== sessionId || !runId2) return s;
                 return {
                   ...s,
-                  currentStepByWorkflow: {
-                    ...s.currentStepByWorkflow,
-                    [wfId]: phaseDefinition.ordinal,
-                  },
+                  workflowRuns: s.workflowRuns.map((r) =>
+                    r.id === runId2 ? { ...r, currentStep: phaseDefinition!.ordinal } : r,
+                  ),
                 };
               }),
             };
@@ -1044,10 +1048,13 @@ export function sendTurn(set: SetFn, get: GetFn) {
         const stepLookup = (() => {
           if (!activeAgentRow?.stepId) return undefined;
           const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
-          for (const t of templates) {
-            const step = t.steps.find((s) => s.id === activeAgentRow.stepId);
-            if (step) return { workflowId: t.id, ordinal: step.ordinal };
-          }
+          const sess = stateForAgentCtx.sessions.find((s) => s.id === sessionId);
+          const run = activeAgentRow.workflowRunId
+            ? sess?.workflowRuns.find((r) => r.id === activeAgentRow.workflowRunId)
+            : undefined;
+          const template = run ? templates.find((t) => t.id === run.workflowId) : undefined;
+          const step = template?.steps.find((s) => s.id === activeAgentRow.stepId);
+          if (template && step) return { workflowId: template.id, ordinal: step.ordinal };
           return undefined;
         })();
         const result = await autoPopulateContext({
@@ -1058,6 +1065,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
           agentContext: {
             agentId: activeAgentId,
             workflowId: stepLookup?.workflowId,
+            ...(activeAgentRow?.workflowRunId != null && {
+              workflowRunId: activeAgentRow.workflowRunId,
+            }),
             stepOrdinal: stepLookup?.ordinal,
           },
         });
@@ -1139,9 +1149,13 @@ export function sendTurn(set: SetFn, get: GetFn) {
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
-      void capturePlanFromTurn(set, sessionId, activeAgentId, assistantText).then((plan) =>
-        emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, plan),
-      );
+      void capturePlanFromTurn(
+        set,
+        sessionId,
+        activeAgentId,
+        assistantText,
+        phaseWorkflowRunId ?? undefined,
+      ).then((plan) => emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, plan));
       const driftViolations = detectDrift({
         agentKind: earlyAgentKind,
         assistantText,

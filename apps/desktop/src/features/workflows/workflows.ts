@@ -16,6 +16,7 @@ import type {
   VerbosityLevel,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   ProviderRunId,
   SessionId,
   WorkspaceId,
@@ -68,6 +69,7 @@ interface RawAgentRow {
   readonly id: string;
   readonly sessionId: string;
   readonly stepId: string | null;
+  readonly workflowRunId: string | null;
   readonly parentAgentId: string | null;
   readonly ordinal: number;
   readonly name: string;
@@ -140,6 +142,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
     ...(row.stepId != null && { stepId: row.stepId as StepId }),
+    ...(row.workflowRunId != null && { workflowRunId: row.workflowRunId as WorkflowRunId }),
     ...(row.parentAgentId != null && { parentAgentId: row.parentAgentId as AgentId }),
     ordinal: row.ordinal,
     name: row.name,
@@ -274,6 +277,7 @@ export interface AgentInsertArgs {
   readonly id?: AgentId;
   readonly sessionId: SessionId;
   readonly stepId?: StepId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly parentAgentId?: AgentId;
   readonly ordinal: number;
   readonly name: string;
@@ -292,6 +296,7 @@ export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
       id: run.id ?? null,
       sessionId: run.sessionId,
       stepId: run.stepId ?? null,
+      workflowRunId: run.workflowRunId ?? null,
       parentAgentId: run.parentAgentId ?? null,
       ordinal: run.ordinal,
       name: run.name,

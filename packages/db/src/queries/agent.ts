@@ -6,6 +6,7 @@ import type {
   ProviderRunId,
   SessionId,
   StepId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -13,6 +14,7 @@ interface AgentRow {
   id: string;
   session_id: string;
   step_id: string | null;
+  workflow_run_id: string | null;
   parent_agent_id: string | null;
   ordinal: number;
   name: string;
@@ -37,6 +39,7 @@ function toAgent(row: AgentRow): Agent {
     id: row.id as AgentId,
     sessionId: row.session_id as SessionId,
     ...(row.step_id != null && { stepId: row.step_id as StepId }),
+    ...(row.workflow_run_id != null && { workflowRunId: row.workflow_run_id as WorkflowRunId }),
     ...(row.parent_agent_id != null && { parentAgentId: row.parent_agent_id as AgentId }),
     ordinal: row.ordinal,
     name: row.name,
@@ -105,12 +108,13 @@ export async function getAgentById(db: Database, id: AgentId): Promise<Agent | n
 export async function insertAgent(db: Database, agent: Agent): Promise<void> {
   await db.execute(
     `INSERT INTO agents
-      (id, session_id, step_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       agent.id,
       agent.sessionId,
       agent.stepId ?? null,
+      agent.workflowRunId ?? null,
       agent.parentAgentId ?? null,
       agent.ordinal,
       agent.name,

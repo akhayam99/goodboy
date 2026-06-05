@@ -163,6 +163,8 @@ pub struct SessionRow {
     pub verbosity: Option<String>,
     #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -187,6 +189,8 @@ pub struct PhaseRunInsertInput {
     pub verbosity: Option<String>,
     #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -776,7 +780,7 @@ pub fn agent_list_for_session(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
-                parent_agent_id
+                parent_agent_id, workflow_run_id
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -799,6 +803,7 @@ pub fn agent_list_for_session(
             kind: row.get(13)?,
             verbosity: row.get(14)?,
             parent_agent_id: row.get(15)?,
+            workflow_run_id: row.get(16)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -816,8 +821,8 @@ pub fn agent_insert(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
-            parent_agent_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            parent_agent_id, workflow_run_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         rusqlite::params![
             id,
             input.session_id,
@@ -832,6 +837,7 @@ pub fn agent_insert(
             input.kind,
             input.verbosity,
             input.parent_agent_id,
+            input.workflow_run_id,
         ],
     )?;
 
@@ -852,6 +858,7 @@ pub fn agent_insert(
         kind: input.kind,
         verbosity: input.verbosity,
         parent_agent_id: input.parent_agent_id,
+        workflow_run_id: input.workflow_run_id,
     })
 }
 
@@ -893,7 +900,7 @@ pub fn agent_update_status(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
-                parent_agent_id
+                parent_agent_id, workflow_run_id
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -916,6 +923,7 @@ pub fn agent_update_status(
             kind: row.get(13)?,
             verbosity: row.get(14)?,
             parent_agent_id: row.get(15)?,
+            workflow_run_id: row.get(16)?,
         })
     })?;
     match rows.next() {

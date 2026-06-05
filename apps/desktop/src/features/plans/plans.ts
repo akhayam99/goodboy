@@ -8,6 +8,7 @@ import type {
   PlanWithCount,
   AgentId,
   SessionId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import {
   addPlanConsumption as dbAddPlanConsumption,
@@ -28,6 +29,7 @@ export async function listPlansForSession(
 export interface UpsertPlanArgs {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
@@ -39,6 +41,7 @@ export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
     id,
     sessionId: args.sessionId,
     agentId: args.agentId,
+    ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
     title: args.title,
     bodyMd: args.bodyMd,
     ...(args.clusters && { clusters: args.clusters }),
