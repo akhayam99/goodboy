@@ -10,6 +10,7 @@ import type {
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -25,6 +26,7 @@ import { AGENT_KIND_DEFAULTS } from '../../../features/session/agent-kind';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WF_ID = 'wf-refactor' as WorkflowId;
+const RUN_ID = 'run-refactor' as WorkflowRunId;
 const SESSION_ID = 'ses-1' as SessionId;
 const PLAN_ID = 'plan-1' as PlanId;
 const CREATOR_AGENT_ID = 'agent-planner' as AgentId;
@@ -46,8 +48,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
       allowTurnOverride: true,
     } as Session['providerPreference'],
     permissionMode: 'default' as Session['permissionMode'],
-    workflowIds: [WF_ID],
-    currentStepByWorkflow: {},
+    workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',
@@ -124,6 +125,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
   const creator: Agent = makeAgent({
     id: CREATOR_AGENT_ID,
     stepId: STEP_PLAN,
+    workflowRunId: RUN_ID,
     status: 'completed',
     name: 'Plan',
     ordinal: 0,
@@ -131,6 +133,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
   const nextImpl: Agent = makeAgent({
     id: IMPL_AGENT_ID,
     stepId: STEP_IMPL,
+    workflowRunId: RUN_ID,
     status: 'pending',
     name: 'Refactor',
     ordinal: 1,
@@ -166,6 +169,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(sid).toBe(SESSION_ID);
       expect(args).toEqual({
         stepId: STEP_IMPL,
+        workflowRunId: RUN_ID,
         triggeredPlanId: PLAN_ID,
         model: AGENT_KIND_DEFAULTS.implementer.model,
       });
@@ -229,7 +233,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ stepId: STEP_IMPL, triggeredPlanId: PLAN_ID, model });
+      expect(args).toEqual({
+        stepId: STEP_IMPL,
+        workflowRunId: RUN_ID,
+        triggeredPlanId: PLAN_ID,
+        model,
+      });
       expect(args).not.toHaveProperty('kindOverride');
     });
   });
@@ -237,7 +246,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
   describe('gate A, session has no workflows attached → free-spawn', () => {
     it('free-spawns an implementer when session has no workflow attached', async () => {
       const state = defaultState({
-        sessions: [makeSession({ workflowIds: [] })],
+        sessions: [makeSession({ workflowRuns: [] })],
       });
       const slice = buildSlice(state);
 
@@ -517,7 +526,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         { name: 'happy path', state: defaultState() },
         {
           name: 'gate A',
-          state: defaultState({ sessions: [makeSession({ workflowIds: [] })] }),
+          state: defaultState({ sessions: [makeSession({ workflowRuns: [] })] }),
         },
         {
           name: 'gate B',

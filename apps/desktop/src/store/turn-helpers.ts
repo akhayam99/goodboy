@@ -36,6 +36,7 @@ import type {
   SessionId,
   TelemetryRecord,
   TelemetryRecordId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../shared/lib/db';
 import { invokeBudgetRuleList } from '../features/budget/budget';
@@ -342,6 +343,7 @@ export async function capturePlanFromTurn(
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
+  workflowRunId?: WorkflowRunId,
 ): Promise<PlanWithCount | null> {
   try {
     const extracted = extractPlanFromMarker(assistantText);
@@ -350,6 +352,7 @@ export async function capturePlanFromTurn(
     await invokeUpsertPlan({
       sessionId,
       agentId,
+      ...(workflowRunId !== undefined && { workflowRunId }),
       title: extracted.title,
       bodyMd: extracted.bodyMd,
       ...(clusters && { clusters }),
@@ -404,7 +407,7 @@ export async function emitTurnNudges(
 ): Promise<void> {
   const session = get().sessions.find((s) => s.id === sessionId);
   if (!session) return;
-  const inWorkflow = session.workflowIds.length > 0;
+  const inWorkflow = session.workflowRuns.length > 0;
 
   let nextNudge: SessionNudge | null = null;
 

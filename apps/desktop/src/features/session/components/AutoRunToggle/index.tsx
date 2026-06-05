@@ -14,18 +14,19 @@ interface Props {
  */
 export function AutoRunToggle({ session }: Props) {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
-  const hasWorkflow = session.workflowIds.length > 0;
+  const hasWorkflow = session.workflowRuns.length > 0;
+  const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const tooltip = !hasWorkflow
     ? 'no workflow configured, auto-run unavailable'
-    : session.autoRun
+    : anyRunAuto
       ? 'autorun on, click to pause'
       : 'autorun off, click to enable';
   const ariaLabel = !hasWorkflow
     ? 'autorun unavailable'
-    : session.autoRun
+    : anyRunAuto
       ? 'autorun on'
       : 'autorun off';
-  const on = hasWorkflow && session.autoRun;
+  const on = hasWorkflow && anyRunAuto;
   const cls = !hasWorkflow
     ? 'text-muted-foreground/25 cursor-not-allowed'
     : on
@@ -38,7 +39,7 @@ export function AutoRunToggle({ session }: Props) {
       disabled={!hasWorkflow}
       onClick={() => {
         if (!hasWorkflow) return;
-        void setSessionAutoRun(session.id as SessionId, !session.autoRun);
+        void setSessionAutoRun(session.id as SessionId, !on);
       }}
       title={tooltip}
       aria-label={ariaLabel}

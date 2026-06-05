@@ -1,12 +1,14 @@
-import type { PlanWithCount, SessionId } from '@goodboy/types';
+import type { PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../features/plans/plans';
 
 export async function buildPlanKickoffSection(
   sessionId: SessionId,
+  workflowRunId?: WorkflowRunId,
 ): Promise<{ section: string; plan: PlanWithCount | null }> {
   try {
     const plans = await invokeListPlansForSession(sessionId);
-    const latest = plans[plans.length - 1] ?? null;
+    const scoped = workflowRunId ? plans.filter((p) => p.workflowRunId === workflowRunId) : plans;
+    const latest = scoped[scoped.length - 1] ?? null;
     if (!latest || latest.status !== 'active') return { section: '', plan: latest };
     return {
       section: ['Active plan to execute:', '', latest.bodyMd].join('\n'),

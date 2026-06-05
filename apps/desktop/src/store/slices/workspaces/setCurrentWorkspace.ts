@@ -187,7 +187,7 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
         // preset picker still filters them out.
         const extraById = new Map<string, Workflow>();
         const needBackfill = get().sessions.filter((s) =>
-          s.workflowIds.some((wid) => !workflowById.has(wid)),
+          s.workflowRuns.some((r) => !workflowById.has(r.workflowId)),
         );
         await Promise.all(
           needBackfill.map(async (s) => {
@@ -198,7 +198,7 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
         const resolveById = new Map<string, Workflow>([...workflowById, ...extraById]);
         const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
         for (const s of get().sessions) {
-          const attached = s.workflowIds
+          const attached = [...new Set(s.workflowRuns.map((r) => r.workflowId))]
             .map((wid) => resolveById.get(wid) ?? null)
             .filter((w): w is Workflow => w !== null);
           if (attached.length > 0) sessionWorkflows[s.id] = attached;

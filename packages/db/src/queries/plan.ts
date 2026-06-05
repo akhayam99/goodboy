@@ -9,6 +9,7 @@ import type {
   PlanStatus,
   PlanWithCount,
   SessionId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -16,6 +17,7 @@ interface PlanRow {
   id: string;
   session_id: string;
   agent_id: string;
+  workflow_run_id: string | null;
   title: string;
   body_md: string;
   status: string;
@@ -56,6 +58,7 @@ function toDomain(row: PlanRow): Plan {
     id: row.id as PlanId,
     sessionId: row.session_id as SessionId,
     agentId: row.agent_id as AgentId,
+    ...(row.workflow_run_id != null && { workflowRunId: row.workflow_run_id as WorkflowRunId }),
     title: row.title,
     bodyMd: row.body_md,
     status: row.status as PlanStatus,
@@ -74,7 +77,7 @@ export async function listPlansForSession(
   sessionId: SessionId,
 ): Promise<ReadonlyArray<PlanWithCount>> {
   const rows = await db.select<PlanWithCountRow>(
-    `SELECT p.id, p.session_id, p.agent_id, p.title, p.body_md, p.status,
+    `SELECT p.id, p.session_id, p.agent_id, p.workflow_run_id, p.title, p.body_md, p.status,
             p.clusters_json, p.created_at, p.updated_at,
             COUNT(c.id) AS consumption_count
      FROM session_plans p
@@ -91,45 +94,57 @@ export interface UpsertPlanInput {
   readonly id: PlanId;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
 }
 
+const PLAN_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at FROM session_plans`;
+
 export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<Plan> {
   const now = Date.now();
   const clustersJson = serializeClusters(input.clusters);
-  const existing = await db.select<{ id: string }>(
-    `SELECT id FROM session_plans
-     WHERE session_id = ? AND status = 'active'
-     ORDER BY created_at DESC LIMIT 1`,
-    [input.sessionId],
-  );
+  const existing = input.workflowRunId
+    ? await db.select<{ id: string }>(
+        `SELECT id FROM session_plans
+         WHERE session_id = ? AND workflow_run_id = ? AND status = 'active'
+         ORDER BY created_at DESC LIMIT 1`,
+        [input.sessionId, input.workflowRunId],
+      )
+    : await db.select<{ id: string }>(
+        `SELECT id FROM session_plans
+         WHERE session_id = ? AND workflow_run_id IS NULL AND status = 'active'
+         ORDER BY created_at DESC LIMIT 1`,
+        [input.sessionId],
+      );
   const activeId = existing[0]?.id;
   if (activeId) {
     await db.execute(
       `UPDATE session_plans SET title = ?, body_md = ?, clusters_json = ?, updated_at = ? WHERE id = ?`,
       [input.title, input.bodyMd, clustersJson, now, activeId],
     );
-    const rows = await db.select<PlanRow>(
-      `SELECT id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at
-       FROM session_plans WHERE id = ?`,
-      [activeId],
-    );
+    const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [activeId]);
     const row = rows[0];
     if (!row) throw new Error(`plan update failed: ${activeId}`);
     return toDomain(row);
   }
   await db.execute(
-    `INSERT INTO session_plans (id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
-    [input.id, input.sessionId, input.agentId, input.title, input.bodyMd, clustersJson, now, now],
+    `INSERT INTO session_plans (id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+    [
+      input.id,
+      input.sessionId,
+      input.agentId,
+      input.workflowRunId ?? null,
+      input.title,
+      input.bodyMd,
+      clustersJson,
+      now,
+      now,
+    ],
   );
-  const rows = await db.select<PlanRow>(
-    `SELECT id, session_id, agent_id, title, body_md, status, clusters_json, created_at, updated_at
-     FROM session_plans WHERE id = ?`,
-    [input.id],
-  );
+  const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [input.id]);
   const row = rows[0];
   if (!row) throw new Error(`plan insert failed: ${input.id}`);
   return toDomain(row);

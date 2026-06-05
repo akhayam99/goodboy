@@ -18,11 +18,10 @@ export function reprocessGoalForWorkflow(set: SetFn, get: GetFn) {
       if (goal.length === 0) return;
 
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
-      const discarded = new Set(session.discardedWorkflowIds ?? []);
-      const stepNames = session.workflowIds
-        .filter((id) => !discarded.has(id))
-        .flatMap((id) => {
-          const template = templates.find((t) => t.id === id);
+      const stepNames = session.workflowRuns
+        .filter((r) => !r.discardedAt)
+        .flatMap((r) => {
+          const template = templates.find((t) => t.id === r.workflowId);
           if (!template) return [];
           return [...template.steps].sort((a, b) => a.ordinal - b.ordinal).map((s) => s.name);
         });

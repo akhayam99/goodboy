@@ -20,20 +20,13 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
     if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
 
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session || session.workflowIds.length === 0) {
+    if (!session || session.workflowRuns.length === 0) {
       throw new Error('session has no workflow');
     }
 
-    // Look up the template that owns this agent's stepId. Multi-workflow
-    // sessions can attach >1 workflow, so hardcoding `workflowIds[0]` would
-    // route step lookups for workflow #2+ agents into workflow #1's template,
-    // silently producing an empty kickoff (kickoff.length === 0 → sendTurn
-    // never fires → the lit row appears unresponsive on click).
+    const run = session.workflowRuns.find((r) => r.id === agent.workflowRunId);
     const templates = get().phaseTemplates[session.workspaceId] ?? [];
-    const template =
-      templates.find(
-        (t) => session.workflowIds.includes(t.id) && t.steps.some((s) => s.id === agent.stepId),
-      ) ?? null;
+    const template = run ? (templates.find((t) => t.id === run.workflowId) ?? null) : null;
     const step = template?.steps.find((s) => s.id === agent.stepId);
     const promptPrefix = step?.promptPrefix ?? '';
 
@@ -52,7 +45,7 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
       (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
     const consumesPlan = kindConsumesPlan(effectiveKind);
     const { section: planSection, plan: latestPlan } = consumesPlan
-      ? await buildPlanKickoffSection(sessionId)
+      ? await buildPlanKickoffSection(sessionId, agent.workflowRunId)
       : { section: '', plan: null };
 
     if (consumesPlan && latestPlan && latestPlan.status === 'active') {

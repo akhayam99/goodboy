@@ -54,7 +54,7 @@ export {
   discardWorkflowInSession,
   updateWorkflowOrder,
   updateSessionWorkflowStep,
-  type SessionWorkflowEntry,
+  updateSessionWorkflowAutoRun,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {

@@ -79,7 +79,7 @@ const session: Session = {
   id: 'sess-1',
   workspaceId: 'ws-1',
   goal: 'g',
-  workflowIds: [],
+  workflowRuns: [],
   state: { kind: 'idle' },
   providerPreference: { defaultProvider: 'anthropic' },
 } as unknown as Session;

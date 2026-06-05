@@ -1,4 +1,11 @@
-import type { Step, Agent, Workflow } from '@goodboy/types';
+import type { Step, Agent, Workflow, WorkflowRunId } from '@goodboy/types';
+
+export function runsForWorkflowRun(
+  runs: ReadonlyArray<Agent>,
+  workflowRunId: WorkflowRunId,
+): ReadonlyArray<Agent> {
+  return runs.filter((r) => r.workflowRunId === workflowRunId);
+}
 
 export function nextStep(template: Workflow, runs: ReadonlyArray<Agent>): Step | null {
   const doneIds = new Set(

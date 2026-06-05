@@ -484,7 +484,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                 <ChatEmptyState
                   selectedAgentId={selectedAgentId}
                   phaseRuns={phaseRuns}
-                  hasWorkflow={session.workflowIds.length > 0}
+                  hasWorkflow={session.workflowRuns.length > 0}
                 />
               </div>
             )

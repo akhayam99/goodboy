@@ -1,4 +1,11 @@
-import type { AgentId, ContextSlot, OpenQuestionId, SessionId, WorkflowId } from '@goodboy/types';
+import type {
+  AgentId,
+  ContextSlot,
+  OpenQuestionId,
+  SessionId,
+  WorkflowId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { insertOpenQuestion, markOpenQuestionsResolvedByText, type Database } from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
@@ -17,6 +24,7 @@ import type { SlotKey } from './slots';
 export interface AgentContext {
   readonly agentId: AgentId;
   readonly workflowId?: WorkflowId;
+  readonly workflowRunId?: WorkflowRunId;
   readonly stepOrdinal?: number;
 }
 
@@ -71,6 +79,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
       id: cryptoRandomUUID() as OpenQuestionId,
       sessionId: input.sessionId,
       workflowId: input.agentContext?.workflowId,
+      workflowRunId: input.agentContext?.workflowRunId,
       createdByStepOrdinal: input.agentContext?.stepOrdinal,
       ownedByStepOrdinal: input.agentContext?.stepOrdinal,
       createdByAgentId: input.agentContext?.agentId,

@@ -6,6 +6,7 @@ import type {
   SessionId,
   Step,
   StepId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
 import {
@@ -23,6 +24,7 @@ import type { GetFn, SetFn } from './types';
 
 interface SpawnArgs {
   stepId?: StepId;
+  workflowRunId?: WorkflowRunId;
   name?: string;
   model?: string;
   effort?: string;
@@ -40,13 +42,22 @@ export function spawnAgent(set: SetFn, get: GetFn) {
     let stepPromptPrefix = '';
     if (args.stepId) {
       const templates = state.phaseTemplates[session.workspaceId] ?? [];
-      const attached = templates.filter((t) => session.workflowIds.includes(t.id));
       let step: Step | null = null;
-      for (const t of attached) {
-        const found = t.steps.find((s) => s.id === args.stepId);
-        if (found) {
-          step = found;
-          break;
+      const run = args.workflowRunId
+        ? session.workflowRuns.find((r) => r.id === args.workflowRunId)
+        : undefined;
+      if (run) {
+        const template = templates.find((t) => t.id === run.workflowId);
+        step = template?.steps.find((s) => s.id === args.stepId) ?? null;
+      } else {
+        const attachedIds = new Set(session.workflowRuns.map((r) => r.workflowId));
+        for (const t of templates) {
+          if (!attachedIds.has(t.id)) continue;
+          const found = t.steps.find((s) => s.id === args.stepId);
+          if (found) {
+            step = found;
+            break;
+          }
         }
       }
       if (step) {
@@ -65,6 +76,7 @@ export function spawnAgent(set: SetFn, get: GetFn) {
     const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
+      ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
       ordinal: nextOrdinal,
       name: resolvedName,
       status: 'pending',
@@ -99,7 +111,10 @@ export function spawnAgent(set: SetFn, get: GetFn) {
     let planSection = '';
     let planToConsume: PlanWithCount | null = null;
     if (engagePlan) {
-      const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(sessionId);
+      const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(
+        sessionId,
+        args.workflowRunId,
+      );
       const explicitPlan =
         args.triggeredPlanId !== undefined
           ? (get().sessionPlans[sessionId]?.find((p) => p.id === args.triggeredPlanId) ?? null)

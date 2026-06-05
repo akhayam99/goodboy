@@ -3,6 +3,7 @@ import type {
   ProviderRunId,
   SessionId,
   WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
   WorkspaceIntegrationId,
   WorkspaceScriptId,
@@ -52,6 +53,15 @@ export type TurnState =
 
 export type SessionUserStatus = 'wip' | 'waiting' | 'blocked' | 'done';
 
+export type WorkflowRun = Readonly<{
+  id: WorkflowRunId;
+  workflowId: WorkflowId;
+  ordinal: number;
+  currentStep: number;
+  autoRun: boolean;
+  discardedAt?: IsoDateTime;
+}>;
+
 export type Session = Readonly<{
   id: SessionId;
   workspaceId: WorkspaceId;
@@ -60,9 +70,7 @@ export type Session = Readonly<{
   contextSlots: ReadonlyArray<ContextSlot>;
   providerPreference: SessionProviderPreference;
   permissionMode: ClaudePermissionMode;
-  workflowIds: ReadonlyArray<WorkflowId>;
-  currentStepByWorkflow: Readonly<Record<WorkflowId, number>>;
-  discardedWorkflowIds?: ReadonlyArray<WorkflowId>;
+  workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
   userStatus: SessionUserStatus;

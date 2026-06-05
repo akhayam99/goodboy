@@ -1,4 +1,11 @@
-import type { Agent, AgentId, ImplementationCluster, IsoDateTime, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ImplementationCluster,
+  IsoDateTime,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { extractClusterDone } from '@goodboy/core';
 import {
   invokeAgentInsert,
@@ -89,6 +96,7 @@ export async function fanOutClusters(
     const inserted = await invokeAgentInsert({
       sessionId,
       parentAgentId: container.id,
+      ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
       ordinal: baseOrdinal + i,
       name: clusters[i]!.title,
       status: 'pending',
@@ -121,11 +129,17 @@ export async function fanOutClusters(
   }
 }
 
-function findClustersPlan(get: GetFn, sessionId: SessionId) {
+function findClustersPlan(
+  get: GetFn,
+  sessionId: SessionId,
+  workflowRunId: WorkflowRunId | undefined,
+) {
   const plans = get().sessionPlans[sessionId] ?? [];
   for (let i = plans.length - 1; i >= 0; i--) {
     const p = plans[i];
-    if (p?.clusters && p.clusters.length >= 2) return p;
+    if (!p?.clusters || p.clusters.length < 2) continue;
+    if (p.workflowRunId !== workflowRunId) continue;
+    return p;
   }
   return null;
 }
@@ -136,7 +150,7 @@ export function advanceClusterImplementation(set: SetFn, get: GetFn) {
     const child = runs.find((r) => r.id === childAgentId);
     if (!child || !child.parentAgentId) return;
     const containerId = child.parentAgentId;
-    const plan = findClustersPlan(get, sessionId);
+    const plan = findClustersPlan(get, sessionId, child.workflowRunId);
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
     const index = Math.max(

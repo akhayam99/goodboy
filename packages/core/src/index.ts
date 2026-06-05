@@ -150,6 +150,7 @@ export {
   findReusableAgent,
   isWorkflowComplete,
   nextStep,
+  runsForWorkflowRun,
   WorkflowPropagator,
   type WorkflowPropagatorDeps,
   WORKFLOW_LIBRARY,

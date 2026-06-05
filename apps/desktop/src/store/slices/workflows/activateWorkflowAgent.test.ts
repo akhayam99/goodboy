@@ -11,6 +11,7 @@ import type {
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -41,6 +42,7 @@ import { activateWorkflowAgent } from './activateWorkflowAgent';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WF_ID = 'wf-1' as WorkflowId;
+const RUN_ID = 'run-1' as WorkflowRunId;
 const SESSION_ID = 'ses-1' as SessionId;
 const PLAN_ID = 'plan-1' as PlanId;
 const AGENT_ID = 'agent-step' as AgentId;
@@ -52,6 +54,7 @@ function makePlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
     id: PLAN_ID,
     sessionId: SESSION_ID,
     agentId: 'agent-planner' as AgentId,
+    workflowRunId: RUN_ID,
     title: 'the plan',
     bodyMd: 'do the thing',
     status: 'active',
@@ -81,6 +84,7 @@ function makeAgent(kind: string | undefined, name: string): Agent {
     id: AGENT_ID,
     sessionId: SESSION_ID,
     stepId: STEP_ID,
+    workflowRunId: RUN_ID,
     ordinal: 0,
     name,
     status: 'pending',
@@ -105,8 +109,7 @@ function buildHarness(opts: {
       allowTurnOverride: true,
     } as Session['providerPreference'],
     permissionMode: 'default' as Session['permissionMode'],
-    workflowIds: [WF_ID],
-    currentStepByWorkflow: {},
+    workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
     autoRun: false,
     titleUserEdited: false,
     userStatus: 'wip',

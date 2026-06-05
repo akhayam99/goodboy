@@ -7,6 +7,7 @@ import type {
   SessionProviderPreference,
   TurnState,
   WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
@@ -95,6 +96,9 @@ export function createSession(set: SetFn, get: GetFn) {
 
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };
+    const runAutoRun = autoRun === true && workflowId !== undefined;
+    const workflowRunId =
+      workflowId !== undefined ? (crypto.randomUUID() as WorkflowRunId) : undefined;
     const session: Session = {
       id: crypto.randomUUID() as SessionId,
       workspaceId,
@@ -103,9 +107,11 @@ export function createSession(set: SetFn, get: GetFn) {
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
       permissionMode: 'bypassPermissions',
-      workflowIds: workflowId !== undefined ? [workflowId] : [],
-      currentStepByWorkflow: {},
-      autoRun: autoRun === true && workflowId !== undefined,
+      workflowRuns:
+        workflowId !== undefined && workflowRunId !== undefined
+          ? [{ id: workflowRunId, workflowId, ordinal: 0, currentStep: 0, autoRun: runAutoRun }]
+          : [],
+      autoRun: runAutoRun,
       titleUserEdited: false,
       userStatus: 'wip',
       createdAt: now,
@@ -178,6 +184,7 @@ export function createSession(set: SetFn, get: GetFn) {
           const agent = await invokeAgentInsert({
             sessionId: session.id,
             stepId: step.id,
+            ...(workflowRunId !== undefined && { workflowRunId }),
             ordinal: step.ordinal,
             name: step.name,
             status: 'pending',
@@ -193,6 +200,7 @@ export function createSession(set: SetFn, get: GetFn) {
       } else {
         const fallback = await invokeAgentInsert({
           sessionId: session.id,
+          ...(workflowRunId !== undefined && { workflowRunId }),
           ordinal: 0,
           name: 'agent 1',
           status: 'pending',

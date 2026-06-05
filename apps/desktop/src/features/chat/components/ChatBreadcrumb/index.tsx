@@ -47,21 +47,30 @@ export function ChatBreadcrumb({ session }: Props) {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
 
   const workflowProgress: WorkflowProgress | null = useMemo(() => {
-    if (sessionWorkflows.length === 0) return null;
-    const workflow = sessionWorkflows[0];
+    if (session.workflowRuns.length === 0) return null;
+    const selected = selectedAgentId ? phaseRuns.find((a) => a.id === selectedAgentId) : undefined;
+    const activeRun =
+      (selected?.workflowRunId
+        ? session.workflowRuns.find((r) => r.id === selected.workflowRunId)
+        : undefined) ??
+      session.workflowRuns.find((r) => !r.discardedAt) ??
+      null;
+    if (!activeRun) return null;
+    const workflow = sessionWorkflows.find((w) => w.id === activeRun.workflowId);
     if (!workflow) return null;
     const total = workflow.steps.length;
     if (total === 0) return null;
     const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
+    const runAgents = phaseRuns.filter((r) => r.workflowRunId === activeRun.id);
     let currentOrdinal = 0;
     for (let i = 0; i < sorted.length; i += 1) {
       const step = sorted[i]!;
-      const agent = phaseRuns.find((r) => r.stepId === step.id);
+      const agent = runAgents.find((r) => r.stepId === step.id);
       if (agent && agent.status !== 'pending') currentOrdinal = i + 1;
     }
     if (currentOrdinal === 0) currentOrdinal = 1;
     return { workflow, currentOrdinal, total };
-  }, [sessionWorkflows, phaseRuns]);
+  }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId]);
 
   const selectedAgent: Agent | null = useMemo(() => {
     if (!selectedAgentId) return null;

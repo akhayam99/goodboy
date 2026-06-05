@@ -6,7 +6,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 const { extractHandoffMock, state } = vi.hoisted(() => ({
   extractHandoffMock: vi.fn<(text: string) => unknown>(() => null),
   state: {
-    sessions: [{ id: 'sess-1', workflowIds: [] as ReadonlyArray<string> }],
+    sessions: [{ id: 'sess-1', workflowRuns: [] as ReadonlyArray<string> }],
     sessionNudges: {} as Record<string, unknown>,
     spawnAgent: vi.fn(async () => undefined),
     acceptSessionNudgeHandoff: vi.fn(async () => undefined),
@@ -22,7 +22,7 @@ import { HandoffChip } from './index';
 
 beforeEach(() => {
   extractHandoffMock.mockReset();
-  state.sessions = [{ id: 'sess-1', workflowIds: [] }];
+  state.sessions = [{ id: 'sess-1', workflowRuns: [] }];
   state.sessionNudges = {};
   state.spawnAgent = vi.fn(async () => undefined);
   state.acceptSessionNudgeHandoff = vi.fn(async () => undefined);
@@ -38,7 +38,7 @@ describe('HandoffChip', () => {
 
   it('renders nothing when the session belongs to a workflow', () => {
     extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: 'r' });
-    state.sessions = [{ id: 'sess-1', workflowIds: ['w'] }];
+    state.sessions = [{ id: 'sess-1', workflowRuns: ['w'] }];
     const { container } = render(<HandoffChip assistantText="x" sessionId={'sess-1' as never} />);
     expect(container.firstChild).toBeNull();
   });
