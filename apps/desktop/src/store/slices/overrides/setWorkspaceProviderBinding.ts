@@ -9,6 +9,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
+  scoutFanout: null,
 };
 
 export function setWorkspaceProviderBinding(set: SetFn, get: GetFn) {

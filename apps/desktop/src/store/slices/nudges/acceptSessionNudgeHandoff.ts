@@ -19,7 +19,7 @@ export function acceptSessionNudgeHandoff(set: SetFn, get: GetFn) {
       } else {
         await get().spawnAgent(sessionId, { kindOverride: 'implementer' });
       }
-    } else {
+    } else if (nudge.kind === 'handoff-suggested') {
       await get().spawnAgent(sessionId, {
         kindOverride: nudge.targetKind,
         ...(nudge.planId !== null && { triggeredPlanId: nudge.planId }),

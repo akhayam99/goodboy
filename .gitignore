@@ -45,3 +45,4 @@ coverage/
 
 # refactor plan stays local
 REFACTOR_PLAN.md
+SCOUT_FANOUT_DESIGN.md

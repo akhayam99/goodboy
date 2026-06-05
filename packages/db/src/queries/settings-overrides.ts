@@ -16,6 +16,7 @@ interface WorkspaceOverrideRow {
   parallel_enabled: number | null;
   default_verbosity: string | null;
   provider_bindings: string | null;
+  scout_fanout: number | null;
 }
 
 interface SessionOverrideRow {
@@ -47,6 +48,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
     defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
     providerBindings: parseBindings(row.provider_bindings),
+    scoutFanout: row.scout_fanout === null ? null : row.scout_fanout !== 0,
   };
 }
 
@@ -58,6 +60,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
     defaultVerbosity: null,
     providerBindings: parseBindings(row.provider_bindings),
+    scoutFanout: null,
   };
 }
 
@@ -66,7 +69,7 @@ export async function getWorkspaceOverrides(
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> {
   const rows = await db.select<WorkspaceOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, scout_fanout
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -87,6 +90,7 @@ export async function setWorkspaceOverrides(
          parallel_enabled = ?,
          default_verbosity = ?,
          provider_bindings = ?,
+         scout_fanout = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -96,6 +100,7 @@ export async function setWorkspaceOverrides(
       overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
       overrides.defaultVerbosity,
       serializeBindings(overrides.providerBindings),
+      overrides.scoutFanout === null ? null : overrides.scoutFanout ? 1 : 0,
       Date.now(),
       workspaceId,
     ],

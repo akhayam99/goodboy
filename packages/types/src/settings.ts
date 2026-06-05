@@ -13,6 +13,7 @@ export type OverrideSettings = Readonly<{
   parallelEnabled: boolean | null;
   defaultVerbosity: VerbosityLevel | null;
   providerBindings: ProviderBindings | null;
+  scoutFanout: boolean | null;
 }>;
 
 /** Fully-resolved settings after applying global → workspace → session cascade. */

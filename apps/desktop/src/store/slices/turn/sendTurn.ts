@@ -4,6 +4,7 @@ import {
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
+  extractScoutSplit,
   findReusableAgent,
   parseSlashCommand,
   turnReducer,
@@ -76,7 +77,11 @@ import {
 } from '../../../features/chat/turn';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  inferAgentKindFromName,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import {
   getCodexPriceOverride,
@@ -481,19 +486,16 @@ export function sendTurn(set: SetFn, get: GetFn) {
         get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
       }
     } else if (!phaseDefinition && parallelDispatch === null) {
-      const manualAgentId = get().selectedAgentId[sessionId] ?? null;
-      if (manualAgentId) {
-        await invokeAgentUpdateStatus(manualAgentId, {
-          status: 'running',
-          providerRunId: runId,
-          startedAt: now(),
-        });
-        resolvedAgentId = manualAgentId;
-        const refreshedRuns = await invokeAgentList(sessionId);
-        set((state) => ({
-          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-        }));
-      }
+      await invokeAgentUpdateStatus(activeAgentId, {
+        status: 'running',
+        providerRunId: runId,
+        startedAt: now(),
+      });
+      resolvedAgentId = activeAgentId;
+      const refreshedRuns = await invokeAgentList(sessionId);
+      set((state) => ({
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+      }));
     }
 
     if (parallelDispatch === null) {
@@ -790,7 +792,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
       }${resolvedPrompt}`;
     }
 
-    if (isFirstTurn) {
+    if (isFirstTurn && !agentRowEarly?.parentAgentId) {
       void applyHeuristicTitle(set, get, sessionId, activeAgentId, content);
     }
 
@@ -957,7 +959,17 @@ export function sendTurn(set: SetFn, get: GetFn) {
       );
       if (resolvedAgentId && !wasCancelled) {
         const ranAgent = get().sessionPhaseRuns[sessionId]?.find((r) => r.id === resolvedAgentId);
-        if (ranAgent?.parentAgentId) {
+        const ranKind = ranAgent
+          ? ((ranAgent.kind as AgentKind | undefined) ??
+            get().agentKindOverride[resolvedAgentId] ??
+            inferAgentKindFromName(ranAgent.name))
+          : null;
+        const isScoutNode =
+          ranKind === 'scout' &&
+          (ranAgent?.parentAgentId != null || extractScoutSplit(assistantText) != null);
+        if (isScoutNode) {
+          await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
+        } else if (ranAgent?.parentAgentId) {
           await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
         } else {
           await invokeAgentUpdateStatus(resolvedAgentId, {

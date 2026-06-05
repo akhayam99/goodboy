@@ -19,6 +19,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
+  scoutFanout: null,
 };
 
 describe('resolveSettings', () => {
@@ -38,6 +39,7 @@ describe('resolveSettings', () => {
       parallelEnabled: true,
       defaultVerbosity: 'verbose',
       providerBindings: null,
+      scoutFanout: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
@@ -55,6 +57,7 @@ describe('resolveSettings', () => {
       parallelEnabled: true,
       defaultVerbosity: null,
       providerBindings: null,
+      scoutFanout: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
@@ -72,6 +75,7 @@ describe('resolveSettings', () => {
       parallelEnabled: false,
       defaultVerbosity: 'verbose',
       providerBindings: null,
+      scoutFanout: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
@@ -80,6 +84,7 @@ describe('resolveSettings', () => {
       parallelEnabled: true,
       defaultVerbosity: null,
       providerBindings: null,
+      scoutFanout: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -101,6 +106,7 @@ describe('resolveSettings', () => {
       parallelEnabled: true,
       defaultVerbosity: 'verbose',
       providerBindings: null,
+      scoutFanout: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
@@ -109,6 +115,7 @@ describe('resolveSettings', () => {
       parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
+      scoutFanout: null,
     };
     const result = resolveSettings({
       global: GLOBAL,

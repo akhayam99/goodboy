@@ -17,6 +17,8 @@ pub struct SettingsOverrides {
     pub default_verbosity: Option<String>,
     #[serde(rename = "providerBindings")]
     pub provider_bindings: Option<serde_json::Value>,
+    #[serde(rename = "scoutFanout")]
+    pub scout_fanout: Option<bool>,
 }
 
 fn bindings_to_text(value: &Option<serde_json::Value>) -> Option<String> {
@@ -37,11 +39,12 @@ pub fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, scout_fanout
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
+        let scout_raw: Option<i64> = row.get(6)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
             default_workflow_id: row.get(1)?,
@@ -49,6 +52,7 @@ pub fn get_workspace_overrides(
             parallel_enabled: parallel_raw.map(|v| v != 0),
             default_verbosity: row.get(4)?,
             provider_bindings: bindings_from_text(row.get(5)?),
+            scout_fanout: scout_raw.map(|v| v != 0),
         })
     })?;
     match rows.next() {
@@ -65,6 +69,7 @@ pub fn set_workspace_overrides(
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
+    let scout_val: Option<i64> = overrides.scout_fanout.map(|v| if v { 1 } else { 0 });
     let now = now_ms();
     conn.execute(
         "UPDATE workspaces
@@ -74,8 +79,9 @@ pub fn set_workspace_overrides(
              parallel_enabled = ?4,
              default_verbosity = ?5,
              provider_bindings = ?6,
-             updated_at = ?7
-         WHERE id = ?8",
+             scout_fanout = ?7,
+             updated_at = ?8
+         WHERE id = ?9",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_workflow_id,
@@ -83,6 +89,7 @@ pub fn set_workspace_overrides(
             parallel_val,
             overrides.default_verbosity,
             bindings_to_text(&overrides.provider_bindings),
+            scout_val,
             now,
             workspace_id,
         ],
@@ -109,6 +116,7 @@ pub fn get_session_overrides(
             parallel_enabled: parallel_raw.map(|v| v != 0),
             default_verbosity: None,
             provider_bindings: bindings_from_text(row.get(4)?),
+            scout_fanout: None,
         })
     })?;
     match rows.next() {
