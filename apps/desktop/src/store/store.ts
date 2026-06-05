@@ -187,6 +187,7 @@ export interface AppState extends UpdaterState {
   // them, they exist only as historical info.
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
+  readonly pendingWorkspaceSwitch: { readonly targetId: WorkspaceId | null } | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
@@ -336,6 +337,9 @@ export interface AppActions {
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
+  requestWorkspaceSwitch(id: WorkspaceId | null): Promise<void>;
+  confirmWorkspaceSwitch(): Promise<void>;
+  cancelWorkspaceSwitch(): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
   // Lazily load archived sessions for a workspace. Called when the Archived
@@ -647,6 +651,7 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
+  pendingWorkspaceSwitch: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

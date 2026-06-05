@@ -7,7 +7,7 @@ import type { Workspace } from '@goodboy/types';
 interface MockState {
   workspaces: ReadonlyArray<Workspace>;
   currentWorkspace: Workspace | null;
-  setCurrentWorkspace: ReturnType<typeof vi.fn>;
+  requestWorkspaceSwitch: ReturnType<typeof vi.fn>;
   workspaceHasUnread: boolean;
 }
 
@@ -15,15 +15,15 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {
     workspaces: [],
     currentWorkspace: null,
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    requestWorkspaceSwitch: vi.fn(async () => undefined),
     workspaceHasUnread: false,
   },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
-    selector: (s: { setCurrentWorkspace: typeof state.setCurrentWorkspace }) => T,
-  ) => selector({ setCurrentWorkspace: state.setCurrentWorkspace }),
+    selector: (s: { requestWorkspaceSwitch: typeof state.requestWorkspaceSwitch }) => T,
+  ) => selector({ requestWorkspaceSwitch: state.requestWorkspaceSwitch }),
   useCurrentWorkspace: () => state.currentWorkspace,
   useWorkspaceHasUnread: () => state.workspaceHasUnread,
   useWorkspaces: () => state.workspaces,
@@ -41,16 +41,16 @@ beforeEach(() => {
     { id: 'ws-b', name: 'bravo' } as Workspace,
   ];
   state.currentWorkspace = state.workspaces[0] ?? null;
-  state.setCurrentWorkspace = vi.fn(async () => undefined);
+  state.requestWorkspaceSwitch = vi.fn(async () => undefined);
   state.workspaceHasUnread = false;
 });
 afterEach(cleanup);
 
 describe('WorkspaceSelect', () => {
-  it('lists each linked workspace and triggers setCurrentWorkspace on click', () => {
+  it('lists each linked workspace and requests a switch on click', () => {
     render(<WorkspaceSelect onAddWorkspace={vi.fn()} />);
     fireEvent.click(screen.getByText('bravo'));
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-b');
+    expect(state.requestWorkspaceSwitch).toHaveBeenCalledWith('ws-b');
   });
 
   it('shows the count + cap label in the header', () => {
