@@ -8,10 +8,19 @@ export interface ToastItem {
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;
+  readonly title?: string;
+  readonly context?: string;
+  readonly persist?: boolean;
+}
+
+export interface ShowToastOptions {
+  readonly title?: string;
+  readonly context?: string;
+  readonly persist?: boolean;
 }
 
 interface ToastContextValue {
-  showToast: (kind: ToastKind, message: string) => void;
+  showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -25,11 +34,21 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
 
-  const showToast = useCallback((kind: ToastKind, message: string) => {
+  const showToast = useCallback((kind: ToastKind, message: string, opts?: ShowToastOptions) => {
     const id = crypto.randomUUID();
     const formatted =
       message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message;
-    setToasts((prev) => [...prev, { id, kind, message: formatted }]);
+    setToasts((prev) => [
+      ...prev,
+      {
+        id,
+        kind,
+        message: formatted,
+        title: opts?.title,
+        context: opts?.context,
+        persist: opts?.persist,
+      },
+    ]);
   }, []);
 
   const dismiss = useCallback((id: string) => {
@@ -83,21 +102,24 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
-    timerRef.current = setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => onDismiss(toast.id), 200);
-    }, AUTO_DISMISS_MS);
+    if (!toast.persist) {
+      timerRef.current = setTimeout(() => {
+        setVisible(false);
+        setTimeout(() => onDismiss(toast.id), 200);
+      }, AUTO_DISMISS_MS);
+    }
 
     return () => {
       cancelAnimationFrame(raf);
       if (timerRef.current !== null) clearTimeout(timerRef.current);
     };
-  }, [toast.id, onDismiss]);
+  }, [toast.id, toast.persist, onDismiss]);
 
   return (
     <div
       className={cn(
-        'pointer-events-auto flex max-w-xs items-start gap-2 rounded-lg border px-3 py-2.5 shadow-md motion-safe:transition-all motion-safe:duration-200',
+        'pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-md motion-safe:transition-all motion-safe:duration-200',
+        toast.title ? 'max-w-sm' : 'max-w-xs',
         visible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
         toast.kind === 'error'
           ? 'border-danger/30 bg-subtle text-danger'
@@ -109,7 +131,22 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
       )}
       role="alert"
     >
-      <span className="flex-1 text-xs leading-snug">{toast.message}</span>
+      <div className="min-w-0 flex-1">
+        {toast.title ? <p className="text-xs font-semibold leading-snug">{toast.title}</p> : null}
+        {toast.message ? (
+          <p
+            className={cn(
+              'whitespace-pre-line break-words text-xs leading-snug',
+              toast.title && 'mt-0.5 line-clamp-4 text-foreground/80',
+            )}
+          >
+            {toast.message}
+          </p>
+        ) : null}
+        {toast.context ? (
+          <p className="mt-1 truncate text-2xs opacity-70">{toast.context}</p>
+        ) : null}
+      </div>
       <button
         type="button"
         className="mt-0.5 shrink-0 opacity-60 hover:opacity-100"

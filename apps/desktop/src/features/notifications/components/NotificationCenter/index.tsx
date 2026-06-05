@@ -199,7 +199,9 @@ function NotificationItem({ notification: n }: NotificationItemProps) {
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground leading-snug">{n.title}</p>
         {n.body && (
-          <p className="mt-0.5 text-xs text-muted-foreground leading-snug truncate">{n.body}</p>
+          <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground">
+            {n.body}
+          </p>
         )}
         <p className="mt-0.5 text-2xs text-muted-foreground/70">{relativeTime(n.ts)}</p>
       </div>

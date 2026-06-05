@@ -9,6 +9,7 @@ import { EndSessionDialog } from './features/session/components/EndSessionDialog
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ToastProvider } from './app/components/Toast';
+import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
@@ -432,6 +433,7 @@ export function App() {
 
   return (
     <ToastProvider>
+      <NotificationToastBridge />
       <AppShell
         leftSidebarCollapsed={leftCollapsed}
         leftSidebar={
