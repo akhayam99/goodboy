@@ -5,10 +5,23 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
+import {
+  AGENT_KIND_DEFAULTS,
+  inferAgentKindFromName,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
 export const SCOUT_MAX_CHILDREN = 6;
+
+function resolveContainerModel(get: GetFn, container: Agent): string {
+  const override = get().agentModelOverride[container.id];
+  if (override) return override;
+  if (container.modelOverride) return container.modelOverride;
+  const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
+  return AGENT_KIND_DEFAULTS[kind]?.model ?? AGENT_KIND_DEFAULTS.scout.model;
+}
 
 const synthesisStarted = new Set<string>();
 const selfExploreTasked = new Set<string>();
@@ -141,6 +154,7 @@ export async function fanOutScouts(
 
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const childDepth = scoutDepth(runs, container.id) + 1;
+  const childModel = resolveContainerModel(get, container);
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
   const childIds: AgentId[] = [];
@@ -161,16 +175,19 @@ export async function fanOutScouts(
     const transcripts = { ...s.transcripts };
     const agentTurnState = { ...s.agentTurnState };
     const agentKindOverride = { ...s.agentKindOverride };
+    const agentModelOverride = { ...s.agentModelOverride };
     for (const id of childIds) {
       transcripts[id] = transcripts[id] ?? [];
       agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
       agentKindOverride[id] = 'scout';
+      agentModelOverride[id] = childModel;
     }
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       transcripts,
       agentTurnState,
       agentKindOverride,
+      agentModelOverride,
     };
   });
 
