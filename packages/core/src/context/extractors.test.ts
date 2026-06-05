@@ -9,6 +9,7 @@ import {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  extractScoutSplit,
   isReviewThreadId,
   mergeIntoSlot,
 } from './extractors';
@@ -378,5 +379,43 @@ describe('extractClusterDone', () => {
 
   it('ignores a marker missing an id', () => {
     expect(extractClusterDone('<<cluster-done reason="x">>')).toBeNull();
+  });
+});
+
+describe('extractScoutSplit', () => {
+  it('returns null when no marker present', () => {
+    expect(extractScoutSplit('just prose, no split')).toBeNull();
+  });
+
+  it('parses a JSON array of areas', () => {
+    const text = `<<scout-split>>[
+      {"area":"auth domain","query":"how login and session work"},
+      {"area":"billing domain","query":"how invoicing is wired"}
+    ]<</scout-split>>`;
+    expect(extractScoutSplit(text)).toEqual([
+      { area: 'auth domain', query: 'how login and session work' },
+      { area: 'billing domain', query: 'how invoicing is wired' },
+    ]);
+  });
+
+  it('tolerates a json code fence', () => {
+    const text = '<<scout-split>>```json\n[{"area":"a","query":"b"}]\n```<</scout-split>>';
+    expect(extractScoutSplit(text)).toEqual([{ area: 'a', query: 'b' }]);
+  });
+
+  it('drops entries missing area or query', () => {
+    const text =
+      '<<scout-split>>[{"area":"keep","query":"x"},{"area":"","query":"y"},{"area":"z"}]<</scout-split>>';
+    expect(extractScoutSplit(text)).toEqual([{ area: 'keep', query: 'x' }]);
+  });
+
+  it('returns null on malformed json', () => {
+    expect(extractScoutSplit('<<scout-split>>not json<</scout-split>>')).toBeNull();
+  });
+
+  it('takes the last block when several appear', () => {
+    const text =
+      '<<scout-split>>[{"area":"old","query":"x"}]<</scout-split>> later <<scout-split>>[{"area":"new","query":"y"}]<</scout-split>>';
+    expect(extractScoutSplit(text)).toEqual([{ area: 'new', query: 'y' }]);
   });
 });

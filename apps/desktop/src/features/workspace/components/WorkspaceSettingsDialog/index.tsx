@@ -11,6 +11,7 @@ import {
   Link2,
   Loader2,
   Sparkles,
+  Telescope,
   Terminal,
   Unplug,
   Zap,
@@ -36,7 +37,7 @@ interface Props {
   initialSection?: string;
 }
 
-type Section = 'general' | 'integrations' | 'skills' | 'scripts' | 'phases' | 'danger';
+type Section = 'general' | 'integrations' | 'skills' | 'scripts' | 'phases' | 'scout' | 'danger';
 
 function isSection(value: string | undefined): value is Section {
   return (
@@ -45,6 +46,7 @@ function isSection(value: string | undefined): value is Section {
     value === 'skills' ||
     value === 'scripts' ||
     value === 'phases' ||
+    value === 'scout' ||
     value === 'danger'
   );
 }
@@ -84,6 +86,8 @@ export function WorkspaceSettingsDialog({
   const [savedVerbosity, setSavedVerbosity] = useState<VerbosityLevel>('normal');
   const [defaultProvider, setDefaultProvider] = useState<ProviderId | null>(null);
   const [savedDefaultProvider, setSavedDefaultProvider] = useState<ProviderId | null>(null);
+  const [scoutFanout, setScoutFanout] = useState(false);
+  const [savedScoutFanout, setSavedScoutFanout] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -107,6 +111,9 @@ export function WorkspaceSettingsDialog({
     const savedProvider = wsOverrides?.defaultProviderId ?? null;
     setDefaultProvider(savedProvider);
     setSavedDefaultProvider(savedProvider);
+    const savedScout = wsOverrides?.scoutFanout ?? false;
+    setScoutFanout(savedScout);
+    setSavedScoutFanout(savedScout);
   }, [open, workspaceId, loadSetting, initialSection, wsOverrides]);
 
   const onDisconnect = async () => {
@@ -136,10 +143,12 @@ export function WorkspaceSettingsDialog({
         parallelEnabled: wsOverrides?.parallelEnabled ?? null,
         defaultVerbosity: verbosity,
         providerBindings: wsOverrides?.providerBindings ?? null,
+        scoutFanout,
       };
       await storeSetWorkspaceOverrides(workspaceId, mergedOverrides);
       setSavedVerbosity(verbosity);
       setSavedDefaultProvider(defaultProvider);
+      setSavedScoutFanout(scoutFanout);
       setSaveState('saved');
     } catch (err) {
       setSaveState('error');
@@ -150,7 +159,8 @@ export function WorkspaceSettingsDialog({
   const branchPrefixDirty = branchPrefix.trim() !== savedBranchPrefix.trim();
   const verbosityDirty = verbosity !== savedVerbosity;
   const providerDirty = defaultProvider !== savedDefaultProvider;
-  const settingsDirty = branchPrefixDirty || verbosityDirty || providerDirty;
+  const scoutDirty = scoutFanout !== savedScoutFanout;
+  const settingsDirty = branchPrefixDirty || verbosityDirty || providerDirty || scoutDirty;
 
   const navItems: ReadonlyArray<NavItem> = [
     { id: 'general', label: 'General', icon: <FolderCode size={13} aria-hidden /> },
@@ -159,6 +169,7 @@ export function WorkspaceSettingsDialog({
       ? ([{ id: 'skills', label: 'Skills', icon: <Zap size={13} aria-hidden /> }] as const)
       : []),
     { id: 'scripts', label: 'Scripts', icon: <Terminal size={13} aria-hidden /> },
+    { id: 'scout', label: 'Scout exploration', icon: <Telescope size={13} aria-hidden /> },
     {
       id: 'danger',
       label: 'Danger zone',
@@ -213,14 +224,14 @@ export function WorkspaceSettingsDialog({
               <span className="inline-flex items-center gap-1 text-xs text-success">
                 <Check size={12} aria-hidden /> Saved
               </span>
-            ) : settingsDirty && active === 'general' ? (
+            ) : settingsDirty && (active === 'general' || active === 'scout') ? (
               <span className="text-xs text-muted-foreground">Unsaved changes</span>
             ) : null}
           </div>
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          {active === 'general' ? (
+          {active === 'general' || active === 'scout' ? (
             <Button
               onClick={() => void onSave()}
               disabled={saveState === 'saving' || !settingsDirty}
@@ -279,6 +290,20 @@ export function WorkspaceSettingsDialog({
             subtitle="User-defined shell scripts you run by hand, copy env files, install deps, build. No agent, no tokens spent."
           >
             <ScriptsPanel workspaceId={workspaceId} />
+          </SectionShell>
+        ) : null}
+
+        {active === 'scout' ? (
+          <SectionShell
+            icon={<Telescope size={14} aria-hidden className="text-primary" />}
+            title="Scout exploration"
+            subtitle="Let a scout split a broad search across parallel sub-scouts to cover large codebases faster."
+          >
+            <ScoutSection
+              enabled={scoutFanout}
+              onChange={setScoutFanout}
+              busy={saveState === 'saving'}
+            />
           </SectionShell>
         ) : null}
 
@@ -622,6 +647,63 @@ function SectionShell({
     <div className="flex flex-col gap-6">
       <SectionHeader icon={icon} title={title} subtitle={subtitle} beta={beta} />
       <div>{children}</div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Section: Scout exploration                                            */
+/* ──────────────────────────────────────────────────────────────────── */
+
+function ScoutSection({
+  enabled,
+  onChange,
+  busy,
+}: {
+  enabled: boolean;
+  onChange: (next: boolean) => void;
+  busy: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        disabled={busy}
+        onClick={() => onChange(!enabled)}
+        className={cn(
+          'flex items-center justify-between gap-4 rounded-lg border px-4 py-3 text-left motion-safe:transition-colors',
+          enabled ? 'border-primary/40 bg-primary/5' : 'border-border hover:bg-muted/40',
+        )}
+      >
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-foreground">
+            Let scouts split into parallel sub-scouts
+          </span>
+          <span className="text-xs text-muted-foreground">
+            When a search spans several areas, the scout maps them, then explores each in parallel.
+          </span>
+        </span>
+        <span
+          className={cn(
+            'relative h-5 w-9 shrink-0 rounded-full motion-safe:transition-colors',
+            enabled ? 'bg-primary' : 'bg-muted-foreground/30',
+          )}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 size-4 rounded-full bg-background shadow-sm motion-safe:transition-all',
+              enabled ? 'left-[18px]' : 'left-0.5',
+            )}
+          />
+        </span>
+      </button>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Faster on large codebases: parallel scouts each read one area, so no single context grows
+        huge. It costs slightly more tokens, since every sub-scout is told which area to read. On a
+        focused question a single scout still answers directly.
+      </p>
     </div>
   );
 }

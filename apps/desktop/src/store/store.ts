@@ -155,6 +155,13 @@ export type SessionNudge =
       readonly targetKind: AgentKind;
       readonly reason: string;
       readonly planId: PlanId | null;
+    }
+  | {
+      readonly kind: 'scout-fanout-suggested';
+      readonly id: string;
+      readonly agentId: AgentId;
+      readonly workspaceId: WorkspaceId;
+      readonly areaCount: number;
     };
 
 import type { ProviderSpendEntry } from './slices/budget';
@@ -396,6 +403,7 @@ export interface AppActions {
     childAgentId: AgentId,
     assistantText: string,
   ): Promise<void>;
+  advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;

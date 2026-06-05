@@ -268,6 +268,50 @@ export function extractClusterDone(assistantText: string): { readonly id: string
   return last;
 }
 
+const SCOUT_SPLIT_RE = /<<scout-split>>([\s\S]*?)<<\/scout-split>>/g;
+
+export interface ExtractedScoutArea {
+  readonly area: string;
+  readonly query: string;
+}
+
+export function extractScoutSplit(assistantText: string): ReadonlyArray<ExtractedScoutArea> | null {
+  SCOUT_SPLIT_RE.lastIndex = 0;
+  let raw: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = SCOUT_SPLIT_RE.exec(assistantText)) !== null) {
+    const inner = (m[1] ?? '').trim();
+    if (inner.length > 0) raw = inner;
+  }
+  if (raw === null) return null;
+
+  const json = stripJsonFences(raw);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    const arr = extractJsonArray(json);
+    if (arr === null) return null;
+    try {
+      parsed = JSON.parse(arr);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed)) return null;
+
+  const out: ExtractedScoutArea[] = [];
+  for (const entry of parsed) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const area = typeof e.area === 'string' ? e.area.trim() : '';
+    const query = typeof e.query === 'string' ? e.query.trim() : '';
+    if (area.length === 0 || query.length === 0) continue;
+    out.push({ area, query });
+  }
+  return out.length > 0 ? out : null;
+}
+
 function stripJsonFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();

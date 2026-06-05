@@ -14,6 +14,7 @@ import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
 import { saveStepDef } from './saveStepDef';
+import { advanceScoutTree } from './scoutTree';
 import type { GetFn, SetFn } from './types';
 
 export function createWorkflowsSlice(set: SetFn, get: GetFn) {
@@ -33,6 +34,7 @@ export function createWorkflowsSlice(set: SetFn, get: GetFn) {
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
+    advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
   };
 }
