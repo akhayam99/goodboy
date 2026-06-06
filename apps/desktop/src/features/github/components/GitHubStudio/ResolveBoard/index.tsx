@@ -2,9 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { PrComment, ProviderId } from '@goodboy/types';
 import { cn, EmptyState } from '@goodboy/ui';
-import { getDefaultTurnModel } from '@goodboy/core';
 import { ChevronDown, ExternalLink, Sliders, Sparkles } from 'lucide-react';
-import { AGENT_KIND_DEFAULTS } from '../../../../session/agent-kind';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
@@ -17,33 +15,7 @@ import { ModelSelect } from '../../../../session/components/ModelSelect';
 import { EffortSelect } from '../../../../session/components/EffortSelect';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import { useAppStore } from '../../../../../store';
-
-interface CardConfig {
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: EffortLevel;
-}
-
-const DEFAULT_CONFIG: CardConfig = {
-  provider: 'anthropic',
-  model: AGENT_KIND_DEFAULTS.resolver.model,
-  effort: AGENT_KIND_DEFAULTS.resolver.effort,
-};
-
-function clampEffort(model: string, effort: EffortLevel): EffortLevel {
-  const levels = modelEffortLevels(model);
-  if (!levels) return effort;
-  return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
-}
-
-function configFor(provider: ProviderId): CardConfig {
-  const model = provider === 'anthropic' ? DEFAULT_CONFIG.model : getDefaultTurnModel(provider);
-  return { provider, model, effort: clampEffort(model, DEFAULT_CONFIG.effort) };
-}
-
-function sameConfig(a: CardConfig, b: CardConfig): boolean {
-  return a.provider === b.provider && a.model === b.model && a.effort === b.effort;
-}
+import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
 
 interface Props {
   readonly comments: ReadonlyArray<PrComment>;
@@ -74,13 +46,7 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
     [comments, deselected],
   );
   const allSelected = selected.length === comments.length;
-
-  const aggregate = useMemo<CardConfig | 'mixed'>(() => {
-    if (comments.length === 0) return DEFAULT_CONFIG;
-    const first = getConfig(comments[0]!.id);
-    return comments.every((c) => sameConfig(getConfig(c.id), first)) ? first : 'mixed';
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comments, configById]);
+  const aggregate = aggregateConfig(comments.map((c) => getConfig(c.id)));
 
   if (comments.length === 0) {
     return (
@@ -88,7 +54,7 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
         bordered
         icon={Sparkles}
         title="Nothing to resolve"
-        description="Open review comments show up here, one card each, ready to hand to a resolver agent."
+        description="Open review comments will appear here."
       />
     );
   }
@@ -352,5 +318,3 @@ function ConfigPanel({
     </div>
   );
 }
-
-export const __test = { configFor, clampEffort, sameConfig, DEFAULT_CONFIG };

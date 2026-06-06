@@ -16,7 +16,7 @@ vi.mock('../../../../../store', () => ({
     selector({ providers: h.providers }),
 }));
 
-import { ResolveBoard, __test } from './index';
+import { ResolveBoard } from './index';
 
 function comment(over: Partial<PrComment> = {}): PrComment {
   return {
@@ -39,18 +39,6 @@ beforeEach(() => {
   h.providers = [{ id: 'anthropic', connection: 'connected' }];
 });
 afterEach(cleanup);
-
-describe('ResolveBoard helpers', () => {
-  it('clampEffort keeps valid levels and falls back to the top for unsupported ones', () => {
-    expect(__test.clampEffort('claude-sonnet-4-5', 'high')).toBe('high');
-    expect(__test.clampEffort('claude-sonnet-4-5', 'max')).toBe('high');
-    expect(__test.clampEffort('gpt-5-codex', 'max')).toBe('max');
-  });
-
-  it('configFor seeds the resolver default model for anthropic', () => {
-    expect(__test.configFor('anthropic').model).toBe(__test.DEFAULT_CONFIG.model);
-  });
-});
 
 describe('ResolveBoard', () => {
   it('counts selected comments and fans out only the selected ones', () => {
