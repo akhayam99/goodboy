@@ -1,20 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import type { Notification } from '@goodboy/db';
-import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import type { Notification, NotificationSeverity } from '@goodboy/db';
+import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import { notificationContext, pickFreshFailures } from './';
 
-function notif(over: Partial<Notification> & { id: string }): Notification {
+interface NotifOverride {
+  id: string;
+  ts?: string;
+  severity?: NotificationSeverity;
+  title?: string;
+  body?: string | null;
+  sessionId?: SessionId | null;
+  workspaceId?: WorkspaceId | null;
+}
+
+function notif(over: NotifOverride): Notification {
   return {
-    ts: '2026-06-05T12:00:00.000Z',
+    id: over.id,
+    ts: (over.ts ?? '2026-06-05T12:00:00.000Z') as IsoDateTime,
     kind: 'error',
-    title: 'something failed',
-    body: null,
-    severity: 'error',
-    sessionId: null,
-    workspaceId: null,
+    title: over.title ?? 'something failed',
+    body: over.body ?? null,
+    severity: over.severity ?? 'error',
+    sessionId: over.sessionId ?? null,
+    workspaceId: over.workspaceId ?? null,
     read: false,
-    ...over,
-  } as Notification;
+  };
 }
 
 const SINCE = new Date('2026-06-05T12:00:00.000Z').getTime();
