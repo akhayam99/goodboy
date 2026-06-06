@@ -1,19 +1,15 @@
 import type { PlanId, SessionId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
-import {
-  AGENT_KIND_DEFAULTS,
-  inferAgentKindFromName,
-  kindConsumesPlan,
-} from '../../../features/session/agent-kind';
+import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta';
 import type { GetFn } from './types';
 
-// Force the spawned agent to be an implementer so spawnAgent injects the
-// plan body into the kickoff prompt. Without kindOverride the agent
+// Free-spawn path: force the agent to be an implementer so spawnAgent injects
+// the plan body into the kickoff prompt. Without kindOverride the agent
 // defaults to 'generic' and the plan section is silently dropped (the
 // implementer branch in spawnAgent is the only one that builds it).
-// Inside a workflow, if the next step is itself an implementer slot, we
-// route the spawn into that slot (stepId) instead of free-spawning.
+// In-workflow path: the next step already has a pre-created pending agent, so
+// activate that slot (routing the chosen plan) instead of inserting a duplicate.
 export function runPlan(get: GetFn) {
   return async (sessionId: SessionId, planId: PlanId) => {
     const state = get();
@@ -77,14 +73,14 @@ export function runPlan(get: GetFn) {
       return;
     }
 
-    // In-workflow spawn: stepId routes the agent into the workflow slot.
-    // triggeredPlanId → explicit plan injected + consumed by spawnAgent.
-    // No kindOverride: kind resolved by inferAgentKindFromName(step.name).
-    await get().spawnAgent(sessionId, {
-      stepId: nextStep.id,
-      workflowRunId: creatorRun.id,
-      triggeredPlanId: planId,
-      model: AGENT_KIND_DEFAULTS[nextKind].model,
-    });
+    const stepAgent = runAgents.find((r) => r.stepId === nextStep.id && r.status === 'pending');
+    if (!stepAgent) {
+      await get().spawnAgent(sessionId, {
+        triggeredPlanId: planId,
+        kindOverride: 'implementer',
+      });
+      return;
+    }
+    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId);
   };
 }

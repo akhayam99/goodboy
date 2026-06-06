@@ -205,4 +205,36 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
 
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
   });
+
+  it('injects and consumes an explicit plan, ignoring the latest active plan for the run', async () => {
+    const EXPLICIT_ID = 'plan-explicit' as PlanId;
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [
+        makePlan({ id: EXPLICIT_ID, bodyMd: 'explicit body' }),
+        makePlan({ bodyMd: 'do the thing' }),
+      ],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID);
+
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(EXPLICIT_ID, AGENT_ID);
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
+    const [payload] = sendTurn.mock.calls[0]!;
+    expect(payload.content).toContain('explicit body');
+    expect(payload.content).not.toContain('do the thing');
+  });
+
+  it('replays an explicit plan even when it is already consumed', async () => {
+    const { activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan({ status: 'consumed' })],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, PLAN_ID);
+
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
+  });
 });
