@@ -15,6 +15,8 @@ export type TranscriptItem =
       key: string;
       text: string;
       attachments?: ReadonlyArray<MessageAttachment>;
+      provider?: ProviderId;
+      model?: string;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; key: string; text: string }
@@ -120,6 +122,8 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
           ...(event.attachments && event.attachments.length > 0
             ? { attachments: event.attachments }
             : {}),
+          ...(event.provider ? { provider: event.provider } : {}),
+          ...(event.model ? { model: event.model } : {}),
           at: event.at,
         });
         break;

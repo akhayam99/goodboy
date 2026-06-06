@@ -437,6 +437,8 @@ export function sendTurn(set: SetFn, get: GetFn) {
         runId,
         text: userTurnText,
         ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
+        provider,
+        model,
         at: userMessage.createdAt,
       });
 
@@ -603,6 +605,8 @@ export function sendTurn(set: SetFn, get: GetFn) {
         kind: 'user_text',
         runId: groupSessionRunId,
         text: userTurnText,
+        provider,
+        model,
         at: userMessage.createdAt,
       });
       let nextStateP: TurnState = session.state;

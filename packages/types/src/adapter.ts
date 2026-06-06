@@ -1,6 +1,7 @@
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { MessageAttachment } from './message';
 import type { ProviderName } from './provider';
+import type { ProviderId } from './provider-registry';
 
 export interface ProviderCapabilities {
   readonly streaming: boolean;
@@ -46,6 +47,8 @@ export type TurnEvent =
       runId: ProviderRunId;
       text: string;
       attachments?: ReadonlyArray<MessageAttachment>;
+      provider?: ProviderId;
+      model?: string;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }
