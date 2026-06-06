@@ -102,7 +102,7 @@ export function GenericTerminalPanel({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
+  const fitAndSyncRef = useRef<(() => void) | null>(null);
 
   const theme = useThemeStore((s) => s.theme);
 
@@ -124,10 +124,17 @@ export function GenericTerminalPanel({
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(container);
-    if (isActive) fitAddon.fit();
+
+    const fitAndSync = () => {
+      if (!container.clientWidth || !container.clientHeight) return;
+      fitAddon.fit();
+      driver.resize(term.cols, term.rows);
+    };
+
+    if (isActive) fitAndSync();
 
     termRef.current = term;
-    fitAddonRef.current = fitAddon;
+    fitAndSyncRef.current = fitAndSync;
 
     // Replay cached output so switching tabs/remounts don't lose history.
     const cached = outputCache.get(terminalId) ?? [];
@@ -144,6 +151,7 @@ export function GenericTerminalPanel({
     let unlistenOutput: (() => void) | null = null;
     let unlistenExit: (() => void) | null = null;
     let mounted = true;
+    let firstOutputSynced = false;
 
     driver
       .onOutput((bytes) => {
@@ -152,7 +160,13 @@ export function GenericTerminalPanel({
           cache.push(bytes);
           outputCache.set(terminalId, cache);
         }
-        if (mounted) term.write(bytes);
+        if (mounted) {
+          term.write(bytes);
+          if (!firstOutputSynced) {
+            firstOutputSynced = true;
+            fitAndSync();
+          }
+        }
       })
       .then((fn) => {
         if (mounted) unlistenOutput = fn;
@@ -171,8 +185,7 @@ export function GenericTerminalPanel({
       });
 
     const ro = new ResizeObserver(() => {
-      fitAddon.fit();
-      driver.resize(term.cols, term.rows);
+      fitAndSync();
     });
     ro.observe(container);
 
@@ -184,7 +197,7 @@ export function GenericTerminalPanel({
       ro.disconnect();
       term.dispose();
       termRef.current = null;
-      fitAddonRef.current = null;
+      fitAndSyncRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId]);
@@ -198,7 +211,7 @@ export function GenericTerminalPanel({
   useEffect(() => {
     if (isActive) {
       const id = requestAnimationFrame(() => {
-        fitAddonRef.current?.fit();
+        fitAndSyncRef.current?.();
         if (!readOnly) termRef.current?.focus();
       });
       return () => cancelAnimationFrame(id);
