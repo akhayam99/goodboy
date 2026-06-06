@@ -84,7 +84,7 @@ fn run_gh(
 }
 
 fn run_git_push(args: &[&str], cwd: &str, token: Option<&str>) -> Result<GhRunResult, GithubError> {
-    let mut cmd = crate::path_env::command("git");
+    let mut cmd = crate::path_env::command_with_login_env("git");
     if gh_available() {
         cmd.args([
             "-c",
