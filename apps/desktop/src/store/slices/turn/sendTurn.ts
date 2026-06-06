@@ -4,6 +4,8 @@ import {
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
+  extractCommentResolved,
+  extractCommentWontfix,
   extractScoutSplit,
   findReusableAgent,
   runsForWorkflowRun,
@@ -1050,7 +1052,15 @@ export function sendTurn(set: SetFn, get: GetFn) {
           void get().refreshUnreadWorkspaces();
 
           void get().maybeAutoAdvanceWorkflow(sessionId);
-          if (ranKind === 'resolver') void get().activateNextResolver(sessionId);
+          if (ranKind === 'resolver') {
+            const resolvedMarker = extractCommentResolved(assistantText);
+            const wontfixMarker = extractCommentWontfix(assistantText);
+            const nextState = resolvedMarker ? 'committed' : wontfixMarker ? 'wontfix' : 'awaiting';
+            set((state) => ({
+              resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
+            }));
+            if (resolvedMarker || wontfixMarker) void get().activateNextResolver(sessionId);
+          }
         }
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn, agent stays `running`. It was activated and has

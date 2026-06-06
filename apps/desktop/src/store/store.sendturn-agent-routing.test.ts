@@ -308,6 +308,8 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'preference',
     });
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -404,6 +406,113 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const [preference, override] = spy.mock.calls[0]!;
     expect(preference.allowTurnOverride).toBe(true);
     expect(override).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
+  });
+
+  it('a resolver that emits a resolution marker records committed and advances the queue', async () => {
+    const useAppStore = await importStore();
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { ...buildAgent(AGENT_A, 0), status: 'completed' },
+      buildAgent(AGENT_B, 1),
+    ]);
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
+      selectedAgentId: { [SESSION_ID]: AGENT_A },
+      transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
+      agentKindOverride: { [AGENT_A]: 'resolver', [AGENT_B]: 'resolver' },
+      agentEffortOverride: {},
+      agentProviderOverride: {},
+      agentModelOverride: {},
+      resolverState: {},
+      pendingResolverKickoff: { [AGENT_B]: 'kick B' },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementationOnce(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'assistant_text' as const,
+        runId: args.runId,
+        delta: '<<comment-resolved threadId="PRRT_1" commit="abc1234">>',
+        at: NOW,
+      };
+      yield { kind: 'done' as const, runId: args.runId, at: NOW };
+    });
+    runTurnSpy.mockImplementation(() => emptyStream());
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('committed');
+    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBeUndefined();
+  });
+
+  it('a resolver that ends without a marker records awaiting and blocks the queue', async () => {
+    const useAppStore = await importStore();
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { ...buildAgent(AGENT_A, 0), status: 'completed' },
+      buildAgent(AGENT_B, 1),
+    ]);
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0), buildAgent(AGENT_B, 1)] },
+      selectedAgentId: { [SESSION_ID]: AGENT_A },
+      transcripts: { [AGENT_A]: [], [AGENT_B]: [] },
+      agentKindOverride: { [AGENT_A]: 'resolver', [AGENT_B]: 'resolver' },
+      agentEffortOverride: {},
+      agentProviderOverride: {},
+      agentModelOverride: {},
+      resolverState: {},
+      pendingResolverKickoff: { [AGENT_B]: 'kick B' },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'assistant_text' as const,
+        runId: args.runId,
+        delta: 'this is non-trivial. can I commit?',
+        at: NOW,
+      };
+      yield { kind: 'done' as const, runId: args.runId, at: NOW };
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('awaiting');
+    expect(runTurnSpy).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B');
   });
 
   it('activateNextResolver runs only the head of the queue and dequeues it', async () => {

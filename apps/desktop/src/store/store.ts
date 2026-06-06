@@ -263,6 +263,7 @@ export interface AppState extends UpdaterState {
   readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
+  readonly resolverState: Readonly<Record<AgentId, 'awaiting' | 'committed' | 'wontfix'>>;
   // Per-agent input draft. Ephemeral, in-memory only (not persisted). Lets the
   // user keep an unsent composition when switching agents/sessions.
   readonly agentDraft: Readonly<Record<AgentId, string>>;
@@ -723,6 +724,7 @@ export const initialState: AppState = {
   agentEffortOverride: {},
   agentKindOverride: {},
   pendingResolverKickoff: {},
+  resolverState: {},
   agentDraft: {},
   diffComments: {},
   notifications: [],

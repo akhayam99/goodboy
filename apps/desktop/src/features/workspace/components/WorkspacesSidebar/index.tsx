@@ -769,7 +769,20 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const pendingThreadIds = useAppStore(
     useShallow((s) => new Set((s.sessionPendingResolutions[task.id] ?? []).map((r) => r.threadId))),
   );
+  const resolverState = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) return out;
+      for (const run of runs) {
+        const st = s.resolverState[run.id];
+        if (st) out[run.id] = st;
+      }
+      return out;
+    }),
+  );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
@@ -1365,10 +1378,12 @@ function AgentsSection({ task }: AgentsSectionProps) {
           prNumber={prNumber}
           resolvedThreadIds={resolvedThreadIds}
           pendingThreadIds={pendingThreadIds}
+          resolverState={resolverState}
           selectedAgentId={selectedAgentId}
           expanded={resolveExpanded}
           onToggle={() => setResolveExpanded((v) => !v)}
           onSelect={onPickAgent}
+          onForceNext={() => void activateNextResolver(task.id)}
         />
       ) : null}
       <div className="flex flex-col gap-1 pl-2">
@@ -1638,19 +1653,31 @@ function ScoutSubtree({
   );
 }
 
-type ResolverStatus = 'running' | 'failed' | 'pending' | 'resolved' | 'committed' | 'done';
+type ResolverState = 'awaiting' | 'committed' | 'wontfix';
+type ResolverStatus =
+  | 'running'
+  | 'failed'
+  | 'pending'
+  | 'resolved'
+  | 'committed'
+  | 'wontfix'
+  | 'awaiting'
+  | 'done';
 
 function resolverStatus(
   agent: Agent,
   resolvedThreadIds: ReadonlySet<string>,
   pendingThreadIds: ReadonlySet<string>,
+  state: ResolverState | undefined,
 ): ResolverStatus {
   if (agent.status === 'running') return 'running';
   if (agent.status === 'failed') return 'failed';
   if (agent.status === 'pending') return 'pending';
   const tid = agent.sourceThreadId;
   if (tid != null && resolvedThreadIds.has(tid)) return 'resolved';
-  if (tid != null && pendingThreadIds.has(tid)) return 'committed';
+  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) return 'committed';
+  if (state === 'wontfix') return 'wontfix';
+  if (state === 'awaiting') return 'awaiting';
   return 'done';
 }
 
@@ -1660,10 +1687,12 @@ interface ResolveClusterProps {
   readonly prNumber: number | null;
   readonly resolvedThreadIds: ReadonlySet<string>;
   readonly pendingThreadIds: ReadonlySet<string>;
+  readonly resolverState: Readonly<Record<string, ResolverState>>;
   readonly selectedAgentId: AgentId | null;
   readonly expanded: boolean;
   readonly onToggle: () => void;
   readonly onSelect: (id: AgentId) => void;
+  readonly onForceNext: () => void;
 }
 
 function ResolveCluster({
@@ -1672,14 +1701,19 @@ function ResolveCluster({
   prNumber,
   resolvedThreadIds,
   pendingThreadIds,
+  resolverState,
   selectedAgentId,
   expanded,
   onToggle,
   onSelect,
+  onForceNext,
 }: ResolveClusterProps) {
-  const resolvedCount = agents.filter(
-    (a) => resolverStatus(a, resolvedThreadIds, pendingThreadIds) === 'resolved',
-  ).length;
+  const statusOf = (a: Agent): ResolverStatus =>
+    resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
+  const resolvedCount = agents.filter((a) => statusOf(a) === 'resolved').length;
+  const anyRunning = agents.some((a) => a.status === 'running');
+  const queuedCount = agents.filter((a) => a.status === 'pending').length;
+  const stalled = !anyRunning && queuedCount > 0;
   const jump = (agent: Agent) => {
     if (agent.sourceThreadId != null && prNumber != null) {
       window.dispatchEvent(
@@ -1693,20 +1727,33 @@ function ResolveCluster({
   };
   return (
     <div className="ml-2 mt-1 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-label={`${expanded ? 'collapse' : 'expand'} resolve cluster`}
-        className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-lime-500/80 transition-colors hover:text-lime-500"
-      >
-        {expanded ? (
-          <ChevronDown size={10} aria-hidden className="shrink-0" />
-        ) : (
-          <ChevronRight size={10} aria-hidden className="shrink-0" />
-        )}
-        resolve {resolvedCount}/{agents.length}
-      </button>
+      <div className="flex items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? 'collapse' : 'expand'} resolve cluster`}
+          className="flex min-w-0 flex-1 items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-lime-500/80 transition-colors hover:text-lime-500"
+        >
+          {expanded ? (
+            <ChevronDown size={10} aria-hidden className="shrink-0" />
+          ) : (
+            <ChevronRight size={10} aria-hidden className="shrink-0" />
+          )}
+          resolve {resolvedCount}/{agents.length}
+        </button>
+        {stalled ? (
+          <button
+            type="button"
+            onClick={onForceNext}
+            title="the current resolver has not committed or explained yet; run the next queued one anyway"
+            className="inline-flex shrink-0 items-center gap-1 rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning transition-colors hover:bg-warning/20"
+          >
+            <Play size={9} aria-hidden />
+            Run next ({queuedCount})
+          </button>
+        ) : null}
+      </div>
       {expanded
         ? agents.map((agent, i) => (
             <ResolveClusterRow
@@ -1714,7 +1761,7 @@ function ResolveCluster({
               agent={agent}
               index={i}
               total={agents.length}
-              status={resolverStatus(agent, resolvedThreadIds, pendingThreadIds)}
+              status={statusOf(agent)}
               isSelected={agent.id === selectedAgentId}
               canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
               onSelect={() => onSelect(agent.id)}
@@ -1758,6 +1805,10 @@ function ResolveClusterRow({
       <CheckCheck size={10} className="text-success" aria-hidden />
     ) : status === 'committed' ? (
       <GitCommit size={10} className="text-warning" aria-hidden />
+    ) : status === 'wontfix' ? (
+      <Ban size={10} className="text-muted-foreground/70" aria-hidden />
+    ) : status === 'awaiting' ? (
+      <AlertTriangle size={10} className="text-warning" aria-hidden />
     ) : (
       <Check size={10} className="text-muted-foreground/70" aria-hidden />
     );
@@ -1766,13 +1817,17 @@ function ResolveClusterRow({
       ? 'resolved on GitHub'
       : status === 'committed'
         ? 'committed locally, pending push'
-        : status === 'running'
-          ? 'working'
-          : status === 'pending'
-            ? 'queued'
-            : status === 'failed'
-              ? 'failed'
-              : 'done locally';
+        : status === 'wontfix'
+          ? 'explained, pending resolve'
+          : status === 'awaiting'
+            ? 'needs you: no commit yet'
+            : status === 'running'
+              ? 'working'
+              : status === 'pending'
+                ? 'queued'
+                : status === 'failed'
+                  ? 'failed'
+                  : 'done locally';
   return (
     <div
       className={cn(
