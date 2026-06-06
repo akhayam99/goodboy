@@ -260,6 +260,7 @@ export interface AppState extends UpdaterState {
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
   // Per-agent input draft. Ephemeral, in-memory only (not persisted). Lets the
@@ -502,6 +503,7 @@ export interface AppActions {
   activateNextResolver(sessionId: SessionId): Promise<void>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
   setAgentKind(agentId: AgentId, kind: AgentKind): void;
+  setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -718,6 +720,7 @@ export const initialState: AppState = {
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentProviderOverride: {},
+  agentEffortOverride: {},
   agentKindOverride: {},
   pendingResolverKickoff: {},
   agentDraft: {},

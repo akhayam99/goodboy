@@ -156,6 +156,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
+  const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
   const workspaceDefaultVerbosity = useAppStore(
     (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
   );
@@ -496,7 +497,10 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
     void storeSetSessionConfig(session.id, { effort: level });
-    if (selectedAgentId) void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
+    if (selectedAgentId) {
+      void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
+      storeSetAgentEffortOverride(selectedAgentId, level);
+    }
   };
 
   const setVerbosity = (level: VerbosityLevel) => {

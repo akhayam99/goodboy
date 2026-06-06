@@ -577,6 +577,19 @@ describe('store contract', () => {
       expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
     });
 
+    it('setAgentEffortOverride pins the per-agent effort', async () => {
+      const store = await getStore();
+      store.getState().setAgentEffortOverride(AGENT_ID, 'xhigh');
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBe('xhigh');
+    });
+
+    it('setAgentKind clears a stale effort pin when reseeding the model', async () => {
+      const store = await getStore();
+      store.setState({ agentEffortOverride: { [AGENT_ID]: 'max' } });
+      store.getState().setAgentKind(AGENT_ID, 'implementer');
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBeUndefined();
+    });
+
     it('markAgentViewed no-ops when the agent has no lastFinishedAt', async () => {
       const store = await getStore();
       const agent = buildAgent({ id: AGENT_ID });

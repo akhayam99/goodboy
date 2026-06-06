@@ -5,6 +5,7 @@ import { markAgentViewed } from './markAgentViewed';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
 import { setAgentDraft } from './setAgentDraft';
+import { setAgentEffortOverride } from './setAgentEffortOverride';
 import { setAgentKind } from './setAgentKind';
 import { spawnAgent } from './spawnAgent';
 import type { GetFn, SetFn } from './types';
@@ -12,6 +13,7 @@ import type { GetFn, SetFn } from './types';
 export function createAgentsSlice(set: SetFn, get: GetFn) {
   return {
     setAgentKind: setAgentKind(set),
+    setAgentEffortOverride: setAgentEffortOverride(set),
     setAgentDraft: setAgentDraft(set),
     clearAgentDraft: clearAgentDraft(set),
     selectAgent: selectAgent(set, get),

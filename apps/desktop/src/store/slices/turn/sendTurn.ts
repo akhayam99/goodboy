@@ -120,6 +120,14 @@ interface Input {
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
 }
 
+const EFFORT_FLAG: Readonly<Record<string, string>> = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  'extra-high': 'xhigh',
+  max: 'max',
+};
+
 export function sendTurn(set: SetFn, get: GetFn) {
   return async ({
     sessionId,
@@ -816,6 +824,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
       void applyHeuristicTitle(set, get, sessionId, activeAgentId, content);
     }
 
+    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
+    const effortFlag = provider === 'anthropic' && rawEffort ? EFFORT_FLAG[rawEffort] : undefined;
+
     try {
       for await (const event of runTurn({
         runId,
@@ -826,6 +837,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
         binary: providerInfo?.binary,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
+        ...(effortFlag !== undefined && { effort: effortFlag }),
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {

@@ -106,6 +106,9 @@ export function spawnAgent(set: SetFn, get: GetFn) {
       ...(args.provider !== undefined && {
         agentProviderOverride: { ...s.agentProviderOverride, [inserted.id]: args.provider },
       }),
+      ...(args.effort !== undefined && {
+        agentEffortOverride: { ...s.agentEffortOverride, [inserted.id]: args.effort },
+      }),
       ...(args.kindOverride !== undefined && {
         agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
       }),

@@ -40,6 +40,8 @@ export function deleteAgent(set: SetFn, get: GetFn) {
       delete nextModelOverride[agentId];
       const nextProviderOverride = { ...s.agentProviderOverride };
       delete nextProviderOverride[agentId];
+      const nextEffortOverride = { ...s.agentEffortOverride };
+      delete nextEffortOverride[agentId];
       const nextKindOverride = { ...s.agentKindOverride };
       delete nextKindOverride[agentId];
       const nextResolverKickoff = { ...s.pendingResolverKickoff };
@@ -57,6 +59,7 @@ export function deleteAgent(set: SetFn, get: GetFn) {
         agentRunHistory: nextHistory,
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,
+        agentEffortOverride: nextEffortOverride,
         agentKindOverride: nextKindOverride,
         pendingResolverKickoff: nextResolverKickoff,
         sessions: s.sessions.map((sess) =>
