@@ -1,9 +1,11 @@
 import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
 import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
-import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
+import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types';
 import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
+import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { readAttachment } from '../../turn';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ImageLightbox } from '../ImageLightbox';
@@ -45,6 +47,8 @@ function TranscriptCardImpl({
           text={item.text}
           at={item.at}
           attachments={item.attachments}
+          provider={item.provider}
+          model={item.model}
           workingDir={workingDir}
         />
       );
@@ -330,11 +334,15 @@ function UserText({
   text,
   at,
   attachments,
+  provider,
+  model,
   workingDir = null,
 }: {
   text: string;
   at: string;
   attachments?: ReadonlyArray<MessageAttachment>;
+  provider?: ProviderId;
+  model?: string;
   workingDir?: string | null;
 }) {
   const images = attachments ?? [];
@@ -353,10 +361,26 @@ function UserText({
         </div>
       ) : null}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
+        {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
         <span className="font-mono">{formatHHMM(at)}</span>
         {text.length > 0 ? <InlineCopyButton value={text} /> : null}
       </div>
     </div>
+  );
+}
+
+function ProviderFootnote({ provider, model }: { provider: ProviderId; model?: string }) {
+  const Icon = PROVIDER_BRAND[provider].icon;
+  const label = PROVIDER_LABEL[provider];
+  return (
+    <span
+      className="mr-auto inline-flex items-center gap-1 text-foreground/45"
+      title={`sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
+    >
+      <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
+      <span>{label}</span>
+      {model ? <span className="text-foreground/35">· {modelLabel(model)}</span> : null}
+    </span>
   );
 }
 
