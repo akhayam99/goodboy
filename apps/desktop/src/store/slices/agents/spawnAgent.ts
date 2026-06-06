@@ -3,6 +3,7 @@ import type {
   IsoDateTime,
   PlanId,
   PlanWithCount,
+  ProviderId,
   SessionId,
   Step,
   StepId,
@@ -27,10 +28,14 @@ interface SpawnArgs {
   workflowRunId?: WorkflowRunId;
   name?: string;
   model?: string;
+  provider?: ProviderId;
   effort?: string;
   initialPrompt?: string;
   triggeredPlanId?: PlanId;
   kindOverride?: AgentKind;
+  sourceThreadId?: string;
+  sourceCommentUrl?: string;
+  deferKickoff?: boolean;
 }
 
 export function spawnAgent(set: SetFn, get: GetFn) {
@@ -82,6 +87,8 @@ export function spawnAgent(set: SetFn, get: GetFn) {
       status: 'pending',
       ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
+      ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
+      ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
     });
     const refreshed = await invokeAgentList(sessionId);
     set((s) => ({
@@ -95,6 +102,9 @@ export function spawnAgent(set: SetFn, get: GetFn) {
       },
       ...(args.model !== undefined && {
         agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
+      }),
+      ...(args.provider !== undefined && {
+        agentProviderOverride: { ...s.agentProviderOverride, [inserted.id]: args.provider },
       }),
       ...(args.kindOverride !== undefined && {
         agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
@@ -127,7 +137,13 @@ export function spawnAgent(set: SetFn, get: GetFn) {
     }
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
-      void get().sendTurn({ sessionId, agentId: inserted.id, content: kickoff });
+      if (args.deferKickoff) {
+        set((s) => ({
+          pendingResolverKickoff: { ...s.pendingResolverKickoff, [inserted.id]: kickoff },
+        }));
+      } else {
+        void get().sendTurn({ sessionId, agentId: inserted.id, content: kickoff });
+      }
     }
 
     if (planToConsume) {

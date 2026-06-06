@@ -1,3 +1,4 @@
+import { activateNextResolver } from './activateNextResolver';
 import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
 import { markAgentViewed } from './markAgentViewed';
@@ -18,5 +19,6 @@ export function createAgentsSlice(set: SetFn, get: GetFn) {
     renameAgent: renameAgent(set),
     spawnAgent: spawnAgent(set, get),
     deleteAgent: deleteAgent(set, get),
+    activateNextResolver: activateNextResolver(set, get),
   };
 }

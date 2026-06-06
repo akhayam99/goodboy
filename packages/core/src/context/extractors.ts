@@ -207,6 +207,27 @@ export function isReviewThreadId(threadId: string): boolean {
   return REVIEW_THREAD_ID_RE.test(threadId);
 }
 
+const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^>]+?)>>/g;
+
+export interface ExtractedCommentWontfix {
+  readonly threadId: string;
+  readonly reason: string;
+}
+
+export function extractCommentWontfix(assistantText: string): ExtractedCommentWontfix | null {
+  COMMENT_WONTFIX_RE.lastIndex = 0;
+  let last: ExtractedCommentWontfix | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = COMMENT_WONTFIX_RE.exec(assistantText)) !== null) {
+    const attrs = parseHandoffAttrs(m[1] ?? '');
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const reason = (attrs.reason ?? '').trim();
+    if (threadId.length === 0 || reason.length === 0) continue;
+    last = { threadId, reason };
+  }
+  return last;
+}
+
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
 

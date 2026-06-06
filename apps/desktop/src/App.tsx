@@ -106,6 +106,8 @@ export function App() {
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
+  const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
+  const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
@@ -159,8 +161,12 @@ export function App() {
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      const detail = (
+        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
+      ).detail;
       setGithubStudioSession(detail?.sessionId ?? null);
+      setGithubStudioPrNumber(detail?.prNumber ?? null);
+      setGithubStudioThreadId(detail?.threadId ?? null);
       setGithubStudioOpen(true);
     };
     window.addEventListener('goodboy:open-github-studio', handler);
@@ -558,6 +564,8 @@ export function App() {
         <GitHubStudio
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
+          initialPrNumber={githubStudioPrNumber}
+          initialThreadId={githubStudioThreadId}
           onClose={() => setGithubStudioOpen(false)}
         />
       ) : null}

@@ -7,13 +7,16 @@ export function setAgentKind(set: SetFn) {
   return (agentId: AgentId, kind: AgentKind) => {
     set((s) => {
       const nextModelOverride = { ...s.agentModelOverride };
+      const nextProviderOverride = { ...s.agentProviderOverride };
       const defaults = AGENT_KIND_DEFAULTS[kind];
       if (defaults?.model) {
         nextModelOverride[agentId] = defaults.model;
+        delete nextProviderOverride[agentId];
       }
       return {
         agentKindOverride: { ...s.agentKindOverride, [agentId]: kind },
         agentModelOverride: nextModelOverride,
+        agentProviderOverride: nextProviderOverride,
       };
     });
     void invokeAgentSetKind(agentId, kind).catch((err) => {

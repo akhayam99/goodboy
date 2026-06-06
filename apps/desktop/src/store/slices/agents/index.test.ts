@@ -570,6 +570,13 @@ describe('store contract', () => {
       expect(invokeAgentSetKindSpy).toHaveBeenCalledWith(AGENT_ID, 'implementer');
     });
 
+    it('setAgentKind clears a stale provider pin when reseeding the model', async () => {
+      const store = await getStore();
+      store.setState({ agentProviderOverride: { [AGENT_ID]: 'codex' } });
+      store.getState().setAgentKind(AGENT_ID, 'implementer');
+      expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
+    });
+
     it('markAgentViewed no-ops when the agent has no lastFinishedAt', async () => {
       const store = await getStore();
       const agent = buildAgent({ id: AGENT_ID });

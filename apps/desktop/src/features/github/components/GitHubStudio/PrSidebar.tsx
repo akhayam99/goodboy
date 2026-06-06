@@ -13,6 +13,7 @@ import {
   MinusCircle,
   Plus,
   Search,
+  Sparkles,
 } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import { computeTabStatus, TabBadge } from '../Card';
@@ -21,7 +22,7 @@ import { useCurrentWorkspace } from '../../../../store';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { PrSwitcher } from './PrSwitcher';
 
-export type PrSection = 'overview' | 'comments' | 'ci';
+export type PrSection = 'overview' | 'comments' | 'resolve' | 'ci';
 
 const NAV: ReadonlyArray<{
   key: PrSection;
@@ -31,6 +32,7 @@ const NAV: ReadonlyArray<{
 }> = [
   { key: 'overview', label: 'Overview', icon: FileText },
   { key: 'comments', label: 'Conversation', icon: MessageSquare, status: 'comments' },
+  { key: 'resolve', label: 'Resolve', icon: Sparkles },
   { key: 'ci', label: 'Checks', icon: ListChecks, status: 'ci' },
 ];
 
@@ -58,6 +60,11 @@ export function PrSidebar({
   onAddReviewers,
 }: Props) {
   const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+  const openResolveCount = useMemo(
+    () =>
+      (detail?.comments ?? []).filter((c) => c.source === 'review' && c.resolved === false).length,
+    [detail?.comments],
+  );
   const requests = detail?.reviewRequests ?? [];
   const reviewed = useMemo(() => latestReviews(detail?.reviews ?? []), [detail?.reviews]);
   const known = useMemo(
@@ -108,7 +115,18 @@ export function PrSidebar({
             >
               <Icon size={14} aria-hidden className="shrink-0" />
               <span className="flex-1">{item.label}</span>
-              {status ? <TabBadge status={status} dim={!active} /> : null}
+              {item.key === 'resolve' && openResolveCount > 0 ? (
+                <span
+                  className={cn(
+                    'inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums',
+                    active ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {openResolveCount}
+                </span>
+              ) : status ? (
+                <TabBadge status={status} dim={!active} />
+              ) : null}
             </button>
           );
         })}

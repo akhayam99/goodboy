@@ -123,6 +123,8 @@ export type Agent = Readonly<{
   modelOverride?: string;
   providerOverride?: string;
   kind?: string;
+  sourceThreadId?: string;
+  sourceCommentUrl?: string;
 }>;
 
 export type StepTransition = Readonly<{

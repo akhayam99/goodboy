@@ -355,10 +355,20 @@ export function sendTurn(set: SetFn, get: GetFn) {
       : undefined;
     const turnOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
-    const effectiveOverride = phaseOverride ?? turnOverride;
+    const agentProvider = get().agentProviderOverride[activeAgentId] ?? null;
+    const agentModelPin = get().agentModelOverride[activeAgentId] ?? null;
+    const agentOverride: TurnProviderOverride | undefined = agentProvider
+      ? { providerId: agentProvider, ...(agentModelPin != null && { model: agentModelPin }) }
+      : undefined;
+    const effectiveOverride = phaseOverride ?? agentOverride ?? turnOverride;
+
+    const routingPreference =
+      effectiveOverride === agentOverride && agentOverride !== undefined
+        ? { ...session.providerPreference, allowTurnOverride: true }
+        : session.providerPreference;
 
     const routingDecision = await resolveProviderForTurn(
-      session.providerPreference,
+      routingPreference,
       effectiveOverride,
       connectedProviders,
     );
@@ -1028,6 +1038,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
           void get().refreshUnreadWorkspaces();
 
           void get().maybeAutoAdvanceWorkflow(sessionId);
+          if (ranKind === 'resolver') void get().activateNextResolver(sessionId);
         }
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn, agent stays `running`. It was activated and has
