@@ -22,7 +22,6 @@ vi.mock('../../../shared/lib/db', () => ({
 }));
 
 import { createPlansSlice } from './index';
-import { AGENT_KIND_DEFAULTS } from '../../../features/session/agent-kind';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WF_ID = 'wf-refactor' as WorkflowId;
@@ -109,6 +108,7 @@ interface FakeState {
   sessionPhaseRuns: Record<SessionId, ReadonlyArray<Agent>>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
   spawnAgent: ReturnType<typeof vi.fn>;
+  activateWorkflowAgent: ReturnType<typeof vi.fn>;
 }
 
 function buildSlice(state: FakeState) {
@@ -148,6 +148,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
     sessionPhaseRuns: { [SESSION_ID]: [creator, nextImpl] },
     phaseTemplates: { [WS_ID]: [wf] },
     spawnAgent: vi.fn(async () => 'spawned' as AgentId),
+    activateWorkflowAgent: vi.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -157,36 +158,27 @@ describe('runPlan, workflow-aware spawn routing', () => {
     vi.clearAllMocks();
   });
 
-  describe('in-workflow spawn (all gates pass)', () => {
-    it('routes to the next implementer step via stepId when plan was created inside the workflow', async () => {
+  describe('in-workflow activation (all gates pass)', () => {
+    it('activates the pre-created pending step agent, routing the clicked plan, with no spawn', async () => {
       const state = defaultState();
       const slice = buildSlice(state);
 
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
-      expect(state.spawnAgent).toHaveBeenCalledTimes(1);
-      const [sid, args] = state.spawnAgent.mock.calls[0]!;
-      expect(sid).toBe(SESSION_ID);
-      expect(args).toEqual({
-        stepId: STEP_IMPL,
-        workflowRunId: RUN_ID,
-        triggeredPlanId: PLAN_ID,
-        model: AGENT_KIND_DEFAULTS.implementer.model,
-      });
-      // No kindOverride, agent kind must come from the step name so the
-      // workflow slot's role wins over the implementer default.
-      expect(args).not.toHaveProperty('kindOverride');
+      expect(state.spawnAgent).not.toHaveBeenCalled();
+      expect(state.activateWorkflowAgent).toHaveBeenCalledTimes(1);
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
     });
 
-    it('uses implementer model default (sonnet) for the in-workflow spawn', async () => {
+    it('does not insert a duplicate agent for a step that already has a pending slot', async () => {
       const state = defaultState();
+      const before = state.sessionPhaseRuns[SESSION_ID]!.length;
       const slice = buildSlice(state);
 
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
-      const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args.model).toBe('claude-sonnet-4-5');
-      expect(args.model).toBe(AGENT_KIND_DEFAULTS.implementer.model);
+      expect(state.sessionPhaseRuns[SESSION_ID]).toHaveLength(before);
+      expect(state.spawnAgent).not.toHaveBeenCalled();
     });
 
     it('recognizes implementer aliases ("Implement", "Build", "Refactor", "Code", "Feature", "Develop")', async () => {
@@ -206,41 +198,36 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
-        const [, args] = state.spawnAgent.mock.calls[0]!;
-        expect(args, `alias "${name}" should route in-workflow`).toMatchObject({
-          stepId: STEP_IMPL,
-          triggeredPlanId: PLAN_ID,
-        });
+        expect(state.spawnAgent, `alias "${name}" must not free-spawn`).not.toHaveBeenCalled();
+        expect(state.activateWorkflowAgent, `alias "${name}" should activate the slot`).toHaveBeenCalledWith(
+          SESSION_ID,
+          IMPL_AGENT_ID,
+          PLAN_ID,
+        );
       }
     });
 
-    it.each([
-      ['Debug', AGENT_KIND_DEFAULTS.debugger.model],
-      ['Execute commits', AGENT_KIND_DEFAULTS.generic.model],
-    ])('routes %s into the workflow slot (consuming kind)', async (name, model) => {
-      const state = defaultState({
-        phaseTemplates: {
-          [WS_ID]: [
-            makeWorkflow([
-              { id: STEP_PLAN, name: 'Plan', ordinal: 0 },
-              { id: STEP_IMPL, name, ordinal: 1 },
-            ]),
-          ],
-        },
-      });
-      const slice = buildSlice(state);
+    it.each([['Debug'], ['Execute commits']])(
+      'activates the workflow slot for %s (consuming kind)',
+      async (name) => {
+        const state = defaultState({
+          phaseTemplates: {
+            [WS_ID]: [
+              makeWorkflow([
+                { id: STEP_PLAN, name: 'Plan', ordinal: 0 },
+                { id: STEP_IMPL, name, ordinal: 1 },
+              ]),
+            ],
+          },
+        });
+        const slice = buildSlice(state);
 
-      await slice.runPlan(SESSION_ID, PLAN_ID);
+        await slice.runPlan(SESSION_ID, PLAN_ID);
 
-      const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({
-        stepId: STEP_IMPL,
-        workflowRunId: RUN_ID,
-        triggeredPlanId: PLAN_ID,
-        model,
-      });
-      expect(args).not.toHaveProperty('kindOverride');
-    });
+        expect(state.spawnAgent).not.toHaveBeenCalled();
+        expect(state.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+      },
+    );
   });
 
   describe('gate A, session has no workflows attached → free-spawn', () => {
@@ -512,16 +499,23 @@ describe('runPlan, workflow-aware spawn routing', () => {
   });
 
   describe('invariants', () => {
-    it('exactly one spawnAgent call per runPlan (no double-spawn between gates)', async () => {
-      const state = defaultState();
-      const slice = buildSlice(state);
+    it('exactly one dispatch per runPlan (in-workflow activates, fallback spawns, never both)', async () => {
+      const inWorkflow = defaultState();
+      await buildSlice(inWorkflow).runPlan(SESSION_ID, PLAN_ID);
+      expect(
+        inWorkflow.spawnAgent.mock.calls.length + inWorkflow.activateWorkflowAgent.mock.calls.length,
+      ).toBe(1);
+      expect(inWorkflow.activateWorkflowAgent).toHaveBeenCalledTimes(1);
 
-      await slice.runPlan(SESSION_ID, PLAN_ID);
-
-      expect(state.spawnAgent).toHaveBeenCalledTimes(1);
+      const freeSpawn = defaultState({ sessions: [makeSession({ workflowRuns: [] })] });
+      await buildSlice(freeSpawn).runPlan(SESSION_ID, PLAN_ID);
+      expect(
+        freeSpawn.spawnAgent.mock.calls.length + freeSpawn.activateWorkflowAgent.mock.calls.length,
+      ).toBe(1);
+      expect(freeSpawn.spawnAgent).toHaveBeenCalledTimes(1);
     });
 
-    it('triggeredPlanId is the clicked plan in every branch (in-workflow + every free-spawn fallback)', async () => {
+    it('the clicked plan is routed in every branch (in-workflow activation + every free-spawn fallback)', async () => {
       const scenarios: Array<{ name: string; state: FakeState }> = [
         { name: 'happy path', state: defaultState() },
         {
@@ -575,8 +569,13 @@ describe('runPlan, workflow-aware spawn routing', () => {
         const slice = buildSlice(state);
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
-        const [, args] = state.spawnAgent.mock.calls[0]!;
-        expect(args.triggeredPlanId, `${name} must carry triggeredPlanId`).toBe(PLAN_ID);
+        if (state.activateWorkflowAgent.mock.calls.length > 0) {
+          const [, , planId] = state.activateWorkflowAgent.mock.calls[0]!;
+          expect(planId, `${name} must route the clicked plan`).toBe(PLAN_ID);
+        } else {
+          const [, args] = state.spawnAgent.mock.calls[0]!;
+          expect(args.triggeredPlanId, `${name} must carry triggeredPlanId`).toBe(PLAN_ID);
+        }
       }
     });
   });

@@ -407,7 +407,11 @@ export interface AppActions {
     workflowRunIds: ReadonlyArray<WorkflowRunId>,
   ): Promise<void>;
   setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
-  activateWorkflowAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  activateWorkflowAgent(
+    sessionId: SessionId,
+    agentId: AgentId,
+    explicitPlanId?: PlanId,
+  ): Promise<void>;
   advanceClusterImplementation(
     sessionId: SessionId,
     childAgentId: AgentId,

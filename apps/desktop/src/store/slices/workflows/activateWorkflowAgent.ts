@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/types';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -14,7 +14,7 @@ import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 export function activateWorkflowAgent(set: SetFn, get: GetFn) {
-  return async (sessionId: SessionId, agentId: AgentId) => {
+  return async (sessionId: SessionId, agentId: AgentId, explicitPlanId?: PlanId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
@@ -44,26 +44,39 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
     const effectiveKind: AgentKind =
       (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
     const consumesPlan = kindConsumesPlan(effectiveKind);
-    const { section: planSection, plan: latestPlan } = consumesPlan
-      ? await buildPlanKickoffSection(sessionId, agent.workflowRunId)
-      : { section: '', plan: null };
+    const explicitPlan =
+      explicitPlanId !== undefined
+        ? (get().sessionPlans[sessionId]?.find((p) => p.id === explicitPlanId) ?? null)
+        : null;
+    const { section: latestSection, plan: latestPlan } =
+      consumesPlan && !explicitPlan
+        ? await buildPlanKickoffSection(sessionId, agent.workflowRunId)
+        : { section: '', plan: null };
 
-    if (consumesPlan && latestPlan && latestPlan.status === 'active') {
-      await invokeAddPlanConsumption(latestPlan.id, agentId);
+    const planForKickoff = explicitPlan ?? latestPlan;
+    const planSection = consumesPlan
+      ? explicitPlan
+        ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+        : latestSection
+      : '';
+    const planToConsume = explicitPlan ?? (latestPlan?.status === 'active' ? latestPlan : null);
+
+    if (consumesPlan && planToConsume) {
+      await invokeAddPlanConsumption(planToConsume.id, agentId);
       const refreshedPlans = await invokeListPlansForSession(sessionId);
-      const consumptions = await invokeListConsumptionsForPlan(latestPlan.id);
+      const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
-        planConsumptions: { ...state.planConsumptions, [latestPlan.id]: consumptions },
+        planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
       }));
     }
 
     const clusters =
-      effectiveKind === 'implementer' && latestPlan?.status === 'active'
-        ? latestPlan.clusters
+      effectiveKind === 'implementer' && planForKickoff?.status === 'active'
+        ? planForKickoff.clusters
         : undefined;
     if (clusters && clusters.length >= 2) {
-      await fanOutClusters(set, get, sessionId, agent, clusters, latestPlan!.title);
+      await fanOutClusters(set, get, sessionId, agent, clusters, planForKickoff!.title);
       return;
     }
 
