@@ -706,13 +706,14 @@ export function sendTurn(set: SetFn, get: GetFn) {
           await updateSessionState(tauriDatabase, sessionId, errorState, now());
           applySessionUpdate(set, sessionId, errorState, activeAgentId);
         } else {
-          const doneState = turnReducer(
-            get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP,
-            {
-              kind: 'receive_event',
-              event: { kind: 'done', runId: result.runIds[0]!, at: now() },
-            },
-          );
+          const current = get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP;
+          const doneState: TurnState =
+            current.kind === 'running'
+              ? turnReducer(current, {
+                  kind: 'receive_event',
+                  event: { kind: 'done', runId: result.runIds[0]!, at: now() },
+                })
+              : { kind: 'idle', lastActivityAt: now() };
           await updateSessionState(tauriDatabase, sessionId, doneState, now());
           applySessionUpdate(set, sessionId, doneState, activeAgentId);
         }
@@ -968,7 +969,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
         }
 
         const currentAgentState = get().agentTurnState[activeAgentId];
-        if (currentAgentState) {
+        if (currentAgentState?.kind === 'running') {
           const reduced = turnReducer(currentAgentState, { kind: 'receive_event', event });
           if (reduced !== currentAgentState) {
             const derived = applyAgentTurnState(set, sessionId, activeAgentId, reduced, now());
