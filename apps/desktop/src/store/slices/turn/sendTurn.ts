@@ -77,6 +77,7 @@ import {
   runTurn,
   writeAttachment,
 } from '../../../features/chat/turn';
+import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
@@ -215,7 +216,13 @@ export function sendTurn(set: SetFn, get: GetFn) {
               fileName: a.fileName,
               dataBase64: a.dataBase64,
             });
-            return { id: a.id, kind: 'image', fileName: a.fileName, mimeType: a.mimeType, relPath };
+            return {
+              id: a.id,
+              kind: attachmentKindFor(a.mimeType),
+              fileName: a.fileName,
+              mimeType: a.mimeType,
+              relPath,
+            };
           }),
         );
       } catch (err) {

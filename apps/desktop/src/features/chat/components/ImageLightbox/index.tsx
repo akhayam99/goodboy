@@ -6,6 +6,7 @@ interface Props {
   readonly src: string;
   readonly alt: string;
   readonly onClose: () => void;
+  readonly media?: 'image' | 'pdf';
 }
 
 const EXIT_MS = 180;
@@ -22,7 +23,7 @@ const EXIT_MS = 180;
  *            the exit transition so the unmount happens at the end of
  *            the animation, not the start.
  */
-export function ImageLightbox({ src, alt, onClose }: Props) {
+export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
   const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
   const exitTimerRef = useRef<number | null>(null);
 
@@ -87,16 +88,27 @@ export function ImageLightbox({ src, alt, onClose }: Props) {
       >
         <X size={18} aria-hidden />
       </button>
-      <img
-        src={src}
-        alt={alt}
-        // Stop propagation so clicking the image itself doesn't dismiss.
-        // Only the surrounding backdrop closes the preview.
-        onClick={(event) => event.stopPropagation()}
-        className={`max-h-full max-w-full rounded-lg object-contain shadow-2xl transition-all duration-[180ms] ease-out ${
-          visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-        }`}
-      />
+      {media === 'pdf' ? (
+        <iframe
+          src={src}
+          title={alt}
+          onClick={(event) => event.stopPropagation()}
+          className={`h-full w-full max-w-3xl rounded-lg bg-white shadow-2xl transition-all duration-[180ms] ease-out ${
+            visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
+        />
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          // Stop propagation so clicking the image itself doesn't dismiss.
+          // Only the surrounding backdrop closes the preview.
+          onClick={(event) => event.stopPropagation()}
+          className={`max-h-full max-w-full rounded-lg object-contain shadow-2xl transition-all duration-[180ms] ease-out ${
+            visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
+        />
+      )}
     </div>,
     document.body,
   );
