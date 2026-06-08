@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ChevronRight, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
+import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,
@@ -91,66 +92,69 @@ export function ChatBreadcrumb({ session }: Props) {
   const sessionLabel = session.goal.trim() || 'untitled session';
 
   return (
-    <div
-      className="flex h-8 shrink-0 items-center gap-1.5 border-b border-border-soft px-3 text-2xs text-muted-foreground"
-      role="navigation"
-      aria-label="chat breadcrumb"
-    >
-      {/* workspace */}
-      {workspace ? (
-        <button
-          type="button"
-          onClick={openWorkspaceSettings}
-          className="truncate font-medium text-muted-foreground transition-colors hover:text-foreground"
-          title={`workspace: ${workspace.name}`}
-        >
-          {workspace.name}
-        </button>
-      ) : (
-        <span className="truncate text-muted-foreground/50">no workspace</span>
-      )}
-
-      <Separator />
-
-      {/* session */}
-      <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
-        {sessionLabel}
-      </span>
-
-      {/* workflow, only when one is attached. Surfaces "step N/M" so the user
-          knows the workflow is driving and how far along it is. */}
-      {workflowProgress ? (
-        <>
-          <Separator />
-          <span
-            className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
-            title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
+    <>
+      <div
+        className="flex h-8 shrink-0 items-center gap-1.5 px-3 text-2xs text-muted-foreground"
+        role="navigation"
+        aria-label="chat breadcrumb"
+      >
+        {/* workspace */}
+        {workspace ? (
+          <button
+            type="button"
+            onClick={openWorkspaceSettings}
+            className="truncate font-medium text-muted-foreground transition-colors hover:text-foreground"
+            title={`workspace: ${workspace.name}`}
           >
-            <GitBranch size={9} aria-hidden />
-            <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
-            <span aria-hidden className="opacity-60">
-              ·
-            </span>
-            <span className="font-mono tabular-nums">
-              {workflowProgress.currentOrdinal}/{workflowProgress.total}
-            </span>
-          </span>
-        </>
-      ) : null}
+            {workspace.name}
+          </button>
+        ) : (
+          <span className="truncate text-muted-foreground/50">no workspace</span>
+        )}
 
-      {/* Spacer pushes the dog to the far right. Just the silhouette: the
-          path on the left already says where you are, the dog is the quiet
-          "who am I talking to" cue. */}
-      <div className="flex-1" />
+        <Separator />
 
-      {selectedAgent && agentKind ? (
-        <AgentAvatar
-          kind={agentKind}
-          size="md"
-          title={`${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
-        />
-      ) : null}
-    </div>
+        {/* session */}
+        <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
+          {sessionLabel}
+        </span>
+
+        {/* workflow, only when one is attached. Surfaces "step N/M" so the user
+            knows the workflow is driving and how far along it is. */}
+        {workflowProgress ? (
+          <>
+            <Separator />
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+              title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
+            >
+              <GitBranch size={9} aria-hidden />
+              <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
+              <span aria-hidden className="opacity-60">
+                ·
+              </span>
+              <span className="font-mono tabular-nums">
+                {workflowProgress.currentOrdinal}/{workflowProgress.total}
+              </span>
+            </span>
+          </>
+        ) : null}
+
+        {/* Spacer pushes the dog to the far right. Just the silhouette: the
+            path on the left already says where you are, the dog is the quiet
+            "who am I talking to" cue. */}
+        <div className="flex-1" />
+
+        {selectedAgent && agentKind ? (
+          <AgentAvatar
+            kind={agentKind}
+            size="md"
+            title={`${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
+          />
+        ) : null}
+      </div>
+      <Divider className="shrink-0" />
+    </>
   );
 }
 
