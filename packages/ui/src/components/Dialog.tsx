@@ -2,7 +2,7 @@ import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react
 import { cn } from '../cn';
 import { Divider } from './Divider';
 
-export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export interface DialogProps {
   open: boolean;
@@ -55,6 +55,7 @@ const SIZE: Record<DialogSize, string> = {
   md: 'w-[32rem]',
   lg: 'w-[44rem]',
   xl: 'w-[56rem]',
+  '2xl': 'w-[64rem]',
 };
 
 // Per-size baseline min-height. Without this the dialog collapses to the
@@ -66,6 +67,7 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
   md: 'min-h-[24rem]',
   lg: 'min-h-[28rem]',
   xl: 'min-h-[32rem]',
+  '2xl': 'min-h-[34rem]',
 };
 
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
