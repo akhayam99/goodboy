@@ -9,7 +9,6 @@ import {
   type SlotKey,
 } from '@goodboy/core';
 import {
-  insertContextSlotHistory,
   insertNudgeEvent,
   insertProviderRun,
   insertTelemetry,
@@ -186,22 +185,12 @@ async function runSummarizer(
         result.delta.upserts.map(async (upsert) => {
           const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
           const prevValue = existing && existing.value !== upsert.value ? existing.value : null;
-          if (prevValue !== null) {
-            await insertContextSlotHistory(
-              tauriDatabase,
-              sessionId,
-              crypto.randomUUID(),
-              upsert.key,
-              prevValue,
-              'summarizer',
-            );
-          }
           const next: ContextSlot = {
             key: upsert.key,
             value: upsert.value,
             enabled: existing?.enabled ?? true,
           };
-          await upsertContextSlot(tauriDatabase, sessionId, next);
+          await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
           return prevValue !== null ? upsert.key : null;
         }),
       )
