@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Button, Dialog } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import { Archive } from 'lucide-react';
+import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-// Tauri errors serialize as `{kind: string; message: string}` plain objects.
-// `instanceof Error` is false for them, so `String(err)` → "[object Object]".
 function unwrapError(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === 'object' && err !== null && 'message' in err) {
@@ -20,18 +19,30 @@ interface Props {
   onClose: () => void;
 }
 
-export function EndSessionDialog({ session, open, onClose }: Props) {
-  const endSession = useAppStore((s) => s.endSession);
+export function DeleteSessionDialog({ session, open, onClose }: Props) {
+  const deleteTask = useAppStore((s) => s.deleteTask);
+  const archiveTask = useAppStore((s) => s.archiveTask);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (session.state.kind === 'ended') return null;
-
-  const onConfirm = async () => {
+  const onConfirmDelete = async () => {
     setBusy(true);
     setError(null);
     try {
-      await endSession(session.id);
+      await deleteTask(session.id as SessionId);
+      onClose();
+    } catch (err) {
+      setError(unwrapError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onArchiveInstead = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await archiveTask(session.id as SessionId);
       onClose();
     } catch (err) {
       setError(unwrapError(err));
@@ -44,8 +55,8 @@ export function EndSessionDialog({ session, open, onClose }: Props) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="End session?"
-      description="Removes the worktree and session transcripts from this device. The branch is preserved for manual merge if needed."
+      title="Delete session?"
+      description="Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge."
       size="sm"
       footer={
         <>
@@ -53,8 +64,12 @@ export function EndSessionDialog({ session, open, onClose }: Props) {
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={() => void onConfirm()} disabled={busy}>
-            {busy ? 'Ending…' : 'End session'}
+          <Button variant="secondary" onClick={() => void onArchiveInstead()} disabled={busy}>
+            <Archive size={13} aria-hidden className="mr-1.5" />
+            {busy ? 'Working…' : 'Archive instead'}
+          </Button>
+          <Button variant="danger" onClick={() => void onConfirmDelete()} disabled={busy}>
+            {busy ? 'Deleting…' : 'Delete session'}
           </Button>
         </>
       }
@@ -63,7 +78,9 @@ export function EndSessionDialog({ session, open, onClose }: Props) {
         <div className="rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
           <span className="font-mono text-foreground">{session.goal}</span>
         </div>
-        <p className="text-xs font-medium text-danger">This cannot be undone.</p>
+        <p className="text-xs font-medium text-danger">
+          This cannot be undone. To keep the history, archive instead.
+        </p>
       </div>
     </Dialog>
   );

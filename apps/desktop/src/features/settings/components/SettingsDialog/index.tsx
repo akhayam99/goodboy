@@ -70,7 +70,7 @@ const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly lab
   { combo: ['⌘', '⇧', 'P'], label: 'open permission picker' },
   { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
   { combo: ['⌘', '⇧', 'A'], label: 'archive current session' },
-  { combo: ['⌘', '.'], label: 'end current session' },
+  { combo: ['⌘', '.'], label: 'delete current session' },
   { combo: ['⌘', ','], label: 'open settings' },
   { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
   { combo: ['Esc'], label: 'close dialog or cancel' },
