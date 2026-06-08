@@ -116,19 +116,19 @@ describe('keyboard, DeleteSessionDialog', () => {
     expect(focused?.tagName.toLowerCase()).toBe('button');
   });
 
-  it('Enter on "delete session" button keeps it keyboard-reachable', async () => {
+  it('Enter on delete button keeps it keyboard-reachable', async () => {
     const user = userEvent.setup();
     render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
-    const deleteBtn = screen.getByRole('button', { name: /delete session/i });
+    const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
     deleteBtn.focus();
     await user.keyboard('{Enter}');
     expect(document.activeElement).toBe(deleteBtn);
   });
 
-  it('exposes both archive-instead and delete actions', () => {
+  it('exposes both archive and delete actions', () => {
     render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /archive instead/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^archive$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeDefined();
   });
 
   it('Tab cycles through cancel → archive → delete buttons', async () => {
