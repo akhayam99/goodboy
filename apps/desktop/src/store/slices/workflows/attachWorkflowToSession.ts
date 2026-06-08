@@ -98,6 +98,10 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
 
     void get().reprocessGoalForWorkflow(sessionId);
 
-    if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+    if (autoRun) {
+      void get().maybeAutoAdvanceWorkflow(sessionId);
+    } else if (newAgents.length > 0) {
+      void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
+    }
   };
 }
