@@ -205,6 +205,15 @@ export async function cancelTurn(runId: ProviderRunId): Promise<void> {
   await invoke('turn_cancel', { runId });
 }
 
+export async function listLiveRunIds(): Promise<ReadonlySet<string>> {
+  try {
+    const ids = await invoke<string[]>('turn_list_live');
+    return new Set(ids ?? []);
+  } catch {
+    return new Set();
+  }
+}
+
 /**
  * Persists a composer image into `<worktree>/.goodboy/attachments/` and returns
  * the worktree-relative path the spawned provider CLI reads it from.

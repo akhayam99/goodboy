@@ -108,7 +108,7 @@ import {
 } from '../../../../features/session/components/AgentMetricsBlock';
 import { formatError } from '../../../../shared/lib/errors';
 import { useThemeStore } from '../../../../shared/lib/theme';
-import { WorkspaceSelect } from '../WorkspaceSelect';
+import { WorkspaceHeader } from '../WorkspaceHeader';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
@@ -213,7 +213,7 @@ export function WorkspacesSidebar({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
-        <WorkspaceSelect onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+        <WorkspaceHeader />
       </div>
 
       <Divider />

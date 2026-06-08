@@ -7,6 +7,7 @@ const cancelTurnSpy = vi.fn();
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: cancelTurnSpy,
+  listLiveRunIds: vi.fn(async () => new Set<string>()),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
 }));

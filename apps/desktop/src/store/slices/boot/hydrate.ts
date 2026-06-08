@@ -14,10 +14,12 @@ import {
   type ProviderStatuses,
 } from '../../../features/providers/providers';
 import { detectEditors } from '../../../shared/lib/editor';
+import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
+  SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
 import { formatError } from '../../../shared/lib/errors';
 import { drainAuditRetryQueue } from './auditRetryQueue';
@@ -41,16 +43,18 @@ export function hydrate(set: SetFn, get: GetFn) {
         await hydrateOnboardingFromDb();
 
         set({ bootPhase: 'loading-settings' });
-        const [editorBinary, lastWorkspaceRaw, lastSessionRaw] = await Promise.all([
+        const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw] = await Promise.all([
           getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
           getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
           getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
+          getSetting(tauriDatabase, SETTING_REOPEN_LAST),
         ]);
         set((state) => {
           const next = { ...state.settings };
           if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
           if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
           if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
+          if (reopenLastRaw !== null) next[SETTING_REOPEN_LAST] = reopenLastRaw;
           return { settings: next };
         });
 
@@ -110,21 +114,31 @@ export function hydrate(set: SetFn, get: GetFn) {
         );
 
         set({ bootPhase: 'restoring-session' });
-        const lastWorkspaceId =
-          lastWorkspaceRaw && lastWorkspaceRaw.length > 0
-            ? (lastWorkspaceRaw as WorkspaceId)
-            : null;
-        const targetWorkspace = lastWorkspaceId
-          ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+        const hashWorkspaceId = targetWorkspaceFromHash();
+        const hashWorkspace = hashWorkspaceId
+          ? (workspaces.find((w) => w.id === hashWorkspaceId) ?? null)
           : null;
-        if (targetWorkspace) {
-          await get().setCurrentWorkspace(targetWorkspace.id);
-          const lastSessionId =
-            lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
-          if (lastSessionId) {
-            const sessions = get().sessions;
-            if (sessions.some((s) => s.id === lastSessionId)) {
-              await get().setCurrentSession(lastSessionId);
+        const reopenLast = reopenLastRaw === '1';
+        if (hashWorkspace) {
+          await get().setCurrentWorkspace(hashWorkspace.id);
+          void setWindowTitle(hashWorkspace.name);
+        } else if (reopenLast) {
+          const lastWorkspaceId =
+            lastWorkspaceRaw && lastWorkspaceRaw.length > 0
+              ? (lastWorkspaceRaw as WorkspaceId)
+              : null;
+          const targetWorkspace = lastWorkspaceId
+            ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+            : null;
+          if (targetWorkspace) {
+            await get().setCurrentWorkspace(targetWorkspace.id);
+            const lastSessionId =
+              lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
+            if (lastSessionId) {
+              const sessions = get().sessions;
+              if (sessions.some((s) => s.id === lastSessionId)) {
+                await get().setCurrentSession(lastSessionId);
+              }
             }
           }
         }
