@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronsDown,
   ChevronsRight,
   Copy,
   ExternalLink,
@@ -157,6 +158,9 @@ const STATUS_COLOR: Record<FileDiffStatus, string> = {
 };
 
 const SIDEBAR_PREF_KEY = STORAGE_KEYS.diffSidebarCollapsed;
+
+const INITIAL_VISIBLE_LINES = 1000;
+const VISIBLE_LINES_STEP = 2000;
 
 const TOOLBAR_ICON_BTN =
   'rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
@@ -645,6 +649,7 @@ export function DiffViewerDialog({
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {selected ? (
                   <FileDiffPane
+                    key={selected.path}
                     file={selected}
                     comments={selectedComments}
                     fileLevelComments={fileLevelComments}
@@ -1232,6 +1237,39 @@ function FileDiffPane({
     return m;
   }, [comments]);
 
+  const rows = useMemo(() => {
+    const out: Array<
+      | { type: 'header'; hi: number; header: string }
+      | { type: 'line'; hi: number; li: number; line: DiffHunkLine }
+    > = [];
+    file.hunks.forEach((hunk, hi) => {
+      out.push({ type: 'header', hi, header: hunk.header });
+      hunk.lines.forEach((line, li) => out.push({ type: 'line', hi, li, line }));
+    });
+    return out;
+  }, [file]);
+
+  const totalLines = useMemo(
+    () => file.hunks.reduce((n, h) => n + h.lines.length, 0),
+    [file],
+  );
+
+  const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
+
+  const visibleRows = useMemo(() => {
+    if (visibleLines >= totalLines) return rows;
+    let count = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i]?.type === 'line') {
+        count += 1;
+        if (count >= visibleLines) return rows.slice(0, i + 1);
+      }
+    }
+    return rows;
+  }, [rows, visibleLines, totalLines]);
+
+  const remaining = Math.max(0, totalLines - visibleLines);
+
   return (
     <ScrollArea className="flex-1 overflow-auto">
       <div className="p-3">
@@ -1289,110 +1327,149 @@ function FileDiffPane({
         ) : file.hunks.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
         ) : (
-          <table className="w-full border-collapse font-mono text-xs leading-5">
-            <tbody>
-              {file.hunks.map((hunk, hi) => (
-                <Fragment key={`hunk-${hi}`}>
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
-                    >
-                      {hunk.header}
-                    </td>
-                  </tr>
-                  {hunk.lines.map((line, li) => {
-                    const anchor = lineAnchor(line);
-                    const lineComments = anchor
-                      ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
-                      : [];
-                    const isActive =
-                      anchor !== null &&
-                      activeAnchor !== null &&
-                      activeAnchor.side === anchor.side &&
-                      activeAnchor.lineNumber === anchor.lineNumber;
-                    const linePrefix = LINE_PREFIX[line.kind];
+          <>
+            <table className="w-full border-collapse font-mono text-xs leading-5">
+              <tbody>
+                {visibleRows.map((row) => {
+                  if (row.type === 'header') {
                     return (
-                      <Fragment key={`hunk-${hi}-line-${li}`}>
-                        <tr
+                      <tr key={`hunk-${row.hi}`}>
+                        <td
+                          colSpan={4}
+                          className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {row.header}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  const { line, hi, li } = row;
+                  const anchor = lineAnchor(line);
+                  const lineComments = anchor
+                    ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
+                    : [];
+                  const isActive =
+                    anchor !== null &&
+                    activeAnchor !== null &&
+                    activeAnchor.side === anchor.side &&
+                    activeAnchor.lineNumber === anchor.lineNumber;
+                  const linePrefix = LINE_PREFIX[line.kind];
+                  return (
+                    <Fragment key={`hunk-${hi}-line-${li}`}>
+                      <tr
+                        className={cn(
+                          'group',
+                          line.kind === 'add' && 'bg-success/10',
+                          line.kind === 'del' && 'bg-danger/10',
+                        )}
+                      >
+                        <td className="w-6 select-none px-0.5 align-top">
+                          {canComment && anchor ? (
+                            <button
+                              type="button"
+                              onClick={() => onStartComment(anchor)}
+                              title="add comment on this line"
+                              aria-label="add comment on this line"
+                              className={cn(
+                                'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
+                                isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                              )}
+                            >
+                              <MessageSquarePlus size={9} aria-hidden />
+                            </button>
+                          ) : null}
+                        </td>
+                        <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                          {line.oldLine ?? ''}
+                        </td>
+                        <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                          {line.newLine ?? ''}
+                        </td>
+                        <td
                           className={cn(
-                            'group',
-                            line.kind === 'add' && 'bg-success/10',
-                            line.kind === 'del' && 'bg-danger/10',
+                            'whitespace-pre px-2',
+                            line.kind === 'add' && 'text-success',
+                            line.kind === 'del' && 'text-danger',
                           )}
                         >
-                          <td className="w-6 select-none px-0.5 align-top">
-                            {canComment && anchor ? (
-                              <button
-                                type="button"
-                                onClick={() => onStartComment(anchor)}
-                                title="add comment on this line"
-                                aria-label="add comment on this line"
-                                className={cn(
-                                  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
-                                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-                                )}
-                              >
-                                <MessageSquarePlus size={9} aria-hidden />
-                              </button>
-                            ) : null}
-                          </td>
-                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                            {line.oldLine ?? ''}
-                          </td>
-                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                            {line.newLine ?? ''}
-                          </td>
-                          <td
-                            className={cn(
-                              'whitespace-pre px-2',
-                              line.kind === 'add' && 'text-success',
-                              line.kind === 'del' && 'text-danger',
-                            )}
-                          >
-                            {linePrefix}
-                            {line.text}
+                          {linePrefix}
+                          {line.text}
+                        </td>
+                      </tr>
+                      {lineComments.length > 0 ? (
+                        <tr>
+                          <td colSpan={4} className="bg-background px-3 py-2">
+                            <div className="flex flex-col gap-1.5">
+                              {lineComments.map((c) => (
+                                <CommentItem
+                                  key={c.id}
+                                  comment={c}
+                                  onResolve={onResolve}
+                                  onReopen={onReopen}
+                                  onDelete={onDelete}
+                                  onViewAgent={onViewAgent}
+                                  getAgentName={getAgentName}
+                                />
+                              ))}
+                            </div>
                           </td>
                         </tr>
-                        {lineComments.length > 0 ? (
-                          <tr>
-                            <td colSpan={4} className="bg-background px-3 py-2">
-                              <div className="flex flex-col gap-1.5">
-                                {lineComments.map((c) => (
-                                  <CommentItem
-                                    key={c.id}
-                                    comment={c}
-                                    onResolve={onResolve}
-                                    onReopen={onReopen}
-                                    onDelete={onDelete}
-                                    onViewAgent={onViewAgent}
-                                    getAgentName={getAgentName}
-                                  />
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        ) : null}
-                        {isActive && anchor ? (
-                          <tr>
-                            <td colSpan={4} className="bg-background px-3 py-2">
-                              <InlineComposer
-                                onSubmit={(body) => onSubmitComment(anchor, body)}
-                                onCancel={onCancelComment}
-                              />
-                            </td>
-                          </tr>
-                        ) : null}
-                      </Fragment>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                      ) : null}
+                      {isActive && anchor ? (
+                        <tr>
+                          <td colSpan={4} className="bg-background px-3 py-2">
+                            <InlineComposer
+                              onSubmit={(body) => onSubmitComment(anchor, body)}
+                              onCancel={onCancelComment}
+                            />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+            {remaining > 0 ? (
+              <ShowMoreBar
+                step={Math.min(VISIBLE_LINES_STEP, remaining)}
+                rendered={Math.min(visibleLines, totalLines)}
+                total={totalLines}
+                onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
+              />
+            ) : null}
+          </>
         )}
       </div>
     </ScrollArea>
+  );
+}
+
+function ShowMoreBar({
+  step,
+  rendered,
+  total,
+  onShowMore,
+}: {
+  step: number;
+  rendered: number;
+  total: number;
+  onShowMore: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1 border-t border-border-soft bg-subtle/30 py-3">
+      <button
+        type="button"
+        onClick={onShowMore}
+        className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
+      >
+        <ChevronsDown size={12} aria-hidden />
+        Show {step.toLocaleString()} more lines
+      </button>
+      <span className="text-[10px] text-muted-foreground/60">
+        showing {rendered.toLocaleString()} of {total.toLocaleString()} lines
+      </span>
+    </div>
   );
 }
 
