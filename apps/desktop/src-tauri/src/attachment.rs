@@ -72,8 +72,41 @@ fn mime_for(path: &Path) -> &'static str {
         Some("webp") => "image/webp",
         Some("svg") => "image/svg+xml",
         Some("bmp") => "image/bmp",
+        Some("pdf") => "application/pdf",
+        Some("csv") => "text/csv",
+        Some("tsv") => "text/tab-separated-values",
+        Some("txt") | Some("log") => "text/plain",
+        Some("md") | Some("markdown") => "text/markdown",
+        Some("json") => "application/json",
+        Some("xml") => "application/xml",
+        Some("yaml") | Some("yml") => "application/yaml",
+        Some("docx") => {
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        }
+        Some("xlsx") => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         _ => "application/octet-stream",
     }
+}
+
+/// Whitelist guard shared by the drag-drop path. Images plus a curated set of
+/// document types the spawned agent can actually read (PDF/CSV/text) or parse
+/// with its own tooling (office formats). Unknown binaries are rejected so a
+/// stray drop never lands an unreadable blob in the worktree.
+fn is_allowed_mime(mime: &str) -> bool {
+    mime.starts_with("image/")
+        || matches!(
+            mime,
+            "application/pdf"
+                | "text/csv"
+                | "text/tab-separated-values"
+                | "text/plain"
+                | "text/markdown"
+                | "application/json"
+                | "application/xml"
+                | "application/yaml"
+                | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 }
 
 /// Writes a base64-encoded image into `<worktree>/.goodboy/attachments/` and
@@ -117,7 +150,7 @@ pub struct DroppedAttachment {
 
 /// Reads a file the user dragged from the OS into the composer and returns the
 /// bytes as base64 so the frontend can reuse the existing attachment pipeline.
-/// Only image MIMEs are accepted, mirroring the composer-side `accept="image/*"`
+/// Accepts the same whitelist as the composer picker, mirroring its `accept`
 /// filter — the second guard exists because OS drag-drop bypasses the picker.
 #[tauri::command]
 pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, AttachmentError> {
@@ -131,7 +164,7 @@ pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, At
     }
 
     let mime = mime_for(path);
-    if !mime.starts_with("image/") {
+    if !is_allowed_mime(mime) {
         return Err(AttachmentError::UnsupportedMime(mime.to_string()));
     }
 
@@ -143,7 +176,7 @@ pub fn attachment_read_dropped(abs_path: String) -> Result<DroppedAttachment, At
     let file_name = path
         .file_name()
         .and_then(|s| s.to_str())
-        .unwrap_or("image")
+        .unwrap_or("file")
         .to_string();
 
     Ok(DroppedAttachment {
@@ -220,14 +253,32 @@ mod tests {
     }
 
     #[test]
-    fn read_dropped_rejects_non_image() {
+    fn read_dropped_rejects_unsupported_type() {
         let dir = std::env::temp_dir().join(format!("goodboy-drop-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let txt = dir.join("notes.txt");
-        fs::write(&txt, b"hello").unwrap();
-        let err = attachment_read_dropped(txt.to_string_lossy().to_string());
+        let blob = dir.join("payload.bin");
+        fs::write(&blob, b"\x00\x01\x02").unwrap();
+        let err = attachment_read_dropped(blob.to_string_lossy().to_string());
         assert!(matches!(err, Err(AttachmentError::UnsupportedMime(_))));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_accepts_documents() {
+        let dir = std::env::temp_dir().join(format!("goodboy-drop-doc-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let csv = dir.join("data.csv");
+        fs::write(&csv, b"a,b\n1,2\n").unwrap();
+        let out = attachment_read_dropped(csv.to_string_lossy().to_string()).unwrap();
+        assert_eq!(out.file_name, "data.csv");
+        assert_eq!(out.mime_type, "text/csv");
+
+        let pdf = dir.join("doc.pdf");
+        fs::write(&pdf, b"%PDF-1.4\n").unwrap();
+        let out = attachment_read_dropped(pdf.to_string_lossy().to_string()).unwrap();
+        assert_eq!(out.mime_type, "application/pdf");
         let _ = fs::remove_dir_all(&dir);
     }
 

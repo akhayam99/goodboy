@@ -50,17 +50,17 @@ import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './store';
 import type { SetFn, GetFn } from './slice-types';
 
-// The provider CLIs have no API content-block channel, images reach the model
-// only as files named in the prompt text. Paths stay worktree-relative so they
+// The provider CLIs have no API content-block channel, files reach the model
+// only as paths named in the prompt text. Paths stay worktree-relative so they
 // resolve against the CLI's cwd and never trip the worktree-scope guard.
 export function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): string {
   const list = refs.map((r) => `- ${r.relPath}`).join('\n');
   return [
-    '[attached-images]',
-    `The user attached ${refs.length} image${refs.length === 1 ? '' : 's'} to this message.`,
-    'Use your Read tool on each path below to view the image:',
+    '[attached-files]',
+    `The user attached ${refs.length} file${refs.length === 1 ? '' : 's'} to this message.`,
+    'Inspect each path below before answering. Images and PDFs render with your Read tool; for spreadsheets or other binary formats, read or parse the file with the appropriate tool:',
     list,
-    '[/attached-images]',
+    '[/attached-files]',
   ].join('\n');
 }
 
