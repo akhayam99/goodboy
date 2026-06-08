@@ -182,6 +182,10 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("-s".to_string());
                 v.push("workspace-write".to_string());
             }
+            if let Some(eff) = args.effort {
+                v.push("-c".to_string());
+                v.push(format!("model_reasoning_effort=\"{eff}\""));
+            }
             v.push("--".to_string());
             v.push(args.prompt.to_string());
             v
@@ -596,6 +600,24 @@ mod tests {
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
         assert!(!cli.iter().any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+    }
+
+    #[test]
+    fn codex_args_include_reasoning_effort_when_set() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.effort = Some("high");
+        let cli = build_provider_cli_args("codex", &args);
+        let idx = cli.iter().position(|a| a == "-c").expect("-c");
+        assert_eq!(cli[idx + 1], "model_reasoning_effort=\"high\"");
+    }
+
+    #[test]
+    fn codex_args_omit_reasoning_effort_when_none() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("codex", &args);
+        assert!(!cli.iter().any(|a| a.starts_with("model_reasoning_effort")));
     }
 
     #[test]

@@ -71,11 +71,11 @@ describe('parseModelId', () => {
     });
   });
 
-  it('canonical anthropic with trailing variant suffix', () => {
+  it('cursor opus thinking-high keeps its effort suffix in the variant label', () => {
     expect(parseModelId('claude-opus-4-7-thinking-high')).toEqual({
       family: 'claude',
       subfamily: 'opus',
-      variantLabel: '4.7',
+      variantLabel: '4.7 high',
     });
   });
 
@@ -88,7 +88,7 @@ describe('parseModelId', () => {
     expect(parseModelId('composer-2-fast')).toEqual({
       family: 'composer',
       subfamily: null,
-      variantLabel: '2-fast',
+      variantLabel: '2 Fast',
     });
   });
 
@@ -100,36 +100,36 @@ describe('parseModelId', () => {
     });
   });
 
-  it('gpt-X.Y with variant', () => {
+  it('cursor gpt variants group under the gpt-5 subfamily', () => {
     expect(parseModelId('gpt-5.5-high')).toEqual({
       family: 'gpt',
-      subfamily: '5.5',
-      variantLabel: 'high',
+      subfamily: 'gpt-5',
+      variantLabel: '5.5 high',
     });
     expect(parseModelId('gpt-5.5-medium')).toEqual({
       family: 'gpt',
-      subfamily: '5.5',
-      variantLabel: 'medium',
+      subfamily: 'gpt-5',
+      variantLabel: '5.5 medium',
     });
   });
 
-  it('gpt-X.Y-codex isolates into its own subfamily', () => {
+  it('codex coding models group under the codex subfamily', () => {
     expect(parseModelId('gpt-5.3-codex')).toEqual({
       family: 'gpt',
-      subfamily: '5.3-codex',
-      variantLabel: 'codex',
+      subfamily: 'codex',
+      variantLabel: '5.3',
     });
   });
 
-  it('codex turn-tier models (gpt-5.4-mini, gpt-5.5)', () => {
+  it('codex turn-tier models cluster under gpt-5 / mini subfamilies', () => {
     expect(parseModelId('gpt-5.4-mini')).toEqual({
       family: 'gpt',
-      subfamily: '5.4',
-      variantLabel: 'mini',
+      subfamily: 'mini',
+      variantLabel: '5.4',
     });
     expect(parseModelId('gpt-5.5')).toEqual({
       family: 'gpt',
-      subfamily: '5.5',
+      subfamily: 'gpt-5',
       variantLabel: '5.5',
     });
   });

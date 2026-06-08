@@ -11,10 +11,10 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from './ids';
-import type { ProviderId } from './provider-registry';
+import type { ModelEffort, ProviderId } from './provider-registry';
 import type { VerbosityLevel } from './settings';
 
-export type AgentEffort = 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+export type AgentEffort = ModelEffort;
 
 export type AgentRole =
   | 'scout'
@@ -119,7 +119,7 @@ export type Agent = Readonly<{
   // Per-agent runtime config (overrides workspace/session defaults). Moved
   // from localStorage into the DB so it survives reload and cross-device sync.
   verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+  effort?: ModelEffort;
   modelOverride?: string;
   providerOverride?: string;
   kind?: string;

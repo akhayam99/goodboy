@@ -1,6 +1,7 @@
 import type {
   ClaudePermissionMode,
   IsoDateTime,
+  ModelEffort,
   ProviderId,
   Session,
   SessionId,
@@ -122,7 +123,7 @@ function toDomain(
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as 'low' | 'medium' | 'high' | 'extra-high' | 'max',
+      effort: row.effort as ModelEffort,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
@@ -145,7 +146,7 @@ async function loadWorkflowsForSession(
 
 export interface SessionConfigUpdate {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
-  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max' | null;
+  effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
   /** Session-level default provider. New agents/workflows spawned in this

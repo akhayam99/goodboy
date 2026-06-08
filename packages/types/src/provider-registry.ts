@@ -2,10 +2,30 @@ export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini';
 
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 
+export type ModelFamily =
+  | 'claude'
+  | 'gpt'
+  | 'codex'
+  | 'gemini'
+  | 'composer'
+  | 'cursor-auto'
+  | 'other';
+
+export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
+
+export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+
 export interface ModelTier {
   readonly id: string;
   readonly tier: 'turn' | 'cheap';
   readonly contextWindow: number;
+  readonly family: ModelFamily;
+  readonly subfamily: string | null;
+  readonly label: string;
+  readonly variantLabel: string;
+  readonly costTier: ModelCostTier;
+  readonly weight: number;
+  readonly effort: ReadonlyArray<ModelEffort> | null;
 }
 
 export interface ProviderRegistryCapabilities {

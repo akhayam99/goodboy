@@ -1,4 +1,5 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
+import { getModelDescriptor } from '@goodboy/core';
 import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
@@ -15,19 +16,30 @@ export const PROVIDER_TEXT: Record<ProviderId, string> = {
   gemini: 'text-[var(--color-provider-gemini)]',
 };
 
-export const EFFORT_LEVELS = ['low', 'medium', 'high', 'extra-high', 'max'] as const;
-export type EffortLevel = (typeof EFFORT_LEVELS)[number];
+export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
+export type EffortLevel = ModelEffort;
 
 const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
 const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
+const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
 
 export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
+  const descriptor = getModelDescriptor(model);
+  if (descriptor) return descriptor.effort;
   if (/claude-opus/i.test(model)) return OPUS_EFFORT;
   if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
+  if (/gpt|codex/i.test(model)) return CODEX_EFFORT;
   return null;
 }
 
+export function clampEffort(model: string, effort: EffortLevel): EffortLevel {
+  const levels = modelEffortLevels(model);
+  if (!levels) return effort;
+  return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
+}
+
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
+  minimal: 'Minimal',
   low: 'Low',
   medium: 'Medium',
   high: 'High',
@@ -36,6 +48,7 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
 };
 
 export const EFFORT_DOT: Record<EffortLevel, string> = {
+  minimal: 'bg-muted-foreground',
   low: 'bg-success',
   medium: 'bg-info',
   high: 'bg-warning',
@@ -44,6 +57,7 @@ export const EFFORT_DOT: Record<EffortLevel, string> = {
 };
 
 export const EFFORT_TEXT: Record<EffortLevel, string> = {
+  minimal: 'text-muted-foreground',
   low: 'text-success',
   medium: 'text-info',
   high: 'text-warning',
@@ -51,7 +65,7 @@ export const EFFORT_TEXT: Record<EffortLevel, string> = {
   max: 'text-danger',
 };
 
-export type CostTier = 'cheap' | 'mid' | 'expensive';
+export type CostTier = ModelCostTier;
 
 const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'cursor-small': { weight: 4, tier: 'cheap' },
@@ -84,6 +98,8 @@ export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
 };
 
 export function modelLabel(id: string): string {
+  const descriptor = getModelDescriptor(id);
+  if (descriptor) return descriptor.label;
   const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
   if (m) {
     const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
@@ -92,14 +108,7 @@ export function modelLabel(id: string): string {
   return id;
 }
 
-export type ModelFamily =
-  | 'claude'
-  | 'gpt'
-  | 'composer'
-  | 'cursor-auto'
-  | 'gemini'
-  | 'codex'
-  | 'other';
+export type { ModelFamily };
 
 export interface ParsedModel {
   readonly family: ModelFamily;
@@ -115,6 +124,15 @@ function stripProviderPrefix(id: string): string {
 }
 
 export function parseModelId(id: string): ParsedModel {
+  const descriptor = getModelDescriptor(id);
+  if (descriptor) {
+    return {
+      family: descriptor.family,
+      subfamily: descriptor.subfamily,
+      variantLabel: descriptor.variantLabel,
+    };
+  }
+
   const local = stripProviderPrefix(id);
 
   // Canonical anthropic: claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-7
@@ -186,6 +204,8 @@ export function parseModelId(id: string): ParsedModel {
 }
 
 export function modelTier(model: string): CostTier {
+  const descriptor = getModelDescriptor(model);
+  if (descriptor) return descriptor.costTier;
   const known = MODEL_COST[model];
   if (known) return known.tier;
   if (/haiku|small|mini|flash|nano|fast/i.test(model)) return 'cheap';
@@ -194,6 +214,8 @@ export function modelTier(model: string): CostTier {
 }
 
 export function modelWeight(model: string): number {
+  const descriptor = getModelDescriptor(model);
+  if (descriptor) return descriptor.weight;
   return MODEL_COST[model]?.weight ?? 10;
 }
 
@@ -244,23 +266,32 @@ const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
   sonnet: 'Sonnet',
   opus: 'Opus',
+  'gpt-5': 'GPT-5',
+  codex: 'Codex',
+  mini: 'Mini',
+  pro: 'Pro',
+  flash: 'Flash',
 };
 
 const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
   sonnet: 'mid',
   opus: 'expensive',
+  'gpt-5': 'mid',
+  codex: 'mid',
+  mini: 'cheap',
+  pro: 'expensive',
+  flash: 'cheap',
 };
 
 export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
-  if (family === 'claude' && SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
+  if (SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
   if (family === 'gpt' && subfamily.endsWith('-codex')) {
     return subfamily.replace('-codex', '-Codex');
   }
   return subfamily;
 }
 
-export function subfamilyTier(family: ModelFamily, subfamily: string): CostTier {
-  if (family === 'claude' && SUBFAMILY_TIER[subfamily]) return SUBFAMILY_TIER[subfamily];
-  return 'mid';
+export function subfamilyTier(_family: ModelFamily, subfamily: string): CostTier {
+  return SUBFAMILY_TIER[subfamily] ?? 'mid';
 }
