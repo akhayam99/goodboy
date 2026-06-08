@@ -22,7 +22,6 @@ import {
   insertProviderRun,
   insertTelemetry,
   listContextSlotsForSession,
-  listOpenQuestionsForSession,
   summarizeSessionTelemetry,
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
@@ -57,7 +56,6 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
-import { useOpenQuestions } from '../../../features/context/components/QuestionsTab/useOpenQuestions';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
 import {
@@ -1122,18 +1120,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
           }));
         }
         if (result.openQuestionsChanged) {
-          await useOpenQuestions.getState().loadQuestions(sessionId);
-          try {
-            const refreshedQs = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
-            set((state) => ({
-              sessionOpenQuestions: {
-                ...state.sessionOpenQuestions,
-                [sessionId]: refreshedQs,
-              },
-            }));
-          } catch {
-            // ignore: cache stays stale until next turn
-          }
+          await get().loadSessionOpenQuestions(sessionId);
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);

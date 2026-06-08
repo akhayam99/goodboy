@@ -123,6 +123,17 @@ export async function listOpenQuestionsForSession(
   return rows.map(toDomain);
 }
 
+export async function listResolvedQuestionTextsForSession(
+  db: Database,
+  sessionId: SessionId,
+): Promise<ReadonlyArray<string>> {
+  const rows = await db.select<{ text: string }>(
+    `SELECT text FROM open_questions WHERE session_id = ? AND status != 'open'`,
+    [sessionId],
+  );
+  return rows.map((r) => r.text);
+}
+
 export async function markOpenQuestionAnswered(
   db: Database,
   id: OpenQuestionId,

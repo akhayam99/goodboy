@@ -9,29 +9,14 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
 }));
 
-vi.mock('../features/context/components/QuestionsTab/useOpenQuestions', () => ({
-  useOpenQuestions: () => ({
-    questions: [],
-    drafts: {},
-    justAnswered: [],
-    pendingUndo: null,
-    loadQuestions: vi.fn().mockResolvedValue(undefined),
-    toggleSuggestion: vi.fn(),
-    setCustomAnswer: vi.fn(),
-    toggleCustomField: vi.fn(),
-    dismissQuestion: vi.fn().mockResolvedValue(undefined),
-    undoDismiss: vi.fn().mockResolvedValue(undefined),
-    submitAnsweredBatch: vi.fn().mockResolvedValue(undefined),
-    clearJustAnswered: vi.fn(),
-  }),
-}));
-
 vi.mock('../store', () => ({
   EMPTY_ARRAY: [],
+  useSessionOpenQuestions: vi.fn().mockReturnValue([]),
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
     const state = {
       upsertSessionSlot: vi.fn(),
       toggleSessionSlot: vi.fn(),
+      loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
       summarizerStatus: {},
       sessionTelemetry: {},
       sessionWorktrees: {},

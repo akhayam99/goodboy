@@ -155,6 +155,7 @@ vi.mock('@goodboy/db', () => ({
   deleteWorkspaceIntegration: deleteWorkspaceIntegrationSpy,
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
+  listResolvedQuestionTextsForSession: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),

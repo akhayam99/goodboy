@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
+import { deriveSuggestions } from '../deriveSuggestions';
 
 interface Props {
   question: OpenQuestion;
@@ -11,7 +12,6 @@ interface Props {
   customAnswer: string;
   showCustomField: boolean;
   justAnswered: boolean;
-  collapsed: boolean;
   onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
   onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   onToggleCustomField: (questionId: OpenQuestionId) => void;
@@ -35,7 +35,6 @@ export function QuestionCard({
   customAnswer,
   showCustomField,
   justAnswered,
-  collapsed,
   onToggleSuggestion,
   onSetCustomAnswer,
   onToggleCustomField,
@@ -55,63 +54,55 @@ export function QuestionCard({
   }, [justAnswered, question.id, onClearJustAnswered]);
 
   const hasPendingAnswer = selectedSuggestions.length > 0 || customAnswer.trim().length > 0;
-
-  if (collapsed) {
-    return (
-      <div
-        className={cn(
-          'flex items-center justify-between gap-2 rounded-md border border-border/30 bg-muted/30 px-2.5 py-1.5',
-          'transition-all duration-150',
-        )}
-      >
-        <span className="truncate text-xs text-foreground">{question.text}</span>
-        <div className="flex shrink-0 items-center gap-1">
-          {hasPendingAnswer && (
-            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
-              {selectedSuggestions.length + (customAnswer.trim() ? 1 : 0)}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => onDismiss(question.id)}
-            className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none"
-            title="dismiss question"
-          >
-            <X size={11} />
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const suggestions =
+    question.suggestedAnswers.length > 0
+      ? question.suggestedAnswers
+      : deriveSuggestions(question.text);
 
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 rounded-md border border-border/30 bg-muted/30 p-2.5',
-        'transition-all duration-200',
-        animate && 'scale-[1.02] border-primary/40 bg-primary/5',
+        'group relative overflow-hidden rounded-lg border bg-elevated pl-3 pr-2.5 py-2.5 shadow-sm',
+        'transition-all duration-200 motion-safe:animate-fade-in',
+        hasPendingAnswer ? 'border-primary/40' : 'border-border-soft hover:border-border',
+        animate && 'scale-[1.01] border-primary/60 bg-primary/5',
       )}
     >
-      {/* header row */}
+      <span
+        aria-hidden
+        className={cn(
+          'absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors duration-200',
+          hasPendingAnswer ? 'bg-primary' : 'bg-transparent',
+        )}
+      />
+
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs leading-relaxed text-foreground">{question.text}</p>
+        <div className="flex min-w-0 items-start gap-2">
+          <MessageCircleQuestion
+            size={13}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-muted-foreground/50"
+          />
+          <p className="text-xs leading-relaxed text-foreground">{question.text}</p>
+        </div>
         <button
           type="button"
           onClick={() => onDismiss(question.id)}
           className={cn(
-            'mt-0.5 shrink-0 rounded-sm p-0.5 text-muted-foreground',
-            'hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
-            'transition-colors',
+            'shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0 transition-all',
+            'hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+            'group-hover:opacity-100',
+            animate && 'opacity-100',
           )}
           title="dismiss question"
+          aria-label="dismiss question"
         >
           {animate ? <Check size={12} className="text-primary" /> : <X size={12} />}
         </button>
       </div>
 
-      {/* chips + custom field */}
-      <div className="flex flex-wrap gap-1.5">
-        {question.suggestedAnswers.map((suggestion) => (
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[21px]">
+        {suggestions.map((suggestion) => (
           <SuggestionChip
             key={suggestion}
             label={suggestion}
@@ -127,17 +118,14 @@ export function QuestionCard({
         />
       </div>
 
-      {/* meta row */}
-      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+      <div className="mt-2 flex items-center gap-2 pl-[21px] text-[10px] text-muted-foreground/70">
         <span>{relativeAge(question.createdAt)}</span>
         {question.ownedByStepOrdinal != null && (
           <span className="rounded bg-muted px-1 py-0.5 font-mono">
             step {question.ownedByStepOrdinal}
           </span>
         )}
-        {question.workflowId && question.ownedByStepOrdinal != null && (
-          <span className="text-muted-foreground/70">delegated</span>
-        )}
+        {question.workflowId && question.ownedByStepOrdinal != null && <span>delegated</span>}
       </div>
     </div>
   );

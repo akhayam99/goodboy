@@ -285,4 +285,26 @@ describe('autoPopulateContext', () => {
 
     expect(result.updatedSlots).toEqual([]);
   });
+
+  it('does not resurrect a question the user already answered', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_5' as SessionId;
+    await seedSession(db, sessionId);
+    const assistantText = '<<ctx-question>>do we need refresh tokens?<</ctx-question>>';
+
+    await autoPopulateContext({ db, sessionId, filesEdited: [], assistantText });
+    await db.execute(`UPDATE open_questions SET status = 'answered' WHERE session_id = ?`, [
+      sessionId,
+    ]);
+
+    const result = await autoPopulateContext({ db, sessionId, filesEdited: [], assistantText });
+
+    expect(result.openQuestionsChanged).toBe(false);
+    const openRows = await db.select<{ c: number }>(
+      `SELECT COUNT(*) AS c FROM open_questions WHERE session_id = ? AND status = 'open'`,
+      [sessionId],
+    );
+    expect(openRows[0]?.c).toBe(0);
+  });
 });

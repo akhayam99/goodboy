@@ -30,7 +30,6 @@ import {
 import { Divider, ScrollArea, ScrollFade, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
-  AgentId,
   ContextSlot,
   ContextSlotHistoryEntry,
   PlanId,
@@ -43,7 +42,6 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { QuestionsTab } from '../QuestionsTab';
-import { useOpenQuestions } from '../QuestionsTab/useOpenQuestions';
 import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
@@ -55,6 +53,7 @@ import {
   useDiffComments,
   useFilesTouched,
   useSessionLoading,
+  useSessionOpenQuestions,
   useSessionPlans,
   useSessionSlots,
   useSlotHistory,
@@ -95,28 +94,13 @@ export function ContextPanel({
   );
   const plans = useSessionPlans(session.id);
   const [tab, setTab] = useState<PanelTab>('context');
-  const sendTurn = useAppStore((s) => s.sendTurn);
-  const { questions, loadQuestions } = useOpenQuestions();
+  const questions = useSessionOpenQuestions(session.id);
+  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
 
   useEffect(() => {
     if (!isActive) return;
-    void loadQuestions(session.id);
-  }, [isActive, session.id, loadQuestions]);
-
-  // Route each cluster's batched answer to the cluster's owner agent.
-  // When targetAgentId is null (orphan cluster) we fall through to
-  // sendTurn's default behaviour: it picks the currently-selected agent
-  // for the session, matching the pre-clustering UX.
-  const onSubmitAnswers = useCallback(
-    async (content: string, targetAgentId: AgentId | null) => {
-      await sendTurn({
-        sessionId: session.id,
-        content,
-        agentId: targetAgentId ?? undefined,
-      });
-    },
-    [sendTurn, session.id],
-  );
+    void loadSessionOpenQuestions(session.id);
+  }, [isActive, session.id, loadSessionOpenQuestions]);
 
   // Files + GitHub data lifted to the panel so the tab badges stay live
   // regardless of the active tab, and the PR / diff-comment fetches fire
@@ -321,7 +305,7 @@ export function ContextPanel({
               ) : tab === 'plans' ? (
                 <PlansTabContent sessionId={session.id} />
               ) : (
-                <QuestionsTab sessionId={session.id} onSubmit={onSubmitAnswers} />
+                <QuestionsTab sessionId={session.id} />
               )}
             </div>
           ) : null}
