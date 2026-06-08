@@ -1,6 +1,6 @@
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { rewriteWorkflowGoal } from '@goodboy/core';
-import { insertContextSlotHistory, upsertContextSlot } from '@goodboy/db';
+import { upsertContextSlot } from '@goodboy/db';
 import { invoke } from '@tauri-apps/api/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
@@ -34,16 +34,8 @@ export function reprocessGoalForWorkflow(set: SetFn, get: GetFn) {
       const cleaned = rewritten?.trim() ?? '';
       if (cleaned.length === 0 || cleaned === goal) return;
 
-      await insertContextSlotHistory(
-        tauriDatabase,
-        sessionId,
-        crypto.randomUUID(),
-        'goal',
-        goal,
-        'summarizer',
-      );
       const next: ContextSlot = { key: 'goal', value: cleaned, enabled: goalSlot?.enabled ?? true };
-      await upsertContextSlot(tauriDatabase, sessionId, next);
+      await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
 
       set((s) => {
         const existing = s.sessionSlots[sessionId] ?? [];
