@@ -31,6 +31,8 @@ import {
   reduceTranscript,
 } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
+import { classifyThinkingContext } from '../../utils/thinking-context';
+import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
 import { OperationsCluster } from '../OperationsCluster';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -189,23 +191,6 @@ function TranscriptSkeleton() {
   );
 }
 
-function ThinkingIndicator() {
-  return (
-    <div
-      role="status"
-      aria-label="claude is thinking"
-      className="flex w-fit items-center gap-1.5 px-1 py-0.5 text-2xs italic text-muted-foreground/80"
-    >
-      <span className="flex gap-0.5">
-        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:0ms]" />
-        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:150ms]" />
-        <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/70 [animation-delay:300ms]" />
-      </span>
-      thinking
-    </div>
-  );
-}
-
 export function ChatView({ session, isActive = true }: ChatViewProps) {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
@@ -299,6 +284,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
     agentKind === 'running' &&
     (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
     !lastClusterRunning;
+  const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
     () => (flagOn ? detectParallelRunIds(events) : []),
@@ -570,7 +556,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
               })()}
               {isThinking ? (
                 <li className="mt-2.5">
-                  <ThinkingIndicator />
+                  <ThinkingIndicator context={thinkingContext} />
                 </li>
               ) : null}
             </ul>
