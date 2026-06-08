@@ -47,14 +47,13 @@ describe('StartWorkflowDialog', () => {
     expect(screen.getByText(/start a workflow/i)).toBeDefined();
   });
 
-  it('renders the Preset and Custom mode cards', () => {
+  it('renders the describe-your-own entry in the rail', () => {
     render(<StartWorkflowDialog open onClose={vi.fn()} session={session} />);
-    expect(screen.getByRole('button', { name: /preset/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /custom/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /describe your own/i })).toBeDefined();
   });
 
   it('shows empty-state copy when no workflow presets exist', () => {
     render(<StartWorkflowDialog open onClose={vi.fn()} session={session} />);
-    expect(screen.getByText(/no workflow presets yet/i)).toBeDefined();
+    expect(screen.getByText(/no presets yet/i)).toBeDefined();
   });
 });
