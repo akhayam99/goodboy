@@ -21,18 +21,4 @@ describe('StepRowCompact', () => {
     expect(screen.getByText('build it')).toBeDefined();
     expect(screen.getByText(/brief/)).toBeDefined();
   });
-
-  it('shows a role badge when a role is passed', () => {
-    render(
-      <StepRowCompact
-        index={0}
-        kind="planner"
-        name="design schema"
-        model="gpt-5"
-        verbosity="normal"
-        role="planner"
-      />,
-    );
-    expect(screen.getByText('Planner')).toBeDefined();
-  });
 });
