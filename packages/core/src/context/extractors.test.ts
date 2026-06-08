@@ -5,6 +5,7 @@ import {
   extractClusterDone,
   extractClustersFromMarker,
   extractCommentResolved,
+  extractCommentWontfix,
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
@@ -270,6 +271,26 @@ describe('extractCommentResolved', () => {
       threadId: 'PRT_2',
       commitSha: 'bbb',
     });
+  });
+});
+
+describe('extractCommentWontfix', () => {
+  it('returns null when the marker is absent', () => {
+    expect(extractCommentWontfix('this is a valid point, fixing it')).toBeNull();
+  });
+
+  it('parses threadId and reason', () => {
+    const text =
+      'this suggestion misreads the code path. <<comment-wontfix threadId="PRRT_9" reason="guard already covers this case upstream">>';
+    expect(extractCommentWontfix(text)).toEqual({
+      threadId: 'PRRT_9',
+      reason: 'guard already covers this case upstream',
+    });
+  });
+
+  it('requires both threadId and a non-empty reason', () => {
+    expect(extractCommentWontfix('<<comment-wontfix threadId="PRRT_1">>')).toBeNull();
+    expect(extractCommentWontfix('<<comment-wontfix reason="nope">>')).toBeNull();
   });
 });
 

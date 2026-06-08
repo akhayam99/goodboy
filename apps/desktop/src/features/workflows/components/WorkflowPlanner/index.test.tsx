@@ -14,12 +14,12 @@ import { WorkflowPlanner } from './index';
 afterEach(cleanup);
 
 describe('WorkflowPlanner', () => {
-  it('renders the planner with a Generate plan button disabled until theme is typed', () => {
+  it('renders the planner with a Generate plan button disabled until a process is typed', () => {
     render(
       <WorkflowPlanner
         workspaceId={'ws-1' as never}
         providerId="anthropic"
-        initialTheme=""
+        initialProcess=""
         onWorkflowReady={vi.fn()}
       />,
     );
@@ -32,7 +32,7 @@ describe('WorkflowPlanner', () => {
       <WorkflowPlanner
         workspaceId={'ws-1' as never}
         providerId="anthropic"
-        initialTheme=""
+        initialProcess=""
         onWorkflowReady={vi.fn()}
       />,
     );

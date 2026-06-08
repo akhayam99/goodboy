@@ -4,10 +4,10 @@ import {
   Check,
   FolderOpen,
   GitBranch,
-  LogOut,
   Play,
   ScrollText,
   Settings2,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord, WorkspaceScript } from '@goodboy/types';
@@ -58,8 +58,8 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
     void runWorkspaceScript(session.id as SessionId, script, worktreePath);
   };
 
-  const onEndSession = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:end-session'));
+  const onDeleteSession = () => {
+    window.dispatchEvent(new CustomEvent('goodboy:delete-session'));
   };
 
   const onArchiveSession = () => {
@@ -136,10 +136,10 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
     });
     items.push({
       kind: 'item',
-      key: 'end',
-      label: 'End session',
-      icon: LogOut,
-      onClick: onEndSession,
+      key: 'delete',
+      label: 'Delete session',
+      icon: Trash2,
+      onClick: onDeleteSession,
       destructive: true,
       hint: '⌘.',
     });

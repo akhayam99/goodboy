@@ -46,6 +46,9 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
 const SETTING_PROGRESS = 'onboarding.progress';
 const SETTING_COLLAPSED = 'onboarding.collapsed';
 const SETTING_FINISHED = 'onboarding.finished';
+const SETTING_WIZARD = 'onboarding.wizard';
+
+export const OPEN_WIZARD_EVENT = 'goodboy:open-onboarding-wizard';
 
 const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
   'workspace',
@@ -59,12 +62,14 @@ interface OnboardingCache {
   completed: ReadonlyArray<OnboardingStepId>;
   collapsed: boolean;
   finished: boolean;
+  wizardDone: boolean;
 }
 
 const cache: OnboardingCache = {
   completed: [],
   collapsed: false,
   finished: false,
+  wizardDone: false,
 };
 
 function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
@@ -84,14 +89,16 @@ function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
 }
 
 export async function hydrateOnboardingFromDb(): Promise<void> {
-  const [rawProgress, rawCollapsed, rawFinished] = await Promise.all([
+  const [rawProgress, rawCollapsed, rawFinished, rawWizard] = await Promise.all([
     getSetting(tauriDatabase, SETTING_PROGRESS),
     getSetting(tauriDatabase, SETTING_COLLAPSED),
     getSetting(tauriDatabase, SETTING_FINISHED),
+    getSetting(tauriDatabase, SETTING_WIZARD),
   ]);
   cache.completed = parseCompleted(rawProgress);
   cache.collapsed = rawCollapsed === '1';
   cache.finished = rawFinished === '1';
+  cache.wizardDone = rawWizard === 'done';
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 }
 
@@ -141,4 +148,19 @@ export function finish(): void {
   cache.finished = true;
   flushFlag(SETTING_FINISHED, true);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
+}
+
+export function isWizardDone(): boolean {
+  return cache.wizardDone;
+}
+
+export function finishWizard(): void {
+  if (cache.wizardDone) return;
+  cache.wizardDone = true;
+  void setSetting(tauriDatabase, SETTING_WIZARD, 'done');
+  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
+}
+
+export function reopenWizard(): void {
+  window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT));
 }

@@ -4,6 +4,8 @@ import {
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
+  extractCommentResolved,
+  extractCommentWontfix,
   extractScoutSplit,
   findReusableAgent,
   runsForWorkflowRun,
@@ -75,6 +77,7 @@ import {
   runTurn,
   writeAttachment,
 } from '../../../features/chat/turn';
+import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
@@ -117,6 +120,14 @@ interface Input {
   override?: TurnProviderOverride;
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
 }
+
+const EFFORT_FLAG: Readonly<Record<string, string>> = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  'extra-high': 'xhigh',
+  max: 'max',
+};
 
 export function sendTurn(set: SetFn, get: GetFn) {
   return async ({
@@ -213,7 +224,13 @@ export function sendTurn(set: SetFn, get: GetFn) {
               fileName: a.fileName,
               dataBase64: a.dataBase64,
             });
-            return { id: a.id, kind: 'image', fileName: a.fileName, mimeType: a.mimeType, relPath };
+            return {
+              id: a.id,
+              kind: attachmentKindFor(a.mimeType),
+              fileName: a.fileName,
+              mimeType: a.mimeType,
+              relPath,
+            };
           }),
         );
       } catch (err) {
@@ -353,10 +370,20 @@ export function sendTurn(set: SetFn, get: GetFn) {
       : undefined;
     const turnOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
-    const effectiveOverride = phaseOverride ?? turnOverride;
+    const agentProvider = get().agentProviderOverride[activeAgentId] ?? null;
+    const agentModelPin = get().agentModelOverride[activeAgentId] ?? null;
+    const agentOverride: TurnProviderOverride | undefined = agentProvider
+      ? { providerId: agentProvider, ...(agentModelPin != null && { model: agentModelPin }) }
+      : undefined;
+    const effectiveOverride = phaseOverride ?? agentOverride ?? turnOverride;
+
+    const routingPreference =
+      effectiveOverride === agentOverride && agentOverride !== undefined
+        ? { ...session.providerPreference, allowTurnOverride: true }
+        : session.providerPreference;
 
     const routingDecision = await resolveProviderForTurn(
-      session.providerPreference,
+      routingPreference,
       effectiveOverride,
       connectedProviders,
     );
@@ -804,6 +831,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
       void applyHeuristicTitle(set, get, sessionId, activeAgentId, content);
     }
 
+    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
+    const effortFlag = provider === 'anthropic' && rawEffort ? EFFORT_FLAG[rawEffort] : undefined;
+
     try {
       for await (const event of runTurn({
         runId,
@@ -814,6 +844,7 @@ export function sendTurn(set: SetFn, get: GetFn) {
         binary: providerInfo?.binary,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
+        ...(effortFlag !== undefined && { effort: effortFlag }),
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
@@ -1026,6 +1057,15 @@ export function sendTurn(set: SetFn, get: GetFn) {
           void get().refreshUnreadWorkspaces();
 
           void get().maybeAutoAdvanceWorkflow(sessionId);
+          if (ranKind === 'resolver') {
+            const resolvedMarker = extractCommentResolved(assistantText);
+            const wontfixMarker = extractCommentWontfix(assistantText);
+            const nextState = resolvedMarker ? 'committed' : wontfixMarker ? 'wontfix' : 'awaiting';
+            set((state) => ({
+              resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
+            }));
+            if (resolvedMarker || wontfixMarker) void get().activateNextResolver(sessionId);
+          }
         }
       } else if (resolvedAgentId && wasCancelled) {
         // Cancelled turn, agent stays `running`. It was activated and has

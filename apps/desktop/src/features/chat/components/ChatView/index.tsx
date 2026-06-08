@@ -30,7 +30,9 @@ import {
   filterEventsByRunId,
   reduceTranscript,
 } from '../../utils/transcript-items';
+import { clusterOperations } from '../../utils/cluster-operations';
 import { TranscriptCard } from '../TranscriptCards';
+import { OperationsCluster } from '../OperationsCluster';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatBreadcrumb } from '../ChatBreadcrumb';
 import { ChatInput } from '../ChatInput';
@@ -45,7 +47,6 @@ import { worktreeDiff } from '../../../../features/worktree/worktree';
 
 interface ChatViewProps {
   session: Session;
-  onRequestEnd?: () => void;
   // Keep-alive aware. False when this instance is mounted but hidden behind
   // another session's view, used to skip background DB fetches.
   isActive?: boolean;
@@ -226,6 +227,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const deferredTagged = useDeferredValue(taggedItems);
   const transcriptStale = deferredTagged.agentId !== selectedAgentId;
   const deferredItems = deferredTagged.items;
+  const rows = useMemo(() => clusterOperations(deferredItems), [deferredItems]);
   const loading = useSessionLoading(session.id);
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
@@ -290,8 +292,13 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   const agentKind = agentState?.kind ?? session.state.kind;
   const isEnded = agentKind === 'ended';
   const lastItem = items[items.length - 1];
+  const lastRow = rows[rows.length - 1];
+  const lastClusterRunning =
+    lastRow?.kind === 'operations' && lastRow.items.some((i) => i.kind === 'tool_call' && !i.ended);
   const isThinking =
-    agentKind === 'running' && (lastItem?.kind ?? 'user_text') !== 'assistant_text';
+    agentKind === 'running' &&
+    (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
+    !lastClusterRunning;
 
   const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
     () => (flagOn ? detectParallelRunIds(events) : []),
@@ -495,32 +502,20 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
               aria-relevant="additions"
             >
               {(() => {
-                const toolishKinds = new Set([
-                  'tool_call',
-                  'file_edit',
-                  'skill_invocation',
-                  'permission_request',
-                  'permission_decision',
-                  'usage',
-                ]);
                 let lastDay: string | null = null;
-                return deferredItems.map((item, idx) => {
-                  const prev = idx > 0 ? (deferredItems[idx - 1] ?? null) : null;
-                  const tightToTool =
-                    prev !== null &&
-                    toolishKinds.has(item.kind) &&
-                    (toolishKinds.has(prev.kind) || prev.kind === 'assistant_text');
+                return rows.map((row, idx) => {
                   const node: React.ReactNode[] = [];
                   let isTurnBreak = false;
-                  if (item.kind === 'user_text') {
-                    const day = dayKey(item.at);
+                  if (row.kind === 'item' && row.item.kind === 'user_text') {
+                    const at = row.item.at;
+                    const day = dayKey(at);
                     const dayChanged = day !== lastDay;
                     // Divider marks the boundary between turns; on a day change
                     // the date pill already separates them, so skip it there.
                     if (idx > 0 && !dayChanged) {
                       isTurnBreak = true;
                       node.push(
-                        <li key={`turn-${item.key}`} className="my-2.5">
+                        <li key={`turn-${row.key}`} className="my-2.5">
                           <Divider />
                         </li>,
                       );
@@ -529,22 +524,17 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                       node.push(
                         <li key={`day-${day}-${idx}`} className="my-2.5 flex justify-center">
                           <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
-                            {formatDayLabel(item.at)}
+                            {formatDayLabel(at)}
                           </span>
                         </li>,
                       );
                       lastDay = day;
                     }
                   }
-                  const itemSpacing = (() => {
-                    if (tightToTool) return 'mt-0.5';
-                    if (idx === 0) return '';
-                    if (isTurnBreak) return '';
-                    return 'mt-2.5';
-                  })();
+                  const itemSpacing = idx === 0 || isTurnBreak ? '' : 'mt-2.5';
                   node.push(
                     <li
-                      key={item.key}
+                      key={row.key}
                       className={cn(
                         itemSpacing,
                         // Browser-native virtualization: skip layout/paint of
@@ -554,14 +544,25 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                         '[content-visibility:auto] [contain-intrinsic-size:80px]',
                       )}
                     >
-                      <TranscriptCard
-                        item={item}
-                        sessionId={session.id}
-                        agentId={selectedAgentId}
-                        workingDir={worktreePath}
-                        onRefreshAuth={handleRefreshAuth}
-                        onOpenDiff={handleOpenDiff}
-                      />
+                      {row.kind === 'operations' ? (
+                        <OperationsCluster
+                          items={row.items}
+                          sessionId={session.id}
+                          agentId={selectedAgentId}
+                          workingDir={worktreePath}
+                          onRefreshAuth={handleRefreshAuth}
+                          onOpenDiff={handleOpenDiff}
+                        />
+                      ) : (
+                        <TranscriptCard
+                          item={row.item}
+                          sessionId={session.id}
+                          agentId={selectedAgentId}
+                          workingDir={worktreePath}
+                          onRefreshAuth={handleRefreshAuth}
+                          onOpenDiff={handleOpenDiff}
+                        />
+                      )}
                     </li>,
                   );
                   return node;

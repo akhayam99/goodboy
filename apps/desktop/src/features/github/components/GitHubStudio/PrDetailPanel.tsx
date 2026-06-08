@@ -4,8 +4,8 @@ import { Button, Divider, EmptyState } from '@goodboy/ui';
 import { AlertCircle, GitPullRequest, Inbox, Loader2, Plus, RefreshCw } from 'lucide-react';
 import {
   buildCommentAgentArgs,
-  buildReviewChangesAgentArgs,
   type CommentAgentArgs,
+  type ResolveModelChoice,
 } from '../../../chat/spawn-from-comment';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
@@ -17,15 +17,23 @@ import { CreatePrDialog } from './CreatePrDialog';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
 import { PrChecks } from './PrChecks';
 import { PrConversation } from './PrConversation';
+import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrSidebar, type PrSection } from './PrSidebar';
 
 interface Props {
   readonly sessionId: SessionId | null;
+  readonly initialPrNumber?: number | null;
+  readonly initialThreadId?: string | null;
   readonly onClose: () => void;
 }
 
-export function PrDetailPanel({ sessionId, onClose }: Props) {
+export function PrDetailPanel({
+  sessionId,
+  initialPrNumber = null,
+  initialThreadId = null,
+  onClose,
+}: Props) {
   const sessions = useSessions();
   const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined;
   const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null));
@@ -47,11 +55,14 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
+  const setAgentConfig = useAppStore((s) => s.setAgentConfig);
 
   const [busy, setBusy] = useState<ActionBusy>(null);
   const [mergeConfirm, setMergeConfirm] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
+  const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
   const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([]);
   const [prsTick, setPrsTick] = useState(0);
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
@@ -95,6 +106,12 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     setCreateOpen(false);
     setSection('overview');
   }, [sessionId]);
+
+  useEffect(() => {
+    if (initialThreadId == null) return;
+    if (initialPrNumber != null) setSelectedNumber(initialPrNumber);
+    setSection('comments');
+  }, [sessionId, initialThreadId, initialPrNumber]);
 
   useEffect(() => {
     if (!branch || !workspaceRoot) {
@@ -163,30 +180,58 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
     refreshActive();
   };
 
-  const runResolve = async (args: CommentAgentArgs) => {
+  const spawnResolver = async (
+    args: CommentAgentArgs,
+    choice: ResolveModelChoice,
+    deferKickoff: boolean,
+  ) => {
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
       model: args.model,
+      ...(args.provider !== undefined && { provider: args.provider }),
       effort: args.effort,
       initialPrompt: args.initialPrompt,
       kindOverride: args.kind,
+      ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
+      sourceCommentUrl: args.sourceCommentUrl,
+      ...(deferKickoff && { deferKickoff: true }),
     });
-    await selectAgent(sessionId, agentId);
-    await setCurrentSession(sessionId);
-    onClose();
+    await setAgentConfig(sessionId, agentId, {
+      ...(choice.provider !== undefined && { providerOverride: choice.provider }),
+      ...(choice.model !== undefined && { modelOverride: choice.model }),
+      effort: args.effort,
+    });
+    return agentId;
   };
 
-  const onSpawnFromComment = (comment: PrComment) => {
+  const onSpawnOne = (comment: PrComment, choice: ResolveModelChoice) => {
     if (!activePr) return;
-    void runResolve(buildCommentAgentArgs(comment, activePr));
+    void (async () => {
+      const agentId = await spawnResolver(
+        buildCommentAgentArgs(comment, activePr, choice),
+        choice,
+        false,
+      );
+      await selectAgent(sessionId, agentId);
+      await setCurrentSession(sessionId);
+      onClose();
+    })();
   };
 
-  const onSpawnFromReviewChanges = () => {
-    if (!activePr) return;
-    const open = (detail?.comments ?? []).filter(
-      (c) => c.source === 'review' && c.resolved === false,
-    );
-    void runResolve(buildReviewChangesAgentArgs(activePr, open));
+  const onSpawnBatch = (
+    batch: ReadonlyArray<PrComment>,
+    choiceById: Readonly<Record<string, ResolveModelChoice>>,
+  ) => {
+    if (!activePr || batch.length === 0) return;
+    void (async () => {
+      for (const c of batch) {
+        const choice = choiceById[c.id] ?? {};
+        await spawnResolver(buildCommentAgentArgs(c, activePr, choice), choice, true);
+      }
+      await activateNextResolver(sessionId);
+      await setCurrentSession(sessionId);
+      onClose();
+    })();
   };
 
   const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
@@ -304,14 +349,24 @@ export function PrDetailPanel({ sessionId, onClose }: Props) {
               detail={detail}
               onRetry={refreshActive}
             >
-              {section === 'comments' ? (
+              {section === 'resolve' ? (
+                <ResolveBoard
+                  comments={(detail?.comments ?? []).filter(
+                    (c) => c.source === 'review' && c.resolved === false,
+                  )}
+                  onSpawnOne={onSpawnOne}
+                  onSpawnBatch={onSpawnBatch}
+                  onOpenThread={(threadId) => {
+                    setJumpThreadId(threadId);
+                    setSection('comments');
+                  }}
+                />
+              ) : section === 'comments' ? (
                 <PrConversation
                   comments={detail?.comments ?? []}
                   pr={activePr}
-                  changesRequested={activePr.reviewDecision === 'changes_requested'}
+                  scrollToThreadId={jumpThreadId ?? initialThreadId}
                   onOpenUrl={(u) => void openUrl(u)}
-                  onSpawnFromComment={onSpawnFromComment}
-                  onSpawnFromReviewChanges={onSpawnFromReviewChanges}
                 />
               ) : (
                 <PrChecks

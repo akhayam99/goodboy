@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { Clock, ImagePlus, Send, Square, Telescope, X } from 'lucide-react';
+import { Clock, Paperclip, Send, Square, Telescope, X } from 'lucide-react';
 import { Divider, Textarea } from '@goodboy/ui';
 import type {
   Agent,
@@ -53,6 +53,13 @@ import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from '../RightSizeCard';
 import { ImageLightbox } from '../ImageLightbox';
+import {
+  ATTACHMENT_ACCEPT,
+  attachmentKindFor,
+  fileIconFor,
+  isAllowedAttachment,
+  resolveAttachmentMime,
+} from '../../attachment-kinds';
 import { NudgeCard } from '../NudgeCard';
 import { ClipboardCheck } from 'lucide-react';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -156,6 +163,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
+  const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
   const workspaceDefaultVerbosity = useAppStore(
     (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
   );
@@ -434,24 +442,32 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const addFiles = useCallback(
     async (files: ReadonlyArray<File>) => {
-      const images = files.filter((f) => f.type.startsWith('image/'));
-      if (images.length === 0) return;
+      const allowed = files.filter(isAllowedAttachment);
+      const skipped = files.length - allowed.length;
+      if (skipped > 0) {
+        showToast(
+          'warning',
+          `${skipped} file${skipped === 1 ? '' : 's'} skipped, unsupported type`,
+        );
+      }
+      if (allowed.length === 0) return;
       const accepted: PendingAttachment[] = [];
-      for (const file of images) {
+      for (const file of allowed) {
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          showToast('error', `${file.name || 'image'} is over 15MB`);
+          showToast('error', `${file.name || 'file'} is over 15MB`);
           continue;
         }
         try {
           const dataUrl = await readFileAsDataUrl(file);
+          const mimeType = resolveAttachmentMime(file);
           accepted.push({
             id: crypto.randomUUID(),
-            fileName: file.name || `pasted-image.${extFromMime(file.type)}`,
-            mimeType: file.type,
+            fileName: file.name || `pasted-file.${extFromMime(mimeType)}`,
+            mimeType,
             dataUrl,
           });
         } catch {
-          showToast('error', `could not read ${file.name || 'image'}`);
+          showToast('error', `could not read ${file.name || 'file'}`);
         }
       }
       if (accepted.length === 0) return;
@@ -476,12 +492,10 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const onPaste = useCallback(
     (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
-      const images = Array.from(event.clipboardData.files).filter((f) =>
-        f.type.startsWith('image/'),
-      );
-      if (images.length > 0) {
+      const files = Array.from(event.clipboardData.files).filter(isAllowedAttachment);
+      if (files.length > 0) {
         event.preventDefault();
-        void addFiles(images);
+        void addFiles(files);
       }
     },
     [addFiles],
@@ -496,7 +510,10 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
     void storeSetSessionConfig(session.id, { effort: level });
-    if (selectedAgentId) void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
+    if (selectedAgentId) {
+      void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
+      storeSetAgentEffortOverride(selectedAgentId, level);
+    }
   };
 
   const setVerbosity = (level: VerbosityLevel) => {
@@ -787,7 +804,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
             dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
           });
         } catch {
-          // Non-image / oversize drops are silently skipped: otherwise a
+          // Unsupported / oversize drops are silently skipped: otherwise a
           // folder drop would spam a toast per child.
         }
       }
@@ -1106,7 +1123,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 isDragging ? 'scale-100' : 'scale-95'
               }`}
             >
-              <ImagePlus size={14} aria-hidden />
+              <Paperclip size={14} aria-hidden />
               drop to attach
             </div>
           </div>
@@ -1176,16 +1193,16 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={providerDisconnected}
-                title="attach images"
-                aria-label="attach images"
+                title="attach files"
+                aria-label="attach files"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <ImagePlus size={15} aria-hidden />
+                <Paperclip size={15} aria-hidden />
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={ATTACHMENT_ACCEPT}
                 multiple
                 className="hidden"
                 onChange={onFileInputChange}
@@ -1270,9 +1287,11 @@ function QueuedMessages({
       </div>
       {items.map((item, i) => {
         const trimmed = item.content.trim();
-        const imageCount = item.attachments.length;
+        const attachmentCount = item.attachments.length;
         const preview =
-          trimmed.length > 0 ? trimmed : `${imageCount} image${imageCount === 1 ? '' : 's'}`;
+          trimmed.length > 0
+            ? trimmed
+            : `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`;
         return (
           <div
             key={item.id}
@@ -1290,10 +1309,10 @@ function QueuedMessages({
             >
               {preview}
             </button>
-            {imageCount > 0 && trimmed.length > 0 ? (
+            {attachmentCount > 0 && trimmed.length > 0 ? (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground">
-                <ImagePlus size={10} aria-hidden />
-                {imageCount}
+                <Paperclip size={10} aria-hidden />
+                {attachmentCount}
               </span>
             ) : null}
             <button
@@ -1320,37 +1339,70 @@ function AttachmentChip({
   readonly onRemove: () => void;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const removeButton = (
+    <button
+      type="button"
+      onClick={onRemove}
+      title={`remove ${attachment.fileName}`}
+      aria-label={`remove ${attachment.fileName}`}
+      className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
+    >
+      <X size={10} aria-hidden />
+    </button>
+  );
+
+  if (attachmentKindFor(attachment.mimeType) === 'image') {
+    return (
+      <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          title={`preview ${attachment.fileName}`}
+          aria-label={`preview ${attachment.fileName}`}
+          className="block h-full w-full cursor-zoom-in"
+        >
+          <img
+            src={attachment.dataUrl}
+            alt={attachment.fileName}
+            className="h-full w-full object-cover"
+          />
+        </button>
+        {previewOpen ? (
+          <ImageLightbox
+            src={attachment.dataUrl}
+            alt={attachment.fileName}
+            onClose={() => setPreviewOpen(false)}
+          />
+        ) : null}
+        {removeButton}
+      </div>
+    );
+  }
+
+  const Icon = fileIconFor(attachment.mimeType);
+  const isPdf = attachment.mimeType === 'application/pdf';
   return (
-    <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
+    <div className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background/60 py-2 pl-2.5 pr-6 ring-1 ring-border-soft">
       <button
         type="button"
+        disabled={!isPdf}
         onClick={() => setPreviewOpen(true)}
-        title={`preview ${attachment.fileName}`}
-        aria-label={`preview ${attachment.fileName}`}
-        className="block h-full w-full cursor-zoom-in"
+        title={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
+        aria-label={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
+        className="flex min-w-0 items-center gap-2 enabled:cursor-zoom-in"
       >
-        <img
-          src={attachment.dataUrl}
-          alt={attachment.fileName}
-          className="h-full w-full object-cover"
-        />
+        <Icon size={18} aria-hidden className="shrink-0 text-muted-foreground" />
+        <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
       </button>
-      {previewOpen ? (
+      {previewOpen && isPdf ? (
         <ImageLightbox
-          src={attachment.dataUrl}
+          media="pdf"
+          src={`data:application/pdf;base64,${dataUrlToBase64(attachment.dataUrl)}`}
           alt={attachment.fileName}
           onClose={() => setPreviewOpen(false)}
         />
       ) : null}
-      <button
-        type="button"
-        onClick={onRemove}
-        title={`remove ${attachment.fileName}`}
-        aria-label={`remove ${attachment.fileName}`}
-        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
-      >
-        <X size={10} aria-hidden />
-      </button>
+      {removeButton}
     </div>
   );
 }

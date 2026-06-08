@@ -38,8 +38,16 @@ export function deleteAgent(set: SetFn, get: GetFn) {
       delete nextHistory[agentId];
       const nextModelOverride = { ...s.agentModelOverride };
       delete nextModelOverride[agentId];
+      const nextProviderOverride = { ...s.agentProviderOverride };
+      delete nextProviderOverride[agentId];
+      const nextEffortOverride = { ...s.agentEffortOverride };
+      delete nextEffortOverride[agentId];
       const nextKindOverride = { ...s.agentKindOverride };
       delete nextKindOverride[agentId];
+      const nextResolverKickoff = { ...s.pendingResolverKickoff };
+      delete nextResolverKickoff[agentId];
+      const nextResolverState = { ...s.resolverState };
+      delete nextResolverState[agentId];
       const survivorStates = refreshed
         .map((a) => nextTurnState[a.id])
         .filter((st): st is NonNullable<typeof st> => st !== undefined);
@@ -52,7 +60,11 @@ export function deleteAgent(set: SetFn, get: GetFn) {
         agentDraft: nextDraft,
         agentRunHistory: nextHistory,
         agentModelOverride: nextModelOverride,
+        agentProviderOverride: nextProviderOverride,
+        agentEffortOverride: nextEffortOverride,
         agentKindOverride: nextKindOverride,
+        pendingResolverKickoff: nextResolverKickoff,
+        resolverState: nextResolverState,
         sessions: s.sessions.map((sess) =>
           sess.id === sessionId ? { ...sess, state: derived! } : sess,
         ),

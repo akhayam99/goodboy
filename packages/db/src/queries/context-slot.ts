@@ -26,7 +26,16 @@ export async function upsertContextSlot(
   db: Database,
   sessionId: SessionId,
   slot: ContextSlot,
+  author: ContextSlotAuthor = 'summarizer',
 ): Promise<void> {
+  const existing = await db.select<ContextSlotRow>(
+    'SELECT session_id, key, value, enabled FROM context_slots WHERE session_id = ? AND key = ?',
+    [sessionId, slot.key],
+  );
+  const prevValue = existing[0]?.value ?? null;
+  if (prevValue !== null && prevValue !== slot.value) {
+    await insertContextSlotHistory(db, sessionId, crypto.randomUUID(), slot.key, prevValue, author);
+  }
   await db.execute(
     `INSERT INTO context_slots (session_id, key, value, enabled)
      VALUES (?, ?, ?, ?)

@@ -14,7 +14,7 @@ export const EMPTY_LOADING: SessionLoadingFlags = {
 /**
  * Shared per-turn session state mutator. Called by every action that flips
  * the in-memory session.state + agentTurnState (sendTurn, cancelCurrentTurn,
- * endSession, deleteAgent). Lives here so slices can import it without
+ * deleteAgent). Lives here so slices can import it without
  * depending on store.ts directly.
  */
 export function applySessionUpdate(

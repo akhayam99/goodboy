@@ -1010,7 +1010,7 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 </div>
 `;
 
-exports[`snapshot, error states > EndSessionDialog: error state 1`] = `
+exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
 <dialog
   aria-describedby="_r_2_-desc"
   aria-labelledby="_r_2_-title"
@@ -1030,13 +1030,13 @@ exports[`snapshot, error states > EndSessionDialog: error state 1`] = `
           class="text-sm font-semibold tracking-tight text-foreground"
           id="_r_2_-title"
         >
-          End session?
+          Delete session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
           id="_r_2_-desc"
         >
-          Removes the worktree and session transcripts from this device. The branch is preserved for manual merge if needed.
+          Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.
         </p>
       </div>
       <button
@@ -1075,7 +1075,7 @@ exports[`snapshot, error states > EndSessionDialog: error state 1`] = `
         <p
           class="text-xs font-medium text-danger"
         >
-          This cannot be undone.
+          This cannot be undone. To keep the history, archive instead.
         </p>
       </div>
     </div>
@@ -1094,10 +1094,43 @@ exports[`snapshot, error states > EndSessionDialog: error state 1`] = `
         Cancel
       </button>
       <button
+        class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-archive mr-1.5"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="13"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="5"
+            rx="1"
+            width="20"
+            x="2"
+            y="3"
+          />
+          <path
+            d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"
+          />
+          <path
+            d="M10 12h4"
+          />
+        </svg>
+        Archive instead
+      </button>
+      <button
         class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
         type="button"
       >
-        End session
+        Delete session
       </button>
     </footer>
   </div>

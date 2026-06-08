@@ -278,7 +278,7 @@ export function SessionSettingsDialog({
             title={
               deleteArmed
                 ? 'click again to confirm, this cannot be undone'
-                : 'delete session (worktree, transcripts, branch)'
+                : 'delete session (worktree, transcripts). branch preserved'
             }
           >
             {busy ? (

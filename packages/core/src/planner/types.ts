@@ -12,6 +12,6 @@ export interface PlannerOutput {
 }
 
 export interface PlannerInput {
-  readonly theme: string;
+  readonly process: string;
   readonly repoContext?: string;
 }

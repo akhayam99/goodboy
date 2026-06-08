@@ -87,6 +87,7 @@ interface SpawnArgs {
   readonly permissionMode?: ClaudePermissionMode;
   readonly resumeSessionId?: string;
   readonly systemPrompt?: string;
+  readonly effort?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
 }

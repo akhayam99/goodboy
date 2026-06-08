@@ -7,6 +7,7 @@ import type { TranscriptItem } from '../../utils/transcript-items';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { readAttachment } from '../../turn';
+import { fileIconFor } from '../../attachment-kinds';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ImageLightbox } from '../ImageLightbox';
 import { SkillInvocationCard } from '../SkillInvocationCard';
@@ -16,6 +17,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { displayPath } from '../../../../shared/utils/display-path';
 import { HandoffChip } from '../HandoffChip';
 import { CommentResolvedChip } from '../CommentResolvedChip';
+import { CommentWontfixChip } from '../CommentWontfixChip';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -184,11 +186,13 @@ function formatTokens(n: number): string {
 
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
 const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
+const COMMENT_WONTFIX_MARKER_RE = /<<comment-wontfix\s+[^>]+?>>/g;
 
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
   const displayText = text
     .replace(HANDOFF_MARKER_RE, '')
     .replace(COMMENT_RESOLVED_MARKER_RE, '')
+    .replace(COMMENT_WONTFIX_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   // The comment-resolved chip lives in the top-right of its own row and
@@ -211,6 +215,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
         <>
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
+          <CommentWontfixChip assistantText={text} sessionId={sessionId} />
         </>
       ) : null}
     </div>
@@ -262,6 +267,19 @@ function InlineCopyButton({ value }: { value: string }) {
 // not in the turn-event payload, so each thumbnail reads its own file. Works
 // the same for a just-sent message and one restored from the DB after restart.
 function AttachmentThumb({
+  attachment,
+  workingDir,
+}: {
+  attachment: MessageAttachment;
+  workingDir: string | null;
+}) {
+  if (attachment.kind === 'file') {
+    return <AttachmentFileCard attachment={attachment} workingDir={workingDir} />;
+  }
+  return <AttachmentImage attachment={attachment} workingDir={workingDir} />;
+}
+
+function AttachmentImage({
   attachment,
   workingDir,
 }: {
@@ -330,6 +348,63 @@ function AttachmentThumb({
   );
 }
 
+function AttachmentFileCard({
+  attachment,
+  workingDir,
+}: {
+  attachment: MessageAttachment;
+  workingDir: string | null;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const Icon = fileIconFor(attachment.mimeType);
+  const isPdf = attachment.mimeType === 'application/pdf';
+
+  const openPreview = () => {
+    if (!isPdf || !workingDir) return;
+    if (src !== null) {
+      setPreviewOpen(true);
+      return;
+    }
+    setLoading(true);
+    readAttachment(workingDir, attachment.relPath)
+      .then((dataUrl) => {
+        setSrc(dataUrl);
+        setPreviewOpen(true);
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!isPdf}
+        onClick={openPreview}
+        title={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
+        aria-label={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
+        className="flex max-w-[16rem] items-center gap-2 rounded-lg bg-foreground/5 px-3 py-2 ring-1 ring-border-soft transition-colors enabled:cursor-zoom-in enabled:hover:bg-foreground/10"
+      >
+        <Icon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+        <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
+        {loading ? (
+          <span className="shrink-0 text-2xs text-muted-foreground">loading...</span>
+        ) : null}
+      </button>
+      {previewOpen && src !== null ? (
+        <ImageLightbox
+          media="pdf"
+          src={src}
+          alt={attachment.fileName}
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function UserText({
   text,
   at,
@@ -345,12 +420,12 @@ function UserText({
   model?: string;
   workingDir?: string | null;
 }) {
-  const images = attachments ?? [];
+  const atts = attachments ?? [];
   return (
     <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
-      {images.length > 0 ? (
+      {atts.length > 0 ? (
         <div className="flex flex-wrap justify-end gap-1.5">
-          {images.map((a) => (
+          {atts.map((a) => (
             <AttachmentThumb key={a.id} attachment={a} workingDir={workingDir} />
           ))}
         </div>

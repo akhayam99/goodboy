@@ -1,26 +1,17 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { Button, Divider, EmptyState, Markdown } from '@goodboy/ui';
-import { CheckCheck, ExternalLink, MessageSquare, Sparkles } from 'lucide-react';
+import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
+import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 
 interface Props {
   readonly comments: ReadonlyArray<PrComment>;
   readonly pr: PullRequestState;
-  readonly changesRequested: boolean;
+  readonly scrollToThreadId?: string | null;
   readonly onOpenUrl: (url: string) => void;
-  readonly onSpawnFromComment: (c: PrComment) => void;
-  readonly onSpawnFromReviewChanges: () => void;
 }
 
-export function PrConversation({
-  comments,
-  pr,
-  changesRequested,
-  onOpenUrl,
-  onSpawnFromComment,
-  onSpawnFromReviewChanges,
-}: Props) {
+export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) {
   const threads = useMemo(() => {
     const all = groupThreads(comments);
     return [...all].sort((a, b) => {
@@ -29,6 +20,18 @@ export function PrConversation({
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
   }, [comments]);
+
+  const threadRefs = useRef(new Map<string, HTMLLIElement>());
+  const [flashThreadId, setFlashThreadId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!scrollToThreadId) return;
+    const el = threadRefs.current.get(scrollToThreadId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlashThreadId(scrollToThreadId);
+    const t = setTimeout(() => setFlashThreadId(null), 1600);
+    return () => clearTimeout(t);
+  }, [scrollToThreadId, threads]);
 
   if (threads.length === 0) {
     return (
@@ -49,30 +52,26 @@ export function PrConversation({
 
   return (
     <div className="flex flex-col gap-3">
-      {changesRequested ? (
-        <button
-          type="button"
-          onClick={onSpawnFromReviewChanges}
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
-        >
-          <Sparkles size={13} aria-hidden />
-          Resolve all requested changes
-        </button>
-      ) : null}
       <ul className="flex flex-col gap-2.5">
-        {threads.map((t) => (
-          <li key={t.head.id}>
-            <ConversationThread
-              thread={t}
-              onOpenUrl={onOpenUrl}
-              onResolve={
-                t.head.source === 'review' && t.head.resolved === false
-                  ? () => onSpawnFromComment(t.head)
-                  : undefined
-              }
-            />
-          </li>
-        ))}
+        {threads.map((t) => {
+          const tid = t.head.threadId ?? null;
+          return (
+            <li
+              key={t.head.id}
+              ref={(el) => {
+                if (!tid) return;
+                if (el) threadRefs.current.set(tid, el);
+                else threadRefs.current.delete(tid);
+              }}
+              className={cn(
+                'rounded-xl transition-shadow',
+                tid && tid === flashThreadId ? 'ring-2 ring-accent/60' : '',
+              )}
+            >
+              <ConversationThread thread={t} onOpenUrl={onOpenUrl} />
+            </li>
+          );
+        })}
       </ul>
       <button
         type="button"
@@ -89,11 +88,9 @@ export function PrConversation({
 function ConversationThread({
   thread,
   onOpenUrl,
-  onResolve,
 }: {
   thread: CommentThread;
   onOpenUrl: (url: string) => void;
-  onResolve?: () => void;
 }) {
   const { head, replies } = thread;
   const isReview = head.source === 'review';
@@ -130,28 +127,15 @@ function ConversationThread({
             resolved
           </span>
         ) : null}
-        <div className="ml-auto flex items-center gap-1">
-          {onResolve ? (
-            <button
-              type="button"
-              onClick={onResolve}
-              title="create agent to resolve this comment"
-              className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-0.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/15"
-            >
-              <Sparkles size={10} aria-hidden />
-              resolve
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onOpenUrl(head.url)}
-            title="open in browser"
-            aria-label="open in browser"
-            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <ExternalLink size={12} aria-hidden />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onOpenUrl(head.url)}
+          title="open in browser"
+          aria-label="open in browser"
+          className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ExternalLink size={12} aria-hidden />
+        </button>
       </div>
 
       {head.path ? (
