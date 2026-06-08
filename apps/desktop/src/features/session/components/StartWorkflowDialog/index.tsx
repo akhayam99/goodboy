@@ -89,9 +89,9 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
       onClose={onClose}
       title="Start a workflow"
       description="Pick a saved preset, or describe the process you want. Skip and add it later."
-      size="xl"
-      fixedHeightClass="h-[34rem]"
-      panelWidthClass="w-64"
+      size="2xl"
+      fixedHeightClass="h-[40rem]"
+      panelWidthClass="w-72"
       panelClassName="min-h-0 bg-subtle/40"
       panel={
         <WorkflowRail
@@ -433,7 +433,6 @@ function StepLadder({ steps }: { steps: Workflow['steps'] }) {
                 name={step.name}
                 model={step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model}
                 verbosity={step.verbosity ?? 'normal'}
-                role={step.role}
               />
             </li>
           );
