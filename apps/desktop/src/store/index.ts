@@ -18,6 +18,7 @@ export {
   useSummarizerStatus,
   useSessionHasUnread,
   useWorkspaceHasUnread,
+  useHasUnreadElsewhere,
   useWorkspaces,
 } from './selectors';
 export { useTranscript } from './transcript';

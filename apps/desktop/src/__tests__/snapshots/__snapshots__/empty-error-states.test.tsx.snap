@@ -400,76 +400,7 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
 >
   <div
     class="shrink-0"
-  >
-    <div
-      class="shrink-0 px-3 py-3"
-      data-tauri-drag-region="false"
-    >
-      <span
-        class="mb-2 flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-folder-open text-primary"
-          fill="none"
-          height="11"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="11"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
-          />
-        </svg>
-        Workspaces
-        <span
-          class="ml-auto font-mono text-[10px] tracking-normal text-muted-foreground/60"
-          title="up to 3 workspaces during beta"
-        >
-          0
-          /
-          3
-        </span>
-      </span>
-      <div
-        class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none]"
-        data-tauri-drag-region="false"
-      >
-        <button
-          aria-label="add workspace"
-          class="flex shrink-0 items-center justify-center rounded border border-dashed px-2 py-1.5 transition-colors border-border-soft text-muted-foreground/60 hover:border-border hover:bg-muted/50 hover:text-muted-foreground"
-          data-tauri-drag-region="false"
-          title="add workspace"
-          type="button"
-        >
-          <svg
-            aria-hidden="true"
-            class="lucide lucide-plus"
-            fill="none"
-            height="12"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="12"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M5 12h14"
-            />
-            <path
-              d="M12 5v14"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
+  />
   <div
     aria-orientation="horizontal"
     class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"

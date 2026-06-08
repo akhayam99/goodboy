@@ -476,7 +476,6 @@ describe('store contract', () => {
         sessions: [],
         archivedSessions: {},
         currentSessionId: null,
-        pendingWorkspaceSwitch: null,
         settings: {},
         sessionSummary: null,
         providerStatus: null,
@@ -596,71 +595,6 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.currentWorkspaceId).toBeNull();
       expect(s.providerSpendBreakdown).toEqual([]);
-    });
-
-    it('requestWorkspaceSwitch switches immediately when no agent is running', async () => {
-      const store = await getStore();
-      store.setState({
-        workspaces: [buildWorkspace(), buildWorkspace({ id: WS_ID_2, name: 'ws2' })],
-        currentWorkspaceId: WS_ID,
-        sessions: [buildSession()],
-      });
-      const spy = vi.fn(async () => undefined);
-      const real = store.getState().setCurrentWorkspace;
-      store.setState({ setCurrentWorkspace: spy } as never);
-      try {
-        await store.getState().requestWorkspaceSwitch(WS_ID_2);
-        expect(spy).toHaveBeenCalledWith(WS_ID_2);
-        expect(store.getState().pendingWorkspaceSwitch).toBeNull();
-      } finally {
-        store.setState({ setCurrentWorkspace: real } as never);
-      }
-    });
-
-    it('requestWorkspaceSwitch defers and records the target when an agent is running', async () => {
-      const store = await getStore();
-      store.setState({
-        workspaces: [buildWorkspace(), buildWorkspace({ id: WS_ID_2, name: 'ws2' })],
-        currentWorkspaceId: WS_ID,
-        sessions: [buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } })],
-      });
-      await store.getState().requestWorkspaceSwitch(WS_ID_2);
-      const s = store.getState();
-      expect(s.currentWorkspaceId).toBe(WS_ID);
-      expect(s.pendingWorkspaceSwitch).toEqual({ targetId: WS_ID_2 });
-    });
-
-    it('confirmWorkspaceSwitch clears the pending switch and delegates to the target', async () => {
-      const store = await getStore();
-      store.setState({
-        workspaces: [buildWorkspace(), buildWorkspace({ id: WS_ID_2, name: 'ws2' })],
-        currentWorkspaceId: WS_ID,
-        sessions: [buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } })],
-        pendingWorkspaceSwitch: { targetId: WS_ID_2 },
-      });
-      const spy = vi.fn(async () => undefined);
-      const real = store.getState().setCurrentWorkspace;
-      store.setState({ setCurrentWorkspace: spy } as never);
-      try {
-        await store.getState().confirmWorkspaceSwitch();
-        expect(store.getState().pendingWorkspaceSwitch).toBeNull();
-        expect(spy).toHaveBeenCalledWith(WS_ID_2);
-      } finally {
-        store.setState({ setCurrentWorkspace: real } as never);
-      }
-    });
-
-    it('cancelWorkspaceSwitch drops the pending switch and stays put', async () => {
-      const store = await getStore();
-      store.setState({
-        workspaces: [buildWorkspace(), buildWorkspace({ id: WS_ID_2, name: 'ws2' })],
-        currentWorkspaceId: WS_ID,
-        pendingWorkspaceSwitch: { targetId: WS_ID_2 },
-      });
-      store.getState().cancelWorkspaceSwitch();
-      const s = store.getState();
-      expect(s.currentWorkspaceId).toBe(WS_ID);
-      expect(s.pendingWorkspaceSwitch).toBeNull();
     });
   });
 });

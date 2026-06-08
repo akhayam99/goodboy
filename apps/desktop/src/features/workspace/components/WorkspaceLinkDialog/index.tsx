@@ -13,9 +13,9 @@ interface Props {
 }
 
 /**
- * Add a new workspace by pointing at a local git repo. The horizontal
- * workspace switcher (WorkspaceSelect) already lists all linked workspaces, so
- * this dialog focuses on the single thing the switcher can't do: link a new
+ * Add a new workspace by pointing at a local git repo. The launcher and
+ * switcher already list all linked workspaces, so this dialog focuses on the
+ * single thing they can't do: link a new
  * one. Past versions also hosted a "Recent" tab; that overlapped with the
  * switcher and confused the primary action, so it was dropped.
  */

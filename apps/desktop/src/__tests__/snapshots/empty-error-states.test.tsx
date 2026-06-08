@@ -111,6 +111,7 @@ vi.mock('../../store', () => ({
   useWorkspaces: vi.fn().mockReturnValue([]),
   useSessions: vi.fn().mockReturnValue([]),
   useSessionSlots: vi.fn().mockReturnValue([]),
+  useHasUnreadElsewhere: vi.fn().mockReturnValue(false),
   EMPTY_ARRAY: [] as never[],
 }));
 

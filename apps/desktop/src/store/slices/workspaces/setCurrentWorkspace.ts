@@ -19,7 +19,8 @@ import {
   updateSessionState,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn } from '../../../features/chat/turn';
+import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
@@ -101,14 +102,12 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
       // n-bro's 7-session workspace switch by ~5× mutex acquisitions.
       const tWsLoad = performance.now();
       const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
-      // Boot-recovery: a session row in 'running' state is necessarily orphaned
-      // here, the Rust TurnRegistry is reset on every app start, so there is
-      // no live process to reattach to. Normalize to 'idle' so the UI re-enables
-      // the input. Persist the correction back to the DB.
+      const liveRunIds = await listLiveRunIds();
       const recoveryNow = new Date().toISOString() as IsoDateTime;
       const sessions = await Promise.all(
         loadedSessions.map(async (s) => {
           if (s.state.kind !== 'running') return s;
+          if (liveRunIds.has(s.state.runId)) return s;
           const idleState: TurnState = { kind: 'idle', lastActivityAt: recoveryNow };
           await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
             () => undefined,
@@ -222,8 +221,10 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
     // Settings persistence, survives next launch as "last opened
     // workspace/session". Fire-and-forget: no UI code awaits these, but
     // awaiting used to add 2 more mutex acquisitions to the click handler.
-    void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
-    void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    if (isMainWindow()) {
+      void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
+      void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
+    }
     void get().refreshUnreadWorkspaces();
     // Single-session workspaces don't have an activity rail, the user can't
     // pick a session manually. Auto-select so the detail panel renders

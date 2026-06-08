@@ -110,6 +110,7 @@ pub fn run() {
       external_terminal::open_command_in_external_terminal,
       turn::turn_spawn,
       turn::turn_cancel,
+      turn::turn_list_live,
       attachment::attachment_write,
       attachment::attachment_read,
       attachment::attachment_read_dropped,

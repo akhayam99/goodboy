@@ -93,7 +93,7 @@ export function CommandPalette({
   const sessions = useSessions();
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
-  const requestWorkspaceSwitch = useAppStore((s) => s.requestWorkspaceSwitch);
+  const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const skills = useAppStore((s) =>
@@ -127,7 +127,7 @@ export function CommandPalette({
         label: w.name,
         sublabel: w.rootPath,
         group: 'workspace',
-        onSelect: () => void requestWorkspaceSwitch(w.id),
+        onSelect: () => void openWorkspace(w.id, w.name),
       });
     }
 
@@ -258,7 +258,7 @@ export function CommandPalette({
     runScript,
     showToast,
     agentKindOverride,
-    requestWorkspaceSwitch,
+    openWorkspace,
     setCurrentSession,
     selectAgent,
     onOpenSettings,

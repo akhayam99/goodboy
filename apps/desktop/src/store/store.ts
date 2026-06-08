@@ -115,6 +115,7 @@ import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
+import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import { createWorktreesSlice } from './slices/worktrees';
 import { createBootSlice } from './slices/boot';
@@ -180,6 +181,7 @@ export interface AppState extends UpdaterState {
    */
   readonly sessionExternalTasks: Readonly<Record<SessionId, SessionExternalTask>>;
   readonly currentWorkspaceId: WorkspaceId | null;
+  readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
   readonly sessions: ReadonlyArray<Session>;
   // Archived sessions, loaded lazily per workspace when the user opens the
   // Archived tab. Kept separate from `sessions` so interactive surfaces
@@ -187,7 +189,6 @@ export interface AppState extends UpdaterState {
   // them, they exist only as historical info.
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
-  readonly pendingWorkspaceSwitch: { readonly targetId: WorkspaceId | null } | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
@@ -341,9 +342,9 @@ export interface AppActions {
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  requestWorkspaceSwitch(id: WorkspaceId | null): Promise<void>;
-  confirmWorkspaceSwitch(): Promise<void>;
-  cancelWorkspaceSwitch(): void;
+  openWorkspace(id: WorkspaceId, title: string): Promise<void>;
+  setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
+  removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
   // Lazily load archived sessions for a workspace. Called when the Archived
@@ -661,10 +662,10 @@ export const initialState: AppState = {
   workspaceIntegrations: {},
   sessionExternalTasks: {},
   currentWorkspaceId: null,
+  windowPresence: {},
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
-  pendingWorkspaceSwitch: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,
@@ -769,6 +770,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
+  ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
   ...createBootSlice(set, get),

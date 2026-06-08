@@ -12,8 +12,11 @@ import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
-import { WorkspaceSwitchDialog } from './features/workspace/components/WorkspaceSwitchDialog';
+import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
+import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
+import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -100,6 +103,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
@@ -131,6 +135,7 @@ export function App() {
   useGithubPolling();
   useProviderRefreshOnFocus();
   useUpdaterPolling();
+  useWindowPresence();
 
   useEffect(() => {
     void applyStoredZoom();
@@ -208,6 +213,12 @@ export function App() {
     const handler = () => setAddWorkspaceOpen(true);
     window.addEventListener('goodboy:add-workspace', handler);
     return () => window.removeEventListener('goodboy:add-workspace', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setSwitcherOpen(true);
+    window.addEventListener('goodboy:open-workspace-switcher', handler);
+    return () => window.removeEventListener('goodboy:open-workspace-switcher', handler);
   }, []);
 
   useEffect(() => {
@@ -335,17 +346,16 @@ export function App() {
     });
   }, []);
 
-  const requestWorkspaceSwitch = useAppStore((s) => s.requestWorkspaceSwitch);
+  const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const pendingWorkspaceSwitch = useAppStore((s) => s.pendingWorkspaceSwitch);
   const currentWorkspaceSessions = useSessions();
 
   const selectWorkspaceByIndex = useCallback(
     (idx: number) => {
       const w = workspaces[idx];
-      if (w) void requestWorkspaceSwitch(w.id);
+      if (w) void openWorkspace(w.id, w.name);
     },
-    [workspaces, requestWorkspaceSwitch],
+    [workspaces, openWorkspace],
   );
 
   const navigateSession = useCallback(
@@ -399,6 +409,7 @@ export function App() {
   useKeyboardShortcut('cmd+.', openDeleteSession);
   useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
+  useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
   useKeyboardShortcut('cmd+b', toggleLeftSidebar);
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateSession(-1), { ignoreInInputs: false });
@@ -441,6 +452,19 @@ export function App() {
         onRetry={() => void hydrate()}
         onFinished={() => setSplashFinished(true)}
       />
+    );
+  }
+
+  if (hasWorkspaces && !currentWorkspace && isMainWindow()) {
+    return (
+      <ToastProvider>
+        <NotificationToastBridge />
+        <WorkspaceLauncher />
+        {addWorkspaceOpen ? (
+          <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+        ) : null}
+        {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
+      </ToastProvider>
     );
   }
 
@@ -606,7 +630,7 @@ export function App() {
       {currentSession && archiveOpen ? (
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
-      {pendingWorkspaceSwitch ? <WorkspaceSwitchDialog /> : null}
+      {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
       {/* App-level modal host so the provider connect modal can be summoned
           from any surface (providers panel, chat callout, future onboarding
           cards) via a CustomEvent, without prop-drilling. */}
