@@ -165,6 +165,10 @@ pub struct SessionRow {
     pub parent_agent_id: Option<String>,
     #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
+    #[serde(rename = "sourceThreadId")]
+    pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceCommentUrl")]
+    pub source_comment_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -191,6 +195,10 @@ pub struct PhaseRunInsertInput {
     pub parent_agent_id: Option<String>,
     #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
+    #[serde(rename = "sourceThreadId")]
+    pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceCommentUrl")]
+    pub source_comment_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -780,7 +788,7 @@ pub fn agent_list_for_session(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
-                parent_agent_id, workflow_run_id
+                parent_agent_id, workflow_run_id, source_thread_id, source_comment_url
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -804,6 +812,8 @@ pub fn agent_list_for_session(
             verbosity: row.get(14)?,
             parent_agent_id: row.get(15)?,
             workflow_run_id: row.get(16)?,
+            source_thread_id: row.get(17)?,
+            source_comment_url: row.get(18)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -821,8 +831,8 @@ pub fn agent_insert(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
-            parent_agent_id, workflow_run_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            parent_agent_id, workflow_run_id, source_thread_id, source_comment_url)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
         rusqlite::params![
             id,
             input.session_id,
@@ -838,6 +848,8 @@ pub fn agent_insert(
             input.verbosity,
             input.parent_agent_id,
             input.workflow_run_id,
+            input.source_thread_id,
+            input.source_comment_url,
         ],
     )?;
 
@@ -859,6 +871,8 @@ pub fn agent_insert(
         verbosity: input.verbosity,
         parent_agent_id: input.parent_agent_id,
         workflow_run_id: input.workflow_run_id,
+        source_thread_id: input.source_thread_id,
+        source_comment_url: input.source_comment_url,
     })
 }
 
@@ -900,7 +914,7 @@ pub fn agent_update_status(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
-                parent_agent_id, workflow_run_id
+                parent_agent_id, workflow_run_id, source_thread_id, source_comment_url
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -924,6 +938,8 @@ pub fn agent_update_status(
             verbosity: row.get(14)?,
             parent_agent_id: row.get(15)?,
             workflow_run_id: row.get(16)?,
+            source_thread_id: row.get(17)?,
+            source_comment_url: row.get(18)?,
         })
     })?;
     match rows.next() {

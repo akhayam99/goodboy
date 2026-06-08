@@ -79,6 +79,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub system_prompt: Option<String>,
     #[serde(default)]
+    pub effort: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -207,6 +209,10 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("--append-system-prompt".to_string());
                 v.push(sp.to_string());
             }
+            if let Some(eff) = args.effort {
+                v.push("--effort".to_string());
+                v.push(eff.to_string());
+            }
             if !args.allowed_tools.is_empty() {
                 v.push("--allowedTools".to_string());
                 v.push(args.allowed_tools.join(","));
@@ -232,6 +238,7 @@ pub struct SpawnOneArgs<'a> {
     pub disallowed_tools: &'a [String],
     pub resume_session_id: Option<&'a str>,
     pub system_prompt: Option<&'a str>,
+    pub effort: Option<&'a str>,
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
 }
@@ -346,6 +353,7 @@ pub fn turn_spawn(
             disallowed_tools: &args.disallowed_tools,
             resume_session_id: args.resume_session_id.as_deref(),
             system_prompt: args.system_prompt.as_deref(),
+            effort: args.effort.as_deref(),
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
         },
@@ -480,6 +488,7 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            effort: None,
             api_key_env: None,
             credential_id: None,
         };
@@ -504,6 +513,7 @@ mod tests {
             disallowed_tools: empty,
             resume_session_id: resume,
             system_prompt,
+            effort: None,
             api_key_env: None,
             credential_id: None,
         }
@@ -539,6 +549,24 @@ mod tests {
             .position(|a| a == "--append-system-prompt")
             .expect("--append-system-prompt");
         assert_eq!(cli[idx + 1], "you are a planner");
+    }
+
+    #[test]
+    fn claude_args_include_effort_when_set() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.effort = Some("xhigh");
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
+        assert_eq!(cli[idx + 1], "xhigh");
+    }
+
+    #[test]
+    fn claude_args_omit_effort_when_none() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.contains(&"--effort".to_string()));
     }
 
     #[test]
@@ -614,6 +642,7 @@ mod tests {
             disallowed_tools: &disallowed,
             resume_session_id: None,
             system_prompt: None,
+            effort: None,
             api_key_env: None,
             credential_id: None,
         };

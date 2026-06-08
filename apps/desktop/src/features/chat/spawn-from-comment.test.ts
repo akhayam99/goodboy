@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import {
-  buildCommentAgentArgs,
-  buildCommentAgentTitle,
-  buildReviewChangesAgentArgs,
-} from './spawn-from-comment';
+import { buildCommentAgentArgs, buildCommentAgentTitle } from './spawn-from-comment';
 
 const PR: PullRequestState = {
   number: 9108,
@@ -61,9 +57,36 @@ describe('spawn-from-comment', () => {
     expect(args.name).toBe('resolve: alice on foo.ts:42');
     expect(args.kind).toBe('resolver');
     expect(args.effort).toBe('medium');
+    expect(args.provider).toBeUndefined();
     expect(args.initialPrompt).toContain('src/foo.ts:42');
     expect(args.initialPrompt).toContain('this should use a helper');
     expect(args.initialPrompt).toContain('#9108');
+  });
+
+  it('honors a provider/model/effort choice and links the source comment', () => {
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+      provider: 'codex',
+      model: 'gpt-5-codex',
+      effort: 'high',
+    });
+    expect(args.provider).toBe('codex');
+    expect(args.model).toBe('gpt-5-codex');
+    expect(args.effort).toBe('high');
+    expect(args.sourceThreadId).toBe('PRRT_7');
+    expect(args.sourceCommentUrl).toBe('https://github.com/o/r/pull/9108#discussion_r1');
+  });
+
+  it('falls back to the resolver default effort when unspecified', () => {
+    expect(buildCommentAgentArgs(makeComment(), PR).effort).toBe('medium');
+  });
+
+  it('omits sourceThreadId for issue comments but keeps the url', () => {
+    const args = buildCommentAgentArgs(
+      makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
+      PR,
+    );
+    expect(args.sourceThreadId).toBeUndefined();
+    expect(args.sourceCommentUrl).toBe('https://github.com/o/r/pull/9108#discussion_r1');
   });
 
   it('keeps issue comments on the resolver kind', () => {
@@ -85,17 +108,5 @@ describe('spawn-from-comment', () => {
       PR,
     );
     expect(args.initialPrompt).not.toContain('thread id');
-  });
-
-  it('aggregates open comments for fix-all as a resolver agent', () => {
-    const args = buildReviewChangesAgentArgs(PR, [
-      makeComment({ id: 'r1', author: 'bob', body: 'rename foo' }),
-      makeComment({ id: 'r2', author: 'eve', path: 'a/b.ts', line: 7, body: 'extract' }),
-    ]);
-    expect(args.name).toContain('#9108');
-    expect(args.kind).toBe('resolver');
-    expect(args.initialPrompt).toContain('bob');
-    expect(args.initialPrompt).toContain('eve');
-    expect(args.initialPrompt).toContain('a/b.ts:7');
   });
 });

@@ -83,6 +83,8 @@ interface RawAgentRow {
   readonly lastViewedAt: string | null;
   readonly kind: string | null;
   readonly verbosity: string | null;
+  readonly sourceThreadId: string | null;
+  readonly sourceCommentUrl: string | null;
 }
 
 function rowToStep(row: RawWorkflowStepRow): Step {
@@ -156,6 +158,8 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
+    ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
+    ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
   };
 }
 
@@ -288,6 +292,8 @@ export interface AgentInsertArgs {
   readonly completedAt?: IsoDateTime;
   readonly kind?: string;
   readonly verbosity?: VerbosityLevel;
+  readonly sourceThreadId?: string;
+  readonly sourceCommentUrl?: string;
 }
 
 export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
@@ -307,6 +313,8 @@ export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
       completedAt: run.completedAt ?? null,
       kind: run.kind ?? null,
       verbosity: run.verbosity ?? null,
+      sourceThreadId: run.sourceThreadId ?? null,
+      sourceCommentUrl: run.sourceCommentUrl ?? null,
     },
   });
   return rowToAgent(row);

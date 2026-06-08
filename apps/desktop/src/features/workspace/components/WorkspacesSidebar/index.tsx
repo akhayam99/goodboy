@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Ban,
   Check,
+  CheckCheck,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -23,10 +24,12 @@ import {
   DollarSign,
   FolderPlus,
   Gauge,
+  GitCommit,
   GitPullRequest,
   HelpCircle,
   Layers,
   Loader2,
+  MessageSquareReply,
   Moon,
   MousePointerClick,
   PanelLeftClose,
@@ -111,6 +114,7 @@ import { SessionActivityBar } from '../SessionActivityBar';
 import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { openUrl } from '../../../../shared/lib/editor';
 
 interface WorkspacesSidebarProps {
   onOpenSettings: () => void;
@@ -751,7 +755,34 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }),
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
+  const prNumber = useAppStore((s) => s.sessionGithub[task.id]?.pr?.number ?? null);
+  const resolvedThreadIds = useAppStore(
+    useShallow(
+      (s) =>
+        new Set(
+          (s.sessionGithub[task.id]?.detail?.comments ?? [])
+            .filter((c) => c.resolved === true && c.threadId != null)
+            .map((c) => c.threadId as string),
+        ),
+    ),
+  );
+  const pendingThreadIds = useAppStore(
+    useShallow((s) => new Set((s.sessionPendingResolutions[task.id] ?? []).map((r) => r.threadId))),
+  );
+  const resolverState = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) return out;
+      for (const run of runs) {
+        const st = s.resolverState[run.id];
+        if (st) out[run.id] = st;
+      }
+      return out;
+    }),
+  );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
@@ -791,6 +822,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
       return next;
     });
   }, []);
+  const [resolveExpanded, setResolveExpanded] = useState(true);
   const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
   const toggleClusterExpand = useCallback((id: string) => {
     setClusterExpand((prev) => {
@@ -923,6 +955,22 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     return map;
   }, [messages]);
+
+  const resolverAgents = useMemo(
+    () =>
+      sorted.filter(
+        (r) =>
+          r.parentAgentId == null &&
+          r.stepId == null &&
+          resolveAgentKind(
+            r.name,
+            firstUserTextByAgentId.get(r.id) ?? null,
+            agentKindOverride[r.id] ?? null,
+          ) === 'resolver',
+      ),
+    [sorted, firstUserTextByAgentId, agentKindOverride],
+  );
+  const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
 
   /**
    * Cumulative telemetry per agent across every providerRun we recorded for
@@ -1298,8 +1346,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
         label="Agents"
       />
       {hasAnyWorkflow ? (
-        adHocAgents.length > 0 ? (
-          <ul className="flex flex-col gap-1 pl-2">{adHocAgents.map(renderAdHocRow)}</ul>
+        adHocAgents.some((r) => !resolverIds.has(r.id)) ? (
+          <ul className="flex flex-col gap-1 pl-2">
+            {adHocAgents.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+          </ul>
         ) : null
       ) : sorted.length === 0 ? (
         loading.agents ? (
@@ -1311,14 +1361,31 @@ function AgentsSection({ task }: AgentsSectionProps) {
               </li>
             ))}
           </ul>
-        ) : (
+        ) : resolverAgents.length === 0 ? (
           <p className="px-2 py-2 text-xs text-muted-foreground/70">
             No agents yet. Spawn one below.
           </p>
-        )
+        ) : null
       ) : (
-        <ul className="flex flex-col gap-1 pl-2">{sorted.map(renderAdHocRow)}</ul>
+        <ul className="flex flex-col gap-1 pl-2">
+          {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+        </ul>
       )}
+      {resolverAgents.length > 0 ? (
+        <ResolveCluster
+          agents={resolverAgents}
+          sessionId={task.id}
+          prNumber={prNumber}
+          resolvedThreadIds={resolvedThreadIds}
+          pendingThreadIds={pendingThreadIds}
+          resolverState={resolverState}
+          selectedAgentId={selectedAgentId}
+          expanded={resolveExpanded}
+          onToggle={() => setResolveExpanded((v) => !v)}
+          onSelect={onPickAgent}
+          onForceNext={() => void activateNextResolver(task.id)}
+        />
+      ) : null}
       <div className="flex flex-col gap-1 pl-2">
         <PlanReadySuggestion task={task} />
         <SpawnAgentControl sessionId={task.id} />
@@ -1582,6 +1649,214 @@ function ScoutSubtree({
             </Fragment>
           ))
         : null}
+    </div>
+  );
+}
+
+type ResolverState = 'awaiting' | 'committed' | 'wontfix';
+type ResolverStatus =
+  | 'running'
+  | 'failed'
+  | 'pending'
+  | 'resolved'
+  | 'committed'
+  | 'wontfix'
+  | 'awaiting'
+  | 'done';
+
+function resolverStatus(
+  agent: Agent,
+  resolvedThreadIds: ReadonlySet<string>,
+  pendingThreadIds: ReadonlySet<string>,
+  state: ResolverState | undefined,
+): ResolverStatus {
+  if (agent.status === 'running') return 'running';
+  if (agent.status === 'failed') return 'failed';
+  if (agent.status === 'pending') return 'pending';
+  const tid = agent.sourceThreadId;
+  if (tid != null && resolvedThreadIds.has(tid)) return 'resolved';
+  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) return 'committed';
+  if (state === 'wontfix') return 'wontfix';
+  if (state === 'awaiting') return 'awaiting';
+  return 'done';
+}
+
+interface ResolveClusterProps {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly sessionId: SessionId;
+  readonly prNumber: number | null;
+  readonly resolvedThreadIds: ReadonlySet<string>;
+  readonly pendingThreadIds: ReadonlySet<string>;
+  readonly resolverState: Readonly<Record<string, ResolverState>>;
+  readonly selectedAgentId: AgentId | null;
+  readonly expanded: boolean;
+  readonly onToggle: () => void;
+  readonly onSelect: (id: AgentId) => void;
+  readonly onForceNext: () => void;
+}
+
+function ResolveCluster({
+  agents,
+  sessionId,
+  prNumber,
+  resolvedThreadIds,
+  pendingThreadIds,
+  resolverState,
+  selectedAgentId,
+  expanded,
+  onToggle,
+  onSelect,
+  onForceNext,
+}: ResolveClusterProps) {
+  const statusOf = (a: Agent): ResolverStatus =>
+    resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
+  const resolvedCount = agents.filter((a) => statusOf(a) === 'resolved').length;
+  const anyRunning = agents.some((a) => a.status === 'running');
+  const queuedCount = agents.filter((a) => a.status === 'pending').length;
+  const stalled = !anyRunning && queuedCount > 0;
+  const jump = (agent: Agent) => {
+    if (agent.sourceThreadId != null && prNumber != null) {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-github-studio', {
+          detail: { sessionId, prNumber, threadId: agent.sourceThreadId },
+        }),
+      );
+    } else if (agent.sourceCommentUrl != null) {
+      void openUrl(agent.sourceCommentUrl);
+    }
+  };
+  return (
+    <div className="ml-2 mt-1 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+      <div className="flex items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? 'collapse' : 'expand'} resolve cluster`}
+          className="flex min-w-0 flex-1 items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-lime-500/80 transition-colors hover:text-lime-500"
+        >
+          {expanded ? (
+            <ChevronDown size={10} aria-hidden className="shrink-0" />
+          ) : (
+            <ChevronRight size={10} aria-hidden className="shrink-0" />
+          )}
+          resolve {resolvedCount}/{agents.length}
+        </button>
+        {stalled ? (
+          <button
+            type="button"
+            onClick={onForceNext}
+            title="the current resolver has not committed or explained yet; run the next queued one anyway"
+            className="inline-flex shrink-0 items-center gap-1 rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning transition-colors hover:bg-warning/20"
+          >
+            <Play size={9} aria-hidden />
+            Run next ({queuedCount})
+          </button>
+        ) : null}
+      </div>
+      {expanded
+        ? agents.map((agent, i) => (
+            <ResolveClusterRow
+              key={agent.id}
+              agent={agent}
+              index={i}
+              total={agents.length}
+              status={statusOf(agent)}
+              isSelected={agent.id === selectedAgentId}
+              canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
+              onSelect={() => onSelect(agent.id)}
+              onJump={() => jump(agent)}
+            />
+          ))
+        : null}
+    </div>
+  );
+}
+
+interface ResolveClusterRowProps {
+  readonly agent: Agent;
+  readonly index: number;
+  readonly total: number;
+  readonly status: ResolverStatus;
+  readonly isSelected: boolean;
+  readonly canJump: boolean;
+  readonly onSelect: () => void;
+  readonly onJump: () => void;
+}
+
+function ResolveClusterRow({
+  agent,
+  index,
+  total,
+  status,
+  isSelected,
+  canJump,
+  onSelect,
+  onJump,
+}: ResolveClusterRowProps) {
+  const icon =
+    status === 'running' ? (
+      <Loader2 size={10} className="animate-spin text-info" aria-hidden />
+    ) : status === 'failed' ? (
+      <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+    ) : status === 'pending' ? (
+      <Clock size={10} className="text-muted-foreground/60" aria-hidden />
+    ) : status === 'resolved' ? (
+      <CheckCheck size={10} className="text-success" aria-hidden />
+    ) : status === 'committed' ? (
+      <GitCommit size={10} className="text-warning" aria-hidden />
+    ) : status === 'wontfix' ? (
+      <Ban size={10} className="text-muted-foreground/70" aria-hidden />
+    ) : status === 'awaiting' ? (
+      <AlertTriangle size={10} className="text-warning" aria-hidden />
+    ) : (
+      <Check size={10} className="text-muted-foreground/70" aria-hidden />
+    );
+  const statusLabel =
+    status === 'resolved'
+      ? 'resolved on GitHub'
+      : status === 'committed'
+        ? 'committed locally, pending push'
+        : status === 'wontfix'
+          ? 'explained, pending resolve'
+          : status === 'awaiting'
+            ? 'needs you: no commit yet'
+            : status === 'running'
+              ? 'working'
+              : status === 'pending'
+                ? 'queued'
+                : status === 'failed'
+                  ? 'failed'
+                  : 'done locally';
+  return (
+    <div
+      className={cn(
+        'flex w-full items-center gap-2 rounded px-2 py-1 text-2xs font-medium transition-colors',
+        isSelected ? 'bg-elevated text-foreground' : 'text-foreground/70 hover:bg-muted/60',
+      )}
+    >
+      <span className="tabular-nums text-muted-foreground/50">
+        {index + 1}/{total}
+      </span>
+      <span title={statusLabel}>{icon}</span>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="min-w-0 flex-1 truncate text-left hover:text-foreground"
+      >
+        {agent.name}
+      </button>
+      {canJump ? (
+        <button
+          type="button"
+          onClick={onJump}
+          title="go to the review comment"
+          aria-label="go to the review comment"
+          className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        >
+          <MessageSquareReply size={11} aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }

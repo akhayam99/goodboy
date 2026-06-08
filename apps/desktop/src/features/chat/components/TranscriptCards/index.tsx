@@ -16,6 +16,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { displayPath } from '../../../../shared/utils/display-path';
 import { HandoffChip } from '../HandoffChip';
 import { CommentResolvedChip } from '../CommentResolvedChip';
+import { CommentWontfixChip } from '../CommentWontfixChip';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -184,11 +185,13 @@ function formatTokens(n: number): string {
 
 const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
 const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
+const COMMENT_WONTFIX_MARKER_RE = /<<comment-wontfix\s+[^>]+?>>/g;
 
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
   const displayText = text
     .replace(HANDOFF_MARKER_RE, '')
     .replace(COMMENT_RESOLVED_MARKER_RE, '')
+    .replace(COMMENT_WONTFIX_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   // The comment-resolved chip lives in the top-right of its own row and
@@ -211,6 +214,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
         <>
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
+          <CommentWontfixChip assistantText={text} sessionId={sessionId} />
         </>
       ) : null}
     </div>

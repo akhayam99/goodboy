@@ -11,10 +11,18 @@ import { ScrollFade } from '../../../../shared/components/ScrollFade';
 interface Props {
   readonly workspaceName: string;
   readonly initialSessionId: SessionId | null;
+  readonly initialPrNumber?: number | null;
+  readonly initialThreadId?: string | null;
   readonly onClose: () => void;
 }
 
-export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props) {
+export function GitHubStudio({
+  workspaceName,
+  initialSessionId,
+  initialPrNumber = null,
+  initialThreadId = null,
+  onClose,
+}: Props) {
   const groups = useGithubInbox();
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
 
@@ -23,6 +31,8 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
     const first = groups[0]?.rows[0]?.session.id ?? null;
     if (first) setFocused(first);
   }, [focused, groups]);
+
+  const onInitialSession = focused === initialSessionId;
 
   return (
     <StudioShell
@@ -39,7 +49,12 @@ export function GitHubStudio({ workspaceName, initialSessionId, onClose }: Props
           </ScrollFade>
           <Divider orientation="vertical" />
           <div className="min-h-0 flex-1">
-            <PrDetailPanel sessionId={focused} onClose={requestClose} />
+            <PrDetailPanel
+              sessionId={focused}
+              initialPrNumber={onInitialSession ? initialPrNumber : null}
+              initialThreadId={onInitialSession ? initialThreadId : null}
+              onClose={requestClose}
+            />
           </div>
         </>
       )}

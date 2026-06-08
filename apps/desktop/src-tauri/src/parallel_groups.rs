@@ -448,6 +448,7 @@ pub fn parallel_agent_spawn(
                 disallowed_tools: &args.disallowed_tools,
                 resume_session_id: None,
                 system_prompt: None,
+                effort: None,
                 api_key_env: args.api_key_env.as_deref(),
                 credential_id: args.credential_id.as_deref(),
             },

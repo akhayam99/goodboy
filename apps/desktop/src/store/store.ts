@@ -259,7 +259,11 @@ export interface AppState extends UpdaterState {
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
+  readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
+  readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
+  readonly resolverState: Readonly<Record<AgentId, 'awaiting' | 'committed' | 'wontfix'>>;
   // Per-agent input draft. Ephemeral, in-memory only (not persisted). Lets the
   // user keep an unsent composition when switching agents/sessions.
   readonly agentDraft: Readonly<Record<AgentId, string>>;
@@ -487,14 +491,20 @@ export interface AppActions {
       workflowRunId?: WorkflowRunId;
       name?: string;
       model?: string;
+      provider?: ProviderId;
       effort?: string;
       initialPrompt?: string;
       triggeredPlanId?: PlanId;
       kindOverride?: AgentKind;
+      sourceThreadId?: string;
+      sourceCommentUrl?: string;
+      deferKickoff?: boolean;
     },
   ): Promise<AgentId>;
+  activateNextResolver(sessionId: SessionId): Promise<void>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
   setAgentKind(agentId: AgentId, kind: AgentKind): void;
+  setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -710,7 +720,11 @@ export const initialState: AppState = {
   sessionPendingResolutions: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
+  agentProviderOverride: {},
+  agentEffortOverride: {},
   agentKindOverride: {},
+  pendingResolverKickoff: {},
+  resolverState: {},
   agentDraft: {},
   diffComments: {},
   notifications: [],
