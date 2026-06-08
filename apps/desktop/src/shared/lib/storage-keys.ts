@@ -15,3 +15,13 @@ export const STORAGE_PREFIXES = {
   diffView: `${PREFIX}diff-view:`,
   sessionView: `${PREFIX}session-view:`,
 } as const;
+
+export function wipeLocalStorage(): void {
+  if (typeof localStorage === 'undefined') return;
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(PREFIX)) keys.push(key);
+  }
+  for (const key of keys) localStorage.removeItem(key);
+}

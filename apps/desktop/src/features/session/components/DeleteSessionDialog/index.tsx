@@ -57,7 +57,7 @@ export function DeleteSessionDialog({ session, open, onClose }: Props) {
       onClose={onClose}
       title="Delete session?"
       description="Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge."
-      size="sm"
+      size="md"
       footer={
         <>
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
@@ -66,10 +66,10 @@ export function DeleteSessionDialog({ session, open, onClose }: Props) {
           </Button>
           <Button variant="secondary" onClick={() => void onArchiveInstead()} disabled={busy}>
             <Archive size={13} aria-hidden className="mr-1.5" />
-            {busy ? 'Working…' : 'Archive instead'}
+            {busy ? 'Working…' : 'Archive'}
           </Button>
           <Button variant="danger" onClick={() => void onConfirmDelete()} disabled={busy}>
-            {busy ? 'Deleting…' : 'Delete session'}
+            {busy ? 'Deleting…' : 'Delete'}
           </Button>
         </>
       }
