@@ -3,6 +3,7 @@ import type {
   AgentId,
   AgentStatus,
   IsoDateTime,
+  ModelEffort,
   ProviderRunId,
   SessionId,
   StepId,
@@ -56,7 +57,7 @@ function toAgent(row: AgentRow): Agent {
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as 'low' | 'medium' | 'high' | 'extra-high' | 'max',
+      effort: row.effort as ModelEffort,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
@@ -178,7 +179,7 @@ export async function restoreAgent(db: Database, id: AgentId): Promise<void> {
 
 export interface AgentConfigUpdate {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
-  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max' | null;
+  effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
   kind?: string | null;

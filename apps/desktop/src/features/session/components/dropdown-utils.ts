@@ -1,3 +1,4 @@
+import { getModelDescriptor } from '@goodboy/core';
 import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const MODEL_COST_DOT: Record<string, string> = {
@@ -13,6 +14,8 @@ export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
 };
 
 export function modelCostTier(modelId: string): 'cheap' | 'mid' | 'premium' {
+  const descriptor = getModelDescriptor(modelId);
+  if (descriptor) return descriptor.costTier === 'expensive' ? 'premium' : descriptor.costTier;
   if (/haiku|mini|fast/i.test(modelId)) return 'cheap';
   if (/opus/i.test(modelId)) return 'premium';
   return 'mid';

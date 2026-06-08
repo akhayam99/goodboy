@@ -80,6 +80,7 @@ import {
   writeAttachment,
 } from '../../../features/chat/turn';
 import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
+import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
@@ -124,12 +125,15 @@ interface Input {
 }
 
 const EFFORT_FLAG: Readonly<Record<string, string>> = {
+  minimal: 'minimal',
   low: 'low',
   medium: 'medium',
   high: 'high',
   'extra-high': 'xhigh',
   max: 'max',
 };
+
+const EFFORT_PROVIDERS: ReadonlySet<string> = new Set(['anthropic', 'codex']);
 
 export function sendTurn(set: SetFn, get: GetFn) {
   return async ({
@@ -834,7 +838,10 @@ export function sendTurn(set: SetFn, get: GetFn) {
     }
 
     const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
-    const effortFlag = provider === 'anthropic' && rawEffort ? EFFORT_FLAG[rawEffort] : undefined;
+    const effortFlag =
+      rawEffort && EFFORT_PROVIDERS.has(provider)
+        ? EFFORT_FLAG[clampEffort(model, rawEffort as EffortLevel)]
+        : undefined;
 
     try {
       for await (const event of runTurn({

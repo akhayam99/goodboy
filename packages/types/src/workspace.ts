@@ -9,6 +9,7 @@ import type {
   WorkspaceScriptId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
+import type { ModelEffort } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 
 export type Workspace = Readonly<{
@@ -77,7 +78,7 @@ export type Session = Readonly<{
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+  effort?: ModelEffort;
   modelOverride?: string;
   providerOverride?: string;
   createdAt: IsoDateTime;

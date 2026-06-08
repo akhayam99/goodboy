@@ -47,7 +47,12 @@ import {
   type QuickActionItem,
 } from '../../../quick-actions';
 import { type VerbosityLevel } from '../../../../features/settings/verbosity';
-import { EFFORT_LEVELS, type EffortLevel, suggestLighterModel } from '../../utils/chat-constants';
+import {
+  EFFORT_LEVELS,
+  type EffortLevel,
+  clampEffort,
+  suggestLighterModel,
+} from '../../utils/chat-constants';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
@@ -306,7 +311,10 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     agentModelOverride ??
     session.providerPreference.defaultModel ??
     getDefaultTurnModel(defaultProvider);
-  const effectiveModel = selectedModel ?? defaultModel;
+  const effectiveModel =
+    selectedModel ??
+    (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
+  const effectiveEffort = clampEffort(effectiveModel, effort);
 
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
 
@@ -1215,7 +1223,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
                 models={modelCandidates}
                 provider={effectiveProvider}
                 model={effectiveModel}
-                effort={effort}
+                effort={effectiveEffort}
                 verbosity={verbosity}
                 connectedProviders={connectedProviderIds}
                 disabled={!allowOverride || isRunning}

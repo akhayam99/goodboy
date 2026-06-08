@@ -99,7 +99,7 @@ export function ModelPicker({
   }, [disabled]);
 
   const effortLevels = modelEffortLevels(model);
-  const showEffort = provider === 'anthropic' && effortLevels !== null;
+  const showEffort = effortLevels !== null;
   const tier = modelTier(model);
 
   // Two-level grouping: family → (subfamily ?? null) → ids. Subfamily=null

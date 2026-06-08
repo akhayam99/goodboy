@@ -41,7 +41,9 @@ export async function resolveProvider(input: ResolveProviderInput): Promise<Rout
   const preferredModel =
     useOverride && turnOverride!.model !== undefined
       ? turnOverride!.model
-      : (sessionPreference.defaultModel ?? getDefaultModel(preferredProvider));
+      : preferredProvider === sessionPreference.defaultProvider
+        ? (sessionPreference.defaultModel ?? getDefaultModel(preferredProvider))
+        : getDefaultModel(preferredProvider);
 
   const preferredName = PROVIDER_ID_TO_NAME[preferredProvider];
   const preferredConnected = connectedProviders.includes(preferredProvider);

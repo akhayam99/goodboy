@@ -116,6 +116,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('@goodboy/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
   getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
+  getModelDescriptor: () => null,
   PROVIDER_CAPABILITIES: {
     anthropic: {
       models: [{ id: 'claude-3-5-sonnet-latest', tier: 'turn', contextWindow: 200_000 }],

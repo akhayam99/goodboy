@@ -370,13 +370,31 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined();
   });
 
-  it('omits effort when the resolved provider is not anthropic', async () => {
+  it('passes clamped effort to runTurn when the resolved provider is codex', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'codex',
-      selectedModel: 'gpt-5-codex',
+      selectedModel: 'gpt-5.5',
+      reason: 'override',
+    });
+    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'max' } });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('high');
+  });
+
+  it('omits effort when the resolved provider has no effort axis (gemini)', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'gemini',
+      selectedModel: 'gemini-2.5-pro',
       reason: 'override',
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } });

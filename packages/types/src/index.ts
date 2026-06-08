@@ -51,6 +51,9 @@ export type {
 } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
+  ModelCostTier,
+  ModelEffort,
+  ModelFamily,
   ModelTier,
   ProviderConnectionState,
   ProviderInfo,

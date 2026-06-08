@@ -6,7 +6,9 @@ describe('ResolveBoard config', () => {
     expect(clampEffort('claude-sonnet-4-5', 'high')).toBe('high');
     expect(clampEffort('claude-sonnet-4-5', 'max')).toBe('high');
     expect(clampEffort('claude-opus-4-5', 'max')).toBe('max');
-    expect(clampEffort('gpt-5-codex', 'max')).toBe('max');
+    expect(clampEffort('gpt-5-codex', 'max')).toBe('high');
+    expect(clampEffort('gpt-5.5', 'max')).toBe('high');
+    expect(clampEffort('gpt-5.5', 'minimal')).toBe('minimal');
   });
 
   it('configFor seeds the resolver default model for anthropic', () => {

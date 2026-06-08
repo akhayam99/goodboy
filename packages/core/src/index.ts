@@ -76,6 +76,8 @@ export {
   getDefaultTurnModel,
 } from './providers/capabilities';
 
+export { getModelDescriptor } from './providers/model-display';
+
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
 // CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
