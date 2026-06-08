@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, FileDown, FolderCode, Keyboard, Link2, Trash2 } from 'lucide-react';
+import { DollarSign, FileDown, FolderCode, Keyboard, Link2, Sparkles, Trash2 } from 'lucide-react';
 import { Button, Dialog, Input, KbdPill } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
@@ -9,6 +9,7 @@ import {
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
@@ -186,6 +187,21 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
               Workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
               next to each workspace row.
             </p>
+            <Field
+              label="Setup guide"
+              help="Replay the first-run walkthrough for providers and workspaces."
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  reopenWizard();
+                }}
+              >
+                <Sparkles size={14} aria-hidden /> Run setup again
+              </Button>
+            </Field>
           </div>
         );
       case 'shortcuts':

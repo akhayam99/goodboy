@@ -25,6 +25,7 @@ import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
 import { DogMascot } from './shared/components/DogMascot';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
+import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
@@ -195,6 +196,12 @@ export function App() {
     };
     window.addEventListener('goodboy:open-linear-studio', handler);
     return () => window.removeEventListener('goodboy:open-linear-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setAddWorkspaceOpen(true);
+    window.addEventListener('goodboy:add-workspace', handler);
+    return () => window.removeEventListener('goodboy:add-workspace', handler);
   }, []);
 
   useEffect(() => {
@@ -602,6 +609,7 @@ export function App() {
           from any surface (providers panel, chat callout, future onboarding
           cards) via a CustomEvent, without prop-drilling. */}
       <ProviderModalHost />
+      <OnboardingWizard />
     </ToastProvider>
   );
 }
