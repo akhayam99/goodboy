@@ -33,6 +33,30 @@ Two voices in the codebase:
 - **"enterprise-grade"**, **"world-class"**, **"best-in-class"**. Empty
   superlatives. Be specific or stay quiet.
 
+### Neutrality
+
+Goodboy is its own tool and routes across many providers. Copy must not bind
+the product to one provider or to the person who happened to write it.
+
+- **No single-provider assumption in chrome.** Launch screens, empty states,
+  headers, and other product surfaces don't address the user as a Claude
+  session or imply Claude is the runtime. Name a specific provider only where
+  the copy is genuinely about that provider (a Claude error, a Codex setup
+  step). The orchestrator itself stays neutral.
+- **No hardcoded user nickname.** Don't bake in a name or salutation. If a
+  greeting needs a name, read it from the user's own profile, never a constant.
+  In doubt, drop the greeting: the mascot plus the action is enough.
+- **Product copy is in English.** Goodboy ships in English: every label,
+  placeholder, empty state, tooltip, and button. The language a contributor
+  happens to chat in (with a teammate, in a PR, with a coding agent) never
+  becomes the product's language. If a new string is in any other language,
+  it's a bug. Translate it.
+- **Don't leak a contributor's assistant config.** How a coding agent is told
+  to address its operator (nicknames, casing, house style, conversational
+  language) belongs to that contributor's local setup, never to Goodboy's
+  product copy or code. If you see such a string in a mock or a PR, it's a
+  bug. Strip it.
+
 ### Punctuation
 
 - **No em-dashes** (`—`). Use a period, comma, colon, or parens instead.
