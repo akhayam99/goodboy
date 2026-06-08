@@ -45,7 +45,6 @@ import { worktreeDiff } from '../../../../features/worktree/worktree';
 
 interface ChatViewProps {
   session: Session;
-  onRequestEnd?: () => void;
   // Keep-alive aware. False when this instance is mounted but hidden behind
   // another session's view, used to skip background DB fetches.
   isActive?: boolean;

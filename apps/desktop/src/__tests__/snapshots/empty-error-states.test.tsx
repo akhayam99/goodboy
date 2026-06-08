@@ -91,7 +91,8 @@ vi.mock('../../store', () => ({
       setCurrentWorkspace: vi.fn(),
       setCurrentSession: vi.fn(),
       addWorkspace: vi.fn(),
-      endSession: vi.fn(),
+      deleteTask: vi.fn(),
+      archiveTask: vi.fn(),
       sendTurn: vi.fn(),
       cancelCurrentTurn: vi.fn(),
       hydrate: vi.fn(),
@@ -161,7 +162,7 @@ function mockStore(partial: Partial<AppStore>): void {
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
-import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
+import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
@@ -270,12 +271,12 @@ describe('snapshot, error states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('EndSessionDialog: error state', () => {
+  it('DeleteSessionDialog: error state', () => {
     mockStore({
-      endSession: vi.fn().mockRejectedValue(new Error('session already ended')),
+      deleteTask: vi.fn().mockRejectedValue(new Error('session not found')),
     });
     const { container } = render(
-      <EndSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />,
+      <DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />,
     );
     expect(container.firstChild).toMatchSnapshot();
   });

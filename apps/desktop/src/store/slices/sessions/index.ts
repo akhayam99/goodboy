@@ -2,7 +2,6 @@ import { archiveTask } from './archiveTask';
 import { autoTitleSession } from './autoTitleSession';
 import { createSession } from './createSession';
 import { deleteTask } from './deleteTask';
-import { endSession } from './endSession';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
@@ -27,7 +26,6 @@ export function createSessionsSlice(set: SetFn, get: GetFn) {
     deleteTask: deleteTask(set, get),
     archiveTask: archiveTask(set, get),
     unarchiveTask: unarchiveTask(set, get),
-    endSession: endSession(set, get),
     createSession: createSession(set, get),
     setCurrentSession: setCurrentSession(set, get),
   };

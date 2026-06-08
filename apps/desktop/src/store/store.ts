@@ -437,7 +437,6 @@ export interface AppActions {
   }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
   retrySummarizer(sessionId: SessionId): void;
-  endSession(sessionId: SessionId): Promise<void>;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;

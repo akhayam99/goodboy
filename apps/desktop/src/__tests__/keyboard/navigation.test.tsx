@@ -36,7 +36,8 @@ vi.mock('../../store', () => ({
       setCurrentWorkspace: vi.fn(),
       setCurrentSession: vi.fn(),
       addWorkspace: vi.fn(),
-      endSession: vi.fn(),
+      deleteTask: vi.fn(),
+      archiveTask: vi.fn(),
       sendTurn: vi.fn(),
       cancelCurrentTurn: vi.fn(),
       hydrate: vi.fn(),
@@ -74,7 +75,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { EndSessionDialog } from '../../features/session/components/EndSessionDialog';
+import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
 import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
@@ -96,10 +97,10 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
-describe('keyboard, EndSessionDialog', () => {
+describe('keyboard, DeleteSessionDialog', () => {
   it('Escape key triggers onClose', async () => {
     const onClose = vi.fn();
-    render(<EndSessionDialog session={makeSession()} open={true} onClose={onClose} />);
+    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={onClose} />);
     fireEvent.keyDown(document, { key: 'Escape' });
     // Dialog native close event fires onClose via the Dialog component listener
     // We also verify the cancel button is keyboard-focusable
@@ -109,25 +110,30 @@ describe('keyboard, EndSessionDialog', () => {
 
   it('cancel button is focusable via Tab', async () => {
     const user = userEvent.setup();
-    render(<EndSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
     await user.tab();
     const focused = document.activeElement;
     expect(focused?.tagName.toLowerCase()).toBe('button');
   });
 
-  it('Enter on "end session" button calls endSession action', async () => {
+  it('Enter on "delete session" button keeps it keyboard-reachable', async () => {
     const user = userEvent.setup();
-    render(<EndSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
-    const endBtn = screen.getByRole('button', { name: /end session/i });
-    endBtn.focus();
+    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    const deleteBtn = screen.getByRole('button', { name: /delete session/i });
+    deleteBtn.focus();
     await user.keyboard('{Enter}');
-    // endSession mock is on the store; we verify the button is reachable via keyboard
-    expect(document.activeElement).toBe(endBtn);
+    expect(document.activeElement).toBe(deleteBtn);
   });
 
-  it('Tab cycles through cancel → end session buttons', async () => {
+  it('exposes both archive-instead and delete actions', () => {
+    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /archive instead/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
+  });
+
+  it('Tab cycles through cancel → archive → delete buttons', async () => {
     const user = userEvent.setup();
-    render(<EndSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
     await user.tab();
     const first = document.activeElement;
     await user.tab();

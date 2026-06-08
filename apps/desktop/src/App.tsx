@@ -5,7 +5,7 @@ import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
-import { EndSessionDialog } from './features/session/components/EndSessionDialog';
+import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsDialog } from './features/settings/components/SettingsDialog';
 import { ToastProvider } from './app/components/Toast';
@@ -94,7 +94,7 @@ export function App() {
   const [settingsInitialSection, setSettingsInitialSection] = useState<string | undefined>(
     undefined,
   );
-  const [endOpen, setEndOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
@@ -286,10 +286,9 @@ export function App() {
     });
   }, [currentSession?.id]);
 
-  const onRequestEnd = useCallback(() => setEndOpen(true), []);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
-  const openEndSession = useCallback(() => {
-    if (currentSession) setEndOpen(true);
+  const openDeleteSession = useCallback(() => {
+    if (currentSession) setDeleteOpen(true);
   }, [currentSession]);
   const openArchiveSession = useCallback(() => {
     if (currentSession) setArchiveOpen(true);
@@ -297,10 +296,10 @@ export function App() {
 
   useEffect(() => {
     const handler = () => {
-      if (currentSession) setEndOpen(true);
+      if (currentSession) setDeleteOpen(true);
     };
-    window.addEventListener('goodboy:end-session', handler);
-    return () => window.removeEventListener('goodboy:end-session', handler);
+    window.addEventListener('goodboy:delete-session', handler);
+    return () => window.removeEventListener('goodboy:delete-session', handler);
   }, [currentSession]);
 
   useEffect(() => {
@@ -390,7 +389,7 @@ export function App() {
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);
-  useKeyboardShortcut('cmd+.', openEndSession);
+  useKeyboardShortcut('cmd+.', openDeleteSession);
   useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+b', toggleLeftSidebar);
@@ -480,12 +479,7 @@ export function App() {
             ) : currentSession ? (
               <div className="relative h-full w-full">
                 {deferredRenderedIds.map((id) => (
-                  <KeepAliveChatPanel
-                    key={id}
-                    sessionId={id}
-                    isActive={id === deferredActiveId}
-                    onRequestEnd={onRequestEnd}
-                  />
+                  <KeepAliveChatPanel key={id} sessionId={id} isActive={id === deferredActiveId} />
                 ))}
               </div>
             ) : (
@@ -599,8 +593,8 @@ export function App() {
           loader={commitDiffLoader}
         />
       ) : null}
-      {currentSession && endOpen ? (
-        <EndSessionDialog session={currentSession} open onClose={() => setEndOpen(false)} />
+      {currentSession && deleteOpen ? (
+        <DeleteSessionDialog session={currentSession} open onClose={() => setDeleteOpen(false)} />
       ) : null}
       {currentSession && archiveOpen ? (
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
@@ -617,15 +611,14 @@ export function App() {
 interface KeepAliveChatPanelProps {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
-  readonly onRequestEnd: () => void;
 }
 
-function KeepAliveChatPanel({ sessionId, isActive, onRequestEnd }: KeepAliveChatPanelProps) {
+function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
   if (!session) return null;
   return (
     <div hidden={!isActive} className="absolute inset-0">
-      <ChatView session={session} isActive={isActive} onRequestEnd={onRequestEnd} />
+      <ChatView session={session} isActive={isActive} />
     </div>
   );
 }
