@@ -52,7 +52,7 @@ describe('PlannerAgent', () => {
       spawnFn: spawnFn as never,
     });
 
-    const promise = agent.plan({ theme: 'Refactor auth module' });
+    const promise = agent.plan({ process: 'Refactor auth module' });
 
     setImmediate(() => {
       child.stdout.emit('data', Buffer.from(claudeEnvelope, 'utf8'));
@@ -76,7 +76,7 @@ describe('PlannerAgent', () => {
       spawnFn: spawnFn as never,
     });
 
-    const promise = agent.plan({ theme: 'X' });
+    const promise = agent.plan({ process: 'X' });
 
     setImmediate(() => {
       child.stderr.emit('data', Buffer.from('boom', 'utf8'));
@@ -86,7 +86,7 @@ describe('PlannerAgent', () => {
     await expect(promise).rejects.toBeInstanceOf(PlannerSpawnError);
   });
 
-  it('passes theme + repoContext into user message', async () => {
+  it('passes process + repoContext into user message', async () => {
     const claudeEnvelope = JSON.stringify({ result: validPlannerJson });
     const child = makeFakeChild();
     let capturedArgs: string[] = [];
@@ -101,7 +101,7 @@ describe('PlannerAgent', () => {
     });
 
     const promise = agent.plan({
-      theme: 'Migrate to Drizzle ORM',
+      process: 'Migrate to Drizzle ORM',
       repoContext: 'Workspace: goodboy, TypeScript monorepo',
     });
 

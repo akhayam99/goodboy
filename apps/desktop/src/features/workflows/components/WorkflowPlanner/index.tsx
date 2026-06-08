@@ -42,7 +42,7 @@ interface StepOverrides {
 interface Props {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
-  initialTheme: string;
+  initialProcess: string;
   // When false (default) the generated workflow is persisted but not added to
   // the reusable preset library: the session that runs it keeps it, but it
   // won't show up in the preset picker. Tick "save as preset" to make it
@@ -57,13 +57,13 @@ const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 export function WorkflowPlanner({
   workspaceId,
   providerId,
-  initialTheme,
+  initialProcess,
   saveAsPreset = false,
   onWorkflowReady,
   onPlanChange,
 }: Props) {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
-  const [theme, setTheme] = useState(initialTheme);
+  const [processText, setProcessText] = useState(initialProcess);
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
   const [overrides, setOverrides] = useState<Record<number, StepOverrides>>({});
@@ -88,7 +88,7 @@ export function WorkflowPlanner({
   };
 
   const onPlan = async () => {
-    if (theme.trim().length === 0) return;
+    if (processText.trim().length === 0) return;
     setError(null);
     setPlan(null);
     setOverrides({});
@@ -96,7 +96,7 @@ export function WorkflowPlanner({
     setBusy(true);
     try {
       const client = new PlannerClient({ providerId, invokeFn: invoke });
-      const result = await client.plan({ theme: theme.trim() });
+      const result = await client.plan({ process: processText.trim() });
       setPlan(result.output);
       onPlanChange?.(true);
       const initial: Record<number, StepOverrides> = {};
@@ -154,7 +154,7 @@ export function WorkflowPlanner({
       setPlan(null);
       onPlanChange?.(false);
       setOverrides({});
-      setTheme('');
+      setProcessText('');
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -170,12 +170,12 @@ export function WorkflowPlanner({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-2xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+      <div className="rounded-xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
         <div className="relative">
           <Textarea
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            placeholder="describe the theme (e.g. migrate auth to oauth, add dark mode toggle)…"
+            value={processText}
+            onChange={(e) => setProcessText(e.target.value)}
+            placeholder="describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…"
             autoGrow
             minRows={5}
             maxRows={10}
@@ -188,7 +188,7 @@ export function WorkflowPlanner({
             <Button
               size="sm"
               onClick={onPlan}
-              disabled={busy || theme.trim().length === 0}
+              disabled={busy || processText.trim().length === 0}
               className="min-w-[6.5rem]"
             >
               {planning ? (
