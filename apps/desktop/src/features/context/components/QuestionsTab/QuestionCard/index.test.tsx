@@ -22,7 +22,6 @@ const baseProps = {
   customAnswer: '',
   showCustomField: false,
   justAnswered: false,
-  collapsed: false,
   onToggleSuggestion: vi.fn(),
   onSetCustomAnswer: vi.fn(),
   onToggleCustomField: vi.fn(),
@@ -36,12 +35,6 @@ describe('QuestionCard', () => {
     expect(screen.getByText('pick a database')).toBeDefined();
     expect(screen.getByRole('button', { name: 'sqlite' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'postgres' })).toBeDefined();
-  });
-
-  it('renders the collapsed variant when collapsed', () => {
-    render(<QuestionCard {...baseProps} collapsed />);
-    expect(screen.getByText('pick a database')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'sqlite' })).toBeNull();
   });
 
   it('fires onDismiss when the close button is clicked', () => {

@@ -35,3 +35,4 @@ export {
   type AutoPopulateInput,
   type AutoPopulateResult,
 } from './auto-populate';
+export { addQuestionsToSlot, removeQuestionsFromSlot } from './slot-questions';

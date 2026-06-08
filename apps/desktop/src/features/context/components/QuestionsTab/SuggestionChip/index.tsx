@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
 interface Props {
@@ -11,14 +12,24 @@ export function SuggestionChip({ label, selected, onToggle }: Props) {
     <button
       type="button"
       onClick={onToggle}
+      aria-pressed={selected}
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all duration-150',
+        'group inline-flex items-center rounded-full border text-xs font-medium transition-all duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         selected
-          ? 'border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/30'
-          : 'border-border/40 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground',
+          ? 'border-primary/50 bg-primary/10 py-1 pl-1.5 pr-2.5 text-primary shadow-[0_0_0_1px_var(--color-primary)]'
+          : 'border-border-soft bg-muted/40 px-2.5 py-1 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground active:scale-[0.97]',
       )}
     >
+      <span
+        aria-hidden
+        className={cn(
+          'grid place-items-center overflow-hidden transition-all duration-150',
+          selected ? 'mr-1 w-3.5 opacity-100' : 'w-0 opacity-0',
+        )}
+      >
+        <Check size={11} strokeWidth={3} />
+      </span>
       {label}
     </button>
   );

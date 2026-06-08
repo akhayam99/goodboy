@@ -23,6 +23,7 @@ import type {
   Message,
   OverrideSettings,
   OpenQuestion,
+  OpenQuestionId,
   PlanConsumption,
   PlanId,
   PlanStatus,
@@ -89,6 +90,7 @@ import type { TerminalTab, TerminalTabId, TerminalTabStatus } from '../shared/ty
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createPlansSlice } from './slices/plans';
+import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createDiffCommentsSlice } from './slices/diff-comments';
@@ -267,12 +269,12 @@ export interface AppState extends UpdaterState {
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
-  // Open questions cached per session so sidebar gates (PlanReadySuggestion,
-  // AgentsSection's per-workflow NextStep CTA) can resolve their block state
-  // without poking the DB on every render. Loaded lazily by setCurrentSession
-  // and refreshed by autoPopulateContext when a turn either raises or
-  // resolves a question. Mirrors the useOpenQuestions store but is keyed by
-  // sessionId so the sidebar can show many sessions side-by-side.
+  // Single source of truth for open questions, keyed by sessionId. Both the
+  // sidebar gates (PlanReadySuggestion, AgentsSection's per-workflow NextStep
+  // CTA) and the QuestionsTab read from here, so answering or dismissing a
+  // question updates the gate immediately instead of waiting for the next
+  // summarizer tick. Loaded lazily by setCurrentSession, refreshed by
+  // autoPopulateContext and by the open-questions slice actions.
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   /**
    * Per-session pending nudges surfaced to the chat input area. Cleared on
@@ -618,6 +620,14 @@ export interface AppActions {
   ): Promise<void>;
   markNotificationsRead(): Promise<void>;
   clearNotifications(): Promise<void>;
+  loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
+  answerOpenQuestions(
+    sessionId: SessionId,
+    pairs: ReadonlyArray<{ id: OpenQuestionId; text: string; answer: string }>,
+    targetAgentId: AgentId | null,
+  ): Promise<void>;
+  dismissOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
+  restoreDismissedOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(
@@ -734,6 +744,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createNotificationsSlice(set, get),
   ...createNudgesSlice(set, get),
   ...createPlansSlice(set, get),
+  ...createOpenQuestionsSlice(set, get),
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),

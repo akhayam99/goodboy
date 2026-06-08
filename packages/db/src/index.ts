@@ -207,6 +207,7 @@ export {
 export {
   insertOpenQuestion,
   listOpenQuestionsForSession,
+  listResolvedQuestionTextsForSession,
   markOpenQuestionAnswered,
   markOpenQuestionDismissed,
   markOpenQuestionsResolvedByText,

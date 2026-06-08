@@ -86,6 +86,7 @@ vi.mock('@goodboy/db', () => ({
   upsertContextSlot: vi.fn(),
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
+  listResolvedQuestionTextsForSession: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),
   insertTurnEventsBatch: vi.fn(async () => undefined),
   listWorktreesForSessions: vi.fn(async () => new Map()),

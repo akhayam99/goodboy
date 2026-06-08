@@ -6,7 +6,12 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { insertOpenQuestion, markOpenQuestionsResolvedByText, type Database } from '@goodboy/db';
+import {
+  insertOpenQuestion,
+  listResolvedQuestionTextsForSession,
+  markOpenQuestionsResolvedByText,
+  type Database,
+} from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
@@ -47,6 +52,9 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
 
   const { decisions, questions, resolved } = extractMarkers(input.assistantText);
 
+  const resolvedTexts = await listResolvedQuestionTextsForSession(input.db, input.sessionId);
+  const freshQuestions = questions.filter((q) => !matchesAny(q.text, resolvedTexts));
+
   const updates: Array<{ key: SlotKey; value: string }> = [];
 
   pushUpdate(updates, slots, 'files_touched', input.filesEdited);
@@ -58,7 +66,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
   let nextQuestions = mergeIntoSlot(
     existingQuestions,
-    questions.map((q) => q.text),
+    freshQuestions.map((q) => q.text),
   );
   nextQuestions = removeFromSlot(nextQuestions, resolved);
   if (nextQuestions !== existingQuestions) {
@@ -74,7 +82,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   // enforced by a partial unique index `(session_id, text) WHERE status='open'`;
   // re-emitting the same question across turns is a no-op.
   let insertedCount = 0;
-  for (const q of questions) {
+  for (const q of freshQuestions) {
     const res = await insertOpenQuestion(input.db, {
       id: cryptoRandomUUID() as OpenQuestionId,
       sessionId: input.sessionId,
@@ -95,6 +103,22 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     updatedSlots: updates.map((u) => u.key),
     openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
   };
+}
+
+function normalizeQuestion(s: string): string {
+  return s
+    .replace(/^\s*(?:[-*]|\d+\.)\s+/, '')
+    .trim()
+    .toLowerCase();
+}
+
+function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
+  const n = normalizeQuestion(text);
+  if (n.length === 0) return false;
+  return candidates.some((c) => {
+    const t = normalizeQuestion(c);
+    return t.length > 0 && (n === t || n.includes(t) || t.includes(n));
+  });
 }
 
 function cryptoRandomUUID(): string {
