@@ -46,12 +46,14 @@ pub fn command_with_login_env(binary: &str) -> Command {
 
 fn compute_path() -> String {
     let inherited = std::env::var("PATH").unwrap_or_default();
-    let shell = probe_login_shell_path().unwrap_or_default();
+    let (shell, npm_bin) = probe_login_shell();
+    let shell = shell.unwrap_or_default();
+    let npm_bin = npm_bin.unwrap_or_default();
     let common = common_install_paths();
 
     let mut parts: Vec<String> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
-    for source in [shell.as_str(), inherited.as_str(), common.as_str()] {
+    for source in [shell.as_str(), inherited.as_str(), npm_bin.as_str(), common.as_str()] {
         for segment in source.split(':') {
             let segment = segment.trim();
             if !segment.is_empty() && seen.insert(segment.to_string()) {
@@ -63,46 +65,69 @@ fn compute_path() -> String {
 }
 
 #[cfg(target_os = "macos")]
-fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
-    &[
-        ("/bin/zsh", &["-ilc", "printf %s \"$PATH\""]),
-        ("/bin/bash", &["-ilc", "printf %s \"$PATH\""]),
-        ("/bin/sh", &["-lc", "printf %s \"$PATH\""]),
-    ]
+fn shell_candidates() -> &'static [&'static str] {
+    &["/bin/zsh", "/bin/bash", "/bin/sh"]
 }
 
 #[cfg(target_os = "linux")]
-fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
-    &[
-        ("/bin/bash", &["-ilc", "printf %s \"$PATH\""]),
-        ("/bin/zsh", &["-ilc", "printf %s \"$PATH\""]),
-        ("/bin/sh", &["-lc", "printf %s \"$PATH\""]),
-    ]
+fn shell_candidates() -> &'static [&'static str] {
+    &["/bin/bash", "/bin/zsh", "/bin/sh"]
 }
 
 #[cfg(target_os = "windows")]
-fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
+fn shell_candidates() -> &'static [&'static str] {
     &[]
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn shell_candidates() -> &'static [(&'static str, &'static [&'static str])] {
+fn shell_candidates() -> &'static [&'static str] {
     &[]
 }
 
-fn probe_login_shell_path() -> Option<String> {
-    for (sh, args) in shell_candidates() {
+const SHELL_PROBE_SCRIPT: &str =
+    "printf 'GBPATH:%s\\n' \"$PATH\"; printf 'GBNPM:%s\\n' \"$(npm prefix -g 2>/dev/null)\"";
+
+fn probe_login_shell() -> (Option<String>, Option<String>) {
+    for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
+        let args: &[&str] = if *sh == "/bin/sh" {
+            &["-lc", SHELL_PROBE_SCRIPT]
+        } else {
+            &["-ilc", SHELL_PROBE_SCRIPT]
+        };
         if let Some(out) = run_with_timeout(sh, args) {
-            let trimmed = out.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
+            let (path, prefix) = parse_shell_probe(&out);
+            if path.is_none() {
+                continue;
+            }
+            let npm_bin = prefix
+                .map(|p| format!("{p}/bin"))
+                .filter(|bin| std::path::Path::new(bin).is_dir());
+            return (path, npm_bin);
+        }
+    }
+    (None, None)
+}
+
+fn parse_shell_probe(out: &str) -> (Option<String>, Option<String>) {
+    let mut path = None;
+    let mut prefix = None;
+    for line in out.lines() {
+        if let Some(rest) = line.strip_prefix("GBPATH:") {
+            let value = rest.trim();
+            if !value.is_empty() {
+                path = Some(value.to_string());
+            }
+        } else if let Some(rest) = line.strip_prefix("GBNPM:") {
+            let value = rest.trim();
+            if !value.is_empty() {
+                prefix = Some(value.to_string());
             }
         }
     }
-    None
+    (path, prefix)
 }
 
 fn compute_env() -> Vec<(String, String)> {
@@ -130,7 +155,7 @@ fn parse_env(raw: &str) -> Vec<(String, String)> {
 fn probe_login_shell_env() -> Option<String> {
     const LOGIN_ARGS: &[&str] = &["-ilc", "env"];
     const POSIX_ARGS: &[&str] = &["-lc", "env"];
-    for (sh, _) in shell_candidates() {
+    for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
@@ -195,6 +220,7 @@ fn common_install_paths() -> String {
             "/.local/bin",
             "/.deno/bin",
             "/.volta/bin",
+            "/.npm-global/bin",
         ] {
             parts.push(format!("{}{}", home, sub));
         }
@@ -254,6 +280,22 @@ mod tests {
             1,
             "duplicate keys collapse to the first occurrence"
         );
+    }
+
+    #[test]
+    fn parse_shell_probe_extracts_path_and_npm_prefix_ignoring_noise() {
+        let raw = "welcome from .zshrc\nGBPATH:/opt/homebrew/bin:/usr/bin\nGBNPM:/Users/x/.nvm/versions/node/v20/bin/..\n";
+        let (path, prefix) = parse_shell_probe(raw);
+        assert_eq!(path.as_deref(), Some("/opt/homebrew/bin:/usr/bin"));
+        assert_eq!(prefix.as_deref(), Some("/Users/x/.nvm/versions/node/v20/bin/.."));
+    }
+
+    #[test]
+    fn parse_shell_probe_drops_empty_npm_prefix() {
+        let raw = "GBPATH:/usr/bin\nGBNPM:\n";
+        let (path, prefix) = parse_shell_probe(raw);
+        assert_eq!(path.as_deref(), Some("/usr/bin"));
+        assert_eq!(prefix, None);
     }
 
     #[test]
