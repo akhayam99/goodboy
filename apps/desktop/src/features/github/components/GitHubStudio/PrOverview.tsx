@@ -5,11 +5,11 @@ import { Check, ImagePlus, Loader2, Pencil, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly sessionId: SessionId;
   readonly onMutated: () => void;
-}
+};
 
 type Editing = 'title' | 'body' | null;
 

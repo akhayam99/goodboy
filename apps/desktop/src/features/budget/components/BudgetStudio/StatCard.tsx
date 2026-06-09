@@ -1,8 +1,8 @@
-interface Props {
+type Props = {
   readonly label: string;
   readonly value: string;
   readonly hint?: string;
-}
+};
 
 export function StatCard({ label, value, hint }: Props) {
   return (

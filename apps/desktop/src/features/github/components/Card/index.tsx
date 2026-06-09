@@ -40,7 +40,7 @@ const TAB_LABEL: Record<GithubTabKey, string> = {
 const TAB_ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
   readonly detailLoading: boolean;
@@ -51,7 +51,7 @@ interface Props {
   readonly onRefresh: () => void;
   readonly onSpawnFromComment?: (comment: PrComment) => void;
   readonly onSpawnFromReviewChanges?: () => void;
-}
+};
 
 export function GithubCard({
   pr,
@@ -189,12 +189,12 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
   );
 }
 
-export interface TabStatus {
+export type TabStatus = {
   readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
   readonly icon: ReactNode;
   readonly count?: number;
   readonly label: string;
-}
+};
 
 const TONE_PILL: Record<TabStatus['tone'], string> = {
   success: 'bg-success/10 text-success',
@@ -849,11 +849,11 @@ function CheckConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) 
   return <HelpCircle {...props} className="text-muted-foreground" />;
 }
 
-interface ReviewSummary {
+type ReviewSummary = {
   readonly label: string;
   readonly tone: string;
   readonly icon: ReactNode;
-}
+};
 
 function summarizeReview(
   pr: PullRequestState,

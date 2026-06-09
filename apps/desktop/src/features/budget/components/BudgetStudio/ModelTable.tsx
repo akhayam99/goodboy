@@ -2,10 +2,10 @@ import { formatUsdPrecise } from '@goodboy/ui';
 import { ProviderIcon } from './ProviderIcon';
 import { formatModel, formatTokens, type ModelBreakdownEntry } from './lib';
 
-interface Props {
+type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
   readonly showProvider: boolean;
-}
+};
 
 export function ModelTable({ entries, showProvider }: Props) {
   if (entries.length === 0) {

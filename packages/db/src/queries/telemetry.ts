@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface TelemetryRow {
+type TelemetryRow = {
   id: string;
   run_id: string;
   session_id: string;
@@ -21,7 +21,7 @@ interface TelemetryRow {
   output_tokens: number;
   estimated_cost_usd: number;
   recorded_at: number;
-}
+};
 
 function toDomain(row: TelemetryRow): TelemetryRecord {
   return {
@@ -69,19 +69,19 @@ export async function listTelemetryForSession(
   return rows.map(toDomain);
 }
 
-export interface TelemetrySummary {
+export type TelemetrySummary = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly estimatedCostUsd: number;
   readonly recordCount: number;
-}
+};
 
-interface SummaryRow {
+type SummaryRow = {
   input: number | null;
   output: number | null;
   cost: number | null;
   count: number;
-}
+};
 
 const SUMMARY_SELECT = `
   COALESCE(SUM(input_tokens), 0) AS input,
@@ -135,15 +135,15 @@ export async function summarizeProviderTelemetry(
   return toSummary(rows[0]);
 }
 
-export interface ProviderTelemetrySummary {
+export type ProviderTelemetrySummary = {
   readonly provider: ProviderName;
   readonly estimatedCostUsd: number;
-}
+};
 
-interface ProviderSummaryRow {
+type ProviderSummaryRow = {
   provider: ProviderName;
   cost: number | null;
-}
+};
 
 export async function summarizeWorkspaceProviderTelemetry(
   db: Database,

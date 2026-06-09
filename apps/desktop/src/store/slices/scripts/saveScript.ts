@@ -3,12 +3,12 @@ import { upsertWorkspaceScript } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';
 
-interface Params {
+type Params = {
   workspaceId: WorkspaceId;
   id?: WorkspaceScriptId;
   name: string;
   body: string;
-}
+};
 
 export function saveScript(get: GetFn) {
   return async ({ workspaceId, id, name, body }: Params) => {

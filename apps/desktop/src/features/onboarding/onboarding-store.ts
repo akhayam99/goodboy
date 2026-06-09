@@ -58,12 +58,12 @@ const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
   'palette',
 ];
 
-interface OnboardingCache {
+type OnboardingCache = {
   completed: ReadonlyArray<OnboardingStepId>;
   collapsed: boolean;
   finished: boolean;
   wizardDone: boolean;
-}
+};
 
 const cache: OnboardingCache = {
   completed: [],

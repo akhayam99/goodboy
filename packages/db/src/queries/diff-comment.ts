@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface DiffCommentRow {
+type DiffCommentRow = {
   id: string;
   session_id: string;
   file_path: string;
@@ -21,7 +21,7 @@ interface DiffCommentRow {
   consumed_by_agent_id: string | null;
   line_number: number | null;
   line_side: string | null;
-}
+};
 
 function toDomain(row: DiffCommentRow): DiffComment {
   const anchor: DiffCommentAnchor | undefined =

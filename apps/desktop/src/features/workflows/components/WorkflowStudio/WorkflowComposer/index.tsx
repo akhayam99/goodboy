@@ -11,7 +11,7 @@ import { StepEditor } from '../StepEditor';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { EmptyGuide } from '../EmptyGuide';
 
-interface Props {
+type Props = {
   readonly open: boolean;
   readonly isNew: boolean;
   readonly hasPresets: boolean;
@@ -38,7 +38,7 @@ interface Props {
   readonly onDeleteDef: (id: StepDefId) => void;
   readonly onSave: () => void;
   readonly onCancel: () => void;
-}
+};
 
 export function WorkflowComposer({
   open,

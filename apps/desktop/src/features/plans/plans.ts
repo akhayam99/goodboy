@@ -26,14 +26,14 @@ export async function listPlansForSession(
   return dbListPlansForSession(tauriDatabase, sessionId);
 }
 
-export interface UpsertPlanArgs {
+export type UpsertPlanArgs = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly workflowRunId?: WorkflowRunId;
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
-}
+};
 
 export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
   const id = crypto.randomUUID() as PlanId;

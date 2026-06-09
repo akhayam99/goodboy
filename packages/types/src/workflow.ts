@@ -135,16 +135,16 @@ export type StepTransition = Readonly<{
   at: IsoDateTime;
 }>;
 
-export interface ParallelGroup {
+export type ParallelGroup = {
   readonly id: ParallelGroupId;
   readonly sessionId: SessionId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt: IsoDateTime;
   readonly completedAt: IsoDateTime | null;
-}
+};
 
-export interface ParallelAgent {
+export type ParallelAgent = {
   readonly id: ParallelAgentId;
   readonly groupId: ParallelGroupId;
   readonly stepId: StepId;
@@ -156,4 +156,4 @@ export interface ParallelAgent {
   readonly outputSummary: string | null;
   readonly startedAt: IsoDateTime;
   readonly completedAt: IsoDateTime | null;
-}
+};

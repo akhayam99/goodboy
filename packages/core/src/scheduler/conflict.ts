@@ -5,23 +5,23 @@ import type {
   ProviderRunId,
 } from '@goodboy/types';
 
-export interface RunFileTouches {
+export type RunFileTouches = {
   runId: ProviderRunId;
   files: ReadonlyArray<string>;
-}
+};
 
-export interface FileConflict {
+export type FileConflict = {
   file: string;
   runIds: ReadonlyArray<ProviderRunId>;
-}
+};
 
-export interface ResolvedConflict {
+export type ResolvedConflict = {
   file: string;
   winnerRunId: ProviderRunId;
   reason: 'last_write_wins' | 'manual_pick' | 'synthesizer';
-}
+};
 
-export interface ConflictResolutionInput {
+export type ConflictResolutionInput = {
   conflicts: ReadonlyArray<FileConflict>;
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
@@ -31,7 +31,7 @@ export interface ConflictResolutionInput {
   strategy: ParallelMergeStrategy;
   manualPicks?: Record<string, ProviderRunId>;
   synthesize?: (conflict: FileConflict) => Promise<ProviderRunId>;
-}
+};
 
 export class ManualResolutionRequiredError extends Error {
   readonly unresolvedFiles: ReadonlyArray<string>;

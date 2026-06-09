@@ -5,11 +5,11 @@
 // shared; consuming it as a library (test runner only) imposes no obligation.
 import axe from 'axe-core';
 
-export interface A11yResult {
+export type A11yResult = {
   violations: axe.Result[];
   passes: axe.Result[];
   incomplete: axe.Result[];
-}
+};
 
 export async function runA11yCheck(container: Element): Promise<A11yResult> {
   const results = await axe.run(container, {

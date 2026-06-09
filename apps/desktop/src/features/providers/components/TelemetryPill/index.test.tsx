@@ -3,11 +3,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-interface Spend {
+type Spend = {
   readonly provider: string;
   readonly spentUsd: number;
   readonly capUsd: number | null;
-}
+};
 
 const { state } = vi.hoisted(() => ({
   state: {

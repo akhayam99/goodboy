@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface SectionHeaderProps {
+export type SectionHeaderProps = {
   readonly label: string;
   readonly icon?: ReactNode;
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly className?: string;
-}
+};
 
 export function SectionHeader({ label, icon, hint, action, className }: SectionHeaderProps) {
   return (

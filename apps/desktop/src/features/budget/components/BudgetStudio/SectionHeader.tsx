@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 
-interface Props {
+type Props = {
   readonly label: string;
   readonly hint?: string;
   readonly action?: ReactNode;
-}
+};
 
 export function SectionHeader({ label, hint, action }: Props) {
   return (

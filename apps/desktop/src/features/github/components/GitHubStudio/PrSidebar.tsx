@@ -36,7 +36,7 @@ const NAV: ReadonlyArray<{
   { key: 'ci', label: 'Checks', icon: ListChecks, status: 'ci' },
 ];
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly options: ReadonlyArray<PullRequestState>;
   readonly selected: number | null;
@@ -46,7 +46,7 @@ interface Props {
   readonly onSection: (s: PrSection) => void;
   readonly workspaceRoot: string | null;
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
-}
+};
 
 export function PrSidebar({
   pr,

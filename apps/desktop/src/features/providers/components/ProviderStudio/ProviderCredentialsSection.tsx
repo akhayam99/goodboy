@@ -4,9 +4,9 @@ import { KeyRound, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly providerId: ProviderId;
-}
+};
 
 export function ProviderCredentialsSection({ providerId }: Props) {
   const credentials = useAppStore((s) => s.providerCredentials);

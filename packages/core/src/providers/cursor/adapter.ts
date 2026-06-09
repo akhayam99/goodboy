@@ -22,12 +22,12 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: CURSOR_MODELS.map((m) => m.id),
 };
 
-export interface CursorAdapterDeps {
+export type CursorAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class CursorAdapter implements ProviderAdapter {
   readonly id = 'cursor' as const;

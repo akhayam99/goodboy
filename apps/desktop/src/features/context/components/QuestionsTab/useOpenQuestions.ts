@@ -3,22 +3,21 @@ import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 
 const UNDO_TTL_MS = 5_000;
 
-interface QuestionDraft {
+type QuestionDraft = {
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
   showCustomField: boolean;
-}
+};
 
-interface PendingUndo {
+type PendingUndo = {
   question: OpenQuestion;
   timer: ReturnType<typeof setTimeout>;
-}
+};
 
-interface OpenQuestionsUiState {
+type OpenQuestionsUiState = {
   drafts: Record<string, QuestionDraft>;
   justAnswered: ReadonlyArray<OpenQuestionId>;
   pendingUndo: PendingUndo | null;
-
   toggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
   setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   toggleCustomField: (questionId: OpenQuestionId) => void;
@@ -26,7 +25,7 @@ interface OpenQuestionsUiState {
   clearJustAnswered: (id: OpenQuestionId) => void;
   beginUndo: (question: OpenQuestion) => void;
   clearUndo: () => void;
-}
+};
 
 function emptyDraft(): QuestionDraft {
   return { selectedSuggestions: [], customAnswer: '', showCustomField: false };

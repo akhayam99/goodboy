@@ -7,12 +7,12 @@ import type {
 import type { IsoDateTime } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ContextSlotRow {
+type ContextSlotRow = {
   session_id: string;
   key: string;
   value: string;
   enabled: number;
-}
+};
 
 function toDomain(row: ContextSlotRow): ContextSlot {
   return {
@@ -48,13 +48,13 @@ export async function upsertContextSlot(
 
 const HISTORY_CAP = 20;
 
-interface ContextSlotHistoryRow {
+type ContextSlotHistoryRow = {
   id: string;
   key: string;
   value: string;
   author: string;
   created_at: number;
-}
+};
 
 function toHistoryDomain(row: ContextSlotHistoryRow): ContextSlotHistoryEntry {
   return {

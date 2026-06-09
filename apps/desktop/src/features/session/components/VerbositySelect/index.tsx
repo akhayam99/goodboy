@@ -10,11 +10,11 @@ import { POPUP_BASE, POPUP_DOWN, POPUP_UP, VERBOSITY_DOT } from '../dropdown-uti
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-interface Props {
+type Props = {
   value: VerbosityLevel;
   onChange: (level: VerbosityLevel) => void;
   disabled: boolean;
-}
+};
 
 export function VerbositySelect({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);

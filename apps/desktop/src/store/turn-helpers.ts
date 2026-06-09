@@ -71,15 +71,15 @@ export function toRelPath(absPath: string, workingDir: string): string {
 
 // Summarizer queue, one per task, max one in-flight + one queued (coalesced).
 // Prevents stacking when the user iterates faster than the summarizer completes.
-interface SummarizerQueueEntry {
+type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
-}
+};
 
-interface SummarizerTaskQueue {
+type SummarizerTaskQueue = {
   inFlight: boolean;
   queued: SummarizerQueueEntry | null;
-}
+};
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 

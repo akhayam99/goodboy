@@ -28,10 +28,10 @@ const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
 const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
 const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
 
-export interface ExtractedQuestion {
+export type ExtractedQuestion = {
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
-}
+};
 
 /**
  * Pull agent-emitted markers out of an assistant turn's full text. Agents
@@ -76,19 +76,10 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
   return out;
 }
 
-/**
- * Pull the most recent `<<plan>>...<</plan>>` block from an assistant turn.
- * Planning agents wrap a Markdown body inside the marker, title is the first
- * non-empty line (with leading `#` stripped); body is the rest. Returns null
- * when no marker is present or its content is empty.
- *
- * If multiple plans appear in one turn (rare), the last one wins, agents are
- * expected to emit one final plan per turn.
- */
-export interface ExtractedPlan {
+export type ExtractedPlan = {
   readonly title: string;
   readonly bodyMd: string;
-}
+};
 
 export function extractPlanFromMarker(assistantText: string): ExtractedPlan | null {
   const matches = extractAll(assistantText, PLAN_RE);
@@ -128,11 +119,11 @@ const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
   'generic',
 ]);
 
-export interface ExtractedHandoff {
+export type ExtractedHandoff = {
   readonly kind: AgentKindLabel;
   readonly reason: string;
   readonly planId: string | null;
-}
+};
 
 /**
  * Parse the last `<<handoff kind=... reason="..." plan=...>>` marker out of an
@@ -171,10 +162,10 @@ function parseHandoffAttrs(inner: string): Record<string, string> {
 
 const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^>]+?)>>/g;
 
-export interface ExtractedCommentResolution {
+export type ExtractedCommentResolution = {
   readonly threadId: string;
   readonly commitSha: string;
-}
+};
 
 /**
  * Parse a `<<comment-resolved threadId="..." commit="<sha>">>` marker out of an
@@ -209,10 +200,10 @@ export function isReviewThreadId(threadId: string): boolean {
 
 const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^>]+?)>>/g;
 
-export interface ExtractedCommentWontfix {
+export type ExtractedCommentWontfix = {
   readonly threadId: string;
   readonly reason: string;
-}
+};
 
 export function extractCommentWontfix(assistantText: string): ExtractedCommentWontfix | null {
   COMMENT_WONTFIX_RE.lastIndex = 0;
@@ -231,10 +222,10 @@ export function extractCommentWontfix(assistantText: string): ExtractedCommentWo
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
 
-export interface ExtractedCluster {
+export type ExtractedCluster = {
   readonly title: string;
   readonly instructions: string;
-}
+};
 
 export function extractClustersFromMarker(
   assistantText: string,
@@ -291,10 +282,10 @@ export function extractClusterDone(assistantText: string): { readonly id: string
 
 const SCOUT_SPLIT_RE = /<<scout-split>>([\s\S]*?)<<\/scout-split>>/g;
 
-export interface ExtractedScoutArea {
+export type ExtractedScoutArea = {
   readonly area: string;
   readonly query: string;
-}
+};
 
 export function extractScoutSplit(assistantText: string): ReadonlyArray<ExtractedScoutArea> | null {
   SCOUT_SPLIT_RE.lastIndex = 0;
@@ -350,15 +341,15 @@ const PLAN_OPEN_QUESTION_RE =
 const PLAN_INCOMPLETE_RE = /\b(TODO|TBD|FIXME|\?\?)\b/i;
 const PLAN_STEP_RE = /^\s*(?:\d+[.)]|[-*])\s+\S/m;
 
-export interface PlanReadinessInput {
+export type PlanReadinessInput = {
   readonly planBody: string;
   readonly assistantText: string;
-}
+};
 
-export interface PlanReadinessResult {
+export type PlanReadinessResult = {
   readonly ready: boolean;
   readonly reason: 'has-open-question' | 'incomplete-markers' | 'too-few-steps' | null;
-}
+};
 
 /**
  * Heuristic check for whether a freshly emitted plan looks complete enough to

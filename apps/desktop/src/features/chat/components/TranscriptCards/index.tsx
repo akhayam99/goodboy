@@ -25,14 +25,14 @@ const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   delete: 'deleted',
 };
 
-interface TranscriptCardProps {
+type TranscriptCardProps = {
   readonly item: TranscriptItem;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function TranscriptCardImpl({
   item,
@@ -131,12 +131,12 @@ export const TranscriptCard = memo(
     prev.onOpenDiff === next.onOpenDiff,
 );
 
-interface FileEditBlockProps {
+type FileEditBlockProps = {
   path: string;
   editType: 'create' | 'modify' | 'delete';
   workingDir?: string | null;
   onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
   const rel = displayPath(path, workingDir);

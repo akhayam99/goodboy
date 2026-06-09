@@ -1,8 +1,8 @@
 import { formatUsdPrecise } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly values: ReadonlyArray<number>;
-}
+};
 
 export function Sparkline({ values }: Props) {
   if (values.length < 2) {

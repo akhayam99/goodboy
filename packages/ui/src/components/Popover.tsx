@@ -1,14 +1,14 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 
-export interface PopoverProps {
+export type PopoverProps = {
   readonly children: ReactNode;
   readonly className?: string;
   readonly style?: CSSProperties;
   readonly role?: 'menu' | 'dialog' | 'listbox';
   readonly ariaLabel?: string;
   readonly innerRef?: Ref<HTMLDivElement>;
-}
+};
 
 /**
  * Canonical popover surface: the floating card shared by every dropdown,

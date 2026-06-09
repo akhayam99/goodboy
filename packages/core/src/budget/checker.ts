@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '@goodboy/db';
 
-interface BudgetRuleRow {
+type BudgetRuleRow = {
   id: string;
   provider: ProviderName;
   period: BudgetPeriod;
@@ -17,16 +17,16 @@ interface BudgetRuleRow {
   alert_threshold_pct: number;
   extra_tokens_budget: number | null;
   created_at: string;
-}
+};
 
-interface SessionBudgetRow {
+type SessionBudgetRow = {
   session_id: string;
   soft_cap_usd: number;
-}
+};
 
-interface CostSumRow {
+type CostSumRow = {
   total: number | null;
-}
+};
 
 export function getPeriodWindow(period: BudgetPeriod): { start: string; end: string } {
   const now = new Date();

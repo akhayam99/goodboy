@@ -5,23 +5,23 @@ export type NudgeKind = 'model-rightsize' | 'scope-mismatch' | 'plan-ready' | 'h
 
 export type NudgeOutcome = 'accepted' | 'dismissed' | 'overridden' | 'ignored';
 
-export interface NudgeEvent {
+export type NudgeEvent = {
   readonly id: string;
   readonly ts: IsoDateTime;
   readonly kind: NudgeKind;
   readonly contextJson: string | null;
   readonly outcome: NudgeOutcome | null;
   readonly outcomeTs: IsoDateTime | null;
-}
+};
 
-interface NudgeEventRow {
+type NudgeEventRow = {
   id: string;
   ts: string;
   kind: string;
   context_json: string | null;
   outcome: string | null;
   outcome_ts: string | null;
-}
+};
 
 function toNudgeEvent(row: NudgeEventRow): NudgeEvent {
   return {
@@ -62,11 +62,11 @@ export async function updateNudgeEventOutcome(
   ]);
 }
 
-export interface ListNudgeEventsOptions {
+export type ListNudgeEventsOptions = {
   readonly sinceTs?: IsoDateTime;
   readonly kind?: NudgeKind;
   readonly limit?: number;
-}
+};
 
 export async function listNudgeEvents(
   db: Database,

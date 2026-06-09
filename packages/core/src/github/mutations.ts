@@ -13,19 +13,19 @@ const ADD_THREAD_REPLY_MUTATION = `mutation($threadId:ID!,$body:String!){
   }
 }`;
 
-interface RawResolveReviewThreadResponse {
+type RawResolveReviewThreadResponse = {
   data?: {
     resolveReviewThread?: {
       thread?: { id: string; isResolved: boolean } | null;
     } | null;
   };
   errors?: ReadonlyArray<{ message: string }>;
-}
+};
 
-export interface ResolvedThread {
+export type ResolvedThread = {
   readonly id: string;
   readonly isResolved: boolean;
-}
+};
 
 /**
  * Marks a review thread as resolved on GitHub via the `resolveReviewThread`
@@ -63,19 +63,19 @@ export async function resolveReviewThread(
   return { id: thread.id, isResolved: thread.isResolved };
 }
 
-interface RawAddThreadReplyResponse {
+type RawAddThreadReplyResponse = {
   data?: {
     addPullRequestReviewThreadReply?: {
       comment?: { id: string; url: string } | null;
     } | null;
   };
   errors?: ReadonlyArray<{ message: string }>;
-}
+};
 
-export interface PostedThreadReply {
+export type PostedThreadReply = {
   readonly id: string;
   readonly url: string;
-}
+};
 
 /**
  * Posts a reply onto an existing review thread via the

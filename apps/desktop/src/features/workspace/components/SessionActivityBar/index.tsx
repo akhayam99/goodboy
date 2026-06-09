@@ -47,18 +47,15 @@ function groupLabel(key: string, groupMode: SessionGroupKey): string {
   return key;
 }
 
-interface SessionActivityBarProps {
+type SessionActivityBarProps = {
   workspaceId: WorkspaceId;
   sessions: ReadonlyArray<Session>;
   archivedSessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
   onSelectSession: (id: SessionId) => void;
   onNewSession: () => void;
-  // Fired when the user reveals the Archived tab. Triggers a lazy DB load
-  // of archived rows in the parent, archived sessions are never eager-
-  // loaded so the rest of the app stays free of them.
   onArchivedTabOpen?: () => void;
-}
+};
 
 export function SessionActivityBar({
   workspaceId,
@@ -171,12 +168,12 @@ export function SessionActivityBar({
   );
 }
 
-interface SessionActivityItemProps {
+type SessionActivityItemProps = {
   session: Session;
   isActive: boolean;
   dimmed?: boolean;
   onClick: () => void;
-}
+};
 
 const SessionActivityItem = memo(function SessionActivityItem({
   session,

@@ -1,8 +1,8 @@
 import { AlertTriangle } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly tail: string;
-}
+};
 
 // Compact error surface: short header + last few lines of output (ANSI
 // already stripped by runLifecycle). Kept lightweight, the full transcript

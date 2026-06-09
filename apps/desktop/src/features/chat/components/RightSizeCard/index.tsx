@@ -4,13 +4,13 @@ import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 import { NudgeCard } from '../NudgeCard';
 
-export interface Props {
+export type Props = {
   readonly currentModel: string;
   readonly suggestedModel: string;
   readonly onUseSuggested: () => void;
   readonly onKeepCurrent: () => void;
   readonly onChangeModel: () => void;
-}
+};
 
 export function RightSizeCard({
   currentModel,

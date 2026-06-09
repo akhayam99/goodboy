@@ -1,13 +1,13 @@
 import { Pencil } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   value: string;
   open: boolean;
   onToggle: () => void;
   onChange: (value: string) => void;
   placeholder?: string;
-}
+};
 
 export function CustomAnswerField({
   value,

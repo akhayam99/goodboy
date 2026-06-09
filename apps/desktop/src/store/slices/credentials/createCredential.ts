@@ -5,10 +5,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { credentialSecretKey, maskApiKey } from './credentialKey';
 import type { SetFn } from './types';
 
-interface ApiKeyCheck {
+type ApiKeyCheck = {
   readonly valid: boolean;
   readonly message: string | null;
-}
+};
 
 export function createCredential(set: SetFn) {
   return async (

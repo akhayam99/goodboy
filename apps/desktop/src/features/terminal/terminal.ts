@@ -1,15 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
-export interface TerminalOutputPayload {
+export type TerminalOutputPayload = {
   readonly sessionId: string;
   readonly data: string;
-}
+};
 
-export interface TerminalExitPayload {
+export type TerminalExitPayload = {
   readonly sessionId: string;
   readonly exitCode: number;
-}
+};
 
 export function invokeTerminalOpen(
   terminalId: string,

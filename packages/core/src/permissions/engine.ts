@@ -9,9 +9,9 @@ import type {
 } from '@goodboy/types';
 import { formatToolPattern, parseToolPattern } from './matcher';
 
-export interface PermissionEngineDeps {
+export type PermissionEngineDeps = {
   readonly defaultDecision?: 'allow' | 'deny';
-}
+};
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
   session: 2,

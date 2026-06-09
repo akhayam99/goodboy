@@ -3,16 +3,16 @@ import type { Database as SqlDatabase } from '@goodboy/db';
 import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@goodboy/db';
 import { parseSkillMarkdown, SkillParseError } from './parser';
 
-export interface SkillFs {
+export type SkillFs = {
   readDir(path: string): Promise<string[]>;
   readFile(path: string): Promise<string>;
   stat(path: string): Promise<{ exists: boolean }>;
-}
+};
 
-export interface SkillRegistryDeps {
+export type SkillRegistryDeps = {
   readonly fs: SkillFs;
   readonly now: () => IsoDateTime;
-}
+};
 
 export class SkillRegistryError extends Error {
   constructor(
@@ -24,13 +24,9 @@ export class SkillRegistryError extends Error {
   }
 }
 
-/**
- * Represents a single skill file path to scan: the resolved path and its
- * canonical file path used as a stable DB key.
- */
-interface SkillCandidate {
+type SkillCandidate = {
   filePath: string;
-}
+};
 
 export class SkillRegistry {
   private readonly fs: SkillFs;

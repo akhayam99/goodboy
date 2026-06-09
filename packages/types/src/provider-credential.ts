@@ -3,10 +3,10 @@ import type { ProviderId } from './provider-registry';
 
 export const CLI_CREDENTIAL = 'cli';
 
-export interface ProviderCredential {
+export type ProviderCredential = {
   readonly id: CredentialId;
   readonly providerId: ProviderId;
   readonly label: string;
   readonly hint: string;
   readonly createdAt: IsoDateTime;
-}
+};

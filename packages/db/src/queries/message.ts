@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface MessageRow {
+type MessageRow = {
   id: string;
   session_id: string;
   agent_id: string;
@@ -18,7 +18,7 @@ interface MessageRow {
   created_at: number;
   provider_override_id: string | null;
   provider_override_model: string | null;
-}
+};
 
 function toDomain(row: MessageRow): Message {
   const providerOverride: TurnProviderOverride | undefined =

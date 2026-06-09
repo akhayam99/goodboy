@@ -13,12 +13,12 @@ import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type { ProviderRegistryCapabilities };
 
-export interface ProviderDeps {
+export type ProviderDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class UnknownProviderError extends Error {
   constructor(id: string) {

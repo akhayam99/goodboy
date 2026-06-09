@@ -23,11 +23,11 @@ function applyTheme(theme: Theme): void {
   }
 }
 
-interface ThemeState {
+type ThemeState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-}
+};
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: 'dark',

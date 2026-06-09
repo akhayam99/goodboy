@@ -10,20 +10,20 @@ import {
 } from '@goodboy/db';
 import { formatError } from '../../shared/lib/errors';
 
-interface RawGhRunResult {
+type RawGhRunResult = {
   stdout: string;
   stderr: string;
   exitCode: number;
-}
+};
 
-interface RawGhStatus {
+type RawGhStatus = {
   available: boolean;
   mode: 'absent' | 'gh-cli' | 'pat';
   version: string | null;
   user: string | null;
   scopes: ReadonlyArray<string>;
   scoped: boolean;
-}
+};
 
 function toStatus(raw: RawGhStatus): GhTokenStatus {
   return {

@@ -10,11 +10,11 @@ import { ProviderDetailPanel } from './ProviderDetailPanel';
 
 const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialFocus?: ProviderId | null;
   readonly onClose: () => void;
-}
+};
 
 export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) {
   const providers = useAppStore((s) => s.providers);

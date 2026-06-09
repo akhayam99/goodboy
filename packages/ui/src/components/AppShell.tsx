@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface AppShellProps {
+export type AppShellProps = {
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
   className?: string;
-}
+};
 
 const LEFT_SIDEBAR_MIN = 300;
 const LEFT_SIDEBAR_MAX = 520;

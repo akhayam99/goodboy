@@ -102,14 +102,14 @@ function makeWorkflow(
   };
 }
 
-interface FakeState {
+type FakeState = {
   sessions: ReadonlyArray<Session>;
   sessionPlans: Record<SessionId, ReadonlyArray<PlanWithCount>>;
   sessionPhaseRuns: Record<SessionId, ReadonlyArray<Agent>>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
   spawnAgent: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
-}
+};
 
 function buildSlice(state: FakeState) {
   const set = vi.fn();
@@ -199,11 +199,10 @@ describe('runPlan, workflow-aware spawn routing', () => {
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
         expect(state.spawnAgent, `alias "${name}" must not free-spawn`).not.toHaveBeenCalled();
-        expect(state.activateWorkflowAgent, `alias "${name}" should activate the slot`).toHaveBeenCalledWith(
-          SESSION_ID,
-          IMPL_AGENT_ID,
-          PLAN_ID,
-        );
+        expect(
+          state.activateWorkflowAgent,
+          `alias "${name}" should activate the slot`,
+        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
       }
     });
 
@@ -225,7 +224,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
         expect(state.spawnAgent).not.toHaveBeenCalled();
-        expect(state.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+        expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
+          SESSION_ID,
+          IMPL_AGENT_ID,
+          PLAN_ID,
+        );
       },
     );
   });
@@ -503,7 +506,8 @@ describe('runPlan, workflow-aware spawn routing', () => {
       const inWorkflow = defaultState();
       await buildSlice(inWorkflow).runPlan(SESSION_ID, PLAN_ID);
       expect(
-        inWorkflow.spawnAgent.mock.calls.length + inWorkflow.activateWorkflowAgent.mock.calls.length,
+        inWorkflow.spawnAgent.mock.calls.length +
+          inWorkflow.activateWorkflowAgent.mock.calls.length,
       ).toBe(1);
       expect(inWorkflow.activateWorkflowAgent).toHaveBeenCalledTimes(1);
 

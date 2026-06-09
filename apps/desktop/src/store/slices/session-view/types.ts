@@ -31,19 +31,19 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 5,
 };
 
-interface SessionViewSliceState {
+type SessionViewSliceState = {
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
-}
+};
 
-interface SessionViewSliceActions {
+type SessionViewSliceActions = {
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
-}
+};
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;
 
-export interface GroupedSessions {
+export type GroupedSessions = {
   readonly key: string;
   readonly sessions: ReadonlyArray<Session>;
-}
+};

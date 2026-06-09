@@ -9,12 +9,12 @@ import {
 } from '../../../session/agent-kind';
 import { StepRowCompact } from '../StepRowCompact';
 
-interface Props {
+type Props = {
   readonly template: Workflow;
   readonly active: boolean;
   readonly onSelect: () => void;
   readonly onDelete: () => void;
-}
+};
 
 export function PresetCard({ template, active, onSelect, onDelete }: Props) {
   const [confirming, setConfirming] = useState(false);

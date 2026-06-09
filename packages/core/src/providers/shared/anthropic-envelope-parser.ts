@@ -1,22 +1,22 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
-export interface ParseContext {
+export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
-export interface AnthropicEnvelopeParserOptions {
+export type AnthropicEnvelopeParserOptions = {
   readonly adapter: string;
   readonly logTag: string;
-}
+};
 
 const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant', 'user', 'result']);
 
-interface AssistantMessage {
+type AssistantMessage = {
   readonly content?: ReadonlyArray<AssistantContentBlock>;
-}
+};
 
 type AssistantContentBlock =
   | { type: 'text'; text: string }
@@ -27,28 +27,28 @@ type AssistantContentBlock =
       input: unknown;
     };
 
-interface ToolResultBlock {
+type ToolResultBlock = {
   readonly tool_use_id: string;
   readonly content?: unknown;
   readonly is_error?: boolean;
-}
+};
 
-interface UserMessage {
+type UserMessage = {
   readonly content?: ReadonlyArray<ToolResultBlock | { type: string }>;
-}
+};
 
 // Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
 // Cursor's stream-json, which is otherwise envelope-compatible, uses camelCase
 // (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
 // Accept both forms so the shared parser can serve both adapters.
-interface UsagePayload {
+type UsagePayload = {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
   readonly cache_read_input_tokens?: number;
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
-}
+};
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
   'Edit',

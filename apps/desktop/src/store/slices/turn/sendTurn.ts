@@ -113,14 +113,14 @@ import {
 } from '../../turn-helpers';
 import type { GetFn, SetFn } from './types';
 
-interface Input {
+type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
-}
+};
 
 const EFFORT_FLAG: Readonly<Record<string, string>> = {
   minimal: 'minimal',

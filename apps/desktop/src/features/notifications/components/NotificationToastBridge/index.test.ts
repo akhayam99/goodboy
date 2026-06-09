@@ -3,7 +3,7 @@ import type { Notification, NotificationSeverity } from '@goodboy/db';
 import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import { notificationContext, pickFreshFailures } from './';
 
-interface NotifOverride {
+type NotifOverride = {
   id: string;
   ts?: string;
   severity?: NotificationSeverity;
@@ -11,7 +11,7 @@ interface NotifOverride {
   body?: string | null;
   sessionId?: SessionId | null;
   workspaceId?: WorkspaceId | null;
-}
+};
 
 function notif(over: NotifOverride): Notification {
   return {

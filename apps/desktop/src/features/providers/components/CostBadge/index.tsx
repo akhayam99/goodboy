@@ -1,10 +1,10 @@
 import { cn, formatUsd } from '@goodboy/ui';
 
-export interface Props {
+export type Props = {
   readonly value: number;
   readonly className?: string;
   readonly title?: string;
-}
+};
 
 export function CostBadge({ value, className, title }: Props) {
   const formatted = formatUsd(value);

@@ -2,12 +2,12 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export interface CreatePrOptions {
+export type CreatePrOptions = {
   title?: string;
   body?: string;
   base?: string;
   draft?: boolean;
-}
+};
 
 export function createPrForSession(_set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, opts?: CreatePrOptions) => {

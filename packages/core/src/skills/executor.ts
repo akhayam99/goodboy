@@ -1,8 +1,8 @@
 import type { Skill } from '@goodboy/types';
 
-export interface SkillScriptRunner {
+export type SkillScriptRunner = {
   runScript(scriptPath: string, args: ReadonlyArray<string>, cwd: string): Promise<string>;
-}
+};
 
 export class SkillScriptError extends Error {
   constructor(

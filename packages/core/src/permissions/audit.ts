@@ -1,18 +1,18 @@
 import type { IsoDateTime, PermissionAuditEntry, SessionId, WorkspaceId } from '@goodboy/types';
 
-export interface AuditQuery {
+export type AuditQuery = {
   readonly sessionId?: SessionId;
   readonly workspaceId?: WorkspaceId;
   readonly fromAt?: IsoDateTime;
   readonly toAt?: IsoDateTime;
   readonly limit?: number;
-}
+};
 
-export interface AuditRecorderDeps {
+export type AuditRecorderDeps = {
   readonly insert: (entry: PermissionAuditEntry) => Promise<void>;
   readonly list: (q: AuditQuery) => Promise<ReadonlyArray<PermissionAuditEntry>>;
   readonly clear: (scope: { sessionId?: SessionId; workspaceId?: WorkspaceId }) => Promise<void>;
-}
+};
 
 export class PermissionAuditRecorder {
   constructor(private readonly deps: AuditRecorderDeps) {}

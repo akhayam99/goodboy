@@ -91,13 +91,12 @@ const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'code
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const ATTACHMENT_LIMIT = 10;
 
-interface PendingAttachment {
+type PendingAttachment = {
   readonly id: string;
   readonly fileName: string;
   readonly mimeType: string;
-  /** `data:<mime>;base64,<…>`, drives both the composer preview and the send payload. */
   readonly dataUrl: string;
-}
+};
 
 function extFromMime(mimeType: string): string {
   const slash = mimeType.indexOf('/');
@@ -139,10 +138,10 @@ function asProvider(v: string | undefined | null): ProviderId | null {
   return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
 }
 
-interface Props {
+type Props = {
   readonly session: Session;
   readonly providerDisconnected?: boolean;
-}
+};
 
 function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
   return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
@@ -227,11 +226,11 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   );
 
   const [error, setError] = useState<string | null>(null);
-  interface FailedTurn {
+  type FailedTurn = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
-  }
+  };
   const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -282,24 +281,24 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   currentEffortRef.current = effort;
   const currentVerbosityRef = useRef(verbosity);
   currentVerbosityRef.current = verbosity;
-  interface QueuedTurn {
+  type QueuedTurn = {
     readonly id: string;
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
-  }
+  };
   const [queue, setQueue] = useState<ReadonlyArray<QueuedTurn>>([]);
-  interface RightSizePending {
+  type RightSizePending = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
-  }
+  };
   const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
   const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
-  interface ScopePending {
+  type ScopePending = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly mismatch: ScopeMismatch;
-  }
+  };
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
   const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
@@ -1265,11 +1264,11 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   );
 }
 
-interface QueuedItem {
+type QueuedItem = {
   readonly id: string;
   readonly content: string;
   readonly attachments: ReadonlyArray<PendingAttachment>;
-}
+};
 
 function QueuedMessages({
   items,

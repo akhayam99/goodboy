@@ -4,10 +4,10 @@ import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
-}
+};
 
 type ChipState =
   | { kind: 'idle' }

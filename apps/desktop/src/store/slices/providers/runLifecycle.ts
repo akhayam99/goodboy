@@ -77,12 +77,12 @@ function statusSlotPatch(
   return { geminiStatus: status };
 }
 
-export interface RunLifecycleArgs {
+export type RunLifecycleArgs = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
   readonly cols?: number;
   readonly rows?: number;
-}
+};
 
 export async function runLifecycle(
   set: SetFn,

@@ -2,12 +2,12 @@ import { Button, Dialog } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
-interface Props {
+type Props = {
   open: boolean;
   result: ConfigBundleImportResult | null;
   error: string | null;
   onClose: () => void;
-}
+};
 
 export function ImportConfigDialog({ open, result, error, onClose }: Props) {
   const title = error

@@ -4,13 +4,13 @@ import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { Summarizer, SummarizerParseError, SummarizerSpawnError } from './cli';
 
-interface MockChild extends EventEmitter {
+type MockChild = EventEmitter & {
   stdout: Readable;
   stderr: Readable;
   killed: boolean;
   exitCode: number | null;
   kill(signal?: NodeJS.Signals | string): boolean;
-}
+};
 
 function makeMockSpawn(
   stdoutData: string,

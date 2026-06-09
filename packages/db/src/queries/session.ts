@@ -15,14 +15,14 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionWorkflowRow {
+type SessionWorkflowRow = {
   workflow_run_id: string;
   workflow_id: string;
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
   discarded_at: string | null;
-}
+};
 
 function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   return {
@@ -35,7 +35,7 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   };
 }
 
-interface SessionRow {
+type SessionRow = {
   id: string;
   workspace_id: string;
   goal: string;
@@ -55,7 +55,7 @@ interface SessionRow {
   user_status: string;
   created_at: number;
   updated_at: number;
-}
+};
 
 const VALID_USER_STATUSES: ReadonlySet<SessionUserStatus> = new Set([
   'wip',
@@ -144,16 +144,13 @@ async function loadWorkflowsForSession(
   return rows.map(toWorkflowRun);
 }
 
-export interface SessionConfigUpdate {
+export type SessionConfigUpdate = {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
   effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
-  /** Session-level default provider. New agents/workflows spawned in this
-   *  session inherit it. Distinct from `providerOverride`, which is the
-   *  ephemeral per-turn pick from the chat composer. */
   defaultProvider?: ProviderId | null;
-}
+};
 
 export async function updateSessionConfig(
   db: Database,

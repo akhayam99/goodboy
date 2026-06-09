@@ -18,9 +18,9 @@ import { openProviderModal } from '../ProviderModalHost';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 
-interface Props {
+type Props = {
   readonly info: ProviderInfo | null;
-}
+};
 
 export function ProviderDetailPanel({ info }: Props) {
   if (!info) {

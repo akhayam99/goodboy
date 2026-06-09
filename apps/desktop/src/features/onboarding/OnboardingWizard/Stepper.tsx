@@ -1,9 +1,9 @@
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly current: number;
   readonly total: number;
-}
+};
 
 export function Stepper({ current, total }: Props) {
   return (

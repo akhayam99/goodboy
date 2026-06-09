@@ -18,7 +18,7 @@ import type { CommentThread } from '../../../comment-threads';
 import { useAppStore } from '../../../../../store';
 import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
 
-interface Props {
+type Props = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void;
   readonly onSpawnBatch: (
@@ -26,7 +26,7 @@ interface Props {
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => void;
   readonly onOpenThread: (threadId: string) => void;
-}
+};
 
 export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) {
   const connectedProviders = useAppStore(

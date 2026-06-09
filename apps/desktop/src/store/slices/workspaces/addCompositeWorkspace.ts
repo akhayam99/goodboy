@@ -5,11 +5,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 
-interface Input {
+type Input = {
   name?: string;
   containerPath: string;
   members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
-}
+};
 
 export function addCompositeWorkspace(set: SetFn, get: GetFn) {
   return async ({ name, containerPath, members }: Input): Promise<Workspace> => {

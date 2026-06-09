@@ -4,11 +4,11 @@ import { GitBranch, Inbox } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
 
-interface Props {
+type Props = {
   readonly groups: ReadonlyArray<InboxGroup>;
   readonly focusedSessionId: SessionId | null;
   readonly onSelect: (sessionId: SessionId) => void;
-}
+};
 
 export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
   if (groups.length === 0) {

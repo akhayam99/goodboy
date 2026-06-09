@@ -8,11 +8,11 @@ import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-interface Props {
+type Props = {
   value: AgentRole;
   onChange: (role: AgentRole) => void;
   disabled: boolean;
-}
+};
 
 export function RoleSelect({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);

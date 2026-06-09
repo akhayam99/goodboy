@@ -1,9 +1,9 @@
 import { cn } from '../cn';
 
-export interface DividerProps {
+export type DividerProps = {
   readonly className?: string;
   readonly orientation?: 'horizontal' | 'vertical';
-}
+};
 
 /**
  * Hairline rule that fades out at both ends, softer than a hard border.

@@ -31,14 +31,14 @@ function libraryStepIdForRole(role: string): StepDefId | undefined {
   return SEEDED_ROLES.has(role as AgentRole) ? (`seed_${role}` as StepDefId) : undefined;
 }
 
-export interface SeedWorkflowLibraryDeps {
+export type SeedWorkflowLibraryDeps = {
   readonly db: Database;
   readonly now?: () => IsoDateTime;
-}
+};
 
-export interface SeedResult {
+export type SeedResult = {
   readonly seeded: ReadonlyArray<{ slug: string; workflowId: WorkflowId }>;
-}
+};
 
 const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 

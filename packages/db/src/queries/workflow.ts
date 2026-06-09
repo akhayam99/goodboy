@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkflowRow {
+type WorkflowRow = {
   id: string;
   workspace_id: string;
   name: string;
@@ -22,9 +22,9 @@ interface WorkflowRow {
   updated_at: string;
   is_preset: number | null;
   deleted_at: number | null;
-}
+};
 
-interface StepRow {
+type StepRow = {
   id: string;
   workflow_id: string;
   library_step_id: string | null;
@@ -37,7 +37,7 @@ interface StepRow {
   effort: string | null;
   verbosity: string | null;
   parallel_group: number | null;
-}
+};
 
 function toStep(row: StepRow): Step {
   return {

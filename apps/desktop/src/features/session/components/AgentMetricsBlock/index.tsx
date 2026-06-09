@@ -2,21 +2,21 @@ import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { formatTokens } from '../../agent-row-format';
 
-export interface AgentAggregate {
+export type AgentAggregate = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly estimatedCostUsd: number;
   readonly turns: number;
-}
+};
 
-interface Props {
+type Props = {
   readonly run: Agent;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly variant: 'workflow' | 'adhoc';
-}
+};
 
 export function AgentMetricsBlock({
   run,

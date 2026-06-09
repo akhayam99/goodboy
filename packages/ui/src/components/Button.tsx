@@ -4,11 +4,11 @@ import { cn } from '../cn';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
 export type ButtonSize = 'sm' | 'md';
 
-export interface ButtonProps extends Omit<ComponentProps<'button'>, 'type'> {
+export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
-}
+};
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-foreground hover:bg-primary/90',

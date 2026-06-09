@@ -1,11 +1,11 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
-export interface ParseContext {
+export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 // gemini-cli v0.x emits plain text on stdout in headless mode (`-p <prompt>`).
 // No stable structured streaming schema is documented today; we fall back to
@@ -15,11 +15,11 @@ export interface ParseContext {
 // passing `--output-format json` from turn.rs without rewriting this file.
 const KNOWN_TYPES = new Set(['response.delta', 'response.completed', 'usage', 'error']);
 
-interface UsagePayload {
+type UsagePayload = {
   readonly input_tokens?: number;
   readonly cached_input_tokens?: number;
   readonly output_tokens?: number;
-}
+};
 
 function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
   return {

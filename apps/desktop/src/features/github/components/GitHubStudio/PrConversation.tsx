@@ -4,12 +4,12 @@ import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
 import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 
-interface Props {
+type Props = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly pr: PullRequestState;
   readonly scrollToThreadId?: string | null;
   readonly onOpenUrl: (url: string) => void;
-}
+};
 
 export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) {
   const threads = useMemo(() => {

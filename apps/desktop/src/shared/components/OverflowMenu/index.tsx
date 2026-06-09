@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import { MoreVertical } from 'lucide-react';
 import { Popover, cn } from '@goodboy/ui';
 
-interface IconProps {
+type IconProps = {
   readonly size?: number;
   readonly className?: string;
   readonly 'aria-hidden'?: boolean;
-}
+};
 
 export type OverflowMenuItem =
   | {
@@ -23,14 +23,14 @@ export type OverflowMenuItem =
   | { readonly kind: 'header'; readonly key: string; readonly label: string }
   | { readonly kind: 'empty'; readonly key: string; readonly label: string };
 
-interface OverflowMenuProps {
+type OverflowMenuProps = {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;
   readonly triggerClassName?: string;
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
   readonly align?: 'left' | 'right';
-}
+};
 
 export function OverflowMenu({
   items,

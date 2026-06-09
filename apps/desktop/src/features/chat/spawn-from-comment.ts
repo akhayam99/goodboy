@@ -56,7 +56,7 @@ function buildCommentAgentPrompt(
   return lines.join('\n');
 }
 
-export interface CommentAgentArgs {
+export type CommentAgentArgs = {
   readonly name: string;
   readonly kind: AgentKind;
   readonly model: string;
@@ -65,13 +65,13 @@ export interface CommentAgentArgs {
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl: string;
-}
+};
 
-export interface ResolveModelChoice {
+export type ResolveModelChoice = {
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel;
-}
+};
 
 export function buildCommentAgentArgs(
   c: PrComment,

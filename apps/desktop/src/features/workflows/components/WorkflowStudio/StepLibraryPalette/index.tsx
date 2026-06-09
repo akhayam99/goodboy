@@ -6,14 +6,14 @@ import type { StepDefUpsertArgs } from '../../../workflows';
 import { LibraryCard } from '../../LibraryCard';
 import { LibraryStepForm } from '../../LibraryStepForm';
 
-interface Props {
+type Props = {
   readonly library: ReadonlyArray<StepDef>;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
-}
+};
 
 export function StepLibraryPalette({
   library,

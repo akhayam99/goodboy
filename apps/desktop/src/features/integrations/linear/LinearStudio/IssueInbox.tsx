@@ -5,13 +5,13 @@ import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { issuePullRequests, type LinearIssue } from '../client';
 import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
 
-interface Props {
+type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
   readonly focusedIssueId: string | null;
   readonly onSelect: (issue: LinearIssue) => void;
   readonly loading: boolean;
   readonly error: string | null;
-}
+};
 
 const STATE_DOT: Record<LinearGroupKey, string> = {
   started: 'bg-primary',

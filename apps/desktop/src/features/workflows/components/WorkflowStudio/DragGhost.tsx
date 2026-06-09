@@ -1,8 +1,8 @@
 import { Plus } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly ghost: { label: string; x: number; y: number } | null;
-}
+};
 
 export function DragGhost({ ghost }: Props) {
   if (!ghost) return null;

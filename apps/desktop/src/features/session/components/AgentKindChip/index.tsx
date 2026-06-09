@@ -1,12 +1,12 @@
 import { cn } from '@goodboy/ui';
 import { AGENT_KIND_PALETTE, type AgentKind } from '../../agent-kind';
 
-interface Props {
+type Props = {
   readonly kind: AgentKind;
   readonly muted?: boolean;
   readonly title?: string;
   readonly className?: string;
-}
+};
 
 export function AgentKindChip({ kind, muted, title, className }: Props) {
   const palette = AGENT_KIND_PALETTE[kind];

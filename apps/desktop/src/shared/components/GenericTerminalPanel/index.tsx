@@ -8,16 +8,12 @@ import { useThemeStore } from '../../lib/theme';
 // Driver abstraction so the same xterm renderer can be wired to either a
 // long-lived session shell (TerminalPanel) or a transient lifecycle PTY
 // (LifecycleTerminalPanel) without duplicating ~150 lines of setup.
-export interface TerminalDriver {
+export type TerminalDriver = {
   write(data: string): void;
   resize(cols: number, rows: number): void;
-  /**
-   * Subscribe to output chunks. The driver is responsible for any filtering
-   * (e.g. by sessionId or runId) before invoking the handler.
-   */
   onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
   onExit(handler: (exitCode: number) => void): Promise<() => void>;
-}
+};
 
 const MAX_CACHE_CHUNKS = 500;
 
@@ -76,18 +72,15 @@ const DARK_THEME: ITheme = {
   brightWhite: '#ffffff',
 };
 
-interface Props {
-  /** Stable id used to scope the output cache across remounts. */
+type Props = {
   readonly terminalId: string;
   readonly driver: TerminalDriver;
   readonly isActive: boolean;
-  /** When true, keyboard input is dropped (still subscribes to output). */
   readonly readOnly?: boolean;
-  /** Optional message appended on exit. Empty string suppresses it. */
   readonly exitMessage?: string;
   readonly onRestart?: () => void;
   readonly onExit?: (exitCode: number) => void;
-}
+};
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
 

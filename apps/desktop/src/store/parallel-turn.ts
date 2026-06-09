@@ -46,7 +46,7 @@ import {
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 import { inferAgentKindFromName } from '../features/session/agent-kind';
 
-export interface ParallelBranchInputs {
+export type ParallelBranchInputs = {
   readonly session: Session;
   readonly orchestratingAgentId: AgentId;
   readonly workspace: Workspace;
@@ -57,26 +57,26 @@ export interface ParallelBranchInputs {
   readonly carryForwardContext: string;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly maxParallelism: number;
-}
+};
 
-export interface ParallelBranchEffects {
+export type ParallelBranchEffects = {
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
   refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
   setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
-}
+};
 
-export interface ParallelBranchResult {
+export type ParallelBranchResult = {
   readonly groupId: ParallelGroupId;
   readonly merge: MergeResult;
   readonly runIds: ReadonlyArray<ProviderRunId>;
   readonly anyFailed: boolean;
   readonly allFailed: boolean;
-}
+};
 
-export interface ParallelDetection {
+export type ParallelDetection = {
   readonly currentDef: Step;
   readonly groupDefs: ReadonlyArray<Step>;
-}
+};
 
 /**
  * Returns the sibling group iff:
@@ -100,26 +100,26 @@ export function detectParallelGroup(
 // Multiplexes turn_event envelopes to per-runId callbacks. Single global
 // listener routed by runId, N independent listeners on the same Tauri
 // channel would be wasteful.
-interface RawTurnEnvelope {
+type RawTurnEnvelope = {
   readonly runId: string;
   readonly type: 'line' | 'end' | 'error';
   readonly line?: string;
   readonly exit_code?: number | null;
   readonly stderr?: string;
   readonly message?: string;
-}
+};
 
-interface RunListenerState {
+type RunListenerState = {
   readonly onEvent: (e: TurnEvent) => void;
   readonly onSettle: (status: AgentStatus, error?: string) => void;
   collectedFiles: Set<string>;
-}
+};
 
-interface MultiplexedListener {
+type MultiplexedListener = {
   unlisten: () => Promise<void>;
   registerRun: (runId: ProviderRunId, state: RunListenerState) => void;
   filesTouchedByRun: (runId: ProviderRunId) => ReadonlyArray<string>;
-}
+};
 
 // Pick the stream parser matching the spawned provider. The single-run path
 // (sendTurn → runTurn) already selects per-provider; the parallel path must
@@ -181,7 +181,7 @@ async function startMultiplexedTurnListener(
 // Scheduler deps factory, design (b): pre-batch via invokeParallelPhaseRunSpawn,
 // scheduler.spawnRun resolves on per-runId 'end' envelope. Aligns with T2 (#208)
 // batched spawn design and keeps the scheduler purely an await-only orchestrator.
-interface BuildSchedulerDepsArgs {
+type BuildSchedulerDepsArgs = {
   readonly listener: MultiplexedListener;
   readonly settleHandlers: Map<
     ProviderRunId,
@@ -190,7 +190,7 @@ interface BuildSchedulerDepsArgs {
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >;
-}
+};
 
 function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
   const { settleHandlers } = args;
@@ -216,7 +216,7 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
   };
 }
 
-export interface RunParallelBranchDeps {
+export type RunParallelBranchDeps = {
   readonly now: () => IsoDateTime;
   readonly provider: ProviderId;
   readonly providerBinary: string | undefined;
@@ -227,7 +227,7 @@ export interface RunParallelBranchDeps {
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
   readonly effects: ParallelBranchEffects;
-}
+};
 
 export async function runParallelBranch(
   inputs: ParallelBranchInputs,

@@ -6,11 +6,11 @@ import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
 import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   open: boolean;
   onClose: () => void;
-}
+};
 
 export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
   const [status, setStatus] = useState<GhTokenStatus | null>(null);

@@ -12,11 +12,11 @@ import {
   XCircle,
 } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly pr: PullRequestState;
   readonly onOpenUrl: (url: string) => void;
-}
+};
 
 export function PrChecks({ checks, pr, onOpenUrl }: Props) {
   if (checks.length === 0) {

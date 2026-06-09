@@ -12,10 +12,10 @@ import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
 import type { GetFn, SetFn } from './types';
 
-interface Input {
+type Input = {
   rootPath: string;
   name?: string;
-}
+};
 
 export function addWorkspace(set: SetFn, get: GetFn) {
   return async ({ rootPath, name }: Input): Promise<Workspace> => {

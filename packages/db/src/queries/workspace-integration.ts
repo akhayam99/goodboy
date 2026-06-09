@@ -7,7 +7,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkspaceIntegrationRow {
+type WorkspaceIntegrationRow = {
   id: string;
   workspace_id: string;
   provider: string;
@@ -15,7 +15,7 @@ interface WorkspaceIntegrationRow {
   credential_key: string;
   created_at: number;
   updated_at: number;
-}
+};
 
 function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
   return {

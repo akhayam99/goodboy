@@ -8,12 +8,12 @@ import { IssueDetailPanel } from './IssueDetailPanel';
 import { useLinearIssues } from './useLinearIssues';
 import type { LinearIssue } from '../client';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
   readonly workspaceName: string;
   readonly initialIssueId?: string | null;
   readonly onClose: () => void;
-}
+};
 
 export function LinearStudio({ workspaceId, workspaceName, initialIssueId, onClose }: Props) {
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId);

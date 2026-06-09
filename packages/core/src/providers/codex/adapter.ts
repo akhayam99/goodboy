@@ -22,13 +22,13 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: CODEX_MODELS.map((m) => m.id),
 };
 
-export interface CodexAdapterDeps {
+export type CodexAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly priceOverride?: CodexModelPriceOverride | null;
-}
+};
 
 export class CodexAdapter implements ProviderAdapter {
   readonly id = 'codex' as const;

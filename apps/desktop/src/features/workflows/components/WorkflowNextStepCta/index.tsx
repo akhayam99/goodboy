@@ -9,7 +9,7 @@ import {
   inferAgentKindFromName,
 } from '../../../../features/session/agent-kind';
 
-export interface Props {
+export type Props = {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (
@@ -20,19 +20,12 @@ export interface Props {
   readonly hasOpenQuestions?: boolean;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
-}
+};
 
-/**
- * Reusable lit CTA that surfaces the next un-spawned workflow step once the
- * current step's agent has completed. Hidden when the next step is already
- * spawned (the user can still iterate inside that agent) or when no step
- * remains. Issue #424 wires this into the agents bar; future issues
- * (#425/#426/#428) reuse the same hook point for additional surfaces.
- */
-export interface PickNextWorkflowStepGate {
+export type PickNextWorkflowStepGate = {
   readonly hasOpenQuestions?: boolean;
   readonly summarizerBusy?: boolean;
-}
+};
 
 export function pickNextWorkflowStep(
   workflow: Workflow,

@@ -3,14 +3,14 @@ import { cn, Divider } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 
-interface Props {
+type Props = {
   readonly icon: LucideIcon;
   readonly title: string;
   readonly workspaceName: string;
   readonly closeLabel: string;
   readonly onClose: () => void;
   readonly children: (requestClose: () => void) => ReactNode;
-}
+};
 
 export function StudioShell({
   icon: Icon,

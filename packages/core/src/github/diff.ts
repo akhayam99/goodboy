@@ -8,7 +8,7 @@ import type {
 import type { GhRunner } from './gh';
 import { GhCliError } from './gh';
 
-interface MutableFile {
+type MutableFile = {
   path: string;
   oldPath?: string;
   status: FileDiffStatus;
@@ -16,7 +16,7 @@ interface MutableFile {
   deletions: number;
   binary: boolean;
   hunks: DiffHunk[];
-}
+};
 
 const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;

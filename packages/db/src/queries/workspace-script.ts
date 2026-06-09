@@ -1,7 +1,7 @@
 import type { IsoDateTime, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkspaceScriptRow {
+type WorkspaceScriptRow = {
   id: string;
   workspace_id: string;
   name: string;
@@ -9,7 +9,7 @@ interface WorkspaceScriptRow {
   sort_order: number;
   created_at: number;
   updated_at: number;
-}
+};
 
 function toDomain(row: WorkspaceScriptRow): WorkspaceScript {
   return {

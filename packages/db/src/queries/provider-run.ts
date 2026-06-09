@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ProviderRunRow {
+type ProviderRunRow = {
   id: string;
   session_id: string;
   provider: ProviderName;
@@ -17,12 +17,12 @@ interface ProviderRunRow {
   status_kind: ProviderRunStatus['kind'];
   status_payload: string;
   created_at: number;
-}
+};
 
-interface ParsedPayload {
+type ParsedPayload = {
   routingDecision?: RoutingDecision;
   [key: string]: unknown;
-}
+};
 
 function toStatus(kind: ProviderRunStatus['kind'], payload: string): ProviderRunStatus {
   const data = JSON.parse(payload) as Record<string, unknown>;

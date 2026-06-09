@@ -1,7 +1,7 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionWorktreeRow {
+type SessionWorktreeRow = {
   id: string;
   session_id: string;
   worktree_path: string;
@@ -10,9 +10,9 @@ interface SessionWorktreeRow {
   mount_workspace_id: string | null;
   mount_name: string | null;
   created_at: number;
-}
+};
 
-export interface SessionWorktree {
+export type SessionWorktree = {
   readonly id: string;
   readonly sessionId: SessionId;
   readonly worktreePath: string;
@@ -21,7 +21,7 @@ export interface SessionWorktree {
   readonly mountWorkspaceId?: WorkspaceId;
   readonly mountName?: string;
   readonly createdAt: number;
-}
+};
 
 function toDomain(row: SessionWorktreeRow): SessionWorktree {
   return {

@@ -3,11 +3,11 @@ import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 import { openProviderModal } from '../../../providers/components/ProviderModalHost';
 
-interface Props {
+type Props = {
   readonly providerId: ProviderId;
   readonly identity?: string | null;
   readonly onRefresh: () => void;
-}
+};
 
 export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) {
   const label = PROVIDER_LABEL_LOWER[providerId];

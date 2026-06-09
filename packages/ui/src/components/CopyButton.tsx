@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from './Button';
 
-export interface CopyButtonProps {
+export type CopyButtonProps = {
   value: string;
   label?: string;
-}
+};
 
 function fallbackCopy(text: string): void {
   const ta = document.createElement('textarea');

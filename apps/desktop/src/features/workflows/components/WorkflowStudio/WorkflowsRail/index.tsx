@@ -4,7 +4,7 @@ import type { Workflow, WorkflowId } from '@goodboy/types';
 import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import { PresetCard } from '../../PresetCard';
 
-interface Props {
+type Props = {
   readonly presets: ReadonlyArray<Workflow>;
   readonly activeId: WorkflowId | null;
   readonly editing: Workflow | null | 'new';
@@ -15,7 +15,7 @@ interface Props {
   readonly onNew: () => void;
   readonly onDelete: (t: Workflow) => void;
   readonly onReset: () => void;
-}
+};
 
 export function WorkflowsRail({
   presets,

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { ProviderConnectModal } from '../ProviderConnectModal';
 
-export interface OpenProviderModalDetail {
+export type OpenProviderModalDetail = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
-}
+};
 
 // Implementation detail of openProviderModal() below. Not exported because
 // callers should use the helper, not dispatch raw CustomEvents.

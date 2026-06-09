@@ -2,35 +2,35 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 
-export interface ScriptRunResult {
+export type ScriptRunResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number;
-}
+};
 
 export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error' | 'cancelled';
 
-export interface ScriptRunRecord {
+export type ScriptRunRecord = {
   readonly status: ScriptRunStatus;
   readonly result: ScriptRunResult | null;
   readonly runId: string;
-}
+};
 
-export interface ScriptResultState {
+export type ScriptResultState = {
   readonly script: WorkspaceScript;
   readonly status: 'pending' | 'ok' | 'error';
   readonly result: ScriptRunResult | null;
-}
+};
 
-export interface ScriptOutputPayload {
+export type ScriptOutputPayload = {
   readonly runId: string;
   readonly data: string;
-}
+};
 
-export interface ScriptExitPayload {
+export type ScriptExitPayload = {
   readonly runId: string;
   readonly exitCode: number;
-}
+};
 
 /** Start a pty-backed script run. Returns immediately; output streams via events. */
 export function invokeScriptRun(

@@ -2,17 +2,17 @@ import { useMemo } from 'react';
 import type { PullRequestState, Session, SessionPrGroup } from '@goodboy/types';
 import { useAppStore, useSessions } from '../../../../store';
 
-export interface InboxRow {
+export type InboxRow = {
   readonly session: Session;
   readonly pr: PullRequestState | null;
   readonly attention: boolean;
-}
+};
 
-export interface InboxGroup {
+export type InboxGroup = {
   readonly key: SessionPrGroup;
   readonly label: string;
   readonly rows: ReadonlyArray<InboxRow>;
-}
+};
 
 function bucketOf(pr: PullRequestState | null): SessionPrGroup {
   if (!pr) return 'not-open';

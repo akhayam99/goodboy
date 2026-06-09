@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
 import type { QuickActionItem } from '../types';
 
-interface Props {
+type Props = {
   readonly items: ReadonlyArray<QuickActionItem>;
   readonly emptyHint: string;
   readonly onSelect: (item: QuickActionItem) => void;
   readonly onDismiss: () => void;
-}
+};
 
 /**
  * Generic prefix-action picker rendered inline above the composer. Renders

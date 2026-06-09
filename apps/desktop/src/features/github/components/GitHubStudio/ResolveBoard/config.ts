@@ -5,11 +5,11 @@ import { AGENT_KIND_DEFAULTS } from '../../../../session/agent-kind';
 
 export { clampEffort };
 
-export interface CardConfig {
+export type CardConfig = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
-}
+};
 
 export const DEFAULT_CONFIG: CardConfig = {
   provider: 'anthropic',

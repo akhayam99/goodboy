@@ -3,13 +3,13 @@ import { Button, type ButtonSize, type ButtonVariant } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import { useOpenSession } from '../../hooks/useOpenSession';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly onOpened?: () => void;
   readonly label?: string;
   readonly size?: ButtonSize;
   readonly variant?: ButtonVariant;
-}
+};
 
 export function OpenSessionButton({
   sessionId,

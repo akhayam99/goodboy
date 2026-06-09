@@ -54,7 +54,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
 
-interface DiffViewerDialogProps {
+type DiffViewerDialogProps = {
   open: boolean;
   onClose: () => void;
   sessionId?: SessionId;
@@ -63,19 +63,11 @@ interface DiffViewerDialogProps {
   repoSlug?: string;
   prNumber?: number;
   cwd?: string;
-  /** Absolute path of the worktree root, used to open files in editor. */
   workingDir?: string;
-  /**
-   * When set, the dialog enters git-aware mode: it loads commits/status from
-   * the worktree and exposes the view selector (working tree / commits / branch).
-   * Without this, the dialog falls back to the supplied `loader` (PR-review mode).
-   */
   worktreePath?: string;
-  /** When true and the dialog opens, jump to the first file that has open comments. */
   jumpToFirstCommented?: boolean;
-  /** When set, jump to this file path after the diff loads. */
   jumpToFile?: string;
-}
+};
 
 // Default to the same scope the sidebar files-touched counter uses
 // (branch vs main) so opening the dialog matches what the count promises.
@@ -686,11 +678,11 @@ export function DiffViewerDialog({
   );
 }
 
-interface GitStatusHeaderProps {
+type GitStatusHeaderProps = {
   status: WorktreeStatus | null;
   onRefresh: () => void;
   refreshing: boolean;
-}
+};
 
 function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps) {
   const headLabel = status?.head ? status.head.slice(0, 7) : null;
@@ -743,11 +735,11 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
   );
 }
 
-interface NotesFooterProps {
+type NotesFooterProps = {
   openCount: number;
   spawning: boolean;
   onPropose: () => void;
-}
+};
 
 function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   return (
@@ -773,7 +765,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   );
 }
 
-interface ToolbarProps {
+type ToolbarProps = {
   title?: string;
   prNumber?: number;
   selected: FileDiff | undefined;
@@ -787,7 +779,7 @@ interface ToolbarProps {
   onNext: () => void;
   onClose: () => void;
   viewSelector?: React.ReactNode;
-}
+};
 
 function Toolbar({
   title,
@@ -1186,7 +1178,7 @@ function anchorKey(a: DiffCommentAnchor): string {
   return `${a.side}:${a.lineNumber}`;
 }
 
-interface FileDiffPaneProps {
+type FileDiffPaneProps = {
   file: FileDiff;
   comments: ReadonlyArray<DiffComment>;
   fileLevelComments: ReadonlyArray<DiffComment>;
@@ -1204,7 +1196,7 @@ interface FileDiffPaneProps {
   onDelete: (id: string) => void;
   onViewAgent: (agentId: AgentId) => void;
   getAgentName: (agentId: AgentId) => string | undefined;
-}
+};
 
 function FileDiffPane({
   file,
@@ -1249,10 +1241,7 @@ function FileDiffPane({
     return out;
   }, [file]);
 
-  const totalLines = useMemo(
-    () => file.hunks.reduce((n, h) => n + h.lines.length, 0),
-    [file],
-  );
+  const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 

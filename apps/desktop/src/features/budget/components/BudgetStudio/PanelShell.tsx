@@ -2,14 +2,14 @@ import type { ReactNode } from 'react';
 import { Divider, cn } from '@goodboy/ui';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
-interface Props {
+type Props = {
   readonly icon?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
   readonly action?: ReactNode;
   readonly maxWidthClass?: string;
   readonly children: ReactNode;
-}
+};
 
 export function PanelShell({
   icon,

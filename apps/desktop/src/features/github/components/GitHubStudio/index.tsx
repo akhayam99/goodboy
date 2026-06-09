@@ -8,13 +8,13 @@ import { useGithubInbox } from './useGithubInbox';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialSessionId: SessionId | null;
   readonly initialPrNumber?: number | null;
   readonly initialThreadId?: string | null;
   readonly onClose: () => void;
-}
+};
 
 export function GitHubStudio({
   workspaceName,

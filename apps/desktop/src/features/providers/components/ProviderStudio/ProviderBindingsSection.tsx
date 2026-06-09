@@ -4,10 +4,10 @@ import { FolderGit2 } from 'lucide-react';
 import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly providerId: ProviderId;
   readonly cliIdentity: string | null;
-}
+};
 
 export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
   const credentials = useAppStore((s) => s.providerCredentials);

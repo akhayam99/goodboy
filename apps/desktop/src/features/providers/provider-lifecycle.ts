@@ -8,21 +8,21 @@ import {
 } from '@goodboy/types';
 import type { AuthState, ProviderStatus } from './providers';
 
-export interface LifecycleOutputPayload {
+export type LifecycleOutputPayload = {
   readonly runId: string;
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
   readonly data: string;
-}
+};
 
-export interface LifecycleExitPayload {
+export type LifecycleExitPayload = {
   readonly runId: string;
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
   readonly exitCode: number;
   readonly status: ProviderStatus;
   readonly auth: AuthState;
-}
+};
 
 // Resolve the platform once per process. Tauri runs on darwin/linux/win32 only;
 // anything else falls back to linux because the npm commands are identical.

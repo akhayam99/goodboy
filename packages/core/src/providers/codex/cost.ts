@@ -19,8 +19,8 @@ export function computeCodexCostUsd(
   );
 }
 
-export interface CodexModelPriceOverride {
+export type CodexModelPriceOverride = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
-}
+};

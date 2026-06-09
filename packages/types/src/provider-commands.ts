@@ -4,17 +4,17 @@ export type ProviderLifecycleAction = 'install' | 'login' | 'logout';
 
 export type ProviderPlatform = 'darwin' | 'linux' | 'win32';
 
-export interface ProviderPlatformCommands {
+export type ProviderPlatformCommands = {
   readonly darwin: string;
   readonly linux: string;
   readonly win32: string;
-}
+};
 
-export interface ProviderLifecycleCommands {
+export type ProviderLifecycleCommands = {
   readonly install: ProviderPlatformCommands;
   readonly login: string;
   readonly logout: string;
-}
+};
 
 // Cross-platform, npm-first. Cursor is the only non-npm exception because
 // cursor-agent is not published on npm. Gemini logout has no subcommand so we

@@ -10,25 +10,25 @@ export class WorktreeError extends Error {
   }
 }
 
-export interface CreateWorktreeOptions {
+export type CreateWorktreeOptions = {
   readonly repoPath: string;
   readonly branchPrefix: string;
   readonly slug: string;
   readonly parentDir?: string;
-}
+};
 
-export interface CreatedWorktree {
+export type CreatedWorktree = {
   readonly worktreePath: string;
   readonly branchName: string;
   readonly slug: string;
-}
+};
 
-export interface WorktreeInfo {
+export type WorktreeInfo = {
   readonly path: string;
   readonly branch: string | null;
   readonly head: string;
   readonly isMain: boolean;
-}
+};
 
 export async function createWorktree(opts: CreateWorktreeOptions): Promise<CreatedWorktree> {
   const slug = sanitizeSlug(opts.slug);

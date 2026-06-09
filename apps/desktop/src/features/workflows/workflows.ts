@@ -23,7 +23,7 @@ import type {
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 
-interface RawWorkflowStepRow {
+type RawWorkflowStepRow = {
   readonly id: string;
   readonly workflowId: string;
   readonly libraryStepId: string | null;
@@ -36,9 +36,9 @@ interface RawWorkflowStepRow {
   readonly effort: string | null;
   readonly verbosity: string | null;
   readonly parallelGroup: number | null;
-}
+};
 
-interface RawStepDefRow {
+type RawStepDefRow = {
   readonly id: string;
   readonly workspaceId: string | null;
   readonly baseStepId: string | null;
@@ -51,9 +51,9 @@ interface RawStepDefRow {
   readonly verbosityDefault: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
-}
+};
 
-interface RawWorkflowRow {
+type RawWorkflowRow = {
   readonly id: string;
   readonly workspaceId: string;
   readonly name: string;
@@ -63,9 +63,9 @@ interface RawWorkflowRow {
   readonly updatedAt: string;
   readonly deletedAt: number | null;
   readonly isPreset: boolean;
-}
+};
 
-interface RawAgentRow {
+type RawAgentRow = {
   readonly id: string;
   readonly sessionId: string;
   readonly stepId: string | null;
@@ -85,7 +85,7 @@ interface RawAgentRow {
   readonly verbosity: string | null;
   readonly sourceThreadId: string | null;
   readonly sourceCommentUrl: string | null;
-}
+};
 
 function rowToStep(row: RawWorkflowStepRow): Step {
   return {
@@ -177,7 +177,7 @@ export async function invokeWorkflowsForSession(sessionId: SessionId): Promise<W
   return rows.map(rowToWorkflow);
 }
 
-export interface WorkflowStepUpsertArgs {
+export type WorkflowStepUpsertArgs = {
   readonly id?: StepId;
   readonly libraryStepId?: StepDefId;
   readonly role?: AgentRole;
@@ -189,16 +189,16 @@ export interface WorkflowStepUpsertArgs {
   readonly effort?: AgentEffort;
   readonly verbosity?: VerbosityLevel;
   readonly parallelGroup?: number;
-}
+};
 
-export interface WorkflowUpsertArgs {
+export type WorkflowUpsertArgs = {
   readonly id?: WorkflowId;
   readonly workspaceId: WorkspaceId;
   readonly name: string;
   readonly description: string;
   readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
   readonly isPreset?: boolean;
-}
+};
 
 export async function invokeWorkflowUpsert(args: WorkflowUpsertArgs): Promise<Workflow> {
   const row = await invoke<RawWorkflowRow>('workflow_upsert', {
@@ -236,7 +236,7 @@ export async function invokeStepDefList(workspaceId: WorkspaceId): Promise<StepD
   return rows.map(rowToStepDef);
 }
 
-export interface StepDefUpsertArgs {
+export type StepDefUpsertArgs = {
   readonly id?: StepDefId;
   readonly workspaceId: WorkspaceId | null;
   readonly baseStepId?: StepDefId;
@@ -247,7 +247,7 @@ export interface StepDefUpsertArgs {
   readonly modelDefault?: string;
   readonly effortDefault?: AgentEffort;
   readonly verbosityDefault?: VerbosityLevel;
-}
+};
 
 export async function invokeStepDefUpsert(args: StepDefUpsertArgs): Promise<StepDef> {
   const row = await invoke<RawStepDefRow>('step_def_upsert', {
@@ -277,7 +277,7 @@ export async function invokeAgentList(sessionId: SessionId): Promise<Agent[]> {
   return rows.map(rowToAgent);
 }
 
-export interface AgentInsertArgs {
+export type AgentInsertArgs = {
   readonly id?: AgentId;
   readonly sessionId: SessionId;
   readonly stepId?: StepId;
@@ -294,7 +294,7 @@ export interface AgentInsertArgs {
   readonly verbosity?: VerbosityLevel;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl?: string;
-}
+};
 
 export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
   const row = await invoke<RawAgentRow>('agent_insert', {
@@ -331,13 +331,13 @@ export async function invokeAgentSetVerbosity(
   return invoke<void>('agent_set_verbosity', { id, verbosity });
 }
 
-export interface AgentUpdateFields {
+export type AgentUpdateFields = {
   readonly status: AgentStatus;
   readonly providerRunId?: ProviderRunId;
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
-}
+};
 
 export async function invokeAgentUpdateStatus(
   id: AgentId,
@@ -376,14 +376,14 @@ export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<Worksp
 }
 
 // Parallel phase group commands (#207).
-interface RawParallelGroupRow {
+type RawParallelGroupRow = {
   readonly id: string;
   readonly sessionId: string;
   readonly ordinal: number;
   readonly mergeStrategy: string;
   readonly createdAt: string;
   readonly completedAt: string | null;
-}
+};
 
 function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
   return {
@@ -396,13 +396,13 @@ function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
   };
 }
 
-export interface ParallelGroupCreateArgs {
+export type ParallelGroupCreateArgs = {
   readonly id?: ParallelGroupId;
   readonly sessionId: SessionId;
   readonly ordinal: number;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly createdAt?: IsoDateTime;
-}
+};
 
 export async function invokeParallelGroupCreate(
   args: ParallelGroupCreateArgs,

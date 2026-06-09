@@ -3,11 +3,11 @@ import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 
-interface Props {
+type Props = {
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly focusedId: ProviderId | null;
   readonly onSelect: (id: ProviderId) => void;
-}
+};
 
 const STATUS_DOT: Record<ProviderConnectionState, string> = {
   connected: 'bg-success',

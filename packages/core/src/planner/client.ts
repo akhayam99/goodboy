@@ -5,26 +5,26 @@ import { parsePlannerOutput } from './parser';
 import { PLANNER_SYSTEM_PROMPT, buildPlannerUserPrompt } from './prompt';
 import type { PlannerInput, PlannerOutput } from './types';
 
-export interface PlannerUsage {
+export type PlannerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
-export interface PlannerClientResult {
+export type PlannerClientResult = {
   readonly output: PlannerOutput;
   readonly usage: PlannerUsage;
   readonly model: string;
-}
+};
 
 type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
-export interface PlannerClientDeps {
+export type PlannerClientDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly invokeFn: InvokeFn;
-}
+};
 
 export class PlannerClientSpawnError extends Error {
   constructor(
@@ -36,20 +36,20 @@ export class PlannerClientSpawnError extends Error {
   }
 }
 
-interface ClaudeJsonResult {
+type ClaudeJsonResult = {
   readonly result?: string;
   readonly usage?: {
     readonly input_tokens?: number;
     readonly output_tokens?: number;
     readonly cache_read_input_tokens?: number;
   };
-}
+};
 
-interface InvokeResult {
+type InvokeResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 export class PlannerClient {
   private readonly providerId: ProviderId;

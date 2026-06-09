@@ -11,19 +11,19 @@ import type {
 import { autoPopulateContext } from './auto-populate';
 import { ContextEngine } from './engine';
 
-interface OpenQuestionRowSnapshot {
+type OpenQuestionRowSnapshot = {
   readonly text: string;
   readonly status: OpenQuestionStatus;
   readonly suggested_answers: string;
   readonly user_answer: string | null;
-}
+};
 
-interface OpenQuestionProvenanceRow {
+type OpenQuestionProvenanceRow = {
   readonly workflow_id: string | null;
   readonly created_by_step_ordinal: number | null;
   readonly owned_by_step_ordinal: number | null;
   readonly created_by_agent_id: string | null;
-}
+};
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');

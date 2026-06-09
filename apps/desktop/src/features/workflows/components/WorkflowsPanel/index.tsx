@@ -18,9 +18,9 @@ import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 import { WorkflowComposer } from '../WorkflowStudio/WorkflowComposer';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
 export function WorkflowsPanel({ workspaceId }: Props) {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);

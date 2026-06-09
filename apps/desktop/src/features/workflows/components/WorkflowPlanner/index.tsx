@@ -33,24 +33,20 @@ import { ModelSelect } from '../../../../features/session/components/ModelSelect
 import { EffortSelect } from '../../../../features/session/components/EffortSelect';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 
-interface StepOverrides {
+type StepOverrides = {
   readonly model: string;
   readonly effort: EffortLevel;
   readonly verbosity: VerbosityLevel;
-}
+};
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialProcess: string;
-  // When false (default) the generated workflow is persisted but not added to
-  // the reusable preset library: the session that runs it keeps it, but it
-  // won't show up in the preset picker. Tick "save as preset" to make it
-  // reusable.
   saveAsPreset?: boolean;
   onWorkflowReady: (workflowId: WorkflowId) => void;
   onPlanChange?: (hasPlan: boolean) => void;
-}
+};
 
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 

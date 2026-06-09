@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface PlanRow {
+type PlanRow = {
   id: string;
   session_id: string;
   agent_id: string;
@@ -24,11 +24,11 @@ interface PlanRow {
   clusters_json: string | null;
   created_at: number;
   updated_at: number;
-}
+};
 
-interface PlanWithCountRow extends PlanRow {
+type PlanWithCountRow = PlanRow & {
   consumption_count: number;
-}
+};
 
 function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster> | undefined {
   if (!raw) return undefined;
@@ -90,7 +90,7 @@ export async function listPlansForSession(
   return rows.map(toDomainWithCount);
 }
 
-export interface UpsertPlanInput {
+export type UpsertPlanInput = {
   readonly id: PlanId;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
@@ -98,7 +98,7 @@ export interface UpsertPlanInput {
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
-}
+};
 
 const PLAN_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at FROM session_plans`;
 
@@ -180,13 +180,13 @@ export async function deletePlan(db: Database, id: PlanId): Promise<void> {
   await db.execute(`DELETE FROM session_plans WHERE id = ?`, [id]);
 }
 
-interface PlanConsumptionRow {
+type PlanConsumptionRow = {
   id: string;
   plan_id: string;
   agent_id: string;
   agent_name: string | null;
   consumed_at: number;
-}
+};
 
 function toConsumption(row: PlanConsumptionRow): PlanConsumption {
   return {
@@ -198,11 +198,11 @@ function toConsumption(row: PlanConsumptionRow): PlanConsumption {
   };
 }
 
-export interface AddPlanConsumptionInput {
+export type AddPlanConsumptionInput = {
   readonly id: PlanConsumptionId;
   readonly planId: PlanId;
   readonly agentId: AgentId;
-}
+};
 
 export async function addPlanConsumption(
   db: Database,

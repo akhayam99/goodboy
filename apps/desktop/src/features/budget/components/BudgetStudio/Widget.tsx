@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 import { SectionHeader } from './SectionHeader';
 
-interface Props {
+type Props = {
   readonly label: string;
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly className?: string;
   readonly children: ReactNode;
-}
+};
 
 export function Widget({ label, hint, action, className, children }: Props) {
   return (

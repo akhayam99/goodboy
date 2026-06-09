@@ -22,14 +22,14 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
   deny: 'rule added: deny for this session',
 };
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly runId: ProviderRunId;
   readonly onResolved: () => void;
-}
+};
 
 export function PermissionScopePicker({
   sessionId,

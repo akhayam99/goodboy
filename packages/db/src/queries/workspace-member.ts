@@ -1,11 +1,11 @@
 import type { WorkspaceId, WorkspaceMember } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkspaceMemberRow {
+type WorkspaceMemberRow = {
   member_workspace_id: string;
   mount_name: string;
   root_path: string;
-}
+};
 
 function toDomain(row: WorkspaceMemberRow): WorkspaceMember {
   return {

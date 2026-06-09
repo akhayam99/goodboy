@@ -1,8 +1,8 @@
 import type { TranscriptItem } from '../../utils/transcript-items';
 
-interface Props {
+type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;
-}
+};
 
 export function SkillInvocationCard({ item }: Props) {
   return (

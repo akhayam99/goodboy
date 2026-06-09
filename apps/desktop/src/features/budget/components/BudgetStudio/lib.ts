@@ -8,27 +8,27 @@ export type BudgetScope =
 
 export type SortKey = 'recent' | 'expensive';
 
-export interface WorkspaceTurn {
+export type WorkspaceTurn = {
   readonly record: TelemetryRecord;
   readonly sessionId: SessionId;
   readonly sessionGoal: string;
-}
+};
 
-export interface SessionSpend {
+export type SessionSpend = {
   readonly sessionId: SessionId;
   readonly goal: string;
   readonly spentUsd: number;
   readonly turnCount: number;
   readonly isCurrent: boolean;
-}
+};
 
-export interface ModelBreakdownEntry {
+export type ModelBreakdownEntry = {
   readonly provider: string;
   readonly model: string;
   readonly tokensIn: number;
   readonly tokensOut: number;
   readonly spentUsd: number;
-}
+};
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 const VENDOR_PREFIXES = ['claude', 'anthropic', 'gemini', 'google', 'cursor'];

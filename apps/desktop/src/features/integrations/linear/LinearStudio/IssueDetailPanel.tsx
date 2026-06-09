@@ -35,12 +35,12 @@ import { issuePullRequests, type LinearIssue } from '../client';
 
 type BranchMode = 'pr' | 'fresh';
 
-interface Props {
+type Props = {
   readonly issue: LinearIssue | null;
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId;
   readonly onClose: () => void;
-}
+};
 
 const SLUG_MAX_LEN = 48;
 

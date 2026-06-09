@@ -5,10 +5,10 @@ import { extractHandoff } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 
-interface Props {
+type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
-}
+};
 
 export function HandoffChip({ assistantText, sessionId }: Props) {
   const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);

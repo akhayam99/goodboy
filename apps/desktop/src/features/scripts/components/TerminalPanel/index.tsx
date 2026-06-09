@@ -31,11 +31,11 @@ function stringToBase64(s: string): string {
   return btoa(binary);
 }
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly cwd: string | null;
-}
+};
 
 export function TerminalPanel({ sessionId, isActive, cwd }: Props) {
   const openTerminal = useAppStore((s) => s.openTerminal);

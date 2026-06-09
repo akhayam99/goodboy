@@ -7,10 +7,10 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
-}
+};
 
 type Mode = 'single' | 'multi';
 

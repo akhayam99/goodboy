@@ -4,12 +4,12 @@ import { useWorkspaceHasUnread } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { workspaceAccent } from '../../color';
 
-interface Props {
+type Props = {
   workspace: Workspace;
   density: 'card' | 'row';
   highlighted: boolean;
   onOpen: () => void;
-}
+};
 
 export function WorkspaceRow({ workspace, density, highlighted, onOpen }: Props) {
   const hasUnread = useWorkspaceHasUnread(workspace.id);

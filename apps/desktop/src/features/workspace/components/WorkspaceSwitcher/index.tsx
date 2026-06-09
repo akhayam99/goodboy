@@ -5,9 +5,9 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
-interface Props {
+type Props = {
   onClose: () => void;
-}
+};
 
 export function WorkspaceSwitcher({ onClose }: Props) {
   const workspaces = useWorkspaces();

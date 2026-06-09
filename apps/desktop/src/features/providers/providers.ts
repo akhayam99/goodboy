@@ -7,26 +7,26 @@ import type {
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
-export interface AuthState {
+export type AuthState = {
   readonly state: AuthStateKind;
   readonly identity: string | null;
-}
+};
 
 export type { ProviderId, ProviderConnectionState };
 
-export interface ProviderStatus {
+export type ProviderStatus = {
   readonly id: string;
   readonly binary: string;
   readonly available: boolean;
   readonly version: string | null;
   readonly error: string | null;
-}
+};
 
-export interface ProviderInfo extends ProviderInfoBase {
+export type ProviderInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
-}
+};
 
 export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   anthropic: 'claude',
@@ -123,12 +123,12 @@ function providerInfoFromStatus(
   return { ...base, connection, version: status.version, error: null };
 }
 
-export interface ProviderStatuses {
+export type ProviderStatuses = {
   readonly anthropic: ProviderStatus | null;
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
   readonly gemini: ProviderStatus | null;
-}
+};
 
 export function buildProviderList(
   statuses: ProviderStatuses,

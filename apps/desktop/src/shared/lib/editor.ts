@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 
-export interface DetectedEditor {
+export type DetectedEditor = {
   readonly binary: string;
   readonly label: string;
-}
+};
 
 export async function detectEditors(): Promise<ReadonlyArray<DetectedEditor>> {
   return invoke<DetectedEditor[]>('detect_editors');

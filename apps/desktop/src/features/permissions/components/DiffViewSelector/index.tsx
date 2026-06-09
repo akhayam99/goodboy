@@ -3,14 +3,14 @@ import { ChevronDown, GitCommit } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 
-interface Props {
+type Props = {
   view: DiffView;
   onChange: (next: DiffView) => void;
   commits: ReadonlyArray<BranchCommit>;
   status: WorktreeStatus | null;
   filesCount: number | null;
   loading?: boolean;
-}
+};
 
 type Row =
   | { kind: 'header'; label: string; badge?: string }

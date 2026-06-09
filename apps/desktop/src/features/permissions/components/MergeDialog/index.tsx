@@ -9,25 +9,23 @@ import { Button, Dialog } from '@goodboy/ui';
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
 
-export interface MergeConflict {
+export type MergeConflict = {
   file: string;
   runIds: ReadonlyArray<ProviderRunId>;
-}
+};
 
-export interface RunMeta {
+export type RunMeta = {
   readonly agentName?: string;
   readonly stepName?: string;
-}
+};
 
-export interface MergeDialogProps {
+export type MergeDialogProps = {
   open: boolean;
   conflicts: ReadonlyArray<MergeConflict>;
-  /** Per-run display metadata. When supplied, each option shows the agent and
-   *  step that produced the version, not just its opaque run id. */
   runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   onResolve: (picks: Record<string, MergeResolution>) => void;
   onCancel: () => void;
-}
+};
 
 export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: MergeDialogProps) {
   const [picks, setPicks] = useState<Record<string, MergeResolution>>({});
@@ -93,12 +91,12 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
   );
 }
 
-interface ConflictRowProps {
+type ConflictRowProps = {
   conflict: MergeConflict;
   runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   pick: MergeResolution | undefined;
   onPick: (resolution: MergeResolution) => void;
-}
+};
 
 function shortRunId(runId: ProviderRunId): string {
   return runId.slice(-8);

@@ -5,17 +5,17 @@ import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 
-interface SortOption {
+type SortOption = {
   readonly key: SessionSortKey;
   readonly label: string;
   readonly hint: string;
-}
+};
 
-interface GroupOption {
+type GroupOption = {
   readonly key: SessionGroupKey;
   readonly label: string;
   readonly hint: string;
-}
+};
 
 const SORT_OPTIONS: ReadonlyArray<SortOption> = [
   { key: 'updatedAt', label: 'Recent', hint: 'Last active first' },
@@ -32,9 +32,9 @@ const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
 const MENU_WIDTH = 200;
 const VIEWPORT_MARGIN = 8;
 
-interface SessionViewMenuProps {
+type SessionViewMenuProps = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
 /**
  * Linear-style "display options" trigger for the sessions rail. Portals the
@@ -153,10 +153,10 @@ export function SessionViewMenu({ workspaceId }: SessionViewMenuProps) {
   );
 }
 
-interface MenuSectionProps {
+type MenuSectionProps = {
   readonly title: string;
   readonly children: React.ReactNode;
-}
+};
 
 function MenuSection({ title, children }: MenuSectionProps) {
   return (
@@ -169,12 +169,12 @@ function MenuSection({ title, children }: MenuSectionProps) {
   );
 }
 
-interface MenuItemProps {
+type MenuItemProps = {
   readonly label: string;
   readonly hint: string;
   readonly selected: boolean;
   readonly onClick: () => void;
-}
+};
 
 function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
   return (

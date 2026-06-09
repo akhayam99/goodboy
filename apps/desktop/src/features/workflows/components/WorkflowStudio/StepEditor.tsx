@@ -12,13 +12,13 @@ import { EffortSelect } from '../../../session/components/EffortSelect';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { ProviderSelect } from '../../../session/components/ProviderSelect';
 
-interface Props {
+type Props = {
   readonly def: DefinitionForm;
   readonly ordinal: number;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onUpdate: (patch: Partial<DefinitionForm>) => void;
   readonly onClose: () => void;
-}
+};
 
 export function StepEditor({ def, ordinal, connectedProviders, onUpdate, onClose }: Props) {
   const kind = ROLE_TO_KIND[def.role];

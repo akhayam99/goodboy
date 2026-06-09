@@ -6,7 +6,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionExternalTaskRow {
+type SessionExternalTaskRow = {
   session_id: string;
   provider: string;
   external_id: string;
@@ -14,7 +14,7 @@ interface SessionExternalTaskRow {
   url: string;
   title: string;
   created_at: number;
-}
+};
 
 function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
   return {

@@ -11,11 +11,11 @@ import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, ROLE_TO_KIND } from '../..
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   session: Session;
-}
+};
 
 type Selection =
   | { readonly kind: 'preset'; readonly id: WorkflowId }

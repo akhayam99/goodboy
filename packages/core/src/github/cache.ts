@@ -2,29 +2,29 @@ import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { resolvePrForBranch } from './resolver';
 
-export interface PrCacheStore {
+export type PrCacheStore = {
   get(repoSlug: string, branch: string): Promise<GithubPrCacheEntry | null>;
   upsert(entry: GithubPrCacheEntry): Promise<void>;
   invalidate(repoSlug: string, branch: string): Promise<void>;
-}
+};
 
-export interface PrCacheDeps {
+export type PrCacheDeps = {
   runner: GhRunner;
   store: PrCacheStore;
   now?: () => Date;
   ttlMs?: number;
-}
+};
 
 export const DEFAULT_PR_CACHE_TTL_MS = 60_000;
 
-export interface GetPrInput {
+export type GetPrInput = {
   repoSlug: string;
   branch: string;
   cwd?: string;
   token?: string;
   workspaceId?: string;
   force?: boolean;
-}
+};
 
 export async function getPrForBranch(
   deps: PrCacheDeps,

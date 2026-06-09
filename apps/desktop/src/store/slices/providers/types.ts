@@ -12,7 +12,7 @@ export type ProviderLifecyclePhase =
   | 'error'
   | 'cancelled';
 
-export interface ProviderLifecycleState {
+export type ProviderLifecycleState = {
   readonly phase: ProviderLifecyclePhase;
   readonly runId: string | null;
   readonly action: ProviderLifecycleAction | null;
@@ -20,10 +20,8 @@ export interface ProviderLifecycleState {
   readonly exitCode: number | null;
   readonly startedAt: number | null;
   readonly errorTail: string | null;
-  // First OAuth URL spotted in the lifecycle PTY stream, surfaced so the UI
-  // can offer "Open in browser" without auto-opening (link safety).
   readonly detectedAuthUrl: string | null;
-}
+};
 
 export const IDLE_LIFECYCLE: ProviderLifecycleState = {
   phase: 'idle',

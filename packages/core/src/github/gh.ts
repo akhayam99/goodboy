@@ -1,19 +1,19 @@
-export interface GhResult {
+export type GhResult = {
   stdout: string;
   stderr: string;
   exitCode: number;
-}
+};
 
-export interface GhRunOptions {
+export type GhRunOptions = {
   cwd?: string;
   token?: string;
   workspaceId?: string;
   timeoutMs?: number;
-}
+};
 
-export interface GhRunner {
+export type GhRunner = {
   run(args: ReadonlyArray<string>, opts?: GhRunOptions): Promise<GhResult>;
-}
+};
 
 export const DEFAULT_GH_TIMEOUT_MS = 8_000;
 
@@ -37,10 +37,10 @@ export class GhJsonParseError extends Error {
   }
 }
 
-export interface GhDetectResult {
+export type GhDetectResult = {
   available: boolean;
   version?: string;
-}
+};
 
 export async function detect(runner: GhRunner): Promise<GhDetectResult> {
   try {

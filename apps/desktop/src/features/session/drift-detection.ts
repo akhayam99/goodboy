@@ -5,17 +5,17 @@ type DriftSignal =
   | 'file-edit-from-readonly-kind'
   | 'impl-output-from-readonly-kind';
 
-export interface DriftViolation {
+export type DriftViolation = {
   readonly kind: AgentKind;
   readonly signal: DriftSignal;
   readonly detail: string;
-}
+};
 
-export interface DriftDetectionInput {
+export type DriftDetectionInput = {
   readonly agentKind: AgentKind;
   readonly assistantText: string;
   readonly filesEdited: ReadonlyArray<string>;
-}
+};
 
 const PLAN_MARKER_RE = /<<plan>>/;
 

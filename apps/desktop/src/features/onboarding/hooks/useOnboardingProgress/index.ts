@@ -9,22 +9,14 @@ import {
   type OnboardingStepId,
 } from '../../onboarding-store';
 
-/**
- * Reads progress from localStorage and auto-detects new completions
- * from store events (workspace added, session created, agent spawned,
- * plan emitted). The 'skill' and 'palette' steps are nudged separately
- *, they fire on first user action in their respective UIs.
- */
-export interface OnboardingProgress {
+export type OnboardingProgress = {
   readonly completedCount: number;
   readonly totalCount: number;
   readonly completed: ReadonlySet<OnboardingStepId>;
-  /** Card collapsed to the chip, reopenable, not a permanent dismiss. */
   readonly collapsed: boolean;
-  /** Wrap-up acknowledged, onboarding gone for good. */
   readonly finished: boolean;
   readonly isDone: boolean;
-}
+};
 
 export function useOnboardingProgress(): OnboardingProgress {
   // localStorage is the source of truth (monotonic). Re-read on a custom

@@ -32,34 +32,34 @@ export type ContextSlotDelta = Readonly<{
   upserts: ReadonlyArray<ContextSlotDeltaUpsert>;
 }>;
 
-export interface SummarizerUsage {
+export type SummarizerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
-export interface SummarizeInput {
+export type SummarizeInput = {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
   readonly prState?: NextActionsPrState | null;
-}
+};
 
-export interface SummarizerResult {
+export type SummarizerResult = {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
   readonly nextActions: ReadonlyArray<NextAction>;
-}
+};
 
 type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
-export interface SummarizerDeps {
+export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly invokeFn: InvokeFn;
-}
+};
 
 export class SummarizerSpawnError extends Error {
   constructor(
@@ -81,11 +81,11 @@ export class SummarizerParseError extends Error {
   }
 }
 
-interface SummarizeCommandResult {
+type SummarizeCommandResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload, a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
 
@@ -185,7 +185,7 @@ function applyDelta(
   return Array.from(byKey.values());
 }
 
-interface ClaudeJsonResult {
+type ClaudeJsonResult = {
   readonly result?: string;
   readonly usage?: {
     readonly input_tokens?: number;
@@ -194,7 +194,7 @@ interface ClaudeJsonResult {
   };
   readonly subtype?: string;
   readonly is_error?: boolean;
-}
+};
 
 function extractTextAndUsage(
   providerId: ProviderId,

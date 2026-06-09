@@ -4,11 +4,11 @@ import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { PermissionScopePicker } from '../PermissionScopePicker';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 
-interface Props {
+type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
-}
+};
 
 export function PermissionRequestCard({ item, sessionId, agentId }: Props) {
   const [resolved, setResolved] = useState(false);

@@ -6,11 +6,11 @@ export type UpdaterStatus =
   | 'uptodate'
   | 'error';
 
-export interface UpdaterState {
+export type UpdaterState = {
   readonly updaterStatus: UpdaterStatus;
   readonly updateVersion: string | null;
   readonly updateError: string | null;
-}
+};
 
 export const initialUpdaterState: UpdaterState = {
   updaterStatus: 'idle',

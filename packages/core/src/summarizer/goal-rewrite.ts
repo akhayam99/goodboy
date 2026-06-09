@@ -14,22 +14,22 @@ If the goal already states only the objective with no process, return it essenti
 
 Output ONLY the rewritten goal text. No preamble, no quotes, no JSON, no explanation.`;
 
-export interface GoalRewriteInput {
+export type GoalRewriteInput = {
   readonly goal: string;
   readonly stepNames: ReadonlyArray<string>;
-}
+};
 
-export interface GoalRewriteDeps {
+export type GoalRewriteDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-}
+};
 
-interface OneShotResult {
+type OneShotResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 export function buildGoalRewriteUserPrompt(input: GoalRewriteInput): string {
   const steps = input.stepNames.map((name) => `- ${name}`).join('\n');

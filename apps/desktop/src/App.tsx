@@ -640,10 +640,10 @@ export function App() {
   );
 }
 
-interface KeepAliveChatPanelProps {
+type KeepAliveChatPanelProps = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
-}
+};
 
 function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
@@ -655,13 +655,13 @@ function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   );
 }
 
-interface KeepAliveContextPanelProps {
+type KeepAliveContextPanelProps = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly collapsed: boolean;
   readonly onCollapse: () => void;
   readonly onExpand: () => void;
-}
+};
 
 function KeepAliveContextPanel({
   sessionId,

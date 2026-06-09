@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface CollapsibleProps {
+export type CollapsibleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trigger: ReactNode;
   children: ReactNode;
   className?: string;
-}
+};
 
 export function Collapsible({
   open,

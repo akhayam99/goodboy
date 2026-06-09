@@ -16,13 +16,11 @@ import { EscapeHatch } from './EscapeHatch';
 import { GuidePanel } from './GuidePanel';
 import { guideFor } from './guides';
 
-interface Props {
-  /** Provider currently being configured. null means the modal is closed. */
+type Props = {
   readonly providerId: ProviderId | null;
-  /** Action to auto-dispatch when the modal opens on an idle lifecycle. */
   readonly initialAction: ProviderLifecycleAction;
   readonly onClose: () => void;
-}
+};
 
 // One modal for the entire install + connect path. Stays mounted through
 // both phases so the user does not lose context when install finishes and
@@ -56,12 +54,12 @@ export function ProviderConnectModal({ providerId, initialAction, onClose }: Pro
   );
 }
 
-interface BodyProps {
+type BodyProps = {
   readonly providerId: ProviderId;
   readonly initialAction: ProviderLifecycleAction;
   readonly open: boolean;
   readonly onClose: () => void;
-}
+};
 
 function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
   const lifecycle = useAppStore((s) => s.providerLifecycle[providerId]);
@@ -219,10 +217,10 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
   );
 }
 
-interface PrimaryButton {
+type PrimaryButton = {
   readonly label: string;
   readonly variant: 'primary' | 'secondary' | 'ghost' | 'danger';
-}
+};
 
 function primaryButton(
   phase: ProviderLifecyclePhase,

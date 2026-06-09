@@ -6,11 +6,11 @@ import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   open: boolean;
   onClose: () => void;
-}
+};
 
 /**
  * Connect Linear via Personal Access Token. The token is verified server-

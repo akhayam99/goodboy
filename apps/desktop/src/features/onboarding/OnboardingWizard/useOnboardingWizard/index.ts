@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { isWizardDone, OPEN_WIZARD_EVENT } from '../../onboarding-store';
 
-export interface OnboardingWizardState {
+export type OnboardingWizardState = {
   readonly open: boolean;
   readonly providersConnected: number;
   readonly hasWorkspace: boolean;
-}
+};
 
 export function useOnboardingWizard(): OnboardingWizardState {
   const providersConnected = useAppStore(

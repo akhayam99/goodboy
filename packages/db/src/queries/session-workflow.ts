@@ -7,14 +7,14 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionWorkflowRow {
+type SessionWorkflowRow = {
   workflow_run_id: string;
   workflow_id: string;
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
   discarded_at: string | null;
-}
+};
 
 function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   return {

@@ -3,18 +3,18 @@ import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from 
 import { serializeSkillMarkdown, SkillExecutor } from '@goodboy/core';
 import type { SkillScriptRunner } from '@goodboy/core';
 
-export interface ResolveSkillInvocationArgs {
+export type ResolveSkillInvocationArgs = {
   readonly skill: Skill;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
   readonly workspaceRoot: string;
-}
+};
 
-export interface ResolveSkillInvocationResult {
+export type ResolveSkillInvocationResult = {
   readonly resolvedPrompt: string;
   readonly skillName: string;
   readonly args: ReadonlyArray<string>;
-}
+};
 
 export async function resolveSkillInvocation(
   input: ResolveSkillInvocationArgs,
@@ -28,7 +28,7 @@ export async function resolveSkillInvocation(
   return { resolvedPrompt, skillName: input.skill.name, args: input.args };
 }
 
-interface RawSkillRow {
+type RawSkillRow = {
   readonly id: string;
   readonly workspaceId: string;
   readonly name: string;
@@ -38,7 +38,7 @@ interface RawSkillRow {
   readonly frontmatterJson: string;
   readonly createdAt: string;
   readonly updatedAt: string;
-}
+};
 
 function rowToSkill(row: RawSkillRow): Skill {
   return {
@@ -60,14 +60,14 @@ export async function invokeSkillList(workspaceId: WorkspaceId): Promise<Skill[]
   return rows.map(rowToSkill);
 }
 
-export interface SkillUpsertArgs {
+export type SkillUpsertArgs = {
   readonly workspaceId: WorkspaceId;
   readonly name: string;
   readonly description: string;
   readonly frontmatter: SkillFrontmatter;
   readonly body: string;
   readonly filePath?: string;
-}
+};
 
 export async function invokeSkillUpsert(args: SkillUpsertArgs): Promise<Skill> {
   const markdown = serializeSkillMarkdown(args.frontmatter, args.body);
@@ -95,17 +95,16 @@ export async function invokeSkillRescan(workspaceId: WorkspaceId): Promise<Skill
 }
 
 // Invoke (#133).
-interface SkillInvokeArgs {
+type SkillInvokeArgs = {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
   readonly workingDir: string;
-  /** Must be the workspace root_path, passed to rust for path guard. */
   readonly workspaceRoot: string;
-}
+};
 
-interface SkillInvokeResult {
+type SkillInvokeResult = {
   readonly resolvedPrompt: string;
-}
+};
 
 async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResult> {
   const rawRow = await invoke<RawSkillRow | null>('skill_get', { skillId: args.skillId });

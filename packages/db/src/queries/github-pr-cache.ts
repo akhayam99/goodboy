@@ -1,12 +1,12 @@
 import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface Row {
+type Row = {
   branch: string;
   repo_slug: string;
   pr_json: string | null;
   fetched_at: string;
-}
+};
 
 function toDomain(row: Row): GithubPrCacheEntry {
   return {

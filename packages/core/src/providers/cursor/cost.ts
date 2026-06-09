@@ -5,11 +5,11 @@ import type { ProviderUsage } from '@goodboy/types';
 // the underlying provider's public list price as the best available cost proxy.
 // This approximates the premium-request consumption Cursor users are billed for.
 // Source: Anthropic + OpenAI public pricing (verified 2026-05).
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok: number;
-}
+};
 
 // `composer-2-fast` is Cursor's CLI default cheap tier (per `cursor-agent models`).
 export const CURSOR_CHEAP_MODEL = 'composer-2-fast';

@@ -4,17 +4,17 @@ import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
-interface EditorForm {
+type EditorForm = {
   name: string;
   description: string;
   args: string;
   scripts: string;
   body: string;
-}
+};
 
 const emptyForm = (): EditorForm => ({
   name: '',

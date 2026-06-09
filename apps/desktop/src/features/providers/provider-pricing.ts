@@ -1,19 +1,19 @@
 import type { CodexModelPriceOverride, GeminiModelPriceOverride } from '@goodboy/core';
 import shippedPricing from './pricing.json';
 
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
-}
+};
 
-export interface PricingTable {
+export type PricingTable = {
   readonly version: string;
   readonly anthropic: Record<string, ModelPrice>;
   readonly cursor: Record<string, ModelPrice>;
   readonly codex: Record<string, ModelPrice>;
   readonly gemini: Record<string, ModelPrice>;
-}
+};
 
 const activeTable: PricingTable = shippedPricing as PricingTable;
 

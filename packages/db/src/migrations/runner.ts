@@ -8,11 +8,11 @@ CREATE TABLE IF NOT EXISTS schema_version (
 );
 `;
 
-export interface MigrateResult {
+export type MigrateResult = {
   readonly applied: ReadonlyArray<number>;
   readonly skipped: ReadonlyArray<number>;
   readonly currentVersion: number;
-}
+};
 
 export async function migrate(
   db: Database,

@@ -99,12 +99,12 @@ function CompletedBody() {
   );
 }
 
-interface StepRowProps {
+type StepRowProps = {
   readonly id: OnboardingStepId;
   readonly title: string;
   readonly why: string;
   readonly done: boolean;
-}
+};
 
 function StepRow({ title, why, done }: StepRowProps) {
   return (

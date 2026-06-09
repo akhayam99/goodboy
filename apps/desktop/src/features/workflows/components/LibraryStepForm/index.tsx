@@ -18,13 +18,13 @@ import { EffortSelect } from '../../../session/components/EffortSelect';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { ProviderSelect } from '../../../session/components/ProviderSelect';
 
-interface Props {
+type Props = {
   readonly def: StepDef | null;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onSave: (args: StepDefUpsertArgs) => void;
   readonly onCancel: () => void;
-}
+};
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';

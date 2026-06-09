@@ -47,12 +47,10 @@ import {
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 
-interface ChatViewProps {
+type ChatViewProps = {
   session: Session;
-  // Keep-alive aware. False when this instance is mounted but hidden behind
-  // another session's view, used to skip background DB fetches.
   isActive?: boolean;
-}
+};
 
 const PIN_TOLERANCE_PX = 32;
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
@@ -83,14 +81,14 @@ function useScrollPin(deps: ReadonlyArray<unknown>, resetKey?: unknown) {
   return { scrollerRef, pinned, atTop, onScroll };
 }
 
-interface ColumnProps {
+type ColumnProps = {
   runId: ProviderRunId;
   index: number;
   events: ReturnType<typeof useTranscript>;
   workingDir: string | null;
   onRefreshAuth: () => void;
   onOpenDiff: (filePath: string) => void;
-}
+};
 
 function ParallelColumn({
   runId,
@@ -603,11 +601,11 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
   );
 }
 
-interface ChatEmptyStateProps {
+type ChatEmptyStateProps = {
   selectedAgentId: AgentId | null;
   phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;
   hasWorkflow: boolean;
-}
+};
 
 function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptyStateProps) {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
@@ -734,14 +732,10 @@ function MaskedDog({ image, className }: { image: string; className?: string }) 
 
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
-interface KindVisual {
-  /** Pre-processed dog silhouette (white on transparent). Applied via CSS
-   *  mask-image so the body fills with the role tint colour. Resolver has no
-   *  portrait and falls back to the shared DogMascot. */
+type KindVisual = {
   image: string | null;
-  /** Tailwind background colour applied to the masked silhouette. */
   tint: string;
-}
+};
 
 const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   generic: {
@@ -782,9 +776,9 @@ const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
   },
 };
 
-interface EmptyCopy {
+type EmptyCopy = {
   eyebrow: string;
   title: string;
   body: string;
   hints: ReadonlyArray<string>;
-}
+};

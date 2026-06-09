@@ -10,15 +10,15 @@ import type {
 import type { GhRunner } from './gh';
 import { GhCliError, runJson } from './gh';
 
-interface RawIssueComment {
+type RawIssueComment = {
   id: number;
   user: { login: string; avatar_url: string | null } | null;
   body: string | null;
   created_at: string;
   html_url: string;
-}
+};
 
-interface RawReviewThreadComment {
+type RawReviewThreadComment = {
   id: string;
   databaseId: number;
   author: { login: string; avatarUrl: string | null } | null;
@@ -26,18 +26,18 @@ interface RawReviewThreadComment {
   createdAt: string;
   url: string;
   replyTo: { id: string } | null;
-}
+};
 
-interface RawReviewThreadNode {
+type RawReviewThreadNode = {
   id: string;
   isResolved: boolean;
   isOutdated: boolean;
   path: string | null;
   line: number | null;
   comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
-}
+};
 
-interface RawReviewThreadsResponse {
+type RawReviewThreadsResponse = {
   data?: {
     repository?: {
       pullRequest?: {
@@ -45,28 +45,28 @@ interface RawReviewThreadsResponse {
       } | null;
     } | null;
   };
-}
+};
 
-interface RawReview {
+type RawReview = {
   id: number;
   author: { login: string } | null;
   authorAssociation: string;
   body: string | null;
   state: string;
   submittedAt: string | null;
-}
+};
 
-interface RawReviewRequestUser {
+type RawReviewRequestUser = {
   login: string;
   avatarUrl?: string | null;
-}
+};
 
-interface RawReviewRequestTeam {
+type RawReviewRequestTeam = {
   name: string;
   avatarUrl?: string | null;
-}
+};
 
-interface RawCheckRollupEntry {
+type RawCheckRollupEntry = {
   name?: string | null;
   status?: string | null;
   conclusion?: string | null;
@@ -75,13 +75,13 @@ interface RawCheckRollupEntry {
   completedAt?: string | null;
   detailsUrl?: string | null;
   workflowName?: string | null;
-}
+};
 
-interface RawPrViewForDetail {
+type RawPrViewForDetail = {
   reviews?: ReadonlyArray<RawReview> | null;
   reviewRequests?: ReadonlyArray<RawReviewRequestUser | RawReviewRequestTeam> | null;
   statusCheckRollup?: ReadonlyArray<RawCheckRollupEntry> | null;
-}
+};
 
 function mapReviewState(raw: string): PrReviewState {
   const normalized = raw.toLowerCase();

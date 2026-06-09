@@ -41,16 +41,16 @@ function groupKeyForStateType(type: string): LinearGroupKey {
   }
 }
 
-export interface LinearIssueRow {
+export type LinearIssueRow = {
   readonly issue: LinearIssue;
   readonly sessionId: SessionId | null;
-}
+};
 
-export interface LinearIssueGroup {
+export type LinearIssueGroup = {
   readonly key: LinearGroupKey;
   readonly label: string;
   readonly rows: ReadonlyArray<LinearIssueRow>;
-}
+};
 
 export function buildIssueGroups(
   issues: ReadonlyArray<LinearIssue>,
@@ -76,10 +76,10 @@ export function buildIssueGroups(
   }));
 }
 
-export interface SessionPrRef {
+export type SessionPrRef = {
   readonly number: number;
   readonly repo: string | null;
-}
+};
 
 export function sessionPrRefFromUrl(number: number, url: string): SessionPrRef {
   return { number, repo: prRepoFromUrl(url) };
@@ -130,12 +130,12 @@ export function resolveIssueSessions(
   return byIssue;
 }
 
-export interface UseLinearIssues {
+export type UseLinearIssues = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
   readonly loading: boolean;
   readonly error: string | null;
   readonly refetch: () => void;
-}
+};
 
 export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
   const sessions = useSessions();

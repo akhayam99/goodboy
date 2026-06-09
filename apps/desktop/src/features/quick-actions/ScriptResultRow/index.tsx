@@ -3,10 +3,10 @@ import { ScrollText, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { ScriptResultState, ScriptRunResult } from '../../scripts';
 
-interface Props {
+type Props = {
   readonly state: ScriptResultState;
   readonly onDismiss: () => void;
-}
+};
 
 /**
  * Sticky result of a `$` quick-action script run, shown above the composer.

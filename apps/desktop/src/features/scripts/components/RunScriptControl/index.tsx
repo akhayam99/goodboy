@@ -6,16 +6,16 @@ import { Play, ScrollText, Square, Terminal } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunRecord, ScriptRunStatus } from '../../scripts';
 
-interface RunScriptControlProps {
+type RunScriptControlProps = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly worktreePath: string | null;
-}
+};
 
-interface PopoverAnchor {
+type PopoverAnchor = {
   readonly centerX: number;
   readonly top: number;
-}
+};
 
 export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunScriptControlProps) {
   const [open, setOpen] = useState(false);
@@ -161,12 +161,12 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
   );
 }
 
-interface ScriptRowProps {
+type ScriptRowProps = {
   readonly script: WorkspaceScript;
   readonly run: ScriptRunRecord | null;
   readonly onRun: () => void;
   readonly onCancel: () => void;
-}
+};
 
 function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
   const status: ScriptRunStatus = run?.status ?? 'idle';

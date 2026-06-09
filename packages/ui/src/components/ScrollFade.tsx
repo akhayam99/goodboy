@@ -7,13 +7,13 @@ const FADE_FROM = {
   muted: 'from-muted',
 } as const;
 
-export interface ScrollFadeProps {
+export type ScrollFadeProps = {
   readonly children: ReactNode;
   readonly className?: string;
   readonly viewportClassName?: string;
   readonly fadeFrom?: keyof typeof FADE_FROM;
   readonly fadeSize?: string;
-}
+};
 
 export function ScrollFade({
   children,

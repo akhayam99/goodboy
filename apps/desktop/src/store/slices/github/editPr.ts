@@ -2,10 +2,10 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export interface EditPrOptions {
+export type EditPrOptions = {
   title?: string;
   body?: string;
-}
+};
 
 export function editPr(_set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {

@@ -16,9 +16,9 @@ import {
 } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
-interface Options {
+type Options = {
   autoRun?: boolean;
-}
+};
 
 export function attachWorkflowToSession(set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, workflowId: WorkflowId, options?: Options) => {

@@ -28,14 +28,13 @@ import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   workspaceName: string;
   open: boolean;
   onClose: () => void;
-  /** Tab to open on, e.g. deep-linked from the command palette. */
   initialSection?: string;
-}
+};
 
 type Section = 'general' | 'integrations' | 'skills' | 'scripts' | 'phases' | 'scout' | 'danger';
 
@@ -51,13 +50,13 @@ function isSection(value: string | undefined): value is Section {
   );
 }
 
-interface NavItem {
+type NavItem = {
   readonly id: Section;
   readonly label: string;
   readonly icon: ReactNode;
   readonly beta?: boolean;
   readonly tone?: 'danger';
-}
+};
 
 export function WorkspaceSettingsDialog({
   workspaceId,

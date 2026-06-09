@@ -186,9 +186,9 @@ export function NotificationCenter() {
   );
 }
 
-interface NotificationItemProps {
+type NotificationItemProps = {
   notification: Notification;
-}
+};
 
 function NotificationItem({ notification: n }: NotificationItemProps) {
   return (

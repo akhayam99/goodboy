@@ -1,6 +1,6 @@
-interface Props {
+type Props = {
   readonly command: string;
-}
+};
 
 // Reassures power users by showing exactly what shell command runs. Mirrors
 // the conventional `$ ` prompt prefix so it reads as runnable text.

@@ -29,7 +29,7 @@ const TONE = {
   warning: 'border-warning/40 text-warning hover:bg-warning/10',
 } as const;
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly sessionId: SessionId;
   readonly onOpenSession: () => void;
@@ -47,7 +47,7 @@ interface Props {
   readonly onSetMergeConfirm: (v: boolean) => void;
   readonly onOpenGithub: () => void;
   readonly onRefresh: () => void;
-}
+};
 
 export function PrActionBar({
   pr,

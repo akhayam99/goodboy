@@ -3,7 +3,7 @@ import type { IsoDateTime, SessionId } from '@goodboy/types';
 import type { ProviderName } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface BudgetRuleRow {
+type BudgetRuleRow = {
   id: string;
   provider: ProviderName;
   period: string;
@@ -11,7 +11,7 @@ interface BudgetRuleRow {
   alert_threshold_pct: number;
   extra_tokens_budget: number | null;
   created_at: string;
-}
+};
 
 function toBudgetRule(row: BudgetRuleRow): BudgetRule {
   return {
@@ -51,10 +51,10 @@ export async function deleteBudgetRule(db: Database, id: string): Promise<void> 
   await db.execute('DELETE FROM budget_rules WHERE id = ?', [id]);
 }
 
-interface SessionBudgetRow {
+type SessionBudgetRow = {
   session_id: string;
   soft_cap_usd: number;
-}
+};
 
 function toSessionBudget(row: SessionBudgetRow): SessionBudget {
   return {
@@ -87,7 +87,7 @@ export async function getSessionBudget(
   return rows[0] ? toSessionBudget(rows[0]) : null;
 }
 
-interface BudgetAlertRow {
+type BudgetAlertRow = {
   id: string;
   kind: BudgetAlertKind;
   provider: string | null;
@@ -96,7 +96,7 @@ interface BudgetAlertRow {
   cap_usd: number;
   created_at: string;
   dismissed_at: string | null;
-}
+};
 
 function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
   return {
@@ -129,11 +129,11 @@ export async function insertBudgetAlert(db: Database, alert: BudgetAlert): Promi
   );
 }
 
-export interface ListBudgetAlertsOptions {
+export type ListBudgetAlertsOptions = {
   readonly sessionId?: SessionId;
   readonly provider?: ProviderName;
   readonly undismissedOnly?: boolean;
-}
+};
 
 export async function listBudgetAlerts(
   db: Database,

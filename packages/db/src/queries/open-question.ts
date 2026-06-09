@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface OpenQuestionRow {
+type OpenQuestionRow = {
   id: string;
   session_id: string;
   workflow_id: string | null;
@@ -25,7 +25,7 @@ interface OpenQuestionRow {
   created_at: number;
   answered_at: number | null;
   dismissed_at: number | null;
-}
+};
 
 function toDomain(row: OpenQuestionRow): OpenQuestion {
   return {
@@ -50,7 +50,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
   };
 }
 
-export interface InsertOpenQuestionInput {
+export type InsertOpenQuestionInput = {
   readonly id: OpenQuestionId;
   readonly sessionId: SessionId;
   readonly workflowId?: WorkflowId;
@@ -60,12 +60,12 @@ export interface InsertOpenQuestionInput {
   readonly createdByAgentId?: AgentId;
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
-}
+};
 
-export interface InsertOpenQuestionResult {
+export type InsertOpenQuestionResult = {
   readonly question: OpenQuestion;
   readonly inserted: boolean;
-}
+};
 
 export async function insertOpenQuestion(
   db: Database,

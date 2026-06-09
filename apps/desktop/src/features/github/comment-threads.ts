@@ -1,9 +1,9 @@
 import type { PrComment } from '@goodboy/types';
 
-export interface CommentThread {
+export type CommentThread = {
   readonly head: PrComment;
   readonly replies: ReadonlyArray<PrComment>;
-}
+};
 
 export function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
   const groups = new Map<string, Array<PrComment>>();

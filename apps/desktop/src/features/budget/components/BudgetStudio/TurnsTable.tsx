@@ -5,11 +5,11 @@ import { ProviderIcon } from './ProviderIcon';
 import { Widget } from './Widget';
 import { formatModel, formatTokens, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly showProvider: boolean;
   readonly showSession: boolean;
-}
+};
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;

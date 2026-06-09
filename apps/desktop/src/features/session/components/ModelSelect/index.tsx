@@ -8,12 +8,12 @@ import { MODEL_COST_DOT, POPUP_BASE, POPUP_DOWN, POPUP_UP, modelCostTier } from 
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-interface Props {
+type Props = {
   provider: ProviderId;
   value: string;
   onChange: (model: string) => void;
   disabled: boolean;
-}
+};
 
 export function ModelSelect({ provider, value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);

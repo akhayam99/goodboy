@@ -35,10 +35,10 @@ function parseForProvider(
 
 const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
-export interface AuthRequiredPayload {
+export type AuthRequiredPayload = {
   readonly providerId: ProviderId;
   readonly identity: string | null;
-}
+};
 
 export function encodeAuthRequiredMessage(payload: AuthRequiredPayload): string {
   return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`;
@@ -75,7 +75,7 @@ const EVENT_NAME = 'turn_event';
 
 type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
-interface SpawnArgs {
+type SpawnArgs = {
   readonly runId: ProviderRunId;
   readonly provider: ProviderId;
   readonly model: string;
@@ -90,7 +90,7 @@ interface SpawnArgs {
   readonly effort?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
-}
+};
 
 type RawTurnEnvelope =
   | { runId: string; type: 'line'; line: string }
@@ -232,11 +232,11 @@ export async function readAttachment(worktreeDir: string, relPath: string): Prom
   return invoke<string>('attachment_read', { worktreeDir, relPath });
 }
 
-export interface DroppedAttachment {
+export type DroppedAttachment = {
   readonly fileName: string;
   readonly mimeType: string;
   readonly dataBase64: string;
-}
+};
 
 /**
  * Reads a file path the user dropped onto the composer from the OS and returns
@@ -247,14 +247,13 @@ export async function readDroppedAttachment(absPath: string): Promise<DroppedAtt
   return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
 }
 
-interface ParallelRunSpec {
+type ParallelRunSpec = {
   readonly runId: ProviderRunId;
-  /** Worktree path from C3 worktree helper. */
   readonly workingDir: string;
   readonly parallelIndex: number;
-}
+};
 
-export interface ParallelSpawnArgs {
+export type ParallelSpawnArgs = {
   readonly groupId: string;
   readonly runs: ReadonlyArray<ParallelRunSpec>;
   readonly binary?: string;
@@ -265,7 +264,7 @@ export interface ParallelSpawnArgs {
   readonly disallowedTools?: ReadonlyArray<string>;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
-}
+};
 
 /**
  * Spawn N child processes concurrently via a single Tauri invoke.

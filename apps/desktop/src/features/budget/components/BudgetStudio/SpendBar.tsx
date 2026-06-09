@@ -1,13 +1,13 @@
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly label: string;
   readonly valueLabel: string;
   readonly pct: number;
   readonly colorVar: string;
   readonly icon?: React.ReactNode;
   readonly onClick?: () => void;
-}
+};
 
 export function SpendBar({ label, valueLabel, pct, colorVar, icon, onClick }: Props) {
   const width = `${Math.min(Math.max(pct, 0), 1) * 100}%`;

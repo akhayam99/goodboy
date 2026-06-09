@@ -4,7 +4,7 @@ import { Divider } from './Divider';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface DialogProps {
+export type DialogProps = {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
@@ -15,40 +15,15 @@ export interface DialogProps {
   className?: string;
   showClose?: boolean;
   closeOnBackdrop?: boolean;
-  /** Override which element receives focus when the dialog opens. */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
-  /**
-   * When true, the dialog collapses to fill the entire viewport on small
-   * screens (≤ 768px in either dimension), removing rounded corners and
-   * shadow so it reads as a full page rather than a floating modal.
-   */
   fullScreenOnSmall?: boolean;
-  /**
-   * Lock the dialog body to a fixed height (e.g. `h-[640px]`). Without this,
-   * the dialog grows and shrinks with its content up to `max-h-[85vh]`.
-   * The fixed height yields when the viewport is too small to hold it.
-   */
   fixedHeightClass?: string;
-  /**
-   * Override the body wrapper classes. Default: `gap-4 px-6 py-5`.
-   * Pass `''` for full-bleed body (no padding/gap), useful for full-width
-   * layouts like diff viewers with their own internal toolbars.
-   */
   bodyClassName?: string;
-  /** When false, removes the divider under the header. Default: true. */
   headerBordered?: boolean;
-  /**
-   * Optional left panel (nav, side actions, etc.) rendered alongside the
-   * main body. When present, a vertical gradient divider separates it from
-   * the content. Use this for any modal that wants a sidebar layout, it
-   * keeps Header / Panel / Body / Footer consistent across the app.
-   */
   panel?: ReactNode;
-  /** Tailwind width class for the panel, defaults to `w-48`. */
   panelWidthClass?: string;
-  /** Override the panel wrapper classes. Default: `flex flex-col gap-0.5 bg-subtle/40 px-3 py-5`. */
   panelClassName?: string;
-}
+};
 
 const SIZE: Record<DialogSize, string> = {
   sm: 'w-[24rem]',

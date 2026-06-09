@@ -1,9 +1,9 @@
 import { ExternalLink } from 'lucide-react';
 import type { ProviderGuide } from './guides';
 
-interface Props {
+type Props = {
   readonly guide: ProviderGuide;
-}
+};
 
 // Sidebar inside the modal: subscription line, numbered steps, docs link.
 // Scrollable independently of the terminal so a long guide does not push the

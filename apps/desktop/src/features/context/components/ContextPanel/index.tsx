@@ -60,16 +60,13 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 
-interface ContextPanelProps {
+type ContextPanelProps = {
   session: Session;
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
-  // Keep-alive aware: false when this panel is mounted but hidden behind
-  // another session. Effects that touch DB or network gate on this so
-  // background panels don't churn.
   isActive?: boolean;
-}
+};
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
@@ -335,7 +332,7 @@ export function ContextPanel({
   );
 }
 
-interface TabStripProps {
+type TabStripProps = {
   readonly tab: PanelTab;
   readonly onPick: (next: PanelTab) => void;
   readonly plansBadge: number | null;
@@ -343,7 +340,7 @@ interface TabStripProps {
   readonly summarizerRunning: boolean;
   readonly questionsBadge: number | null;
   readonly isTerminalOpen: boolean;
-}
+};
 
 function TabStrip({
   tab,
@@ -390,14 +387,14 @@ function TabStrip({
   );
 }
 
-interface TabButtonProps {
+type TabButtonProps = {
   readonly active: boolean;
   readonly onClick: () => void;
   readonly icon: React.ReactNode;
   readonly label: string;
   readonly badge?: number | null;
   readonly accentDot?: string | null;
-}
+};
 
 function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButtonProps) {
   return (
@@ -514,12 +511,12 @@ function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
-interface FilesTouchedShape {
+type FilesTouchedShape = {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
   readonly additions: number;
   readonly deletions: number;
-}
+};
 
 function ChangesStrip({
   sessionId,
@@ -756,24 +753,20 @@ function PlansSkeleton() {
   );
 }
 
-interface SlotMeta {
+type SlotMeta = {
   readonly icon: LucideIcon;
   readonly iconClass: string;
   readonly iconChipBg: string;
   readonly description: string;
   readonly emphasis?: boolean;
-  /** Tailwind ring-* class to swap the default border-soft ring when hasValue. */
   readonly accentRingWhenNonEmpty?: string;
   readonly emptyLabel: string;
   readonly emptyCta: string;
   readonly collapsible?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
-  // Read-only slots can't be hand-edited by the user. When empty the row
-  // collapses to an inactive label (no CTA, no click) and switches to the
-  // canvas bg so it visually recedes vs. the live slots.
   readonly readOnly?: boolean;
-}
+};
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
   'open_questions',
@@ -852,14 +845,14 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
   return normalized === slot.value ? slot : { ...slot, value: normalized };
 }
 
-interface SlotRowProps {
+type SlotRowProps = {
   sessionId: SessionId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   loading?: boolean;
   isSummarizing?: boolean;
   onCommit: (value: string) => void;
-}
+};
 
 function SlotRow({
   sessionId,
@@ -1113,14 +1106,14 @@ function SlotRow({
   );
 }
 
-interface SlotHistoryDialogProps {
+type SlotHistoryDialogProps = {
   label: string;
   renderAsMarkdown: boolean;
   open: boolean;
   entries: ReadonlyArray<ContextSlotHistoryEntry>;
   onRestore: (entry: ContextSlotHistoryEntry) => void;
   onClose: () => void;
-}
+};
 
 function SlotHistoryDialog({
   label,

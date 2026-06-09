@@ -2,14 +2,14 @@ import { type ReactNode } from 'react';
 import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 
-interface CtxTagStyle {
+type CtxTagStyle = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly iconClass: string;
   readonly chipClass: string;
   readonly calloutClass: string;
   readonly calloutLabelClass: string;
-}
+};
 
 const CTX_DEFAULT: CtxTagStyle = {
   icon: Activity,
@@ -96,10 +96,10 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
 // strings only; we never dangerouslySetHTML so any unmatched delimiter just
 // shows literal characters.
 
-interface MarkdownProps {
+type MarkdownProps = {
   readonly text: string;
   readonly className?: string;
-}
+};
 
 type CellAlign = 'left' | 'center' | 'right';
 
@@ -118,10 +118,10 @@ type Block =
   | { kind: 'callout'; tag: string; content: string }
   | { kind: 'paragraph'; content: string };
 
-interface ListItem {
+type ListItem = {
   readonly content: string;
   readonly children: ReadonlyArray<Block>;
-}
+};
 
 const FENCE_RE = /^```([^\s`]*)\s*$/;
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;

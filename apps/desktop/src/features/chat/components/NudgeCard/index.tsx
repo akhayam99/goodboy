@@ -4,13 +4,13 @@ import { cn } from '@goodboy/ui';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
 
-interface NudgeAction {
+type NudgeAction = {
   readonly label: string;
   readonly onClick: () => void;
   readonly testId?: string;
-}
+};
 
-export interface Props {
+export type Props = {
   readonly severity: NudgeSeverity;
   readonly icon?: ReactNode;
   readonly title: ReactNode;
@@ -22,7 +22,7 @@ export interface Props {
   readonly ariaLabel: string;
   readonly testId?: string;
   readonly autoFocusPrimary?: boolean;
-}
+};
 
 const SEVERITY_FRAME: Record<NudgeSeverity, string> = {
   info: 'border-info/30 bg-info/5',

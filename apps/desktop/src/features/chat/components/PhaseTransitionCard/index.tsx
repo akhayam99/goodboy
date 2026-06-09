@@ -4,9 +4,9 @@ import { Collapsible, Markdown } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 
-interface Props {
+type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
-}
+};
 
 export function PhaseTransitionCard({ item }: Props) {
   const [open, setOpen] = useState(false);

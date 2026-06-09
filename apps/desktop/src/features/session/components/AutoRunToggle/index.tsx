@@ -3,9 +3,9 @@ import { cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly session: Session;
-}
+};
 
 /**
  * Compact icon toggle for the per-session autorun flag. Only meaningful when

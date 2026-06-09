@@ -1,27 +1,17 @@
 import type { Agent, AgentId, OpenQuestion, Step, Workflow } from '@goodboy/types';
 
-export interface QuestionCluster {
-  // The agent the cluster's batched answer will be sent to. `null` for the
-  // orphan bucket: questions without provenance (legacy rows, ad-hoc
-  // creator agents, or owners that no longer have a spawned step), those
-  // fall back to the currently-selected chat on submit.
+export type QuestionCluster = {
   readonly ownerAgentId: AgentId | null;
   readonly ownerAgentName: string | null;
-  // Optional creator display when the question has been transferred to a
-  // later step in the same workflow: lets the UI annotate "originally
-  // raised by <creator>". Only set on clusters where every question in
-  // the cluster shares the same creator and that creator differs from the
-  // owner, keeps the header honest without averaging across mixed
-  // origins.
   readonly creatorAgentName: string | null;
   readonly questions: ReadonlyArray<OpenQuestion>;
-}
+};
 
-interface BuildClustersInput {
+type BuildClustersInput = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows: ReadonlyArray<Workflow>;
-}
+};
 
 // Maps a question to the currently-owning agent (via workflow_id +
 // owned_by_step_ordinal → step → spawned agent for that step). Returns

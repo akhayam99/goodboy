@@ -1,11 +1,11 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
-export interface ParseContext {
+export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 // Codex CLI v0.130.0 emits NDJSON when run with `--json`. Schema captured from
 // `codex exec --json -m gpt-5.2 -s read-only -C /tmp "..."`:
@@ -24,36 +24,36 @@ const KNOWN_TYPES = new Set([
   'error',
 ]);
 
-interface UsagePayload {
+type UsagePayload = {
   readonly input_tokens?: number;
   readonly cached_input_tokens?: number;
   readonly output_tokens?: number;
   readonly reasoning_output_tokens?: number;
-}
+};
 
-interface CommandItem {
+type CommandItem = {
   readonly id: string;
   readonly type: 'command_execution';
   readonly command?: string;
   readonly aggregated_output?: string;
   readonly exit_code?: number | null;
   readonly status?: string;
-}
+};
 
-interface AgentMessageItem {
+type AgentMessageItem = {
   readonly id: string;
   readonly type: 'agent_message';
   readonly text?: string;
-}
+};
 
-interface ApplyPatchItem {
+type ApplyPatchItem = {
   readonly id: string;
   readonly type: 'apply_patch' | 'file_change';
   readonly changes?: ReadonlyArray<{
     readonly path?: string;
     readonly kind?: 'create' | 'modify' | 'delete' | string;
   }>;
-}
+};
 
 type CodexItem =
   | CommandItem

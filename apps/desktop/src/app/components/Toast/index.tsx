@@ -4,32 +4,32 @@ import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
-export interface ToastItem {
+export type ToastItem = {
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
-}
+};
 
-export interface ShowToastOptions {
+export type ShowToastOptions = {
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
-}
+};
 
-interface ToastContextValue {
+type ToastContextValue = {
   showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
-}
+};
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const AUTO_DISMISS_MS = 5000;
 
-interface ToastProviderProps {
+type ToastProviderProps = {
   children: React.ReactNode;
-}
+};
 
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
@@ -69,10 +69,10 @@ export function useToast(): ToastContextValue {
   return ctx;
 }
 
-interface ToastStackProps {
+type ToastStackProps = {
   toasts: ReadonlyArray<ToastItem>;
   onDismiss: (id: string) => void;
-}
+};
 
 function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   if (toasts.length === 0) return null;
@@ -91,10 +91,10 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   );
 }
 
-interface ToastCardProps {
+type ToastCardProps = {
   toast: ToastItem;
   onDismiss: (id: string) => void;
-}
+};
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const [visible, setVisible] = useState(false);

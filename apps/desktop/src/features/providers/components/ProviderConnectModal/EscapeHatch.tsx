@@ -4,9 +4,9 @@ import { Tooltip } from '@goodboy/ui';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { formatError } from '../../../../shared/lib/errors';
 
-interface Props {
+type Props = {
   readonly command: string;
-}
+};
 
 const RESET_AFTER_MS = 1500;
 

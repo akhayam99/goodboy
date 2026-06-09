@@ -101,11 +101,11 @@ const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
   /\{\s*\.\.\.[^}]*\}\s*$/,
 ];
 
-interface BadCall {
+type BadCall = {
   readonly file: string;
   readonly line: number;
   readonly snippet: string;
-}
+};
 
 function lineOf(content: string, idx: number): number {
   return content.slice(0, idx).split('\n').length;

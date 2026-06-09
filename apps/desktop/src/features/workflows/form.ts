@@ -9,7 +9,7 @@ import type {
 import { inferAgentKindFromName, KIND_TO_ROLE } from '../session/agent-kind';
 import { type EffortLevel } from '../chat/utils/chat-constants';
 
-export interface DefinitionForm {
+export type DefinitionForm = {
   id?: StepId;
   libraryStepId?: StepDefId;
   role: AgentRole;
@@ -19,13 +19,13 @@ export interface DefinitionForm {
   modelOverride: string;
   effort: EffortLevel;
   verbosity: VerbosityLevel;
-}
+};
 
-export interface TemplateForm {
+export type TemplateForm = {
   name: string;
   description: string;
   steps: DefinitionForm[];
-}
+};
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';

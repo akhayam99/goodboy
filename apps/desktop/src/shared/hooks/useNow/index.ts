@@ -14,11 +14,11 @@ import { useEffect, useState } from 'react';
 
 type Cadence = 5_000 | 15_000 | 30_000 | 60_000;
 
-interface Ticker {
+type Ticker = {
   now: number;
   listeners: Set<(n: number) => void>;
   intervalId: number | null;
-}
+};
 
 const tickers = new Map<Cadence, Ticker>();
 

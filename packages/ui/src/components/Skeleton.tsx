@@ -1,8 +1,8 @@
 import { cn } from '../cn';
 
-interface SkeletonProps {
+type SkeletonProps = {
   className?: string;
-}
+};
 
 export function Skeleton({ className }: SkeletonProps) {
   return (

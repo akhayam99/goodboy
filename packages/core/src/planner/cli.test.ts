@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PlannerAgent, PlannerSpawnError } from './cli';
 
-interface FakeChild extends EventEmitter {
+type FakeChild = EventEmitter & {
   stdout: EventEmitter;
   stderr: EventEmitter;
-}
+};
 
 function makeFakeChild(): FakeChild {
   const child = new EventEmitter() as FakeChild;

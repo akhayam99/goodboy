@@ -39,11 +39,11 @@ function stringToBase64(s: string): string {
 
 const EMPTY_TABS = [] as const;
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly cwd: string | null;
-}
+};
 
 export function TerminalDock({ sessionId, isActive, cwd }: Props) {
   const tabs = useAppStore((s) => s.terminalTabs[sessionId] ?? EMPTY_TABS);

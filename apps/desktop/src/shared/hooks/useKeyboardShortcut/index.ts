@@ -2,19 +2,18 @@ import { useEffect } from 'react';
 
 type ShortcutScope = 'global' | 'dialog';
 
-interface ShortcutOptions {
-  /** Prevent firing when focus is inside an input/textarea/select/contenteditable. */
+type ShortcutOptions = {
   ignoreInInputs?: boolean;
   scope?: ShortcutScope;
-}
+};
 
-interface ShortcutCombo {
+type ShortcutCombo = {
   key: string;
   meta?: boolean;
   ctrl?: boolean;
   shift?: boolean;
   alt?: boolean;
-}
+};
 
 const KEY_ALIAS: Record<string, string> = {
   comma: ',',

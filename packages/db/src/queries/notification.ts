@@ -12,7 +12,7 @@ export type NotificationKind =
   | 'boundary-drift'
   | 'error';
 
-export interface Notification {
+export type Notification = {
   readonly id: string;
   readonly ts: IsoDateTime;
   readonly kind: NotificationKind;
@@ -22,9 +22,9 @@ export interface Notification {
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId | null;
   readonly read: boolean;
-}
+};
 
-interface NotificationRow {
+type NotificationRow = {
   id: string;
   ts: string;
   kind: string;
@@ -34,7 +34,7 @@ interface NotificationRow {
   session_id: string | null;
   workspace_id: string | null;
   read: number;
-}
+};
 
 function toNotification(row: NotificationRow): Notification {
   return {

@@ -2,10 +2,10 @@ import type { CSSProperties } from 'react';
 import { cn } from '@goodboy/ui';
 import mascot from '../../../assets/mascot.png';
 
-interface Props {
+type Props = {
   size?: number;
   className?: string;
-}
+};
 
 export function DogMascot({ size = 16, className }: Props) {
   const style: CSSProperties = {

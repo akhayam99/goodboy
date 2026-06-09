@@ -4,14 +4,13 @@ import { ChevronDown, ExternalLink, Loader2 } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { linearFetchAssignedIssues, type LinearIssue } from './client';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
-  /** Currently-selected issue, used only to render the input text. */
   value: LinearIssue | null;
   onPick: (issue: LinearIssue) => void;
   onClear: () => void;
   disabled?: boolean;
-}
+};
 
 /**
  * Autocomplete combobox over issues assigned to the current Linear viewer.

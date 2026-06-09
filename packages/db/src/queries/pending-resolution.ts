@@ -1,14 +1,14 @@
 import type { IsoDateTime, PendingResolution, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface PendingResolutionRow {
+type PendingResolutionRow = {
   id: string;
   session_id: string;
   pr_number: number;
   thread_id: string;
   commit_sha: string;
   created_at: number;
-}
+};
 
 function toDomain(row: PendingResolutionRow): PendingResolution {
   return {

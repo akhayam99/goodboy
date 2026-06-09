@@ -40,7 +40,7 @@ const slugifyDir = (raw: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'session';
 
-interface Input {
+type Input = {
   workspaceId: WorkspaceId;
   goal: string;
   branchPrefix?: string;
@@ -57,7 +57,7 @@ interface Input {
     url: string;
     title: string;
   };
-}
+};
 
 export function createSession(set: SetFn, get: GetFn) {
   return async ({

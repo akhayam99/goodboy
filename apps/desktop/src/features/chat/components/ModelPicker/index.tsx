@@ -31,7 +31,7 @@ import {
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-export interface Props {
+export type Props = {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly models: ReadonlyArray<string>;
   readonly provider: ProviderId;
@@ -41,8 +41,6 @@ export interface Props {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly disabledTitle?: string;
-  /** Session-persistent defaults. When the effective provider/model differs, the
-   *  chip switches to "override" styling and exposes a reset affordance. */
   readonly defaultProvider: ProviderId;
   readonly defaultModel: string;
   readonly onSelectProvider: (id: ProviderId) => void;
@@ -50,7 +48,7 @@ export interface Props {
   readonly onSelectEffort: (level: EffortLevel) => void;
   readonly onSelectVerbosity: (level: VerbosityLevel) => void;
   readonly onResetToDefault: () => void;
-}
+};
 
 export function ModelPicker({
   providers,

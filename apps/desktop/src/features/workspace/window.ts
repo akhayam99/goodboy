@@ -9,10 +9,10 @@ const PRESENCE_EVENT = 'goodboy:presence';
 const PRESENCE_REQUEST_EVENT = 'goodboy:presence-request';
 const WINDOW_CLOSING_EVENT = 'goodboy:window-closing';
 
-export interface PresencePayload {
+export type PresencePayload = {
   readonly label: string;
   readonly workspaceId: WorkspaceId | null;
-}
+};
 
 function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -87,11 +87,11 @@ export function notifyWindowClosing(): Promise<void> {
   return emit(WINDOW_CLOSING_EVENT, { label: currentWindowLabel() });
 }
 
-export interface PresenceHandlers {
+export type PresenceHandlers = {
   readonly onPresence: (payload: PresencePayload) => void;
   readonly onRequest: () => void;
   readonly onClosing: (label: string) => void;
-}
+};
 
 export async function listenPresence(handlers: PresenceHandlers): Promise<UnlistenFn> {
   if (!inTauri()) return () => undefined;

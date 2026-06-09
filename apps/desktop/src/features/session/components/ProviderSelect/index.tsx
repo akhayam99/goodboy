@@ -10,12 +10,12 @@ import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirect
 // '' = inherit the session/workspace default provider at run time.
 type Value = ProviderId | '';
 
-interface Props {
+type Props = {
   value: Value;
   providers: ReadonlyArray<ProviderId>;
   onChange: (value: Value) => void;
   disabled: boolean;
-}
+};
 
 const PROVIDER_DOT: Record<ProviderId, string> = {
   anthropic: 'bg-orange-400',

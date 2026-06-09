@@ -7,7 +7,7 @@ import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/a
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { shortModel } from '../../../session/agent-row-format';
 
-interface Props {
+type Props = {
   readonly def: DefinitionForm;
   readonly ordinal: number;
   readonly total: number;
@@ -19,7 +19,7 @@ interface Props {
   readonly onRemove: () => void;
   readonly onMoveLeft: () => void;
   readonly onMoveRight: () => void;
-}
+};
 
 export function StepFlowCard({
   def,

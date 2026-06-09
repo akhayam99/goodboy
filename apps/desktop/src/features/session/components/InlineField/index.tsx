@@ -1,7 +1,7 @@
-interface Props {
+type Props = {
   label: string;
   children: React.ReactNode;
-}
+};
 
 export function InlineField({ label, children }: Props) {
   return (

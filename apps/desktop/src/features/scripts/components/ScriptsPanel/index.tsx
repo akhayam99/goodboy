@@ -5,9 +5,9 @@ import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 

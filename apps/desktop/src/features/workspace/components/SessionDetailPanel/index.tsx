@@ -18,10 +18,10 @@ import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/componen
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
-interface SessionDetailPanelProps {
+type SessionDetailPanelProps = {
   session: Session;
   onOpenSessionSettings: () => void;
-}
+};
 
 export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDetailPanelProps) {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
@@ -380,9 +380,9 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
-interface SessionMetaFooterProps {
+type SessionMetaFooterProps = {
   session: Session;
-}
+};
 
 // Branch identity + session cost only. Files and GitHub moved to the
 // right-hand ContextPanel tabs (plan §B), so the sidebar footer keeps just

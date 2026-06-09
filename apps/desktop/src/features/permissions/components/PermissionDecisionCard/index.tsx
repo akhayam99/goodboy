@@ -3,11 +3,11 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 
-interface Props {
+type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
-}
+};
 
 const DECISION_TONE: Record<'allow' | 'deny', string> = {
   allow: 'text-success',

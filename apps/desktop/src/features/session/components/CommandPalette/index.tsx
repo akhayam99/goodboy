@@ -24,7 +24,7 @@ import { useToast } from '../../../../app/components/Toast';
  */
 type PaletteGroup = QuickActionGroup | 'recents';
 
-interface PaletteItem {
+type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly sublabel?: string;
@@ -32,7 +32,7 @@ interface PaletteItem {
   readonly accent?: string;
   readonly icon?: string;
   readonly onSelect: () => void;
-}
+};
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
   recents: 'Recents',
@@ -68,14 +68,13 @@ function fuzzyScore(query: string, text: string): number {
   return 0;
 }
 
-export interface Props {
+export type Props = {
   onClose: () => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;
-  /** Pre-fills the input, e.g. a prefix like '/' opened from a quick-action. */
   initialQuery?: string;
-}
+};
 
 export function CommandPalette({
   onClose,

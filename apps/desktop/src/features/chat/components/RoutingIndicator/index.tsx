@@ -8,12 +8,12 @@ import type {
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 
-interface Props {
+type Props = {
   readonly sessionPreference: SessionProviderPreference;
   readonly turnOverride: TurnProviderOverride | undefined;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onSendAnyway?: () => void;
-}
+};
 
 export function RoutingIndicator({
   sessionPreference,

@@ -2,9 +2,9 @@ import { listContextSlotsForSession, upsertContextSlot, type Database } from '@g
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { assertSlotKey, serializeSlots, SLOT_KEYS, type SlotKey } from './slots';
 
-export interface ContextEngineDeps {
+export type ContextEngineDeps = {
   readonly db: Database;
-}
+};
 
 export class ContextEngine {
   constructor(private readonly deps: ContextEngineDeps) {}

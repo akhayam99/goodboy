@@ -2,15 +2,15 @@ import type { LucideIcon } from 'lucide-react';
 import { ArrowLeft, ArrowRight, Layers, Plus } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly onNew: () => void;
   readonly hasPresets: boolean;
-}
+};
 
-interface GuideStep {
+type GuideStep = {
   readonly text: string;
   readonly arrow?: LucideIcon;
-}
+};
 
 const STEPS: ReadonlyArray<GuideStep> = [
   {

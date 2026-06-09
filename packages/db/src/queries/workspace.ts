@@ -2,7 +2,7 @@ import type { IsoDateTime, Workspace, WorkspaceId, WorkspaceKind } from '@goodbo
 import type { Database } from '../client';
 import { listMembersForWorkspaces } from './workspace-member';
 
-interface WorkspaceRow {
+type WorkspaceRow = {
   id: string;
   name: string;
   root_path: string;
@@ -11,7 +11,7 @@ interface WorkspaceRow {
   updated_at: number;
   disconnected_at: number | null;
   last_accessed_at: number | null;
-}
+};
 
 function toDomain(row: WorkspaceRow): Workspace {
   return {

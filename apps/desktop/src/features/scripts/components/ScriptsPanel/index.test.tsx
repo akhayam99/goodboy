@@ -3,11 +3,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-interface Script {
+type Script = {
   readonly id: string;
   readonly name: string;
   readonly body: string;
-}
+};
 
 const { state } = vi.hoisted(() => ({
   state: {

@@ -1,13 +1,13 @@
 import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ProviderCredentialRow {
+type ProviderCredentialRow = {
   id: string;
   provider_id: string;
   label: string;
   hint: string;
   created_at: number;
-}
+};
 
 function toDomain(row: ProviderCredentialRow): ProviderCredential {
   return {

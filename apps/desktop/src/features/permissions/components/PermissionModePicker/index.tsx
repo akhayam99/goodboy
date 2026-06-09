@@ -6,13 +6,13 @@ import { useAppStore } from '../../../../store';
 
 const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 
-interface ModeMeta {
+type ModeMeta = {
   readonly value: ClaudePermissionMode;
   readonly label: string;
   readonly description: string;
   readonly dot: string;
   readonly text: string;
-}
+};
 
 const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
@@ -49,10 +49,10 @@ export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
   return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
 }
 
-interface Props {
+type Props = {
   readonly session: Session;
   readonly activeProvider: ProviderId;
-}
+};
 
 export function PermissionModePicker({ session, activeProvider }: Props) {
   const [open, setOpen] = useState(false);

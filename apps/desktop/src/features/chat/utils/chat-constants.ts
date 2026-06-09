@@ -110,11 +110,11 @@ export function modelLabel(id: string): string {
 
 export type { ModelFamily };
 
-export interface ParsedModel {
+export type ParsedModel = {
   readonly family: ModelFamily;
   readonly subfamily: string | null;
   readonly variantLabel: string;
-}
+};
 
 // Strip a `provider/model` prefix so cursor's `gpt-5.5-high` and any future
 // prefixed id (e.g. `openai/gpt-5.5-high`) parse the same way.

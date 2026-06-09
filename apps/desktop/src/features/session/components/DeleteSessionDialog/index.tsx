@@ -13,11 +13,11 @@ function unwrapError(err: unknown): string {
   return String(err);
 }
 
-interface Props {
+type Props = {
   session: Session;
   open: boolean;
   onClose: () => void;
-}
+};
 
 export function DeleteSessionDialog({ session, open, onClose }: Props) {
   const deleteTask = useAppStore((s) => s.deleteTask);

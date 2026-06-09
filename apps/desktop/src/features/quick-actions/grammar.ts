@@ -13,11 +13,11 @@ export type QuickActionGroup =
   | 'action'
   | 'help';
 
-export interface PrefixMeta {
+export type PrefixMeta = {
   readonly symbol: string;
   readonly hint: string;
   readonly group: QuickActionGroup;
-}
+};
 
 export const PREFIXES: ReadonlyArray<PrefixMeta> = [
   { symbol: '@', hint: 'agents in current session', group: 'agent' },
@@ -30,10 +30,10 @@ export const PREFIXES: ReadonlyArray<PrefixMeta> = [
   { symbol: '?', hint: 'help & shortcuts', group: 'help' },
 ];
 
-export interface ParsedQuery {
+export type ParsedQuery = {
   readonly prefix: PrefixMeta | null;
   readonly query: string;
-}
+};
 
 export function parseQuery(raw: string): ParsedQuery {
   const trimmed = raw.trimStart();

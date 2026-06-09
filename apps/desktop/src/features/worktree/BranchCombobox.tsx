@@ -3,25 +3,15 @@ import { cn } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
-interface Props {
+type Props = {
   readonly branches: ReadonlyArray<LocalBranchInfo>;
   readonly value: string;
   readonly onChange: (v: string) => void;
   readonly disabled: boolean;
   readonly loading: boolean;
-  /**
-   * Branches to hide from the list (e.g. the current session branch when
-   * we don't want the user picking it again). Filtering happens before
-   * the substring search.
-   */
   readonly excludeNames?: ReadonlyArray<string>;
-  /**
-   * Vertical anchor for the popup. `'auto'` (default) opens below; `'up'`
-   * opens above. Used by callers where the input sits near the bottom of
-   * a scroll container.
-   */
   readonly openDirection?: 'down' | 'up';
-}
+};
 
 export function BranchCombobox({
   branches,

@@ -1,11 +1,11 @@
 import { spendStrokeColor } from './lib';
 
-interface Props {
+type Props = {
   readonly pct: number;
   readonly centerLabel: string;
   readonly subLabel?: string;
   readonly size?: number;
-}
+};
 
 export function CostRing({ pct, centerLabel, subLabel, size = 132 }: Props) {
   const stroke = 12;

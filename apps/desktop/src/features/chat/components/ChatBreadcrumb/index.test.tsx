@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-interface MockState {
+type MockState = {
   workspaces: ReadonlyArray<{ id: string; name: string }>;
   selectedAgentId: Record<string, string>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   agentKindOverride: Record<string, string>;
-}
+};
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {

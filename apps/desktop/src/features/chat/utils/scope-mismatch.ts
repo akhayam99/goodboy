@@ -2,10 +2,10 @@ import type { AgentKind } from '../../session/agent-kind';
 
 type ScopeMismatchKind = 'planner-asked-to-implement' | 'implementer-asked-to-plan';
 
-export interface ScopeMismatch {
+export type ScopeMismatch = {
   readonly kind: ScopeMismatchKind;
   readonly suggestedAgentKind: AgentKind;
-}
+};
 
 /**
  * Imperative verbs that mean "do the thing", not "design it". Anchored to the

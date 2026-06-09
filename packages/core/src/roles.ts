@@ -2,12 +2,12 @@ import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
 
 export type { AgentEffort, AgentRole } from '@goodboy/types';
 
-export interface RoleDefaults {
+export type RoleDefaults = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: AgentEffort;
   readonly description: string;
-}
+};
 
 export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
   scout: {

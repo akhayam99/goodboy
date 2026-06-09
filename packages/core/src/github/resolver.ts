@@ -17,7 +17,7 @@ const PR_FIELDS = [
   'body',
 ] as const;
 
-interface RawPullRequest {
+type RawPullRequest = {
   number: number;
   title: string;
   url: string;
@@ -33,13 +33,13 @@ interface RawPullRequest {
   }> | null;
   updatedAt: string;
   body: string | null;
-}
+};
 
-interface ClosingIssueRef {
+type ClosingIssueRef = {
   number: number;
   title?: string;
   url: string;
-}
+};
 
 function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
   if (raw.state === 'MERGED') return 'merged';

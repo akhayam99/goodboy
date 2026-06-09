@@ -18,9 +18,9 @@ import { useOpenQuestions } from './useOpenQuestions';
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-interface Props {
+type Props = {
   sessionId: SessionId;
-}
+};
 
 export function QuestionsTab({ sessionId }: Props) {
   const {

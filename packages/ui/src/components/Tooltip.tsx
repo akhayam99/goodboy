@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
-export interface TooltipProps {
+export type TooltipProps = {
   content: string;
   side?: TooltipSide;
   children: React.ReactElement<{
@@ -12,7 +12,7 @@ export interface TooltipProps {
     onFocus?: React.FocusEventHandler;
     onBlur?: React.FocusEventHandler;
   }>;
-}
+};
 
 const SIDE_CLASSES: Record<TooltipSide, string> = {
   top: 'bottom-full left-1/2 -translate-x-1/2 mb-1.5',

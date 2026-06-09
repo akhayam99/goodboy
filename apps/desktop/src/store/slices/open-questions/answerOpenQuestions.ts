@@ -4,11 +4,11 @@ import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';
 
-interface AnswerPair {
+type AnswerPair = {
   readonly id: OpenQuestionId;
   readonly text: string;
   readonly answer: string;
-}
+};
 
 function buildBatchPrompt(pairs: ReadonlyArray<AnswerPair>): string {
   const lines = ['Answers to open questions:'];

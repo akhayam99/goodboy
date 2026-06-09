@@ -22,13 +22,13 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: GEMINI_MODELS.map((m) => m.id),
 };
 
-export interface GeminiAdapterDeps {
+export type GeminiAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly priceOverride?: GeminiModelPriceOverride | null;
-}
+};
 
 export class GeminiAdapter implements ProviderAdapter {
   readonly id = 'gemini' as const;

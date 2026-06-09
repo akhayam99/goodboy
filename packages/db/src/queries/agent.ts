@@ -11,7 +11,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface AgentRow {
+type AgentRow = {
   id: string;
   session_id: string;
   step_id: string | null;
@@ -33,7 +33,7 @@ interface AgentRow {
   model_override: string | null;
   provider_override: string | null;
   kind: string | null;
-}
+};
 
 function toAgent(row: AgentRow): Agent {
   return {
@@ -177,13 +177,13 @@ export async function restoreAgent(db: Database, id: AgentId): Promise<void> {
   await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
 }
 
-export interface AgentConfigUpdate {
+export type AgentConfigUpdate = {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
   effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
   kind?: string | null;
-}
+};
 
 export async function updateAgentConfig(
   db: Database,

@@ -1,10 +1,10 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok: number;
-}
+};
 
 const OPUS_PRICE: ModelPrice = {
   inputPerMtok: 15,

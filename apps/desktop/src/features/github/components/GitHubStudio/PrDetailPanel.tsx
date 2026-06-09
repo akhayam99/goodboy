@@ -22,12 +22,12 @@ import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrSidebar, type PrSection } from './PrSidebar';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId | null;
   readonly initialPrNumber?: number | null;
   readonly initialThreadId?: string | null;
   readonly onClose: () => void;
-}
+};
 
 export function PrDetailPanel({
   sessionId,

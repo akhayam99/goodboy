@@ -1,8 +1,8 @@
 import type { ProviderLifecycleAction } from '@goodboy/types';
 
-interface Props {
+type Props = {
   readonly action: ProviderLifecycleAction;
-}
+};
 
 // Two-step ladder rendered only during install or connect. Install is step 1,
 // the implicit follow-on connect is step 2. Logout has no stepper.

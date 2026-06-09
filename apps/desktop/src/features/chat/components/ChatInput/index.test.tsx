@@ -10,7 +10,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
   const { create } = await import('zustand');
   const send = vi.fn(async () => undefined);
   const cancel = vi.fn();
-  interface S {
+  type S = {
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
     setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>;
@@ -45,7 +45,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     attachWorkflowToSession: () => Promise<void>;
     loadPhaseTemplates: () => Promise<void>;
     loadPhaseRunsForSession: () => Promise<void>;
-  }
+  };
   const store = create<S>((set) => ({
     sendTurn: send,
     cancelCurrentTurn: cancel,

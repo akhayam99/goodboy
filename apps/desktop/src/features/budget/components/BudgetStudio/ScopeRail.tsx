@@ -4,12 +4,12 @@ import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from './ProviderIcon';
 import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib';
 
-interface Props {
+type Props = {
   readonly scope: BudgetScope;
   readonly onSelect: (scope: BudgetScope) => void;
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly sessions: ReadonlyArray<SessionSpend>;
-}
+};
 
 export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
   return (

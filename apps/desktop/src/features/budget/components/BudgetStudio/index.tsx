@@ -12,11 +12,11 @@ import { ScopeRail } from './ScopeRail';
 import { SessionPanel } from './SessionPanel';
 import type { BudgetScope, SessionSpend, WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialScope?: BudgetScope;
   readonly onClose: () => void;
-}
+};
 
 const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;

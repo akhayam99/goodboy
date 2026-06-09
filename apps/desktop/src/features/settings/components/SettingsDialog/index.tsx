@@ -14,20 +14,20 @@ import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   initialSection?: string;
-}
+};
 
 type NavSection = 'app' | 'shortcuts' | 'budget' | 'integrations' | 'initialization' | 'advanced';
 
-interface NavItem {
+type NavItem = {
   id: NavSection;
   label: string;
   icon: React.ReactNode;
   beta?: boolean;
-}
+};
 
 // global settings only, per-workspace skills + workflows live in
 // WorkspaceSettingsDialog (the gear icon next to a workspace row).

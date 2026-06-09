@@ -6,11 +6,11 @@ import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
 
-export interface PushAllResult {
+export type PushAllResult = {
   pushed: boolean;
   resolved: number;
   failed: number;
-}
+};
 
 /**
  * Publish every queued resolution with a SINGLE push: push the branch once,

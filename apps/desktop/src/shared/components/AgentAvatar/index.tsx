@@ -43,12 +43,12 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 
-interface Props {
+type Props = {
   readonly kind: AgentKind;
   readonly size?: AvatarSize;
   readonly className?: string;
   readonly title?: string;
-}
+};
 
 /**
  * Tiny dog silhouette in the role tint colour. Drop-in replacement for the

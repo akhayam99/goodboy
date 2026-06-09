@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly className?: string;
   readonly fade?: number;
   readonly orientation?: 'vertical' | 'horizontal';
   readonly children: ReactNode;
-}
+};
 
 export function ScrollFade({ className, fade = 24, orientation = 'vertical', children }: Props) {
   const ref = useRef<HTMLDivElement>(null);

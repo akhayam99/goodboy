@@ -1,7 +1,7 @@
 import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SkillRow {
+type SkillRow = {
   id: string;
   workspace_id: string;
   name: string;
@@ -11,7 +11,7 @@ interface SkillRow {
   frontmatter_json: string;
   created_at: string;
   updated_at: string;
-}
+};
 
 function toSkill(row: SkillRow): Skill {
   return {

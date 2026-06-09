@@ -116,7 +116,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { openUrl } from '../../../../shared/lib/editor';
 
-interface WorkspacesSidebarProps {
+type WorkspacesSidebarProps = {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
@@ -126,7 +126,7 @@ interface WorkspacesSidebarProps {
   onOpenBudget: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
-}
+};
 
 const FOOTER_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
@@ -701,9 +701,9 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
-interface AgentsSectionProps {
+type AgentsSectionProps = {
   task: Session;
-}
+};
 
 function AgentsSection({ task }: AgentsSectionProps) {
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
@@ -1400,16 +1400,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
 }
 
-interface SpawnAgentControlProps {
+type SpawnAgentControlProps = {
   sessionId: SessionId;
-}
+};
 
-interface PopoverAnchor {
+type PopoverAnchor = {
   readonly left: number;
   readonly top: number | null;
   readonly bottom: number | null;
   readonly direction: 'up' | 'down';
-}
+};
 
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
@@ -1525,14 +1525,14 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   );
 }
 
-interface ClusterChildRowProps {
+type ClusterChildRowProps = {
   readonly child: Agent;
   readonly index: number;
   readonly total: number;
   readonly costUsd: number;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
-}
+};
 
 function ClusterChildRow({
   child,
@@ -1582,7 +1582,7 @@ function ClusterChildRow({
   );
 }
 
-interface ScoutSubtreeProps {
+type ScoutSubtreeProps = {
   readonly containerId: AgentId;
   readonly depth: number;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
@@ -1591,7 +1591,7 @@ interface ScoutSubtreeProps {
   readonly expandState: ReadonlyMap<string, boolean>;
   readonly onToggle: (id: string) => void;
   readonly onSelect: (id: AgentId) => void;
-}
+};
 
 function ScoutSubtree({
   containerId,
@@ -1681,7 +1681,7 @@ function resolverStatus(
   return 'done';
 }
 
-interface ResolveClusterProps {
+type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
@@ -1693,7 +1693,7 @@ interface ResolveClusterProps {
   readonly onToggle: () => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onForceNext: () => void;
-}
+};
 
 function ResolveCluster({
   agents,
@@ -1773,7 +1773,7 @@ function ResolveCluster({
   );
 }
 
-interface ResolveClusterRowProps {
+type ResolveClusterRowProps = {
   readonly agent: Agent;
   readonly index: number;
   readonly total: number;
@@ -1782,7 +1782,7 @@ interface ResolveClusterRowProps {
   readonly canJump: boolean;
   readonly onSelect: () => void;
   readonly onJump: () => void;
-}
+};
 
 function ResolveClusterRow({
   agent,
@@ -1863,7 +1863,7 @@ function ResolveClusterRow({
 
 type WorkflowBlockReason = 'questions' | 'summarizer';
 
-interface WorkflowStepRowProps {
+type WorkflowStepRowProps = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -1881,7 +1881,7 @@ interface WorkflowStepRowProps {
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
-}
+};
 
 function WorkflowStepRow({
   run,
@@ -2131,7 +2131,7 @@ function WorkflowStepRow({
   );
 }
 
-interface AgentRowProps {
+type AgentRowProps = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -2147,7 +2147,7 @@ interface AgentRowProps {
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
   readonly onDelete: () => void;
-}
+};
 
 function AgentRow({
   run,

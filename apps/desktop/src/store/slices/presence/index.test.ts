@@ -13,11 +13,11 @@ vi.mock('../../../features/workspace/window', () => ({
   spawnWorkspaceWindow,
 }));
 
-interface FakeState {
+type FakeState = {
   windowPresence: Record<string, WorkspaceId | null>;
   currentWorkspaceId: WorkspaceId | null;
   setCurrentWorkspace: (id: WorkspaceId | null) => Promise<void>;
-}
+};
 
 function harness(initial: Partial<FakeState>) {
   let state = {

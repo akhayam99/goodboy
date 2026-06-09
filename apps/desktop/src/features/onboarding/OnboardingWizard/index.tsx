@@ -11,11 +11,11 @@ import { ReadyStep } from './steps/ReadyStep';
 const STEP_COUNT = 4;
 const EXIT_MS = 200;
 
-interface Cta {
+type Cta = {
   readonly label: string;
   readonly onClick: () => void;
   readonly variant: ButtonVariant;
-}
+};
 
 export function OnboardingWizard() {
   const { open, providersConnected, hasWorkspace } = useOnboardingWizard();

@@ -23,7 +23,7 @@ import {
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import type { GetFn, SetFn } from './types';
 
-interface SpawnArgs {
+type SpawnArgs = {
   stepId?: StepId;
   workflowRunId?: WorkflowRunId;
   name?: string;
@@ -36,7 +36,7 @@ interface SpawnArgs {
   sourceThreadId?: string;
   sourceCommentUrl?: string;
   deferKickoff?: boolean;
-}
+};
 
 export function spawnAgent(set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, args: SpawnArgs): Promise<AgentId> => {

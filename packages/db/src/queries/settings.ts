@@ -1,10 +1,10 @@
 import type { Database } from '../client';
 
-interface SettingsRow {
+type SettingsRow = {
   key: string;
   value: string;
   updated_at: number;
-}
+};
 
 export async function getSetting(db: Database, key: string): Promise<string | null> {
   const rows = await db.select<SettingsRow>('SELECT * FROM settings WHERE key = ?', [key]);

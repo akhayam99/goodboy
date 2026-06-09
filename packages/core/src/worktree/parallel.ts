@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 
-export interface ParallelWorktreeDeps {
+export type ParallelWorktreeDeps = {
   invokeWorktreeCreate: (args: {
     repoPath: string;
     branchPrefix: string;
@@ -18,13 +18,13 @@ export interface ParallelWorktreeDeps {
     sessionId: SessionId,
   ) => Promise<ReadonlyArray<{ worktreePath: string; branch: string; parallelIndex: number }>>;
   deleteWorktreesForSession: (sessionId: SessionId) => Promise<void>;
-}
+};
 
-export interface ParallelWorktreeResult {
+export type ParallelWorktreeResult = {
   readonly worktreePath: string;
   readonly branch: string;
   readonly parallelIndex: number;
-}
+};
 
 /**
  * Splits parentBranch into branchPrefix and base slug.

@@ -137,12 +137,12 @@ export type BootPhase =
 
 export type SystemAlertKind = 'audit-retry-corrupt' | 'audit-retry-exhausted' | 'context-soft-cap';
 
-export interface SystemAlert {
+export type SystemAlert = {
   readonly id: string;
   readonly kind: SystemAlertKind;
   readonly message: string;
   readonly createdAt: string;
-}
+};
 
 export type SessionNudge =
   | {
@@ -171,24 +171,15 @@ export type SessionNudge =
 import type { ProviderSpendEntry } from './slices/budget';
 export type { ProviderSpendEntry };
 
-export interface AppState extends UpdaterState {
+export type AppState = UpdaterState & {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
-  /**
-   * Per-session external task (Linear issue) snapshot. Hydrated on workspace
-   * switch and refreshed when createSession links a fresh issue. Used by the
-   * UI to show an "open in Linear" badge in the session header.
-   */
   readonly sessionExternalTasks: Readonly<Record<SessionId, SessionExternalTask>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
   readonly sessions: ReadonlyArray<Session>;
-  // Archived sessions, loaded lazily per workspace when the user opens the
-  // Archived tab. Kept separate from `sessions` so interactive surfaces
-  // (palette, github polling, unread, workspace-switch eager loads) never see
-  // them, they exist only as historical info.
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
@@ -232,13 +223,6 @@ export interface AppState extends UpdaterState {
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  /**
-   * Runtime history of providerRunIds per agent (Agent). Populated as turns
-   * fire so the sidebar can aggregate telemetry across provider switches.
-   * Agents whose `runId` only points at the *latest* provider run would
-   * otherwise drop costs from previous providers when the user swaps mid-
-   * session. Lives in-memory only; rebuilt from current state on hydrate.
-   */
   readonly agentRunHistory: Readonly<Record<AgentId, ReadonlyArray<ProviderRunId>>>;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;
   readonly sessionMergeConflicts: Readonly<Record<SessionId, ReadonlyArray<FileConflict>>>;
@@ -248,17 +232,11 @@ export interface AppState extends UpdaterState {
   readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
   readonly sidebarWorkspaceSearch: string;
   readonly sidebarSessionSearch: string;
-  // Workspaces with at least one agent whose terminal turn hasn't been viewed.
-  // Refreshed from a DB aggregate so the workspace dot can pulse even for
-  // workspaces whose sessions aren't currently loaded in memory.
   readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
   readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
-  // Review threads the user resolved locally but deferred publishing. Pushed
-  // and resolved as a batch (single push) via pushAllResolutions. Loaded lazily
-  // per session; undefined = not yet loaded.
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
@@ -267,49 +245,30 @@ export interface AppState extends UpdaterState {
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
   readonly resolverState: Readonly<Record<AgentId, 'awaiting' | 'committed' | 'wontfix'>>;
-  // Per-agent input draft. Ephemeral, in-memory only (not persisted). Lets the
-  // user keep an unsent composition when switching agents/sessions.
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
-  // Single source of truth for open questions, keyed by sessionId. Both the
-  // sidebar gates (PlanReadySuggestion, AgentsSection's per-workflow NextStep
-  // CTA) and the QuestionsTab read from here, so answering or dismissing a
-  // question updates the gate immediately instead of waiting for the next
-  // summarizer tick. Loaded lazily by setCurrentSession, refreshed by
-  // autoPopulateContext and by the open-questions slice actions.
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
-  /**
-   * Per-session pending nudges surfaced to the chat input area. Cleared on
-   * dismiss or when the user acts on the suggestion. Not persisted across
-   * app restarts on purpose, nudges expire with the session lifetime.
-   */
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
-  /**
-   * Per-session loading flags. Each block (agents, transcript, telemetry,
-   * slots, plans, summary) starts true on session switch and is flipped off
-   * as that block's async load resolves. UI uses these to render skeletons
-   * without blocking the whole app on a single Promise.all.
-   */
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;
-}
+};
 
-export interface SessionLoadingFlags {
+export type SessionLoadingFlags = {
   readonly agents: boolean;
   readonly transcript: boolean;
   readonly telemetry: boolean;
   readonly slots: boolean;
   readonly plans: boolean;
   readonly summary: boolean;
-}
+};
 
-export interface SessionGithubState {
+export type SessionGithubState = {
   readonly pr: PullRequestState | null;
   readonly linkedIssues: ReadonlyArray<LinkedIssue>;
   readonly fetchedAt: IsoDateTime | null;
@@ -319,9 +278,9 @@ export interface SessionGithubState {
   readonly detailFetchedAt: IsoDateTime | null;
   readonly detailLoading: boolean;
   readonly detailError: string | null;
-}
+};
 
-export interface SummarizerSessionStatus {
+export type SummarizerSessionStatus = {
   readonly status: 'idle' | 'running' | 'error';
   readonly lastUpdate: IsoDateTime | null;
   readonly error: string | null;
@@ -330,16 +289,13 @@ export interface SummarizerSessionStatus {
     readonly outputTokens: number;
     readonly estimatedCostUsd: number;
   } | null;
-  // Inputs of the most recent (or in-flight) run. Retained on the 'error'
-  // branch so the UI can re-trigger the same summarization; cleared on
-  // 'idle' (success) so a stale retry can't fire after we've moved on.
   readonly lastAttempt: {
     readonly turnInput: string;
     readonly turnOutput: string;
   } | null;
-}
+};
 
-export interface AppActions {
+export type AppActions = {
   hydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
@@ -349,9 +305,6 @@ export interface AppActions {
   removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
   refreshSessions(workspaceId: WorkspaceId): Promise<void>;
-  // Lazily load archived sessions for a workspace. Called when the Archived
-  // tab opens. Idempotent: re-running refreshes the list (e.g. after the user
-  // archived something new in another tab).
   loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
   refreshSessionSummary(sessionId: SessionId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
@@ -667,7 +620,7 @@ export interface AppActions {
   setActiveTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
   setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
   closeSessionTerminals(sessionId: SessionId): void;
-}
+};
 
 export type AppStore = AppState & AppActions;
 

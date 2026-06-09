@@ -1,11 +1,11 @@
 import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   label: string;
   selected: boolean;
   onToggle: () => void;
-}
+};
 
 export function SuggestionChip({ label, selected, onToggle }: Props) {
   return (

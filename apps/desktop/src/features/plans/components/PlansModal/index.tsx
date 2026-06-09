@@ -29,12 +29,12 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   discarded: 'Discarded',
 };
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly open: boolean;
   readonly onClose: () => void;
   readonly initialPlanId?: PlanId;
-}
+};
 
 export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
   const plans = useSessionPlans(sessionId);

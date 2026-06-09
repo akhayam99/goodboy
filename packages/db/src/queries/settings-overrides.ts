@@ -9,7 +9,7 @@ import type {
 import type { ProviderId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkspaceOverrideRow {
+type WorkspaceOverrideRow = {
   default_provider_id: string | null;
   default_workflow_id: string | null;
   default_branch_prefix: string | null;
@@ -17,15 +17,15 @@ interface WorkspaceOverrideRow {
   default_verbosity: string | null;
   provider_bindings: string | null;
   scout_fanout: number | null;
-}
+};
 
-interface SessionOverrideRow {
+type SessionOverrideRow = {
   default_provider_id: string | null;
   default_workflow_id: string | null;
   default_branch_prefix: string | null;
   parallel_enabled: number | null;
   provider_bindings: string | null;
-}
+};
 
 function parseBindings(raw: string | null): ProviderBindings | null {
   if (!raw) return null;

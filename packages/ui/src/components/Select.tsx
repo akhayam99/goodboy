@@ -3,11 +3,10 @@ import { cn } from '../cn';
 
 export type SelectSize = 'sm' | 'md';
 
-export interface SelectProps extends Omit<ComponentProps<'select'>, 'size'> {
+export type SelectProps = Omit<ComponentProps<'select'>, 'size'> & {
   size?: SelectSize;
-  /** Stretch the wrapper to its container's width and make `<select>` w-full. */
   block?: boolean;
-}
+};
 
 const SIZE: Record<SelectSize, string> = {
   sm: 'h-7 pl-2 pr-7 text-xs',

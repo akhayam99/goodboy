@@ -1,13 +1,13 @@
 import type { IsoDateTime, SkillId, WorkspaceId } from './ids';
 
-export interface SkillFrontmatter {
+export type SkillFrontmatter = {
   readonly name: string;
   readonly description: string;
   readonly args?: ReadonlyArray<string>;
   readonly scripts?: ReadonlyArray<string>;
-}
+};
 
-export interface Skill {
+export type Skill = {
   readonly id: SkillId;
   readonly workspaceId: WorkspaceId;
   readonly name: string;
@@ -17,15 +17,15 @@ export interface Skill {
   readonly frontmatter: SkillFrontmatter;
   readonly createdAt: IsoDateTime;
   readonly updatedAt: IsoDateTime;
-}
+};
 
-export interface SkillInvocation {
+export type SkillInvocation = {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;
-}
+};
 
-export interface SlashCommand {
+export type SlashCommand = {
   readonly name: string;
   readonly args: ReadonlyArray<string>;
   readonly raw: string;
-}
+};

@@ -7,11 +7,11 @@ import type {
 } from '@goodboy/types';
 import { formatToolPattern } from './matcher';
 
-export interface ClaudeFlagSet {
+export type ClaudeFlagSet = {
   readonly allowedTools: ReadonlyArray<string>;
   readonly disallowedTools: ReadonlyArray<string>;
   readonly permissionMode: ClaudePermissionMode;
-}
+};
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
   session: 2,

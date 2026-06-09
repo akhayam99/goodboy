@@ -3,10 +3,10 @@ import { TriangleAlert, X } from 'lucide-react';
 import type { BudgetAlert } from '@goodboy/types';
 import { providerLabel } from './lib';
 
-interface Props {
+type Props = {
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly onDismiss: (id: string) => void;
-}
+};
 
 function alertMessage(alert: BudgetAlert): string {
   const who = alert.provider ? providerLabel(alert.provider) : 'this session';

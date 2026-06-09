@@ -4,10 +4,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { changeWorktreeBranch } from '../../../features/worktree/worktree';
 import type { GetFn, SetFn } from './types';
 
-interface Args {
+type Args = {
   branch: string;
   createNew: boolean;
-}
+};
 
 export function changeSessionBranch(set: SetFn, get: GetFn) {
   return async (sessionId: SessionId, { branch, createNew }: Args) => {

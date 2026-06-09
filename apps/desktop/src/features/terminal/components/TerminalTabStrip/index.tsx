@@ -6,13 +6,13 @@ import type {
   TerminalTabStatus,
 } from '../../../../shared/types/terminal';
 
-interface Props {
+type Props = {
   readonly tabs: readonly TerminalTab[];
   readonly activeId: TerminalTabId | null;
   readonly onSelect: (id: TerminalTabId) => void;
   readonly onClose: (id: TerminalTabId) => void;
   readonly onSpawn: () => void;
-}
+};
 
 const STATUS_DOT: Record<TerminalTabStatus, string> = {
   running: 'bg-success',

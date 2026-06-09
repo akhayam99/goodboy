@@ -3,26 +3,26 @@ import type { ContextSlotDelta, SummarizeInput } from './client';
 
 export type NextActionKind = 'scout' | 'plan' | 'implement';
 
-export interface NextAction {
+export type NextAction = {
   readonly id: string;
   readonly kind: NextActionKind;
   readonly label: string;
   readonly prompt: string;
-}
+};
 
-export interface InferNextActionsInput {
+export type InferNextActionsInput = {
   readonly input: SummarizeInput;
   readonly delta: ContextSlotDelta;
   readonly slotsAfter: ReadonlyArray<ContextSlot>;
   readonly prState?: NextActionsPrState | null;
-}
+};
 
 // Kept on the public surface so existing client wiring (cli.ts, client.ts)
 // keeps compiling without a sweep. PR-state no longer changes the trio output.
-export interface NextActionsPrState {
+export type NextActionsPrState = {
   readonly hasOpenPr: boolean;
   readonly checksGreen: boolean;
-}
+};
 
 const MAX_TOPICS = 3;
 const STOPWORDS = new Set([

@@ -10,15 +10,15 @@ import {
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
-interface Props {
+type Props = {
   readonly session: Session;
-}
+};
 
-interface WorkflowProgress {
+type WorkflowProgress = {
   readonly workflow: Workflow;
   readonly currentOrdinal: number;
   readonly total: number;
-}
+};
 
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 

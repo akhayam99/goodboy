@@ -1,13 +1,13 @@
 import type { Database } from '../client';
 
-export interface AuditRetryRow {
+export type AuditRetryRow = {
   readonly id: string;
   readonly payload_json: string;
   readonly attempts: number;
   readonly last_error: string | null;
   readonly created_at: number;
   readonly updated_at: number;
-}
+};
 
 export async function enqueueAuditRetry(
   db: Database,

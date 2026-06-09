@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-interface MockState {
+type MockState = {
   githubStatus:
     | null
     | { available: false }
@@ -18,7 +18,7 @@ interface MockState {
   refreshGithubStatus: ReturnType<typeof vi.fn>;
   setGithubPat: ReturnType<typeof vi.fn>;
   clearGithubToken: ReturnType<typeof vi.fn>;
-}
+};
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {

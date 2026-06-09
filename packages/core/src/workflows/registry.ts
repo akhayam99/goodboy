@@ -14,9 +14,9 @@ export class WorkflowRegistryError extends Error {
   }
 }
 
-export interface WorkflowRegistryDeps {
+export type WorkflowRegistryDeps = {
   readonly db: Database;
-}
+};
 
 export class WorkflowRegistry {
   constructor(private readonly deps: WorkflowRegistryDeps) {}

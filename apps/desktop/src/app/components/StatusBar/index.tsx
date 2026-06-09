@@ -3,9 +3,9 @@ import { useCurrentSession, useCurrentWorkspace } from '../../../store';
 import { TelemetryPill } from '../../../features/providers/components/TelemetryPill';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 
-interface StatusBarProps {
+type StatusBarProps = {
   onFocusWorkspaces?: () => void;
-}
+};
 
 export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
   const workspace = useCurrentWorkspace();

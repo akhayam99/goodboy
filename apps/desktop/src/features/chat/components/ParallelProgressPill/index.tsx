@@ -1,11 +1,11 @@
 import { cn } from '@goodboy/ui';
 import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 
-interface Props {
+type Props = {
   parallelRunIds: ReadonlyArray<ProviderRunId>;
   runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>;
   onSelectRun: (runId: ProviderRunId) => void;
-}
+};
 
 const BADGE_CLASSES: Record<AgentStatus, string> = {
   running: 'bg-blue-500 motion-safe:animate-pulse',

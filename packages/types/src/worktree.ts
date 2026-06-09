@@ -1,4 +1,4 @@
-export interface BranchCommit {
+export type BranchCommit = {
   readonly sha: string;
   readonly shortSha: string;
   readonly subject: string;
@@ -6,9 +6,9 @@ export interface BranchCommit {
   readonly timestamp: number;
   readonly pushed: boolean;
   readonly parentSha: string | null;
-}
+};
 
-export interface WorktreeStatus {
+export type WorktreeStatus = {
   readonly branch: string | null;
   readonly head: string | null;
   readonly headSubject: string | null;
@@ -19,7 +19,7 @@ export interface WorktreeStatus {
   readonly untracked: number;
   readonly changed: number;
   readonly hasUpstream: boolean;
-}
+};
 
 export type WorktreeDiffScope = 'unstaged' | 'staged' | 'all';
 

@@ -17,18 +17,18 @@ import {
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
-}
+};
 
 type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
-interface NavItem {
+type NavItem = {
   readonly id: Section;
   readonly label: string;
   readonly icon: ReactNode;
-}
+};
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'overview', label: 'Overview', icon: <BookOpen size={13} aria-hidden /> },
@@ -751,12 +751,12 @@ function ConceptCard({
   );
 }
 
-interface DefinitionRow {
+type DefinitionRow = {
   readonly term: string;
   readonly desc: string;
   readonly icon?: ReactNode;
   readonly tone?: Tone;
-}
+};
 
 function DefinitionList({ rows }: { rows: ReadonlyArray<DefinitionRow> }) {
   return (
@@ -845,11 +845,11 @@ function InlineCode({ children }: { children: ReactNode }) {
   );
 }
 
-interface LegendaRow {
+type LegendaRow = {
   readonly dot: string;
   readonly label: string;
   readonly desc: string;
-}
+};
 
 function LegendaGrid({ rows }: { rows: ReadonlyArray<LegendaRow> }) {
   return (

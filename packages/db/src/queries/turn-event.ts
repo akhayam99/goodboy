@@ -1,13 +1,13 @@
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface TurnEventRow {
+type TurnEventRow = {
   id: string;
   session_id: string;
   agent_id: string;
   payload: string;
   created_at: number;
-}
+};
 
 function rowToEvent(row: TurnEventRow): TurnEvent | null {
   try {
@@ -41,12 +41,12 @@ export async function insertTurnEvent(
   );
 }
 
-export interface PendingTurnEventInsert {
+export type PendingTurnEventInsert = {
   readonly id: string;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly event: TurnEvent;
-}
+};
 
 // Multi-row INSERT for batched streaming events. Token-by-token providers can
 // emit 50-200 events/sec; one `db.execute` per event used to grab the Rust

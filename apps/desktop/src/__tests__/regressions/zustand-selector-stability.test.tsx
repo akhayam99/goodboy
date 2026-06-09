@@ -28,11 +28,11 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
-interface TestState {
+type TestState = {
   providers: ReadonlyArray<{ id: string; connection: string }>;
   integrations: Readonly<Record<string, ReadonlyArray<string>>>;
   filler: number;
-}
+};
 
 afterEach(cleanup);
 

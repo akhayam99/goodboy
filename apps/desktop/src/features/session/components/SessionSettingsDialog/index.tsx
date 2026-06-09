@@ -24,14 +24,14 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 
-interface SessionSettingsDialogProps {
+type SessionSettingsDialogProps = {
   sessionId: SessionId;
   open: boolean;
   onClose: () => void;
   archived: boolean;
   onArchive: () => void;
   onUnarchive: () => void;
-}
+};
 
 const DELETE_ARM_TIMEOUT_MS = 4000;
 
@@ -384,7 +384,7 @@ export function SessionSettingsDialog({
 /* Section: General                                                      */
 /* ──────────────────────────────────────────────────────────────────── */
 
-interface GeneralSectionProps {
+type GeneralSectionProps = {
   readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
   readonly goalDraft: string;
   readonly setGoalDraft: (v: string) => void;
@@ -408,7 +408,7 @@ interface GeneralSectionProps {
   readonly targetDirty: boolean;
   readonly confirmReuse: boolean;
   readonly onChangeBranch: () => void;
-}
+};
 
 function GeneralSection(props: GeneralSectionProps) {
   const {
@@ -662,14 +662,14 @@ function SessionProviderPicker({
 /* Section: Budget                                                       */
 /* ──────────────────────────────────────────────────────────────────── */
 
-interface BudgetSectionProps {
+type BudgetSectionProps = {
   readonly capDraft: string;
   readonly setCapDraft: (v: string) => void;
   readonly onSaveCap: () => void;
   readonly busy: boolean;
   readonly softCapUsd: number | null;
   readonly spent: number;
-}
+};
 
 function BudgetSection({
   capDraft,

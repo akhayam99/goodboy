@@ -7,14 +7,14 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ParallelGroupRow {
+type ParallelGroupRow = {
   id: string;
   session_id: string;
   ordinal: number;
   merge_strategy: string;
   created_at: number;
   completed_at: number | null;
-}
+};
 
 function toDomain(row: ParallelGroupRow): ParallelGroup {
   return {

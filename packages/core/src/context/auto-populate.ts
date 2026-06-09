@@ -26,25 +26,25 @@ import type { SlotKey } from './slots';
 // cluster them per-agent and route answers back to the right chat. The
 // store resolves this from `activeAgentId` + workflow templates before
 // invoking auto-populate.
-export interface AgentContext {
+export type AgentContext = {
   readonly agentId: AgentId;
   readonly workflowId?: WorkflowId;
   readonly workflowRunId?: WorkflowRunId;
   readonly stepOrdinal?: number;
-}
+};
 
-export interface AutoPopulateInput {
+export type AutoPopulateInput = {
   readonly db: Database;
   readonly sessionId: SessionId;
   readonly filesEdited: ReadonlyArray<string>;
   readonly assistantText: string;
   readonly agentContext?: AgentContext;
-}
+};
 
-export interface AutoPopulateResult {
+export type AutoPopulateResult = {
   readonly updatedSlots: ReadonlyArray<SlotKey>;
   readonly openQuestionsChanged: boolean;
-}
+};
 
 export async function autoPopulateContext(input: AutoPopulateInput): Promise<AutoPopulateResult> {
   const engine = new ContextEngine({ db: input.db });

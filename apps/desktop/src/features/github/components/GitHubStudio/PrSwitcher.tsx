@@ -4,11 +4,11 @@ import { cn } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 
-interface Props {
+type Props = {
   readonly prs: ReadonlyArray<PullRequestState>;
   readonly selected: number | null;
   readonly onSelect: (prNumber: number) => void;
-}
+};
 
 export function PrSwitcher({ prs, selected, onSelect }: Props) {
   const [open, setOpen] = useState(false);

@@ -22,7 +22,7 @@ import {
   type WorkspaceTurn,
 } from './lib';
 
-interface Props {
+type Props = {
   readonly workspaceSummary: TelemetrySummary | null;
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -30,7 +30,7 @@ interface Props {
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly onDismissAlert: (id: string) => void;
   readonly onSelect: (scope: BudgetScope) => void;
-}
+};
 
 export function OverviewPanel({
   workspaceSummary,

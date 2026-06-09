@@ -37,12 +37,12 @@ export type LinearIssue = {
   attachments?: { nodes: ReadonlyArray<LinearAttachment> };
 };
 
-export interface LinearLinkedPr {
+export type LinearLinkedPr = {
   readonly url: string;
   readonly number: number;
   readonly repo: string | null;
   readonly status: string | null;
-}
+};
 
 const PR_URL_RE = /\/(?:pull|merge_requests)\/(\d+)/;
 const GH_REPO_RE = /github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/pull\/\d+/;

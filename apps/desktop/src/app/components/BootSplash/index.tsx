@@ -6,23 +6,20 @@ import { DogMascot } from '../../../shared/components/DogMascot';
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
 
-interface BootSplashProps {
+type BootSplashProps = {
   phase: BootPhase;
   error: string | null;
   onRetry?: () => void;
   onSkipProviderDetection?: () => void;
-  // Fires once the smooth progress bar has fully played through (pct === 100).
-  // Parent holds the splash visible until this signal so even fast boots get
-  // the complete intro animation.
   onFinished?: () => void;
-}
+};
 
 // User-facing steps. Internal phases (migrations, settings, cli detection) are
 // collapsed into the first one, users don't care about the difference.
-interface BootStep {
+type BootStep = {
   threshold: number;
   label: string;
-}
+};
 
 const STEPS: ReadonlyArray<BootStep> = [
   { threshold: 33, label: 'Loading your workspaces' },

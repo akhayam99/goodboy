@@ -21,12 +21,12 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: ['claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
 };
 
-export interface ClaudeAdapterDeps {
+export type ClaudeAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class ClaudeAdapter implements ProviderAdapter {
   readonly id = 'anthropic' as const;

@@ -1,12 +1,12 @@
 import { cn } from '@goodboy/ui';
 import { ArrowRight } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly index: number;
   readonly interior: boolean;
   readonly dragging: boolean;
   readonly active: boolean;
-}
+};
 
 export function StepFlowConnector({ index, interior, dragging, active }: Props) {
   return (

@@ -8,14 +8,14 @@ import type {
 import { invokePermissionRuleUpsert } from '../../../features/permissions/permissions';
 import type { GetFn, SetFn } from './types';
 
-interface Params {
+type Params = {
   sessionId: SessionId;
   agentId: AgentId;
   toolUseId: string;
   toolName: string;
   runId: ProviderRunId;
   scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
-}
+};
 
 export function resolvePermissionRequest(set: SetFn, get: GetFn) {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope }: Params) => {

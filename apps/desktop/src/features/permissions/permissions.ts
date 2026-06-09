@@ -14,7 +14,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-interface RawPermissionRuleRow {
+type RawPermissionRuleRow = {
   readonly id: string;
   readonly scope: string;
   readonly workspaceId: string | null;
@@ -25,9 +25,9 @@ interface RawPermissionRuleRow {
   readonly priority: number;
   readonly createdAt: string;
   readonly updatedAt: string;
-}
+};
 
-interface RawPermissionAuditRow {
+type RawPermissionAuditRow = {
   readonly id: string;
   readonly runId: string;
   readonly sessionId: string;
@@ -39,7 +39,7 @@ interface RawPermissionAuditRow {
   readonly decidedBy: string;
   readonly requestedAt: string;
   readonly decidedAt: string;
-}
+};
 
 function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
   return {
@@ -78,7 +78,7 @@ function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
   };
 }
 
-export interface PermissionRuleUpsertPayload {
+export type PermissionRuleUpsertPayload = {
   readonly id?: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
@@ -87,9 +87,9 @@ export interface PermissionRuleUpsertPayload {
   readonly patternArgsMatcher?: string;
   readonly decision: PermissionDecisionKind;
   readonly priority: number;
-}
+};
 
-export interface PermissionAuditInsertPayload {
+export type PermissionAuditInsertPayload = {
   readonly id?: string;
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
@@ -101,7 +101,7 @@ export interface PermissionAuditInsertPayload {
   readonly decidedBy: PermissionDecisionSource;
   readonly requestedAt: IsoDateTime;
   readonly decidedAt: IsoDateTime;
-}
+};
 
 // Permission rule commands (#176).
 export async function invokePermissionRuleList(args: {
@@ -159,23 +159,23 @@ export async function invokePermissionAuditInsert(
 
 // Permission audit retry queue (#196).
 
-interface RawAuditRetryRow {
+type RawAuditRetryRow = {
   readonly id: string;
   readonly payloadJson: string;
   readonly attempts: number;
   readonly lastError: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
-}
+};
 
-export interface AuditRetryEntry {
+export type AuditRetryEntry = {
   readonly id: string;
   readonly payloadJson: string;
   readonly attempts: number;
   readonly lastError: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
-}
+};
 
 function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
   return {

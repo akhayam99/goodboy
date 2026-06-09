@@ -19,8 +19,8 @@ export function computeGeminiCostUsd(
   );
 }
 
-export interface GeminiModelPriceOverride {
+export type GeminiModelPriceOverride = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
-}
+};

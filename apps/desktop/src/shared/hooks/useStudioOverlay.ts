@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 const EXIT_MS = 200;
 
-interface StudioOverlay {
+type StudioOverlay = {
   readonly closing: boolean;
   readonly requestClose: () => void;
-}
+};
 
 export function useStudioOverlay(onClose: () => void): StudioOverlay {
   const [closing, setClosing] = useState(false);

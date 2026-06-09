@@ -28,12 +28,11 @@ function stringToBase64(s: string): string {
   return btoa(binary);
 }
 
-interface Props {
+type Props = {
   readonly runId: string;
   readonly isActive: boolean;
-  /** Tailwind height class for the terminal wrapper. Default `h-44`. */
   readonly heightClass?: string;
-}
+};
 
 // Wraps GenericTerminalPanel with a lifecycle-scoped driver. The driver
 // filters output/exit events by runId so concurrent lifecycle runs (e.g. user

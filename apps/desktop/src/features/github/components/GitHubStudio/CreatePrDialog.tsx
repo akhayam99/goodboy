@@ -6,13 +6,13 @@ import { ghBaseBranches } from '../../github';
 import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly defaultTitle: string;
   readonly closedPr?: { number: number; url: string };
   readonly onClose: () => void;
   readonly onStudioClose: () => void;
-}
+};
 
 const FIELD =
   'w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-primary' as const;

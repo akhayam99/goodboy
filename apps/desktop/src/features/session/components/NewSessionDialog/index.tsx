@@ -17,12 +17,12 @@ import { IssuePicker } from '../../../../features/integrations/linear/IssuePicke
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
-}
+};
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Claude Code',
@@ -55,11 +55,11 @@ function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId 
   return 'anthropic';
 }
 
-interface SummarizeTaskResult {
+type SummarizeTaskResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 function getCheapModel(providerId: ProviderId): string {
   switch (providerId) {

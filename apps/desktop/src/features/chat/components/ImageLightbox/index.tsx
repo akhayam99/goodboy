@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly src: string;
   readonly alt: string;
   readonly onClose: () => void;
   readonly media?: 'image' | 'pdf';
-}
+};
 
 const EXIT_MS = 180;
 

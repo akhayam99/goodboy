@@ -1,8 +1,8 @@
 import type { PermissionRulePattern } from '@goodboy/types';
 
-export interface ToolMatcher {
+export type ToolMatcher = {
   matches(toolName: string, input: unknown): boolean;
-}
+};
 
 // Regex metachars excluding * (handled separately as glob wildcard)
 const REGEX_METACHARS = /[.+?()[\]{}\^$|\\]/g;

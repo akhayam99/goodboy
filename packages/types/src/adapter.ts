@@ -3,21 +3,21 @@ import type { MessageAttachment } from './message';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
 
-export interface ProviderCapabilities {
+export type ProviderCapabilities = {
   readonly streaming: boolean;
   readonly toolUse: boolean;
   readonly fileEdits: boolean;
   readonly contextWindow: number;
   readonly defaultModel: string;
   readonly availableModels: ReadonlyArray<string>;
-}
+};
 
-export interface ProviderUsage {
+export type ProviderUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
 export type DetectResult =
   | { kind: 'available'; binary: string; version: string }
@@ -25,13 +25,13 @@ export type DetectResult =
 
 export type PermissionMode = 'default' | 'bypassPermissions' | 'plan' | 'acceptEdits';
 
-export interface TurnPermissionFlags {
+export type TurnPermissionFlags = {
   readonly mode: PermissionMode;
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
-}
+};
 
-export interface TurnRequest {
+export type TurnRequest = {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
   readonly model: string;
@@ -39,7 +39,7 @@ export interface TurnRequest {
   readonly systemPrompt: string;
   readonly userMessage: string;
   readonly permissionFlags?: TurnPermissionFlags;
-}
+};
 
 export type TurnEvent =
   | {
@@ -128,10 +128,10 @@ export type TurnEvent =
       at: IsoDateTime;
     };
 
-export interface ProviderAdapter {
+export type ProviderAdapter = {
   readonly id: ProviderName;
   readonly capabilities: ProviderCapabilities;
   detect(): Promise<DetectResult>;
   spawn(request: TurnRequest): AsyncIterable<TurnEvent>;
   cost(usage: ProviderUsage, model: string): number;
-}
+};

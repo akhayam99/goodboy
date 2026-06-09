@@ -5,14 +5,14 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptCard } from '../TranscriptCards';
 
-interface OperationsClusterProps {
+type OperationsClusterProps = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function runningTool(
   items: ReadonlyArray<TranscriptItem>,

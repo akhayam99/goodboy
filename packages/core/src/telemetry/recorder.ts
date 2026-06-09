@@ -19,27 +19,27 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-export interface RecordTurnInput {
+export type RecordTurnInput = {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
   readonly model: string;
   readonly usage: ProviderUsage;
-}
+};
 
-export interface RecordSummarizerInput {
+export type RecordSummarizerInput = {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
   readonly model: string;
   readonly usage: ProviderUsage;
   readonly costUsd: number;
-}
+};
 
-export interface TelemetryRecorderDeps {
+export type TelemetryRecorderDeps = {
   readonly db: Database;
   readonly adapter: ProviderAdapter;
   readonly newId: () => TelemetryRecordId;
   readonly now: () => IsoDateTime;
-}
+};
 
 export class TelemetryRecorder {
   constructor(private readonly deps: TelemetryRecorderDeps) {}

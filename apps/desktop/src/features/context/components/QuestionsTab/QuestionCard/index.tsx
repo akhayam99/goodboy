@@ -6,7 +6,7 @@ import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { deriveSuggestions } from '../deriveSuggestions';
 
-interface Props {
+type Props = {
   question: OpenQuestion;
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
@@ -17,7 +17,7 @@ interface Props {
   onToggleCustomField: (questionId: OpenQuestionId) => void;
   onDismiss: (id: OpenQuestionId) => void;
   onClearJustAnswered: (id: OpenQuestionId) => void;
-}
+};
 
 function relativeAge(isoDate: string): string {
   const diffMs = Date.now() - new Date(isoDate).getTime();

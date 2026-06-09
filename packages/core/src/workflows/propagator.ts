@@ -1,9 +1,9 @@
 import type { ContextSlot, IsoDateTime, StepTransition } from '@goodboy/types';
 import { serializeSlots } from '../context';
 
-export interface WorkflowPropagatorDeps {
+export type WorkflowPropagatorDeps = {
   readonly summarizer: { summarizePhaseOutput(text: string): Promise<string> };
-}
+};
 
 export class WorkflowPropagator {
   constructor(private readonly deps: WorkflowPropagatorDeps) {}
