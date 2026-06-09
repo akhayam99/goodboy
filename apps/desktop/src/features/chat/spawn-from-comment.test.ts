@@ -97,6 +97,23 @@ describe('spawn-from-comment', () => {
     expect(args.kind).toBe('resolver');
   });
 
+  it('includes thread replies as context after the head comment', () => {
+    const args = buildCommentAgentArgs(makeComment(), PR, {}, [
+      makeComment({ id: 'review-2', author: 'bob', body: 'agree, but rename it' }),
+    ]);
+    expect(args.initialPrompt).toContain('Replies in this thread');
+    expect(args.initialPrompt).toContain('bob:');
+    expect(args.initialPrompt).toContain('agree, but rename it');
+    expect(args.initialPrompt.indexOf('this should use a helper')).toBeLessThan(
+      args.initialPrompt.indexOf('agree, but rename it'),
+    );
+  });
+
+  it('omits the replies section when the thread has no replies', () => {
+    const args = buildCommentAgentArgs(makeComment(), PR);
+    expect(args.initialPrompt).not.toContain('Replies in this thread');
+  });
+
   it('passes the review thread id into the kickoff when present', () => {
     const args = buildCommentAgentArgs(makeComment({ threadId: 'PRT_42' }), PR);
     expect(args.initialPrompt).toContain('PRT_42');

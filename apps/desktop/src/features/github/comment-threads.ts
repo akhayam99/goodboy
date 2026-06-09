@@ -5,31 +5,23 @@ export interface CommentThread {
   readonly replies: ReadonlyArray<PrComment>;
 }
 
-/**
- * Groups review replies under their head comment. Issue comments and orphan
- * review comments (no resolvable parent) each become their own single-message
- * thread. Replies are sorted by createdAt ascending so the UI reads top-down.
- */
 export function groupThreads(comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> {
-  const byId = new Map<string, PrComment>();
-  for (const c of comments) byId.set(c.id, c);
-  const heads: Array<PrComment> = [];
-  const repliesByHead = new Map<string, Array<PrComment>>();
+  const groups = new Map<string, Array<PrComment>>();
+  const order: Array<string> = [];
   for (const c of comments) {
-    if (c.source === 'review' && c.inReplyToId && byId.has(c.inReplyToId)) {
-      const arr = repliesByHead.get(c.inReplyToId) ?? [];
+    const key = c.source === 'review' && c.threadId ? `t:${c.threadId}` : `c:${c.id}`;
+    const arr = groups.get(key);
+    if (arr) {
       arr.push(c);
-      repliesByHead.set(c.inReplyToId, arr);
     } else {
-      heads.push(c);
+      groups.set(key, [c]);
+      order.push(key);
     }
   }
-  return heads.map((head) => ({
-    head,
-    replies: (repliesByHead.get(head.id) ?? []).sort((a, b) =>
-      a.createdAt.localeCompare(b.createdAt),
-    ),
-  }));
+  return order.map((key) => {
+    const sorted = [...groups.get(key)!].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return { head: sorted[0]!, replies: sorted.slice(1) };
+  });
 }
 
 /** Open review > issue > resolved review. Smaller = higher priority. */
