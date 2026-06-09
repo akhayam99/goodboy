@@ -48,7 +48,7 @@ export const TelemetryPill = () => {
           ·
         </span>
         <span className="font-medium">{formatUsd(workspaceCost)}</span>
-        {providerSpend.length > 0 ? (
+        {providerSpend.length > 0 && (
           <span aria-hidden className="ml-1 flex items-center -space-x-0.5">
             {providerSpend
               .filter((p) => p.spentUsd > 0)
@@ -60,7 +60,7 @@ export const TelemetryPill = () => {
                 />
               ))}
           </span>
-        ) : null}
+        )}
       </button>
     </>
   );

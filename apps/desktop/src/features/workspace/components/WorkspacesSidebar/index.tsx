@@ -1106,7 +1106,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           onRenameCancel={() => setEditingId(null)}
           onDelete={() => void onDeleteAgent(run.id)}
         />
-        {scoutChildren.length > 0 ? (
+        {scoutChildren.length > 0 && (
           <li>
             <ScoutSubtree
               containerId={run.id}
@@ -1119,7 +1119,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               onSelect={onPickAgent}
             />
           </li>
-        ) : null}
+        )}
       </Fragment>
     );
   };
@@ -1173,7 +1173,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               </span>
             ) : null}
           </button>
-          {!isDiscarded && !isCompleted ? (
+          {!isDiscarded && !isCompleted && (
             <div className="flex shrink-0 items-center">
               <button
                 type="button"
@@ -1190,7 +1190,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               >
                 {run.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
               </button>
-              {attachedRuns.length > 1 ? (
+              {attachedRuns.length > 1 && (
                 <>
                   <button
                     type="button"
@@ -1213,10 +1213,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
                     <ChevronDown size={11} aria-hidden />
                   </button>
                 </>
-              ) : null}
+              )}
               <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
             </div>
-          ) : null}
+          )}
         </div>
         {expanded ? (
           wfAgents.length > 0 ? (
@@ -1369,7 +1369,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
         </ul>
       )}
-      {resolverAgents.length > 0 ? (
+      {resolverAgents.length > 0 && (
         <ResolveCluster
           agents={resolverAgents}
           sessionId={task.id}
@@ -1383,7 +1383,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           onSelect={onPickAgent}
           onForceNext={() => void activateNextResolver(task.id)}
         />
-      ) : null}
+      )}
       <div className="flex flex-col gap-1 pl-2">
         <PlanReadySuggestion task={task} />
         <SpawnAgentControl sessionId={task.id} />
@@ -1581,14 +1581,14 @@ function ClusterChildRow({
       </span>
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
-      {costUsd > 0 ? (
+      {costUsd > 0 && (
         <span
           className="shrink-0 tabular-nums text-muted-foreground/60"
           title={`$${costUsd.toFixed(4)}`}
         >
           ${costUsd.toFixed(2)}
         </span>
-      ) : null}
+      )}
     </button>
   );
 }
@@ -2290,8 +2290,8 @@ function AgentRow({
             {run.name}
           </span>
         )}
-        {!isEditing ? (
-          confirmingDelete ? (
+        {!isEditing &&
+          (confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
@@ -2331,8 +2331,7 @@ function AgentRow({
                 <Trash2 size={11} aria-hidden />
               </button>
             </div>
-          )
-        ) : null}
+          ))}
       </div>
       <div
         className={cn(

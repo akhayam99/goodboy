@@ -254,13 +254,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
         )}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
-      {sessionCost > 0 ? (
+      {sessionCost > 0 && (
         <CostBadge
           value={sessionCost}
           title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
           className="text-[9px] font-medium text-muted-foreground/55"
         />
-      ) : null}
+      )}
     </button>
   );
 });

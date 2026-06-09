@@ -65,14 +65,14 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         }
       />
 
-      {mine.length === 0 && !adding ? (
+      {mine.length === 0 && !adding && (
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-8 text-center">
           <KeyRound size={18} className="text-muted-foreground/70" aria-hidden />
           <span className="text-2xs text-muted-foreground">No API keys yet</span>
         </div>
-      ) : null}
+      )}
 
-      {mine.length > 0 ? (
+      {mine.length > 0 && (
         <ul className="flex flex-col gap-2">
           {mine.map((c) => (
             <li
@@ -101,7 +101,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             </li>
           ))}
         </ul>
-      ) : null}
+      )}
 
       {adding ? (
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-muted/20 p-3">

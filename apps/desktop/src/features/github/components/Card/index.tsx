@@ -515,7 +515,7 @@ export const CommentsPane = ({
       <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <span>All review comments resolved 🎉</span>
-          {resolvedCount > 0 ? (
+          {resolvedCount > 0 && (
             <button
               type="button"
               onClick={() => setShowResolved(true)}
@@ -523,7 +523,7 @@ export const CommentsPane = ({
             >
               show {resolvedCount}
             </button>
-          ) : null}
+          )}
         </div>
         {generalFooter}
       </div>
@@ -558,7 +558,7 @@ export const CommentsPane = ({
           />
         </li>
       ))}
-      {hidden > 0 ? (
+      {hidden > 0 && (
         <li>
           <button
             type="button"
@@ -568,8 +568,8 @@ export const CommentsPane = ({
             +{hidden} more
           </button>
         </li>
-      ) : null}
-      {resolvedCount > 0 ? (
+      )}
+      {resolvedCount > 0 && (
         <li>
           <button
             type="button"
@@ -579,7 +579,7 @@ export const CommentsPane = ({
             {showResolved ? `hide ${resolvedCount} resolved` : `show ${resolvedCount} resolved`}
           </button>
         </li>
-      ) : null}
+      )}
       {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
   );
@@ -634,11 +634,11 @@ function CommentThreadRow({
           ) : null}
           <span className="opacity-50">·</span>
           <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
-          {replies.length > 0 ? (
+          {replies.length > 0 && (
             <span className="opacity-50">
               · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
             </span>
-          ) : null}
+          )}
           <div className="ml-auto flex items-center gap-1">
             {onSpawn && status !== 'resolved' ? (
               <button
@@ -685,7 +685,7 @@ function CommentThreadRow({
         >
           {head.body.trim() || '(empty)'}
         </button>
-        {replies.length > 0 ? (
+        {replies.length > 0 && (
           <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
             {replies.map((r) => (
               <li key={r.id} className="flex flex-col gap-0.5">
@@ -705,7 +705,7 @@ function CommentThreadRow({
               </li>
             ))}
           </ul>
-        ) : null}
+        )}
       </div>
     </div>
   );
@@ -748,7 +748,7 @@ export const ReviewPane = ({
           resolve all requested changes
         </button>
       ) : null}
-      {perReviewer.length > 0 ? (
+      {perReviewer.length > 0 && (
         <ul className="flex flex-col gap-0.5">
           {perReviewer.map((r) => (
             <li
@@ -771,8 +771,8 @@ export const ReviewPane = ({
             </li>
           ))}
         </ul>
-      ) : null}
-      {requests.length > 0 ? (
+      )}
+      {requests.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           <span className="text-[10px] text-muted-foreground">awaiting:</span>
           {requests.map((r) => (
@@ -786,8 +786,8 @@ export const ReviewPane = ({
             </span>
           ))}
         </div>
-      ) : null}
-      {reviews.length === 0 && requests.length === 0 ? (
+      )}
+      {reviews.length === 0 && requests.length === 0 && (
         <button
           type="button"
           onClick={() => onOpenUrl(pr.url)}
@@ -796,7 +796,7 @@ export const ReviewPane = ({
           view on GitHub
           <ExternalLink size={9} aria-hidden />
         </button>
-      ) : null}
+      )}
     </div>
   );
 };

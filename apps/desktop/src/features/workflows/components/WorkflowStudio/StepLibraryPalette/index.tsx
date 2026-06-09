@@ -41,7 +41,7 @@ export const StepLibraryPalette = ({
         }
       />
 
-      {editing === 'new' ? (
+      {editing === 'new' && (
         <LibraryStepForm
           def={null}
           workspaceId={workspaceId}
@@ -52,16 +52,16 @@ export const StepLibraryPalette = ({
           }}
           onCancel={() => setEditing(null)}
         />
-      ) : null}
+      )}
 
-      {library.length === 0 && editing !== 'new' ? (
+      {library.length === 0 && editing !== 'new' && (
         <EmptyState
           icon={Layers}
           title="No library steps yet"
           description="Create one to reuse it across workflows."
           bordered
         />
-      ) : null}
+      )}
 
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {library.map((def) =>

@@ -519,7 +519,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
     case 'list':
       if (block.ordered) {
         return (
-          <ol key={key} className="list-decimal space-y-1.5 pl-5">
+          <ol key={key} className="flex list-decimal flex-col gap-1.5 pl-5">
             {block.items.map((item, j) => (
               <li key={`${key}-${j}`} className="leading-relaxed">
                 {renderInline(item.content, `${key}-${j}`)}
@@ -529,7 +529,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
         );
       }
       return (
-        <ul key={key} className="list-disc space-y-1.5 pl-5">
+        <ul key={key} className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item, j) => (
             <li key={`${key}-${j}`} className="leading-relaxed">
               {renderInline(item.content, `${key}-${j}`)}
@@ -635,7 +635,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
 export const Markdown = ({ text, className }: MarkdownProps) => {
   const blocks = parseBlocks(text);
   return (
-    <div className={cn('space-y-2 text-base text-foreground/85', className)}>
+    <div className={cn('flex flex-col gap-2 text-base text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
   );

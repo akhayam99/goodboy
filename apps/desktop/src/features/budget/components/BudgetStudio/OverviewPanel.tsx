@@ -72,7 +72,7 @@ export const OverviewPanel = ({
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {providers.length > 0 ? (
+        {providers.length > 0 && (
           <Widget label="spend by provider" hint="share of workspace total">
             <div className="flex flex-col gap-3">
               {providers.map((entry) => {
@@ -91,7 +91,7 @@ export const OverviewPanel = ({
               })}
             </div>
           </Widget>
-        ) : null}
+        )}
 
         <Widget label="cost per turn">
           <Sparkline values={turnCosts} />

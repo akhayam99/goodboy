@@ -262,11 +262,11 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
                 {wipeError}
               </p>
             ) : null}
-            {wipeState === 'done' ? (
+            {wipeState === 'done' && (
               <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
                 Database wiped. Restart the app (or reopen settings) to start fresh.
               </p>
-            ) : null}
+            )}
             {wipeState === 'confirm' ? (
               <div className="flex flex-col gap-2 rounded-md border border-danger/40 bg-danger/5 p-3">
                 <p className="text-sm font-semibold text-danger">
@@ -337,9 +337,7 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
       fullScreenOnSmall
       footer={
         <>
-          {saveState === 'saved' ? (
-            <span className="mr-auto text-xs text-success">Saved.</span>
-          ) : null}
+          {saveState === 'saved' && <span className="mr-auto text-xs text-success">Saved.</span>}
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose}>
             Close

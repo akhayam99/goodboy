@@ -133,7 +133,7 @@ function ParallelColumn({
             </ul>
           )}
         </div>
-        {!pinned ? (
+        {!pinned && (
           <button
             type="button"
             aria-label="jump to latest"
@@ -146,7 +146,7 @@ function ParallelColumn({
           >
             <ArrowDown size={14} aria-hidden />
           </button>
-        ) : null}
+        )}
       </div>
     </div>
   );
@@ -555,7 +555,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
             </ul>
           )}
         </div>
-        {!pinned ? (
+        {!pinned && (
           <button
             type="button"
             aria-label="jump to latest"
@@ -568,7 +568,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
           >
             <ArrowDown size={14} aria-hidden />
           </button>
-        ) : null}
+        )}
       </div>
       {isEnded ? (
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">

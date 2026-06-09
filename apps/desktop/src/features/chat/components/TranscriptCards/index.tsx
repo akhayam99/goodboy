@@ -427,22 +427,22 @@ function UserText({
   const atts = attachments ?? [];
   return (
     <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
-      {atts.length > 0 ? (
+      {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
           {atts.map((a) => (
             <AttachmentThumb key={a.id} attachment={a} workingDir={workingDir} />
           ))}
         </div>
-      ) : null}
-      {text.length > 0 ? (
+      )}
+      {text.length > 0 && (
         <div className="text-sm text-foreground">
           <Markdown text={text} />
         </div>
-      ) : null}
+      )}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
         <span className="font-mono">{formatHHMM(at)}</span>
-        {text.length > 0 ? <InlineCopyButton value={text} /> : null}
+        {text.length > 0 && <InlineCopyButton value={text} />}
       </div>
     </div>
   );

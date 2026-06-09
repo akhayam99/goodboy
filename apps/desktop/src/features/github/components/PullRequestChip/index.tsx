@@ -95,7 +95,7 @@ export const PullRequestChip = ({
         )}
       >
         <Icon size={iconSize ?? 12} aria-hidden />
-        {number !== undefined ? <span>#{number}</span> : null}
+        {number !== undefined && <span>#{number}</span>}
       </span>
     );
   }
@@ -111,14 +111,14 @@ export const PullRequestChip = ({
     >
       <Icon size={iconSize ?? 10} aria-hidden />
       <span>{meta.label}</span>
-      {number !== undefined ? (
+      {number !== undefined && (
         <>
           <span aria-hidden className="opacity-40">
             ·
           </span>
           <span className="normal-case tracking-normal">#{number}</span>
         </>
-      ) : null}
+      )}
     </span>
   );
 };

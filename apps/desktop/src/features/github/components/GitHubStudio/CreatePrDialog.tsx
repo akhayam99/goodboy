@@ -156,7 +156,7 @@ export const CreatePrDialog = ({
             disabled={busy !== null || title.trim().length === 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            {busy === 'create' ? <Loader2 size={13} aria-hidden className="animate-spin" /> : null}
+            {busy === 'create' && <Loader2 size={13} aria-hidden className="animate-spin" />}
             Create PR
           </button>
         </div>

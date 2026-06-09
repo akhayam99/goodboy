@@ -696,7 +696,7 @@ export const DiffViewerDialog = ({
             </div>
           ) : (
             <>
-              {!sidebarCollapsed ? (
+              {!sidebarCollapsed && (
                 <FileRail
                   files={files}
                   selectedIdx={selectedIdx}
@@ -704,7 +704,7 @@ export const DiffViewerDialog = ({
                   onStartFileComment={sessionId ? handleRailFileComment : undefined}
                   commentCounts={openCommentsByFile}
                 />
-              ) : null}
+              )}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {selected ? (
                   <FileDiffPane
@@ -914,14 +914,14 @@ function Toolbar({
             {filesCount} {filesCount === 1 ? 'file' : 'files'}
           </span>
         )}
-        {openCommentsCount > 0 ? (
+        {openCommentsCount > 0 && (
           <span
             className="ml-1 shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
             title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
           >
             {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
           </span>
-        ) : null}
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
@@ -1075,17 +1075,15 @@ function TreeNodeView({
             {STATUS_GLYPH[file.status]}
           </span>
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
-          {noteCount > 0 ? (
+          {noteCount > 0 && (
             <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
               {noteCount}
             </span>
-          ) : null}
+          )}
           <span className="shrink-0 text-[10px] tabular-nums">
-            {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
-            {file.additions > 0 && file.deletions > 0 ? (
-              <span className="opacity-40"> </span>
-            ) : null}
-            {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
+            {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+            {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
+            {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
           </span>
         </button>
         <button
@@ -1184,7 +1182,7 @@ function CommentItem({
           )}
         </p>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          {comment.status === 'open' ? (
+          {comment.status === 'open' && (
             <button
               type="button"
               onClick={() => onResolve(comment.id)}
@@ -1194,8 +1192,8 @@ function CommentItem({
             >
               <Check size={11} />
             </button>
-          ) : null}
-          {comment.status === 'consumed' ? (
+          )}
+          {comment.status === 'consumed' && (
             <button
               type="button"
               onClick={() => onReopen(comment.id)}
@@ -1205,7 +1203,7 @@ function CommentItem({
             >
               <RotateCcw size={11} />
             </button>
-          ) : null}
+          )}
           <button
             type="button"
             onClick={() => onDelete(comment.id)}
@@ -1217,7 +1215,7 @@ function CommentItem({
           </button>
         </div>
       </div>
-      {comment.status === 'consumed' ? (
+      {comment.status === 'consumed' && (
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {agentName && comment.consumedByAgentId ? (
             <>
@@ -1235,7 +1233,7 @@ function CommentItem({
             <span className="italic">consumed by removed agent</span>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -1467,7 +1465,7 @@ function FileDiffPane({
                           {line.text}
                         </td>
                       </tr>
-                      {lineComments.length > 0 ? (
+                      {lineComments.length > 0 && (
                         <tr>
                           <td colSpan={4} className="bg-background px-3 py-2">
                             <div className="flex flex-col gap-1.5">
@@ -1485,7 +1483,7 @@ function FileDiffPane({
                             </div>
                           </td>
                         </tr>
-                      ) : null}
+                      )}
                       {isActive && anchor ? (
                         <tr>
                           <td colSpan={4} className="bg-background px-3 py-2">
@@ -1501,14 +1499,14 @@ function FileDiffPane({
                 })}
               </tbody>
             </table>
-            {remaining > 0 ? (
+            {remaining > 0 && (
               <ShowMoreBar
                 step={Math.min(VISIBLE_LINES_STEP, remaining)}
                 rendered={Math.min(visibleLines, totalLines)}
                 total={totalLines}
                 onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
               />
-            ) : null}
+            )}
           </>
         )}
       </div>

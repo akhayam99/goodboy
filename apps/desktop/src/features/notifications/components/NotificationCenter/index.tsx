@@ -147,7 +147,7 @@ export const NotificationCenter = () => {
                     {notifications.length}{' '}
                     {notifications.length === 1 ? 'notification' : 'notifications'}
                   </span>
-                  {notifications.length > 0 ? (
+                  {notifications.length > 0 && (
                     <button
                       type="button"
                       onClick={() => void clearNotifications()}
@@ -158,7 +158,7 @@ export const NotificationCenter = () => {
                       <Trash2 size={11} aria-hidden />
                       Clear all
                     </button>
-                  ) : null}
+                  )}
                 </header>
                 <Divider />
                 {notifications.length === 0 ? (
@@ -172,11 +172,11 @@ export const NotificationCenter = () => {
                     <ul className="max-h-80 overflow-y-auto">
                       {notifications.map((n, i) => (
                         <Fragment key={n.id}>
-                          {i > 0 ? (
+                          {i > 0 && (
                             <li aria-hidden className="px-3">
                               <Divider />
                             </li>
-                          ) : null}
+                          )}
                           <NotificationItem notification={n} />
                         </Fragment>
                       ))}

@@ -220,7 +220,7 @@ function ResolveCard({
             {head.body.trim() || '(empty)'}
           </p>
 
-          {replies.length > 0 ? (
+          {replies.length > 0 && (
             <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
               {replies.map((r) => (
                 <div key={r.id} className="flex flex-col gap-0.5">
@@ -231,7 +231,7 @@ function ResolveCard({
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <div className="relative">

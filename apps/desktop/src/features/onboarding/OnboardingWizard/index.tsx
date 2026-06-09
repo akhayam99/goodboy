@@ -85,7 +85,7 @@ export const OnboardingWizard = () => {
       />
 
       <header className="relative flex shrink-0 items-center justify-end px-6 pt-5">
-        {step < last ? (
+        {step < last && (
           <button
             type="button"
             onClick={dismiss}
@@ -93,13 +93,13 @@ export const OnboardingWizard = () => {
           >
             Skip setup
           </button>
-        ) : null}
+        )}
       </header>
 
       <main className="relative min-h-0 flex-1 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
-            {step > 0 ? <Stepper current={step} total={last} /> : null}
+            {step > 0 && <Stepper current={step} total={last} />}
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
@@ -109,11 +109,11 @@ export const OnboardingWizard = () => {
                 step > 0 ? 'justify-between' : 'justify-center',
               )}
             >
-              {step > 0 ? (
+              {step > 0 && (
                 <Button variant="ghost" size="sm" onClick={goBack}>
                   Back
                 </Button>
-              ) : null}
+              )}
               <Button variant={cta.variant} onClick={cta.onClick}>
                 {cta.label}
               </Button>

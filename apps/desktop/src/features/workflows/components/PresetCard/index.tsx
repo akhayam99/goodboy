@@ -37,7 +37,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
             {steps.length} step{steps.length === 1 ? '' : 's'}
           </span>
         </div>
-        {steps.length > 0 ? (
+        {steps.length > 0 && (
           <ol className="flex flex-col gap-1">
             {steps.map((step, i) => {
               const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
@@ -54,7 +54,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
               );
             })}
           </ol>
-        ) : null}
+        )}
       </button>
       {confirming ? (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm backdrop-blur-sm">

@@ -266,11 +266,11 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                 <Boxes size={13} aria-hidden />
               )}
               {m === 'single' ? 'Single project' : 'Multi project'}
-              {m === 'multi' ? (
+              {m === 'multi' && (
                 <span className="rounded bg-primary/15 px-1 text-2xs font-bold uppercase tracking-wide text-primary">
                   beta
                 </span>
-              ) : null}
+              )}
             </button>
           ))}
         </div>
@@ -367,7 +367,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                   </ul>
                 </div>
 
-                {selectedWorkspaces.length > 0 ? (
+                {selectedWorkspaces.length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-semibold text-foreground">mount names</span>
                     {selectedWorkspaces.map((ws) => (
@@ -384,13 +384,13 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                         />
                       </div>
                     ))}
-                    {!mountsValid ? (
+                    {!mountsValid && (
                       <span className="text-xs text-danger">
                         mount names must be non-empty and unique.
                       </span>
-                    ) : null}
+                    )}
                   </div>
-                ) : null}
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-foreground">save into folder</span>
@@ -414,7 +414,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                   </div>
                 </div>
 
-                {selectedWorkspaces.length >= 2 && containerPath.trim().length > 0 ? (
+                {selectedWorkspaces.length >= 2 && containerPath.trim().length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-semibold text-foreground">preview</span>
                     <pre className="overflow-x-auto rounded-md border border-border bg-muted/30 px-3 py-2 text-2xs leading-relaxed text-muted-foreground">
@@ -425,7 +425,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                         .join('\n')}`}
                     </pre>
                   </div>
-                ) : null}
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-foreground">name</span>

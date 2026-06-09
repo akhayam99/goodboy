@@ -276,7 +276,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           </a>
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">{issue.title}</h2>
-        {linkedPrs.length > 0 ? (
+        {linkedPrs.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
             {linkedPrs.map((pr) => (
               <a
@@ -295,7 +295,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               </a>
             ))}
           </div>
-        ) : null}
+        )}
       </div>
       <Divider />
 

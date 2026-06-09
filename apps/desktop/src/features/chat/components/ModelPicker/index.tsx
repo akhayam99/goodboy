@@ -243,9 +243,7 @@ export const ModelPicker = ({
                     className={cn('rounded-full px-2.5 py-0.5 transition-colors', chipTone)}
                   >
                     {PROVIDER_LABEL[id]}
-                    {!isConnected ? (
-                      <span className="ml-0.5 text-[9px] text-warning">↗</span>
-                    ) : null}
+                    {!isConnected && <span className="ml-0.5 text-[9px] text-warning">↗</span>}
                   </button>
                 );
               })}

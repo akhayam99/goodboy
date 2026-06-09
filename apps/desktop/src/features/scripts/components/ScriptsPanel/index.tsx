@@ -86,11 +86,11 @@ export const ScriptsPanel = ({ workspaceId }: Props) => {
 
       {error ? <p className="text-xs text-danger">{error}</p> : null}
 
-      {list.length === 0 && draft === null ? (
+      {list.length === 0 && draft === null && (
         <p className="rounded-md border border-dashed border-border-soft px-3 py-6 text-center text-xs text-muted-foreground">
           No scripts yet. Create one, e.g. <code className="font-mono">copy environments</code>.
         </p>
-      ) : null}
+      )}
 
       <ul className="flex flex-col gap-2">
         {list.map((script) => {

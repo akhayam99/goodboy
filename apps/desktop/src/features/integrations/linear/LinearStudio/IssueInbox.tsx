@@ -116,13 +116,13 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                             {row.issue.identifier}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
-                          {issuePullRequests(row.issue).length > 0 ? (
+                          {issuePullRequests(row.issue).length > 0 && (
                             <GitPullRequest
                               size={11}
                               aria-label="has linked pull request"
                               className="shrink-0 text-muted-foreground/70"
                             />
-                          ) : null}
+                          )}
                           {row.sessionId ? (
                             <MessagesSquare
                               size={11}

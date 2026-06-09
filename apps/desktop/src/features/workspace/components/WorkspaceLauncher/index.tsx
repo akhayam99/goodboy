@@ -79,7 +79,7 @@ export const WorkspaceLauncher = () => {
         <p className="mb-2 px-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           Recent
         </p>
-        <ul className="mb-6 space-y-0.5">
+        <ul className="mb-6 flex flex-col gap-0.5">
           {filtered.length === 0 ? (
             <li className="px-3 py-8 text-center text-sm text-muted-foreground">
               No workspaces found

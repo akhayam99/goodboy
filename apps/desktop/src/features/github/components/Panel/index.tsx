@@ -63,14 +63,14 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        {!hideSectionHeader ? (
+        {!hideSectionHeader && (
           <>
             <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
             <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
               GitHub
             </h2>
           </>
-        ) : null}
+        )}
         <div className="flex-1" />
         <button
           type="button"
@@ -171,9 +171,7 @@ function Absent({
           onClick={onConnect}
           disabled={save === 'saving' || token.trim().length === 0}
         >
-          {save === 'saving' ? (
-            <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
-          ) : null}
+          {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
           Connect
         </Button>
       </div>
@@ -260,9 +258,7 @@ function Connected({
               onClick={onConnect}
               disabled={save === 'saving' || token.trim().length === 0}
             >
-              {save === 'saving' ? (
-                <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
-              ) : null}
+              {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
               Use a token
             </Button>
           </div>

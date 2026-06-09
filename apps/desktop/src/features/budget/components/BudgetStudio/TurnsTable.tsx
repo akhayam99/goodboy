@@ -108,7 +108,7 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
               ))}
             </tbody>
           </table>
-          {remaining > 0 ? (
+          {remaining > 0 && (
             <button
               type="button"
               onClick={() => setVisible((v) => v + PAGE_SIZE)}
@@ -116,7 +116,7 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
             >
               Show more ({remaining})
             </button>
-          ) : null}
+          )}
         </>
       )}
     </Widget>

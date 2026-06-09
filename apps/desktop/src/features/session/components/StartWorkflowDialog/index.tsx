@@ -295,11 +295,11 @@ function PresetRailRow({
         {shown.map((k, i) => (
           <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
         ))}
-        {kinds.length > shown.length ? (
+        {kinds.length > shown.length && (
           <span className="text-[10px] text-muted-foreground/40">
             +{kinds.length - shown.length}
           </span>
-        ) : null}
+        )}
       </span>
     </button>
   );

@@ -339,7 +339,7 @@ export const CommandPalette = ({
           className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
 
-        {parsed.prefix === null && query.length === 0 ? (
+        {parsed.prefix === null && query.length === 0 && (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border-soft bg-subtle/30 px-3 py-1.5 text-[10px] text-muted-foreground">
             {PREFIXES.map((p) => (
               <button
@@ -358,7 +358,7 @@ export const CommandPalette = ({
               </button>
             ))}
           </div>
-        ) : null}
+        )}
 
         <ul ref={listRef} className="max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (

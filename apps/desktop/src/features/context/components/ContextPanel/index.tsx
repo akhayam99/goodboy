@@ -260,7 +260,7 @@ export const ContextPanel = ({
           >
             <TerminalDock sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
-          {tab !== 'terminal' ? (
+          {tab !== 'terminal' && (
             <div
               key={tab}
               className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2 motion-safe:animate-fade-in"
@@ -297,12 +297,12 @@ export const ContextPanel = ({
                 <QuestionsTab sessionId={session.id} />
               )}
             </div>
-          ) : null}
+          )}
         </div>
 
         <Divider />
 
-        {questions.length > 0 ? (
+        {questions.length > 0 && (
           <button
             type="button"
             onClick={() => setTab('questions')}
@@ -316,7 +316,7 @@ export const ContextPanel = ({
             </span>
             <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
           </button>
-        ) : null}
+        )}
       </div>
     </>
   );
@@ -404,11 +404,11 @@ function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButton
     >
       {icon}
       {active ? <span>{label}</span> : null}
-      {badge !== null && badge !== undefined ? (
+      {badge !== null && badge !== undefined && (
         <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium tracking-normal text-muted-foreground">
           {badge}
         </span>
-      ) : null}
+      )}
       {accentDot ? (
         <span aria-hidden className={cn('ml-0.5 size-1.5 rounded-full', accentDot)} />
       ) : null}
@@ -539,16 +539,16 @@ function ChangesStrip({
             </span>
           </span>
           <span className="inline-flex shrink-0 items-center gap-2">
-            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
+            {(filesTouched.additions > 0 || filesTouched.deletions > 0) && (
               <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
-                {filesTouched.additions > 0 ? (
+                {filesTouched.additions > 0 && (
                   <span className="text-success">+{filesTouched.additions}</span>
-                ) : null}
-                {filesTouched.deletions > 0 ? (
+                )}
+                {filesTouched.deletions > 0 && (
                   <span className="text-danger">−{filesTouched.deletions}</span>
-                ) : null}
+                )}
               </span>
-            ) : null}
+            )}
             <ArrowUpRight size={12} aria-hidden className="opacity-70" />
           </span>
         </button>
@@ -558,7 +558,7 @@ function ChangesStrip({
           <span className="font-medium">working tree clean</span>
         </div>
       )}
-      {count > 0 ? (
+      {count > 0 && (
         <DiffViewerDialog
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
@@ -567,7 +567,7 @@ function ChangesStrip({
           workingDir={workingDir ?? undefined}
           worktreePath={workingDir ?? undefined}
         />
-      ) : null}
+      )}
     </div>
   );
 }
@@ -654,13 +654,13 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
           {pr ? (
             <span className="inline-flex min-w-0 items-center gap-2">
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
-              {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
-              {unresolvedComments > 0 ? (
+              {ciState !== 'none' && <CiBadge state={ciState} />}
+              {unresolvedComments > 0 && (
                 <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
                   <MessageSquare size={11} aria-hidden />
                   <span className="tabular-nums">{unresolvedComments}</span>
                 </span>
-              ) : null}
+              )}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5">
@@ -969,7 +969,7 @@ function SlotRow({
           ) : null}
         </div>
 
-        {history.length > 0 ? (
+        {history.length > 0 && (
           <button
             type="button"
             onClick={openHistory}
@@ -979,7 +979,7 @@ function SlotRow({
           >
             <History size={11} aria-hidden />
           </button>
-        ) : null}
+        )}
         {headerToggle}
       </div>
 

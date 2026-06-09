@@ -133,11 +133,11 @@ export const RunScriptControl = ({
               <ul className="flex flex-col px-1.5">
                 {list.map((script, i) => (
                   <Fragment key={script.id}>
-                    {i > 0 ? (
+                    {i > 0 && (
                       <li aria-hidden className="px-1.5">
                         <Divider />
                       </li>
-                    ) : null}
+                    )}
                     <li>
                       <ScriptRow
                         script={script}
@@ -271,7 +271,7 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
               {result!.stderr}
             </span>
           ) : null}
-          {!result!.stdout && !result!.stderr ? '(no output)' : null}
+          {!result!.stdout && !result!.stderr && '(no output)'}
         </pre>
       ) : null}
     </div>

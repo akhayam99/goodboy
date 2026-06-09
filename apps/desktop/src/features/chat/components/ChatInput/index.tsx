@@ -1136,14 +1136,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   return (
     <div className="px-10 pb-4 pt-2">
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
-        {!isRunning && !providerDisconnected ? (
+        {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
             turnOverride={routingOverride}
             connectedProviders={connectedProviderIds}
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
-        ) : null}
+        )}
         <SuggestionStack items={suggestions} />
         {scriptResult ? (
           <ScriptResultRow state={scriptResult} onDismiss={() => dismissScriptResult(session.id)} />
@@ -1175,13 +1175,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               drop to attach
             </div>
           </div>
-          {attachments.length > 0 ? (
+          {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (
                 <AttachmentChip key={a.id} attachment={a} onRemove={() => removeAttachment(a.id)} />
               ))}
             </div>
-          ) : null}
+          )}
           <div className="relative" ref={wrapperRef}>
             {popoverOpen ? (
               <QuickActionsPopover
@@ -1282,7 +1282,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         {error ? (
           <div role="alert" className="flex items-center gap-2">
             <p className="flex-1 text-xs text-danger">{error}</p>
-            {lastFailedTurn !== null ? (
+            {lastFailedTurn !== null && (
               <button
                 type="button"
                 onClick={() => {
@@ -1297,7 +1297,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               >
                 retry
               </button>
-            ) : null}
+            )}
           </div>
         ) : null}
       </div>
@@ -1359,12 +1359,12 @@ function QueuedMessages({
             >
               {preview}
             </button>
-            {attachmentCount > 0 && trimmed.length > 0 ? (
+            {attachmentCount > 0 && trimmed.length > 0 && (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground">
                 <Paperclip size={10} aria-hidden />
                 {attachmentCount}
               </span>
-            ) : null}
+            )}
             <button
               type="button"
               onClick={() => onRemove(item.id)}
@@ -1476,7 +1476,7 @@ function SuggestionStack({
     <div className="flex flex-col gap-2">
       {top.node}
       {expanded ? rest.map((it) => <div key={it.key}>{it.node}</div>) : null}
-      {rest.length > 0 ? (
+      {rest.length > 0 && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -1486,7 +1486,7 @@ function SuggestionStack({
             ? 'show fewer suggestions'
             : `+${rest.length} more suggestion${rest.length === 1 ? '' : 's'}`}
         </button>
-      ) : null}
+      )}
     </div>
   );
 }

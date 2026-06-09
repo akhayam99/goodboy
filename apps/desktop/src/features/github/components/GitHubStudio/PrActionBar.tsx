@@ -105,7 +105,7 @@ export const PrActionBar = ({
         </button>
       ) : null}
 
-      {!isTerminal ? (
+      {!isTerminal && (
         <button
           type="button"
           onClick={onClose}
@@ -119,7 +119,7 @@ export const PrActionBar = ({
           )}
           Close
         </button>
-      ) : null}
+      )}
 
       {isClosed ? (
         <>
@@ -165,7 +165,7 @@ export const PrActionBar = ({
           <RefreshCw size={14} aria-hidden className={cn(detailLoading && 'animate-spin')} />
         </button>
 
-        {!isTerminal ? (
+        {!isTerminal && (
           <>
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             {mergeConfirm ? (
@@ -205,7 +205,7 @@ export const PrActionBar = ({
               </button>
             )}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );

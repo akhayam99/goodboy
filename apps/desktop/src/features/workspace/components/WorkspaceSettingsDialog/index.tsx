@@ -229,7 +229,7 @@ export const WorkspaceSettingsDialog = ({
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          {active === 'general' || active === 'scout' ? (
+          {(active === 'general' || active === 'scout') && (
             <Button
               onClick={() => void onSave()}
               disabled={saveState === 'saving' || !settingsDirty}
@@ -243,12 +243,12 @@ export const WorkspaceSettingsDialog = ({
                 'Save'
               )}
             </Button>
-          ) : null}
+          )}
         </div>
       }
     >
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-        {active === 'general' ? (
+        {active === 'general' && (
           <GeneralSection
             branchPrefix={branchPrefix}
             setBranchPrefix={setBranchPrefix}
@@ -259,9 +259,9 @@ export const WorkspaceSettingsDialog = ({
             connectedProviderIds={connectedProviderIds}
             busy={saveState === 'saving'}
           />
-        ) : null}
+        )}
 
-        {active === 'integrations' ? (
+        {active === 'integrations' && (
           <SectionShell
             icon={<Link2 size={14} aria-hidden className="text-primary" />}
             title="Integrations"
@@ -269,9 +269,9 @@ export const WorkspaceSettingsDialog = ({
           >
             <IntegrationsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'skills' ? (
+        {active === 'skills' && (
           <SectionShell
             icon={<Zap size={14} aria-hidden className="text-primary" />}
             title="Skills"
@@ -279,9 +279,9 @@ export const WorkspaceSettingsDialog = ({
           >
             <SkillsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'scripts' ? (
+        {active === 'scripts' && (
           <SectionShell
             icon={<Terminal size={14} aria-hidden className="text-primary" />}
             title="Scripts"
@@ -289,9 +289,9 @@ export const WorkspaceSettingsDialog = ({
           >
             <ScriptsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'scout' ? (
+        {active === 'scout' && (
           <SectionShell
             icon={<Telescope size={14} aria-hidden className="text-primary" />}
             title="Scout exploration"
@@ -303,16 +303,16 @@ export const WorkspaceSettingsDialog = ({
               busy={saveState === 'saving'}
             />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'danger' ? (
+        {active === 'danger' && (
           <DangerSection
             confirmDisconnect={confirmDisconnect}
             setConfirmDisconnect={setConfirmDisconnect}
             disconnecting={disconnecting}
             onDisconnect={() => void onDisconnect()}
           />
-        ) : null}
+        )}
       </div>
     </Dialog>
   );
@@ -512,9 +512,9 @@ function DefaultProviderPicker({
             title={isConnected ? undefined : 'CLI not connected'}
           >
             {PROVIDER_LABEL[id]}
-            {!isConnected ? (
+            {!isConnected && (
               <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
-            ) : null}
+            )}
           </button>
         );
       })}
@@ -720,7 +720,7 @@ function DangerSection({
               showing up in the sidebar until you re-add the path.
             </p>
           </div>
-          {!confirmDisconnect ? (
+          {!confirmDisconnect && (
             <Button
               variant="danger"
               onClick={() => setConfirmDisconnect(true)}
@@ -729,7 +729,7 @@ function DangerSection({
               <Unplug size={13} aria-hidden className="mr-1.5" />
               Disconnect
             </Button>
-          ) : null}
+          )}
         </div>
 
         {confirmDisconnect ? (

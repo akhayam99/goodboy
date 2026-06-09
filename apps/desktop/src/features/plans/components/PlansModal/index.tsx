@@ -378,7 +378,7 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
                     Edit
                   </button>
                 </div>
-                {selected.status !== 'discarded' ? (
+                {selected.status !== 'discarded' && (
                   <button
                     type="button"
                     onClick={() => void handleTrigger()}
@@ -413,7 +413,7 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
                         ? 'Start'
                         : 'Replay'}
                   </button>
-                ) : null}
+                )}
                 {selected.status === 'consumed' ? (
                   <span
                     className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"

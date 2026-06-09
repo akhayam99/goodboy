@@ -34,9 +34,9 @@ export const ScriptResultRow = ({ state, onDismiss }: Props) => {
             {status === 'pending' ? 'running ' : 'ran '}
           </span>
           <span className="font-medium text-foreground">{script.name}</span>
-          {result !== null ? (
+          {result !== null && (
             <span className="text-muted-foreground"> · exit {result.exitCode}</span>
-          ) : null}
+          )}
         </span>
         {hasOutput ? (
           <button

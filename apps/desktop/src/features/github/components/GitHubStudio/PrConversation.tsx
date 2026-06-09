@@ -169,7 +169,7 @@ function ConversationThread({
         )}
       </div>
 
-      {replies.length > 0 ? (
+      {replies.length > 0 && (
         <div className="ml-3 mt-2 flex gap-2">
           <Divider orientation="vertical" />
           <ul className="flex flex-1 flex-col gap-2">
@@ -192,7 +192,7 @@ function ConversationThread({
             ))}
           </ul>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

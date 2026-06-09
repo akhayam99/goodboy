@@ -652,9 +652,9 @@ function SessionProviderPicker({
           >
             <Zap size={11} aria-hidden />
             {PROVIDER_LABEL[id]}
-            {!isConnected ? (
+            {!isConnected && (
               <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
-            ) : null}
+            )}
           </button>
         );
       })}
@@ -706,7 +706,7 @@ function BudgetSection({
           </Button>
         </div>
       </Field>
-      {softCapUsd != null && softCapUsd > 0 ? (
+      {softCapUsd != null && softCapUsd > 0 && (
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/50 p-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Spent this session</span>
@@ -722,14 +722,14 @@ function BudgetSection({
           </div>
           <div className="flex items-center justify-between text-2xs text-muted-foreground/70">
             <span>{Math.round(pct * 100)}% used</span>
-            {pct >= 0.8 ? (
+            {pct >= 0.8 && (
               <span className={pct >= 1 ? 'text-danger' : 'text-warning'}>
                 {pct >= 1 ? 'cap exceeded' : 'approaching cap'}
               </span>
-            ) : null}
+            )}
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

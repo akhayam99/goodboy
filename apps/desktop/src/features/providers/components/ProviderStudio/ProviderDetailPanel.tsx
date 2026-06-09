@@ -134,12 +134,12 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
             )}
           </section>
 
-          {info.connection !== 'missing' ? (
+          {info.connection !== 'missing' && (
             <>
               <ProviderCredentialsSection providerId={id} />
               <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
             </>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

@@ -94,7 +94,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
             >
               <Pencil size={12} aria-hidden />
             </button>
-            {!isGlobal ? (
+            {!isGlobal && (
               <button
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
@@ -105,7 +105,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
               >
                 <Trash2 size={12} aria-hidden />
               </button>
-            ) : null}
+            )}
           </div>
         )}
       </div>

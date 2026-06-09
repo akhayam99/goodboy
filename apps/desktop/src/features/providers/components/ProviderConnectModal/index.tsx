@@ -183,11 +183,11 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       }
       footer={
         <>
-          {!connected && !inFlight ? (
+          {!connected && !inFlight && (
             <Button variant="ghost" size="sm" onClick={onClose}>
               Close
             </Button>
-          ) : null}
+          )}
           <Button variant={primary.variant} size="sm" onClick={onPrimary}>
             {primary.label}
           </Button>
