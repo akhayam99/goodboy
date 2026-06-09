@@ -70,17 +70,19 @@ export const QuestionCard = ({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-lg border bg-elevated pl-3 pr-2.5 py-2.5 shadow-sm',
-        'transition-all duration-200 motion-safe:animate-fade-in',
-        hasPendingAnswer ? 'border-primary/40' : 'border-border-soft hover:border-border',
-        animate && 'scale-[1.01] border-primary/60 bg-primary/5',
+        'group relative overflow-hidden rounded-lg border border-border-soft bg-elevated py-2.5 pl-3 pr-2.5 shadow-sm',
+        'transition-[border-color,background-color,box-shadow,transform] duration-200',
+        !hasPendingAnswer && 'hover:border-border',
+        animate
+          ? 'motion-safe:animate-answer-lock motion-reduce:bg-success/5'
+          : 'motion-safe:animate-fade-in',
       )}
     >
       <span
         aria-hidden
         className={cn(
-          'absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors duration-200',
-          hasPendingAnswer ? 'bg-primary' : 'bg-transparent',
+          'pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors duration-200',
+          hasPendingAnswer ? 'bg-primary/70' : 'bg-transparent',
         )}
       />
 
@@ -97,15 +99,15 @@ export const QuestionCard = ({
           type="button"
           onClick={() => onDismiss(question.id)}
           className={cn(
-            'shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0 transition-all',
+            'shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0 transition-[opacity,color,background-color] duration-150',
             'hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
-            'group-hover:opacity-100',
+            'group-hover:opacity-100 motion-reduce:opacity-60',
             animate && 'opacity-100',
           )}
           title="dismiss question"
           aria-label="dismiss question"
         >
-          {animate ? <Check size={12} className="text-primary" /> : <X size={12} />}
+          {animate ? <Check size={12} className="text-success" /> : <X size={12} />}
         </button>
       </div>
 
@@ -126,10 +128,10 @@ export const QuestionCard = ({
         />
       </div>
 
-      <div className="mt-2 flex items-center gap-2 pl-[21px] text-[10px] text-muted-foreground/70">
+      <div className="mt-2 flex items-center gap-2 pl-[21px] text-2xs text-muted-foreground">
         <span>{relativeAge(question.createdAt)}</span>
         {question.ownedByStepOrdinal != null && (
-          <span className="rounded bg-muted px-1 py-0.5 font-mono">
+          <span className="rounded bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
             step {question.ownedByStepOrdinal}
           </span>
         )}

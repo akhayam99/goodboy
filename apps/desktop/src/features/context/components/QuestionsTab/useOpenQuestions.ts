@@ -39,10 +39,7 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   toggleSuggestion: (questionId, suggestion) => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
-    const current = draft.selectedSuggestions;
-    const next = current.includes(suggestion)
-      ? current.filter((s) => s !== suggestion)
-      : [...current, suggestion];
+    const next = draft.selectedSuggestions.includes(suggestion) ? [] : [suggestion];
     drafts[questionId] = { ...draft, selectedSuggestions: next };
     set({ drafts });
   },
