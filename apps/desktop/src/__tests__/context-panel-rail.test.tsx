@@ -16,6 +16,10 @@ vi.mock('../store', () => ({
       upsertSessionSlot: vi.fn(),
       toggleSessionSlot: vi.fn(),
       loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
+      loadSessionPlans: vi.fn().mockResolvedValue(undefined),
+      reconcileSessionBranch: vi.fn().mockResolvedValue(undefined),
+      loadSlotHistory: vi.fn().mockResolvedValue(undefined),
+      retrySummarizer: vi.fn(),
       summarizerStatus: {},
       sessionTelemetry: {},
       sessionWorktrees: {},
@@ -46,7 +50,6 @@ vi.mock('../store', () => ({
       setTerminalTabStatus: vi.fn(),
       sessionPlans: {},
       sessionPhaseRuns: {},
-      loadSessionPlans: vi.fn(),
       setPlanStatus: vi.fn(),
       updatePlanBody: vi.fn(),
       deletePlan: vi.fn(),
@@ -56,7 +59,13 @@ vi.mock('../store', () => ({
   useSessionSlots: vi.fn().mockReturnValue([]),
   useSummarizerStatus: vi
     .fn()
-    .mockReturnValue({ status: 'idle', lastUpdate: null, error: null, lastUsage: null }),
+    .mockReturnValue({
+      status: 'idle',
+      lastUpdate: null,
+      error: null,
+      lastUsage: null,
+      lastAttempt: null,
+    }),
   useSlotHistory: vi.fn().mockReturnValue([]),
   useDiffComments: vi.fn().mockReturnValue([]),
   useFilesTouched: vi.fn().mockReturnValue({ paths: [], count: 0 }),
@@ -170,5 +179,43 @@ describe('ContextPanel, persistence contract', () => {
     render(<ContextPanel session={makeSession()} collapsed={true} onExpand={vi.fn()} />);
     const scrollArea = document.querySelector('.h-full.hidden');
     expect(scrollArea).not.toBeNull();
+  });
+});
+
+describe('ContextPanel, 2-tab rail', () => {
+  it('shows only Context and Terminal tabs', () => {
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    const tabs = screen.getAllByRole('tab');
+    const labels = tabs.map((t) => t.getAttribute('aria-label'));
+    expect(labels).toContain('Context');
+    expect(labels).toContain('Terminal');
+    expect(labels).not.toContain('Plans');
+    expect(labels).not.toContain('Questions');
+  });
+
+  it('plans launcher row exists and dispatches goodboy:open-plan-studio', () => {
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    const dispatchedEvents: CustomEvent[] = [];
+    window.addEventListener('goodboy:open-plan-studio', (e) => {
+      dispatchedEvents.push(e as CustomEvent);
+    });
+    const planBtn = screen.getByRole('button', { name: /open plan studio/i });
+    planBtn.click();
+    expect(dispatchedEvents.length).toBeGreaterThan(0);
+    expect(dispatchedEvents[0]?.detail?.sessionId).toBe('sess-1');
+  });
+
+  it('questions section does not render when useSessionOpenQuestions returns empty', () => {
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    expect(screen.queryByText(/open questions/i)).toBeNull();
+  });
+
+  it('questions section renders when useSessionOpenQuestions returns items', async () => {
+    const storeModule = await import('../store');
+    vi.mocked(storeModule.useSessionOpenQuestions).mockReturnValueOnce([
+      { id: 'q1', text: 'What is the approach?', sessionId: 'sess-1' } as never,
+    ]);
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    expect(screen.getByText(/open questions/i)).toBeDefined();
   });
 });
