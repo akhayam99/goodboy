@@ -524,10 +524,12 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
                       className={cn(
                         itemSpacing,
                         // Browser-native virtualization: skip layout/paint of
-                        // off-screen cards. Intrinsic size keeps the scroll bar
-                        // accurate (avg card ~80px). With 100+ turns, scroll
-                        // and switch stay smooth without a virtualizer dep.
-                        '[content-visibility:auto] [contain-intrinsic-size:80px]',
+                        // off-screen cards. The `auto` keyword makes the engine
+                        // remember each card's last-rendered height as its
+                        // placeholder, so scrolling back up doesn't jump (the
+                        // 80px seed only applies to never-yet-painted cards).
+                        // With 100+ turns, scroll stays smooth, no virtualizer dep.
+                        '[content-visibility:auto] [contain-intrinsic-size:auto_80px]',
                       )}
                     >
                       {row.kind === 'operations' ? (
