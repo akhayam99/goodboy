@@ -41,6 +41,12 @@ describe('parsePlannerOutput', () => {
     expect(out.steps).toHaveLength(2);
   });
 
+  it('strips fences with whitespace padding around the payload', () => {
+    const fenced = '```json\n\t ' + validJson + ' \t\n\t ```';
+    const out = parsePlannerOutput(fenced);
+    expect(out.workflowName).toBe('Auth Refactor');
+  });
+
   it('rejects invalid json', () => {
     expect(() => parsePlannerOutput('{not json')).toThrow(PlannerParseError);
   });

@@ -18,8 +18,22 @@ interface MutableFile {
   hunks: DiffHunk[];
 }
 
-const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
+const FILE_HEADER_PREFIX = 'diff --git a/';
+const LINE_TERMINATOR_RE = /[\r\u2028\u2029]/;
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
+
+function parseFileHeader(line: string): { oldPath: string; newPath: string } | null {
+  if (!line.startsWith(FILE_HEADER_PREFIX)) return null;
+  const rest = line.slice(FILE_HEADER_PREFIX.length);
+  if (LINE_TERMINATOR_RE.test(rest)) return null;
+  let sep = rest.lastIndexOf(' b/');
+  while (sep > 0) {
+    const newPath = rest.slice(sep + 3);
+    if (newPath.length > 0) return { oldPath: rest.slice(0, sep), newPath };
+    sep = rest.lastIndexOf(' b/', sep - 1);
+  }
+  return null;
+}
 
 export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
   const lines = diff.split('\n');
@@ -51,13 +65,11 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
   };
 
   for (const line of lines) {
-    const fileMatch = line.match(FILE_HEADER);
+    const fileMatch = parseFileHeader(line);
     if (fileMatch) {
       flushHunk();
       if (current) files.push(current);
-      const oldPath = fileMatch[1];
-      const newPath = fileMatch[2];
-      if (!oldPath || !newPath) continue;
+      const { oldPath, newPath } = fileMatch;
       current = {
         path: newPath,
         oldPath: oldPath === newPath ? undefined : oldPath,
