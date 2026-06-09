@@ -1,7 +1,3 @@
-// Gated behind SUMMARIZER_INTEGRATION=1. Not run on CI by default.
-// To enable: SUMMARIZER_INTEGRATION=1 pnpm test
-// Why gated: avoids flaky CI when provider binary (claude, cursor-agent, codex) is unavailable or auth fails.
-// Follows the gated pattern from packages/core/src/providers/cursor/adapter.integration.test.ts
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot } from '@goodboy/types';
 import { Summarizer } from './cli';

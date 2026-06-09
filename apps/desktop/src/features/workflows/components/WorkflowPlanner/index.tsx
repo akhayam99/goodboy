@@ -64,8 +64,6 @@ export const WorkflowPlanner = ({
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
   const [overrides, setOverrides] = useState<Record<number, StepOverrides>>({});
   const [error, setError] = useState<string | null>(null);
-  // The generated plan reads as a compact summary by default; "Edit" reveals
-  // the per-step model/effort/verbosity pickers.
   const [editing, setEditing] = useState(false);
 
   const updateOverride = (index: number, patch: Partial<StepOverrides>) => {
@@ -158,9 +156,6 @@ export const WorkflowPlanner = ({
     }
   };
 
-  // While planning (initial or re-plan), `onPlan` clears `plan` first, so
-  // `busy && !plan` is the spinner state. A spinner reads as "working" at a
-  // glance, where a static "Planning…" label looked stuck.
   const planning = busy && !plan;
   const planButtonLabel = plan ? 'Re-plan' : 'Generate plan';
 
@@ -178,9 +173,6 @@ export const WorkflowPlanner = ({
             className="min-h-24 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
           />
           <div className="absolute bottom-2.5 right-2.5">
-            {/* Fixed min-width so swapping the label for the spinner doesn't
-                resize this right-anchored button (which read as the spinner
-                drifting). The spinner is centered by the button's flex. */}
             <Button
               size="sm"
               onClick={onPlan}
@@ -237,8 +229,7 @@ export const WorkflowPlanner = ({
               )}
             </button>
           </div>
-          {/* One cohesive card, steps separated by hairlines. Compact by
-              default; "Edit" swaps each row for the per-step pickers. */}
+
           <ol className="flex flex-col">
             {plan.steps.map((s, i) => {
               const ov = overrides[i];

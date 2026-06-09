@@ -33,10 +33,6 @@ const SIZE: Record<DialogSize, string> = {
   '2xl': 'w-[64rem]',
 };
 
-// Per-size baseline min-height. Without this the dialog collapses to the
-// height of its content, which looks thin for small forms (add workspace,
-// new session). Caps at the per-size sweet spot, large dialogs already
-// need more room. Skipped when fixedHeightClass is set (caller knows best).
 const MIN_HEIGHT: Record<DialogSize, string> = {
   sm: 'min-h-[16rem]',
   md: 'min-h-[24rem]',
@@ -72,19 +68,11 @@ export const Dialog = ({
   const titleId = title ? `${uid}-title` : undefined;
   const descId = description ? `${uid}-desc` : undefined;
 
-  // Latest-onClose ref so the showModal effect can stay keyed on `open` alone
-  // instead of refiring whenever the parent re-renders with a fresh handler.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   });
 
-  // Suppress close-event-driven onClose when we ourselves called dialog.close()
-  // (cleanup or open→false transition). React 19 strict mode double-invokes
-  // effects, so a "mount when open" parent would otherwise: setup → showModal,
-  // cleanup → dialog.close() queues a close event, resetup → showModal again,
-  // then the deferred close event fires onClose against the new listener and
-  // the parent unmounts the dialog for real. The user sees nothing happen.
   const programmaticCloseRef = useRef(false);
 
   useEffect(() => {

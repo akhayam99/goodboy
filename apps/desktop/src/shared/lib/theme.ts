@@ -9,9 +9,7 @@ function readStoredTheme(): Theme {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === 'light') return 'light';
-  } catch {
-    // ignore
-  }
+  } catch {}
   return 'dark';
 }
 
@@ -34,9 +32,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   setTheme: (theme) => {
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      // ignore
-    }
+    } catch {}
     applyTheme(theme);
     set({ theme });
   },

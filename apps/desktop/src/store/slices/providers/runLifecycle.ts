@@ -23,9 +23,6 @@ const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g;
 const AUTH_HINT_RE =
   /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i;
 
-// First plausible OAuth URL in the chunk, or null. Stays conservative: only
-// surfaces URLs whose path or host looks auth-related so we don't offer to
-// "open in browser" on a random npm changelog link.
 function findAuthUrl(text: string): string | null {
   const matches = text.match(URL_RE);
   if (!matches) return null;
@@ -35,17 +32,12 @@ function findAuthUrl(text: string): string | null {
   return null;
 }
 
-// Map an action to the in-flight phase that drives the UI while the PTY runs.
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
   if (action === 'install') return 'installing';
   if (action === 'login') return 'connecting';
   return 'disconnecting';
 }
 
-// Map exit payload to the resting phase the UI lands on after exit. Coherence
-// guard: ground truth comes from the fresh detection in the payload, not from
-// our optimistic guess. If detection says "missing" after an install attempt,
-// we land on 'error' regardless of exit code (half-installed).
 function restingPhase(
   action: ProviderLifecycleAction,
   payload: LifecycleExitPayload,
@@ -95,7 +87,6 @@ export const runLifecycle = async (
     existing.phase === 'connecting' ||
     existing.phase === 'disconnecting'
   ) {
-    // Idempotent: another run is already in flight for this provider.
     return;
   }
 
@@ -152,8 +143,6 @@ export const runLifecycle = async (
     unlistenOutput();
 
     const curr = get().providerLifecycle[providerId];
-    // If user cancelled, the slice already wrote phase='cancelled'. Preserve it
-    // but still refresh provider state from the payload.
     const finalPhase: ProviderLifecyclePhase =
       curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
     const errorTail = finalPhase === 'error' ? outputTail.replace(ANSI_RE, '').slice(-500) : null;

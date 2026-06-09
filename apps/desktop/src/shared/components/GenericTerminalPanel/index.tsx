@@ -5,9 +5,6 @@ import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
 
-// Driver abstraction so the same xterm renderer can be wired to either a
-// long-lived session shell (TerminalPanel) or a transient lifecycle PTY
-// (LifecycleTerminalPanel) without duplicating ~150 lines of setup.
 export type TerminalDriver = {
   write(data: string): void;
   resize(cols: number, rows: number): void;
@@ -17,9 +14,6 @@ export type TerminalDriver = {
 
 const MAX_CACHE_CHUNKS = 500;
 
-// Output cache keyed by terminalId so tab switches and remounts don't lose
-// history. Module-level because each terminalId has its own buffer regardless
-// of which component instance mounted last.
 const outputCache = new Map<string, Uint8Array[]>();
 
 export const clearTerminalCache = (terminalId: string): void => {
@@ -129,7 +123,6 @@ export const GenericTerminalPanel = ({
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
 
-    // Replay cached output so switching tabs/remounts don't lose history.
     const cached = outputCache.get(terminalId) ?? [];
     for (const chunk of cached) {
       term.write(chunk);

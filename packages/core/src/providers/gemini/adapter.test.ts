@@ -185,7 +185,6 @@ describe('GeminiAdapter.cost', () => {
     const adapter = new GeminiAdapter({
       priceOverride: { inputPerMtok: 1.25, outputPerMtok: 10 },
     });
-    // 1M billable input @ $1.25 + 1M output @ $10 = $11.25
     expect(
       adapter.cost(
         {
@@ -203,7 +202,6 @@ describe('GeminiAdapter.cost', () => {
     const adapter = new GeminiAdapter({
       priceOverride: { inputPerMtok: 1.25, outputPerMtok: 10, cachedInputPerMtok: 0.3 },
     });
-    // 2M input - 1M cached = 1M billable @ $1.25, + 1M cached @ $0.3
     expect(
       adapter.cost(
         {

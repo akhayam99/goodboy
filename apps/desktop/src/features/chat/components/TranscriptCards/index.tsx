@@ -104,10 +104,6 @@ function TranscriptCardImpl({
   }
 }
 
-// Content-aware comparator: reduceTranscript allocates fresh items every call,
-// so reference equality on `item` is always false. Skipping re-render when the
-// rendered output would be identical avoids costly Markdown/CopyButton work for
-// 100+ static cards on session switch and during streaming updates.
 function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
   if (a === b) return true;
   if (a.kind !== b.kind || a.key !== b.key) return false;
@@ -195,11 +191,6 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
     .replace(COMMENT_WONTFIX_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  // The comment-resolved chip lives in the top-right of its own row and
-  // hovers a primary action. The hover-only copy button positioned at the
-  // same corner of the assistant bubble crashes into that primary action
-  // on short messages, and copying the marker prose isn't useful anyway.
-  // Hide copy when the marker is present.
   const resolvedMarker = extractCommentResolved(text);
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
@@ -263,9 +254,6 @@ function InlineCopyButton({ value }: { value: string }) {
   );
 }
 
-// Loads a persisted attachment lazily: the bytes live on disk in the worktree,
-// not in the turn-event payload, so each thumbnail reads its own file. Works
-// the same for a just-sent message and one restored from the DB after restart.
 function AttachmentThumb({
   attachment,
   workingDir,

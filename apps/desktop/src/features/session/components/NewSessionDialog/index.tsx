@@ -110,10 +110,6 @@ function slugifyLive(input: string): string {
     .replace(/-+$/, '');
 }
 
-// Live sanitizer for the hand-typed branch slug. Unlike slugifyLive (which
-// derives a slug from the prose goal) this preserves the user's casing, an
-// uppercase branch stays uppercase. Any run of spaces or disallowed chars
-// collapses to a single dash so e.g. ten spaces yield one dash.
 function sanitizeBranchSlug(input: string): string {
   return input
     .replace(/[^a-zA-Z0-9-]+/g, '-')
@@ -202,9 +198,6 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
     }
   });
 
-  // Hide the issue picker entirely on workspaces without a Linear integration.
-  // Defensive read: tests mock the store with a shallow shape that may not
-  // include the integrations slot.
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
   );
@@ -235,8 +228,6 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
     setSlugTouched(false);
   };
 
-  // Drop the cached branch list when the workspace changes (different repo →
-  // different branches). Reuse the cache across reopens of the same workspace.
   useEffect(() => {
     setExistingBranches(EMPTY_LOCAL_BRANCHES);
     setBranchesLoaded(false);
@@ -327,8 +318,6 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
       showToast('success', `session created: ${session.goal}`);
       onClose();
       if (setupWorkflow) {
-        // Defer one tick so the closing dialog finishes its leave transition
-        // and the new session becomes current before we open the next step.
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent('goodboy:open-workflow-picker', {

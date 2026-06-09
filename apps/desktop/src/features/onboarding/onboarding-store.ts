@@ -1,11 +1,3 @@
-/**
- * Onboarding progress is auto-detected from store state and persisted to
- * the DB `settings` table so completion is monotonic across reloads AND
- * survives a localStorage wipe / reinstall. An in-memory cache keeps the
- * sync API the existing callers depend on; the cache is hydrated at boot
- * by `hydrateOnboardingFromDb` (called from app boot) and mutations are
- * flushed to DB best-effort.
- */
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 

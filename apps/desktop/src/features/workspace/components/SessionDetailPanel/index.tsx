@@ -178,7 +178,6 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
 
   return (
     <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
-      {/* header row, user tick · title · settings */}
       <div className="flex items-center gap-2">
         <SessionStatusMenu
           status={session.userStatus}
@@ -293,7 +292,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Session switch, snap, don't animate stale → fresh transition.
     if (prevSessionIdRef.current !== sessionId) {
       prevSessionIdRef.current = sessionId;
       prevCostRef.current = sessionCost;
@@ -313,7 +311,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
     const toCost = sessionCost;
     prevCostRef.current = toCost;
 
-    // Respect reduced motion: snap to final, no roll, no glow.
     if (
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -323,12 +320,6 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
       return;
     }
 
-    // Interpolate the numeric value directly and re-format on every frame.
-    // The previous slot-machine roller spun each digit through extra full
-    // 0-9 cycles, so a small bump like $0.99 → $1.05 briefly painted
-    // $9.XX mid-animation. Value-space interpolation can never show a
-    // number outside [fromCost, toCost], so the chip reads as a real
-    // counter regardless of direction.
     setAnimating(true);
     const duration = 1100;
     const start = performance.now();
@@ -384,9 +375,6 @@ type SessionMetaFooterProps = {
   session: Session;
 };
 
-// Branch identity + session cost only. Files and GitHub moved to the
-// right-hand ContextPanel tabs (plan §B), so the sidebar footer keeps just
-// the at-a-glance identity bits and stops being a vertical stack.
 export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
 

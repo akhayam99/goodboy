@@ -92,9 +92,6 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
     if (selected && mode === 'preview') setDraft(planToSource(selected));
   }, [selected, mode]);
 
-  // Discarded plans are frozen, force preview, segmented control is
-  // disabled below. If the user was editing when the plan got discarded
-  // (or selected a discarded one), drop back to preview.
   useEffect(() => {
     if (selected?.status === 'discarded' && mode === 'edit') setMode('preview');
   }, [selected?.status, mode]);
@@ -144,10 +141,6 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
     }
   };
 
-  // Soft delete, flips the plan to 'discarded' (status only, row stays).
-  // If the user happens to be mid-edit, commit the draft first so their
-  // typing isn't lost on restore. Selection stays on the plan: it's still
-  // visible in the list (dimmed) so the user can immediately undo.
   const handleDiscard = (plan: PlanWithCount) => {
     if (mode === 'edit') commitEdit();
     setMode('preview');
@@ -300,9 +293,7 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
                   );
                 })}
               </div>
-              {/* Actions, left-to-right: segmented control → trigger → delete/restore.
-                  Order intentionally inverted vs. older builds: the destructive
-                  action sits at the far right so it's predictable to find. */}
+
               <div className="flex shrink-0 items-center gap-1.5">
                 <div
                   role="tablist"
@@ -422,14 +413,7 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
                 )}
               </div>
             </div>
-            {/* Scroll container: only the body scrolls, header/actions above
-                stay anchored. Top/bottom gradients fade content into the
-                dialog bg, same trick used by the chat transcript. Border
-                only in edit mode where the textarea needs a visible field. */}
-            {/* Hairline separator between sticky header (created by + actions)
-                and the scrollable body, with breathing room on both sides
-                so the divider doesn't kiss the content. The fade gradients
-                below kick in further down once the body starts scrolling. */}
+
             <div className="shrink-0 py-2">
               <Divider />
             </div>

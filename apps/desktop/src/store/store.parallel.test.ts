@@ -16,7 +16,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks, hoisted before importing the store.
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
 vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
@@ -48,12 +47,11 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-// Listener mock, captures the registered handler so tests can drive 'end' events.
 const listenHandlers: Array<(payload: unknown) => void> = [];
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async (_event: string, cb: (e: { payload: unknown }) => void) => {
     listenHandlers.push((payload) => cb({ payload }));
-    return () => undefined; // unlisten
+    return () => undefined;
   }),
 }));
 
@@ -370,7 +368,6 @@ describe('sendTurn, parallel agents branch', () => {
 
     const turnPromise = useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'plan' });
 
-    // Wait for spawn registration so listeners are wired before we emit 'end'.
     await new Promise((r) => setTimeout(r, 5));
 
     expect(invokeParallelPhaseRunSpawnSpy).toHaveBeenCalledTimes(2);

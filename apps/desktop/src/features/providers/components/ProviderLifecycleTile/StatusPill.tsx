@@ -13,8 +13,6 @@ type PillSpec = {
   readonly labelClass: string;
 };
 
-// Phase wins when an in-flight action is happening, otherwise we fall back to
-// the connection state (idle providers show their detection truth).
 function specFor(phase: ProviderLifecyclePhase, connection: ProviderConnectionState): PillSpec {
   switch (phase) {
     case 'installing':

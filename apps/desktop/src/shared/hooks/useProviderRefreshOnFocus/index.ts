@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../store/store';
 
-// Two layers of throttling. DEBOUNCE collapses a focus + visibilitychange
-// burst from the same window-restore into one call. TTL guards against the
-// real cost: a refresh re-runs detection + auth on all four providers, which
-// even after the Rust-side async + spawn_blocking rework still costs a few
-// hundred ms of subprocess wall time. No point repeating that every time the
-// user alt-tabs out and back in.
 const DEBOUNCE_MS = 500;
 const REFRESH_TTL_MS = 60_000;
 

@@ -49,9 +49,6 @@ import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './store';
 import type { SetFn, GetFn } from './slice-types';
 
-// The provider CLIs have no API content-block channel, files reach the model
-// only as paths named in the prompt text. Paths stay worktree-relative so they
-// resolve against the CLI's cwd and never trip the worktree-scope guard.
 export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {
   const list = refs.map((r) => `- ${r.relPath}`).join('\n');
   return [
@@ -69,8 +66,6 @@ export const toRelPath = (absPath: string, workingDir: string): string => {
   return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
 };
 
-// Summarizer queue, one per task, max one in-flight + one queued (coalesced).
-// Prevents stacking when the user iterates faster than the summarizer completes.
 type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
@@ -105,7 +100,6 @@ export const enqueueSummarizer = (
   }
 
   if (queue.inFlight) {
-    // Coalesce: overwrite any previously queued entry with the latest.
     queue.queued = { turnInput, turnOutput };
     return;
   }
@@ -146,8 +140,6 @@ async function runSummarizer(
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-  // Mark running without a separate set, merged into the final batch below on success,
-  // or emitted immediately only on the error path. This avoids a spurious re-render at start.
   set((state) => {
     const prev = state.summarizerStatus[sessionId];
     return {
@@ -196,11 +188,6 @@ async function runSummarizer(
       )
     ).filter((k): k is SlotKey => k !== null);
 
-    // If the summarizer carried a GitHub PR URL into any slot value and we
-    // still have no PR cached for this session, pull the PR state now so the
-    // polling sweep picks it up on its next tick. Complements the same regex
-    // run on raw assistant text post-turn, covers cases where the URL only
-    // surfaces in the summarized context, not in the verbatim turn output.
     if (
       !get().sessionGithub[sessionId]?.pr &&
       result.delta.upserts.some((u) => /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(u.value))
@@ -213,7 +200,6 @@ async function runSummarizer(
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
 
-    // Parallel: telemetry write + slot refresh + analytics queries.
     const [
       refreshed,
       ,
@@ -267,7 +253,6 @@ async function runSummarizer(
       ),
     ]);
 
-    // Single batched set, one re-render for the entire summarizer completion.
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
       slotHistory: {
@@ -301,7 +286,6 @@ async function runSummarizer(
       sessionId,
     });
   } catch (err) {
-    // never log api key, only the error message
     const message = formatError(err);
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);

@@ -41,8 +41,6 @@ export const TerminalPanel = ({ sessionId, isActive, cwd }: Props) => {
   const openTerminal = useAppStore((s) => s.openTerminal);
   const closeTerminal = useAppStore((s) => s.closeTerminal);
 
-  // Session driver: routes write/resize through invokeTerminal* and filters
-  // global output/exit events by sessionId before forwarding to the panel.
   const driver = useMemo<TerminalDriver>(
     () => ({
       write: (data: string) => {
@@ -65,20 +63,15 @@ export const TerminalPanel = ({ sessionId, isActive, cwd }: Props) => {
     [sessionId],
   );
 
-  // Lazy-spawn bash on first mount per session. Idempotent on the backend.
   useEffect(() => {
     void openTerminal(sessionId, cwd, 100, 24);
   }, [sessionId, cwd, openTerminal]);
 
-  // Restart: close, clear cache, reopen. The xterm reset is handled by
-  // GenericTerminalPanel remount via the cache clear plus exit message.
   const handleRestart = useCallback(() => {
     void (async () => {
       try {
         await closeTerminal(sessionId);
-      } catch {
-        // best-effort
-      }
+      } catch {}
       clearTerminalCache(sessionId);
       await openTerminal(sessionId, cwd, 100, 24);
     })();

@@ -71,9 +71,6 @@ export const WorkspaceSettingsDialog = ({
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
 
-  // useShallow because the selector derives a fresh array each call; without
-  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
-  // every render and React 19 bails into an infinite render loop.
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -319,10 +316,6 @@ export const WorkspaceSettingsDialog = ({
   );
 };
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Nav button                                                            */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function NavButton({
   item,
   active,
@@ -358,10 +351,6 @@ function NavButton({
     </button>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: General                                                      */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function GeneralSection({
   branchPrefix,
@@ -531,14 +520,7 @@ function DefaultProviderPicker({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Integrations                                                 */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
-  // Same snapshot-stability fix as connectedProviderIds: `?? []` returns a
-  // fresh array on every missing-key lookup, which causes useSyncExternalStore
-  // to loop.
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const [linearOpen, setLinearOpen] = useState(false);
@@ -625,10 +607,6 @@ function GithubCard({ workspaceId }: { workspaceId: WorkspaceId }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section shell (skills / init / phases reuse this header)              */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function SectionShell({
   icon,
   title,
@@ -649,10 +627,6 @@ function SectionShell({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Scout exploration                                            */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function ScoutSection({
   enabled,
@@ -706,10 +680,6 @@ function ScoutSection({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Danger zone                                                  */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function DangerSection({
   confirmDisconnect,
@@ -789,10 +759,6 @@ function DangerSection({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function SectionHeader({
   icon,

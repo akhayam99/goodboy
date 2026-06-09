@@ -109,10 +109,6 @@ function Content({ section, onJump }: { section: Section; onJump: (s: Section) =
   }
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Sections                                                              */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-7">
@@ -616,10 +612,6 @@ function LegendSection() {
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
 
 type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
 

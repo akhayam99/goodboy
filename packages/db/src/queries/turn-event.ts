@@ -48,11 +48,6 @@ export type PendingTurnEventInsert = {
   readonly event: TurnEvent;
 };
 
-// Multi-row INSERT for batched streaming events. Token-by-token providers can
-// emit 50-200 events/sec; one `db.execute` per event used to grab the Rust
-// `Mutex<Connection>` 50-200× per second and block every reader (including a
-// freshly-clicked session-switch). Caller coalesces events between microtasks
-// and flushes through this one statement.
 export const insertTurnEventsBatch = async (
   db: Database,
   inserts: ReadonlyArray<PendingTurnEventInsert>,
@@ -85,10 +80,6 @@ export const listTurnEventsForAgent = async (
   agentId: AgentId,
   opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<TurnEvent>> => {
-  // When a limit is set we return the *last* N events in ASC order — DESC +
-  // reverse keeps SQLite using the agent_id+created_at index efficiently.
-  // Used for fast initial paint of long sessions; background full fetch
-  // follows to fill in older history without blocking the first frame.
   if (opts?.limit !== undefined) {
     const rows = await db.select<TurnEventRow>(
       'SELECT * FROM turn_events WHERE agent_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?',

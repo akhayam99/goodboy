@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-// Tests for ContextPanel rail variant (collapsed state), #318.
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(vi.fn()) }));

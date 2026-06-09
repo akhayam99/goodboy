@@ -86,7 +86,6 @@ export const ChatBreadcrumb = ({ session }: Props) => {
         role="navigation"
         aria-label="chat breadcrumb"
       >
-        {/* workspace */}
         {workspace ? (
           <button
             type="button"
@@ -102,13 +101,10 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 
         <Separator />
 
-        {/* session */}
         <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
           {sessionLabel}
         </span>
 
-        {/* workflow, only when one is attached. Surfaces "step N/M" so the user
-            knows the workflow is driving and how far along it is. */}
         {workflowProgress ? (
           <>
             <Separator />
@@ -128,9 +124,6 @@ export const ChatBreadcrumb = ({ session }: Props) => {
           </>
         ) : null}
 
-        {/* Spacer pushes the dog to the far right. Just the silhouette: the
-            path on the left already says where you are, the dog is the quiet
-            "who am I talking to" cue. */}
         <div className="flex-1" />
 
         {selectedAgent && agentKind ? (

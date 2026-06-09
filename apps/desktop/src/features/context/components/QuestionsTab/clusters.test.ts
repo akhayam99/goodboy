@@ -139,7 +139,6 @@ describe('buildQuestionClusters', () => {
     const scout = agent('agent_scout', wfA.steps[0]!.id, 'scout');
     const planner = agent('agent_planner', wfA.steps[1]!.id, 'planner');
 
-    // Scout raised q1 then ownership transferred to planner (ordinal 1)
     const qs: OpenQuestion[] = [
       question('q1', {
         workflowId: WF_A,

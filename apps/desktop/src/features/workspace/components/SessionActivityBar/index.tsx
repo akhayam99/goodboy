@@ -82,8 +82,6 @@ export const SessionActivityBar = ({
     <div className="flex h-full w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1 px-1.5 py-1.5">
-          {/* header strip: eyebrow title + display-options trigger. one row,
-              no decoration, DESIGN.md "compact: minimum chrome". */}
           <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions

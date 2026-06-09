@@ -24,8 +24,6 @@ export type LifecycleExitPayload = {
   readonly auth: AuthState;
 };
 
-// Resolve the platform once per process. Tauri runs on darwin/linux/win32 only;
-// anything else falls back to linux because the npm commands are identical.
 export const currentPlatform = (): ProviderPlatform => {
   if (typeof navigator === 'undefined') return 'linux';
   const ua = navigator.userAgent.toLowerCase();

@@ -11,10 +11,6 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     const archived: Session = { ...prev, archivedAt: nowIso };
     const workspaceId = prev.workspaceId;
 
-    // Optimistic move: out of `sessions` (so palette / github / unread / eager
-    // loads stop seeing it), into `archivedSessions[workspaceId]` if that
-    // cache is loaded. If not loaded, the next Archived-tab open will fetch
-    // fresh from DB and pick it up.
     set((state) => {
       const cached = state.archivedSessions[workspaceId];
       const nextArchived = cached
@@ -30,7 +26,6 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     try {
       await archiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
-      // Rollback: put the session back, undo the archived insertion.
       set((state) => {
         const cached = state.archivedSessions[workspaceId];
         const nextArchived = cached
@@ -44,9 +39,6 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
-    // Post-archive cleanup: drop heavy per-session caches so memory doesn't
-    // grow with the archive count. Cheap to rebuild on unarchive (lazy DB
-    // reload + worktree/agent re-fetch).
     set((state) => {
       const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
       const nextTranscripts = { ...state.transcripts };

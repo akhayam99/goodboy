@@ -67,7 +67,6 @@ export const NotificationCenter = () => {
       const el = triggerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      // Center on the trigger; clamp so the popover stays inside the viewport.
       const centerX = rect.left + rect.width / 2;
       const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
@@ -157,9 +156,6 @@ export const NotificationCenter = () => {
                     No notifications
                   </p>
                 ) : (
-                  // Same scroll-shadow pattern used in chat/plans: top/bottom
-                  // gradients fade content into the popover bg as items
-                  // scroll past the edge.
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-muted to-transparent" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-muted to-transparent" />

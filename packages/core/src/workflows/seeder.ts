@@ -12,9 +12,6 @@ import { upsertWorkflow, type Database } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { defaultsForRole } from '../roles';
 
-// Global library seed ids created by db migration m045. Each canonical role has
-// one. Seeded preset steps point back to these so the preset composer + library
-// manager treat seeded steps as instances of the shared definitions.
 const SEEDED_ROLES = new Set<AgentRole>([
   'scout',
   'planner',
@@ -61,9 +58,6 @@ export const seedWorkflowLibrary = async (
   for (const entry of WORKFLOW_LIBRARY) {
     const workflowId = makeWorkflowId(entry.slug, workspaceId);
     const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
-      // Apply per-role defaults so the orchestrator routes each agent to a
-      // sensibly-priced model out of the box. The user can still override at
-      // the Step level later.
       const roleDefaults = defaultsForRole(s.role);
       const libraryStepId = libraryStepIdForRole(s.role);
       return {

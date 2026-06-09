@@ -2,10 +2,6 @@ import { useState } from 'react';
 import type { ProviderRunId } from '@goodboy/types';
 import { Button, Dialog } from '@goodboy/ui';
 
-// Sentinel used when the user chooses to skip resolution for a file.
-// The consumer (onResolve) receives picks[file] === SKIP_SENTINEL for skipped files.
-// Skipped files are included in the picks map so callers always have a full record
-// keyed by every conflict file, no ambiguity between "skipped" and "not yet picked".
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
 

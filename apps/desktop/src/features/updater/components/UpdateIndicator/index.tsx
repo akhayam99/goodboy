@@ -6,10 +6,6 @@ import { useAppStore } from '../../../../store';
 
 type Props = { variant: 'bar' | 'pip' };
 
-// Non-invasive "update ready" affordance, shown only when a newer release has
-// been found. Click opens a confirm dialog (the app relaunches on install, so
-// we warn before interrupting running sessions). Rendered both in the status
-// bar (bar) and next to the sidebar logo (pip), à la VS Code / Claude.
 export const UpdateIndicator = ({ variant }: Props) => {
   const { status, version, installUpdate } = useAppStore(
     useShallow((s) => ({
@@ -33,7 +29,6 @@ export const UpdateIndicator = ({ variant }: Props) => {
     void installUpdate();
   };
 
-  // Both placements share the same confirm flow; only the trigger chrome differs.
   const trigger =
     variant === 'pip' ? (
       <button

@@ -96,7 +96,6 @@ export const insertOpenQuestion = async (
   if (ownRows[0]) {
     return { question: toDomain(ownRows[0]), inserted: true };
   }
-  // Conflict on partial unique index (session_id, text) WHERE status='open'.
   const existingRows = await db.select<OpenQuestionRow>(
     `SELECT * FROM open_questions WHERE session_id = ? AND text = ? AND status = 'open' LIMIT 1`,
     [input.sessionId, input.text],

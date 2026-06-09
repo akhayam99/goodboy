@@ -1,9 +1,5 @@
 const PREFIX = 'goodboy:';
 
-// Only device-local UI state remains in localStorage. Domain state
-// (archived sessions, model/provider/effort/verbosity overrides, onboarding
-// progress) lives on the DB so it survives reinstalls. See
-// shared/lib/ls-to-db-migration.ts for the one-shot legacy-key sweep.
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,

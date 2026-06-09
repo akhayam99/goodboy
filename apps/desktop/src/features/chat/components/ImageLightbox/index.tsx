@@ -15,9 +15,6 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
   const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
   const exitTimerRef = useRef<number | null>(null);
 
-  // Two rAFs so the browser commits the initial `enter` classes to a paint
-  // before we flip to `open`. A single rAF batches with the initial render
-  // on some browsers and skips the transition entirely.
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setPhase('open'));
@@ -89,8 +86,6 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
         <img
           src={src}
           alt={alt}
-          // Stop propagation so clicking the image itself doesn't dismiss.
-          // Only the surrounding backdrop closes the preview.
           onClick={(event) => event.stopPropagation()}
           className={`max-h-full max-w-full rounded-lg object-contain shadow-2xl transition-all duration-[180ms] ease-out ${
             visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'

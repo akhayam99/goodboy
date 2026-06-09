@@ -49,9 +49,6 @@ export const RoutingIndicator = ({
     );
   }
 
-  // Only render when there's actually something the user needs to know about
-  //, fallbacks or budget warnings. The vanilla "claude / claude-opus-4-7"
-  // routing label was redundant with the chips below the input.
   const isFallback =
     decision.reason === 'fallback-budget' || decision.reason === 'fallback-disconnected';
   if (!isFallback || !decision.fallbackFrom) return null;

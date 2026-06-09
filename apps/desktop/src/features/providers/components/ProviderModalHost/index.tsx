@@ -7,8 +7,6 @@ export type OpenProviderModalDetail = {
   readonly action: ProviderLifecycleAction;
 };
 
-// Implementation detail of openProviderModal() below. Not exported because
-// callers should use the helper, not dispatch raw CustomEvents.
 const OPEN_PROVIDER_MODAL_EVENT = 'goodboy:open-provider-modal';
 
 export const ProviderModalHost = () => {
@@ -35,9 +33,6 @@ export const ProviderModalHost = () => {
   );
 };
 
-// Convenience dispatcher so callers do not have to remember the event name
-// or detail shape. Imported by the tile, the chat callout, and any other
-// surface that wants to summon the modal.
 export const openProviderModal = (detail: OpenProviderModalDetail): void => {
   window.dispatchEvent(
     new CustomEvent<OpenProviderModalDetail>(OPEN_PROVIDER_MODAL_EVENT, { detail }),

@@ -1,9 +1,5 @@
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 
-// Per-provider × action playbook surfaced in the modal sidebar. Three sections
-// (subscription, what happens, troubleshooting) keep every guide structured
-// identically so the user learns the pattern once. Logout is rare and brief,
-// so it shares a minimal template.
 type GuideStep = {
   readonly title: string;
   readonly body: string;

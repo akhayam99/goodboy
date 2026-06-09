@@ -31,7 +31,6 @@ describe('MergeDialog, rendering', () => {
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
     const radios = screen.getAllByRole('radio');
-    // 2 runIds + 1 skip = 3
     expect(radios).toHaveLength(3);
   });
 
@@ -71,7 +70,7 @@ describe('MergeDialog, confirm button gate', () => {
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
     const radios = screen.getAllByRole('radio');
-    fireEvent.click(radios[0]!); // pick run-a
+    fireEvent.click(radios[0]!);
     const confirm = screen.getByRole('button', { name: /apply merge/i });
     expect(confirm.hasAttribute('disabled')).toBe(false);
   });
@@ -80,7 +79,6 @@ describe('MergeDialog, confirm button gate', () => {
     render(
       <MergeDialog open={true} conflicts={TWO_CONFLICTS} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
-    // pick run-a for first file only (radio index 0)
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!);
     const confirm = screen.getByRole('button', { name: /apply merge/i });
@@ -92,8 +90,6 @@ describe('MergeDialog, confirm button gate', () => {
       <MergeDialog open={true} conflicts={TWO_CONFLICTS} onResolve={vi.fn()} onCancel={vi.fn()} />,
     );
     const radios = screen.getAllByRole('radio');
-    // Each conflict has 3 radios: run-a, run-b, skip. Total = 6.
-    // Skip for file 1 = index 2; skip for file 2 = index 5.
     fireEvent.click(radios[2]!);
     fireEvent.click(radios[5]!);
     const confirm = screen.getByRole('button', { name: /apply merge/i });
@@ -101,11 +97,8 @@ describe('MergeDialog, confirm button gate', () => {
   });
 
   it('confirm enabled when no conflicts (edge case: always resolved)', () => {
-    // With 0 conflicts the button stays disabled because
-    // "allResolved = conflicts.length > 0 && ..." guards the empty state.
     render(<MergeDialog open={true} conflicts={[]} onResolve={vi.fn()} onCancel={vi.fn()} />);
     const confirm = screen.getByRole('button', { name: /apply merge/i });
-    // empty conflicts → allResolved = false → disabled
     expect(confirm.hasAttribute('disabled')).toBe(true);
   });
 });
@@ -117,7 +110,7 @@ describe('MergeDialog, onResolve payload', () => {
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={onResolve} onCancel={vi.fn()} />,
     );
     const radios = screen.getAllByRole('radio');
-    fireEvent.click(radios[0]!); // run-a
+    fireEvent.click(radios[0]!);
     fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledOnce();
     expect(onResolve).toHaveBeenCalledWith({ 'src/foo.ts': RUN_A });
@@ -129,7 +122,7 @@ describe('MergeDialog, onResolve payload', () => {
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={onResolve} onCancel={vi.fn()} />,
     );
     const radios = screen.getAllByRole('radio');
-    fireEvent.click(radios[2]!); // skip
+    fireEvent.click(radios[2]!);
     fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledWith({ 'src/foo.ts': SKIP_SENTINEL });
   });
@@ -145,8 +138,8 @@ describe('MergeDialog, onResolve payload', () => {
       />,
     );
     const radios = screen.getAllByRole('radio');
-    fireEvent.click(radios[0]!); // foo.ts → run-a
-    fireEvent.click(radios[5]!); // bar.ts → skip
+    fireEvent.click(radios[0]!);
+    fireEvent.click(radios[5]!);
     fireEvent.click(screen.getByRole('button', { name: /apply merge/i }));
     expect(onResolve).toHaveBeenCalledWith({
       'src/foo.ts': RUN_A,
@@ -176,12 +169,9 @@ describe('MergeDialog, cancel', () => {
         onCancel={onCancel}
       />,
     );
-    // pick run-a, then cancel
     const radios = screen.getAllByRole('radio');
     fireEvent.click(radios[0]!);
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
-    // confirm is disabled after cancel resets state (not directly observable
-    // without reopening, but onCancel must have been called)
     expect(onCancel).toHaveBeenCalledOnce();
   });
 });
@@ -192,8 +182,6 @@ describe('MergeDialog, escape', () => {
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={onCancel} />,
     );
-    // The Dialog primitive listens for the native `close` event on <dialog>.
-    // happy-dom fires that event when Escape is pressed on an open modal.
     const dialogEl = document.querySelector('dialog');
     expect(dialogEl).not.toBeNull();
     fireEvent.keyDown(dialogEl!, { key: 'Escape', code: 'Escape' });

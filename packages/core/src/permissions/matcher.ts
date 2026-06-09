@@ -4,12 +4,9 @@ export type ToolMatcher = {
   matches(toolName: string, input: unknown): boolean;
 };
 
-// Regex metachars excluding * (handled separately as glob wildcard)
 const REGEX_METACHARS = /[.+?()[\]{}\^$|\\]/g;
 
 function globToRegex(glob: string): RegExp {
-  // Split on ** and * BEFORE escaping other metachars so we can handle them independently
-  // Strategy: walk char by char building pattern
   let pattern = '';
   let i = 0;
   while (i < glob.length) {

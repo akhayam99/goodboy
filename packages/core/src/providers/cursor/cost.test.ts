@@ -12,7 +12,6 @@ const usage: ProviderUsage = {
 
 describe('computeCursorCostUsd', () => {
   it('composer-2-fast (cheap default) uses Composer-tier pricing', () => {
-    // 1M input @ $0.8 + 1M output @ $4
     expect(computeCursorCostUsd(usage, CURSOR_CHEAP_MODEL)).toBeCloseTo(0.8 + 4);
   });
 
@@ -23,12 +22,10 @@ describe('computeCursorCostUsd', () => {
   });
 
   it('claude-opus-4-7-thinking-high uses opus-tier pricing', () => {
-    // 1M input @ $15 + 1M output @ $75
     expect(computeCursorCostUsd(usage, 'claude-opus-4-7-thinking-high')).toBeCloseTo(15 + 75);
   });
 
   it('gpt-5.5-high uses GPT-5 pricing proxy', () => {
-    // 1M input @ $5 + 1M output @ $15
     expect(computeCursorCostUsd(usage, 'gpt-5.5-high')).toBeCloseTo(5 + 15);
   });
 
@@ -45,7 +42,6 @@ describe('computeCursorCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // claude-sonnet-4-5: 1M billable @ $3 + 1M cached @ $0.3
     expect(computeCursorCostUsd(partial, 'claude-sonnet-4-5')).toBeCloseTo(3 + 0.3);
   });
 

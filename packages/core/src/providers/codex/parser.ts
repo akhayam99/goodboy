@@ -7,14 +7,6 @@ export type ParseContext = {
   readonly onUnknown?: (type: string, payload: unknown) => void;
 };
 
-// Codex CLI v0.130.0 emits NDJSON when run with `--json`. Schema captured from
-// `codex exec --json -m gpt-5.2 -s read-only -C /tmp "..."`:
-//   thread.started   { thread_id }
-//   turn.started
-//   item.started     { item: { id, type, ... } }
-//   item.completed   { item: { id, type, ... } }   // type = agent_message | command_execution | apply_patch | ...
-//   turn.completed   { usage: { input_tokens, cached_input_tokens, output_tokens, reasoning_output_tokens } }
-//   error            { message }                   // terminal error
 const KNOWN_TYPES = new Set([
   'thread.started',
   'turn.started',

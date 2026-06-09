@@ -1,8 +1,3 @@
-/**
- * Prefix grammar shared by the command palette (⌘K) and the in-chat
- * quick-actions popover, single source so the two never drift.
- */
-
 export type QuickActionGroup =
   | 'agent'
   | 'session'

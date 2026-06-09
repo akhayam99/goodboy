@@ -153,8 +153,6 @@ export const RunScriptControl = ({
         aria-expanded={open}
         className={cn(
           'shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground/60',
-          // Animated primary ring while any script in this session runs, the
-          // signal survives the popover being closed.
           isRunning && 'spin-border spin-border-primary',
         )}
       >
@@ -178,8 +176,6 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
   const isPending = status === 'pending';
   const preview = script.body.trim().split('\n')[0] ?? '';
   const hasOutput = result !== null;
-  // Default the disclosure open on a failed run, the user almost always
-  // wants to see why it failed. Successful and cancelled runs stay collapsed.
   const [outputOpen, setOutputOpen] = useState(false);
   const prevResultRef = useRef(result);
   if (result !== prevResultRef.current) {
@@ -192,9 +188,6 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
       className={cn(
         'group flex flex-col rounded border border-transparent transition-colors',
         !isPending && 'hover:bg-muted/60',
-        // Same border-spinner language used on running agents / workflow
-        // steps: the row itself is the activity signal, no extra spinner
-        // icon needed and the play affordance is locked while it runs.
         isPending && 'spin-border spin-border-info',
       )}
     >

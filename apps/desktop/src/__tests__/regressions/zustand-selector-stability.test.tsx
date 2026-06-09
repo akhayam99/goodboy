@@ -1,28 +1,5 @@
 // @vitest-environment happy-dom
 
-/**
- * Regression: opening WorkspaceSettingsDialog / SessionSettingsDialog /
- * ConnectLinearDialog crashed with "Maximum update depth exceeded"
- * (React #185) because they had useAppStore selectors that built a fresh
- * non-primitive each call:
- *
- *     useAppStore((s) => s.providers.filter(...).map(...))
- *     useAppStore((s) => s.workspaceIntegrations[id] ?? [])
- *
- * React 19's useSyncExternalStore compares snapshots via Object.is. A fresh
- * array always fails that check, the snapshot mismatch retriggers the
- * render, and the next render computes yet another fresh ref. Infinite loop,
- * error boundary catches it as React #185, user sees "something went wrong".
- *
- * Fix: wrap the offending selector in `useShallow` from
- * `zustand/react/shallow`. This file pins the contract: the wrapped pattern
- * returns a stable ref across unrelated store updates, the raw pattern does
- * not. If anyone removes useShallow from one of those dialogs the
- * `no-unstable-zustand-selectors` source scan below catches it; if the
- * underlying assumption about useShallow ever changes the hook tests here
- * catch that too.
- */
-
 import { afterEach, describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';

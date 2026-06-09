@@ -76,10 +76,6 @@ export const listAgentsForSession = async (
   return rows.map(toAgent);
 };
 
-// Batched lookup for workspace switch: replaces
-// `Promise.all(ids.map(invokePhaseRunList))`, which serialized N IPC round trips
-// through the Rust `Mutex<Connection>`. One IN-clause query + group-by-session
-// preserves per-session ordering (ordinal ASC within each bucket).
 export const listAgentsForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,

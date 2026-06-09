@@ -14,8 +14,6 @@ type BootSplashProps = {
   onFinished?: () => void;
 };
 
-// User-facing steps. Internal phases (migrations, settings, cli detection) are
-// collapsed into the first one, users don't care about the difference.
 type BootStep = {
   threshold: number;
   label: string;
@@ -32,8 +30,6 @@ const LAST_STEP: BootStep = STEPS[STEPS.length - 1] ?? {
   label: 'Almost there',
 };
 
-// Maps a real boot phase to the target % the animation should crawl toward.
-// The animation always lerps smoothly, fast boots still play the full bar.
 function targetForPhase(phase: BootPhase): number {
   switch (phase) {
     case 'pending':
@@ -114,7 +110,6 @@ export const BootSplash = ({
 
   return (
     <div className="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground">
-      {/* dot grid background */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -124,7 +119,7 @@ export const BootSplash = ({
           backgroundSize: '18px 18px',
         }}
       />
-      {/* radial vignette to keep focus center */}
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -134,7 +129,6 @@ export const BootSplash = ({
         }}
       />
 
-      {/* mascot + wordmark */}
       <div className="flex flex-col items-center gap-5">
         <div className="relative flex h-24 w-24 items-center justify-center text-primary">
           <span
@@ -160,7 +154,6 @@ export const BootSplash = ({
         </div>
       </div>
 
-      {/* single message + progress bar */}
       {hasError ? null : (
         <div className="flex w-72 flex-col gap-3">
           <div className="flex h-5 items-center justify-center">

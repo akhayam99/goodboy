@@ -113,8 +113,6 @@ type FakeState = {
 
 function buildSlice(state: FakeState) {
   const set = vi.fn();
-  // Cast through unknown, the slice only touches the few fields above; the
-  // rest of AppStore is intentionally absent to keep the harness narrow.
   const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[1];
   return createPlansSlice(set as unknown as Parameters<typeof createPlansSlice>[0], get);
 }
@@ -377,8 +375,6 @@ describe('runPlan, workflow-aware spawn routing', () => {
     });
 
     it('free-spawns when an earlier step is not yet done (next step blocked)', async () => {
-      // creator (Plan) is still running and there is an earlier step before it
-      // that hasn't completed → pickNextWorkflowStep returns null.
       const earlyStep = 's-scout' as StepId;
       const wf = makeWorkflow([
         { id: earlyStep, name: 'Scout', ordinal: 0 },

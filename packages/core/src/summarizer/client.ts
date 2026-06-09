@@ -289,21 +289,6 @@ function parseDelta(raw: string): ContextSlotDelta {
   return { upserts };
 }
 
-/**
- * Pull the JSON object out of a model response that might be wrapped in any
- * of these shapes:
- *   1. Pure JSON: `{...}`
- *   2. Whole response is a fenced block: ```json\n{...}\n```
- *   3. JSON inside a fenced block with surrounding prose
- *   4. Prose preamble followed by a bare `{...}` object
- *
- * Falls back to the trimmed input so a non-JSON response still hits the
- * `JSON.parse` path and surfaces a structured `SummarizerParseError`.
- *
- * Real failure observed: model preambles like "Sometimes I get stuck..."
- * followed by the JSON would slip past the strict edge-anchored fence
- * regex and crash with "Unexpected identifier 'stuck'".
- */
 function extractJson(raw: string): string {
   const trimmed = raw.trim();
 
@@ -319,12 +304,6 @@ function extractJson(raw: string): string {
   return trimmed;
 }
 
-/**
- * Walk the string from the first `{` while tracking string-literal state so
- * braces nested inside JSON string values don't desync the depth counter.
- * Returns the substring from that `{` through its matching `}` if balanced,
- * otherwise null.
- */
 function extractBalancedJsonObject(text: string): string | null {
   const start = text.indexOf('{');
   if (start === -1) return null;

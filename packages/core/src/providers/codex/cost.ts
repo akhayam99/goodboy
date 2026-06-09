@@ -1,10 +1,5 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-// Codex CLI does not expose token counts in its output stream. Cost is therefore
-// not computable from usage data alone. Users who want cost attribution for Codex
-// can set per-model override prices via providerPricingConfig in app settings;
-// those overrides are applied in the desktop layer before recording telemetry.
-// Default: 0 (unmetered / cost unknown).
 export const computeCodexCostUsd = (
   usage: ProviderUsage,
   _model: string,

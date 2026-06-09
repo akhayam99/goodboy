@@ -74,8 +74,6 @@ export class CodexAdapter implements ProviderAdapter {
     });
   }
 
-  // ChatGPT-login users are unmetered; API-key users can wire a price override
-  // via CodexAdapterDeps.priceOverride to surface estimated USD.
   cost(usage: ProviderUsage, model: string): number {
     return computeCodexCostUsd(usage, model, this.priceOverride);
   }
@@ -92,10 +90,6 @@ async function* spawnCodex(
   onUnknown: (type: string, payload: unknown) => void,
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
-  // Codex CLI v0.130.0 headless flags (probed live, May 2026):
-  //   codex exec --json -m <model> -C <cwd> -s workspace-write --skip-git-repo-check <prompt>
-  // No `--` separator before prompt; prompt is the trailing positional. systemPrompt
-  // is prepended to userMessage since `exec` accepts a single prompt argument.
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;
@@ -156,8 +150,6 @@ async function* spawnCodex(
   });
 
   lineReader.on('close', () => {
-    // Usage is emitted by the parser on `turn.completed`. We only need to seal
-    // the stream with `done` here.
     queue.push({ kind: 'done', runId: request.runId, at: now() });
     ended = true;
     flush();

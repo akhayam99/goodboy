@@ -163,15 +163,11 @@ function rowToAgent(row: RawAgentRow): Agent {
   };
 }
 
-// Workflow (preset) commands.
 export const invokeWorkflowList = async (workspaceId: WorkspaceId): Promise<Workflow[]> => {
   const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId });
   return rows.map(rowToWorkflow);
 };
 
-// Workflows attached to a session, including ones soft-deleted from the preset
-// list. Loaded in addition to invokeWorkflowList so a session keeps showing a
-// workflow that was deleted everywhere else.
 export const invokeWorkflowsForSession = async (sessionId: SessionId): Promise<Workflow[]> => {
   const rows = await invoke<RawWorkflowRow[]>('workflows_for_session', { sessionId });
   return rows.map(rowToWorkflow);
@@ -230,7 +226,6 @@ export const invokeWorkflowDelete = async (id: WorkflowId): Promise<void> => {
   return invoke<void>('workflow_delete', { id });
 };
 
-// Step library (reusable StepDef) commands.
 export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepDef[]> => {
   const rows = await invoke<RawStepDefRow[]>('step_def_list', { workspaceId });
   return rows.map(rowToStepDef);
@@ -271,7 +266,6 @@ export const invokeStepDefDelete = async (id: StepDefId): Promise<void> => {
   return invoke<void>('step_def_delete', { id });
 };
 
-// Phase run commands (#156).
 export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
   const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
   return rows.map(rowToAgent);
@@ -375,7 +369,6 @@ export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<Worksp
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
 };
 
-// Parallel phase group commands (#207).
 type RawParallelGroupRow = {
   readonly id: string;
   readonly sessionId: string;

@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
 
-/**
- * Walks up the DOM until it finds an ancestor that clips overflow
- * (auto/scroll/hidden on Y). That's the box our popover would actually
- * be cut off by, measuring against `window` is misleading when the
- * trigger sits inside a Dialog with `overflow: hidden`.
- */
 function findClippingAncestor(el: HTMLElement | null): HTMLElement | null {
   let current = el?.parentElement ?? null;
   while (current) {

@@ -4,8 +4,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-// Module mocks, hoisted before imports that transitively pull the mocked modules.
-// vi.hoisted keeps shared refs alive across the hoisting reorder.
 const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
   const { create } = await import('zustand');
   const send = vi.fn(async () => undefined);
@@ -132,7 +130,6 @@ vi.mock('@goodboy/core', () => ({
   assessTurnWeight: () => 'small',
 }));
 
-// Import component AFTER mocks are in place.
 import { ChatInput } from './index';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
@@ -238,7 +235,6 @@ describe('ChatInput, input wiring', () => {
   });
 
   it('provider override persists across sends (regression for bug D)', async () => {
-    // Session arrives with provider already overridden (persisted on DB).
     const setSessionConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig });
 

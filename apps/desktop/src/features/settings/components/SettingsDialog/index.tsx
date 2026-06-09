@@ -29,8 +29,6 @@ type NavItem = {
   beta?: boolean;
 };
 
-// global settings only, per-workspace skills + workflows live in
-// WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} aria-hidden /> },

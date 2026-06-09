@@ -2,12 +2,6 @@ import { insertTurnEventsBatch, type PendingTurnEventInsert } from '@goodboy/db'
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 
-// Streaming providers can emit 50-200 turn_events per second. Persisting each
-// one with its own `insertTurnEvent` used to grab the Rust `Mutex<Connection>`
-// at the same cadence and block every concurrent reader, including a
-// freshly-clicked workspace/session switch. The buffer below coalesces
-// non-critical events between microtasks and flushes them through a single
-// multi-row INSERT, collapsing the write storm to ~one IPC per frame.
 let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
 let turnEventFlushScheduled = false;
 

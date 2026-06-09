@@ -59,9 +59,6 @@ const ZOOM_ACTIONS: Record<string, () => Promise<void>> = {
   '0': zoomReset,
 };
 
-// Cap on retained ChatView instances. Five covers nearly all real navigation
-// patterns (recent N tabs) without unbounded memory growth from long sessions
-// kept alive in the background.
 const KEEP_ALIVE_CAP = 5;
 
 function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
@@ -128,7 +125,6 @@ export const App = () => {
   useEffect(() => {
     void hydrate();
     void refreshPricingTable();
-    // Only meaningful in a packaged build; in dev there is no matching release.
     if (import.meta.env.PROD) void checkForUpdates();
   }, [hydrate, checkForUpdates]);
 
@@ -243,11 +239,6 @@ export const App = () => {
     return () => document.removeEventListener('click', onClick);
   }, []);
 
-  // ESC on macOS exits native fullscreen, never wanted. preventDefault at the
-  // capture phase blocks it (the event is marked handled in WKWebView before
-  // it reaches the native responder chain). That same call also cancels a
-  // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
-  // dialog ourselves, ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -281,18 +272,10 @@ export const App = () => {
     });
   };
 
-  // Discard keep-alive IDs from the previous workspace. Without this, switching
-  // workspaces left up to 5 orphan IDs in App state: their KeepAliveChatPanel/
-  // ContextPanel components stayed mounted, ran `useSessionById` (which itself
-  // scans every archivedSessions list) on every store update, and only ever
-  // resolved to null. Pure dead weight on the render path of every set call.
   useEffect(() => {
     setKeepAliveIds([]);
   }, [currentWorkspace?.id]);
 
-  // Persist visited-session order across renders. Triggered by the same
-  // currentSession change that drives the synchronous derivation above; this
-  // just commits the new order to state so future switches reuse it.
   useEffect(() => {
     const id = currentSession?.id ?? null;
     if (!id) return;
@@ -426,9 +409,6 @@ export const App = () => {
   useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
 
-  // Synchronous LRU: include the current session even before the persisting
-  // effect runs, so the active view paints on the first frame after a switch.
-  // Must stay above the early-return for hydrated to keep hook order stable.
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
     if (!cid) return keepAliveIds;
@@ -437,10 +417,6 @@ export const App = () => {
     return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
   }, [keepAliveIds, currentSession?.id]);
 
-  // Defer the heavy panel mount so sidebar selection + AppShell swap paint
-  // urgently while React schedules the fresh ChatView/ContextPanel at low
-  // priority. Active id is deferred too so the previous panel stays visible
-  // (and `isActive`) during the lag, otherwise we'd flash a blank frame.
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
@@ -519,18 +495,12 @@ export const App = () => {
                 onAddWorkspace={() => setAddWorkspaceOpen(true)}
               />
             )}
-            {/* Onboarding checklist floats top-right of the chat area: app-level so
-                the sidebar chip can summon it from anywhere. */}
+
             <OnboardingCard />
           </div>
         }
         rightSidebar={
           currentSession ? (
-            // Same keep-alive pattern as the chat panel: the LRU window of
-            // recently-visited sessions stays mounted, only visibility flips
-            // on switch. ContextPanel gates its own session-change effects
-            // (loadDiffComments, refreshSessionPr*) on isActive so hidden
-            // panels don't fire background work.
             <div className="relative h-full w-full">
               {deferredRenderedIds.map((id) => (
                 <KeepAliveContextPanel
@@ -547,9 +517,7 @@ export const App = () => {
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
       />
-      {/* Only mount dialog bodies (and their selectors) when actually open.
-          Otherwise SettingsDialog/WorkspaceLinkDialog stay alive across the
-          whole session and pay re-render cost on every store update. */}
+
       {settingsOpen ? (
         <SettingsDialog
           open
@@ -631,9 +599,7 @@ export const App = () => {
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
       {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
-      {/* App-level modal host so the provider connect modal can be summoned
-          from any surface (providers panel, chat callout, future onboarding
-          cards) via a CustomEvent, without prop-drilling. */}
+
       <ProviderModalHost />
       <OnboardingWizard />
     </ToastProvider>

@@ -108,12 +108,10 @@ function resolveLastWriteWins(
       );
 
     if (candidates.length === 0) {
-      // No completed run, fall back to deterministic sort on runId
       const sorted = [...conflict.runIds].sort();
       return { file: conflict.file, winnerRunId: sorted[0]!, reason: 'last_write_wins' };
     }
 
-    // Sort descending by completedAt, tie-break ascending by runId (deterministic)
     candidates.sort((a, b) => {
       const timeDiff = b.completedAt.localeCompare(a.completedAt);
       if (timeDiff !== 0) return timeDiff;

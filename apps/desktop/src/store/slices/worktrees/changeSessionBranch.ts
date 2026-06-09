@@ -27,8 +27,6 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
     });
     await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, target);
     set((state) => {
-      // Branch changed → the cached PR/detail belong to the old branch. Drop
-      // the entry so the ContextPanel effect refetches against the new branch.
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
       return {

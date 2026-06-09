@@ -99,7 +99,6 @@ export const heuristicAgentTitle = (prompt: string): string | null => {
     if (significant.length >= 2) return significant.join(' ');
   }
 
-  // Fallback: first 3 significant words from first line
   const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3);
   return significant.length >= 2 ? significant.join(' ') : null;
 };

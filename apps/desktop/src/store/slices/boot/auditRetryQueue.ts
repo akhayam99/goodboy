@@ -11,7 +11,6 @@ import type { SetFn } from './types';
 
 const AUDIT_RETRY_MAX_ATTEMPTS = 5;
 const AUDIT_RETRY_DRAIN_BATCH = 50;
-// Exponential backoff delays (ms): attempt 0→1s, 1→2s, 2→4s, 3→8s, 4→16s.
 const AUDIT_RETRY_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000] as const;
 
 function auditRetryBackoffMs(attempt: number): number {
@@ -29,7 +28,6 @@ export const drainAuditRetryQueue = async (set: SetFn): Promise<void> => {
   const now = () => new Date().toISOString();
 
   for (const entry of entries) {
-    // Respect backoff: skip entries updated too recently for their attempt count.
     const backoffMs = auditRetryBackoffMs(entry.attempts);
     const msSinceUpdate = Date.now() - entry.updatedAt;
     if (msSinceUpdate < backoffMs) continue;

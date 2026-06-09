@@ -12,8 +12,6 @@ export const ScriptResultRow = ({ state, onDismiss }: Props) => {
   const { script, status, result } = state;
   const [outputOpen, setOutputOpen] = useState(false);
 
-  // Default the disclosure open on a failed run, the user almost always
-  // wants to see why. Successful runs stay collapsed.
   const prevResultRef = useRef<ScriptRunResult | null>(null);
   if (result !== prevResultRef.current) {
     prevResultRef.current = result;

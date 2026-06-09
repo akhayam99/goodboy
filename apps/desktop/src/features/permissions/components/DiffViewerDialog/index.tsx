@@ -69,8 +69,6 @@ type DiffViewerDialogProps = {
   jumpToFile?: string;
 };
 
-// Default to the same scope the sidebar files-touched counter uses
-// (branch vs main) so opening the dialog matches what the count promises.
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
 
 function viewStorageKey(sessionId: SessionId | undefined): string | null {
@@ -481,9 +479,6 @@ export const DiffViewerDialog = ({
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
-      // Resolver is the right kind for "fix these local diff notes": it
-      // commits locally, never pushes, and is scoped to the comment(s) in
-      // the kickoff. Reviewer would only describe the fix, not apply it.
       const defaults = AGENT_KIND_DEFAULTS.resolver;
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
       const name = `resolve notes (${fileCount}F/${openComments.length}N)`;

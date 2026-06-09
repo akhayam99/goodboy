@@ -17,8 +17,6 @@ export type InferNextActionsInput = {
   readonly prState?: NextActionsPrState | null;
 };
 
-// Kept on the public surface so existing client wiring (cli.ts, client.ts)
-// keeps compiling without a sweep. PR-state no longer changes the trio output.
 export type NextActionsPrState = {
   readonly hasOpenPr: boolean;
   readonly checksGreen: boolean;
@@ -55,9 +53,6 @@ const STOPWORDS = new Set([
   'with',
 ]);
 
-// Trigger: a turn has produced output, or the assistant left open questions, or
-// last_output_summary captured a decision branch worth acting on. Otherwise the
-// user is still framing, surface nothing.
 export const inferNextActions = (input: InferNextActionsInput): ReadonlyArray<NextAction> => {
   const slots = mapSlots(input.slotsAfter);
   const openQuestions = (slots.open_questions ?? '').trim();

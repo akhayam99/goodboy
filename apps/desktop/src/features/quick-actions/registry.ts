@@ -57,9 +57,6 @@ export const buildAgentActions = (
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
     .map<QuickActionItem>((agent) => {
-      // Authoritative source: agentKindOverride is populated by the workflow
-      // step that spawned the agent. Fall back to name-based inference for
-      // ad-hoc agents created without a workflow context.
       const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name);
       return {
         id: `agent:${agent.id}`,

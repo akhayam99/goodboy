@@ -69,7 +69,6 @@ describe('orchestration, happy path: 3 runs, no conflict, last_write_wins', () =
     expect(result.runStatuses).toHaveLength(3);
     expect(result.runStatuses.every((r) => r.status === 'completed')).toBe(true);
 
-    // per-runId outputSummary preserved
     expect(result.runStatuses.find((r) => r.runId === rid('run-a'))?.outputSummary).toBe(
       'output-run-a',
     );
@@ -80,7 +79,6 @@ describe('orchestration, happy path: 3 runs, no conflict, last_write_wins', () =
       'output-run-c',
     );
 
-    // disjoint touches → 0 conflicts
     const touches: ReadonlyArray<RunFileTouches> = [
       { runId: rid('run-a'), files: ['src/a.ts'] },
       { runId: rid('run-b'), files: ['src/b.ts'] },
@@ -89,7 +87,6 @@ describe('orchestration, happy path: 3 runs, no conflict, last_write_wins', () =
     const conflicts = detectConflicts(touches);
     expect(conflicts).toHaveLength(0);
 
-    // resolveConflicts with empty conflict list → empty resolutions
     const resolutions = await resolveConflicts({
       conflicts,
       runStatuses: [],
@@ -124,7 +121,6 @@ describe('orchestration, 1 run fails, 2 complete', () => {
     const completed = result.runStatuses.filter((r) => r.status === 'completed');
     expect(completed).toHaveLength(2);
 
-    // conflict resolution only uses completed runs
     const touches: ReadonlyArray<RunFileTouches> = [
       { runId: rid('run-a'), files: ['src/shared.ts'] },
       { runId: rid('run-c'), files: ['src/shared.ts'] },
@@ -132,7 +128,6 @@ describe('orchestration, 1 run fails, 2 complete', () => {
     const conflicts = detectConflicts(touches);
     expect(conflicts).toHaveLength(1);
 
-    // only completed run statuses passed in
     const completedStatuses = result.runStatuses
       .filter((r) => r.status === 'completed')
       .map((r) => ({
@@ -171,7 +166,6 @@ describe('orchestration, all 3 runs fail', () => {
     expect(result.runStatuses.every((r) => r.status === 'failed')).toBe(true);
     expect(result.runStatuses.every((r) => r.error === 'crash')).toBe(true);
 
-    // no completed runs → pass empty conflicts + empty statuses
     const resolutions = await resolveConflicts({
       conflicts: [],
       runStatuses: [],
@@ -197,7 +191,6 @@ describe('orchestration, conflict detected, last_write_wins', () => {
 
     expect(result.runStatuses.every((r) => r.status === 'completed')).toBe(true);
 
-    // run-a and run-b both touch src/foo.ts; run-c is disjoint
     const touches: ReadonlyArray<RunFileTouches> = [
       { runId: rid('run-a'), files: ['src/foo.ts', 'src/a.ts'] },
       { runId: rid('run-b'), files: ['src/foo.ts', 'src/b.ts'] },
@@ -207,7 +200,6 @@ describe('orchestration, conflict detected, last_write_wins', () => {
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0]!.file).toBe('src/foo.ts');
 
-    // run-b completed later → wins
     const runStatuses = [
       {
         runId: rid('run-a'),
@@ -235,7 +227,6 @@ describe('orchestration, conflict detected, last_write_wins', () => {
     expect(resolutions[0]!.winnerRunId).toBe(rid('run-b'));
     expect(resolutions[0]!.reason).toBe('last_write_wins');
 
-    // tie-break test: same completedAt → lower runId wins (run-a < run-b)
     const tieStatuses = [
       {
         runId: rid('run-a'),
@@ -278,7 +269,6 @@ describe('orchestration, manual strategy, missing pick throws ManualResolutionRe
     const conflicts = detectConflicts(touches);
     expect(conflicts).toHaveLength(1);
 
-    // no manualPicks → must throw
     await expect(
       resolveConflicts({
         conflicts,
@@ -307,7 +297,6 @@ describe('orchestration, cancel mid-flight', () => {
     const runs = [makeRun(0, 'run-a'), makeRun(1, 'run-b'), makeRun(2, 'run-c')];
     const group = makeGroup();
 
-    // latches: spawnRun resolves only after we release each latch
     type Latch = { resolve: (v: { status: AgentStatus; outputSummary: null }) => void };
     const latches: Latch[] = [];
 
@@ -322,10 +311,8 @@ describe('orchestration, cancel mid-flight', () => {
     const deps: SchedulerDeps = { spawnRun, cancelRun };
     const handle = fanOut(deps, group, runs);
 
-    // wait until all 3 spawnRun calls have been initiated
     await vi.waitFor(() => expect(spawnRun).toHaveBeenCalledTimes(3));
 
-    // cancel before any resolve
     await cancelGroup(handle);
 
     expect(cancelRun).toHaveBeenCalledTimes(3);
@@ -333,7 +320,6 @@ describe('orchestration, cancel mid-flight', () => {
     expect(cancelRun).toHaveBeenCalledWith(rid('run-b'));
     expect(cancelRun).toHaveBeenCalledWith(rid('run-c'));
 
-    // release latches so awaitMerge can settle (simulating cancelled runs resolving as failed)
     for (const latch of latches) {
       latch.resolve({ status: 'failed' as AgentStatus, outputSummary: null });
     }

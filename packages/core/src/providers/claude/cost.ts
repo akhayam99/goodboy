@@ -17,9 +17,6 @@ const SONNET_PRICE: ModelPrice = {
   cachedInputPerMtok: 0.3,
 };
 
-// Keep every model advertised in PROVIDER_CAPABILITIES (../capabilities.ts)
-// priced here. A model missing from this table silently bills at the sonnet
-// FALLBACK, which under-counts Opus spend ~5x.
 const PRICES: Record<string, ModelPrice> = {
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,

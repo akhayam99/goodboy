@@ -105,8 +105,6 @@ async function* spawnCursor(
     request.workingDir,
     '--model',
     request.model,
-    // --force is the cursor-agent equivalent of --dangerously-skip-permissions:
-    // allows all tool/command execution without interactive confirmation prompts.
     '--force',
   ];
 

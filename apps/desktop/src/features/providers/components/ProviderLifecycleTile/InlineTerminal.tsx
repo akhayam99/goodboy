@@ -34,13 +34,6 @@ type Props = {
   readonly heightClass?: string;
 };
 
-// Wraps GenericTerminalPanel with a lifecycle-scoped driver. The driver
-// filters output/exit events by runId so concurrent lifecycle runs (e.g. user
-// installs claude then immediately starts codex install) never bleed into
-// each other's xterm view.
-//
-// The same component is reused in the connect modal at a larger size by
-// overriding heightClass, see ProviderConnectModal.
 export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props) => {
   const driver = useMemo<TerminalDriver>(
     () => ({

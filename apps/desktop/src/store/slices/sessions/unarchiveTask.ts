@@ -13,7 +13,6 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
     const { archivedAt: _drop, ...restored } = prev;
     const restoredSession = restored as Session;
 
-    // Optimistic move: out of archived cache, into `sessions`.
     set((state) => {
       const cached = state.archivedSessions[workspaceId];
       const nextArchived = cached
@@ -29,7 +28,6 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
     try {
       await unarchiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
-      // Rollback move.
       set((state) => {
         const cached = state.archivedSessions[workspaceId];
         const nextArchived = cached
@@ -43,9 +41,6 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
-    // Repopulate per-session caches we cleared on archive (only meaningful if
-    // we're on the same workspace, otherwise the next setCurrentWorkspace
-    // will hydrate fresh).
     if (get().currentWorkspaceId !== workspaceId) return;
     try {
       const [worktreeRows, runs] = await Promise.all([
@@ -66,8 +61,6 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
         };
       });
-    } catch {
-      // Best-effort: setCurrentSession reloads on demand if the user opens it
-    }
+    } catch {}
   };
 };

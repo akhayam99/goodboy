@@ -15,8 +15,6 @@ export const setSessionConfig = (set: SetFn, get: GetFn) => {
       const nextEffort = fields.effort !== undefined ? fields.effort : (effort ?? null);
       const nextModel =
         fields.modelOverride !== undefined ? fields.modelOverride : (modelOverride ?? null);
-      // Changing the session-level default in db clears provider_override; mirror
-      // that here so the ChatInput pill drops back to "session default" too.
       const nextProvider =
         fields.defaultProvider !== undefined && fields.defaultProvider !== null
           ? null

@@ -16,16 +16,6 @@ import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
 
-// Glue layer between turn output (files touched + assistant text markers)
-// and the persistent ContextPanel slots. Called by the desktop store at the
-// end of every turn. Thin on purpose: heavy logic lives in extractors.ts and
-// ContextEngine; this fn orchestrates load → merge → upsert per slot.
-
-// Provenance of the agent that produced the turn whose markers we're about
-// to persist. Used to stamp open_questions with their creator so the UI can
-// cluster them per-agent and route answers back to the right chat. The
-// store resolves this from `activeAgentId` + workflow templates before
-// invoking auto-populate.
 export type AgentContext = {
   readonly agentId: AgentId;
   readonly workflowId?: WorkflowId;
@@ -62,9 +52,6 @@ export const autoPopulateContext = async (
   pushUpdate(updates, slots, 'files_touched', input.filesEdited);
   pushUpdate(updates, slots, 'decisions', decisions);
 
-  // open_questions: add new ones, then remove resolved. Compose against the
-  // pending update if `pushUpdate` already staged one for this slot, so
-  // resolutions and additions in the same turn don't fight each other.
   const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
   let nextQuestions = mergeIntoSlot(
     existingQuestions,
@@ -79,10 +66,6 @@ export const autoPopulateContext = async (
     await engine.upsert(input.sessionId, upd.key, upd.value);
   }
 
-  // Persist questions to the dedicated `open_questions` table so the Questions
-  // tab can render gamified per-question cards with suggestion chips. Dedup is
-  // enforced by a partial unique index `(session_id, text) WHERE status='open'`;
-  // re-emitting the same question across turns is a no-op.
   let insertedCount = 0;
   for (const q of freshQuestions) {
     const res = await insertOpenQuestion(input.db, {
@@ -126,8 +109,6 @@ function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
 function cryptoRandomUUID(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
   if (g.crypto?.randomUUID) return g.crypto.randomUUID();
-  // Fallback: RFC4122 v4 with Math.random, used only when the runtime lacks
-  // crypto.randomUUID (older test environments).
   const rnd = () =>
     Math.floor(Math.random() * 0x10000)
       .toString(16)

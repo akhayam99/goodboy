@@ -22,15 +22,8 @@ type Props = {
   readonly onClose: () => void;
 };
 
-// One modal for the entire install + connect path. Stays mounted through
-// both phases so the user does not lose context when install finishes and
-// the flow advances to sign-in. Closing during an in-flight run is allowed:
-// the PTY keeps running, status returns to the tile, reopening replays
-// terminal output from the GenericTerminalPanel cache keyed by runId.
 export const ProviderConnectModal = ({ providerId, initialAction, onClose }: Props) => {
   const open = providerId !== null;
-  // Pin the active providerId across the close animation so the body keeps
-  // rendering its content for the duration of the dialog's exit transition.
   const [pinned, setPinned] = useState<ProviderId | null>(null);
   const [pinnedAction, setPinnedAction] = useState<ProviderLifecycleAction>(initialAction);
 
@@ -70,10 +63,6 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
 
   const [didAutoStart, setDidAutoStart] = useState(false);
 
-  // Auto-dispatch the initial action exactly once per open. Only if the
-  // lifecycle is resting and the provider is not already in the desired
-  // terminal state (e.g. opening the install modal on an already-installed
-  // provider should not reinstall it).
   useEffect(() => {
     if (!open) {
       setDidAutoStart(false);

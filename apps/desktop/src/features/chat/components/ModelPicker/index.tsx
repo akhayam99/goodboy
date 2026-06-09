@@ -100,10 +100,6 @@ export const ModelPicker = ({
   const showEffort = effortLevels !== null;
   const tier = modelTier(model);
 
-  // Two-level grouping: family → (subfamily ?? null) → ids. Subfamily=null
-  // means "render as a flat chip row under the family label" (composer,
-  // cursor-auto). Subfamily set means "render as a FamilyVersionRow" with
-  // a subfamily label and version chips.
   const groupedModels = useMemo(() => {
     const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b));
     const byFamily = new Map<ModelFamily, Map<string | null, string[]>>();
@@ -191,9 +187,6 @@ export const ModelPicker = ({
           aria-label="model picker"
           className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-2 text-xs shadow-lg ring-1 ring-border-soft"
         >
-          {/* Session default banner: shows what each new turn falls back to when
-              no override is active. Surfaces "override active" status without
-              hunting through chip styles. */}
           <div
             className={cn(
               'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-[10px] leading-relaxed',
@@ -219,7 +212,6 @@ export const ModelPicker = ({
             ) : null}
           </div>
 
-          {/* Provider */}
           <PickerSection label="Provider" hint="Which CLI agent runs your turns">
             <div className={CHIP_ROW}>
               {providers.map((id) => {
@@ -249,7 +241,6 @@ export const ModelPicker = ({
           </PickerSection>
           <PickerDivider />
 
-          {/* Model, family/subfamily/variant chip layout. */}
           {[...groupedModels.entries()].map(([fam, subMap]) => {
             const subKeys = [...subMap.keys()];
             const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
@@ -299,7 +290,6 @@ export const ModelPicker = ({
           })}
           <PickerDivider />
 
-          {/* Effort, always visible */}
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
               <div className={CHIP_ROW}>
@@ -327,7 +317,6 @@ export const ModelPicker = ({
           </PickerSection>
           <PickerDivider />
 
-          {/* Verbosity */}
           <PickerSection label="Verbosity" hint="How detailed the replies should be">
             <div className={CHIP_ROW}>
               {VERBOSITY_LEVELS.map((level) => (

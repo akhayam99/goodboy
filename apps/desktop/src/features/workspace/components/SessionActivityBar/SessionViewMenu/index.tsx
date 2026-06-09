@@ -51,7 +51,6 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
       const el = triggerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      // anchor below-right of trigger; clamp inside the viewport.
       const desiredLeft = rect.left;
       const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_MARGIN;
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);

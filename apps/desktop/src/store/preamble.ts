@@ -27,8 +27,6 @@ export const buildContextPreamble = (
 
 const PRIOR_TURNS_HEADER = '## prior turns (this conversation, most recent last)';
 
-// codex/cursor are stateless per-invocation. inject recent user/assistant text
-// so they keep working memory. claude uses --resume (M1) so skip there.
 export const buildPriorTurnsBlock = (
   transcripts: ReadonlyArray<TurnEvent>,
   maxTokens: number,

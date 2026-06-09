@@ -5,8 +5,6 @@ type Props = {
   readonly url: string;
 };
 
-// Surfaces a detected OAuth URL with click-through to the system browser.
-// Never auto-opens, the user owns the navigation decision.
 export const OpenInBrowserButton = ({ url }: Props) => {
   return (
     <button

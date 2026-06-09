@@ -33,10 +33,6 @@ export const Textarea = ({
     el.style.overflowY = el.scrollHeight > maxPx ? 'auto' : 'hidden';
   }, [autoGrow, maxPx, minPx]);
 
-  // rAF inside useLayoutEffect: the consumer often mounts the textarea inside
-  // an animating Dialog. Measuring scrollHeight before the parent has finished
-  // layout returns inflated values, which is what made the input spawn at a
-  // huge height on first mount.
   useLayoutEffect(() => {
     const id = requestAnimationFrame(resize);
     return () => cancelAnimationFrame(id);

@@ -13,8 +13,6 @@ export const OnboardingCard = () => {
   const progress = useOnboardingProgress();
 
   if (progress.finished) return null;
-  // Collapsed hides the checklist, but a freshly-completed run still earns
-  // its wrap-up, so the completed state ignores the collapsed flag.
   if (!progress.isDone && progress.collapsed) return null;
 
   return (

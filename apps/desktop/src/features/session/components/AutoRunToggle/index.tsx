@@ -40,8 +40,6 @@ export const AutoRunToggle = ({ session }: Props) => {
       aria-label={ariaLabel}
       aria-pressed={on}
       className={cn(
-        // Fixed height so the row never reflows vertically when the label
-        // appears. Width grows leftward into the row as 'auto' fades in.
         'inline-flex h-6 shrink-0 items-center justify-end rounded-md px-1 transition-colors',
         cls,
       )}

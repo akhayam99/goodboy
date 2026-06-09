@@ -7,12 +7,6 @@ export type ParseContext = {
   readonly onUnknown?: (type: string, payload: unknown) => void;
 };
 
-// gemini-cli v0.x emits plain text on stdout in headless mode (`-p <prompt>`).
-// No stable structured streaming schema is documented today; we fall back to
-// treating each non-empty line as an assistant_text delta. When future versions
-// gain a JSON output flag, the JSON branch below already handles a small set
-// of expected types (mirrors codex.parser conventions) so we can opt in by
-// passing `--output-format json` from turn.rs without rewriting this file.
 const KNOWN_TYPES = new Set(['response.delta', 'response.completed', 'usage', 'error']);
 
 type UsagePayload = {
@@ -47,8 +41,6 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
   const payload = tryParseJson(trimmed);
 
   if (payload === null) {
-    // Plain-text mode: every line is text the model produced. Preserve newline
-    // so multi-line output renders correctly in the transcript.
     return [{ kind: 'assistant_text', runId: ctx.runId, delta: `${trimmed}\n`, at }];
   }
 

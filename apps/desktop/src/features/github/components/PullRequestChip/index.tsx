@@ -15,11 +15,6 @@ type PrStateMeta = {
   readonly bgClass: string;
 };
 
-// Single source of truth for PR-state visual language. The activity rail
-// renders icon-only; the GithubCard renders icon + #number; the right-panel
-// GitHub tab and status-bar signal render the full badge with label word.
-// Colors lift from existing tokens (success/merged/danger/muted) so there's
-// no new palette work, see plan §H.5.
 const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   draft: {
     icon: GitPullRequestDraft,
@@ -105,7 +100,6 @@ export const PullRequestChip = ({
     );
   }
 
-  // badge: full colored chip with label word
   return (
     <span
       className={cn(

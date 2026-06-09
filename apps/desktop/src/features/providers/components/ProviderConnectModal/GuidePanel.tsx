@@ -5,9 +5,6 @@ type Props = {
   readonly guide: ProviderGuide;
 };
 
-// Sidebar inside the modal: subscription line, numbered steps, docs link.
-// Scrollable independently of the terminal so a long guide does not push the
-// PTY off-screen on small viewports.
 export const GuidePanel = ({ guide }: Props) => {
   return (
     <div className="flex h-full flex-col gap-4">

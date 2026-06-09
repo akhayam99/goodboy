@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks, hoisted before store import.
 const cancelTurnSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({

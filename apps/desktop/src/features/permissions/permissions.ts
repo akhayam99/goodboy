@@ -103,7 +103,6 @@ export type PermissionAuditInsertPayload = {
   readonly decidedAt: IsoDateTime;
 };
 
-// Permission rule commands (#176).
 export const invokePermissionRuleList = async (args: {
   scope: PermissionRuleScope;
   workspaceId?: WorkspaceId;
@@ -135,7 +134,6 @@ export const invokePermissionRuleUpsert = async (
   return rowToPermissionRule(row);
 };
 
-// Permission audit commands (#177).
 export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
 ): Promise<PermissionAuditEntry> => {
@@ -156,8 +154,6 @@ export const invokePermissionAuditInsert = async (
   });
   return rowToAuditEntry(row);
 };
-
-// Permission audit retry queue (#196).
 
 type RawAuditRetryRow = {
   readonly id: string;

@@ -37,10 +37,6 @@ export class SkillRegistry {
     this.now = deps.now;
   }
 
-  /**
-   * Collects skill file paths from a flat `.kay/skills/*.md` directory.
-   * Returns an empty array when the directory is absent.
-   */
   private async collectKaySkills(rootPath: string): Promise<SkillCandidate[]> {
     const skillsDir = `${rootPath}/.kay/skills`;
     let filenames: string[];
@@ -56,19 +52,10 @@ export class SkillRegistry {
       .map((f) => ({ filePath: `${skillsDir}/${f}` }));
   }
 
-  /**
-   * Collects skill file paths from the Claude Code convention:
-   * `.claude/skills/<skill-name>/SKILL.md` (one subdirectory per skill).
-   * Returns an empty array when the directory is absent.
-   */
   private async collectClaudeSkills(rootPath: string): Promise<SkillCandidate[]> {
     return this.collectNestedSkills(`${rootPath}/.claude/skills`);
   }
 
-  /**
-   * Shared helper for nested skill directory layouts where each skill lives in
-   * its own subdirectory containing a `SKILL.md` (Claude convention).
-   */
   private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
     let entries: string[];
     try {

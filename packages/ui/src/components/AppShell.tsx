@@ -127,7 +127,6 @@ export const AppShell = ({
         const next = Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, e.clientX));
         setLeftWidth(next);
       } else {
-        // right handle: width grows as cursor moves toward the left edge
         const next = Math.max(
           RIGHT_SIDEBAR_MIN,
           Math.min(RIGHT_SIDEBAR_MAX, window.innerWidth - e.clientX),
@@ -172,7 +171,6 @@ export const AppShell = ({
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
     const step = e.shiftKey ? 32 : 8;
-    // ArrowLeft → grow right sidebar; ArrowRight → shrink it
     setRightWidth((w) =>
       Math.max(
         RIGHT_SIDEBAR_MIN,

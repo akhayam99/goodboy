@@ -77,13 +77,8 @@ import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-misma
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
-// Prefix-mode trigger for the in-chat quick-actions popover: a leading
-// $ / ~ @ followed by a single space-free token. A space closes the popover
-// so the message sends normally.
 const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
-// Idle-state composer placeholder, shows the whole prefix grammar at once
-// so the user is taught every quick-action up front, not over time.
 const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
 const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
@@ -765,13 +760,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
   }, [isRunning, queue, dispatchTurn]);
 
-  // Native drag-drop. Tauri swallows DOM drop events for OS-file drags by
-  // default (dragDropEnabled=true) and emits a window-global event instead.
-  // We register the listener ONCE per component lifetime. Refs carry the
-  // latest providerDisconnected/showToast so dep churn never tears the
-  // listener down mid-drag. Coordinate semantics vary across Tauri builds
-  // (some emit physical px, some logical), so the hit-test tries both
-  // interpretations against the composer's bounding rect.
   const providerDisconnectedRef = useRef(providerDisconnected);
   providerDisconnectedRef.current = providerDisconnected;
   const showToastRef = useRef(showToast);
@@ -781,10 +769,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    // Rect-based hit-test, tolerant to whichever coordinate space Tauri
-    // emits on this build (physical vs logical px). `elementFromPoint`
-    // proved unreliable during an active OS drag: the native drag overlay
-    // sits above the DOM and the hit-test returns null.
     const isInsideComposer = (px: number, py: number): boolean => {
       const el = composerRef.current;
       if (!el) return false;
@@ -840,11 +824,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           switch (p.type) {
             case 'enter':
             case 'over':
-              // Tauri only fires these while the cursor is over our webview,
-              // so an unconditional `true` means "drag is happening here".
-              // Good enough to highlight the composer as the drop target.
-              // We don't gate on hit-test: native drag overlays defeat the
-              // DOM, and the user knows there's only one drop zone.
               setIsDragging(true);
               break;
             case 'leave':
@@ -861,8 +840,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         if (cancelled) off();
         else unlisten = off;
       } catch (err) {
-        // Webview API unavailable in non-Tauri test env. Log so a real
-        // failure in dev surfaces in the console instead of being silent.
         console.warn('drag-drop listener registration failed:', err);
       }
     })();
@@ -912,14 +889,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setScopeNudgeEventId(null);
   }, [selectedAgentId]);
 
-  // Load workspace scripts + workflows so the `$` and `~` quick-actions can
-  // list them.
   useEffect(() => {
     void loadScripts(session.workspaceId);
     void loadPhaseTemplates(session.workspaceId);
   }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
 
-  // Load this session's agents so the `@` quick-action can list them.
   useEffect(() => {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
@@ -964,10 +938,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
   }, [rightSizePending, rightSizeSuggested]);
 
-  // Priority-ranked suggestions, folded into one stack so a pile of nudges
-  // can't shove the composer below the fold (plan §D.1). Order: plan-ready >
-  // scope-mismatch > right-size. RoutingIndicator stays outside, it's a
-  // status line, not an action card.
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
   if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
     suggestions.push({
@@ -1414,8 +1384,6 @@ function AttachmentChip({
   );
 }
 
-// Renders the top-priority suggestion; any others fold behind a counter so
-// the stack never grows tall enough to push the composer below the fold.
 function SuggestionStack({
   items,
 }: {

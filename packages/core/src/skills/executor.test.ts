@@ -81,7 +81,6 @@ describe('SkillExecutor.resolve', () => {
       workingDir: '/workspace',
       runner,
     });
-    // placeholder stays unreplaced since no scripts ran
     expect(result).toBe('result={{script:other}}');
     expect(runner.runScript).not.toHaveBeenCalled();
   });

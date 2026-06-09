@@ -1,17 +1,5 @@
 import { useEffect, useState } from 'react';
 
-/**
- * Shared global clock. Replaces per-component `setInterval(() => setNow(Date.now()), ms)`
- * patterns that explode when one parent renders many "relative time" rows
- * (one ticker per agent, per PR card, etc.). A single timer per cadence
- * publishes to all subscribers via Object.is, components that don't care
- * about the new tick (because the visible label rounds to the same value)
- * still skip work via React.memo.
- *
- * `cadenceMs` is bucketed (5s / 30s / 60s) so two callers asking for 5s
- * share one timer rather than scheduling their own.
- */
-
 type Cadence = 5_000 | 15_000 | 30_000 | 60_000;
 
 type Ticker = {

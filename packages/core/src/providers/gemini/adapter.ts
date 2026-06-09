@@ -74,8 +74,6 @@ export class GeminiAdapter implements ProviderAdapter {
     });
   }
 
-  // Free-tier Google AI users are unmetered; paid users can wire a per-model
-  // price via GeminiAdapterDeps.priceOverride to surface estimated USD.
   cost(usage: ProviderUsage, model: string): number {
     return computeGeminiCostUsd(usage, model, this.priceOverride);
   }
@@ -92,12 +90,6 @@ async function* spawnGemini(
   onUnknown: (type: string, payload: unknown) => void,
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
-  // gemini-cli headless flags (v0.x, May 2026):
-  //   gemini -m <model> -p <prompt>
-  // -p forces non-interactive mode and writes the model response to stdout.
-  // Working directory is taken from process cwd; we set it via spawn options.
-  // systemPrompt is prepended to userMessage since the CLI has no
-  // `--system-prompt` flag yet.
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;

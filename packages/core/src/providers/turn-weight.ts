@@ -33,7 +33,6 @@ const ARCHITECTURAL_VERBS =
 const MULTI_STEP =
   /\bfirst\b.+\bthen\b.+\bthen\b|\bimplement\b.+\band\s+also\b|\brefactor\b.+\bacross\b/i;
 
-// Hard wrap of length-related heuristic constants so heavy/light bands are explicit.
 const SHORT_LEN = 200;
 const QUESTION_LEN = 400;
 const HEAVY_LEN = 1500;
@@ -62,8 +61,6 @@ function hasMultiLineStructure(text: string): boolean {
 }
 
 function countDistinctAsks(text: string): number {
-  // Conjunctions linking two imperative verbs ("rename X and delete Y") count as
-  // multi-ask. We approximate by counting `and` joiners between verb-like tokens.
   const matches = text.match(
     /\b(and|then|also)\s+(implement|add|remove|delete|create|build|design|refactor|migrate|fix|update|rename|move)\b/gi,
   );

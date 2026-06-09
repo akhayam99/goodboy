@@ -99,10 +99,6 @@ export const ContextPanel = ({
     void loadSessionOpenQuestions(session.id);
   }, [isActive, session.id, loadSessionOpenQuestions]);
 
-  // Files + GitHub data lifted to the panel so the tab badges stay live
-  // regardless of the active tab, and the PR / diff-comment fetches fire
-  // even before the user visits those tabs, matching the behaviour of the
-  // old SessionMetaFooter, which always rendered for the current session.
   const filesTouched = useFilesTouched(session.id, isActive);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
@@ -130,11 +126,6 @@ export const ContextPanel = ({
 
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
 
-  // Self-heal the branch cache: an agent can `git switch` directly in the
-  // worktree, moving HEAD without going through changeSessionBranch, which
-  // leaves the sidebar footer chip on a stale branch. Read the real branch off
-  // worktree_status and write it back. Re-runs after each turn (summarizer
-  // tick) and on file-count changes, the moments a branch switch is likely.
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   useEffect(() => {
     if (!isActive || !workingDir) return;
@@ -169,8 +160,6 @@ export const ContextPanel = ({
     [slots, workingDir],
   );
 
-  // open_questions is pinned in a sticky footer (visible across both tabs);
-  // goal/decisions/last_output_summary live in the Context tab.
   const visibleSlotKeys = useMemo(
     () =>
       SLOT_KEYS.filter((k) => k !== 'files_touched' && k !== 'open_questions').sort((a, b) => {
@@ -184,7 +173,6 @@ export const ContextPanel = ({
     [],
   );
 
-  // Count badges on the tab strip, at-a-glance counts beat hunting through.
   const plansBadge = plans.length > 0 ? plans.length : null;
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const questionsBadge = questions.length > 0 ? questions.length : null;
@@ -255,10 +243,6 @@ export const ContextPanel = ({
           </header>
         </div>
 
-        {/* Tab content, Context / Plans / Questions / Files / GitHub / Terminal. Open
-            Questions is pinned across every tab via the sticky footer below.
-            Terminal is always mounted (visibility toggled) so output is not
-            lost when the user switches away mid-run. */}
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
             className={cn(
@@ -310,8 +294,6 @@ export const ContextPanel = ({
 
         <Divider />
 
-        {/* Sticky footer. Open questions are owned by the Questions tab now,
-            the footer is just a one-click entry point when any are unresolved. */}
         {questions.length > 0 ? (
           <button
             type="button"
@@ -595,9 +577,6 @@ function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
   const count = pending.length;
   if (count === 0) return null;
 
-  // Success is self-evident (this strip disappears as the queue drains and each
-  // chat chip flips to "conversation resolved"); push/partial failures surface
-  // through emitNotification inside pushAllResolutions.
   const onPush = async () => {
     if (busy) return;
     setBusy(true);
@@ -890,11 +869,6 @@ function SlotRow({
     [onCommit],
   );
 
-  // Per-slot skeleton: while the slots fetch is still in flight and this
-  // particular slot hasn't materialized yet, show a placeholder. Sibling
-  // slots that already arrived render their content independently. Must
-  // come after all hook calls, React requires a stable hook order across
-  // renders, and slot can flip between undefined/defined on workspace switch.
   if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
 
   const Icon = meta?.icon;
@@ -926,9 +900,6 @@ function SlotRow({
     </button>
   ) : null;
 
-  // Empty slot → blends into the panel bg (no surface). Slot with content →
-  // a step brighter so it reads as "active / has signal." Same rule for every
-  // slot regardless of read-only, emptiness is the only switch.
   const inactive = !hasValue;
   const ringClass = inactive
     ? 'ring-border-soft/30'
@@ -969,9 +940,7 @@ function SlotRow({
             </span>
           ) : null}
         </div>
-        {/* History first, then chevron at the far right. The history button
-            stays hidden until we already have entries in cache, listing it
-            without loading would force a per-slot fetch on every render. */}
+
         {history.length > 0 ? (
           <button
             type="button"
@@ -1207,9 +1176,6 @@ function SummarizerBadge({
   const retrySummarizer = useAppStore((s) => s.retrySummarizer);
   const [retrying, setRetrying] = useState(false);
 
-  // Reset the retry-spin once the run actually kicks off, the store flips
-  // status to 'running' synchronously, but the icon-only spin is what tells
-  // the user their click was registered.
   useEffect(() => {
     if (status !== 'error') setRetrying(false);
   }, [status]);
@@ -1228,13 +1194,6 @@ function SummarizerBadge({
     </span>
   );
 
-  // Running state: small spinner glyph next to the cost pill. Replaces the
-  // earlier full-panel spin-border, which forced a 400×800px composite layer
-  // with a conic-gradient + mask-composite animation, the heaviest CSS shape
-  // possible on WKWebView. With 5 keep-alive ContextPanels each potentially
-  // wearing one, the GPU compositor stalled for 200-300ms during cursor
-  // movement (verified via Web Inspector perf trace). A 10px Loader2 is one
-  // tiny layer, negligible cost.
   if (status === 'running') {
     return (
       <span className="flex items-center gap-1">

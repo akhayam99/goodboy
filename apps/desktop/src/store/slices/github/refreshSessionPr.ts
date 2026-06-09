@@ -13,10 +13,6 @@ type Params = {
 
 export const refreshSessionPr = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
-    // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
-    // re-activation) before the first ~1s GitHub round-trip resolves. The
-    // existing `loading` flag is the right signal, since this action sets it
-    // to true synchronously below.
     if (!opts?.force && get().sessionGithub[sessionId]?.loading) return;
     const branch = get().sessionBranches[sessionId];
     if (!branch) return;
@@ -40,10 +36,6 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         },
       },
     }));
-    // Retry loop. Polling sweeps pass `retries: 1` so a transient gh
-    // failure gets a second chance; everything else defaults to a single
-    // attempt. The `slug === null` branch is a real success (no git repo
-    // for this workspace) and short-circuits without retrying.
     const maxAttempts = (opts?.retries ?? 0) + 1;
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -106,9 +98,6 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         lastErr = err;
       }
     }
-    // All attempts failed. `silent: true` (polling) suppresses the error
-    // chip, by design the timer-driven path shouldn't paint failures the
-    // user didn't ask for. Explicit refreshes keep the existing UI.
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,

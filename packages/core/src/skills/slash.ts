@@ -21,7 +21,7 @@ function tokenize(argsStr: string): ReadonlyArray<string> {
         token += s[i];
         i++;
       }
-      i++; // skip closing quote
+      i++;
       tokens.push(token);
     } else {
       let token = '';

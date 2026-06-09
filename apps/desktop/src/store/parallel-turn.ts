@@ -91,9 +91,6 @@ export const detectParallelGroup = (
   return { currentDef, groupDefs: siblings };
 };
 
-// Multiplexes turn_event envelopes to per-runId callbacks. Single global
-// listener routed by runId, N independent listeners on the same Tauri
-// channel would be wasteful.
 type RawTurnEnvelope = {
   readonly runId: string;
   readonly type: 'line' | 'end' | 'error';
@@ -115,11 +112,6 @@ type MultiplexedListener = {
   filesTouchedByRun: (runId: ProviderRunId) => ReadonlyArray<string>;
 };
 
-// Pick the stream parser matching the spawned provider. The single-run path
-// (sendTurn → runTurn) already selects per-provider; the parallel path must
-// too. Hardcoding claude's parseStreamJsonLine made a codex/cursor/gemini
-// parallel run yield no assistant_text, no file_edit (so detectConflicts saw
-// nothing and merged blind), and no usage.
 function parseProviderLine(
   provider: ProviderId,
   line: string,
@@ -172,9 +164,6 @@ async function startMultiplexedTurnListener(
   };
 }
 
-// Scheduler deps factory, design (b): pre-batch via invokeParallelPhaseRunSpawn,
-// scheduler.spawnRun resolves on per-runId 'end' envelope. Aligns with T2 (#208)
-// batched spawn design and keeps the scheduler purely an await-only orchestrator.
 type BuildSchedulerDepsArgs = {
   readonly listener: MultiplexedListener;
   readonly settleHandlers: Map<
@@ -193,7 +182,6 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
     spawnRun: async (run, onEvent) => {
       const handler = settleHandlers.get(run.runId);
       if (!handler) {
-        // Should be impossible, every run has a pre-registered handler.
         return { status: 'failed', outputSummary: null, error: 'no settle handler registered' };
       }
       handler.onEvent(onEvent);
@@ -238,10 +226,8 @@ export const runParallelBranch = async (
   } = inputs;
   const { now, effects, provider } = deps;
 
-  // Cap by maxParallelism, defensive guard; UI clamps but accept any spec list.
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
 
-  // Persist parallel group up front so the audit trail captures it even if spawn fails.
   const groupRow = await invokeParallelGroupCreate({
     sessionId: session.id,
     ordinal: currentDef.ordinal,
@@ -250,7 +236,6 @@ export const runParallelBranch = async (
   });
   const groupId = groupRow.id;
 
-  // Generate runIds + per-def prompts up front. Same ID flows through every layer.
   const runIds: ProviderRunId[] = cappedDefs.map(() => crypto.randomUUID() as ProviderRunId);
   const promptsByIndex: string[] = cappedDefs.map((def) =>
     buildStepPrompt({
@@ -260,7 +245,6 @@ export const runParallelBranch = async (
     }),
   );
 
-  // Boot listener BEFORE spawn, race-free: events arrive only after spawn.
   const listener = await startMultiplexedTurnListener(now, provider);
 
   const settleResolvers = new Map<
@@ -268,17 +252,8 @@ export const runParallelBranch = async (
     (v: { status: AgentStatus; error?: string }) => void
   >();
 
-  // Per-run scheduler progress callbacks, set by scheduler.spawnRun, invoked by
-  // listener. Listener registration must happen up front (before spawn) so no
-  // events leak before scheduler subscribes. Until spawnRun fires, scheduler
-  // progress callbacks are absent, benign because scheduler progress fan-out is
-  // best-effort UI plumbing; the canonical transcript stream still flows via
-  // appendTurnEvent below.
   const progressCallbacks = new Map<ProviderRunId, ((e: TurnEvent) => void) | null>();
 
-  // Per-run settle handlers, promise resolves when listener observes 'end'/'error'
-  // for the matching runId. scheduler.spawnRun awaits the promise; onEvent stores
-  // the scheduler's progress callback for the listener to dispatch into.
   const settleHandlers = new Map<
     ProviderRunId,
     {
@@ -312,9 +287,6 @@ export const runParallelBranch = async (
     });
   }
 
-  // Persist N phase_runs rows (status=running). Using the existing single-run
-  // invoker, group_id remains NULL for now (Rust insert doesn't accept it yet),
-  // but session_id+ordinal+stepId still uniquely identifies each run.
   for (let i = 0; i < cappedDefs.length; i++) {
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
@@ -331,13 +303,6 @@ export const runParallelBranch = async (
   }
   await effects.refreshPhaseRuns(session.id);
 
-  // Build ParallelAgent records the scheduler operates on. parallelIndex
-  // matches the spec's order. We DO NOT wire createParallelWorktrees here, the
-  // issue scope keeps worktree-per-run out of v1: every run executes in the
-  // session's primary worktree (existing single-run invariant). Workdir
-  // collisions are still surfaced by detectConflicts via emitted file_edit events.
-  // TODO (@ak, #414): wire createParallelWorktrees + per-run workingDir
-  // once Rust phase_run_insert accepts (group_id, parallel_index).
   const parallelRuns: ParallelAgent[] = cappedDefs.map((def, i) => ({
     id: crypto.randomUUID() as ParallelAgentId,
     groupId,
@@ -351,10 +316,6 @@ export const runParallelBranch = async (
     completedAt: null,
   }));
 
-  // Pre-batch spawn, keeps registration atomic on the rust side. Per-run prompts
-  // differ, so we issue one invokeParallelPhaseRunSpawn PER definition with a single
-  // run each. (T2's batch invoker is designed for same-prompt fan-out; here each
-  // run has a distinct prompt because each is a different phase definition.)
   const spawnPromises = cappedDefs.map(async (_def, i) => {
     const runId = runIds[i]!;
     return invokeParallelPhaseRunSpawn({
@@ -406,13 +367,6 @@ export const runParallelBranch = async (
     }
     await effects.refreshPhaseRuns(session.id);
 
-    // Auto-resolution path only, manual MergeDialog wiring is deferred. Reason:
-    // surfacing conflicts to the user requires emitting MergeResult into ChatView
-    // state (currently a TODO placeholder in MergeDialog). Default to the group's
-    // mergeStrategy; if 'manual' and unresolved, swallow the rejection and emit
-    // a warning event so the parallel branch never blocks the turn pipeline.
-    // TODO (@ak, #415): plumb MergeResult to ChatView and gate completion
-    // on user picks for mergeStrategy === 'manual'.
     const touches: ReadonlyArray<RunFileTouches> = runIds.map((rid) => ({
       runId: rid,
       files: listener.filesTouchedByRun(rid),
@@ -421,7 +375,6 @@ export const runParallelBranch = async (
 
     if (conflicts.length > 0) {
       if (mergeStrategy === 'manual') {
-        // Surface conflicts to UI via store, ChatView will open MergeDialog.
         effects.setMergeConflicts(session.id, conflicts);
       } else {
         try {
@@ -451,8 +404,6 @@ export const runParallelBranch = async (
     const allFailed = completedCount === 0 && merge.runStatuses.length > 0;
     const anyFailed = merge.runStatuses.some((rs) => rs.status !== 'completed');
 
-    // Emit synthetic phase_transition marking sync-point completion.
-    // We use the first runId for routing; UI treats parallel groups as one phase boundary.
     if (!allFailed) {
       effects.appendTurnEvent(orchestratingAgentId, session.id, {
         kind: 'step_transition',
@@ -464,8 +415,6 @@ export const runParallelBranch = async (
       });
     }
 
-    // Mark group complete only when at least one run completed. allFailed runs
-    // leave completedAt NULL so the user can inspect/retry without rolling up.
     if (!allFailed) {
       await invokeParallelGroupUpdateCompletedAt(groupId, now());
     }

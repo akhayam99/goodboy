@@ -1,10 +1,5 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-// gemini-cli does not surface token counts in its current output stream. Cost
-// is therefore not computable from usage data alone. Users on a paid Google AI
-// tier can wire a per-model override via providerPricingConfig in app settings;
-// overrides are applied in the desktop layer before recording telemetry.
-// Default: 0 (free tier / cost unknown).
 export const computeGeminiCostUsd = (
   usage: ProviderUsage,
   _model: string,

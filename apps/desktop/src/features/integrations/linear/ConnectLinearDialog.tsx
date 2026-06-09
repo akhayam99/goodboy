@@ -13,9 +13,6 @@ type Props = {
 };
 
 export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
-  // useShallow because `?? []` returns a fresh array on every missing-key
-  // lookup; without shallow comparison useSyncExternalStore loops on a
-  // snapshot mismatch in React 19.
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const connectLinear = useAppStore((s) => s.connectLinear);

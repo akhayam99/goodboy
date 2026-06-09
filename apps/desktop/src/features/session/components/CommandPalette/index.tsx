@@ -17,11 +17,6 @@ import {
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
 
-/**
- * Categorized palette with a prefix-routed grammar, the Raycast / Linear
- * model. Empty input shows all sources; typing a prefix (@ # : / ~ $ ?)
- * scopes the result list to one source. Plan section A.2.
- */
 type PaletteGroup = QuickActionGroup | 'recents';
 
 type PaletteItem = {
@@ -119,7 +114,6 @@ export const CommandPalette = ({
   const items = useMemo<ReadonlyArray<PaletteItem>>(() => {
     const out: PaletteItem[] = [];
 
-    // workspaces
     for (const w of workspaces) {
       out.push({
         id: `workspace:${w.id}`,
@@ -130,9 +124,6 @@ export const CommandPalette = ({
       });
     }
 
-    // sessions, archived live only as historical info, never in interactive
-    // surfaces (palette, switcher, polling). They show up under the Archived
-    // tab in the sidebar and that's it.
     for (const s of sessions) {
       if (s.archivedAt) continue;
       const ws = workspaces.find((w) => w.id === s.workspaceId);
@@ -145,7 +136,6 @@ export const CommandPalette = ({
       });
     }
 
-    // agents (in current session only, they only make sense there)
     if (currentSession) {
       for (const a of agents) {
         const kind: AgentKind =
@@ -161,7 +151,6 @@ export const CommandPalette = ({
       }
     }
 
-    // skills
     for (const sk of skills) {
       out.push({
         id: `skill:${sk.id}`,
@@ -175,7 +164,6 @@ export const CommandPalette = ({
       });
     }
 
-    // workflows
     for (const wf of workflows) {
       out.push({
         id: `workflow:${wf.id}`,
@@ -192,7 +180,6 @@ export const CommandPalette = ({
       });
     }
 
-    // scripts
     for (const sc of scripts) {
       out.push({
         id: `script:${sc.id}`,
@@ -214,7 +201,6 @@ export const CommandPalette = ({
       });
     }
 
-    // actions
     if (onOpenSettings) {
       out.push({
         id: 'action:settings',
@@ -233,7 +219,6 @@ export const CommandPalette = ({
       });
     }
 
-    // help
     if (onOpenShortcutHelp) {
       out.push({
         id: 'help:shortcuts',
@@ -269,8 +254,6 @@ export const CommandPalette = ({
     const { prefix, query: q } = parsed;
     const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
     if (q.length === 0) {
-      // When no query: prefix view shows the full scope; no-prefix view
-      // caps to keep the list manageable.
       return prefix ? scope.slice(0, 50) : scope.slice(0, 30);
     }
     return scope
@@ -315,7 +298,6 @@ export const CommandPalette = ({
       e.preventDefault();
       onClose();
     } else if (e.key === 'Tab' && query.length === 0) {
-      // empty + Tab → seed the next prefix (cycle through PREFIXES)
       e.preventDefault();
       const first = PREFIXES[0]!;
       setQuery(first.symbol);
@@ -345,7 +327,6 @@ export const CommandPalette = ({
           className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
 
-        {/* prefix legend strip when the input is empty, teaches grammar */}
         {parsed.prefix === null && query.length === 0 ? (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border-soft bg-subtle/30 px-3 py-1.5 text-[10px] text-muted-foreground">
             {PREFIXES.map((p) => (

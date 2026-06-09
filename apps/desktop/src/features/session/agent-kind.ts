@@ -74,9 +74,6 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
     },
   };
 
-// `fg` deliberately mirrors the `bg` hue so an icon (tinted via `bg`) and its
-// label text always read as the same colour. Using semantic tokens for `fg`
-// (text-primary/info/...) drifted from the tint and looked broken.
 export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; label: string }> = {
   scout: {
     bg: 'bg-sky-400',
@@ -125,13 +122,6 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
   },
 };
 
-// Roles the user can assign to a workflow step. Curated to exactly the agents
-// that are spawnable from the main "Create agent" menu (AGENT_KIND_ORDER where
-// visible !== false), so the picker never offers a role that isn't a real
-// agent. architect/product/explorer were dropped: they aren't distinct
-// spawnable kinds (they collapsed onto planner/generic/scout). 'custom' = the
-// generic agent. ROLE_TO_KIND/ROLE_LABEL still cover the dropped values so any
-// legacy step that used them still renders.
 export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
   'scout',
   'planner',
@@ -142,8 +132,6 @@ export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
   'custom',
 ];
 
-// Maps a workflow role to the persona kind used for the icon/colour/system
-// prompt. Roles without a 1:1 kind fall back to the closest visual match.
 export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   scout: 'scout',
   planner: 'planner',
@@ -157,8 +145,6 @@ export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   custom: 'generic',
 };
 
-// Inverse of ROLE_TO_KIND, used to seed a role for legacy steps that only have
-// a name (the kind is inferred from the name, then mapped back to a role).
 export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   scout: 'scout',
   planner: 'planner',
@@ -190,13 +176,7 @@ export const AGENT_KIND_DEFAULTS: Record<
     model: string;
     effort: 'low' | 'medium' | 'high';
     verbosity?: 'low' | 'medium' | 'high';
-    // Optional role bias appended to the claude system prompt via
-    // `--append-system-prompt`. Kept short to avoid drowning the user prompt;
-    // only kinds with a sharp role have one.
     systemPrompt?: string;
-    // When false, the kind is spawnable only programmatically (by other
-    // UI surfaces, e.g. the PR resolve flow) and is hidden from the manual
-    // "Create agent" menu. Defaults to visible.
     visible?: boolean;
   }
 > = {
@@ -257,9 +237,6 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
 };
 
-// Loose lookup for arbitrary role strings coming from WorkflowLibraryStep.role
-// (a free-form string), distinct from the strict AgentRole-keyed ROLE_TO_KIND
-// above. Keeps extra synonyms (writer, docs, resolver) the strict map omits.
 const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
   scout: 'scout',
   explorer: 'scout',
@@ -282,8 +259,6 @@ export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => 
 
 export const inferAgentKindFromName = (name: string): AgentKind => {
   const lower = name.toLowerCase();
-  // 'resolve' must come before 'review' so a name like `resolve: bob on
-  // foo.ts:42` lands as resolver, not reviewer.
   if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) return 'resolver';
   if (/scout|explor|survey|map/.test(lower)) return 'scout';
   if (/plan|design|architect|spec|product/.test(lower)) return 'planner';

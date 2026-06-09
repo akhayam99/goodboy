@@ -209,8 +209,6 @@ async function fetchReviewThreads(
     );
     const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
     const out: Array<PrComment> = [];
-    // First pass: map graphql node ids → PrComment id form so inReplyToId can be
-    // resolved against the same id space the UI uses.
     const nodeIdToCommentId = new Map<string, string>();
     for (const t of threads) {
       for (const c of t.comments?.nodes ?? []) {

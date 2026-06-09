@@ -13,8 +13,6 @@ export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
     ) {
       return;
     }
-    // Optimistic mark; the exit handler will land on the resting phase based on
-    // refreshed detection but preserves 'cancelled' if it sees it.
     set((state) => ({
       providerLifecycle: {
         ...state.providerLifecycle,

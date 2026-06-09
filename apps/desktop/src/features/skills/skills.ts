@@ -54,7 +54,6 @@ function rowToSkill(row: RawSkillRow): Skill {
   };
 }
 
-// CRUD wrappers (#132).
 export const invokeSkillList = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
   const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId });
   return rows.map(rowToSkill);
@@ -94,7 +93,6 @@ export const invokeSkillRescan = async (workspaceId: WorkspaceId): Promise<Skill
   return rows.map(rowToSkill);
 };
 
-// Invoke (#133).
 type SkillInvokeArgs = {
   readonly skillId: SkillId;
   readonly args: ReadonlyArray<string>;

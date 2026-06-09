@@ -144,8 +144,6 @@ export const WorkspacesSidebar = ({
 }: WorkspacesSidebarProps) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
-  // Linear Studio is gated on the workspace having a connected Linear
-  // integration; defensive `?.` because tests mock a shallow store.
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
@@ -166,9 +164,6 @@ export const WorkspacesSidebar = ({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  // `sessions` from the store is now archive-free by construction. Archived
-  // sessions live in `archivedSessions[workspaceId]`, loaded lazily when the
-  // Archived tab opens (see SessionActivityBar's onArchivedOpen).
   const activeSessions = sessions;
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -192,8 +187,6 @@ export const WorkspacesSidebar = ({
     if (!currentWorkspace) return;
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
-  // currentSession may live in either pool, useCurrentSession looks up both
-  //, so the dialog's `archived` flag needs to read from the session itself.
   const isCurrentArchived = !!currentSession?.archivedAt;
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
@@ -225,11 +218,6 @@ export const WorkspacesSidebar = ({
             const hasAnySession = totalSessions > 0;
             return (
               <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                {/* Sessions rail, always visible while a workspace is current.
-                    Earlier builds collapsed it when totalSessions <= 1, which
-                    moved the "new session" affordance into the detail header.
-                    That morphing made it hard to teach; now the rail is the
-                    single home for session navigation and creation. */}
                 <div className="w-28 shrink-0 overflow-hidden">
                   <SessionActivityBar
                     workspaceId={currentWorkspace.id}
@@ -256,9 +244,6 @@ export const WorkspacesSidebar = ({
                       <SessionMetaFooter session={currentSession} />
                     </>
                   ) : (
-                    /* No detail panel content when no session is selected: the
-                       sessions rail on the left already offers selection and
-                       creation, and the chat area renders the primary hero. */
                     <SidebarDetailHint hasAnySession={hasAnySession} />
                   )}
                 </div>
@@ -272,8 +257,6 @@ export const WorkspacesSidebar = ({
 
       <Divider />
 
-      {/* quick actions, jump straight into the palette pre-scoped to a
-          source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
       {currentWorkspace ? (
         <QuickActionsRow
           onOpenPalette={onOpenPalette}
@@ -340,9 +323,6 @@ export const WorkspacesSidebar = ({
         </div>
       </div>
 
-      {/* Mount these heavy dialogs only when open. Otherwise their inner
-          selectors (GuideDialog walks a few maps) re-evaluate on every store
-          update for a panel the user almost never has open. */}
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
@@ -370,9 +350,6 @@ export const WorkspacesSidebar = ({
 };
 
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
-  // Logo pinned top, expand control pinned bottom, the expand button holds
-  // the same bottom slot it occupies in the expanded sidebar's footer, so it
-  // doesn't jump when the rail toggles.
   return (
     <div className="flex h-full w-full flex-col items-center justify-between py-3">
       <DogMascot size={18} className="shrink-0 text-foreground" />
@@ -418,8 +395,7 @@ function QuickActionsRow({
           onClick={() => onOpenPalette('/')}
         />
       ) : null}
-      {/* Single entry point to the global Workflow Studio. Scripts is reachable
-          from the composer ($ prefix) and the palette, so it's dropped here. */}
+
       <QuickAction
         icon={<Layers size={12} className="text-primary" aria-hidden />}
         label="Workflows"
@@ -535,24 +511,6 @@ function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
   );
 }
 
-/**
- * Inline follow-up CTA rendered directly above the generic 'Create agent'
- * trigger when the session has an active plan ready to execute. The pitch is:
- * before the user picks any role from the spawn menu, the plan already
- * implies the answer, so offer it one click away.
- *
- * Visibility guards:
- *   - latest plan status is 'active' (a 'consumed' plan already has an
- *     implementer attached; no need to suggest again)
- *   - no open questions on the session (the user owes the agent an answer
- *     first; a spawn CTA on top would be noise)
- *   - if any pending workflow step will consume the plan itself (a
- *     plan-consuming kind: implementer/debugger/generic), defer to the
- *     workflow, suggesting a free-spawn on top would be noise
- *
- * Click goes through the store's runPlan, which (since the runPlan fix in
- * this branch) seeds an implementer agent with the plan body as kickoff.
- */
 function PlanReadySuggestion({ task }: { task: Session }) {
   const plans = useSessionPlans(task.id);
   const openQuestions = useSessionOpenQuestions(task.id);
@@ -568,9 +526,6 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   const latest = plans[plans.length - 1];
   if (!latest || latest.status !== 'active') return null;
 
-  // Per-workflow gate: find the workflow that owns the plan creator's step
-  // and block only if THAT workflow has open questions. Plans without a
-  // workflow context (ad-hoc creator) fall back to the orphan-or-any check.
   const creator = phaseRuns.find((r) => r.id === latest.agentId);
   const creatorWorkflow = creator?.stepId
     ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
@@ -578,7 +533,6 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   if (creatorWorkflow) {
     if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) return null;
   } else if (openQuestions.some((q) => q.status === 'open')) {
-    // No workflow context, keep legacy session-wide block (safe default).
     return null;
   }
 
@@ -714,10 +668,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
-  // Scope cross-agent maps to this session's runs. Subscribing to the raw
-  // store map (`s.agentRunHistory` etc.) re-renders this section every time
-  // any agent anywhere in the app updates, useShallow narrows the
-  // subscription to "did any of *my* runs' entries change".
   const agentRunHistory = useAppStore(
     useShallow((s) => {
       const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
@@ -944,8 +894,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [messages]);
 
-  // First user message per agent, kept stable so the chip's auto-label only
-  // ever derives from turn #1 even if later turns arrive.
   const firstUserTextByAgentId = useMemo(() => {
     const map = new Map<string, string>();
     for (const m of messages) {
@@ -972,11 +920,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
 
-  /**
-   * Cumulative telemetry per agent across every providerRun we recorded for
-   * that agent, needed so the cost/tokens row in the sidebar doesn't drop
-   * earlier providers' usage when the user swaps provider mid-session.
-   */
   const aggregatesByAgentId = useMemo(() => {
     const map = new Map<
       string,
@@ -1033,11 +976,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
 
-  /**
-   * Most recent turn telemetry per agent, walks agentRunHistory newest-first so
-   * the context bar always shows the latest prompt size, even if Session.runId
-   * lags behind (e.g. the DB row wasn't flushed before telemetry arrived).
-   */
   const latestTelemetryByAgentId = useMemo(
     () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
     [telemetryByRunId, phaseRuns, agentRunHistory],
@@ -1929,10 +1867,6 @@ function WorkflowStepRow({
 
   const ROW_BASE =
     'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
-  // Border telegraphs the live state. running wins over everything else
-  // (the conic-info sweep is the most attention-grabbing); the blocked
-  // step pulses warning to say "I'm waiting on you"; otherwise the
-  // base tone wins.
   const isRunning = run.status === 'running';
   const containerClass = isRunning
     ? cn(
@@ -1970,11 +1904,6 @@ function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      // Used to rely on the row's conic spin-border to signal running.
-      // That ring forced a 250×36px composite layer per running agent and
-      // showed up in WKWebView profiles as 200ms+ composite stalls on hover.
-      // Static border-info now carries the state; a tiny Loader2 spin keeps
-      // the motion cue without the gradient cost.
       return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
     }
     if (run.status === 'completed') {
@@ -2205,11 +2134,6 @@ function AgentRow({
         'group rounded border transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
-        // State signal lives on the border, never on the dot, never on
-        // the content. running > unread > selected > idle. Static colors
-        // only; the prior `spin-border` and `animate-border-pulse` here
-        // were the same GPU-heavy conic-gradient / oklch border-color
-        // animations dropped from the workflow row variant.
         run.status === 'running'
           ? 'border-info/60'
           : agentHasUnread(run, isSelected && isTaskActive)
@@ -2339,9 +2263,6 @@ function findContextWindow(model: string): number | null {
 
 function AgentLifetime({ run }: { run: Agent }) {
   const isLive = !!run.startedAt && !run.completedAt;
-  // Subscribe to a shared 5s ticker so the relative label refreshes without
-  // spawning one setInterval per live agent. The hook no-ops when isLive is
-  // false, completed agents render once and never re-tick.
   const now = useNow(5_000, isLive);
   void now;
 
@@ -2378,12 +2299,6 @@ function ContextWindowBar({
   if (!telemetry) return null;
   const window = findContextWindow(telemetry.model);
   if (!window) return null;
-  // Conversation size proxy: sum of per-turn uncached input deltas + assistant
-  // output across the session. Each turn's `inputTokens` is the *new* tokens
-  // added (the cached prefix isn't double-counted), and each `outputTokens`
-  // becomes part of history for the next turn. Avoids the `cache_read` trap:
-  // claude-code's per-turn `cache_read_input_tokens` sums every sub-call in a
-  // tool loop, so adding it would multiply by the number of iterations.
   const cumulativeInput = aggregate?.inputTokens ?? telemetry.inputTokens;
   const cumulativeOutput = aggregate?.outputTokens ?? telemetry.outputTokens;
   const used = cumulativeInput + cumulativeOutput;

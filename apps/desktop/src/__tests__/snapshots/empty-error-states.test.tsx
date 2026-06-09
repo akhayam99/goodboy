@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-// Purpose: catch unintentional regressions during pre-0.1.0 IA refactor.
-// Update snapshots intentionally with: vitest run --update-snapshots
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));

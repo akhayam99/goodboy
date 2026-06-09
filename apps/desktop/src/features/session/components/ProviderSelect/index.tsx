@@ -7,7 +7,6 @@ import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-// '' = inherit the session/workspace default provider at run time.
 type Value = ProviderId | '';
 
 type Props = {

@@ -114,9 +114,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    // Make sure workspace overrides are cached before reading defaultProviderId,
-    // otherwise a fresh boot would silently fall back to anthropic for the
-    // first session created against a workspace.
     if (!get().workspaceOverrides[workspaceId]) {
       try {
         await get().loadWorkspaceOverrides(workspaceId);
@@ -168,7 +165,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       try {
         await setSessionExternalTask(tauriDatabase, externalTask);
       } catch {
-        // non-fatal: session is usable without the issue link
         externalTask = null;
       }
     }
@@ -194,10 +190,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    // Seed the goal context slot so the session prompt carries the user's
-    // stated goal from turn 1. Otherwise the goal lives only on the session
-    // row and never reaches the model unless the user retypes it in the
-    // context panel.
     const goalText = session.goal.trim();
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
@@ -207,17 +199,11 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    // Pre-create all workflow agents so the sidebar shows the full plan as a
-    // progress tracker. Only the first step fires sendTurn; the rest stay
-    // pending until the user (or autoRun) advances. Ad-hoc agents spawned
-    // later appear in a separate "Agents" block below the workflow block.
     let prespawnedRuns: ReadonlyArray<Agent>;
     let firstStepPromptPrefix = '';
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
 
-    // Seed L2 (per-agent) verbosity from the workspace default at insert time
-    // so each new chat starts with the user's workspace setting baked in.
     const workspaceVerbositySeed =
       get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
 

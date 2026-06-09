@@ -79,9 +79,6 @@ export type TurnEvent =
   | { kind: 'error'; runId: ProviderRunId; message: string; at: IsoDateTime }
   | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime }
   | {
-      // Emitted on the provider's first `system` event of a turn (claude init).
-      // Carries the provider-side session id so the store can persist it per
-      // agent and pass `--resume <id>` on the next turn.
       kind: 'provider_session_init';
       runId: ProviderRunId;
       providerSessionId: string;

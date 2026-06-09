@@ -102,8 +102,6 @@ describe('keyboard, DeleteSessionDialog', () => {
     const onClose = vi.fn();
     render(<DeleteSessionDialog session={makeSession()} open={true} onClose={onClose} />);
     fireEvent.keyDown(document, { key: 'Escape' });
-    // Dialog native close event fires onClose via the Dialog component listener
-    // We also verify the cancel button is keyboard-focusable
     const cancelBtn = screen.getByRole('button', { name: /cancel/i });
     expect(cancelBtn).toBeDefined();
   });
@@ -139,7 +137,6 @@ describe('keyboard, DeleteSessionDialog', () => {
     await user.tab();
     const second = document.activeElement;
     expect(first).not.toBe(second);
-    // Both should be button elements
     expect(first?.tagName.toLowerCase()).toBe('button');
     expect(second?.tagName.toLowerCase()).toBe('button');
   });
@@ -157,7 +154,6 @@ describe('keyboard, NewSessionDialog', () => {
         />
       </ToastProvider>,
     );
-    // NewSessionDialog has both textarea (goal) and inputs (branch prefix, soft cap)
     const textboxes = screen.getAllByRole('textbox');
     expect(textboxes.length).toBeGreaterThan(0);
   });
@@ -174,7 +170,6 @@ describe('keyboard, NewSessionDialog', () => {
         />
       </ToastProvider>,
     );
-    // Tab through up to 10 focusable elements, verify at least one is an input/textarea
     let foundInput = false;
     for (let i = 0; i < 10; i++) {
       await user.tab();
@@ -217,7 +212,6 @@ describe('keyboard, QuickActionsPopover arrow / tab navigation', () => {
     );
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     fireEvent.keyDown(window, { key: 'Enter' });
-    // After one ArrowDown from index 0, active is 1 → 'test'
     expect(onSelect).toHaveBeenCalledWith(items[1]);
   });
 
@@ -228,7 +222,6 @@ describe('keyboard, QuickActionsPopover arrow / tab navigation', () => {
     );
     fireEvent.keyDown(window, { key: 'ArrowUp' });
     fireEvent.keyDown(window, { key: 'Enter' });
-    // ArrowUp from 0 stays at 0 → 'review'
     expect(onSelect).toHaveBeenCalledWith(items[0]);
   });
 

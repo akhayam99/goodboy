@@ -46,9 +46,6 @@ export const useSortedGroupedSessions = (
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
   const needsGithub = prefs.group === 'pr';
-  // Only subscribe to the full github map when we actually group by PR.
-  // Otherwise any PR poll for any session would invalidate the memo and
-  // force a re-sort of every sidebar in the app.
   const sessionGithub = useAppStore((s) =>
     needsGithub ? s.sessionGithub : (EMPTY_GITHUB_STATE as typeof s.sessionGithub),
   );
@@ -75,11 +72,6 @@ const selectCurrentWorkspace = (state: AppState): Workspace | null =>
   state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
 const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
 
-// Archived sessions are not in `state.sessions` by construction, they live
-// in `state.archivedSessions[workspaceId]` and are loaded lazily. Lookups for
-// the current session / a specific id need to fall back into that pool so the
-// detail panel and SessionSettingsDialog work when the user clicks an
-// archived row in the Archived tab.
 function findSessionInAnyPool(state: AppState, id: string | null): Session | null {
   if (!id) return null;
   const active = state.sessions.find((s) => s.id === id);
@@ -160,18 +152,6 @@ type FilesTouched = {
 
 const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
 
-/**
- * Files that differ between the session worktree and its base branch
- * (`main`/`master`, or their `origin/` counterparts, first existing wins).
- * Includes uncommitted + untracked changes. Stable across pushes: pushing
- * commits doesn't drop the count because the diff is computed against the
- * merge-base with the base branch, not against `HEAD`.
- *
- * Refresh triggers: session switch, summarizer ticks, and the max
- * `lastFinishedAt` across the session's agents. We avoid keying on
- * transcript length, that grows token-by-token and would re-fire the
- * Tauri invoke on every streamed chunk.
- */
 export const useFilesTouched = (
   sessionId: SessionId | null,
   isActive: boolean = true,
@@ -196,11 +176,6 @@ export const useFilesTouched = (
 
   const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED);
 
-  // Keep-alive panels stay mounted but hidden behind the active session.
-  // Without the `isActive` gate, every summarizer tick on a hidden session
-  // re-fires `worktreeChangedFiles` (4 git subprocesses + per-untracked
-  // `fs::read_to_string`). With 5 keep-alive ContextPanels this piles up
-  // 15+ concurrent git invocations during heavy streaming.
   useEffect(() => {
     if (!isActive || !workingDir) {
       if (!workingDir) setState(EMPTY_FILES_TOUCHED);
@@ -232,13 +207,6 @@ export const useFilesTouched = (
   return state;
 };
 
-/**
- * Unread = agent finished a terminal turn after the user last viewed it.
- * `isCurrentlyViewed` must be true ONLY when the user is actively looking at
- * this agent right now (i.e. agent is selected in its session AND its session is the
- * active session). Being merely "selected" in a non-active session does not count:
- * the user is elsewhere.
- */
 export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {
   if (isCurrentlyViewed) return false;
   if (!agent.lastFinishedAt) return false;
@@ -246,10 +214,6 @@ export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolea
   return agent.lastFinishedAt > agent.lastViewedAt;
 };
 
-/**
- * Returns true if any child agent of the session has an unread terminal response.
- * Excludes the agent the user is currently viewing (selected + session active).
- */
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {
   const phaseRuns = useAppStore((s) =>
     sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
@@ -266,12 +230,6 @@ export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {
   }, [phaseRuns, selectedAgentId, isCurrentSession]);
 };
 
-/**
- * Workspace bubbles up: true if any of its tasks contain an unread agent.
- * Backed by `unreadWorkspaceIds`, a DB-aggregated set so the dot can pulse
- * even on workspaces whose tasks aren't loaded in memory (the user is
- * currently on a different workspace).
- */
 export const useWorkspaceHasUnread = (workspaceId: WorkspaceId | null): boolean =>
   useAppStore((s) => (workspaceId ? s.unreadWorkspaceIds.has(workspaceId) : false));
 

@@ -166,7 +166,6 @@ describe('sessionNextActions store slice', () => {
     useAppStore.setState({ sessionNextActions: { [SESSION_ID]: ACTIONS_PLAN } });
     expect(useAppStore.getState().sessionNextActions[SESSION_ID]).toEqual(ACTIONS_PLAN);
 
-    // Simulate runSummarizer success branch overwriting.
     useAppStore.setState((state) => ({
       sessionNextActions: { ...state.sessionNextActions, [SESSION_ID]: ACTIONS_PR },
     }));

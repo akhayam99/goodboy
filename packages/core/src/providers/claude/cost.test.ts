@@ -45,7 +45,6 @@ describe('computeCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // sonnet: 1M billable @ $3 + 1M cached @ $0.3
     expect(computeCostUsd(partial, 'claude-sonnet-4-6')).toBeCloseTo(3 + 0.3);
   });
 });

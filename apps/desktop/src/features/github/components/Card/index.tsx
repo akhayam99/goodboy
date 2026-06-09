@@ -337,7 +337,6 @@ function computeReviewStatus(
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
-  // Shared 30s ticker, one timer total even with many PR cards on screen.
   const now = useNow(30_000, !!fetchedAt);
   if (!fetchedAt) return null;
   const ageMs = now - new Date(fetchedAt).getTime();
@@ -442,8 +441,6 @@ export const CommentsPane = ({
 
   const allThreads = useMemo(() => groupThreads(comments), [comments]);
 
-  // Only review threads are resolvable / actionable. General issue-comments
-  // (no path, no resolved state) are filtered out, they live "view on github".
   const reviewThreads = useMemo(
     () => allThreads.filter((t) => t.head.source === 'review'),
     [allThreads],

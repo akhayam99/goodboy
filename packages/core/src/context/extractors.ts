@@ -1,10 +1,6 @@
 import type { TurnEvent } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
 
-// Extractors that turn raw turn output into ContextPanel updates. Each
-// exported fn is pure, caller persists via the ContextEngine. Split kept
-// extractors trivially testable and lets the store decide when to flush.
-
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -343,7 +339,6 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
   const out: string[] = [];
-  // Reset lastIndex because we share the global regex across calls.
   re.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {

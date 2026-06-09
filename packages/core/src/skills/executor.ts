@@ -61,7 +61,6 @@ function substituteArgs(body: string, args: ReadonlyArray<string>): string {
   });
 }
 
-/** Normalize away `.` and `..` segments, preserving leading slash. */
 function normalizePath(p: string): string {
   const isAbsolute = p.startsWith('/');
   const parts = p.split('/').filter((s) => s.length > 0);

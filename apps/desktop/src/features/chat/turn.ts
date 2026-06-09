@@ -9,8 +9,6 @@ import {
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
 
-// Each provider emits its own stream-json schema; the wrong parser silently
-// returns zero events and the store reports "provider exited without a response".
 function parseForProvider(
   provider: ProviderId,
   line: string,
@@ -146,9 +144,6 @@ export async function* runTurn(
       case 'end': {
         const exitCode = event.payload.exit_code;
         const stderr = event.payload.stderr;
-        // Only synthesize an error when the process produced no JSON. If lines
-        // were emitted the parsed events already convey the outcome; a second
-        // "exit N" card would just be noise.
         if (!receivedAnyLine) {
           const tail = stderr.trim().split('\n').slice(-5).join('\n');
           const detail = tail.length > 0 ? `: ${tail}` : '';

@@ -52,9 +52,6 @@ export const SessionSettingsDialog = ({
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const setSessionConfig = useAppStore((s) => s.setSessionConfig);
   const renameTask = useAppStore((s) => s.renameTask);
-  // useShallow because the selector derives a fresh array each call; without
-  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
-  // every render and React 19 bails into an infinite render loop.
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -380,10 +377,6 @@ export const SessionSettingsDialog = ({
   );
 };
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: General                                                      */
-/* ──────────────────────────────────────────────────────────────────── */
-
 type GeneralSectionProps = {
   readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
   readonly goalDraft: string;
@@ -447,7 +440,6 @@ function GeneralSection(props: GeneralSectionProps) {
         subtitle="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
       />
 
-      {/* Name */}
       <Field
         label="Name"
         hint="Display name in the sidebar. Renaming doesn't change what the agent sees."
@@ -470,7 +462,6 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Branch, inline change */}
       <Field
         label="Branch"
         hint="Switch this session to a different branch. Existing checkouts with uncommitted work require confirmation."
@@ -658,10 +649,6 @@ function SessionProviderPicker({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Budget                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
-
 type BudgetSectionProps = {
   readonly capDraft: string;
   readonly setCapDraft: (v: string) => void;
@@ -733,10 +720,6 @@ function BudgetSection({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function SectionHeader({
   icon,

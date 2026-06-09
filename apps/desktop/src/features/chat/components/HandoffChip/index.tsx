@@ -18,8 +18,6 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
 
   if (!handoff || !session) return null;
-  // Handoff suggestions are noise inside a workflow, the next step is
-  // already defined by the workflow itself.
   if (session.workflowRuns.length > 0) return null;
 
   const meta = AGENT_KIND_META[handoff.kind];

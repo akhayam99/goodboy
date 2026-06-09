@@ -178,8 +178,6 @@ export const updateSessionConfig = async (
   if (fields.defaultProvider !== undefined && fields.defaultProvider !== null) {
     updates.push('provider_default = ?');
     values.push(fields.defaultProvider);
-    // Changing the session-level default clears any stale per-turn override so
-    // future agents inherit the new default instead of the old override.
     updates.push('provider_override = ?');
     values.push(null);
   }
@@ -326,11 +324,6 @@ async function hydrateSessions(
   return rows.map((row) => toDomain(row, [], runsBySession.get(row.id) ?? []));
 }
 
-// Active sessions only — archived rows are returned by
-// `listArchivedSessionsForWorkspace` and live in a separate, lazily-loaded
-// slice of the store. The split keeps archived sessions out of every
-// interactive surface (palette, github polling, unread, eager loads) by
-// construction; they exist purely as historical info under the Archived tab.
 export const listSessionsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
@@ -342,9 +335,6 @@ export const listSessionsForWorkspace = async (
   return hydrateSessions(db, rows);
 };
 
-// Archived sessions for a workspace, sorted by archival time. Loaded lazily
-// when the Archived tab is opened — never participates in palette search,
-// github polling, unread dots, or workspace-switch eager loads.
 export const listArchivedSessionsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,

@@ -122,7 +122,6 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
       oldCursor += 1;
       newCursor += 1;
     } else if (line.startsWith('\\ No newline')) {
-      // ignore marker
     }
   }
 

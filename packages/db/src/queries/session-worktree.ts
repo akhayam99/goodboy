@@ -70,9 +70,6 @@ export const listWorktreesForSession = async (
   return rows.map(toDomain);
 };
 
-// Batched lookup for workspace switch: replaces `Promise.all(ids.map(listWorktreesForSession))`,
-// which used to serialize N round trips through the single `Mutex<Connection>` on the Rust
-// side. One IN-clause query + group-by-session keeps the result shape per-session.
 export const listWorktreesForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,

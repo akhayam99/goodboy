@@ -16,9 +16,6 @@ export type ProviderLifecycleCommands = {
   readonly logout: string;
 };
 
-// Cross-platform, npm-first. Cursor is the only non-npm exception because
-// cursor-agent is not published on npm. Gemini logout has no subcommand so we
-// remove the OAuth creds file directly (matches detect fallback in providers.rs).
 export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCommands> = {
   anthropic: {
     install: {

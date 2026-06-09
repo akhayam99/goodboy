@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks, must be hoisted before store import.
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -87,7 +86,6 @@ vi.mock('../features/providers/provider-pricing', () => ({
   refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
-// Summarizer mock, controlled resolve so we can simulate slow runs.
 let resolveSummarize: (() => void) | null = null;
 const summarizeSpy = vi.fn(
   () =>
@@ -195,7 +193,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
   beforeEach(() => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
-    // Default: summarize returns immediately unless test overrides.
     summarizeSpy.mockResolvedValue(undefined);
   });
 
@@ -204,7 +201,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('rapid back-to-back triggers result in at most 2 underlying summarize calls', async () => {
-    // Slow first summarize so subsequent triggers arrive while in-flight.
     let firstResolve: () => void = () => undefined;
     summarizeSpy
       .mockImplementationOnce(
@@ -213,7 +209,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             firstResolve = res;
           }),
       )
-      .mockResolvedValue(undefined); // second call (queued) resolves immediately
+      .mockResolvedValue(undefined);
 
     const { useAppStore, summarizerQueues } = await import('./store');
     summarizerQueues.clear();
@@ -227,11 +223,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       ],
     });
 
-    // Pull enqueueSummarizer, it's not exported, so we test via summarizerQueues state.
-    // Strategy: verify summarizerQueues holds at most 1 queued entry when in-flight.
     const state = useAppStore.getState();
-    // Patch: call sendTurn is complex to set up; instead directly exercise queue invariant
-    // by checking that queue.queued only stores one entry even if updated N times.
     const queue = {
       inFlight: true,
       queued: null as null | { turnInput: string; turnOutput: string },
@@ -246,14 +238,12 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     expect(queue.queued?.turnInput).toBe('input-4');
 
-    // Now simulate in-flight completing: the queued entry fires → 1 more call.
-    // Total = 1 (in-flight) + 1 (queued) = 2 max.
     const callsBefore = summarizeSpy.mock.calls.length;
     firstResolve();
     await Promise.resolve();
 
     expect(callsBefore).toBeLessThanOrEqual(2);
-    expect(state).toBeDefined(); // store is live
+    expect(state).toBeDefined();
 
     summarizerQueues.delete(SESSION_ID);
   });
@@ -273,7 +263,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
     };
     sq.set(SESSION_ID, queue);
 
-    // Simulate enqueueSummarizer logic for the "nothing in flight" path.
     queue.inFlight = true;
     await summarizeSpy();
     queue.inFlight = false;
@@ -307,13 +296,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
-    // Regression: ensure the blocking barrier was removed and is not re-introduced.
     const storeModule = await import('./store');
     expect((storeModule as Record<string, unknown>)['waitForSummarizerSettled']).toBeUndefined();
   });
 
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
-    // Regression: next sendTurn dispatch proceeds immediately even with inFlight summarizer.
     const { summarizerQueues: sq } = await import('./store');
     sq.clear();
 
@@ -323,8 +310,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
     };
     sq.set(SESSION_ID, queue);
 
-    // A second "sendTurn" arriving while summarizer is in-flight must coalesce and return
-    // immediately, not await. We verify this by ensuring the queue mutation is synchronous.
     const before = Date.now();
     queue.queued = { turnInput: 'next-input', turnOutput: '' };
     const elapsed = Date.now() - before;

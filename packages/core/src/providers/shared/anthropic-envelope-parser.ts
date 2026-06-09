@@ -37,10 +37,6 @@ type UserMessage = {
   readonly content?: ReadonlyArray<ToolResultBlock | { type: string }>;
 };
 
-// Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
-// Cursor's stream-json, which is otherwise envelope-compatible, uses camelCase
-// (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
-// Accept both forms so the shared parser can serve both adapters.
 type UsagePayload = {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
@@ -134,9 +130,6 @@ export const parseAnthropicEnvelopeLine = (
     }
 
     case 'system': {
-      // Claude stream-json emits `{"type":"system","subtype":"init","session_id":"..."}`.
-      // Capture the session id so it can be threaded back via --resume; ignore
-      // other system subtypes for now.
       const subtype = payload.subtype as string | undefined;
       const sessionId = payload.session_id;
       if (subtype === 'init' && typeof sessionId === 'string' && sessionId.length > 0) {

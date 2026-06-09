@@ -336,12 +336,6 @@ export type AppActions = {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
-    /**
-     * Optional Linear issue to link to the new session. Stored in the
-     * session_external_tasks table for navigation back to Linear, status
-     * sync, etc. Set by the new-session dialog when the user picks an
-     * issue from the autocomplete.
-     */
     linearIssue?: {
       externalId: string;
       identifier: string;
@@ -707,8 +701,6 @@ export const initialState: AppState = {
   activeTerminalTab: {},
 };
 
-// Re-exported so existing test imports (`import { summarizerQueues } from './store'`)
-// keep working after the turn helpers moved out of this file.
 export { summarizerQueues } from './turn-helpers';
 
 export const useAppStore = create<AppStore>((set, get) => ({

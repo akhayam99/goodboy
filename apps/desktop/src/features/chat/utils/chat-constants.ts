@@ -116,8 +116,6 @@ export type ParsedModel = {
   readonly variantLabel: string;
 };
 
-// Strip a `provider/model` prefix so cursor's `gpt-5.5-high` and any future
-// prefixed id (e.g. `openai/gpt-5.5-high`) parse the same way.
 function stripProviderPrefix(id: string): string {
   const slash = id.indexOf('/');
   return slash >= 0 ? id.slice(slash + 1) : id;
@@ -135,7 +133,6 @@ export const parseModelId = (id: string): ParsedModel => {
 
   const local = stripProviderPrefix(id);
 
-  // Canonical anthropic: claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-7
   let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i);
   if (m) {
     return {
@@ -145,7 +142,6 @@ export const parseModelId = (id: string): ParsedModel => {
     };
   }
 
-  // Cursor's anthropic naming: claude-4.6-sonnet-medium, claude-4.6-opus-high-thinking
   m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i);
   if (m) {
     const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : '';
@@ -156,37 +152,30 @@ export const parseModelId = (id: string): ParsedModel => {
     };
   }
 
-  // Composer (cursor first-party): composer-2, composer-2-fast
   m = local.match(/^composer-(.+)$/i);
   if (m) {
     return { family: 'composer', subfamily: null, variantLabel: m[1]! };
   }
 
-  // Cursor's `auto` model, standalone family so it renders without a row label.
   if (local === 'auto') {
     return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
   }
 
-  // gpt-X.Y-codex → its own subfamily so it visually groups separately from
-  // the generic gpt-X.Y row (mockup: `5.3-codex [codex]`).
   m = local.match(/^gpt-(\d+\.\d+)-codex$/i);
   if (m) {
     return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' };
   }
 
-  // gpt-X.Y-<variant> (variant = high/medium/mini/...)
   m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! };
   }
 
-  // bare gpt-X.Y
   m = local.match(/^gpt-(\d+\.\d+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! };
   }
 
-  // unparseable gpt fallback
   m = local.match(/^gpt-(.+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: null, variantLabel: m[1]! };
@@ -219,12 +208,8 @@ export const modelWeight = (model: string): number => {
   return MODEL_COST[model]?.weight ?? 10;
 };
 
-// Heuristic floor used by the first-turn right-sizing card.
-// Never suggest Haiku, user explicitly disallows it for this workspace.
 const SUGGESTION_FLOOR_PATTERN = /haiku|small|mini|nano|cursor-small/i;
 
-// Weight delta below which a suggestion is not worth surfacing (avoid nagging
-// for marginal savings like Sonnet 4.6 → 4.5).
 const MIN_WEIGHT_GAP = 20;
 
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };

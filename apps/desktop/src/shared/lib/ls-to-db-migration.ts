@@ -1,21 +1,3 @@
-/**
- * One-time migration of residual localStorage state to DB. Runs at boot
- * right after migrations, before the rest of hydrate() reads from DB.
- *
- * For each key, copy LS → DB only if DB is empty (preserve DB-as-source-of-
- * truth), then remove LS. Marker key `goodboy:ls-migrated-v1` prevents re-runs.
- *
- * Covers (legacy LS keys):
- *   - goodboy:archived-tasks                       → sessions.archived_at
- *   - goodboy:workspace-verbosity:<workspaceId>    → workspaces.default_verbosity
- *   - goodboy:effort:<sessionId>                   → sessions.effort
- *   - goodboy:model:<sessionId>                    → sessions.model_override
- *   - goodboy:provider:<sessionId>                 → sessions.provider_override
- *   - goodboy:agent-effort:<agentId>               → agents.effort
- *   - goodboy:agent-model:<agentId>                → agents.model_override
- *   - goodboy:agent-provider:<agentId>             → agents.provider_override
- *   - goodboy:onboarding-progress / -collapsed / -finished → settings.onboarding.*
- */
 import {
   archiveSession,
   getWorkspaceOverrides,
@@ -86,9 +68,7 @@ async function migrateArchivedSessions(): Promise<void> {
         }
       }
     }
-  } catch {
-    // malformed LS payload, ignore
-  }
+  } catch {}
   localStorage.removeItem(LS_ARCHIVED);
 }
 
@@ -226,7 +206,6 @@ export const migrateLsToDb = async (): Promise<void> => {
     await migrateOnboarding();
     localStorage.setItem(MIGRATED_MARKER, '1');
   } catch (err) {
-    // best-effort, don't block boot; next launch will retry
     console.warn('[ls-to-db migration] failed', err);
   }
 };

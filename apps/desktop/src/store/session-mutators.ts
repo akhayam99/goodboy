@@ -74,11 +74,4 @@ export const applyAgentTurnState = (
   return derived;
 };
 
-/**
- * Module-scoped registry of run IDs cancelled by the user via
- * cancelCurrentTurn. The stream-end finalization in sendTurn checks this set
- * and skips marking the agent as `completed`. A cancelled turn must NOT
- * count as a workflow step completion, otherwise the next-step CTA appears
- * prematurely.
- */
 export const cancelledRunIds = new Set<ProviderRunId>();

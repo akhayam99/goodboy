@@ -26,11 +26,6 @@ export type ParallelWorktreeResult = {
   readonly parallelIndex: number;
 };
 
-/**
- * Splits parentBranch into branchPrefix and base slug.
- * "feat/session-goal" → { prefix: "feat", base: "session-goal" }
- * "main" → { prefix: "kay", base: "main" }
- */
 function splitParentBranch(parentBranch: string): { prefix: string; base: string } {
   const slashIdx = parentBranch.indexOf('/');
   if (slashIdx === -1) {

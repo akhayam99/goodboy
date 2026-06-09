@@ -9,10 +9,6 @@ export type AgentKindLabel =
   | 'resolver'
   | 'generic';
 
-// First-match-wins ordering. Patterns are case-insensitive whole-word.
-// More specific intents listed first so "plan and implement" → planner,
-// not implementer. `docs|readme` precedes `review` so doc-only requests
-// don't get pulled into review when the wording overlaps.
 const PATTERNS: ReadonlyArray<readonly [AgentKindLabel, RegExp]> = [
   ['planner', /\b(pianifica|plan|design)\b/i],
   ['scout', /\b(scout|find|explore|grep)\b/i],

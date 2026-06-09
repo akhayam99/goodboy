@@ -28,13 +28,7 @@ export type Workspace = Readonly<{
   members?: ReadonlyArray<WorkspaceMember>;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
-  /**
-   * Set when the user "disconnects" the workspace. Soft delete: the row stays
-   * in DB along with all sessions, transcripts, worktree refs. Reactivated by
-   * adding a workspace pointing at the same `rootPath`.
-   */
   disconnectedAt?: IsoDateTime;
-  /** Last time this workspace was switched to or added. Used to rank recent workspaces. */
   lastAccessedAt?: IsoDateTime;
 }>;
 
@@ -95,10 +89,6 @@ export type Session = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-/**
- * A user-defined shell script attached to a workspace. Run manually by the
- * user from the Scripts panel — never executed by an agent.
- */
 export type WorkspaceScript = Readonly<{
   id: WorkspaceScriptId;
   workspaceId: WorkspaceId;
@@ -111,17 +101,9 @@ export type WorkspaceScript = Readonly<{
 
 export type WorkspaceIntegrationProvider = 'linear';
 
-/**
- * Snapshot of the connected Linear account + workspace, cached locally so
- * "issues assigned to me" and URL building work without an extra /viewer
- * roundtrip on every fetch.
- */
 export type LinearIntegrationConfig = Readonly<{
-  /** URL slug of the Linear workspace, e.g. "serenis" → linear.app/serenis/... */
   workspaceUrlKey: string;
-  /** Linear user id of the connected user. Used to filter "assigned to me". */
   viewerUserId: string;
-  /** Display name of the connected user. Cached for UI. */
   viewerName: string;
 }>;
 
@@ -130,32 +112,19 @@ export type WorkspaceIntegration = Readonly<{
   workspaceId: WorkspaceId;
   provider: WorkspaceIntegrationProvider;
   config: LinearIntegrationConfig;
-  /**
-   * Key used to retrieve the provider API token from Tauri's credential store.
-   * Format: `goodboy.workspace.<workspaceId>.<provider>`
-   */
   credentialKey: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
 
-/**
- * 1:1 link between a session and an external task (Linear issue today).
- * Lets us navigate from a session back to its source issue, snapshot title
- * for offline display, and pre-fill the goal at session creation.
- */
 export type SessionExternalTaskProvider = 'linear';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
   provider: SessionExternalTaskProvider;
-  /** Internal Linear ID (UUID-like). Used for API calls. */
   externalId: string;
-  /** Human-readable identifier, e.g. "SER-123". Used for display. */
   identifier: string;
-  /** Direct URL into Linear, e.g. linear.app/serenis/issue/SER-123. */
   url: string;
-  /** Snapshot of the issue title at link time. Refreshed on demand. */
   title: string;
   createdAt: IsoDateTime;
 }>;

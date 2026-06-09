@@ -74,9 +74,6 @@ export const listMessagesForAgent = async (
   agentId: AgentId,
   opts?: { readonly limit?: number },
 ): Promise<ReadonlyArray<Message>> => {
-  // Limited variant returns the last N messages in ASC order. Mirrors the
-  // turn-event pagination so the chat view can paint the recent slice fast
-  // while the rest streams in behind it.
   if (opts?.limit !== undefined) {
     const rows = await db.select<MessageRow>(
       'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',

@@ -1,34 +1,3 @@
-/**
- * m045 — reusable step library.
- *
- * Decouples the "what a step is" (reusable, shareable) from "a step's place in
- * one workflow" (ordinal + per-instance overrides). Before this migration a
- * `steps` row was bound to exactly one workflow via `workflow_id`, so the same
- * conceptual step (scout, plan, implement, ...) had to be re-authored for every
- * preset and could never be shared.
- *
- * Model after this migration:
- *   - `step_library`  = the reusable unit. UI label "Step"; TS type `StepDef`
- *                       (disambiguated from the in-workflow instance below).
- *                       `workspace_id IS NULL` = a global seed shared by every
- *                       workspace. A workspace can shadow a global step with a
- *                       local override row linked via `base_step_id`.
- *   - `steps`         = an INSTANCE of a library step inside one workflow
- *                       (TS type `Step`; `Workflow.steps: Step[]`). Keeps
- *                       ordinal + the per-instance overrides and gains
- *                       `library_step_id` linking back to its `StepDef`.
- *                       `agents.step_id` still points here (resolved by name
- *                       after the rebuild below), so run history keeps linkage.
- *
- * `steps` is rebuilt (not just ALTERed) to DROP the old
- * `UNIQUE(workflow_id, ordinal)` constraint: with soft-delete a removed step
- * keeps its ordinal, and reordering swaps ordinals, both of which the unique
- * constraint would reject. Ordering is now by `ordinal ASC` without uniqueness.
- *
- * Soft-delete: `step_library.deleted_at` and `steps.deleted_at` /
- * `workflows.deleted_at` (m031) are the only delete path going forward. Nothing
- * is hard-deleted, so sessions that used a workflow keep seeing it.
- */
 export const m045StepLibrary = /* sql */ `
 PRAGMA foreign_keys = OFF;
 

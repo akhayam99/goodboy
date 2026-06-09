@@ -21,16 +21,10 @@ export const getActivePricingTable = (): PricingTable => {
   return activeTable;
 };
 
-// Remote CDN refresh is intentionally disabled, the previous placeholder URL
-// (`goodboy.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
-// every boot and spammed DevTools with `Failed to load resource` 3×. The shipped
-// `data/pricing.json` is authoritative until a real CDN endpoint exists.
 export const refreshPricingTable = async (): Promise<void> => {
   return;
 };
 
-// Dev-only override: merged on top of the active pricing table when IS_DEV is true.
-// Set window.__DEV_PRICING_OVERRIDE__ in devtools to test alternate prices.
 declare global {
   interface Window {
     __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;
@@ -51,7 +45,6 @@ function priceForModel(
   return table[provider][model] ?? null;
 }
 
-// Legacy compat: getCodexPriceOverride still works but now reads from the shipped table.
 export const getCodexPriceOverride = (
   _config: unknown,
   model: string,

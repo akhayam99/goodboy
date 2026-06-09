@@ -1,5 +1,3 @@
-// Display helpers for the sidebar agent row telemetry pill.
-// Extracted so they can be unit-tested without rendering React.
 import type { TelemetryRecord } from '@goodboy/types';
 import { getModelDescriptor } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
