@@ -175,9 +175,9 @@ export function parseLinkedIssuesFromBody(
   repoUrl: string,
 ): ReadonlyArray<LinkedIssue> {
   const seen = new Map<number, LinkedIssue>();
-  const repoBase = repoUrl
-    .replace(/\/pull\/\d+(?:[^\d\n\r\u2028\u2029].*)?$/, '')
-    .replace(/\.git$/, '');
+  const pullMatch = /\/pull\/\d+/.exec(repoUrl);
+  const withoutPull = pullMatch ? repoUrl.slice(0, pullMatch.index) : repoUrl;
+  const repoBase = withoutPull.replace(/\.git$/, '');
   for (const match of body.matchAll(LINKED_KEYWORD_RE)) {
     const keyword = match[1]?.toLowerCase();
     const numberStr = match[2];

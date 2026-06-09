@@ -306,6 +306,15 @@ describe('extractHandoff', () => {
     const text = `<<handoff${' \t'.repeat(5000)}`;
     expect(extractHandoff(text)).toBeNull();
   });
+
+  it('rejects a marker whose body holds a stray > before the close', () => {
+    expect(extractHandoff('<<handoff kind=implementer rea>son="x">>')).toBeNull();
+  });
+
+  it('stops at the first >> when scanning the body', () => {
+    const text = '<<handoff kind=scout reason="a">>tail kind=implementer>>';
+    expect(extractHandoff(text)?.kind).toBe('scout');
+  });
 });
 
 describe('extractCommentResolved', () => {

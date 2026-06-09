@@ -23,7 +23,24 @@ export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyA
 
 const QUESTION_OPEN_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>/g;
 const QUESTION_CLOSE = '<</ctx-question>>';
-const HANDOFF_RE = /<<handoff(\s[^>]*)>>/g;
+const LEADING_SPACE_RE = /^\s/;
+
+function extractSelfClosing(text: string, name: string): ReadonlyArray<string> {
+  const open = `<<${name}`;
+  const out: string[] = [];
+  let idx = 0;
+  while (idx < text.length) {
+    const start = text.indexOf(open, idx);
+    if (start === -1) break;
+    const after = start + open.length;
+    const close = text.indexOf('>>', after);
+    if (close === -1) break;
+    idx = close + 2;
+    const inner = text.slice(after, close);
+    if (inner.length > 0 && LEADING_SPACE_RE.test(inner) && !inner.includes('>')) out.push(inner);
+  }
+  return out;
+}
 
 function extractAllTagged(text: string, tag: string): ReadonlyArray<string> {
   const open = `<<${tag}>>`;
@@ -182,11 +199,8 @@ export interface ExtractedHandoff {
  * to suggest the next agent. Self-closing format. Unknown kinds are rejected.
  */
 export function extractHandoff(assistantText: string): ExtractedHandoff | null {
-  HANDOFF_RE.lastIndex = 0;
   let last: ExtractedHandoff | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = HANDOFF_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'handoff')) {
     const attrs = parseHandoffAttrs(inner);
     const kindRaw = attrs.kind?.toLowerCase() ?? '';
     if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) continue;
@@ -238,8 +252,6 @@ function parseAttrValue(inner: string, from: number): { value: string; end: numb
   return { value: inner.slice(from, end), end };
 }
 
-const COMMENT_RESOLVED_RE = /<<comment-resolved(\s[^>]*)>>/g;
-
 export interface ExtractedCommentResolution {
   readonly threadId: string;
   readonly commitSha: string;
@@ -256,11 +268,8 @@ export interface ExtractedCommentResolution {
  * is present.
  */
 export function extractCommentResolved(assistantText: string): ExtractedCommentResolution | null {
-  COMMENT_RESOLVED_RE.lastIndex = 0;
   let last: ExtractedCommentResolution | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_RESOLVED_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'comment-resolved')) {
     const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const commitSha = (attrs.commit ?? attrs.sha ?? '').trim();
@@ -276,19 +285,15 @@ export function isReviewThreadId(threadId: string): boolean {
   return REVIEW_THREAD_ID_RE.test(threadId);
 }
 
-const COMMENT_WONTFIX_RE = /<<comment-wontfix(\s[^>]*)>>/g;
-
 export interface ExtractedCommentWontfix {
   readonly threadId: string;
   readonly reason: string;
 }
 
 export function extractCommentWontfix(assistantText: string): ExtractedCommentWontfix | null {
-  COMMENT_WONTFIX_RE.lastIndex = 0;
   let last: ExtractedCommentWontfix | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_WONTFIX_RE.exec(assistantText)) !== null) {
-    const attrs = parseHandoffAttrs(m[1] ?? '');
+  for (const inner of extractSelfClosing(assistantText, 'comment-wontfix')) {
+    const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const reason = (attrs.reason ?? '').trim();
     if (threadId.length === 0 || reason.length === 0) continue;
@@ -296,8 +301,6 @@ export function extractCommentWontfix(assistantText: string): ExtractedCommentWo
   }
   return last;
 }
-
-const CLUSTER_DONE_RE = /<<cluster-done(\s[^>]*)>>/g;
 
 export interface ExtractedCluster {
   readonly title: string;
@@ -339,11 +342,8 @@ export function extractClustersFromMarker(
 }
 
 export function extractClusterDone(assistantText: string): { readonly id: string } | null {
-  CLUSTER_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = CLUSTER_DONE_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'cluster-done')) {
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
     if (id.length === 0) continue;

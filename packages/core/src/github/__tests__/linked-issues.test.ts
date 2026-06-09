@@ -92,6 +92,11 @@ describe('parseLinkedIssuesFromBody', () => {
     expect(result[0]?.url).toBe(`${REPO_BASE}/issues/7`);
   });
 
+  it('strips from the first /pull/ segment when several appear', () => {
+    const result = parseLinkedIssuesFromBody('closes #7', `${REPO_BASE}/pull/9/pull/8`);
+    expect(result[0]?.url).toBe(`${REPO_BASE}/issues/7`);
+  });
+
   it('returns sorted by issue number', () => {
     const body = 'closes #30\nfixes #10\nresolves #20';
     const result = parseLinkedIssuesFromBody(body, REPO_URL);
