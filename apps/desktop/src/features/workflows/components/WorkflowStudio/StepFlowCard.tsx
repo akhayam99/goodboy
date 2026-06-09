@@ -42,7 +42,7 @@ export function StepFlowCard({
   return (
     <div
       className={cn(
-        'group relative flex w-52 shrink-0 flex-col gap-2 overflow-hidden rounded-xl border p-3 transition-colors',
+        'group relative flex w-52 shrink-0 flex-col gap-2 overflow-hidden rounded-lg border p-3 transition-colors',
         selected
           ? 'border-primary/40 bg-primary/5 ring-1 ring-primary/30'
           : 'border-border-soft bg-muted/10 hover:border-border hover:bg-muted/30',

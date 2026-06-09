@@ -62,7 +62,7 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
         <span
-          className="flex size-11 items-center justify-center rounded-xl"
+          className="flex size-11 items-center justify-center rounded-lg"
           style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`, color }}
         >
           <Icon size={22} aria-hidden />

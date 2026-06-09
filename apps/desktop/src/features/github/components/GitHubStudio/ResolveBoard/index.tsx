@@ -182,7 +182,7 @@ function ResolveCard({
   return (
     <div
       className={cn(
-        'rounded-xl border p-3 transition-colors',
+        'rounded-lg border p-3 transition-colors',
         checked ? 'border-border bg-muted/10' : 'border-border-soft/60 bg-muted/5 opacity-70',
       )}
     >

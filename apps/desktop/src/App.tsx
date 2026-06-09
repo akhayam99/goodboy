@@ -765,7 +765,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
 function AppLayoutPreview() {
   return (
     <div className="flex w-full max-w-2xl gap-3">
-      <div className="flex w-[30%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+      <div className="flex w-[30%] flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-subtle/15 px-5 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
           <MessagesSquare size={20} className="text-muted-foreground/60" aria-hidden />
         </div>
@@ -775,7 +775,7 @@ function AppLayoutPreview() {
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-background/30 px-6 py-6">
+      <div className="flex flex-1 flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-background/30 px-6 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
           <MessageSquare size={20} className="text-primary/60" aria-hidden />
         </div>
@@ -785,7 +785,7 @@ function AppLayoutPreview() {
         </p>
       </div>
 
-      <div className="flex w-[26%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+      <div className="flex w-[26%] flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-subtle/15 px-5 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
           <BookOpen size={20} className="text-muted-foreground/60" aria-hidden />
         </div>
@@ -802,7 +802,7 @@ function EmptyStateLogo() {
   return (
     <div className="relative">
       <div className="absolute -inset-6 rounded-full bg-primary/10 blur-2xl" />
-      <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
+      <div className="relative flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
         <DogMascot size={56} className="text-foreground" />
       </div>
     </div>

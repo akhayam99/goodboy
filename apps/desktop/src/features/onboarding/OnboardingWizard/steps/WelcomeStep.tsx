@@ -6,7 +6,7 @@ export function WelcomeStep() {
     <div className="flex flex-col items-center gap-7 text-center">
       <div className="relative">
         <div className="absolute -inset-6 rounded-full bg-primary/10 blur-2xl" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
           <DogMascot size={56} className="text-foreground" />
         </div>
       </div>

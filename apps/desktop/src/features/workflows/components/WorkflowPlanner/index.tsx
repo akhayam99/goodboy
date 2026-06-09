@@ -166,7 +166,7 @@ export function WorkflowPlanner({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+      <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
         <div className="relative">
           <Textarea
             value={processText}

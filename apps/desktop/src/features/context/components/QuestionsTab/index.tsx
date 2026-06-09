@@ -164,7 +164,7 @@ export function QuestionsTab({ sessionId }: Props) {
               <div
                 key={cluster.ownerAgentId ?? '__orphan__'}
                 className={cn(
-                  'flex flex-col gap-2.5 rounded-xl border bg-subtle/50 p-2.5 transition-colors duration-200',
+                  'flex flex-col gap-2.5 rounded-lg border bg-subtle/50 p-2.5 transition-colors duration-200',
                   complete ? 'border-primary/40' : 'border-border-soft',
                 )}
               >

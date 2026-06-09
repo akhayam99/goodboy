@@ -14,7 +14,7 @@ export function Widget({ label, hint, action, className, children }: Props) {
   return (
     <section
       className={cn(
-        'flex flex-col gap-3 rounded-xl border border-border-soft bg-muted/10 p-4',
+        'flex flex-col gap-3 rounded-lg border border-border-soft bg-muted/10 p-4',
         className,
       )}
     >

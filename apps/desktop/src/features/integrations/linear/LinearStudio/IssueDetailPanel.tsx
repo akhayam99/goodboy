@@ -298,7 +298,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
             <section className="flex flex-col gap-3">
               <SectionHeader label="launch session" />
               {openableSessionId ? (
-                <div className="flex items-center gap-3 rounded-xl border border-border-soft bg-muted/10 px-4 py-3.5">
+                <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/15">
                     <MessagesSquare size={15} className="text-success" aria-hidden />
                   </span>
@@ -315,7 +315,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
                   <OpenSessionButton sessionId={openableSessionId} onOpened={onClose} />
                 </div>
               ) : (
-                <div className="flex flex-col gap-4 rounded-xl border border-border-soft bg-muted/10 p-4">
+                <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
                   <LaunchField
                     icon={<Target size={13} aria-hidden className="text-primary" />}
                     label="Goal"

@@ -4,7 +4,7 @@ import { Button } from '@goodboy/ui';
 export function WorkspaceStep({ hasWorkspace }: { hasWorkspace: boolean }) {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 text-primary">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
         <FolderGit2 size={26} aria-hidden />
       </span>
 

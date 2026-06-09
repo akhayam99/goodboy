@@ -64,7 +64,7 @@ export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUr
                 else threadRefs.current.delete(tid);
               }}
               className={cn(
-                'rounded-xl transition-shadow',
+                'rounded-lg transition-shadow',
                 tid && tid === flashThreadId ? 'ring-2 ring-accent/60' : '',
               )}
             >
@@ -101,8 +101,8 @@ function ConversationThread({
     <div
       className={
         resolved
-          ? 'rounded-xl border border-border-soft bg-muted/5 p-3'
-          : 'rounded-xl border border-border-soft bg-muted/10 p-3'
+          ? 'rounded-lg border border-border-soft bg-muted/5 p-3'
+          : 'rounded-lg border border-border-soft bg-muted/10 p-3'
       }
     >
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
