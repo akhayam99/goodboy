@@ -18,7 +18,13 @@ const CAPABILITIES: ProviderCapabilities = {
   fileEdits: true,
   contextWindow: 1_000_000,
   defaultModel: 'claude-opus-4-8',
-  availableModels: ['claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
+  availableModels: [
+    'claude-opus-4-8',
+    'claude-fable-5',
+    'claude-opus-4-7',
+    'claude-sonnet-4-6',
+    'claude-haiku-4-5',
+  ],
 };
 
 export interface ClaudeAdapterDeps {

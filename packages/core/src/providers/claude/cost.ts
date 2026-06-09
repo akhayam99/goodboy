@@ -6,10 +6,15 @@ interface ModelPrice {
   readonly cachedInputPerMtok: number;
 }
 
+const FABLE_PRICE: ModelPrice = {
+  inputPerMtok: 10,
+  outputPerMtok: 50,
+  cachedInputPerMtok: 1,
+};
 const OPUS_PRICE: ModelPrice = {
-  inputPerMtok: 15,
-  outputPerMtok: 75,
-  cachedInputPerMtok: 1.5,
+  inputPerMtok: 5,
+  outputPerMtok: 25,
+  cachedInputPerMtok: 0.5,
 };
 const SONNET_PRICE: ModelPrice = {
   inputPerMtok: 3,
@@ -21,6 +26,7 @@ const SONNET_PRICE: ModelPrice = {
 // priced here. A model missing from this table silently bills at the sonnet
 // FALLBACK, which under-counts Opus spend ~5x.
 const PRICES: Record<string, ModelPrice> = {
+  'claude-fable-5': FABLE_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
   'claude-opus-4-6': OPUS_PRICE,
