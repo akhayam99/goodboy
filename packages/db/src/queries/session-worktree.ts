@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
 interface SessionWorktreeRow {
@@ -7,6 +7,8 @@ interface SessionWorktreeRow {
   worktree_path: string;
   branch: string;
   parallel_index: number;
+  mount_workspace_id: string | null;
+  mount_name: string | null;
   created_at: number;
 }
 
@@ -16,6 +18,8 @@ export interface SessionWorktree {
   readonly worktreePath: string;
   readonly branch: string;
   readonly parallelIndex: number;
+  readonly mountWorkspaceId?: WorkspaceId;
+  readonly mountName?: string;
   readonly createdAt: number;
 }
 
@@ -26,6 +30,10 @@ function toDomain(row: SessionWorktreeRow): SessionWorktree {
     worktreePath: row.worktree_path,
     branch: row.branch,
     parallelIndex: row.parallel_index,
+    ...(row.mount_workspace_id != null
+      ? { mountWorkspaceId: row.mount_workspace_id as WorkspaceId }
+      : {}),
+    ...(row.mount_name != null ? { mountName: row.mount_name } : {}),
     createdAt: row.created_at,
   };
 }
@@ -36,14 +44,16 @@ export async function insertSessionWorktree(
 ): Promise<void> {
   await db.execute(
     `INSERT INTO session_worktrees
-      (id, session_id, worktree_path, branch, parallel_index, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+      (id, session_id, worktree_path, branch, parallel_index, mount_workspace_id, mount_name, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       worktree.id,
       worktree.sessionId,
       worktree.worktreePath,
       worktree.branch,
       worktree.parallelIndex,
+      worktree.mountWorkspaceId ?? null,
+      worktree.mountName ?? null,
       worktree.createdAt,
     ],
   );

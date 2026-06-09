@@ -7,7 +7,6 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
-import { MAX_WORKSPACES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
@@ -34,12 +33,6 @@ export function addWorkspace(set: SetFn, get: GetFn) {
       if (!onDisk.disconnectedAt) {
         throw new Error(`workspace already exists: ${onDisk.name}`);
       }
-      // Cap counts only active workspaces.
-      if (get().workspaces.length >= MAX_WORKSPACES) {
-        throw new Error(
-          `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
-        );
-      }
       const now = new Date().toISOString() as IsoDateTime;
       await reconnectWorkspaceInDb(tauriDatabase, onDisk.id, now);
       const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
@@ -62,13 +55,6 @@ export function addWorkspace(set: SetFn, get: GetFn) {
         // non-fatal: templates can be re-fetched on next workspace switch
       }
       return reactivated;
-    }
-
-    // New workspace path → enforce cap before insert.
-    if (get().workspaces.length >= MAX_WORKSPACES) {
-      throw new Error(
-        `workspace limit reached (${MAX_WORKSPACES}). disconnect one before adding another.`,
-      );
     }
 
     const inferredName =

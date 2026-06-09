@@ -9,6 +9,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
+  WorkspaceMember,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
@@ -30,6 +31,14 @@ import {
 } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import type { GetFn, SetFn } from './types';
+
+const slugifyDir = (raw: string): string =>
+  raw
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'session';
 
 interface Input {
   workspaceId: WorkspaceId;
@@ -71,12 +80,39 @@ export function createSession(set: SetFn, get: GetFn) {
     const slugSeed =
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const trimmedExisting = existingBranch?.trim();
-    const worktree = await createWorktree({
-      repoPath: workspace.rootPath,
-      branchPrefix: prefix,
-      slug: slugSeed,
-      ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
-    });
+    const sessionId = crypto.randomUUID() as SessionId;
+    const isComposite = workspace.kind === 'composite';
+    const members = isComposite ? (workspace.members ?? []) : [];
+    if (isComposite && members.length < 2) {
+      throw new Error(`multi-project workspace has no linked repos: ${workspaceId}`);
+    }
+
+    let worktree: CreatedWorktree;
+    const memberWorktrees: Array<{ member: WorkspaceMember; worktree: CreatedWorktree }> = [];
+    if (isComposite) {
+      const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
+      const compositeDir = `${workspace.rootPath}/${dirSlug}`;
+      for (const member of members) {
+        const wt = await createWorktree({
+          repoPath: member.rootPath,
+          branchPrefix: prefix,
+          slug: dirSlug,
+          parentDir: compositeDir,
+          dirName: member.mountName,
+          ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
+        });
+        memberWorktrees.push({ member, worktree: wt });
+      }
+      const branchName = memberWorktrees[0]?.worktree.branchName ?? `${prefix}/${dirSlug}`;
+      worktree = { worktreePath: compositeDir, branchName, slug: dirSlug, reused: false };
+    } else {
+      worktree = await createWorktree({
+        repoPath: workspace.rootPath,
+        branchPrefix: prefix,
+        slug: slugSeed,
+        ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
+      });
+    }
 
     // Make sure workspace overrides are cached before reading defaultProviderId,
     // otherwise a fresh boot would silently fall back to anthropic for the
@@ -100,7 +136,7 @@ export function createSession(set: SetFn, get: GetFn) {
     const workflowRunId =
       workflowId !== undefined ? (crypto.randomUUID() as WorkflowRunId) : undefined;
     const session: Session = {
-      id: crypto.randomUUID() as SessionId,
+      id: sessionId,
       workspaceId,
       goal: goal.trim() || worktree.slug,
       state: initialState,
@@ -144,6 +180,19 @@ export function createSession(set: SetFn, get: GetFn) {
       parallelIndex: 0,
       createdAt: Date.now(),
     });
+    for (let i = 0; i < memberWorktrees.length; i += 1) {
+      const { member, worktree: wt } = memberWorktrees[i]!;
+      await insertSessionWorktree(tauriDatabase, {
+        id: crypto.randomUUID(),
+        sessionId: session.id,
+        worktreePath: wt.worktreePath,
+        branch: wt.branchName,
+        parallelIndex: i + 1,
+        mountWorkspaceId: member.workspaceId,
+        mountName: member.mountName,
+        createdAt: Date.now(),
+      });
+    }
 
     // Seed the goal context slot so the session prompt carries the user's
     // stated goal from turn 1. Otherwise the goal lives only on the session
@@ -244,7 +293,10 @@ export function createSession(set: SetFn, get: GetFn) {
         : state.sessionExternalTasks,
       sessionWorktrees: {
         ...state.sessionWorktrees,
-        [session.id]: [worktree.worktreePath],
+        [session.id]: [
+          worktree.worktreePath,
+          ...memberWorktrees.map((m) => m.worktree.worktreePath),
+        ],
       },
       sessionBranches: {
         ...state.sessionBranches,

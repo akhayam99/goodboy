@@ -363,6 +363,11 @@ export interface AppActions {
   logoutProvider(providerId: ProviderId): Promise<void>;
   cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  addCompositeWorkspace(input: {
+    name?: string;
+    containerPath: string;
+    members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
+  }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;

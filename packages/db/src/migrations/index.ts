@@ -53,6 +53,7 @@ import { m052PendingResolutions } from './m052-pending-resolutions';
 import { m053ScoutFanout } from './m053-scout-fanout';
 import { m054WorkflowRunInstances } from './m054-workflow-run-instances';
 import { m055ResolverCommentLink } from './m055-resolver-comment-link';
+import { m056CompositeWorkspaces } from './m056-composite-workspaces';
 
 export interface Migration {
   readonly version: number;
@@ -115,4 +116,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 53, sql: m053ScoutFanout },
   { version: 54, sql: m054WorkflowRunInstances },
   { version: 55, sql: m055ResolverCommentLink },
+  { version: 56, sql: m056CompositeWorkspaces },
 ];
