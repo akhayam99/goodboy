@@ -33,6 +33,14 @@ const ARCHITECTURAL_VERBS =
 const MULTI_STEP =
   /\bfirst\b.+\bthen\b.+\bthen\b|\bimplement\b.+\band\s+also\b|\brefactor\b.+\bacross\b/i;
 
+const BARE_FILENAME_TOKEN =
+  /(?:^|[\s"'`(,])([a-zA-Z0-9_-]+\.(?:ts|tsx|js|jsx|rs|py|go|rb|java|kt|swift|cpp|c|cs|sh|toml|json|yaml|yml|md|sql|html|css|scss))(?=[\s"'`),]|$)/gm;
+
+const SLASH_PATH_TOKEN =
+  /(?:^|[\s"'`(,])((?:[a-zA-Z0-9_.-]+\/)+[a-zA-Z0-9_.-]+\.[a-zA-Z]{1,6})(?=[\s"'`),]|$)/gm;
+
+const NUMBERED_LIST_LINE = /^\s*\d+[.)]\s/gm;
+
 const SHORT_LEN = 200;
 const QUESTION_LEN = 400;
 const HEAVY_LEN = 1500;
@@ -77,7 +85,30 @@ function countDistinctAsks(text: string): number {
   return matches?.length ?? 0;
 }
 
-export const assessTurnWeight = (firstTurnText: string): TurnWeight => {
+function countDistinctFilePaths(text: string): number {
+  const found = new Set<string>();
+  let m: RegExpExecArray | null;
+  SLASH_PATH_TOKEN.lastIndex = 0;
+  while ((m = SLASH_PATH_TOKEN.exec(text)) !== null) {
+    found.add(m[1]!.toLowerCase());
+  }
+  BARE_FILENAME_TOKEN.lastIndex = 0;
+  while ((m = BARE_FILENAME_TOKEN.exec(text)) !== null) {
+    found.add(m[1]!.toLowerCase());
+  }
+  return found.size;
+}
+
+function hasInlinedPlan(text: string): boolean {
+  NUMBERED_LIST_LINE.lastIndex = 0;
+  const matches = text.match(NUMBERED_LIST_LINE);
+  return matches !== null && matches.length >= 3;
+}
+
+export const assessTurnWeight = (
+  firstTurnText: string,
+  opts?: { attachmentCount?: number },
+): TurnWeight => {
   const text = firstTurnText ?? '';
   const trimmed = text.trim();
   if (!trimmed) {
@@ -97,6 +128,15 @@ export const assessTurnWeight = (firstTurnText: string): TurnWeight => {
     return 'heavy';
   }
   if (countDistinctAsks(trimmed) >= 1 && trimmed.length > SHORT_LEN) {
+    return 'heavy';
+  }
+  if (countDistinctFilePaths(trimmed) >= 3) {
+    return 'heavy';
+  }
+  if (hasInlinedPlan(trimmed)) {
+    return 'heavy';
+  }
+  if ((opts?.attachmentCount ?? 0) >= 2) {
     return 'heavy';
   }
 

@@ -87,6 +87,7 @@ const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'claude-opus-4-6': { weight: 60, tier: 'expensive' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
   'claude-opus-4-8': { weight: 80, tier: 'expensive' },
+  'claude-fable-5': { weight: 90, tier: 'expensive' },
 };
 
 export const TIER_TEXT: Record<CostTier, string> = {
@@ -230,36 +231,48 @@ export const modelWeight = (model: string): number => {
   return MODEL_COST[model]?.weight ?? 10;
 };
 
-const SUGGESTION_FLOOR_PATTERN = /haiku|small|mini|nano|cursor-small/i;
-
-const MIN_WEIGHT_GAP = 20;
-
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
 export const suggestLighterModel = (
   current: string,
   candidates: ReadonlyArray<string>,
 ): string | null => {
-  const currentWeight = modelWeight(current);
-  const eligible = candidates.filter((id) => {
+  const currentRank = TIER_RANK[modelTier(current)];
+  let best: { id: string; weight: number } | null = null;
+  for (const id of candidates) {
     if (id === current) {
-      return false;
+      continue;
     }
-    if (SUGGESTION_FLOOR_PATTERN.test(id)) {
-      return false;
+    const rank = TIER_RANK[modelTier(id)];
+    if (rank >= currentRank || rank === TIER_RANK.cheap) {
+      continue;
     }
-    const w = modelWeight(id);
-    return w < currentWeight && currentWeight - w >= MIN_WEIGHT_GAP;
-  });
-  if (eligible.length === 0) {
-    return null;
-  }
-  let best: { id: string; tierRank: number; weight: number } | null = null;
-  for (const id of eligible) {
-    const tierRank = TIER_RANK[modelTier(id)];
     const weight = modelWeight(id);
-    if (!best || tierRank < best.tierRank || (tierRank === best.tierRank && weight > best.weight)) {
-      best = { id, tierRank, weight };
+    if (!best || weight > best.weight) {
+      best = { id, weight };
+    }
+  }
+  return best?.id ?? null;
+};
+
+export const suggestHeavierModel = (
+  current: string,
+  candidates: ReadonlyArray<string>,
+): string | null => {
+  const currentRank = TIER_RANK[modelTier(current)];
+  const currentWeight = modelWeight(current);
+  let best: { id: string; rank: number; weight: number } | null = null;
+  for (const id of candidates) {
+    if (id === current) {
+      continue;
+    }
+    const rank = TIER_RANK[modelTier(id)];
+    const weight = modelWeight(id);
+    if (rank < currentRank || weight <= currentWeight) {
+      continue;
+    }
+    if (!best || rank > best.rank || (rank === best.rank && weight > best.weight)) {
+      best = { id, rank, weight };
     }
   }
   return best?.id ?? null;
@@ -279,6 +292,7 @@ const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
   sonnet: 'Sonnet',
   opus: 'Opus',
+  fable: 'Fable',
   'gpt-5': 'GPT-5',
   codex: 'Codex',
   mini: 'Mini',
@@ -290,6 +304,7 @@ const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
   sonnet: 'mid',
   opus: 'expensive',
+  fable: 'expensive',
   'gpt-5': 'mid',
   codex: 'mid',
   mini: 'cheap',

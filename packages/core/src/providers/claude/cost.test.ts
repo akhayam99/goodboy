@@ -10,16 +10,20 @@ const usage: ProviderUsage = {
 };
 
 describe('computeCostUsd', () => {
+  it('fable-5 pricing, not the sonnet fallback', () => {
+    expect(computeCostUsd(usage, 'claude-fable-5')).toBeCloseTo(10 + 50);
+  });
+
   it('opus pricing', () => {
-    expect(computeCostUsd(usage, 'claude-opus-4-7')).toBeCloseTo(15 + 75);
+    expect(computeCostUsd(usage, 'claude-opus-4-7')).toBeCloseTo(5 + 25);
   });
 
   it('opus-4-8 is priced as opus', () => {
-    expect(computeCostUsd(usage, 'claude-opus-4-8')).toBeCloseTo(15 + 75);
+    expect(computeCostUsd(usage, 'claude-opus-4-8')).toBeCloseTo(5 + 25);
   });
 
   it('opus-4-6 is priced as opus, not the sonnet fallback', () => {
-    expect(computeCostUsd(usage, 'claude-opus-4-6')).toBeCloseTo(15 + 75);
+    expect(computeCostUsd(usage, 'claude-opus-4-6')).toBeCloseTo(5 + 25);
   });
 
   it('sonnet pricing', () => {

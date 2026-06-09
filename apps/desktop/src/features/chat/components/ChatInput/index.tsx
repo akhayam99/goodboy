@@ -51,6 +51,7 @@ import {
   EFFORT_LEVELS,
   type EffortLevel,
   clampEffort,
+  suggestHeavierModel,
   suggestLighterModel,
 } from '../../utils/chat-constants';
 import { ProviderUsagePill } from '../ProviderUsagePill';
@@ -704,7 +705,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       }
     }
 
-    if (allowOverride && !isRunning && rightSizeSuggested !== null && rightSizePending === null) {
+    if (allowOverride && !isRunning && rightSizeSuggestion !== null && rightSizePending === null) {
       setRightSizePending({ content, attachments: atts });
       return;
     }
@@ -770,7 +771,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     if (pending === null) {
       return;
     }
-    const suggested = rightSizeSuggested;
+    const suggested = rightSizeSuggestion?.model ?? null;
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
@@ -992,22 +993,37 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     return Array.from(ids);
   }, [providerModels, effectiveModel]);
 
-  const rightSizeSuggested = useMemo<string | null>(() => {
+  const rightSizeSuggestion = useMemo<{
+    readonly direction: 'lighter' | 'heavier';
+    readonly model: string;
+  } | null>(() => {
     if (!isFirstTurnForAgent || rightSizeDismissed) {
       return null;
     }
-    const weight = assessTurnWeight(value);
-    if (weight !== 'light') {
-      return null;
+    const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
+    if (weight === 'light') {
+      const model = suggestLighterModel(effectiveModel, modelCandidates);
+      return model ? { direction: 'lighter', model } : null;
     }
-    return suggestLighterModel(effectiveModel, modelCandidates);
-  }, [isFirstTurnForAgent, rightSizeDismissed, value, effectiveModel, modelCandidates]);
+    if (weight === 'heavy') {
+      const model = suggestHeavierModel(effectiveModel, modelCandidates);
+      return model ? { direction: 'heavier', model } : null;
+    }
+    return null;
+  }, [
+    isFirstTurnForAgent,
+    rightSizeDismissed,
+    value,
+    effectiveModel,
+    modelCandidates,
+    attachments,
+  ]);
 
   useEffect(() => {
-    if (rightSizePending !== null && rightSizeSuggested === null) {
+    if (rightSizePending !== null && rightSizeSuggestion === null) {
       setRightSizePending(null);
     }
-  }, [rightSizePending, rightSizeSuggested]);
+  }, [rightSizePending, rightSizeSuggestion]);
 
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
   if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
@@ -1118,13 +1134,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       ),
     });
   }
-  if (rightSizePending !== null && rightSizeSuggested !== null) {
+  if (rightSizePending !== null && rightSizeSuggestion !== null) {
     suggestions.push({
       key: 'right-size',
       node: (
         <RightSizeCard
+          direction={rightSizeSuggestion.direction}
           currentModel={effectiveModel}
-          suggestedModel={rightSizeSuggested}
+          suggestedModel={rightSizeSuggestion.model}
           onUseSuggested={() => void onUseSuggested()}
           onKeepCurrent={() => void onKeepCurrent()}
           onChangeModel={onChangeModel}

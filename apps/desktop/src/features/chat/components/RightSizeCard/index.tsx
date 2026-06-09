@@ -5,6 +5,7 @@ import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 import { NudgeCard } from '../NudgeCard';
 
 export type Props = {
+  readonly direction: 'lighter' | 'heavier';
   readonly currentModel: string;
   readonly suggestedModel: string;
   readonly onUseSuggested: () => void;
@@ -13,6 +14,7 @@ export type Props = {
 };
 
 export const RightSizeCard = ({
+  direction,
   currentModel,
   suggestedModel,
   onUseSuggested,
@@ -28,7 +30,7 @@ export const RightSizeCard = ({
       autoFocusPrimary
       title={
         <>
-          This looks light. Run with{' '}
+          {direction === 'lighter' ? 'This looks light.' : 'This looks heavy.'} Run with{' '}
           <span className={cn('font-semibold', TIER_TEXT[modelTier(suggestedModel)])}>
             {modelLabel(suggestedModel)}
           </span>{' '}

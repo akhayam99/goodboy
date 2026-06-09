@@ -15,7 +15,7 @@ export const formatTokens = (n: number): string => {
 export const formatCost = formatUsd;
 
 export const shortModel = (model: string): string => {
-  const m = model.match(/claude-(haiku|sonnet|opus)/i);
+  const m = model.match(/claude-(haiku|sonnet|opus|fable)/i);
   if (m && m[1]) {
     return m[1].toLowerCase();
   }
@@ -23,9 +23,9 @@ export const shortModel = (model: string): string => {
 };
 
 export const shortModelWithVersion = (model: string): string => {
-  const m = model.match(/claude-(haiku|sonnet|opus)-(\d+)-(\d+)/i);
-  if (m && m[1] && m[2] && m[3]) {
-    return `${m[1].toLowerCase()} ${m[2]}.${m[3]}`;
+  const m = model.match(/claude-(haiku|sonnet|opus|fable)-(\d+)(?:-(\d+))?/i);
+  if (m && m[1] && m[2]) {
+    return `${m[1].toLowerCase()} ${m[2]}${m[3] ? `.${m[3]}` : ''}`;
   }
   return shortModel(model);
 };

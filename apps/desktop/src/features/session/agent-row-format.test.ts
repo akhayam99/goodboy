@@ -59,6 +59,7 @@ describe('shortModel', () => {
     expect(shortModel('claude-haiku-4-5')).toBe('haiku');
     expect(shortModel('claude-sonnet-4-6')).toBe('sonnet');
     expect(shortModel('claude-opus-4-7')).toBe('opus');
+    expect(shortModel('claude-fable-5')).toBe('fable');
   });
 
   it('passes non-claude models through', () => {
