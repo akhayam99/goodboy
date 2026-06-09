@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrComment } from '@goodboy/types';
+import type { CommentThread } from '../../../comment-threads';
 
 const h = vi.hoisted(() => ({
   providers: [{ id: 'anthropic', connection: 'connected' }] as Array<{
@@ -35,6 +36,13 @@ function comment(over: Partial<PrComment> = {}): PrComment {
   };
 }
 
+function thread(
+  over: Partial<PrComment> = {},
+  replies: ReadonlyArray<PrComment> = [],
+): CommentThread {
+  return { head: comment(over), replies };
+}
+
 beforeEach(() => {
   h.providers = [{ id: 'anthropic', connection: 'connected' }];
 });
@@ -45,7 +53,7 @@ describe('ResolveBoard', () => {
     const onSpawnBatch = vi.fn();
     render(
       <ResolveBoard
-        comments={[comment({ id: 'c1' }), comment({ id: 'c2', threadId: 'PRRT_2' })]}
+        threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={onSpawnBatch}
         onOpenThread={vi.fn()}
@@ -63,15 +71,15 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 1 comment/i }));
     });
     expect(onSpawnBatch).toHaveBeenCalledTimes(1);
-    const batchArg = onSpawnBatch.mock.calls[0]?.[0] as ReadonlyArray<PrComment>;
-    expect(batchArg.map((c) => c.id)).toEqual(['c2']);
+    const batchArg = onSpawnBatch.mock.calls[0]?.[0] as ReadonlyArray<CommentThread>;
+    expect(batchArg.map((t) => t.head.id)).toEqual(['c2']);
   });
 
   it('spawns a single comment via its Resolve button', () => {
     const onSpawnOne = vi.fn();
     render(
       <ResolveBoard
-        comments={[comment({ id: 'c1' })]}
+        threads={[thread({ id: 'c1' })]}
         onSpawnOne={onSpawnOne}
         onSpawnBatch={vi.fn()}
         onOpenThread={vi.fn()}
@@ -81,13 +89,31 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /^Resolve$/i }));
     });
     expect(onSpawnOne).toHaveBeenCalledTimes(1);
-    expect(onSpawnOne.mock.calls[0]?.[0]?.id).toBe('c1');
+    expect(onSpawnOne.mock.calls[0]?.[0]?.head?.id).toBe('c1');
+  });
+
+  it('renders the head comment plus its replies as context', () => {
+    render(
+      <ResolveBoard
+        threads={[
+          thread({ id: 'c1', body: 'main request' }, [
+            comment({ id: 'r1', author: 'bob', body: 'agree, ship it' }),
+          ]),
+        ]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/main request/i)).toBeDefined();
+    expect(screen.getByText(/agree, ship it/i)).toBeDefined();
+    expect(screen.getByText('bob')).toBeDefined();
   });
 
   it('renders an empty state when there are no open comments', () => {
     render(
       <ResolveBoard
-        comments={[]}
+        threads={[]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={vi.fn()}
         onOpenThread={vi.fn()}

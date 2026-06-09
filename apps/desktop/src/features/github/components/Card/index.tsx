@@ -277,7 +277,9 @@ function computeCiStatus(
 }
 
 function computeCommentsStatus(comments: ReadonlyArray<PrComment>): TabStatus | null {
-  const heads = comments.filter((c) => c.source === 'review' && !c.inReplyToId);
+  const heads = groupThreads(comments)
+    .map((t) => t.head)
+    .filter((c) => c.source === 'review');
   if (heads.length === 0) return null;
   const open = heads.filter((c) => c.resolved === false).length;
   if (open > 0)

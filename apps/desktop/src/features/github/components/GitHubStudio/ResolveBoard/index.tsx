@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { PrComment, ProviderId } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import { cn, EmptyState } from '@goodboy/ui';
 import { ChevronDown, ExternalLink, Sliders, Sparkles } from 'lucide-react';
 import {
@@ -14,20 +14,21 @@ import { ProviderSelect } from '../../../../session/components/ProviderSelect';
 import { ModelSelect } from '../../../../session/components/ModelSelect';
 import { EffortSelect } from '../../../../session/components/EffortSelect';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
+import type { CommentThread } from '../../../comment-threads';
 import { useAppStore } from '../../../../../store';
 import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
 
 interface Props {
-  readonly comments: ReadonlyArray<PrComment>;
-  readonly onSpawnOne: (comment: PrComment, choice: ResolveModelChoice) => void;
+  readonly threads: ReadonlyArray<CommentThread>;
+  readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void;
   readonly onSpawnBatch: (
-    comments: ReadonlyArray<PrComment>,
+    threads: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => void;
   readonly onOpenThread: (threadId: string) => void;
 }
 
-export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread }: Props) {
+export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -39,16 +40,16 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
   const patchConfig = (id: string, next: CardConfig) =>
     setConfigById((prev) => ({ ...prev, [id]: next }));
   const applyToAll = (next: CardConfig) =>
-    setConfigById(() => Object.fromEntries(comments.map((c) => [c.id, next])));
+    setConfigById(() => Object.fromEntries(threads.map((t) => [t.head.id, next])));
 
   const selected = useMemo(
-    () => comments.filter((c) => !deselected.has(c.id)),
-    [comments, deselected],
+    () => threads.filter((t) => !deselected.has(t.head.id)),
+    [threads, deselected],
   );
-  const allSelected = selected.length === comments.length;
-  const aggregate = aggregateConfig(comments.map((c) => getConfig(c.id)));
+  const allSelected = selected.length === threads.length;
+  const aggregate = aggregateConfig(threads.map((t) => getConfig(t.head.id)));
 
-  if (comments.length === 0) {
+  if (threads.length === 0) {
     return (
       <EmptyState
         bordered
@@ -67,10 +68,10 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
       return next;
     });
   const toggleAll = () =>
-    setDeselected(allSelected ? new Set(comments.map((c) => c.id)) : new Set());
+    setDeselected(allSelected ? new Set(threads.map((t) => t.head.id)) : new Set());
 
   const choiceById: Record<string, ResolveModelChoice> = Object.fromEntries(
-    comments.map((c) => [c.id, getConfig(c.id)]),
+    threads.map((t) => [t.head.id, getConfig(t.head.id)]),
   );
 
   return (
@@ -135,17 +136,19 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
       </div>
 
       <ul className="flex flex-col gap-2">
-        {comments.map((c) => (
-          <li key={c.id}>
+        {threads.map((t) => (
+          <li key={t.head.id}>
             <ResolveCard
-              comment={c}
-              config={getConfig(c.id)}
-              checked={!deselected.has(c.id)}
+              thread={t}
+              config={getConfig(t.head.id)}
+              checked={!deselected.has(t.head.id)}
               connectedProviders={connectedProviders}
-              onToggle={() => toggle(c.id)}
-              onConfig={(next) => patchConfig(c.id, next)}
-              onResolve={() => onSpawnOne(c, getConfig(c.id))}
-              onOpenThread={c.threadId ? () => onOpenThread(c.threadId as string) : undefined}
+              onToggle={() => toggle(t.head.id)}
+              onConfig={(next) => patchConfig(t.head.id, next)}
+              onResolve={() => onSpawnOne(t, getConfig(t.head.id))}
+              onOpenThread={
+                t.head.threadId ? () => onOpenThread(t.head.threadId as string) : undefined
+              }
             />
           </li>
         ))}
@@ -155,7 +158,7 @@ export function ResolveBoard({ comments, onSpawnOne, onSpawnBatch, onOpenThread 
 }
 
 function ResolveCard({
-  comment,
+  thread,
   config,
   checked,
   connectedProviders,
@@ -164,7 +167,7 @@ function ResolveCard({
   onResolve,
   onOpenThread,
 }: {
-  comment: PrComment;
+  thread: CommentThread;
   config: CardConfig;
   checked: boolean;
   connectedProviders: ReadonlyArray<ProviderId>;
@@ -174,9 +177,8 @@ function ResolveCard({
   onOpenThread?: () => void;
 }) {
   const [configOpen, setConfigOpen] = useState(false);
-  const loc = comment.path
-    ? `${comment.path}${comment.line ? `:${comment.line}` : ''}`
-    : 'conversation';
+  const { head, replies } = thread;
+  const loc = head.path ? `${head.path}${head.line ? `:${head.line}` : ''}` : 'conversation';
   return (
     <div
       className={cn(
@@ -189,12 +191,12 @@ function ResolveCard({
           type="checkbox"
           checked={checked}
           onChange={onToggle}
-          aria-label={`include comment by ${comment.author}`}
+          aria-label={`include comment by ${head.author}`}
           className="mt-0.5 size-3.5 accent-primary"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{comment.author}</span>
+            <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
             <span className="min-w-0 truncate font-mono text-[11px]">{loc}</span>
             {onOpenThread ? (
@@ -210,8 +212,21 @@ function ResolveCard({
             ) : null}
           </div>
           <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-[13px] leading-snug text-foreground [overflow-wrap:anywhere]">
-            {comment.body.trim() || '(empty)'}
+            {head.body.trim() || '(empty)'}
           </p>
+
+          {replies.length > 0 ? (
+            <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
+              {replies.map((r) => (
+                <div key={r.id} className="flex flex-col gap-0.5">
+                  <span className="text-[11px] font-medium text-muted-foreground">{r.author}</span>
+                  <p className="line-clamp-2 whitespace-pre-wrap text-[12px] leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
+                    {r.body.trim() || '(empty)'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <div className="relative">

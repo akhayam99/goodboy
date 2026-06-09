@@ -20,14 +20,11 @@ export function buildCommentAgentTitle(c: PrComment): string {
   return truncate(`resolve: ${who} comment`, TITLE_MAX);
 }
 
-/**
- * Build the kickoff prompt for a resolver agent spawned from a single
- * review comment. The commit-locally policy, EASY/NON-TRIVIAL classifier,
- * and `<<comment-resolved>>` marker emission rule all live in the resolver
- * kind's systemPrompt (agent-kind.ts), so this prompt only supplies the
- * comment-specific context: PR + author + body + path + thread id.
- */
-function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): string {
+function buildCommentAgentPrompt(
+  c: PrComment,
+  pr: PullRequestState,
+  replies: ReadonlyArray<PrComment>,
+): string {
   const lines: Array<string> = [];
   lines.push(`Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`);
   if (c.source === 'review' && c.path) {
@@ -38,6 +35,17 @@ function buildCommentAgentPrompt(c: PrComment, pr: PullRequestState): string {
   lines.push('');
   for (const ln of (c.body.trim() || '(empty body)').split('\n')) {
     lines.push(`> ${ln}`);
+  }
+  if (replies.length > 0) {
+    lines.push('');
+    lines.push('Replies in this thread (chronological, for context; resolve the comment above):');
+    for (const r of replies) {
+      lines.push('');
+      lines.push(`${r.author}:`);
+      for (const ln of (r.body.trim() || '(empty body)').split('\n')) {
+        lines.push(`> ${ln}`);
+      }
+    }
   }
   lines.push('');
   lines.push(`Comment URL: ${c.url}`);
@@ -69,6 +77,7 @@ export function buildCommentAgentArgs(
   c: PrComment,
   pr: PullRequestState,
   choice: ResolveModelChoice = {},
+  replies: ReadonlyArray<PrComment> = [],
 ): CommentAgentArgs {
   const defaults = AGENT_KIND_DEFAULTS.resolver;
   return {
@@ -77,7 +86,7 @@ export function buildCommentAgentArgs(
     model: choice.model ?? defaults.model,
     ...(choice.provider !== undefined && { provider: choice.provider }),
     effort: choice.effort ?? defaults.effort,
-    initialPrompt: buildCommentAgentPrompt(c, pr),
+    initialPrompt: buildCommentAgentPrompt(c, pr, replies),
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
   };

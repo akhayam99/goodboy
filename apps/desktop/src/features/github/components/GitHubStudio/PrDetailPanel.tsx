@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { PrComment, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import { AlertCircle, GitPullRequest, Inbox, Loader2, Plus, RefreshCw } from 'lucide-react';
 import {
@@ -13,6 +13,7 @@ import { OpenSessionButton } from '../../../../shared/components/OpenSessionButt
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
+import { groupThreads, type CommentThread } from '../../comment-threads';
 import { CreatePrDialog } from './CreatePrDialog';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
 import { PrChecks } from './PrChecks';
@@ -204,11 +205,11 @@ export function PrDetailPanel({
     return agentId;
   };
 
-  const onSpawnOne = (comment: PrComment, choice: ResolveModelChoice) => {
+  const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
     if (!activePr) return;
     void (async () => {
       const agentId = await spawnResolver(
-        buildCommentAgentArgs(comment, activePr, choice),
+        buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
         choice,
         false,
       );
@@ -219,14 +220,18 @@ export function PrDetailPanel({
   };
 
   const onSpawnBatch = (
-    batch: ReadonlyArray<PrComment>,
+    batch: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => {
     if (!activePr || batch.length === 0) return;
     void (async () => {
-      for (const c of batch) {
-        const choice = choiceById[c.id] ?? {};
-        await spawnResolver(buildCommentAgentArgs(c, activePr, choice), choice, true);
+      for (const t of batch) {
+        const choice = choiceById[t.head.id] ?? {};
+        await spawnResolver(
+          buildCommentAgentArgs(t.head, activePr, choice, t.replies),
+          choice,
+          true,
+        );
       }
       await activateNextResolver(sessionId);
       await setCurrentSession(sessionId);
@@ -351,8 +356,8 @@ export function PrDetailPanel({
             >
               {section === 'resolve' ? (
                 <ResolveBoard
-                  comments={(detail?.comments ?? []).filter(
-                    (c) => c.source === 'review' && c.resolved === false,
+                  threads={groupThreads(detail?.comments ?? []).filter(
+                    (t) => t.head.source === 'review' && t.head.resolved === false,
                   )}
                   onSpawnOne={onSpawnOne}
                   onSpawnBatch={onSpawnBatch}
