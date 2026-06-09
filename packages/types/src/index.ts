@@ -32,6 +32,8 @@ export type {
   SessionUserStatus,
   TurnState,
   Workspace,
+  WorkspaceKind,
+  WorkspaceMember,
   WorkflowRun,
   WorkspaceIntegration,
   WorkspaceIntegrationProvider,

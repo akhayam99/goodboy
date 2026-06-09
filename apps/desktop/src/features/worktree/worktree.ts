@@ -15,6 +15,7 @@ export interface CreateWorktreeArgs {
   readonly parentDir?: string;
   readonly existingBranch?: string;
   readonly baseBranch?: string;
+  readonly dirName?: string;
 }
 
 export async function createWorktree(args: CreateWorktreeArgs): Promise<CreatedWorktree> {

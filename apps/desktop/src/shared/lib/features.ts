@@ -1,10 +1,3 @@
-/**
- * Max workspaces a user can keep connected at once.
- * Beta-phase cap: keeps disk/worktree footprint predictable and forces
- * users to disconnect stale repos rather than hoarding them.
- */
-export const MAX_WORKSPACES = 5;
-
 export const WORKSPACE_FEATURES = {
   workflows: true,
   skills: false,

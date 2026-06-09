@@ -84,6 +84,8 @@ pub struct CreateArgs {
     /// `existing_branch` is set.
     #[serde(rename = "baseBranch", default)]
     pub base_branch: Option<String>,
+    #[serde(rename = "dirName", default)]
+    pub dir_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -163,7 +165,15 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     let dir_slug = existing_branch
         .map(sanitize_slug)
         .unwrap_or_else(|| slug.clone());
-    let worktree_path = parent.join(format!("{}-{dir_slug}", args.branch_prefix));
+    let explicit_dir = args
+        .dir_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let worktree_path = match explicit_dir {
+        Some(name) => parent.join(name),
+        None => parent.join(format!("{}-{dir_slug}", args.branch_prefix)),
+    };
 
     ensure_gitignore_entry(&repo_path, ".goodboy/")?;
 

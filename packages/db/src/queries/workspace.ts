@@ -1,10 +1,12 @@
-import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Workspace, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import type { Database } from '../client';
+import { listMembersForWorkspaces } from './workspace-member';
 
 interface WorkspaceRow {
   id: string;
   name: string;
   root_path: string;
+  kind: string | null;
   created_at: number;
   updated_at: number;
   disconnected_at: number | null;
@@ -16,6 +18,7 @@ function toDomain(row: WorkspaceRow): Workspace {
     id: row.id as WorkspaceId,
     name: row.name,
     rootPath: row.root_path,
+    kind: (row.kind === 'composite' ? 'composite' : 'repo') as WorkspaceKind,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
     ...(row.disconnected_at != null
@@ -27,20 +30,42 @@ function toDomain(row: WorkspaceRow): Workspace {
   };
 }
 
+async function attachMembers(
+  db: Database,
+  workspaces: ReadonlyArray<Workspace>,
+): Promise<ReadonlyArray<Workspace>> {
+  const compositeIds = workspaces.filter((w) => w.kind === 'composite').map((w) => w.id);
+  if (compositeIds.length === 0) return workspaces;
+  const membersByComposite = await listMembersForWorkspaces(db, compositeIds);
+  return workspaces.map((w) =>
+    w.kind === 'composite' ? { ...w, members: membersByComposite.get(w.id) ?? [] } : w,
+  );
+}
+
 export async function insertWorkspace(db: Database, workspace: Workspace): Promise<void> {
   const created = Date.parse(workspace.createdAt);
   const updated = Date.parse(workspace.updatedAt);
   const accessed = workspace.lastAccessedAt ? Date.parse(workspace.lastAccessedAt) : updated;
   await db.execute(
-    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [workspace.id, workspace.name, workspace.rootPath, created, updated, accessed],
+    'INSERT INTO workspaces (id, name, root_path, kind, created_at, updated_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [
+      workspace.id,
+      workspace.name,
+      workspace.rootPath,
+      workspace.kind ?? 'repo',
+      created,
+      updated,
+      accessed,
+    ],
   );
 }
 
 export async function getWorkspaceById(db: Database, id: WorkspaceId): Promise<Workspace | null> {
   const rows = await db.select<WorkspaceRow>('SELECT * FROM workspaces WHERE id = ?', [id]);
   const row = rows[0];
-  return row ? toDomain(row) : null;
+  if (!row) return null;
+  const [withMembers] = await attachMembers(db, [toDomain(row)]);
+  return withMembers ?? null;
 }
 
 /**
@@ -51,7 +76,7 @@ export async function listWorkspaces(db: Database): Promise<ReadonlyArray<Worksp
   const rows = await db.select<WorkspaceRow>(
     'SELECT * FROM workspaces WHERE disconnected_at IS NULL ORDER BY created_at DESC',
   );
-  return rows.map(toDomain);
+  return attachMembers(db, rows.map(toDomain));
 }
 
 /**
@@ -66,7 +91,7 @@ export async function listDisconnectedWorkspaces(
     'SELECT * FROM workspaces WHERE disconnected_at IS NOT NULL ORDER BY disconnected_at DESC LIMIT ?',
     [limit],
   );
-  return rows.map(toDomain);
+  return attachMembers(db, rows.map(toDomain));
 }
 
 /**
@@ -82,7 +107,9 @@ export async function findWorkspaceByRootPath(
     [rootPath],
   );
   const row = rows[0];
-  return row ? toDomain(row) : null;
+  if (!row) return null;
+  const [withMembers] = await attachMembers(db, [toDomain(row)]);
+  return withMembers ?? null;
 }
 
 /** Soft delete. Sessions, worktrees, transcripts stay intact. */

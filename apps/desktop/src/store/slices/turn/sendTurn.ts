@@ -816,14 +816,27 @@ export function sendTurn(set: SetFn, get: GetFn) {
 
     // Worktree scope guard, claude/cursor/codex all accept absolute paths
     // in their Write/Edit tools and won't refuse to write outside cwd.
-    const scopeGuard = [
-      '[worktree-scope]',
-      `You are operating inside an isolated git worktree at: ${workingDir}`,
-      'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-      'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-      'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-      '[/worktree-scope]',
-    ].join('\n');
+    const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
+    const scopeGuard = (
+      scopeMembers.length > 0
+        ? [
+            '[multi-repo-scope]',
+            `You are operating across ${scopeMembers.length} linked git repositories mounted under: ${workingDir}`,
+            `Each repo lives in its own subfolder: ${scopeMembers.map((m) => m.mountName).join(', ')}.`,
+            'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
+            'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
+            '[/multi-repo-scope]',
+          ]
+        : [
+            '[worktree-scope]',
+            `You are operating inside an isolated git worktree at: ${workingDir}`,
+            'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
+            'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
+            'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
+            '[/worktree-scope]',
+          ]
+    ).join('\n');
     const fullSystemPrompt = kindSystemPrompt ? `${scopeGuard}\n\n${kindSystemPrompt}` : scopeGuard;
 
     if (provider !== 'anthropic') {

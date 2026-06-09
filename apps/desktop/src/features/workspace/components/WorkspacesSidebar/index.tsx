@@ -48,7 +48,7 @@ import {
 import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
-import { MAX_WORKSPACES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
 import { OnboardingChip } from '../../../onboarding/OnboardingCard';

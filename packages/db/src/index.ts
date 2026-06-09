@@ -16,6 +16,7 @@ export {
   touchWorkspaceLastAccessed,
   deleteWorkspace,
 } from './queries/workspace';
+export { insertWorkspaceMembers } from './queries/workspace-member';
 export {
   upsertWorkspaceIntegration,
   listIntegrationsForWorkspace,

@@ -12,10 +12,20 @@ import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 
+export type WorkspaceKind = 'repo' | 'composite';
+
+export type WorkspaceMember = Readonly<{
+  workspaceId: WorkspaceId;
+  rootPath: string;
+  mountName: string;
+}>;
+
 export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
   rootPath: string;
+  kind?: WorkspaceKind;
+  members?: ReadonlyArray<WorkspaceMember>;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
   /**
