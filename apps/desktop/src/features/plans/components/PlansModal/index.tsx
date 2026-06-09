@@ -492,6 +492,14 @@ function parsePlanSource(raw: string): { title: string; bodyMd: string } {
   const titleLine = (lines[firstIdx] ?? '').trim();
   const title = titleLine.replace(/^#+\s*/, '').trim();
   const restLines = lines.slice(firstIdx + 1);
-  const bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  const bodyMd = trimNewlines(restLines.join('\n'));
   return { title, bodyMd };
+}
+
+function trimNewlines(s: string): string {
+  let start = 0;
+  let end = s.length;
+  while (start < end && s.charAt(start) === '\n') start++;
+  while (end > start && s.charAt(end - 1) === '\n') end--;
+  return s.slice(start, end);
 }
