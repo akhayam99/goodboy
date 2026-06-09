@@ -17,12 +17,67 @@ export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyA
   return out;
 };
 
-const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
-const QUESTION_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>([\s\S]*?)<<\/ctx-question>>/g;
-const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
-const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
-const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
-const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
+const QUESTION_OPEN_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>/g;
+const QUESTION_CLOSE = '<</ctx-question>>';
+const LEADING_SPACE_RE = /^\s/;
+
+const extractAllTagged = (text: string, tag: string): ReadonlyArray<string> => {
+  const open = `<<${tag}>>`;
+  const close = `<</${tag}>>`;
+  const out: string[] = [];
+  let idx = 0;
+  while (idx < text.length) {
+    const start = text.indexOf(open, idx);
+    if (start === -1) break;
+    const end = text.indexOf(close, start + open.length);
+    if (end === -1) break;
+    const value = text.slice(start + open.length, end).trim();
+    if (value.length > 0) out.push(value);
+    idx = end + close.length;
+  }
+  return out;
+};
+
+const stripTagged = (text: string, tag: string): string => {
+  const open = `<<${tag}>>`;
+  const close = `<</${tag}>>`;
+  let out = '';
+  let idx = 0;
+  while (idx < text.length) {
+    const start = text.indexOf(open, idx);
+    if (start === -1) break;
+    const end = text.indexOf(close, start + open.length);
+    if (end === -1) break;
+    out += text.slice(idx, start);
+    idx = end + close.length;
+  }
+  return out + text.slice(idx);
+};
+
+const extractSelfClosing = (text: string, name: string): ReadonlyArray<string> => {
+  const open = `<<${name}`;
+  const out: string[] = [];
+  let idx = 0;
+  while (idx < text.length) {
+    const start = text.indexOf(open, idx);
+    if (start === -1) break;
+    const after = start + open.length;
+    const close = text.indexOf('>>', after);
+    if (close === -1) break;
+    idx = close + 2;
+    const inner = text.slice(after, close);
+    if (inner.length > 0 && LEADING_SPACE_RE.test(inner) && !inner.includes('>')) out.push(inner);
+  }
+  return out;
+};
+
+const trimNewlines = (s: string): string => {
+  let start = 0;
+  let end = s.length;
+  while (start < end && s.charAt(start) === '\n') start++;
+  while (end > start && s.charAt(end - 1) === '\n') end--;
+  return s.slice(start, end);
+};
 
 export type ExtractedQuestion = {
   readonly text: string;
@@ -36,19 +91,23 @@ export const extractMarkers = (
   readonly questions: ReadonlyArray<ExtractedQuestion>;
   readonly resolved: ReadonlyArray<string>;
 } => {
-  const decisions = extractAll(assistantText, DECISION_RE);
+  const decisions = extractAllTagged(assistantText, 'ctx-decision');
   const questions = extractQuestions(assistantText);
-  const resolved = extractAll(assistantText, RESOLVED_RE);
+  const resolved = extractAllTagged(assistantText, 'ctx-resolved');
   return { decisions, questions, resolved };
 };
 
-function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
+const extractQuestions = (text: string): ReadonlyArray<ExtractedQuestion> => {
   const out: ExtractedQuestion[] = [];
-  QUESTION_RE.lastIndex = 0;
+  QUESTION_OPEN_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = QUESTION_RE.exec(text)) !== null) {
+  while ((m = QUESTION_OPEN_RE.exec(text)) !== null) {
+    const bodyStart = m.index + m[0].length;
+    const end = text.indexOf(QUESTION_CLOSE, bodyStart);
+    if (end === -1) break;
+    QUESTION_OPEN_RE.lastIndex = end + QUESTION_CLOSE.length;
     const suggestionsRaw = (m[1] ?? '').trim();
-    const body = (m[2] ?? '').trim();
+    const body = text.slice(bodyStart, end).trim();
     if (body.length === 0) {
       continue;
     }
@@ -62,7 +121,7 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
     out.push({ text: body, suggestedAnswers });
   }
   return out;
-}
+};
 
 export type ExtractedPlan = {
   readonly title: string;
@@ -70,7 +129,7 @@ export type ExtractedPlan = {
 };
 
 export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
-  const matches = extractAll(assistantText, PLAN_RE);
+  const matches = extractAllTagged(assistantText, 'plan');
   if (matches.length === 0) {
     return null;
   }
@@ -78,7 +137,7 @@ export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | nu
   return parsePlanBody(raw);
 };
 
-function parsePlanBody(raw: string): ExtractedPlan | null {
+const parsePlanBody = (raw: string): ExtractedPlan | null => {
   const lines = raw.split('\n');
   let firstIdx = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -97,12 +156,12 @@ function parsePlanBody(raw: string): ExtractedPlan | null {
     return null;
   }
   const restLines = lines.slice(firstIdx + 1);
-  let bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  let bodyMd = trimNewlines(restLines.join('\n'));
   if (bodyMd.length === 0) {
     bodyMd = title;
   }
   return { title, bodyMd };
-}
+};
 
 const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
   'planner',
@@ -122,11 +181,8 @@ export type ExtractedHandoff = {
 };
 
 export const extractHandoff = (assistantText: string): ExtractedHandoff | null => {
-  HANDOFF_RE.lastIndex = 0;
   let last: ExtractedHandoff | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = HANDOFF_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'handoff')) {
     const attrs = parseHandoffAttrs(inner);
     const kindRaw = attrs.kind?.toLowerCase() ?? '';
     if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) {
@@ -141,21 +197,44 @@ export const extractHandoff = (assistantText: string): ExtractedHandoff | null =
   return last;
 };
 
-function parseHandoffAttrs(inner: string): Record<string, string> {
+const WORD_CHAR_RE = /\w/;
+const SPACE_CHAR_RE = /\s/;
+
+const parseHandoffAttrs = (inner: string): Record<string, string> => {
   const out: Record<string, string> = {};
-  HANDOFF_ATTR_RE.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = HANDOFF_ATTR_RE.exec(inner)) !== null) {
-    const key = (m[1] ?? '').toLowerCase();
-    const value = m[2] ?? m[3] ?? m[4] ?? '';
-    if (key.length > 0) {
-      out[key] = value;
+  let i = 0;
+  while (i < inner.length) {
+    if (!WORD_CHAR_RE.test(inner.charAt(i))) {
+      i++;
+      continue;
     }
+    const keyStart = i;
+    while (i < inner.length && WORD_CHAR_RE.test(inner.charAt(i))) i++;
+    const key = inner.slice(keyStart, i).toLowerCase();
+    let j = i;
+    while (j < inner.length && SPACE_CHAR_RE.test(inner.charAt(j))) j++;
+    if (inner.charAt(j) !== '=') continue;
+    j++;
+    while (j < inner.length && SPACE_CHAR_RE.test(inner.charAt(j))) j++;
+    const parsed = parseAttrValue(inner, j);
+    if (parsed === null) continue;
+    out[key] = parsed.value;
+    i = parsed.end;
   }
   return out;
-}
+};
 
-const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^>]+?)>>/g;
+const parseAttrValue = (inner: string, from: number): { value: string; end: number } | null => {
+  const quote = inner.charAt(from);
+  if (quote === '"' || quote === "'") {
+    const closing = inner.indexOf(quote, from + 1);
+    if (closing !== -1) return { value: inner.slice(from + 1, closing), end: closing + 1 };
+  }
+  let end = from;
+  while (end < inner.length && !SPACE_CHAR_RE.test(inner.charAt(end))) end++;
+  if (end === from) return null;
+  return { value: inner.slice(from, end), end };
+};
 
 export type ExtractedCommentResolution = {
   readonly threadId: string;
@@ -165,11 +244,8 @@ export type ExtractedCommentResolution = {
 export const extractCommentResolved = (
   assistantText: string,
 ): ExtractedCommentResolution | null => {
-  COMMENT_RESOLVED_RE.lastIndex = 0;
   let last: ExtractedCommentResolution | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_RESOLVED_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'comment-resolved')) {
     const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const commitSha = (attrs.commit ?? attrs.sha ?? '').trim();
@@ -187,19 +263,15 @@ export const isReviewThreadId = (threadId: string): boolean => {
   return REVIEW_THREAD_ID_RE.test(threadId);
 };
 
-const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^>]+?)>>/g;
-
 export type ExtractedCommentWontfix = {
   readonly threadId: string;
   readonly reason: string;
 };
 
 export const extractCommentWontfix = (assistantText: string): ExtractedCommentWontfix | null => {
-  COMMENT_WONTFIX_RE.lastIndex = 0;
   let last: ExtractedCommentWontfix | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_WONTFIX_RE.exec(assistantText)) !== null) {
-    const attrs = parseHandoffAttrs(m[1] ?? '');
+  for (const inner of extractSelfClosing(assistantText, 'comment-wontfix')) {
+    const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const reason = (attrs.reason ?? '').trim();
     if (threadId.length === 0 || reason.length === 0) {
@@ -210,9 +282,6 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
   return last;
 };
 
-const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
-const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
-
 export type ExtractedCluster = {
   readonly title: string;
   readonly instructions: string;
@@ -221,15 +290,8 @@ export type ExtractedCluster = {
 export const extractClustersFromMarker = (
   assistantText: string,
 ): ReadonlyArray<ExtractedCluster> | null => {
-  CLUSTERS_RE.lastIndex = 0;
-  let raw: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = CLUSTERS_RE.exec(assistantText)) !== null) {
-    const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) {
-      raw = inner;
-    }
-  }
+  const blocks = extractAllTagged(assistantText, 'clusters');
+  const raw = blocks.length > 0 ? blocks[blocks.length - 1]! : null;
   if (raw === null) {
     return null;
   }
@@ -270,11 +332,8 @@ export const extractClustersFromMarker = (
 };
 
 export const extractClusterDone = (assistantText: string): { readonly id: string } | null => {
-  CLUSTER_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = CLUSTER_DONE_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosing(assistantText, 'cluster-done')) {
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
     if (id.length === 0) {
@@ -285,8 +344,6 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   return last;
 };
 
-const SCOUT_SPLIT_RE = /<<scout-split>>([\s\S]*?)<<\/scout-split>>/g;
-
 export type ExtractedScoutArea = {
   readonly area: string;
   readonly query: string;
@@ -295,15 +352,8 @@ export type ExtractedScoutArea = {
 export const extractScoutSplit = (
   assistantText: string,
 ): ReadonlyArray<ExtractedScoutArea> | null => {
-  SCOUT_SPLIT_RE.lastIndex = 0;
-  let raw: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = SCOUT_SPLIT_RE.exec(assistantText)) !== null) {
-    const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) {
-      raw = inner;
-    }
-  }
+  const blocks = extractAllTagged(assistantText, 'scout-split');
+  const raw = blocks.length > 0 ? blocks[blocks.length - 1]! : null;
   if (raw === null) {
     return null;
   }
@@ -343,19 +393,19 @@ export const extractScoutSplit = (
   return out.length > 0 ? out : null;
 };
 
-function stripJsonFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
+const stripJsonFences = (raw: string): string => {
+  const fenced = /^```(?:json)?([\s\S]*?)```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();
-}
+};
 
-function extractJsonArray(text: string): string | null {
+const extractJsonArray = (text: string): string | null => {
   const start = text.indexOf('[');
   const end = text.lastIndexOf(']');
   if (start === -1 || end === -1 || end <= start) {
     return null;
   }
   return text.slice(start, end + 1);
-}
+};
 
 const PLAN_OPEN_QUESTION_RE =
   /\b(vuoi che|ti torna|che ne dici|should i|let me know|do you want|shall i|wdyt|preferisci)\b/i;
@@ -380,25 +430,12 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
   if (stepLines.length < 2) {
     return { ready: false, reason: 'too-few-steps' };
   }
-  const outsidePlan = input.assistantText.replace(PLAN_RE, '').trim();
+  const outsidePlan = stripTagged(input.assistantText, 'plan').trim();
   if (PLAN_OPEN_QUESTION_RE.test(outsidePlan)) {
     return { ready: false, reason: 'has-open-question' };
   }
   return { ready: true, reason: null };
 };
-
-function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
-  const out: string[] = [];
-  re.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const value = (m[1] ?? '').trim();
-    if (value.length > 0) {
-      out.push(value);
-    }
-  }
-  return out;
-}
 
 export const mergeIntoSlot = (existing: string, additions: ReadonlyArray<string>): string => {
   if (additions.length === 0) {

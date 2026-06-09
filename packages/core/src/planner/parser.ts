@@ -90,7 +90,7 @@ export const parsePlannerOutput = (raw: string): PlannerOutput => {
 };
 
 function stripCodeFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
+  const fenced = /^```(?:json)?([\s\S]*?)```$/i.exec(raw.trim());
   return (fenced?.[1] ?? raw).trim();
 }
 

@@ -119,6 +119,31 @@ line three<</ctx-decision>>`;
     expect(extractMarkers(text).decisions).toEqual(['x']);
     expect(extractMarkers(text).decisions).toEqual(['x']);
   });
+
+  it('ignores an unclosed marker', () => {
+    expect(extractMarkers('<<ctx-decision>>dangling, never closed').decisions).toEqual([]);
+    expect(extractMarkers('<<ctx-question>>dangling too').questions).toEqual([]);
+  });
+
+  it('keeps closed markers that precede an unclosed one', () => {
+    const text = '<<ctx-decision>>a<</ctx-decision>> then <<ctx-decision>>dangling';
+    expect(extractMarkers(text).decisions).toEqual(['a']);
+  });
+
+  it('swallows a nested opening marker into the body', () => {
+    const text = '<<ctx-decision>>outer <<ctx-decision>>inner<</ctx-decision>>';
+    expect(extractMarkers(text).decisions).toEqual(['outer <<ctx-decision>>inner']);
+  });
+
+  it('rejects a question opening tag with an unknown attribute', () => {
+    const text = '<<ctx-question foo="x">>not extracted<</ctx-question>>';
+    expect(extractMarkers(text).questions).toEqual([]);
+  });
+
+  it('completes quickly on adversarial repeated open markers', () => {
+    const text = '<<ctx-question>>a'.repeat(2000);
+    expect(extractMarkers(text).questions).toEqual([]);
+  });
 });
 
 describe('extractPlanFromMarker', () => {
@@ -172,6 +197,15 @@ body 2<</plan>>`;
     expect(extractPlanFromMarker(text)?.title).toBe('x');
     expect(extractPlanFromMarker(text)?.title).toBe('x');
     expect(extractPlanFromMarker(text)?.title).toBe('x');
+  });
+
+  it('trims blank lines around the body', () => {
+    const text = '<<plan>>title\n\n\nbody line\n\n\n<</plan>>';
+    expect(extractPlanFromMarker(text)).toEqual({ title: 'title', bodyMd: 'body line' });
+  });
+
+  it('ignores an unclosed plan marker', () => {
+    expect(extractPlanFromMarker('<<plan>>title\nbody, never closed')).toBeNull();
   });
 });
 
@@ -235,6 +269,51 @@ describe('extractHandoff', () => {
     const text =
       '<<handoff kind=scout reason="early">> ... <<handoff kind=implementer reason="final">>';
     expect(extractHandoff(text)?.kind).toBe('implementer');
+  });
+
+  it('parses single-quoted attribute values', () => {
+    const text = "<<handoff kind=implementer reason='single quoted reason'>>";
+    expect(extractHandoff(text)?.reason).toBe('single quoted reason');
+  });
+
+  it('skips junk between attributes', () => {
+    const text = '<<handoff kind=implementer !! ~~ reason="still parsed">>';
+    expect(extractHandoff(text)).toEqual({
+      kind: 'implementer',
+      reason: 'still parsed',
+      planId: null,
+    });
+  });
+
+  it('returns null for a marker with only whitespace inside', () => {
+    expect(extractHandoff('<<handoff   >>')).toBeNull();
+  });
+
+  it('returns null when an attribute value contains a bare >', () => {
+    expect(extractHandoff('<<handoff kind=implementer reason="a>b">>')).toBeNull();
+  });
+
+  it('ignores attributes without a value', () => {
+    expect(extractHandoff('<<handoff kind>>')).toBeNull();
+    expect(extractHandoff('<<handoff kind= >>')).toBeNull();
+  });
+
+  it('does not require the handoff word boundary to leak into longer markers', () => {
+    expect(extractHandoff('<<handoffs kind=implementer reason="x">>')).toBeNull();
+  });
+
+  it('completes quickly on adversarial whitespace runs', () => {
+    const text = `<<handoff${' \t'.repeat(5000)}`;
+    expect(extractHandoff(text)).toBeNull();
+  });
+
+  it('rejects a marker whose body holds a stray > before the close', () => {
+    expect(extractHandoff('<<handoff kind=implementer rea>son="x">>')).toBeNull();
+  });
+
+  it('stops at the first >> when scanning the body', () => {
+    const text = '<<handoff kind=scout reason="a">>tail kind=implementer>>';
+    expect(extractHandoff(text)?.kind).toBe('scout');
   });
 });
 
@@ -363,6 +442,12 @@ describe('extractClustersFromMarker', () => {
 
   it('tolerates a json code fence', () => {
     const text = '<<clusters>>```json\n[{"title":"a","instructions":"b"}]\n```<</clusters>>';
+    expect(extractClustersFromMarker(text)).toEqual([{ title: 'a', instructions: 'b' }]);
+  });
+
+  it('tolerates whitespace padding inside the code fence', () => {
+    const text =
+      '<<clusters>>```json\n\t [{"title":"a","instructions":"b"}] \t\n\t ```<</clusters>>';
     expect(extractClustersFromMarker(text)).toEqual([{ title: 'a', instructions: 'b' }]);
   });
 

@@ -23,4 +23,14 @@ describe('sanitizeSlug', () => {
     expect(sanitizeSlug('')).toMatch(/^[a-f0-9]{8}$/);
     expect(sanitizeSlug('!!!')).toMatch(/^[a-f0-9]{8}$/);
   });
+
+  it('drops a hyphen left dangling by truncation', () => {
+    const input = `${'a'.repeat(39)}-${'b'.repeat(10)}`;
+    expect(sanitizeSlug(input)).toBe('a'.repeat(39));
+  });
+
+  it('handles long separator runs quickly', () => {
+    expect(sanitizeSlug(`a${'-'.repeat(5000)}b`)).toBe('a-b');
+    expect(sanitizeSlug(`${'-'.repeat(5000)}x${'-'.repeat(5000)}`)).toBe('x');
+  });
 });

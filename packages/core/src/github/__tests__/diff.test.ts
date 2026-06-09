@@ -161,6 +161,32 @@ describe('parseUnifiedDiff', () => {
     expect(lines?.[3]).toMatchObject({ kind: 'context', oldLine: 7, newLine: 7 });
   });
 
+  it('parses paths containing spaces', () => {
+    const diff = [
+      'diff --git a/my file.ts b/my file.ts',
+      '--- a/my file.ts',
+      '+++ b/my file.ts',
+      '@@ -1 +1 @@',
+      '-old',
+      '+new',
+    ].join('\n');
+
+    const files = parseUnifiedDiff(diff);
+    expect(files[0]?.path).toBe('my file.ts');
+    expect(files[0]?.oldPath).toBeUndefined();
+  });
+
+  it('splits ambiguous headers at the last " b/" separator', () => {
+    const files = parseUnifiedDiff('diff --git a/a b/c b/a b/c');
+    expect(files[0]?.path).toBe('c');
+    expect(files[0]?.oldPath).toBe('a b/c b/a');
+  });
+
+  it('ignores a header missing one of the paths', () => {
+    expect(parseUnifiedDiff('diff --git a/only-one-path')).toEqual([]);
+    expect(parseUnifiedDiff('diff --git a/x b/')).toEqual([]);
+  });
+
   it('path without oldPath when old and new paths match (modified)', () => {
     const diff = [
       'diff --git a/same.ts b/same.ts',
