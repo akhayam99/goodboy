@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseModelId, suggestLighterModel } from '../features/chat/utils/chat-constants';
+import {
+  parseModelId,
+  suggestHeavierModel,
+  suggestLighterModel,
+} from '../features/chat/utils/chat-constants';
 
 const ANTHROPIC = [
   'claude-haiku-4-5',
@@ -8,22 +12,27 @@ const ANTHROPIC = [
   'claude-opus-4-6',
   'claude-opus-4-7',
   'claude-opus-4-8',
+  'claude-fable-5',
 ];
 
+const CODEX = ['gpt-5.4-mini', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.5'];
+
+const GEMINI = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+
 describe('suggestLighterModel', () => {
-  it('Opus 4.8 → Sonnet 4.6 (drops to cheapest non-floor tier, most capable in it)', () => {
+  it('Opus 4.8 → Sonnet 4.6 (drops one cost tier, most capable in it)', () => {
     expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).toBe('claude-sonnet-4-6');
   });
 
-  it('Opus 4.6 → Sonnet 4.6 (same target from a lighter Opus)', () => {
-    expect(suggestLighterModel('claude-opus-4-6', ANTHROPIC)).toBe('claude-sonnet-4-6');
+  it('Fable 5 → Sonnet 4.6 (top tier drops to mid, never to cheap)', () => {
+    expect(suggestLighterModel('claude-fable-5', ANTHROPIC)).toBe('claude-sonnet-4-6');
   });
 
-  it('never suggests below the Haiku floor', () => {
+  it('never suggests below the cheap-tier floor', () => {
     expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).not.toMatch(/haiku/);
   });
 
-  it('no nag when already mid-tier (gap below threshold)', () => {
+  it('no nag when already mid-tier (cheap tier is floored out)', () => {
     expect(suggestLighterModel('claude-sonnet-4-6', ANTHROPIC)).toBeNull();
   });
 
@@ -31,6 +40,40 @@ describe('suggestLighterModel', () => {
     expect(
       suggestLighterModel('claude-sonnet-4-6', ['claude-sonnet-4-6', 'claude-haiku-4-5']),
     ).toBeNull();
+  });
+
+  it('codex: GPT-5.5 → GPT-5.4 (small weight gaps no longer block tier drops)', () => {
+    expect(suggestLighterModel('gpt-5.5', CODEX)).toBe('gpt-5.4');
+  });
+
+  it('gemini: Pro has no mid tier, so no suggestion instead of falling to Flash', () => {
+    expect(suggestLighterModel('gemini-2.5-pro', GEMINI)).toBeNull();
+  });
+});
+
+describe('suggestHeavierModel', () => {
+  it('Opus 4.8 → Fable 5 (escalates to the strongest same-or-higher tier model)', () => {
+    expect(suggestHeavierModel('claude-opus-4-8', ANTHROPIC)).toBe('claude-fable-5');
+  });
+
+  it('Sonnet 4.6 → Fable 5 (heavy task escalates straight to the top)', () => {
+    expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)).toBe('claude-fable-5');
+  });
+
+  it('no suggestion when already on the top model', () => {
+    expect(suggestHeavierModel('claude-fable-5', ANTHROPIC)).toBeNull();
+  });
+
+  it('codex: GPT-5.4 → GPT-5.5', () => {
+    expect(suggestHeavierModel('gpt-5.4', CODEX)).toBe('gpt-5.5');
+  });
+
+  it('gemini: Flash → Pro', () => {
+    expect(suggestHeavierModel('gemini-2.5-flash', GEMINI)).toBe('gemini-2.5-pro');
+  });
+
+  it('never downgrades the cost tier to gain weight', () => {
+    expect(suggestHeavierModel('gemini-2.5-pro', GEMINI)).toBeNull();
   });
 });
 

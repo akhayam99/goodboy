@@ -53,4 +53,38 @@ describe('assessTurnWeight', () => {
     const bullets = '- foo\n- bar\n- baz';
     expect(assessTurnWeight(bullets)).not.toBe('light');
   });
+
+  it('flags 3+ distinct file paths as heavy', () => {
+    expect(
+      assessTurnWeight(
+        'update src/foo/bar.ts and packages/core/index.ts and apps/desktop/main.tsx',
+      ),
+    ).toBe('heavy');
+  });
+
+  it('does not flag 2 distinct paths in short text as heavy', () => {
+    expect(assessTurnWeight('look at src/foo/bar.ts and packages/core/index.ts')).not.toBe('heavy');
+  });
+
+  it('does not flag the same path repeated 3 times as heavy', () => {
+    expect(assessTurnWeight('src/foo/bar.ts src/foo/bar.ts src/foo/bar.ts')).not.toBe('heavy');
+  });
+
+  it('flags 3+ numbered list lines as heavy', () => {
+    expect(assessTurnWeight('1. install deps\n2. run migrations\n3. start the server')).toBe(
+      'heavy',
+    );
+  });
+
+  it('flags attachmentCount >= 2 as heavy', () => {
+    expect(assessTurnWeight('fix this', { attachmentCount: 2 })).toBe('heavy');
+  });
+
+  it('does not flag attachmentCount 1 with short text as heavy', () => {
+    expect(assessTurnWeight('fix this', { attachmentCount: 1 })).not.toBe('heavy');
+  });
+
+  it('does not count e.g. or version numbers as file paths', () => {
+    expect(assessTurnWeight('e.g. use version 4.5 and 2.0 here')).not.toBe('heavy');
+  });
 });
